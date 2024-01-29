@@ -830,6 +830,7 @@ def ensure_reflex_distinct_id() -> int:
     Returns:
         Distinct id (int).
     """
+    initialize_reflex_user_directory()
     distinct_id_file = os.path.join(constants.Reflex.DIR, "distinct_id")
 
     distinct_id = None
