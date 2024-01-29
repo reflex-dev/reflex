@@ -406,6 +406,22 @@ def test_var_indexing_lists(var):
     assert str(var[-1]) == f"{{{var._var_name}.at(-1)}}"
 
 
+def test_var_indexing_str():
+    """Test that we can index into str vars."""
+    str_var = BaseVar(_var_name="str", _var_type=str)
+
+    # Test that indexing gives a type of Var[str].
+    assert isinstance(str_var[0], Var)
+    assert str_var[0]._var_type == str
+
+    # Test basic indexing.
+    assert str(str_var[0]) == "{str.at(0)}"
+    assert str(str_var[1]) == "{str.at(1)}"
+
+    # Test negative indexing.
+    assert str(str_var[-1]) == "{str.at(-1)}"
+
+
 @pytest.mark.parametrize(
     "var, index",
     [
