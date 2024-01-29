@@ -33,7 +33,7 @@ class TextFieldRoot(el.Div, CommonMarginProps, RadixThemesComponent):
     variant: Var[LiteralTextFieldVariant]
 
     # Override theme color for text field
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
@@ -88,7 +88,7 @@ class TextFieldSlot(RadixThemesComponent):
     tag = "TextField.Slot"
 
     # Override theme color for text field slot
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Override the gap spacing between slot and input: "1" - "9"
     gap: Var[LiteralSize]
@@ -107,7 +107,7 @@ class Input(RadixThemesComponent):
     variant: Var[LiteralTextFieldVariant]
 
     # Override theme color for text field
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]

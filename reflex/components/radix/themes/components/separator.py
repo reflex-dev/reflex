@@ -21,7 +21,7 @@ class Separator(CommonMarginProps, RadixThemesComponent):
     size: Var[LiteralSeperatorSize] = Var.create_safe("4")
 
     # The color of the select
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # The orientation of the separator.
     orientation: Var[Literal["horizontal", "vertical"]]

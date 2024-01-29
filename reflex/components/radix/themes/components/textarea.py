@@ -28,7 +28,7 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
     variant: Var[Literal["classic", "surface", "soft"]]
 
     # The color of the text area
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
