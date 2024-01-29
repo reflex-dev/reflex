@@ -316,57 +316,57 @@ def test_basic_operations(TestObj):
         str(BaseVar(_var_name="foo", _var_type=list).reverse())
         == "{[...foo].reverse()}"
     )
-    assert str(BaseVar(_var_name="foo", _var_type=str).type()) == "{typeof foo}"
+    assert str(BaseVar(_var_name="foo", _var_type=str).type()) == "{typeof foo}"  # type: ignore
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() == str)
+        str(BaseVar(_var_name="foo", _var_type=str).type() == str)  # type: ignore
         == "{(typeof foo === `string`)}"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() == str)
+        str(BaseVar(_var_name="foo", _var_type=str).type() == str)  # type: ignore
         == "{(typeof foo === `string`)}"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() == int)
+        str(BaseVar(_var_name="foo", _var_type=str).type() == int)  # type: ignore
         == "{(typeof foo === `number`)}"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() == list)
+        str(BaseVar(_var_name="foo", _var_type=str).type() == list)  # type: ignore
         == "{(typeof foo === `Array`)}"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() == float)
+        str(BaseVar(_var_name="foo", _var_type=str).type() == float)  # type: ignore
         == "{(typeof foo === `number`)}"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() == tuple)
+        str(BaseVar(_var_name="foo", _var_type=str).type() == tuple)  # type: ignore
         == "{(typeof foo === `Array`)}"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() == dict)
+        str(BaseVar(_var_name="foo", _var_type=str).type() == dict)  # type: ignore
         == "{(typeof foo === `Object`)}"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() != str)
+        str(BaseVar(_var_name="foo", _var_type=str).type() != str)  # type: ignore
         == "{(typeof foo !== `string`)}"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() != int)
+        str(BaseVar(_var_name="foo", _var_type=str).type() != int)  # type: ignore
         == "{(typeof foo !== `number`)}"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() != list)
+        str(BaseVar(_var_name="foo", _var_type=str).type() != list)  # type: ignore
         == "{(typeof foo !== `Array`)}"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() != float)
+        str(BaseVar(_var_name="foo", _var_type=str).type() != float)  # type: ignore
         == "{(typeof foo !== `number`)}"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() != tuple)
+        str(BaseVar(_var_name="foo", _var_type=str).type() != tuple)  # type: ignore
         == "{(typeof foo !== `Array`)}"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() != dict)
+        str(BaseVar(_var_name="foo", _var_type=str).type() != dict)  # type: ignore
         == "{(typeof foo !== `Object`)}"
     )
 
