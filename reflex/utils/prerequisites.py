@@ -824,20 +824,20 @@ def validate_frontend_dependencies(init=True):
         validate_bun()
 
 
-def ensure_reflex_distinct_id() -> int:
+def ensure_reflex_installation_id() -> int:
     """Ensures that a reflex distinct id has been generated and stored in the reflex directory.
 
     Returns:
-        Distinct id (int).
+        Distinct id.
     """
     initialize_reflex_user_directory()
-    distinct_id_file = os.path.join(constants.Reflex.DIR, "distinct_id")
+    installation_id_file = os.path.join(constants.Reflex.DIR, "installation_id")
 
-    distinct_id = None
-    if os.path.exists(distinct_id_file):
+    installation_id = None
+    if os.path.exists(installation_id_file):
         try:
-            with open(distinct_id_file, "r") as f:
-                distinct_id = int(f.read())
+            with open(installation_id_file, "r") as f:
+                installation_id = int(f.read())
         except Exception:
             # If anything goes wrong at all... just regenerate.
             # Like what? Examples:
@@ -846,12 +846,12 @@ def ensure_reflex_distinct_id() -> int:
             #     - content not parseable as an int
             pass
 
-    if distinct_id is None:
-        distinct_id = random.getrandbits(128)
-        with open(distinct_id_file, "w") as f:
-            f.write(str(distinct_id))
-    # If we get here, distinct_id is definitely set
-    return distinct_id
+    if installation_id is None:
+        installation_id = random.getrandbits(128)
+        with open(installation_id_file, "w") as f:
+            f.write(str(installation_id))
+    # If we get here, installation_id is definitely set
+    return installation_id
 
 
 def initialize_reflex_user_directory():

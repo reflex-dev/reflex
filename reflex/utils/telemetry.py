@@ -10,7 +10,7 @@ from datetime import datetime
 import psutil
 
 from reflex import constants
-from reflex.utils.prerequisites import ensure_reflex_distinct_id
+from reflex.utils.prerequisites import ensure_reflex_installation_id
 
 
 def get_os() -> str:
@@ -80,18 +80,18 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
     if not telemetry_enabled:
         return False
 
-    distinct_id = ensure_reflex_distinct_id()
+    installation_id = ensure_reflex_installation_id()
 
     try:
         with open(constants.Dirs.REFLEX_JSON) as f:
             reflex_json = json.load(f)
-            distinct_app_id = reflex_json["project_hash"]
+            project_hash = reflex_json["project_hash"]
         post_hog = {
             "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
             "event": event,
             "properties": {
-                "distinct_id": distinct_id,
-                "distinct_app_id": distinct_app_id,
+                "distinct_id": installation_id,
+                "distinct_app_id": project_hash,
                 "user_os": get_os(),
                 "reflex_version": get_reflex_version(),
                 "python_version": get_python_version(),
