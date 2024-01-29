@@ -23,9 +23,6 @@ class Match(MemoizationLeaf):
     # The catchall case to match.
     default: Any
 
-    # The theme if set.
-    theme: Optional[Component] = None
-
     @classmethod
     def create(cls, cond: Any, *cases) -> Union[Component, BaseVar]:
         """Create a Match Component.
@@ -254,15 +251,6 @@ class Match(MemoizationLeaf):
         )
 
     def _render(self) -> Tag:
-        # apply theme to return components.
-        for match_case in self.match_cases:
-            if isinstance(match_case[-1], Component):
-                match_case[-1].apply_theme(self.theme)
-
-        # apply theme to default component
-        if isinstance(self.default, Component):
-            self.default.apply_theme(self.theme)
-
         return MatchTag(
             cond=self.cond, match_cases=self.match_cases, default=self.default
         )
@@ -289,4 +277,11 @@ class Match(MemoizationLeaf):
         Args:
             theme: The theme to apply.
         """
-        self.theme = theme
+        # apply theme to return components.
+        for match_case in self.match_cases:
+            if isinstance(match_case[-1], Component):
+                match_case[-1].apply_theme(theme)
+
+        # apply theme to default component
+        if isinstance(self.default, Component):
+            self.default.apply_theme(theme)

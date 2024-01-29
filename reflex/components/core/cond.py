@@ -27,9 +27,6 @@ class Cond(MemoizationLeaf):
     # The component to render if the cond is false.
     comp2: BaseComponent = Fragment.create()
 
-    # The theme if set.
-    theme: Optional[Component] = None
-
     @classmethod
     def create(
         cls,
@@ -70,9 +67,6 @@ class Cond(MemoizationLeaf):
         return []
 
     def _render(self) -> Tag:
-        self.comp1.apply_theme(self.theme)  # type: ignore
-        self.comp2.apply_theme(self.theme)  # type: ignore
-
         return CondTag(
             cond=self.cond,
             true_value=self.comp1.render(),
@@ -112,7 +106,8 @@ class Cond(MemoizationLeaf):
         Args:
             theme: The theme to apply.
         """
-        self.theme = theme
+        self.comp1.apply_theme(theme)  # type: ignore
+        self.comp2.apply_theme(theme)  # type: ignore
 
 
 @overload
