@@ -1019,7 +1019,7 @@ class Callout(CalloutRoot):
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             size: Size "1" - "3"
             variant: Variant of button: "soft" | "surface" | "outline"
-            color: Override theme color for button
+            color_scheme: Override theme color for button
             high_contrast: Whether to render the button with higher contrast color against background
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
