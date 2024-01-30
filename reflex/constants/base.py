@@ -95,6 +95,9 @@ class Templates(SimpleNamespace):
     # Create an enum value for each directory in the .templates folder
     Kind = Enum("Kind", {template.upper(): template for template in template_dirs})
 
+    # The route on Reflex backend to query which templates are available and their URLs
+    APP_TEMPLATES_ROUTE = "/app-templates"
+
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""
 

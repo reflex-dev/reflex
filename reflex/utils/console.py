@@ -150,7 +150,10 @@ def error(msg: str, **kwargs):
 
 
 def ask(
-    question: str, choices: Optional[List[str]] = None, default: Optional[str] = None
+    question: str,
+    choices: Optional[List[str]] = None,
+    default: Optional[str] = None,
+    show_choices: bool = True,
 ) -> str:
     """Takes a prompt question and optionally a list of choices
      and returns the user input.
@@ -159,11 +162,12 @@ def ask(
         question: The question to ask the user.
         choices: A list of choices to select from.
         default: The default option selected.
+        show_choices: Whether to show the choices.
 
     Returns:
         A string with the user input.
     """
-    return Prompt.ask(question, choices=choices, default=default)  # type: ignore
+    return Prompt.ask(question, choices=choices, default=default, show_choices=show_choices)  # type: ignore
 
 
 def progress():

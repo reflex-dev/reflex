@@ -407,18 +407,42 @@ def initialize_requirements_txt():
         console.info(f"Unable to check {fp} for reflex dependency.")
 
 
-def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
+def initialize_app_directory(
+    app_name: str,
+    template_name: str = constants.Templates.Kind.BLANK.value,
+    template_code_dir_name: Optional[str] = None,
+    template_dir: Optional[Path] = None,
+):
     """Initialize the app directory on reflex init.
 
     Args:
         app_name: The name of the app.
-        template: The template to use.
+        template_name: The name of the template to use.
+        template_code_dir_name: The name of the code directory in the template.
+        template_dir: The directory of the template source files.
+
+    Raises:
+        Exit: If template_name, template_code_dir_name, template_dir combination is not supported.
     """
     console.log("Initializing the app directory.")
 
-    # Copy the template to the current directory.
-    template_dir = Path(constants.Templates.Dirs.BASE, "apps", template.value)
+    # By default, use the blank template from local assets.
+    if template_name == constants.Templates.Kind.BLANK.value:
+        if template_code_dir_name is not None or template_dir is not None:
+            console.error(
+                f"Only {template_name=} should be provided, got {template_code_dir_name=}, {template_dir=}."
+            )
+            raise typer.Exit(1)
+        template_code_dir_name = constants.Templates.Dirs.CODE
+        template_dir = Path(constants.Templates.Dirs.BASE, "apps", template_name)
+    else:
+        if template_code_dir_name is None or template_dir is None:
+            console.error(
+                f"For `{template_name}` template, `template_code_dir_name` and `template_dir` should both be provided."
+            )
+            raise typer.Exit(1)
 
+    console.debug(f"Using {template_name=} {template_dir=} {template_code_dir_name=}.")
     # Remove all pyc and __pycache__ dirs in template directory.
     for pyc_file in template_dir.glob("**/*.pyc"):
         pyc_file.unlink()
@@ -430,16 +454,16 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
         path_ops.cp(str(file), file.name)
 
     # Rename the template app to the app name.
-    path_ops.mv(constants.Templates.Dirs.CODE, app_name)
+    path_ops.mv(template_code_dir_name, app_name)
     path_ops.mv(
-        os.path.join(app_name, template_dir.name + constants.Ext.PY),
+        os.path.join(app_name, template_name + constants.Ext.PY),
         os.path.join(app_name, app_name + constants.Ext.PY),
     )
 
     # Fix up the imports.
     path_ops.find_replace(
         app_name,
-        f"from {constants.Templates.Dirs.CODE}",
+        f"from {template_name}",
         f"from {app_name}",
     )
 
@@ -999,33 +1023,34 @@ def check_schema_up_to_date():
                 )
 
 
-def prompt_for_template() -> constants.Templates.Kind:
+def prompt_for_template(template_names: list[str]) -> str:
     """Prompt the user to specify a template.
 
+    Args:
+        template_names: The names of the templates to choose from.
+
     Returns:
-        The template the user selected.
+        The template name the user selects.
     """
-    # Show the user the URLs of each temlate to preview.
+    # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
-    console.print("blank (https://blank-template.reflex.run) - A minimal template.")
-    console.print(
-        "sidebar (https://sidebar-template.reflex.run) - A template with a sidebar to navigate pages."
-    )
-    console.print("")
 
     # Prompt the user to select a template.
+    id_to_name = {str(idx): name for idx, name in enumerate(template_names, start=1)}
+    id_to_name["0"] = constants.Templates.Kind.BLANK.value
+
+    for id in range(len(id_to_name)):
+        console.print(f"({id}) {id_to_name[str(id)]}")
+
     template = console.ask(
         "Which template would you like to use?",
-        choices=[
-            template.value
-            for template in constants.Templates.Kind
-            if template.value != "demo"
-        ],
-        default=constants.Templates.Kind.BLANK.value,
+        choices=[str(i) for i in range(len(id_to_name))],
+        show_choices=False,
+        default="0",
     )
 
     # Return the template.
-    return constants.Templates.Kind(template)
+    return id_to_name[template]
 
 
 def should_show_rx_chakra_migration_instructions() -> bool:
@@ -1178,3 +1203,29 @@ def migrate_to_reflex():
                 for old, new in updates.items():
                     line = line.replace(old, new)
                 print(line, end="")
+
+
+def fetch_app_templates() -> dict[str, str] | None:
+    """Fetch the list of app templates from the Reflex backend server.
+
+    Returns:
+        The name and download URL as a dictionary.
+    """
+    config = get_config()
+    if not config.cp_backend_url:
+        console.info(
+            "Skip fetching App templates. No backend URL is specified in the config."
+        )
+        return None
+    try:
+        response = httpx.get(
+            f"{config.cp_backend_url}{constants.Templates.APP_TEMPLATES_ROUTE}"
+        )
+        response.raise_for_status()
+        return {template["name"]: template["url"] for template in response.json()}
+    except httpx.HTTPError as ex:
+        console.info(f"Failed to fetch app templates: {ex}")
+        return None
+    except (TypeError, KeyError, json.JSONDecodeError) as tkje:
+        console.info(f"Unable to process server response for app templates: {tkje}")
+        return None
