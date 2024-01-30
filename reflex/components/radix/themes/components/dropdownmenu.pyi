@@ -130,7 +130,6 @@ class DropdownMenuRoot(CommonMarginProps, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -205,7 +204,6 @@ class DropdownMenuRoot(CommonMarginProps, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -330,7 +328,6 @@ class DropdownMenuTrigger(CommonMarginProps, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -400,7 +397,6 @@ class DropdownMenuTrigger(CommonMarginProps, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -526,7 +522,6 @@ class DropdownMenuContent(CommonMarginProps, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -608,7 +603,6 @@ class DropdownMenuContent(CommonMarginProps, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -733,7 +727,6 @@ class DropdownMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -803,7 +796,6 @@ class DropdownMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -928,7 +920,6 @@ class DropdownMenuSub(CommonMarginProps, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -998,7 +989,6 @@ class DropdownMenuSub(CommonMarginProps, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -1128,7 +1118,6 @@ class DropdownMenuSubContent(CommonMarginProps, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -1201,7 +1190,6 @@ class DropdownMenuSubContent(CommonMarginProps, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -1327,7 +1315,6 @@ class DropdownMenuItem(CommonMarginProps, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -1398,7 +1385,6 @@ class DropdownMenuItem(CommonMarginProps, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -1523,7 +1509,6 @@ class DropdownMenuSeparator(CommonMarginProps, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -1593,7 +1578,6 @@ class DropdownMenuSeparator(CommonMarginProps, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: Component properties.
 

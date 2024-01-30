@@ -615,7 +615,7 @@ class PyiGenerator:
         pyi_content.append("")  # add empty line at the end for formatting
 
         pyi_path = module_path.with_suffix(".pyi")
-        pyi_path.write_text("\n".join(pyi_content), encoding="utf-8")
+        pyi_path.write_text("\n".join(pyi_content))
         logger.info(f"Wrote {pyi_path}")
 
     def _scan_file(self, module_path: Path):
