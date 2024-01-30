@@ -95,7 +95,9 @@ def _relative_to_pwd(path: Path) -> Path:
     Returns:
         The relative path.
     """
-    return path.relative_to(PWD)
+    if path.is_absolute():
+        return path.relative_to(PWD)
+    return path
 
 
 def _git_diff(args: list[str]) -> str:
