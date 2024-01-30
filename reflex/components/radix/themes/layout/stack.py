@@ -4,13 +4,14 @@ from __future__ import annotations
 from typing import Literal, Optional
 
 from reflex.components.component import Component
-from reflex.components.el.elements.typography import Div
+
+from .flex import Flex
 
 LiteralJustify = Literal["start", "center", "end"]
 LiteralAlign = Literal["start", "center", "end", "stretch"]
 
 
-class Stack(Div):
+class Stack(Flex):
     """A stack component."""
 
     @classmethod
@@ -37,7 +38,6 @@ class Stack(Div):
         style = props.setdefault("style", {})
         style.update(
             {
-                "display": "flex",
                 "alignItems": align,
                 "justifyContent": justify,
                 "gap": spacing,
@@ -58,7 +58,3 @@ class HStack(Stack):
 
     def _apply_theme(self, theme: Component | None):
         self.style.update({"flex_direction": "row"})
-
-
-hstack = HStack.create
-vstack = VStack.create

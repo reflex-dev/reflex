@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 from reflex.components.component import Component
-from reflex.components.el.elements.typography import Div
+
+from .flex import Flex
 
 
-class Center(Div):
+class Center(Flex):
     """A center component."""
 
     def _apply_theme(self, theme: Component | None):
@@ -16,6 +17,3 @@ class Center(Div):
                 "justify_content": "center",
             }
         )
-
-
-center = Center.create
