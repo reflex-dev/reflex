@@ -11,18 +11,21 @@ from ..base import (
     LiteralAccentColor,
     LiteralSize,
     RadixThemesComponent,
+    RadixThemesComponentPropsOverride,
 )
 
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 
 
-class RadioGroupRoot(RadixThemesComponent):
+class RadioGroupRoot(
+    RadixThemesComponentPropsOverride, RadixThemesComponent
+):
     """A set of interactive radio buttons where only one can be selected at a time."""
 
     tag = "RadioGroup.Root"
 
     # The size of the radio group: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Literal["1", "2", "3", 1, 2, 3]]
 
     # The variant of the radio group
     variant: Var[Literal["classic", "surface", "soft"]]
@@ -94,7 +97,7 @@ class HighLevelRadioGroup(RadioGroupRoot):
     gap: Var[LiteralSize] = Var.create_safe("2")
 
     # The size of the radio group.
-    size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
+    size: Var[Literal["1", "2", "3", 1, 2, 3]] = Var.create_safe("2")
 
     @classmethod
     def create(

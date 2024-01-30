@@ -10,6 +10,7 @@ from reflex.vars import Var
 from ..base import (
     LiteralAccentColor,
     RadixThemesComponent,
+    RadixThemesComponentPropsOverride,
 )
 from .base import (
     LiteralTextAlign,
@@ -19,7 +20,9 @@ from .base import (
 )
 
 
-class Heading(el.H1, RadixThemesComponent):
+class Heading(
+    el.H1, RadixThemesComponentPropsOverride, RadixThemesComponent
+):
     """A foundational text primitive based on the <span> element."""
 
     tag = "Heading"

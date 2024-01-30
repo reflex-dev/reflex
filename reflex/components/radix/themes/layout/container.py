@@ -8,7 +8,7 @@ from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
-LiteralContainerSize = Literal["1", "2", "3", "4"]
+LiteralContainerSize = Literal["1", "2", "3", "4", 1, 2, 3, 4]
 
 
 class Container(el.Div, RadixThemesComponent):
@@ -21,3 +21,7 @@ class Container(el.Div, RadixThemesComponent):
 
     # The size of the container: "1" - "4" (default "4")
     size: Var[LiteralContainerSize]
+
+    @classmethod
+    def _get_props_to_override(cls) -> list:
+        return super()._get_props_to_overide + ["size"]

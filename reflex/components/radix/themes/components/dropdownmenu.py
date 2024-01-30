@@ -6,6 +6,7 @@ from reflex.vars import Var
 from ..base import (
     LiteralAccentColor,
     RadixThemesComponent,
+    RadixThemesComponentPropsOverride,
 )
 
 
@@ -70,13 +71,13 @@ class DropdownMenuSub(RadixThemesComponent):
     tag = "DropdownMenu.Sub"
 
 
-class DropdownMenuSubContent(RadixThemesComponent):
+class DropdownMenuSubContent(RadixThemesComponentPropsOverride, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "DropdownMenu.SubContent"
 
     # Button size "1" - "4"
-    size: Var[Literal["1", "2"]]
+    size: Var[Literal["1", "2", 1, 2]]
 
     # Variant of button: "solid" | "soft" | "outline" | "ghost"
     variant: Var[Literal["solid", "soft"]]

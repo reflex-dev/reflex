@@ -11,7 +11,9 @@ from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
-LiteralSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+LiteralSize = Literal[
+    "1", "2", "3", "4", "5", "6", "7", "8", "9", 1, 2, 3, 4, 5, 6, 7, 8, 9
+]
 LiteralVariant = Literal["classic", "solid", "soft", "surface", "outline", "ghost"]
 LiteralAppearance = Literal["inherit", "light", "dark"]
 LiteralGrayColor = Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]
@@ -210,3 +212,40 @@ class RadixThemesColorModeProvider(Component):
     library = "/components/reflex/radix_themes_color_mode_provider.js"
     tag = "RadixThemesColorModeProvider"
     is_default = True
+
+
+class RadixThemesComponentPropsOverride(Component):
+    @classmethod
+    def create(
+        cls,
+        *children,
+        **props,
+    ) -> Component:
+        """Create a new component instance.
+
+        Will prepend "RadixThemes" to the component tag to avoid conflicts with
+        other UI libraries for common names, like Text and Button.
+
+        Args:
+            *children: Child components.
+            **props: Component properties.
+
+        Returns:
+            A new component instance.
+        """
+        props = cls._convert_props(props)
+        return super().create(*children, **props)
+
+    @classmethod
+    def _get_props_to_override(cls):
+
+        return ["size"]
+
+    @classmethod
+    def _convert_props(cls, props):
+        for prop in cls._get_props_to_override():
+            if prop in props:
+                prop_value = props[prop]
+                prop_value = Var.create(prop_value)._replace(_var_type=str)
+                props[prop] = prop_value
+        return props

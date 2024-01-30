@@ -249,18 +249,35 @@ class Component(BaseComponent, ABC):
 
                     if (
                         types.is_literal(expected_type)
+                        and not isinstance(value, Var)
                         and value not in expected_type.__args__
+                    ) or (
+                        types.is_literal(expected_type)
+                        and isinstance(value, Var)
+                        and not value._var_state
+                        and value._var_name not in expected_type.__args__
                     ):
                         allowed_values = expected_type.__args__
-                        if value not in allowed_values:
+                        prop_value = (
+                            types.get_base_class(value._var_type)(value._var_name)
+                            if isinstance(value, Var)
+                            else value
+                        )
+                        if prop_value not in allowed_values:
+                            value_str = ",".join(
+                                [
+                                    str(v) if not isinstance(v, str) else f"'{v}'"
+                                    for v in allowed_values
+                                ]
+                            )
                             raise ValueError(
-                                f"prop value for {key} of the `{type(self).__name__}` component should be one of the following: {','.join(allowed_values)}. Got '{value}' instead"
+                                f"prop value for {str(key)} of the `{type(self).__name__}` component should be one of the following: {value_str}. Got '{prop_value}' instead"
                             )
 
                     # Get the passed type and the var type.
                     passed_type = kwargs[key]._var_type
                     expected_type = (
-                        type(expected_type.__args__[0])
+                        types.get_literal_types(expected_type)
                         if types.is_literal(expected_type)
                         else expected_type
                     )
@@ -268,6 +285,11 @@ class Component(BaseComponent, ABC):
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
                     expected_type = fields[key].outer_type_
+                    expected_type = (
+                        types.get_literal_types(expected_type)
+                        if types.is_literal(expected_type)
+                        else expected_type
+                    )
                 if not types._issubclass(passed_type, expected_type):
                     value_name = value._var_name if isinstance(value, Var) else value
                     raise TypeError(

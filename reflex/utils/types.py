@@ -94,6 +94,30 @@ def is_literal(cls: GenericType) -> bool:
     return get_origin(cls) is Literal
 
 
+def get_literal_types(cls: GenericType) -> Type | Union[Type, ...]:
+    """Obtain the types in a literal.
+
+    Args:
+        cls: The class to check.
+
+    Returns:
+        The literal type or union of types for literals with multiple arg types.
+    """
+    if not is_literal(cls):
+        raise TypeError(f"{cls} is not a literal")
+
+    types_of_literals = cls.__args__
+
+    result_types = set()
+    for item in types_of_literals:
+        result_types.add(type(item))
+
+    if len(result_types) == 1:
+        return result_types.pop()
+    else:
+        return Union[*result_types]
+
+
 def is_optional(cls: GenericType) -> bool:
     """Check if a class is an Optional.
 

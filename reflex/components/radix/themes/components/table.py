@@ -6,16 +6,19 @@ from reflex.vars import Var
 
 from ..base import (
     RadixThemesComponent,
+    RadixThemesComponentPropsOverride,
 )
 
 
-class TableRoot(el.Table, RadixThemesComponent):
+class TableRoot(
+    el.Table, RadixThemesComponentPropsOverride, RadixThemesComponent
+):
     """A semantic table for presenting tabular data."""
 
     tag = "Table.Root"
 
     # The size of the table: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Literal["1", "2", "3", 1, 2, 3]]
 
     # The variant of the table
     variant: Var[Literal["surface", "ghost"]]

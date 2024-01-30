@@ -8,5 +8,7 @@ from typing import Literal
 
 LiteralTextWeight = Literal["light", "regular", "medium", "bold"]
 LiteralTextAlign = Literal["left", "center", "right"]
-LiteralTextSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+LiteralTextSize = Literal[
+    "1", "2", "3", "4", "5", "6", "7", "8", "9", 1, 2, 3, 4, 5, 6, 7, 8, 9
+]
 LiteralTextTrim = Literal["normal", "start", "end", "both"]

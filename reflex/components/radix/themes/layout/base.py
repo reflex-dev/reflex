@@ -9,12 +9,15 @@ from ..base import (
     CommonMarginProps,
     LiteralSize,
     RadixThemesComponent,
+    RadixThemesComponentPropsOverride,
 )
 
-LiteralBoolNumber = Literal["0", "1"]
+LiteralBoolNumber = Literal["0", "1", 0, 1]
 
 
-class LayoutComponent(CommonMarginProps, RadixThemesComponent):
+class LayoutComponent(
+    CommonMarginProps, RadixThemesComponentPropsOverride, RadixThemesComponent
+):
     """Box, Flex and Grid are foundational elements you'll use to construct
     layouts. Box provides block-level spacing and sizing, while Flex and Grid
     let you create flexible columns, rows and grids.
@@ -46,3 +49,7 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
 
     # Whether the element will take up the largest possible space: "0" | "1"
     grow: Var[LiteralBoolNumber]
+
+    @classmethod
+    def _get_props_to_override(cls) -> list:
+        return ["p", "px", "py", "pr", "pb", "pl", "shrink", "grow"]
