@@ -9,11 +9,11 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Optional
 from reflex.components.component import Component
-from reflex.components.radix.primitives.base import RadixPrimitiveComponent
+from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.style import Style
 from reflex.vars import Var
 
-class ProgressComponent(RadixPrimitiveComponent):
+class ProgressComponent(RadixPrimitiveComponentWithClassName):
     @overload
     @classmethod
     def create(  # type: ignore

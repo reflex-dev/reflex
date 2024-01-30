@@ -1,9 +1,11 @@
 """Radix themes components."""
 
 from .alertdialog import (
-    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
+    AlertDialogRoot,
     AlertDialogTitle,
     AlertDialogTrigger,
 )
@@ -11,9 +13,9 @@ from .aspectratio import AspectRatio
 from .avatar import Avatar
 from .badge import Badge
 from .button import Button
-from .callout import CalloutIcon, CalloutRoot, CalloutText
+from .callout import Callout, CalloutIcon, CalloutRoot, CalloutText
 from .card import Card
-from .checkbox import Checkbox
+from .checkbox import Checkbox, HighLevelCheckbox
 from .contextmenu import (
     ContextMenuContent,
     ContextMenuItem,
@@ -37,6 +39,7 @@ from .dropdownmenu import (
     DropdownMenuItem,
     DropdownMenuRoot,
     DropdownMenuSeparator,
+    DropdownMenuSub,
     DropdownMenuSubContent,
     DropdownMenuSubTrigger,
     DropdownMenuTrigger,
@@ -46,9 +49,10 @@ from .iconbutton import IconButton
 from .icons import Icon
 from .inset import Inset
 from .popover import PopoverClose, PopoverContent, PopoverRoot, PopoverTrigger
-from .radiogroup import RadioGroupItem, RadioGroupRoot
+from .radiogroup import HighLevelRadioGroup, RadioGroupItem, RadioGroupRoot
 from .scrollarea import ScrollArea
 from .select import (
+    HighLevelSelect,
     SelectContent,
     SelectGroup,
     SelectItem,
@@ -71,15 +75,17 @@ from .table import (
 )
 from .tabs import TabsContent, TabsList, TabsRoot, TabsTrigger
 from .textarea import TextArea
-from .textfield import TextFieldInput, TextFieldRoot, TextFieldSlot
+from .textfield import Input, TextFieldInput, TextFieldRoot, TextFieldSlot
 from .tooltip import Tooltip
 
 # Alert Dialog
-alertdialog = AlertDialog.create
+alertdialog_root = AlertDialogRoot.create
 alertdialog_trigger = AlertDialogTrigger.create
 alertdialog_content = AlertDialogContent.create
 alertdialog_title = AlertDialogTitle.create
 alertdialog_description = AlertDialogDescription.create
+alertdialog_action = AlertDialogAction.create
+alertdialog_cancel = AlertDialogCancel.create
 
 # Aspect Ratio
 aspect_ratio = AspectRatio.create
@@ -97,12 +103,14 @@ button = Button.create
 callout_root = CalloutRoot.create
 callout_icon = CalloutIcon.create
 callout_text = CalloutText.create
+callout = Callout.create
 
 # Card
 card = Card.create
 
 # Checkbox
 checkbox = Checkbox.create
+checkbox_hl = HighLevelCheckbox.create
 
 # Context Menu
 contextmenu_root = ContextMenuRoot.create
@@ -127,6 +135,7 @@ dialog_close = DialogClose.create
 dropdownmenu_root = DropdownMenuRoot.create
 dropdownmenu_trigger = DropdownMenuTrigger.create
 dropdownmenu_content = DropdownMenuContent.create
+dropdownmenu_sub = DropdownMenuSub.create
 dropdownmenu_sub_content = DropdownMenuSubContent.create
 dropdownmenu_sub_trigger = DropdownMenuSubTrigger.create
 dropdownmenu_item = DropdownMenuItem.create
@@ -155,6 +164,7 @@ popover_close = PopoverClose.create
 # Radio Group
 radio_group_root = RadioGroupRoot.create
 radio_group_item = RadioGroupItem.create
+radio_group = HighLevelRadioGroup.create
 
 # Scroll Area
 scroll_area = ScrollArea.create
@@ -167,6 +177,7 @@ select_item = SelectItem.create
 select_separator = SelectSeparator.create
 select_group = SelectGroup.create
 select_label = SelectLabel.create
+select = HighLevelSelect.create
 
 # Separator
 separator = Separator.create
@@ -199,6 +210,7 @@ textarea = TextArea.create
 textfield_root = TextFieldRoot.create
 textfield_input = TextFieldInput.create
 textfield_slot = TextFieldSlot.create
+input = Input.create
 
 # Tooltip
 tooltip = Tooltip.create

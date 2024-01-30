@@ -11,6 +11,7 @@ from hashlib import md5
 from typing import Any, Dict, Iterator, Literal
 from jinja2 import Environment
 from reflex.components.component import Component
+from reflex.components.radix.themes.components.textfield import TextFieldInput
 from reflex.components.tags.tag import Tag
 from reflex.constants.base import Dirs
 from reflex.constants.event import EventTriggers
@@ -18,14 +19,14 @@ from reflex.event import EventChain
 from reflex.utils import imports
 from reflex.utils.format import format_event_chain, to_camel_case
 from reflex.vars import BaseVar, Var
-from .base import RadixPrimitiveComponent
+from .base import RadixPrimitiveComponentWithClassName
 
 FORM_DATA = Var.create("form_data")
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     "\n    const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {\n        const $form = ev.target\n        ev.preventDefault()\n        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}\n\n        {{ on_submit_event_chain }}\n\n        if ({{ reset_on_submit }}) {\n            $form.reset()\n        }\n    })\n    "
 )
 
-class FormComponent(RadixPrimitiveComponent):
+class FormComponent(RadixPrimitiveComponentWithClassName):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -180,7 +181,7 @@ class FormRoot(FormComponent):
         Args:
             *children: The children of the form.
             reset_on_submit: If true, the form will be cleared after submit.
-            handle_submit_unique_name: The name used to make this form's submit handler function unique
+            handle_submit_unique_name: The name used to make this form's submit handler function unique.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -261,6 +262,8 @@ class FormField(FormComponent):
 
         Args:
             *children: The children of the component.
+            name: The name of the form field, that is passed down to the control and used to match with validation messages.
+            server_invalid: Flag to mark the form field as invalid, for server side validation.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -419,10 +422,10 @@ class FormControl(FormComponent):
         ] = None,
         **props
     ) -> "FormControl":
-        """Create the component.
+        """Create a Form Control component.
 
         Args:
-            *children: The children of the component.
+            *children: The children of the form.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -430,13 +433,14 @@ class FormControl(FormComponent):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
-
-        Returns:
-            The component.
+            **props: The properties of the form.
 
         Raises:
-            TypeError: If an invalid child is passed.
+            ValueError: If the number of children is greater than 1.
+            TypeError: If a child exists but it is not a TextFieldInput.
+
+        Returns:
+            The form control component.
         """
         ...
 
@@ -490,7 +494,7 @@ class FormMessage(FormComponent):
                 ],
             ]
         ] = None,
-        forceMatch: Optional[Union[Var[bool], bool]] = None,
+        force_match: Optional[Union[Var[bool], bool]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -551,7 +555,7 @@ class FormMessage(FormComponent):
             *children: The children of the component.
             name: Used to target a specific field by name when rendering outside of a Field part.
             match: Used to indicate on which condition the message should be visible.
-            forceMatch: Forces the message to be shown. This is useful when using server-side validation.
+            force_match: Forces the message to be shown. This is useful when using server-side validation.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -731,6 +735,7 @@ class FormSubmit(FormComponent):
         """
         ...
 
+Form = FormRoot
 form_root = FormRoot.create
 form_field = FormField.create
 form_label = FormLabel.create
@@ -738,3 +743,4 @@ form_control = FormControl.create
 form_message = FormMessage.create
 form_validity_state = FormValidityState.create
 form_submit = FormSubmit.create
+form = Form.create

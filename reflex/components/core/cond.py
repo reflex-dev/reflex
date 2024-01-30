@@ -59,10 +59,10 @@ class Cond(MemoizationLeaf):
         )
 
     def _get_props_imports(self):
-        """Get the imports needed for components props.
+        """Get the imports needed for component's props.
 
         Returns:
-            The  imports for the components props of the component.
+            The imports for the component's props of the component.
         """
         return []
 
@@ -99,6 +99,15 @@ class Cond(MemoizationLeaf):
             getattr(self.cond._var_data, "imports", {}),
             _IS_TRUE_IMPORT,
         )
+
+    def _apply_theme(self, theme: Component):
+        """Apply the theme to this component.
+
+        Args:
+            theme: The theme to apply.
+        """
+        self.comp1.apply_theme(theme)  # type: ignore
+        self.comp2.apply_theme(theme)  # type: ignore
 
 
 @overload

@@ -16,6 +16,7 @@ import zipfile
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
+from typing import Callable
 
 import httpx
 import pkg_resources
@@ -26,7 +27,7 @@ from redis.asyncio import Redis
 
 from reflex import constants, model
 from reflex.compiler import templates
-from reflex.config import get_config
+from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 
 
@@ -159,6 +160,13 @@ def get_app(reload: bool = False) -> ModuleType:
     sys.path.insert(0, os.getcwd())
     app = __import__(module, fromlist=(constants.CompileVars.APP,))
     if reload:
+        from reflex.state import State
+
+        # Reset rx.State subclasses to avoid conflict when reloading.
+        for subclass in tuple(State.class_subclasses):
+            if subclass.__module__ == module:
+                State.class_subclasses.remove(subclass)
+        # Reload the app module.
         importlib.reload(app)
 
     return app
@@ -614,14 +622,64 @@ def install_bun():
     )
 
 
-def install_frontend_packages(packages: set[str]):
+def _write_cached_procedure_file(payload: str, cache_file: str):
+    with open(cache_file, "w") as f:
+        f.write(payload)
+
+
+def _read_cached_procedure_file(cache_file: str) -> str | None:
+    if os.path.exists(cache_file):
+        with open(cache_file, "r") as f:
+            return f.read()
+    return None
+
+
+def _clear_cached_procedure_file(cache_file: str):
+    if os.path.exists(cache_file):
+        os.remove(cache_file)
+
+
+def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
+    """Decorator to cache the runs of a procedure on disk. Procedures should not have
+       a return value.
+
+    Args:
+        cache_file: The file to store the cache payload in.
+        payload_fn: Function that computes cache payload from function args
+
+    Returns:
+        The decorated function.
+    """
+
+    def _inner_decorator(func):
+        def _inner(*args, **kwargs):
+            payload = _read_cached_procedure_file(cache_file)
+            new_payload = payload_fn(*args, **kwargs)
+            if payload != new_payload:
+                _clear_cached_procedure_file(cache_file)
+                func(*args, **kwargs)
+                _write_cached_procedure_file(new_payload, cache_file)
+
+        return _inner
+
+    return _inner_decorator
+
+
+@cached_procedure(
+    cache_file=os.path.join(
+        constants.Dirs.WEB, "reflex.install_frontend_packages.cached"
+    ),
+    payload_fn=lambda p, c: f"{repr(sorted(list(p)))},{c.json()}",
+)
+def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
 
     Args:
         packages: A list of package names to be installed.
+        config: The config object.
 
     Example:
-        >>> install_frontend_packages(["react", "react-dom"])
+        >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
     # Install the base packages.
     process = processes.new_process(
@@ -632,7 +690,6 @@ def install_frontend_packages(packages: set[str]):
 
     processes.show_status("Installing base frontend packages", process)
 
-    config = get_config()
     if config.tailwind is not None:
         # install tailwind and tailwind plugins as dev dependencies.
         process = processes.new_process(

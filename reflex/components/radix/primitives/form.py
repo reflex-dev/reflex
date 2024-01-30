@@ -1,11 +1,14 @@
 """Radix form component."""
 
+from __future__ import annotations
+
 from hashlib import md5
 from typing import Any, Dict, Iterator, Literal
 
 from jinja2 import Environment
 
 from reflex.components.component import Component
+from reflex.components.radix.themes.components.textfield import TextFieldInput
 from reflex.components.tags.tag import Tag
 from reflex.constants.base import Dirs
 from reflex.constants.event import EventTriggers
@@ -14,7 +17,7 @@ from reflex.utils import imports
 from reflex.utils.format import format_event_chain, to_camel_case
 from reflex.vars import BaseVar, Var
 
-from .base import RadixPrimitiveComponent
+from .base import RadixPrimitiveComponentWithClassName
 
 FORM_DATA = Var.create("form_data")
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
@@ -34,7 +37,7 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
 )
 
 
-class FormComponent(RadixPrimitiveComponent):
+class FormComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-form components."""
 
     library = "@radix-ui/react-form@^0.0.3"
@@ -50,7 +53,7 @@ class FormRoot(FormComponent):
     # If true, the form will be cleared after submit.
     reset_on_submit: Var[bool] = False  # type: ignore
 
-    # The name used to make this form's submit handler function unique
+    # The name used to make this form's submit handler function unique.
     handle_submit_unique_name: Var[str]
 
     def get_event_triggers(self) -> Dict[str, Any]:
@@ -62,7 +65,7 @@ class FormRoot(FormComponent):
         return {
             **super().get_event_triggers(),
             EventTriggers.ON_SUBMIT: lambda e0: [FORM_DATA],
-            "on_clear_server_errors": lambda: [],
+            EventTriggers.ON_CLEAR_SERVER_ERRORS: lambda: [],
         }
 
     @classmethod
@@ -169,8 +172,10 @@ class FormField(FormComponent):
 
     alias = "RadixFormField"
 
+    # The name of the form field, that is passed down to the control and used to match with validation messages.
     name: Var[str]
 
+    # Flag to mark the form field as invalid, for server side validation.
     server_invalid: Var[bool]
 
     def _apply_theme(self, theme: Component | None):
@@ -204,6 +209,32 @@ class FormControl(FormComponent):
 
     alias = "RadixFormControl"
 
+    @classmethod
+    def create(cls, *children, **props):
+        """Create a Form Control component.
+
+        Args:
+            *children: The children of the form.
+            **props: The properties of the form.
+
+        Raises:
+            ValueError: If the number of children is greater than 1.
+            TypeError: If a child exists but it is not a TextFieldInput.
+
+        Returns:
+            The form control component.
+        """
+        if len(children) > 1:
+            raise ValueError(
+                f"FormControl can only have at most one child, got {len(children)} children"
+            )
+        for child in children:
+            if not isinstance(child, TextFieldInput):
+                raise TypeError(
+                    "Only Radix TextFieldInput is allowed as child of FormControl"
+                )
+        return super().create(*children, **props)
+
 
 LiteralMatcher = Literal[
     "badInput",
@@ -233,7 +264,7 @@ class FormMessage(FormComponent):
     match: Var[LiteralMatcher]
 
     # Forces the message to be shown. This is useful when using server-side validation.
-    forceMatch: Var[bool]
+    force_match: Var[bool]
 
     def _apply_theme(self, theme: Component | None):
         return {
@@ -258,6 +289,9 @@ class FormSubmit(FormComponent):
     alias = "RadixFormSubmit"
 
 
+# High Level API
+Form = FormRoot
+
 form_root = FormRoot.create
 form_field = FormField.create
 form_label = FormLabel.create
@@ -265,3 +299,4 @@ form_control = FormControl.create
 form_message = FormMessage.create
 form_validity_state = FormValidityState.create
 form_submit = FormSubmit.create
+form = Form.create

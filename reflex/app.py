@@ -43,6 +43,7 @@ from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
+from reflex.components.core.upload import UploadFilesProvider
 from reflex.components.radix import themes
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
@@ -63,6 +64,7 @@ from reflex.state import (
     State,
     StateManager,
     StateUpdate,
+    code_uses_state_contexts,
 )
 from reflex.utils import console, exceptions, format, prerequisites, types
 from reflex.utils.imports import ImportVar
@@ -169,7 +171,8 @@ class App(Base):
                     deprecation_version="0.3.5",
                     removal_version="0.4.0",
                 )
-            self.state = State
+            if len(State.class_subclasses) > 0:
+                self.state = State
         # Get the config
         config = get_config()
 
@@ -179,7 +182,6 @@ class App(Base):
         # Set up the API.
         self.api = FastAPI()
         self.add_cors()
-        self.add_default_endpoints()
 
         if self.state:
             # Set up the state manager.
@@ -241,7 +243,8 @@ class App(Base):
         self.api.get(str(constants.Endpoint.PING))(ping)
 
         # To upload files.
-        self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+        if UploadFilesProvider.is_used:
+            self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
     def add_cors(self):
         """Add CORS middleware to the app."""
@@ -590,7 +593,7 @@ class App(Base):
                 continue
             _frontend_packages.append(package)
         page_imports.update(_frontend_packages)
-        prerequisites.install_frontend_packages(page_imports)
+        prerequisites.install_frontend_packages(page_imports, get_config())
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):
@@ -636,7 +639,11 @@ class App(Base):
         return
 
     def compile_(self):
-        """Compile the app and output it to the pages folder."""
+        """Compile the app and output it to the pages folder.
+
+        Raises:
+            RuntimeError: When any page uses state, but no rx.State subclass is defined.
+        """
         # add the pages before the compile check so App know onload methods
         for render, kwargs in DECORATED_PAGES:
             self.add_page(render, **kwargs)
@@ -701,6 +708,16 @@ class App(Base):
                 stateful_components_code,
                 page_components,
             ) = compiler.compile_stateful_components(self.pages.values())
+
+            # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
+            if (
+                code_uses_state_contexts(stateful_components_code)
+                and self.state is None
+            ):
+                raise RuntimeError(
+                    "To access rx.State in frontend components, at least one "
+                    "subclass of rx.State must be defined in the app."
+                )
             compile_results.append((stateful_components_path, stateful_components_code))
 
             result_futures = []
@@ -784,6 +801,8 @@ class App(Base):
                 )
             for future in concurrent.futures.as_completed(write_page_futures):
                 future.result()
+
+        self.add_default_endpoints()
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:

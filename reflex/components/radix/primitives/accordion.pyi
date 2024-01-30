@@ -7,18 +7,35 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Literal
+from typing import Any, Dict, Literal
 from reflex.components.component import Component
+from reflex.components.core import cond, match
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.components.icons import Icon
-from reflex.style import Style
+from reflex.style import (
+    Style,
+    convert_dict_to_style_and_format_emotion,
+    format_as_emotion,
+)
 from reflex.utils import imports
-from reflex.vars import Var
+from reflex.vars import BaseVar, Var, VarData
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
 LiteralAccordionOrientation = Literal["vertical", "horizontal"]
+LiteralAccordionRootVariant = Literal["classic", "soft", "surface", "outline", "ghost"]
+LiteralAccordionRootColorScheme = Literal["primary", "accent"]
 DEFAULT_ANIMATION_DURATION = 250
+
+def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseVar: ...
+def get_theme_accordion_item(): ...
+def get_theme_accordion_header() -> dict[str, str]: ...
+def get_theme_accordion_trigger(
+    variant: str | Var, color_scheme: str | Var
+) -> BaseVar: ...
+def get_theme_accordion_content(
+    variant: str | Var, color_scheme: str | Var
+) -> BaseVar: ...
 
 class AccordionComponent(RadixPrimitiveComponent):
     @overload
@@ -121,6 +138,17 @@ class AccordionRoot(AccordionComponent):
                 Literal["vertical", "horizontal"],
             ]
         ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                Literal["classic", "soft", "surface", "outline", "ghost"],
+            ]
+        ] = None,
+        color_scheme: Optional[
+            Union[Var[Literal["primary", "accent"]], Literal["primary", "accent"]]
+        ] = None,
+        _dynamic_themes: Optional[Union[Var[dict], dict]] = None,
+        _var_data: Optional[VarData] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -173,9 +201,12 @@ class AccordionRoot(AccordionComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_value_change: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         **props
     ) -> "AccordionRoot":
-        """Create the component.
+        """Create the Accordion root component.
 
         Args:
             *children: The children of the component.
@@ -186,6 +217,10 @@ class AccordionRoot(AccordionComponent):
             disabled: Whether or not the accordion is disabled.
             dir: The reading direction of the accordion when applicable.
             orientation: The orientation of the accordion.
+            variant: The variant of the accordion.
+            color_scheme: The color scheme of the accordion.
+            _dynamic_themes: dynamic themes of the accordion generated at compile time.
+            _var_data: The var_data associated with the component.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -193,15 +228,13 @@ class AccordionRoot(AccordionComponent):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the component.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            The Accordion root Component.
         """
         ...
+    def get_event_triggers(self) -> Dict[str, Any]: ...
 
 class AccordionItem(AccordionComponent):
     @overload
@@ -532,5 +565,3 @@ class AccordionContent(AccordionComponent):
         ...
 
 def accordion_item(header: Component, content: Component, **props) -> Component: ...
-
-accordion = AccordionRoot.create

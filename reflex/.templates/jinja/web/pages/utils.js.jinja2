@@ -85,7 +85,7 @@
 {% macro render_match_tag(component) %}
 {
     (() => {
-        switch (JSON.stringify({{ component.cond._var_full_name }})) {
+        switch (JSON.stringify({{ component.cond._var_name_unwrapped }})) {
         {% for case in component.match_cases %}
             {% for condition in case[:-1] %}
                 case JSON.stringify({{ condition._var_name_unwrapped }}):

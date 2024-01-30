@@ -262,6 +262,41 @@ def test_basic_operations(TestObj):
     assert str(v(1) | v(2)) == "{(1 || 2)}"
     assert str(v([1, 2, 3])[v(0)]) == "{[1, 2, 3].at(0)}"
     assert str(v({"a": 1, "b": 2})["a"]) == '{{"a": 1, "b": 2}["a"]}'
+    assert str(v("foo") == v("bar")) == '{("foo" === "bar")}'
+    assert (
+        str(
+            Var.create("foo", _var_is_local=False)
+            == Var.create("bar", _var_is_local=False)
+        )
+        == "{(foo === bar)}"
+    )
+    assert (
+        str(
+            BaseVar(
+                _var_name="foo", _var_type=str, _var_is_string=True, _var_is_local=True
+            )
+            == BaseVar(
+                _var_name="bar", _var_type=str, _var_is_string=True, _var_is_local=True
+            )
+        )
+        == "(`foo` === `bar`)"
+    )
+    assert (
+        str(
+            BaseVar(
+                _var_name="foo",
+                _var_type=TestObj,
+                _var_is_string=True,
+                _var_is_local=False,
+            )
+            ._var_set_state("state")
+            .bar
+            == BaseVar(
+                _var_name="bar", _var_type=str, _var_is_string=True, _var_is_local=True
+            )
+        )
+        == "{(state.foo.bar === `bar`)}"
+    )
     assert (
         str(BaseVar(_var_name="foo", _var_type=TestObj)._var_set_state("state").bar)
         == "{state.foo.bar}"
@@ -369,6 +404,22 @@ def test_var_indexing_lists(var):
 
     # Test negative indexing.
     assert str(var[-1]) == f"{{{var._var_name}.at(-1)}}"
+
+
+def test_var_indexing_str():
+    """Test that we can index into str vars."""
+    str_var = BaseVar(_var_name="str", _var_type=str)
+
+    # Test that indexing gives a type of Var[str].
+    assert isinstance(str_var[0], Var)
+    assert str_var[0]._var_type == str
+
+    # Test basic indexing.
+    assert str(str_var[0]) == "{str.at(0)}"
+    assert str(str_var[1]) == "{str.at(1)}"
+
+    # Test negative indexing.
+    assert str(str_var[-1]) == "{str.at(-1)}"
 
 
 @pytest.mark.parametrize(

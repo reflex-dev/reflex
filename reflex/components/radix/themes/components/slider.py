@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Union
 
 from reflex.vars import Var
 
@@ -26,7 +26,7 @@ class Slider(CommonMarginProps, RadixThemesComponent):
     variant: Var[Literal["classic", "surface", "soft"]]
 
     # Override theme color for button
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the button with higher contrast color against background
     high_contrast: Var[bool]
@@ -35,19 +35,22 @@ class Slider(CommonMarginProps, RadixThemesComponent):
     radius: Var[LiteralRadius]
 
     # The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
-    default_value: Var[List[float]]
+    default_value: Var[List[Union[float, int]]]
 
     # The controlled value of the slider. Must be used in conjunction with onValueChange.
-    value: Var[float]
+    value: Var[List[Union[float, int]]]
+
+    # The name of the slider. Submitted with its owning form as part of a name/value pair.
+    name: Var[str]
 
     # The minimum value of the slider.
-    min: Var[float]
+    min: Var[Union[float, int]]
 
     # The maximum value of the slider.
-    max: Var[float]
+    max: Var[Union[float, int]]
 
     # The step value of the slider.
-    step: Var[float]
+    step: Var[Union[float, int]]
 
     # Whether the slider is disabled
     disabled: Var[bool]

@@ -20,6 +20,7 @@ class Inset(el.Div, CommonMarginProps, RadixThemesComponent):
     # The side
     side: Var[Literal["x", "y", "top", "bottom", "right", "left"]]
 
+    # How to clip the element's content: "border-box" | "padding-box"
     clip: Var[Literal["border-box", "padding-box"]]
 
     # Padding

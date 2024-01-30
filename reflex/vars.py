@@ -234,6 +234,8 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
     Returns:
         The extracted VarDatas.
     """
+    from reflex.style import Style
+
     var_datas = []
     with contextlib.suppress(TypeError):
         for sub in value:
@@ -245,10 +247,15 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
                     var_datas.extend(_extract_var_data(sub.values()))
                 # Recurse into iterable values (or dict keys).
                 var_datas.extend(_extract_var_data(sub))
-    # Recurse when value is a dict itself.
-    values = getattr(value, "values", None)
-    if callable(values):
-        var_datas.extend(_extract_var_data(values()))
+
+    # Style objects should already have _var_data.
+    if isinstance(value, Style):
+        var_datas.append(value._var_data)
+    else:
+        # Recurse when value is a dict itself.
+        values = getattr(value, "values", None)
+        if callable(values):
+            var_datas.extend(_extract_var_data(values()))
     return var_datas
 
 
@@ -421,6 +428,23 @@ class Var:
             and self._var_data == other._var_data
         )
 
+    def _merge(self, other) -> Var:
+        """Merge two or more dicts.
+
+        Args:
+            other: The other var to merge.
+
+        Returns:
+            The merged var.
+        """
+        if other is None:
+            return self._replace()
+        if not isinstance(other, Var):
+            other = Var.create(other)
+        return self._replace(
+            _var_name=f"{{...{self._var_name}, ...{other._var_name}}}"  # type: ignore
+        )
+
     def to_string(self, json: bool = True) -> Var:
         """Convert a var to a string.
 
@@ -548,11 +572,10 @@ class Var:
                 )
 
             # Get the type of the indexed var.
-            type_ = (
-                types.get_args(self._var_type)[0]
-                if types.is_generic_alias(self._var_type)
-                else Any
-            )
+            if types.is_generic_alias(self._var_type):
+                type_ = types.get_args(self._var_type)[0]
+            elif types._issubclass(self._var_type, str):
+                type_ = str
 
             # Use `at` to support negative indices.
             return self._replace(
@@ -677,6 +700,16 @@ class Var:
 
         left_operand, right_operand = (other, self) if flip else (self, other)
 
+        def get_operand_full_name(operand):
+            # operand vars that are string literals need to be wrapped in back ticks.
+            return (
+                operand._var_name_unwrapped
+                if operand._var_is_string
+                and not operand._var_state
+                and operand._var_is_local
+                else operand._var_full_name
+            )
+
         if other is not None:
             # check if the operation between operands is valid.
             if op and not self.is_valid_operation(
@@ -688,18 +721,21 @@ class Var:
                     f"Unsupported Operand type(s) for {op}: `{left_operand._var_full_name}` of type {left_operand._var_type.__name__} and `{right_operand._var_full_name}` of type {right_operand._var_type.__name__}"  # type: ignore
                 )
 
+            left_operand_full_name = get_operand_full_name(left_operand)
+            right_operand_full_name = get_operand_full_name(right_operand)
+
             # apply function to operands
             if fn is not None:
                 if invoke_fn:
                     # invoke the function on left operand.
-                    operation_name = f"{left_operand._var_full_name}.{fn}({right_operand._var_full_name})"  # type: ignore
+                    operation_name = f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
                 else:
                     # pass the operands as arguments to the function.
-                    operation_name = f"{left_operand._var_full_name} {op} {right_operand._var_full_name}"  # type: ignore
+                    operation_name = f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
                     operation_name = f"{fn}({operation_name})"
             else:
                 # apply operator to operands (left operand <operator> right_operand)
-                operation_name = f"{left_operand._var_full_name} {op} {right_operand._var_full_name}"  # type: ignore
+                operation_name = f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
@@ -1541,6 +1577,8 @@ class Var:
         Returns:
             The str var without the wrapped curly braces
         """
+        from reflex.style import Style
+
         type_ = (
             get_origin(self._var_type)
             if types.is_generic_alias(self._var_type)
@@ -1550,7 +1588,9 @@ class Var:
         wrapped_var = str(self)
         return (
             wrapped_var
-            if not self._var_state and issubclass(type_, dict)
+            if not self._var_state
+            and issubclass(type_, dict)
+            or issubclass(type_, Style)
             else wrapped_var.strip("{}")
         )
 

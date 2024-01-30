@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import MatchTag, Tag
+from reflex.style import Style
 from reflex.utils import format, imports, types
 from reflex.utils.exceptions import MatchTypeError
 from reflex.vars import BaseVar, Var, VarData
@@ -64,7 +65,8 @@ class Match(MemoizationLeaf):
         Raises:
             ValueError: If the condition is not provided.
         """
-        match_cond_var = Var.create(cond)
+        match_cond_var = Var.create(cond, _var_is_string=type(cond) is str)
+
         if match_cond_var is None:
             raise ValueError("The condition must be set")
         return match_cond_var  # type: ignore
@@ -93,12 +95,32 @@ class Match(MemoizationLeaf):
         if not isinstance(cases[-1], tuple):
             default = cases.pop()
             default = (
-                Var.create(default, _var_is_string=type(default) is str)
+                cls._create_case_var_with_var_data(default)
                 if not isinstance(default, BaseComponent)
                 else default
             )
 
         return cases, default  # type: ignore
+
+    @classmethod
+    def _create_case_var_with_var_data(cls, case_element):
+        """Convert a case element into a Var.If the case
+        is a Style type, we extract the var data and merge it with the
+        newly created Var.
+
+        Args:
+            case_element: The case element.
+
+        Returns:
+            The case element Var.
+        """
+        _var_data = case_element._var_data if isinstance(case_element, Style) else None  # type: ignore
+        case_element = Var.create(
+            case_element, _var_is_string=type(case_element) is str
+        )
+        if _var_data is not None:
+            case_element._var_data = VarData.merge(case_element._var_data, _var_data)  # type: ignore
+        return case_element
 
     @classmethod
     def _process_match_cases(cls, cases: List) -> List[List[BaseVar]]:
@@ -129,7 +151,7 @@ class Match(MemoizationLeaf):
             for element in case:
                 # convert all non component element to vars.
                 el = (
-                    Var.create(element, _var_is_string=type(element) is str)
+                    cls._create_case_var_with_var_data(element)
                     if not isinstance(element, BaseComponent)
                     else element
                 )
@@ -198,6 +220,7 @@ class Match(MemoizationLeaf):
                     cond=match_cond_var,
                     match_cases=match_cases,
                     default=default,
+                    children=[case[-1] for case in match_cases] + [default],  # type: ignore
                 )
             )
 
@@ -216,13 +239,14 @@ class Match(MemoizationLeaf):
 
         return match_cond_var._replace(
             _var_name=format.format_match(
-                cond=match_cond_var._var_full_name,
+                cond=match_cond_var._var_name_unwrapped,
                 match_cases=match_cases,  # type: ignore
                 default=default,  # type: ignore
             ),
             _var_type=default._var_type,  # type: ignore
             _var_is_local=False,
             _var_full_name_needs_state_prefix=False,
+            _var_is_string=False,
             merge_var_data=VarData.merge(*var_data),
         )
 
@@ -241,17 +265,23 @@ class Match(MemoizationLeaf):
         tag.name = "match"
         return dict(tag)
 
-    def _get_imports(self):
-        merged_imports = super()._get_imports()
-        # Obtain the imports of all components the in match case.
-        for case in self.match_cases:
-            if isinstance(case[-1], BaseComponent):
-                merged_imports = imports.merge_imports(
-                    merged_imports, case[-1].get_imports()
-                )
-        # Get the import of the default case component.
-        if isinstance(self.default, BaseComponent):
-            merged_imports = imports.merge_imports(
-                merged_imports, self.default.get_imports()
-            )
-        return merged_imports
+    def _get_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
+            super()._get_imports(),
+            getattr(self.cond._var_data, "imports", {}),
+        )
+
+    def _apply_theme(self, theme: Component):
+        """Apply the theme to this component.
+
+        Args:
+            theme: The theme to apply.
+        """
+        # apply theme to return components.
+        for match_case in self.match_cases:
+            if isinstance(match_case[-1], Component):
+                match_case[-1].apply_theme(theme)
+
+        # apply theme to default component
+        if isinstance(self.default, Component):
+            self.default.apply_theme(theme)

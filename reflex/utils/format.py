@@ -255,16 +255,20 @@ def format_cond(
 
     # Format prop conds.
     if is_prop:
-        prop1 = Var.create_safe(
-            true_value,
-            _var_is_string=type(true_value) is str,
+        if not isinstance(true_value, Var):
+            true_value = Var.create_safe(
+                true_value,
+                _var_is_string=type(true_value) is str,
+            )
+        prop1 = true_value._replace(
+            _var_is_local=True,
         )
-        prop1._var_is_local = True
-        prop2 = Var.create_safe(
-            false_value,
-            _var_is_string=type(false_value) is str,
-        )
-        prop2._var_is_local = True
+        if not isinstance(false_value, Var):
+            false_value = Var.create_safe(
+                false_value,
+                _var_is_string=type(false_value) is str,
+            )
+        prop2 = false_value._replace(_var_is_local=True)
         prop1, prop2 = str(prop1), str(prop2)  # avoid f-string semantics for Var
         return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
 

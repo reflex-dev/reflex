@@ -144,6 +144,18 @@ def test_setup_frontend(tmp_path, mocker):
     assert (web_public_folder / "favicon.ico").exists()
 
 
+@pytest.fixture
+def test_backend_variable_cls():
+    class TestBackendVariable:
+        """Test backend variable."""
+
+        _hidden: int = 0
+        not_hidden: int = 0
+        __dunderattr__: int = 0
+
+    return TestBackendVariable
+
+
 @pytest.mark.parametrize(
     "input, output",
     [
@@ -152,8 +164,8 @@ def test_setup_frontend(tmp_path, mocker):
         ("__dundermethod__", False),
     ],
 )
-def test_is_backend_variable(input, output):
-    assert types.is_backend_variable(input) == output
+def test_is_backend_variable(test_backend_variable_cls, input, output):
+    assert types.is_backend_variable(input, test_backend_variable_cls) == output
 
 
 @pytest.mark.parametrize(

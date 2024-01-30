@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Literal, Union
+from typing import Union
 
 from reflex.vars import Var
 
@@ -8,11 +8,9 @@ from ..base import (
     RadixThemesComponent,
 )
 
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
-
 
 class AspectRatio(CommonMarginProps, RadixThemesComponent):
-    """A toggle switch alternative to the checkbox."""
+    """Displays content with a desired ratio."""
 
     tag = "AspectRatio"
 
