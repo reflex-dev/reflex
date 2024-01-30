@@ -63,7 +63,7 @@ class Icon(LucideIconComponent):
     def _apply_theme(self, theme: Component | None):
         self.style = Style(
             {
-                "color": f"var(--accent-12)",
+                "color": f"var(--current-color)",
                 **self.style,
             }
         )
