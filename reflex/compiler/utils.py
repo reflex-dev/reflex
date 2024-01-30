@@ -290,20 +290,21 @@ def create_theme(style: ComponentStyle) -> dict:
         The base style for the app.
     """
     # Get the global style from the style dict.
-    global_style = Style({k: v for k, v in style.items() if not isinstance(k, type)})
+    style_rules = Style({k: v for k, v in style.items() if not isinstance(k, type)})
 
-    # Root styles.
-    root_style = Style({k: v for k, v in global_style.items() if k.startswith("::")})
-
-    # Body styles.
-    root_style["body"] = Style(
-        {k: v for k, v in global_style.items() if k not in root_style}
-    )
+    root_style = {
+        # Root styles.
+        ":root": Style(
+            {f"*{k}": v for k, v in style_rules.items() if k.startswith(":")}
+        ),
+        # Body styles.
+        "body": Style(
+            {k: v for k, v in style_rules.items() if not k.startswith(":")},
+        ),
+    }
 
     # Return the theme.
-    return {
-        "styles": {"global": root_style},
-    }
+    return {"styles": {"global": root_style}}
 
 
 def get_page_path(path: str) -> str:

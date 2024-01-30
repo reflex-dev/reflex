@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from reflex.components import Component
+from reflex.components.tags import Tag
 from reflex.utils import imports
 from reflex.vars import Var
 
@@ -154,10 +155,27 @@ class Theme(RadixThemesComponent):
     scaling: Var[LiteralScaling]
 
     def _get_imports(self) -> imports.ImportDict:
-        return {
-            **super()._get_imports(),
-            "": [imports.ImportVar(tag="@radix-ui/themes/styles.css", install=False)],
-        }
+        return imports.merge_imports(
+            super()._get_imports(),
+            {
+                "": [
+                    imports.ImportVar(tag="@radix-ui/themes/styles.css", install=False)
+                ],
+                "/utils/theme.js": [
+                    imports.ImportVar(tag="theme", is_default=True),
+                ],
+            },
+        )
+
+    def _render(self, props: dict[str, Any] | None = None) -> Tag:
+        tag = super()._render(props)
+        tag.add_props(
+            css=Var.create(
+                "{{...theme.styles.global[':root'], ...theme.styles.global.body}}",
+                _var_is_local=False,
+            ),
+        )
+        return tag
 
 
 class ThemePanel(RadixThemesComponent):
