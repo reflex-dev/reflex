@@ -28,6 +28,7 @@ class BaseTabs(ChakraComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -85,6 +86,7 @@ class BaseTabs(ChakraComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -191,6 +193,7 @@ class Tabs(BaseTabs):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -259,6 +262,7 @@ class Tabs(BaseTabs):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The properties of the component.
 
@@ -277,6 +281,7 @@ class Tab(BaseTabs):
         is_selected: Optional[Union[Var[bool], bool]] = None,
         id_: Optional[Union[Var[str], str]] = None,
         panel_id: Optional[Union[Var[str], str]] = None,
+        _valid_parents: Optional[List[str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -343,6 +348,7 @@ class Tab(BaseTabs):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -360,6 +366,7 @@ class TabList(BaseTabs):
     def create(  # type: ignore
         cls,
         *children,
+        _valid_parents: Optional[List[str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -422,6 +429,7 @@ class TabList(BaseTabs):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -439,6 +447,7 @@ class TabPanels(BaseTabs):
     def create(  # type: ignore
         cls,
         *children,
+        _valid_parents: Optional[List[str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -501,6 +510,7 @@ class TabPanels(BaseTabs):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -518,6 +528,7 @@ class TabPanel(BaseTabs):
     def create(  # type: ignore
         cls,
         *children,
+        _valid_parents: Optional[List[str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -580,6 +591,7 @@ class TabPanel(BaseTabs):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 

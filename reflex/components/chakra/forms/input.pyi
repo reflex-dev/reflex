@@ -31,6 +31,7 @@ class BaseInput(ChakraComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -88,6 +89,7 @@ class BaseInput(ChakraComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -184,6 +186,7 @@ class Input(BaseInput):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -263,6 +266,7 @@ class Input(BaseInput):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The properties of the component.
 
@@ -282,6 +286,7 @@ class InputGroup(BaseInput):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -339,6 +344,7 @@ class InputGroup(BaseInput):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -361,6 +367,7 @@ class InputLeftAddon(BaseInput):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -418,6 +425,7 @@ class InputLeftAddon(BaseInput):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -440,6 +448,7 @@ class InputRightAddon(BaseInput):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -497,6 +506,7 @@ class InputRightAddon(BaseInput):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -519,6 +529,7 @@ class InputLeftElement(BaseInput):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -576,6 +587,7 @@ class InputLeftElement(BaseInput):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -598,6 +610,7 @@ class InputRightElement(BaseInput):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -655,6 +668,7 @@ class InputRightElement(BaseInput):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 

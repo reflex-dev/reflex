@@ -24,6 +24,7 @@ class BaseAlertDialog(ChakraComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -81,6 +82,7 @@ class BaseAlertDialog(ChakraComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -141,6 +143,7 @@ class AlertDialog(BaseAlertDialog):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -227,6 +230,7 @@ class AlertDialog(BaseAlertDialog):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The properties of the alert dialog component.
 
@@ -249,6 +253,7 @@ class AlertDialogBody(BaseAlertDialog):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -306,6 +311,7 @@ class AlertDialogBody(BaseAlertDialog):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -328,6 +334,7 @@ class AlertDialogHeader(BaseAlertDialog):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -385,6 +392,7 @@ class AlertDialogHeader(BaseAlertDialog):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -407,6 +415,7 @@ class AlertDialogFooter(BaseAlertDialog):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -464,6 +473,7 @@ class AlertDialogFooter(BaseAlertDialog):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -486,6 +496,7 @@ class AlertDialogContent(BaseAlertDialog):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -543,6 +554,7 @@ class AlertDialogContent(BaseAlertDialog):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -565,6 +577,7 @@ class AlertDialogOverlay(BaseAlertDialog):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -622,6 +635,7 @@ class AlertDialogOverlay(BaseAlertDialog):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -644,6 +658,7 @@ class AlertDialogCloseButton(BaseAlertDialog):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -701,6 +716,7 @@ class AlertDialogCloseButton(BaseAlertDialog):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 

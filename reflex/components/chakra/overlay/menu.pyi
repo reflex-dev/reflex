@@ -29,6 +29,7 @@ class BaseMenu(ChakraComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -86,6 +87,7 @@ class BaseMenu(ChakraComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -131,6 +133,7 @@ class Menu(BaseMenu):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -212,6 +215,7 @@ class Menu(BaseMenu):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The properties of the component.
 
@@ -233,6 +237,7 @@ class MenuButton(BaseMenu):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -292,6 +297,7 @@ class MenuButton(BaseMenu):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -315,6 +321,7 @@ class MenuList(BaseMenu):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -373,6 +380,7 @@ class MenuList(BaseMenu):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The properties of the component.
 
@@ -397,6 +405,7 @@ class MenuItem(BaseMenu):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -459,6 +468,7 @@ class MenuItem(BaseMenu):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -491,6 +501,7 @@ class MenuItemOption(BaseMenu):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -556,6 +567,7 @@ class MenuItemOption(BaseMenu):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -578,6 +590,7 @@ class MenuGroup(BaseMenu):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -635,6 +648,7 @@ class MenuGroup(BaseMenu):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -661,6 +675,7 @@ class MenuOptionGroup(BaseMenu):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -720,6 +735,7 @@ class MenuOptionGroup(BaseMenu):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -742,6 +758,7 @@ class MenuDivider(BaseMenu):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -799,6 +816,7 @@ class MenuDivider(BaseMenu):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 

@@ -23,6 +23,7 @@ class BaseEditable(ChakraComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -80,6 +81,7 @@ class BaseEditable(ChakraComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -111,6 +113,7 @@ class Editable(BaseEditable):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -188,6 +191,7 @@ class Editable(BaseEditable):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -210,6 +214,7 @@ class EditableInput(BaseEditable):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -267,6 +272,7 @@ class EditableInput(BaseEditable):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -289,6 +295,7 @@ class EditableTextarea(BaseEditable):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -346,6 +353,7 @@ class EditableTextarea(BaseEditable):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -368,6 +376,7 @@ class EditablePreview(BaseEditable):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _valid_parents: Optional[List[str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -425,6 +434,7 @@ class EditablePreview(BaseEditable):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _valid_parents: only components that are allowed as parent
             custom_attrs: custom attribute
             **props: The props of the component.
 
