@@ -322,6 +322,8 @@ class RadixThemesComponent(Component):
             A new component instance.
         """
         ...
+    @classmethod
+    def get_fields(cls) -> dict[str, Any]: ...
 
 class Theme(RadixThemesComponent):
     @overload
