@@ -12,7 +12,7 @@ def page(
     title: str | None = None,
     image: str | None = None,
     description: str | None = None,
-    meta: str | None = None,
+    meta: list[Any] | None = None,
     script_tags: list[Any] | None = None,
     on_load: Any | list[Any] | None = None,
 ):
