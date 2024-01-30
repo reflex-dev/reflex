@@ -6,8 +6,8 @@ from typing import Any, Dict, Literal
 
 from reflex.components.component import Component
 from reflex.components.core import cond, match
+from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
-from reflex.components.radix.themes.components.icons import Icon
 from reflex.style import (
     Style,
     convert_dict_to_style_and_format_emotion,

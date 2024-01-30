@@ -60,7 +60,7 @@ class Icon(LucideIconComponent):
         props["alias"] = f"Lucide{props['tag']}"
         return super().create(*children, **props)
 
-    def _apply_theme(self, theme: Component | None):
+    def _apply_theme(self, theme: Component):
         self.style = Style(
             {
                 "color": f"var(--current-color)",
