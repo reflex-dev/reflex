@@ -51,5 +51,5 @@ class LayoutComponent(
     grow: Var[LiteralBoolNumber]
 
     @classmethod
-    def _get_props_to_override(cls) -> list:
+    def _get_props_to_convert(cls) -> list:
         return ["p", "px", "py", "pr", "pb", "pl", "shrink", "grow"]

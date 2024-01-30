@@ -23,5 +23,5 @@ class Container(el.Div, RadixThemesComponent):
     size: Var[LiteralContainerSize]
 
     @classmethod
-    def _get_props_to_override(cls) -> list:
-        return super()._get_props_to_overide + ["size"]
+    def _get_props_to_convert(cls) -> list:
+        return super()._get_props_to_convert + ["size"]

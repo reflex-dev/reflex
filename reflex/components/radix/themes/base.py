@@ -215,6 +215,8 @@ class RadixThemesColorModeProvider(Component):
 
 
 class RadixThemesComponentPropsOverride(Component):
+    """Class to override props of radix components."""
+
     @classmethod
     def create(
         cls,
@@ -223,9 +225,6 @@ class RadixThemesComponentPropsOverride(Component):
     ) -> Component:
         """Create a new component instance.
 
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
-
         Args:
             *children: Child components.
             **props: Component properties.
@@ -233,17 +232,34 @@ class RadixThemesComponentPropsOverride(Component):
         Returns:
             A new component instance.
         """
-        props = cls._convert_props(props)
+        props = cls._convert_props_to_designated_types(props)
         return super().create(*children, **props)
 
     @classmethod
-    def _get_props_to_override(cls):
+    def _get_props_to_convert(cls):
+        """Get the list of props whose values we want to
+        cast.
 
+        Returns:
+            list of props.
+        """
         return ["size"]
 
     @classmethod
-    def _convert_props(cls, props):
-        for prop in cls._get_props_to_override():
+    def _convert_props_to_designated_types(
+        cls, props: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Convert the prop values to their designated types(strings
+        for this use case).
+
+        We do this to ensure that the radix props that take integer strings
+        (eg, "1" instead 1) allow the int representation in the API.
+
+        Args:
+            props: The Component's properties.
+
+        """
+        for prop in cls._get_props_to_convert():
             if prop in props:
                 prop_value = props[prop]
                 prop_value = Var.create(prop_value)._replace(_var_type=str)

@@ -115,7 +115,7 @@ def get_literal_types(cls: GenericType) -> Type | Union[Type, ...]:
     if len(result_types) == 1:
         return result_types.pop()
     else:
-        return Union[*result_types]
+        return Union[*result_types]  # type: ignore
 
 
 def is_optional(cls: GenericType) -> bool:
