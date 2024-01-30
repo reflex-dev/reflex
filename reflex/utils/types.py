@@ -18,8 +18,8 @@ from typing import (
     get_type_hints,
 )
 
+import sqlalchemy
 from pydantic.fields import ModelField
-from sqlalchemy import inspect
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 
@@ -149,7 +149,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             type_ = Optional[type_]
         return type_
     elif isinstance(cls, type) and issubclass(cls, DeclarativeBase):
-        insp = inspect(cls)
+        insp = sqlalchemy.inspect(cls)
         if name in insp.columns:
             return insp.columns[name].type.python_type
         if name not in insp.all_orm_descriptors.keys():
