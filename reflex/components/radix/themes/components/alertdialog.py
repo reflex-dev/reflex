@@ -17,6 +17,9 @@ class AlertDialogRoot(CommonMarginProps, RadixThemesComponent):
     # The controlled open state of the dialog.
     open: Var[bool]
 
+    # The size of the dialog.
+    size: Var[LiteralSize]
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -33,6 +36,9 @@ class AlertDialogTrigger(CommonMarginProps, RadixThemesComponent):
     """Wraps the control that will open the dialog."""
 
     tag = "AlertDialog.Trigger"
+
+    # The size of the dialog.
+    size: Var[LiteralSize]
 
 
 class AlertDialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
@@ -68,6 +74,9 @@ class AlertDialogTitle(CommonMarginProps, RadixThemesComponent):
 
     tag = "AlertDialog.Title"
 
+    # The size of the dialog.
+    size: Var[LiteralSize]
+
 
 class AlertDialogDescription(CommonMarginProps, RadixThemesComponent):
     """An optional accessible description that is announced when the dialog is opened.
@@ -75,6 +84,9 @@ class AlertDialogDescription(CommonMarginProps, RadixThemesComponent):
     """
 
     tag = "AlertDialog.Description"
+
+    # The size of the dialog.
+    size: Var[LiteralSize]
 
 
 class AlertDialogAction(CommonMarginProps, RadixThemesComponent):
@@ -84,6 +96,9 @@ class AlertDialogAction(CommonMarginProps, RadixThemesComponent):
 
     tag = "AlertDialog.Action"
 
+    # The size of the dialog.
+    size: Var[LiteralSize]
+
 
 class AlertDialogCancel(CommonMarginProps, RadixThemesComponent):
     """Wraps the control that will close the dialog. This should be distinguished
@@ -91,3 +106,6 @@ class AlertDialogCancel(CommonMarginProps, RadixThemesComponent):
     """
 
     tag = "AlertDialog.Cancel"
+
+    # The size of the dialog.
+    size: Var[LiteralSize]

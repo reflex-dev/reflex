@@ -85,6 +85,12 @@ class AlertDialogRoot(CommonMarginProps, RadixThemesComponent):
             ]
         ] = None,
         open: Optional[Union[Var[bool], bool]] = None,
+        size: Optional[
+            Union[
+                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            ]
+        ] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -193,6 +199,7 @@ class AlertDialogRoot(CommonMarginProps, RadixThemesComponent):
             color: map to CSS default color property.
             color_scheme: map to radix color property.
             open: The controlled open state of the dialog.
+            size: The size of the dialog.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
@@ -280,6 +287,12 @@ class AlertDialogTrigger(CommonMarginProps, RadixThemesComponent):
                     "bronze",
                     "gray",
                 ],
+            ]
+        ] = None,
+        size: Optional[
+            Union[
+                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         m: Optional[
@@ -386,6 +399,7 @@ class AlertDialogTrigger(CommonMarginProps, RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
+            size: The size of the dialog.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
@@ -747,6 +761,12 @@ class AlertDialogTitle(CommonMarginProps, RadixThemesComponent):
                 ],
             ]
         ] = None,
+        size: Optional[
+            Union[
+                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            ]
+        ] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -851,6 +871,7 @@ class AlertDialogTitle(CommonMarginProps, RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
+            size: The size of the dialog.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
@@ -938,6 +959,12 @@ class AlertDialogDescription(CommonMarginProps, RadixThemesComponent):
                     "bronze",
                     "gray",
                 ],
+            ]
+        ] = None,
+        size: Optional[
+            Union[
+                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         m: Optional[
@@ -1044,6 +1071,7 @@ class AlertDialogDescription(CommonMarginProps, RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
+            size: The size of the dialog.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
@@ -1131,6 +1159,12 @@ class AlertDialogAction(CommonMarginProps, RadixThemesComponent):
                     "bronze",
                     "gray",
                 ],
+            ]
+        ] = None,
+        size: Optional[
+            Union[
+                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         m: Optional[
@@ -1237,6 +1271,7 @@ class AlertDialogAction(CommonMarginProps, RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
+            size: The size of the dialog.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
@@ -1324,6 +1359,12 @@ class AlertDialogCancel(CommonMarginProps, RadixThemesComponent):
                     "bronze",
                     "gray",
                 ],
+            ]
+        ] = None,
+        size: Optional[
+            Union[
+                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         m: Optional[
@@ -1430,6 +1471,7 @@ class AlertDialogCancel(CommonMarginProps, RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
+            size: The size of the dialog.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"

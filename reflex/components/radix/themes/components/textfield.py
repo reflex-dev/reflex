@@ -5,6 +5,7 @@ import reflex as rx
 from reflex.components import el
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
+from reflex.components.literals import LiteralInputType
 from reflex.components.radix.themes.components.icons import Icon
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -136,6 +137,9 @@ class Input(RadixThemesComponent):
     # Indicates that the input is required
     required: Var[bool]
 
+    # The type of input.
+    type: Var[LiteralInputType] = "text"  # type: ignore
+
     # Value of the input
     value: Var[str]
 
@@ -160,6 +164,7 @@ class Input(RadixThemesComponent):
                 "name",
                 "placeholder",
                 "required",
+                "type",
                 "value",
                 "on_change",
                 "on_focus",

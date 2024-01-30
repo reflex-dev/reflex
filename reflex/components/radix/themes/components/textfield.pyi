@@ -22,6 +22,7 @@ from ..base import (
     LiteralSize,
     RadixThemesComponent,
 )
+from reflex.components.literals import LiteralInputType
 
 LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
@@ -924,6 +925,60 @@ class Input(RadixThemesComponent):
         name: Optional[Union[Var[str], str]] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
+        type: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "button",
+                        "checkbox",
+                        "color",
+                        "date",
+                        "datetime-local",
+                        "email",
+                        "file",
+                        "hidden",
+                        "image",
+                        "month",
+                        "number",
+                        "password",
+                        "radio",
+                        "range",
+                        "reset",
+                        "search",
+                        "submit",
+                        "tel",
+                        "text",
+                        "time",
+                        "url",
+                        "week",
+                    ]
+                ],
+                Literal[
+                    "button",
+                    "checkbox",
+                    "color",
+                    "date",
+                    "datetime-local",
+                    "email",
+                    "file",
+                    "hidden",
+                    "image",
+                    "month",
+                    "number",
+                    "password",
+                    "radio",
+                    "range",
+                    "reset",
+                    "search",
+                    "submit",
+                    "tel",
+                    "text",
+                    "time",
+                    "url",
+                    "week",
+                ],
+            ]
+        ] = None,
         value: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1003,6 +1058,7 @@ class Input(RadixThemesComponent):
             name: Name of the input, used when sending form data
             placeholder: Placeholder text in the input
             required: Indicates that the input is required
+            type: The type of input.
             value: Value of the input
             style: The style of the component.
             key: A unique key for the component.
