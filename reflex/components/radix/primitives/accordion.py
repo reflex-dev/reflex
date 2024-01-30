@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
 from reflex.components.component import Component
@@ -618,3 +619,16 @@ def accordion_item(header: Component, content: Component, **props) -> Component:
         **props,
         class_name="AccordionItem",
     )
+
+
+class Accordion(SimpleNamespace):
+    """Accordion component."""
+
+    content = staticmethod(AccordionContent.create)
+    header = staticmethod(AccordionHeader.create)
+    item = staticmethod(accordion_item)
+    root = __call__ = staticmethod(AccordionRoot.create)
+    trigger = staticmethod(AccordionTrigger.create)
+
+
+accordion = Accordion()

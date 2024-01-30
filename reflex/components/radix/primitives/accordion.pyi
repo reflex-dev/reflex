@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from types import SimpleNamespace
 from typing import Any, Dict, Literal
 from reflex.components.component import Component
 from reflex.components.core import cond, match
@@ -565,3 +566,126 @@ class AccordionContent(AccordionComponent):
         ...
 
 def accordion_item(header: Component, content: Component, **props) -> Component: ...
+
+class Accordion(SimpleNamespace):
+    content = staticmethod(AccordionContent.create)
+    header = staticmethod(AccordionHeader.create)
+    item = staticmethod(accordion_item)
+    root = staticmethod(AccordionRoot.create)
+    trigger = staticmethod(AccordionTrigger.create)
+
+    @staticmethod
+    def __call__(
+        *children,
+        type_: Optional[
+            Union[Var[Literal["single", "multiple"]], Literal["single", "multiple"]]
+        ] = None,
+        value: Optional[Union[Var[str], str]] = None,
+        default_value: Optional[Union[Var[str], str]] = None,
+        collapsible: Optional[Union[Var[bool], bool]] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
+        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        orientation: Optional[
+            Union[
+                Var[Literal["vertical", "horizontal"]],
+                Literal["vertical", "horizontal"],
+            ]
+        ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                Literal["classic", "soft", "surface", "outline", "ghost"],
+            ]
+        ] = None,
+        color_scheme: Optional[
+            Union[Var[Literal["primary", "accent"]], Literal["primary", "accent"]]
+        ] = None,
+        _dynamic_themes: Optional[Union[Var[dict], dict]] = None,
+        _var_data: Optional[VarData] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_value_change: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        **props
+    ) -> "AccordionRoot":
+        """Create the Accordion root component.
+
+        Args:
+            *children: The children of the component.
+            type_: The type of accordion (single or multiple).
+            value: The value of the item to expand.
+            default_value: The default value of the item to expand.
+            collapsible: Whether or not the accordion is collapsible.
+            disabled: Whether or not the accordion is disabled.
+            dir: The reading direction of the accordion when applicable.
+            orientation: The orientation of the accordion.
+            variant: The variant of the accordion.
+            color_scheme: The color scheme of the accordion.
+            _dynamic_themes: dynamic themes of the accordion generated at compile time.
+            _var_data: The var_data associated with the component.
+            as_child: Change the default rendered element for the one passed as a child.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
+
+        Returns:
+            The Accordion root Component.
+        """
+        ...
+
+accordion = Accordion()

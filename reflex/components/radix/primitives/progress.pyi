@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from types import SimpleNamespace
 from typing import Optional
 from reflex.components.component import Component
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
@@ -262,7 +263,11 @@ class ProgressIndicator(ProgressComponent):
         """
         ...
 
-progress_root = ProgressRoot.create
-progress_indicator = ProgressIndicator.create
+class Progress(SimpleNamespace):
+    root = staticmethod(ProgressRoot.create)
+    indicator = staticmethod(ProgressIndicator.create)
 
-def progress(**props): ...
+    @staticmethod
+    def __call__(**props) -> Component: ...
+
+progress = Progress()
