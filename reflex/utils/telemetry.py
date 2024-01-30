@@ -81,6 +81,8 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
         return False
 
     installation_id = ensure_reflex_installation_id()
+    if installation_id is None:
+        return False
 
     try:
         with open(constants.Dirs.REFLEX_JSON) as f:
