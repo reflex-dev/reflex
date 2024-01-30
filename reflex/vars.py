@@ -93,7 +93,7 @@ PYTHON_JS_TYPE_MAP = {
     (bool,): "boolean",
     (list, tuple): "Array",
     (dict,): "Object",
-    (None,): "undefined",
+    (None,): "null",
 }
 
 
@@ -859,7 +859,10 @@ class Var:
             A var representing the type check.
         """
         return self._replace(
-            _var_name=f"typeof {self._var_name}", _var_type=str, _var_is_string=False
+            _var_name=f"typeof {self._var_full_name}",
+            _var_type=str,
+            _var_is_string=False,
+            _var_full_name_needs_state_prefix=False,
         )
 
     def __eq__(self, other: Union[Var, Type]) -> Var:
