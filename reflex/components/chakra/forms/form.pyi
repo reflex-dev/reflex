@@ -11,7 +11,6 @@ from hashlib import md5
 from typing import Any, Dict, Iterator
 from jinja2 import Environment
 from reflex.components.chakra import ChakraComponent
-from reflex.components.chakra.layout.base import ChakraLayoutComponent
 from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.constants import Dirs, EventTriggers
@@ -25,7 +24,7 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     "\n    const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {\n        const $form = ev.target\n        ev.preventDefault()\n        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}\n\n        {{ on_submit_event_chain }}\n\n        if ({{ reset_on_submit }}) {\n            $form.reset()\n        }\n    })\n    "
 )
 
-class Form(ChakraLayoutComponent):
+class Form(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore

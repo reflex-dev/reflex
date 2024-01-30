@@ -9,13 +9,7 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class BaseAlertDialog(ChakraComponent):
-    """The base class for all alert dialog components."""
-
-    library = "@chakra-ui/modal@2.3.1"
-
-
-class AlertDialog(BaseAlertDialog):
+class AlertDialog(ChakraComponent):
     """Provides context and state for the dialog."""
 
     tag = "AlertDialog"
@@ -125,37 +119,37 @@ class AlertDialog(BaseAlertDialog):
         return super().create(*children, **props)
 
 
-class AlertDialogBody(BaseAlertDialog):
+class AlertDialogBody(ChakraComponent):
     """Should contain the description announced by screen readers."""
 
     tag = "AlertDialogBody"
 
 
-class AlertDialogHeader(BaseAlertDialog):
+class AlertDialogHeader(ChakraComponent):
     """Should contain the title announced by screen readers."""
 
     tag = "AlertDialogHeader"
 
 
-class AlertDialogFooter(BaseAlertDialog):
+class AlertDialogFooter(ChakraComponent):
     """Should contain the events of the dialog."""
 
     tag = "AlertDialogFooter"
 
 
-class AlertDialogContent(BaseAlertDialog):
+class AlertDialogContent(ChakraComponent):
     """The wrapper for the alert dialog's content."""
 
     tag = "AlertDialogContent"
 
 
-class AlertDialogOverlay(BaseAlertDialog):
+class AlertDialogOverlay(ChakraComponent):
     """The dimmed overlay behind the dialog."""
 
     tag = "AlertDialogOverlay"
 
 
-class AlertDialogCloseButton(BaseAlertDialog):
+class AlertDialogCloseButton(ChakraComponent):
     """The button that closes the dialog."""
 
     tag = "AlertDialogCloseButton"

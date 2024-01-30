@@ -10,13 +10,7 @@ from reflex.utils import format
 from reflex.vars import Var
 
 
-class BaseRangeSlider(ChakraComponent):
-    """Base componemt of all chakra range sliders."""
-
-    library = "@chakra-ui/slider@2.1.0"
-
-
-class RangeSlider(BaseRangeSlider):
+class RangeSlider(ChakraComponent):
     """The RangeSlider is a multi thumb slider used to select a range of related values. A common use-case of this component is a price range picker that allows a user to set the minimum and maximum price."""
 
     tag = "RangeSlider"
@@ -124,19 +118,19 @@ class RangeSlider(BaseRangeSlider):
         return super().create(*children, **props)
 
 
-class RangeSliderTrack(BaseRangeSlider):
+class RangeSliderTrack(ChakraComponent):
     """A range slider track."""
 
     tag = "RangeSliderTrack"
 
 
-class RangeSliderFilledTrack(BaseRangeSlider):
+class RangeSliderFilledTrack(ChakraComponent):
     """A filled range slider track."""
 
     tag = "RangeSliderFilledTrack"
 
 
-class RangeSliderThumb(BaseRangeSlider):
+class RangeSliderThumb(ChakraComponent):
     """A range slider thumb."""
 
     tag = "RangeSliderThumb"

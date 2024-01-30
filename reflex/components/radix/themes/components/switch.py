@@ -48,7 +48,7 @@ class Switch(CommonMarginProps, RadixThemesComponent):
     variant: Var[LiteralVariant]
 
     # Override theme color for switch
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the switch with higher contrast color against background
     high_contrast: Var[bool]

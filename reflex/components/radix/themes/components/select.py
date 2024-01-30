@@ -66,7 +66,7 @@ class SelectTrigger(CommonMarginProps, RadixThemesComponent):
     variant: Var[Literal["classic", "surface", "soft", "ghost"]]
 
     # The color of the select trigger
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # The radius of the select trigger
     radius: Var[LiteralRadius]
@@ -84,7 +84,7 @@ class SelectContent(CommonMarginProps, RadixThemesComponent):
     variant: Var[Literal["solid", "soft"]]
 
     # The color of the select content
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the select content with higher contrast color against background
     high_contrast: Var[bool]
@@ -161,7 +161,7 @@ class HighLevelSelect(SelectRoot):
     label: Var[str]
 
     # The color of the select.
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the select with higher contrast color against background.
     high_contrast: Var[bool]

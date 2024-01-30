@@ -10,14 +10,13 @@ from reflex.testing import AppHarness
 
 PARAGRAPH_TEXT = "Tailwind Is Cool"
 PARAGRAPH_CLASS_NAME = "text-red-500"
-GLOBAL_PARAGRAPH_COLOR = "rgba(0, 0, 242, 1)"
+TEXT_RED_500_COLOR = "rgba(239, 68, 68, 1)"
 
 
 def TailwindApp(
     tailwind_disabled: bool = False,
     paragraph_text: str = PARAGRAPH_TEXT,
     paragraph_class_name: str = PARAGRAPH_CLASS_NAME,
-    global_paragraph_color: str = GLOBAL_PARAGRAPH_COLOR,
 ):
     """App with tailwind optionally disabled.
 
@@ -25,7 +24,6 @@ def TailwindApp(
         tailwind_disabled: Whether tailwind is disabled for the app.
         paragraph_text: Text for the paragraph.
         paragraph_class_name: Tailwind class_name for the paragraph.
-        global_paragraph_color: Color for the paragraph set in global app styles.
     """
     import reflex as rx
     import reflex.components.radix.themes as rdxt
@@ -38,7 +36,7 @@ def TailwindApp(
             id="p-content",
         )
 
-    app = rx.App(style={"p": {"color": global_paragraph_color}})
+    app = rx.App(style={"font_family": "monospace"})
     app.add_page(index)
     if tailwind_disabled:
         config = rx.config.get_config()
@@ -100,9 +98,10 @@ def test_tailwind_app(tailwind_app: AppHarness, tailwind_disabled: bool):
     assert len(paragraphs) == 3
     for p in paragraphs:
         assert tailwind_app.poll_for_content(p, exp_not_equal="") == PARAGRAPH_TEXT
+        assert p.value_of_css_property("font-family") == "monospace"
         if tailwind_disabled:
-            # expect "blue" color from global stylesheet, not "text-red-500" from tailwind utility class
-            assert p.value_of_css_property("color") == GLOBAL_PARAGRAPH_COLOR
+            # expect default color, not "text-red-500" from tailwind utility class
+            assert p.value_of_css_property("color") != TEXT_RED_500_COLOR
         else:
             # expect "text-red-500" from tailwind utility class
-            assert p.value_of_css_property("color") == "rgba(239, 68, 68, 1)"
+            assert p.value_of_css_property("color") == TEXT_RED_500_COLOR

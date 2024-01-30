@@ -7,13 +7,7 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class BaseStepper(ChakraComponent):
-    """The base class for all Chakra stepper components."""
-
-    library = "@chakra-ui/stepper@2.3.1"
-
-
-class Stepper(BaseStepper):
+class Stepper(ChakraComponent):
     """The parent container for a stepper."""
 
     tag = "Stepper"
@@ -61,43 +55,43 @@ class Stepper(BaseStepper):
         return super().create(*children, **props)
 
 
-class Step(BaseStepper):
+class Step(ChakraComponent):
     """A component for an individual step in the stepper."""
 
     tag = "Step"
 
 
-class StepDescription(BaseStepper):
+class StepDescription(ChakraComponent):
     """The description text for a step component."""
 
     tag = "StepDescription"
 
 
-class StepIcon(BaseStepper):
+class StepIcon(ChakraComponent):
     """The icon displayed in a step indicator component."""
 
     tag = "StepIcon"
 
 
-class StepIndicator(BaseStepper):
+class StepIndicator(ChakraComponent):
     """The component displaying the status of a step."""
 
     tag = "StepIndicator"
 
 
-class StepNumber(BaseStepper):
+class StepNumber(ChakraComponent):
     """The number of a step displayed in a step indicator component."""
 
     tag = "StepNumber"
 
 
-class StepSeparator(BaseStepper):
+class StepSeparator(ChakraComponent):
     """The component separting steps."""
 
     tag = "StepSeparator"
 
 
-class StepStatus(BaseStepper):
+class StepStatus(ChakraComponent):
     """A component that displays a number or icon based on the status of a step."""
 
     # [not working yet]
@@ -113,7 +107,7 @@ class StepStatus(BaseStepper):
     tag = "StepStatus"
 
 
-class StepTitle(BaseStepper):
+class StepTitle(ChakraComponent):
     """The title text for a step component."""
 
     tag = "StepTitle"

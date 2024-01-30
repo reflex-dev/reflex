@@ -7,8 +7,6 @@ from reflex.vars import Var
 class Spinner(ChakraComponent):
     """The component that spins."""
 
-    library = "@chakra-ui/spinner@2.1.0"
-
     tag = "Spinner"
 
     # The color of the empty area in the spinner

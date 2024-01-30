@@ -269,7 +269,7 @@ class HighLevelCheckbox(Checkbox):
                 Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
             ]
         ] = None,
-        color: Optional[
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -445,7 +445,7 @@ class HighLevelCheckbox(Checkbox):
             size: Button size "1" - "3"
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
-            color: Override theme color for button
+            color_scheme: Override theme color for button
             high_contrast: Whether to render the button with higher contrast color against background
             default_checked: Whether the checkbox is checked by default
             checked: Whether the checkbox is checked

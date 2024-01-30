@@ -270,3 +270,18 @@ class Match(MemoizationLeaf):
             super()._get_imports(),
             getattr(self.cond._var_data, "imports", {}),
         )
+
+    def _apply_theme(self, theme: Component):
+        """Apply the theme to this component.
+
+        Args:
+            theme: The theme to apply.
+        """
+        # apply theme to return components.
+        for match_case in self.match_cases:
+            if isinstance(match_case[-1], Component):
+                match_case[-1].apply_theme(theme)
+
+        # apply theme to default component
+        if isinstance(self.default, Component):
+            self.default.apply_theme(theme)

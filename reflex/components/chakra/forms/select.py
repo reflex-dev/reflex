@@ -14,8 +14,6 @@ from reflex.vars import Var
 class Select(ChakraComponent):
     """Select component is a component that allows users pick a value from predefined options. Ideally, it should be used when there are more than 5 options, otherwise you might consider using a radio group instead."""
 
-    library = "@chakra-ui/select@2.1.2"
-
     tag = "Select"
 
     # State var to bind the select.

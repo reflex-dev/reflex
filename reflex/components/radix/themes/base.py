@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from reflex.components import Component
+from reflex.components.tags import Tag
 from reflex.utils import imports
 from reflex.vars import Var
 
@@ -113,6 +114,21 @@ class RadixThemesComponent(Component):
         )
         return component
 
+    @classmethod
+    def get_fields(cls) -> dict[str, Any]:
+        """Get the pydantic fields for the component.
+
+        Returns:
+            Mapping of field name to ModelField instance.
+        """
+        fields = super().get_fields()
+        if "color_scheme" in fields:
+            # Treat "color" as a direct prop, so the translation of reflex "color_scheme"
+            # to "color" does not put the "color_scheme" value into the "style" prop.
+            fields["color"] = fields.pop("color_scheme")
+            fields["color"].required = False
+        return fields
+
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         return {
@@ -154,10 +170,27 @@ class Theme(RadixThemesComponent):
     scaling: Var[LiteralScaling]
 
     def _get_imports(self) -> imports.ImportDict:
-        return {
-            **super()._get_imports(),
-            "": [imports.ImportVar(tag="@radix-ui/themes/styles.css", install=False)],
-        }
+        return imports.merge_imports(
+            super()._get_imports(),
+            {
+                "": [
+                    imports.ImportVar(tag="@radix-ui/themes/styles.css", install=False)
+                ],
+                "/utils/theme.js": [
+                    imports.ImportVar(tag="theme", is_default=True),
+                ],
+            },
+        )
+
+    def _render(self, props: dict[str, Any] | None = None) -> Tag:
+        tag = super()._render(props)
+        tag.add_props(
+            css=Var.create(
+                "{{...theme.styles.global[':root'], ...theme.styles.global.body}}",
+                _var_is_local=False,
+            ),
+        )
+        return tag
 
 
 class ThemePanel(RadixThemesComponent):
