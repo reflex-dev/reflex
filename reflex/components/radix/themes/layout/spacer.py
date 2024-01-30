@@ -9,7 +9,7 @@ from .flex import Flex
 class Spacer(Flex):
     """A spacer component."""
 
-    def _apply_theme(self, theme: Component | None):
+    def _apply_theme(self, theme: Component):
         self.style.update(
             {
                 "flex": 1,

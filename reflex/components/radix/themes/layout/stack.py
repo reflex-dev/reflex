@@ -49,12 +49,12 @@ class Stack(Flex):
 class VStack(Stack):
     """A vertical stack component."""
 
-    def _apply_theme(self, theme: Component | None):
+    def _apply_theme(self, theme: Component):
         self.style.update({"flex_direction": "column"})
 
 
 class HStack(Stack):
     """A horizontal stack component."""
 
-    def _apply_theme(self, theme: Component | None):
+    def _apply_theme(self, theme: Component):
         self.style.update({"flex_direction": "row"})

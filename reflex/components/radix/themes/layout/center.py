@@ -9,7 +9,7 @@ from .flex import Flex
 class Center(Flex):
     """A center component."""
 
-    def _apply_theme(self, theme: Component | None):
+    def _apply_theme(self, theme: Component):
         self.style.update(
             {
                 "display": "flex",
