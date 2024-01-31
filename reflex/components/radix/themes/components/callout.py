@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+from types import SimpleNamespace
 from typing import Literal, Union
 
 import reflex as rx
@@ -75,3 +76,15 @@ class Callout(CalloutRoot):
             CalloutText.create(text),
             **props,
         )
+
+
+class CalloutNamespace(SimpleNamespace):
+    """Callout components namespace."""
+
+    root = staticmethod(CalloutRoot.create)
+    icon = staticmethod(CalloutIcon.create)
+    text = staticmethod(CalloutText.create)
+    __call__ = staticmethod(Callout.create)
+
+
+callout = CalloutNamespace()

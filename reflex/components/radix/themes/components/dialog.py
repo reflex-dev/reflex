@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
 from reflex import el
@@ -75,3 +76,17 @@ class DialogClose(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Close"
+
+
+class Dialog(SimpleNamespace):
+    """Dialog components namespace."""
+
+    root = __call__ = staticmethod(DialogRoot.create)
+    trigger = staticmethod(DialogTrigger.create)
+    title = staticmethod(DialogTitle.create)
+    content = staticmethod(DialogContent.create)
+    description = staticmethod(DialogDescription.create)
+    close = staticmethod(DialogClose.create)
+
+
+dialog = Dialog()

@@ -172,6 +172,7 @@ class Icon(RadixIconComponent):
         """
         ...
 
+icon = Icon.create
 ICON_ABSTRACT: List[str]
 ICON_ALIGNS: List[str]
 ICON_ARROWS: List[str]

@@ -155,3 +155,5 @@ class Tooltip(RadixThemesComponent):
             A new component instance.
         """
         ...
+
+tooltip = Tooltip.create

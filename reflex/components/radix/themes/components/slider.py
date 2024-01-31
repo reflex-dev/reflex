@@ -68,3 +68,6 @@ class Slider(RadixThemesComponent):
             "on_value_change": lambda e0: [e0],
             "on_value_commit": lambda e0: [e0],
         }
+
+
+slider = Slider.create

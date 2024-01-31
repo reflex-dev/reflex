@@ -13,3 +13,6 @@ class Tooltip(RadixThemesComponent):
 
     # The content of the tooltip.
     content: Var[str]
+
+
+tooltip = Tooltip.create

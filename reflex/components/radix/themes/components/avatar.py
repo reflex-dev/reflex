@@ -36,3 +36,6 @@ class Avatar(RadixThemesComponent):
 
     # The rendered fallback text
     fallback: Var[str]
+
+
+avatar = Avatar.create

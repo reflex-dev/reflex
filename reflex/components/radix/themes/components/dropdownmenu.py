@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
 from reflex.vars import Var
@@ -104,3 +105,19 @@ class DropdownMenuSeparator(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "DropdownMenu.Separator"
+
+
+class DropdownMenu(SimpleNamespace):
+    """DropdownMenu components namespace."""
+
+    root = __call__ = staticmethod(DropdownMenuRoot.create)
+    trigger = staticmethod(DropdownMenuTrigger.create)
+    content = staticmethod(DropdownMenuContent.create)
+    sub_trigger = staticmethod(DropdownMenuSubTrigger.create)
+    sub = staticmethod(DropdownMenuSub.create)
+    sub_content = staticmethod(DropdownMenuSubContent.create)
+    item = staticmethod(DropdownMenuItem.create)
+    separator = staticmethod(DropdownMenuSeparator.create)
+
+
+dropdown_menu = DropdownMenu()

@@ -28,3 +28,6 @@ class ScrollArea(RadixThemesComponent):
 
     # If type is set to either "scroll" or "hover", this prop determines the length of time, in milliseconds, before the scrollbars are hidden after the user stops interacting with scrollbars.
     scroll_hide_delay: Var[int]
+
+
+scroll_area = ScrollArea.create
