@@ -7,12 +7,11 @@ from __future__ import annotations
 from reflex import el
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class Strong(el.Strong, CommonMarginProps, RadixThemesComponent):
+class Strong(el.Strong, RadixThemesComponent):
     """Marks text to signify strong importance."""
 
     tag = "Strong"

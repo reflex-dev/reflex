@@ -8,7 +8,6 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     RadixThemesComponent,
 )
@@ -18,7 +17,7 @@ from .base import (
 )
 
 
-class Blockquote(el.Blockquote, CommonMarginProps, RadixThemesComponent):
+class Blockquote(el.Blockquote, RadixThemesComponent):
     """A block level extended quotation."""
 
     tag = "Blockquote"

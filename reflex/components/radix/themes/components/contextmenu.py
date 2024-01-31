@@ -4,13 +4,12 @@ from typing import Any, Dict, Literal
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     RadixThemesComponent,
 )
 
 
-class ContextMenuRoot(CommonMarginProps, RadixThemesComponent):
+class ContextMenuRoot(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Root"
@@ -30,7 +29,7 @@ class ContextMenuRoot(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class ContextMenuTrigger(CommonMarginProps, RadixThemesComponent):
+class ContextMenuTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Trigger"
@@ -39,7 +38,7 @@ class ContextMenuTrigger(CommonMarginProps, RadixThemesComponent):
     disabled: Var[bool]
 
 
-class ContextMenuContent(CommonMarginProps, RadixThemesComponent):
+class ContextMenuContent(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Content"
@@ -78,13 +77,13 @@ class ContextMenuContent(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class ContextMenuSub(CommonMarginProps, RadixThemesComponent):
+class ContextMenuSub(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Sub"
 
 
-class ContextMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
+class ContextMenuSubTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.SubTrigger"
@@ -93,7 +92,7 @@ class ContextMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
     disabled: Var[bool]
 
 
-class ContextMenuSubContent(CommonMarginProps, RadixThemesComponent):
+class ContextMenuSubContent(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.SubContent"
@@ -116,7 +115,7 @@ class ContextMenuSubContent(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class ContextMenuItem(CommonMarginProps, RadixThemesComponent):
+class ContextMenuItem(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Item"
@@ -128,7 +127,7 @@ class ContextMenuItem(CommonMarginProps, RadixThemesComponent):
     shortcut: Var[str]
 
 
-class ContextMenuSeparator(CommonMarginProps, RadixThemesComponent):
+class ContextMenuSeparator(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Separator"

@@ -6,7 +6,6 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
     RadixThemesComponent,
@@ -15,7 +14,7 @@ from ..base import (
 LiteralButtonSize = Literal[1, 2, 3, 4]
 
 
-class SelectRoot(CommonMarginProps, RadixThemesComponent):
+class SelectRoot(RadixThemesComponent):
     """Displays a list of options for the user to pick from, triggered by a button."""
 
     tag = "Select.Root"
@@ -57,7 +56,7 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class SelectTrigger(CommonMarginProps, RadixThemesComponent):
+class SelectTrigger(RadixThemesComponent):
     """The button that toggles the select."""
 
     tag = "Select.Trigger"
@@ -75,7 +74,7 @@ class SelectTrigger(CommonMarginProps, RadixThemesComponent):
     placeholder: Var[str]
 
 
-class SelectContent(CommonMarginProps, RadixThemesComponent):
+class SelectContent(RadixThemesComponent):
     """The component that pops out when the select is open."""
 
     tag = "Select.Content"
@@ -118,13 +117,13 @@ class SelectContent(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class SelectGroup(CommonMarginProps, RadixThemesComponent):
+class SelectGroup(RadixThemesComponent):
     """Used to group multiple items."""
 
     tag = "Select.Group"
 
 
-class SelectItem(CommonMarginProps, RadixThemesComponent):
+class SelectItem(RadixThemesComponent):
     """The component that contains the select items."""
 
     tag = "Select.Item"
@@ -136,13 +135,13 @@ class SelectItem(CommonMarginProps, RadixThemesComponent):
     disabled: Var[bool]
 
 
-class SelectLabel(CommonMarginProps, RadixThemesComponent):
+class SelectLabel(RadixThemesComponent):
     """Used to render the label of a group, it isn't focusable using arrow keys."""
 
     tag = "Select.Label"
 
 
-class SelectSeparator(CommonMarginProps, RadixThemesComponent):
+class SelectSeparator(RadixThemesComponent):
     """Used to visually separate items in the Select."""
 
     tag = "Select.Separator"

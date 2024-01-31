@@ -4,7 +4,6 @@ from typing import Literal
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     RadixThemesComponent,
 )
@@ -12,7 +11,7 @@ from ..base import (
 LiteralSeperatorSize = Literal["1", "2", "3", "4"]
 
 
-class Separator(CommonMarginProps, RadixThemesComponent):
+class Separator(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Separator"

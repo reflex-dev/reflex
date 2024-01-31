@@ -2,12 +2,11 @@
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class Tooltip(CommonMarginProps, RadixThemesComponent):
+class Tooltip(RadixThemesComponent):
     """Floating element that provides a control with contextual information via pointer or focus."""
 
     tag = "Tooltip"
