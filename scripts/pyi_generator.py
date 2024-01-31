@@ -704,7 +704,6 @@ class PyiGenerator:
 
     def _write_pyi_file(self, module_path: Path, source: str):
         relpath = str(_relative_to_pwd(module_path)).replace("\\", "/")
-        print(f"Writing {relpath}")
         pyi_content = [
             f'"""Stub file for {relpath}"""',
             "# ------------------- DO NOT EDIT ----------------------",
