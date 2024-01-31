@@ -102,7 +102,7 @@ def _init(
             # If user selects a template, it needs to exist
             if (
                 template not in template_name_to_url
-                or template != constants.Templates.Kind.BLANK.value
+                and template != constants.Templates.Kind.BLANK.value
             ):
                 console.error(f"Template `{template}` not found.")
                 raise typer.Exit(1)
