@@ -9,78 +9,21 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
 from reflex.vars import Var
-from ..base import LiteralRadius, RadixThemesComponent
+from ..base import (
+    LiteralRadius,
+    RadixThemesComponent,
+    RadixThemesComponentPropsOverride,
+)
 
-class ScrollArea(RadixThemesComponent):
+class ScrollArea(RadixThemesComponentPropsOverride, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
-        color_scheme: Optional[
-            Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
-            ]
+        size: Optional[
+            Union[Var[Literal[1, 2, 3, "1", "2", "3"]], Literal[1, 2, 3, "1", "2", "3"]]
         ] = None,
-        size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
         radius: Optional[
             Union[
                 Var[Literal["none", "small", "medium", "large", "full"]],
@@ -155,13 +98,8 @@ class ScrollArea(RadixThemesComponent):
     ) -> "ScrollArea":
         """Create a new component instance.
 
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
-
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
             size: The size of the radio group: "1" | "2" | "3"
             radius: The radius of the radio group
             scrollbars: The alignment of the scroll area

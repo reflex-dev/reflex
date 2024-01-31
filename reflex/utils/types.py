@@ -10,6 +10,7 @@ from typing import (
     Iterable,
     Literal,
     Optional,
+    Tuple,
     Type,
     Union,
     _GenericAlias,  # type: ignore
@@ -94,7 +95,7 @@ def is_literal(cls: GenericType) -> bool:
     return get_origin(cls) is Literal
 
 
-def get_literal_types(cls: GenericType) -> Type | Union[Type]:
+def get_literal_types(cls: GenericType) -> Union[Type, Tuple[Type, ...]]:
     """Obtain the types in a literal.
 
     Args:

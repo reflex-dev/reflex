@@ -6,6 +6,7 @@ from reflex.vars import Var
 
 from ..base import (
     RadixThemesComponent,
+    RadixThemesComponentPropsOverride
 )
 
 
@@ -38,13 +39,13 @@ class PopoverTrigger(RadixThemesComponent):
     tag = "Popover.Trigger"
 
 
-class PopoverContent(el.Div, RadixThemesComponent):
+class PopoverContent(el.Div, RadixThemesComponentPropsOverride, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Popover.Content"
 
     # Size of the button: "1" | "2" | "3" | "4"
-    size: Var[Literal[1, 2, 3, 4]]
+    size: Var[Literal[1, 2, 3, 4, "1", "2", "3", "4"]]
 
     # The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
     side: Var[Literal["top", "right", "bottom", "left"]]

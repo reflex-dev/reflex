@@ -6,16 +6,17 @@ from reflex.vars import Var
 from ..base import (
     LiteralRadius,
     RadixThemesComponent,
+    RadixThemesComponentPropsOverride
 )
 
 
-class ScrollArea(RadixThemesComponent):
+class ScrollArea(RadixThemesComponentPropsOverride, RadixThemesComponent):
     """Custom styled, cross-browser scrollable area using native functionality."""
 
     tag = "ScrollArea"
 
     # The size of the radio group: "1" | "2" | "3"
-    size: Var[Literal[1, 2, 3]]
+    size: Var[Literal[1, 2, 3, "1", "2", "3"]]
 
     # The radius of the radio group
     radius: Var[LiteralRadius]

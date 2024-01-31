@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Any, Dict, Literal
 from reflex import el
 from reflex.vars import Var
-from ..base import RadixThemesComponent
+from ..base import RadixThemesComponent, RadixThemesComponentPropsOverride
 
 class PopoverRoot(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
@@ -308,77 +308,19 @@ class PopoverTrigger(RadixThemesComponent):
         """
         ...
 
-class PopoverContent(el.Div, RadixThemesComponent):
+class PopoverContent(el.Div, RadixThemesComponentPropsOverride, RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
-        color_scheme: Optional[
+        size: Optional[
             Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
+                Var[Literal[1, 2, 3, 4, "1", "2", "3", "4"]],
+                Literal[1, 2, 3, 4, "1", "2", "3", "4"],
             ]
         ] = None,
-        size: Optional[Union[Var[Literal[1, 2, 3, 4]], Literal[1, 2, 3, 4]]] = None,
         side: Optional[
             Union[
                 Var[Literal["top", "right", "bottom", "left"]],
@@ -510,13 +452,8 @@ class PopoverContent(el.Div, RadixThemesComponent):
     ) -> "PopoverContent":
         """Create a new component instance.
 
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
-
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
             size: Size of the button: "1" | "2" | "3" | "4"
             side: The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
             side_offset: The distance in pixels from the anchor.
