@@ -3,6 +3,7 @@
 # Style based on https://ui.shadcn.com/docs/components/drawer
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
 
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
@@ -230,11 +231,17 @@ class DrawerDescription(DrawerComponent):
         return self.style
 
 
-drawer_root = DrawerRoot.create
-drawer_trigger = DrawerTrigger.create
-drawer_portal = DrawerPortal.create
-drawer_content = DrawerContent.create
-drawer_overlay = DrawerOverlay.create
-drawer_close = DrawerClose.create
-drawer_title = DrawerTitle.create
-drawer_description = DrawerDescription.create
+class Drawer(SimpleNamespace):
+    """A namespace for Drawer components."""
+
+    root = __call__ = staticmethod(DrawerRoot.create)
+    trigger = staticmethod(DrawerTrigger.create)
+    portal = staticmethod(DrawerPortal.create)
+    content = staticmethod(DrawerContent.create)
+    overlay = staticmethod(DrawerOverlay.create)
+    close = staticmethod(DrawerClose.create)
+    title = staticmethod(DrawerTitle.create)
+    description = staticmethod(DrawerDescription.create)
+
+
+drawer = Drawer()
