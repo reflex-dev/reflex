@@ -2,11 +2,11 @@ name: integration-tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main", "reflex-0.4.0" ]
     paths-ignore:
       - '**/*.md'
   pull_request:
-    branches: [ main ]
+    branches: [ "main", "reflex-0.4.0" ]
     paths-ignore:
       - '**/*.md'
 
