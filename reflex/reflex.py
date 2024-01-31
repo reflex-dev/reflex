@@ -240,7 +240,6 @@ def init(
     ),
 ):
     """Initialize a new Reflex app in the current directory."""
-    print(f"test: {template}")
     _init(name, template, loglevel)
 
 
