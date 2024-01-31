@@ -221,6 +221,8 @@ class RadixThemesComponentPropsOverride(Component):
     def create(
         cls,
         *children,
+        color: Var[str] = None,  # type: ignore
+        color_scheme: Var[LiteralAccentColor] = None,  # type: ignore
         **props,
     ) -> Component:
         """Create a new component instance.
@@ -233,7 +235,7 @@ class RadixThemesComponentPropsOverride(Component):
             A new component instance.
         """
         props = cls._convert_props_to_designated_types(props)
-        return super().create(*children, **props)
+        return super().create(color=color, color_scheme=color_scheme, *children, **props)
 
     @classmethod
     def _get_props_to_convert(cls):
