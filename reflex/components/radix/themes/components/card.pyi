@@ -230,3 +230,5 @@ class Card(el.Div, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+card = Card.create

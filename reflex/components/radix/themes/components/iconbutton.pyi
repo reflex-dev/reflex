@@ -282,3 +282,5 @@ class IconButton(el.Button, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+icon_button = IconButton.create

@@ -156,3 +156,5 @@ class AspectRatio(RadixThemesComponent):
             A new component instance.
         """
         ...
+
+aspect_ratio = AspectRatio.create

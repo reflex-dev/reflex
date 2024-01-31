@@ -178,3 +178,5 @@ class Avatar(RadixThemesComponent):
             A new component instance.
         """
         ...
+
+avatar = Avatar.create
