@@ -31,7 +31,6 @@ LiteralStickyType = Literal[
 
 # The Tooltip inherits props from the Tooltip.Root, Tooltip.Portal, Tooltip.Content
 class Tooltip(RadixThemesComponent):
-
     """Floating element that provides a control with contextual information via pointer or focus."""
 
     tag = "Tooltip"
