@@ -52,3 +52,15 @@ class Color:
 
     # Whether to use the alpha variant of the color
     alpha: bool = False
+
+    def __format__(self, format_spec: str) -> str:
+        """Format the color as a CSS color string.
+        
+        Returns:
+            str: The CSS color string
+        """
+        if self.alpha:
+            return f"var(--{self.color}-a{self.shade})"
+        else:
+            return f"var(--{self.color}-{self.shade})"
+    
