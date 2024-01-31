@@ -155,7 +155,7 @@ class FormRoot(FormComponent):
                 )._replace(merge_var_data=ref_var._var_data)
         return form_refs
 
-    def _apply_theme(self, theme: Component | None):
+    def _apply_theme(self, theme: Component):
         return {
             "width": "260px",
             **self.style,
@@ -179,7 +179,7 @@ class FormField(FormComponent):
     # Flag to mark the form field as invalid, for server side validation.
     server_invalid: Var[bool]
 
-    def _apply_theme(self, theme: Component | None):
+    def _apply_theme(self, theme: Component):
         return {
             "display": "grid",
             "margin_bottom": "10px",
@@ -194,7 +194,7 @@ class FormLabel(FormComponent):
 
     alias = "RadixFormLabel"
 
-    def _apply_theme(self, theme: Component | None):
+    def _apply_theme(self, theme: Component):
         return {
             "font_size": "15px",
             "font_weight": "500",
@@ -267,7 +267,7 @@ class FormMessage(FormComponent):
     # Forces the message to be shown. This is useful when using server-side validation.
     force_match: Var[bool]
 
-    def _apply_theme(self, theme: Component | None):
+    def _apply_theme(self, theme: Component):
         return {
             "font_size": "13px",
             "opacity": "0.8",

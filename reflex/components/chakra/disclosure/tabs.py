@@ -90,11 +90,15 @@ class Tab(ChakraComponent):
     # The id of the panel.
     panel_id: Var[str]
 
+    _valid_parents: List[str] = ["TabList"]
+
 
 class TabList(ChakraComponent):
     """Wrapper for the Tab components."""
 
     tag = "TabList"
+
+    _valid_parents: List[str] = ["Tabs"]
 
 
 class TabPanels(ChakraComponent):
@@ -102,8 +106,12 @@ class TabPanels(ChakraComponent):
 
     tag = "TabPanels"
 
+    _valid_parents: List[str] = ["Tabs"]
+
 
 class TabPanel(ChakraComponent):
     """An element that contains the content associated with a tab."""
 
     tag = "TabPanel"
+
+    _valid_parents: List[str] = ["TabPanels"]

@@ -55,14 +55,15 @@ class Icon(LucideIconComponent):
                 f"Invalid icon tag: {props['tag']}. Please use one of the following: {', '.join(LUCIDE_ICON_LIST[0:25])}, ..."
                 "\nSee full list at https://lucide.dev/icons."
             )
-        props["tag"] = format.to_title_case(props["tag"]) + "Icon"
+
+        props["tag"] = format.to_title_case(format.to_snake_case(props["tag"])) + "Icon"
         props["alias"] = f"Lucide{props['tag']}"
         return super().create(*children, **props)
 
-    def _apply_theme(self, theme: Component | None):
+    def _apply_theme(self, theme: Component):
         self.style = Style(
             {
-                "color": f"var(--accent-12)",
+                "color": f"var(--current-color)",
                 **self.style,
             }
         )

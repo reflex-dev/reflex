@@ -114,6 +114,21 @@ class RadixThemesComponent(Component):
         )
         return component
 
+    @classmethod
+    def get_fields(cls) -> dict[str, Any]:
+        """Get the pydantic fields for the component.
+
+        Returns:
+            Mapping of field name to ModelField instance.
+        """
+        fields = super().get_fields()
+        if "color_scheme" in fields:
+            # Treat "color" as a direct prop, so the translation of reflex "color_scheme"
+            # to "color" does not put the "color_scheme" value into the "style" prop.
+            fields["color"] = fields.pop("color_scheme")
+            fields["color"].required = False
+        return fields
+
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         return {
