@@ -115,7 +115,7 @@ class BaseComponent(Base, ABC):
 
 
 # Map from component to styling.
-ComponentStyle = Dict[Union[str, Type[BaseComponent]], Any]
+ComponentStyle = Dict[Union[str, Type[BaseComponent], Callable], Any]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
 
 
@@ -600,10 +600,13 @@ class Component(BaseComponent, ABC):
         Returns:
             The component with the additional style.
         """
+        component_style = None
         if type(self) in style:
             # Extract the style for this component.
             component_style = Style(style[type(self)])
-
+        if self.create in style:
+            component_style = Style(style[self.create])
+        if component_style is not None:
             # Only add style props that are not overridden.
             component_style = {
                 k: v for k, v in component_style.items() if k not in self.style
