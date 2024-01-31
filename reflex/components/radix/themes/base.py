@@ -210,3 +210,7 @@ class RadixThemesColorModeProvider(Component):
     library = "/components/reflex/radix_themes_color_mode_provider.js"
     tag = "RadixThemesColorModeProvider"
     is_default = True
+
+
+theme = Theme.create
+theme_panel = ThemePanel.create
