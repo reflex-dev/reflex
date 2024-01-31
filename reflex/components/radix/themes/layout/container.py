@@ -24,4 +24,4 @@ class Container(el.Div, RadixThemesComponent):
 
     @classmethod
     def _get_props_to_convert(cls) -> list:
-        return super()._get_props_to_convert + ["size"]
+        return super()._get_props_to_convert() + ["size"]  # type: ignore

@@ -258,10 +258,11 @@ class RadixThemesComponentPropsOverride(Component):
         Args:
             props: The Component's properties.
 
+        Returns:
+            The updated properties.
         """
         for prop in cls._get_props_to_convert():
             if prop in props:
                 prop_value = props[prop]
-                prop_value = Var.create(prop_value)._replace(_var_type=str)
-                props[prop] = prop_value
+                props[prop] = str(prop_value) if not isinstance(prop_value, Var) else prop_value
         return props

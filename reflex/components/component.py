@@ -251,19 +251,9 @@ class Component(BaseComponent, ABC):
                         types.is_literal(expected_type)
                         and not isinstance(value, Var)
                         and value not in expected_type.__args__
-                    ) or (
-                        types.is_literal(expected_type)
-                        and isinstance(value, Var)
-                        and not value._var_state
-                        and value._var_name not in expected_type.__args__
                     ):
                         allowed_values = expected_type.__args__
-                        prop_value = (
-                            types.get_base_class(value._var_type)(value._var_name)
-                            if isinstance(value, Var)
-                            else value
-                        )
-                        if prop_value not in allowed_values:
+                        if value not in allowed_values:
                             value_str = ",".join(
                                 [
                                     str(v) if not isinstance(v, str) else f"'{v}'"
@@ -271,7 +261,7 @@ class Component(BaseComponent, ABC):
                                 ]
                             )
                             raise ValueError(
-                                f"prop value for {str(key)} of the `{type(self).__name__}` component should be one of the following: {value_str}. Got '{prop_value}' instead"
+                                f"prop value for {str(key)} of the `{type(self).__name__}` component should be one of the following: {value_str}. Got '{value}' instead"
                             )
 
                     # Get the passed type and the var type.
