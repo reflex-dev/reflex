@@ -36,3 +36,6 @@ class IconButton(el.Button, RadixThemesComponent):
 
     # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
+
+
+icon_button = IconButton.create

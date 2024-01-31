@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
 from reflex import el
@@ -91,3 +92,18 @@ class AlertDialogCancel(RadixThemesComponent):
     """
 
     tag = "AlertDialog.Cancel"
+
+
+class AlertDialog(SimpleNamespace):
+    """AlertDialog components namespace."""
+
+    root = __call__ = staticmethod(AlertDialogRoot.create)
+    trigger = staticmethod(AlertDialogTrigger.create)
+    content = staticmethod(AlertDialogContent.create)
+    title = staticmethod(AlertDialogTitle.create)
+    description = staticmethod(AlertDialogDescription.create)
+    action = staticmethod(AlertDialogAction.create)
+    cancel = staticmethod(AlertDialogCancel.create)
+
+
+alert_dialog = AlertDialog()

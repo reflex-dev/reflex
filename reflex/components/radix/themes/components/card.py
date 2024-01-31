@@ -22,3 +22,6 @@ class Card(el.Div, RadixThemesComponent):
 
     # Variant of Card: "solid" | "soft" | "outline" | "ghost"
     variant: Var[Literal["surface", "classic", "ghost"]]
+
+
+card = Card.create

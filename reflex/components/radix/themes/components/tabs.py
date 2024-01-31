@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
 from reflex.vars import Var
@@ -62,3 +63,15 @@ class TabsContent(RadixThemesComponent):
 
     # The value of the tab. Must be unique for each tab.
     value: Var[str]
+
+
+class Tabs(SimpleNamespace):
+    """Tabs components namespace."""
+
+    root = __call__ = staticmethod(TabsRoot.create)
+    list = staticmethod(TabsList.create)
+    trigger = staticmethod(TabsTrigger.create)
+    content = staticmethod(TabsContent.create)
+
+
+tabs = Tabs()

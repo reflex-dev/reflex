@@ -27,3 +27,6 @@ class Separator(RadixThemesComponent):
 
     # When true, signifies that it is purely visual, carries no semantic meaning, and ensures it is not present in the accessibility tree.
     decorative: Var[bool]
+
+
+separator = Separator.create

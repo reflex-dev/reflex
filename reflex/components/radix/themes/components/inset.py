@@ -42,3 +42,6 @@ class Inset(el.Div, RadixThemesComponent):
 
     # Padding on the left
     pl: Var[Union[int, str]]
+
+
+inset = Inset.create

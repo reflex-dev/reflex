@@ -65,3 +65,6 @@ class Switch(RadixThemesComponent):
             **super().get_event_triggers(),
             EventTriggers.ON_CHECKED_CHANGE: lambda checked: [checked],
         }
+
+
+switch = Switch.create
