@@ -552,12 +552,13 @@ def set_clipboard(content: str) -> EventSpec:
     )
 
 
-def download(url: str | Var, filename: Optional[str | Var] = None) -> EventSpec:
+def download(url: str | Var | None = None, filename: Optional[str | Var] = None, data: str | None = None) -> EventSpec:
     """Download the file at a given path.
 
     Args:
         url : The URL to the file to download.
         filename : The name that the file should be saved as after download.
+        data : The data to download.
 
     Raises:
         ValueError: If the URL provided is invalid.
@@ -575,12 +576,32 @@ def download(url: str | Var, filename: Optional[str | Var] = None) -> EventSpec:
         # if filename is not provided, infer it from url
         if filename is None:
             filename = url.rpartition("/")[-1]
+    
+    if url is None:
+        if filename is None:
+            filename = "download.txt"
+
+        return server_side(
+            "_download",
+            get_fn_signature(download),
+            filename=filename,
+            data=data,
+        )
+
+    if data is None:
+        return server_side(
+            "_download",
+            get_fn_signature(download),
+            url=url,
+            filename=filename,
+        )
 
     return server_side(
         "_download",
         get_fn_signature(download),
         url=url,
         filename=filename,
+        data=data,
     )
 
 
