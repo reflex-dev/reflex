@@ -10,9 +10,7 @@ from ..base import (
 )
 
 
-class TableRoot(
-    el.Table, RadixThemesComponentPropsOverride, RadixThemesComponent
-):
+class TableRoot(el.Table, RadixThemesComponentPropsOverride, RadixThemesComponent):
     """A semantic table for presenting tabular data."""
 
     tag = "Table.Root"

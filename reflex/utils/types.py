@@ -94,7 +94,7 @@ def is_literal(cls: GenericType) -> bool:
     return get_origin(cls) is Literal
 
 
-def get_literal_types(cls: GenericType) -> Type | Union[Type, ...]:
+def get_literal_types(cls: GenericType) -> Type | Union[Type]:
     """Obtain the types in a literal.
 
     Args:
@@ -102,6 +102,9 @@ def get_literal_types(cls: GenericType) -> Type | Union[Type, ...]:
 
     Returns:
         The literal type or union of types for literals with multiple arg types.
+
+    Raises:
+        TypeError: if the class is not a literal
     """
     if not is_literal(cls):
         raise TypeError(f"{cls} is not a literal")

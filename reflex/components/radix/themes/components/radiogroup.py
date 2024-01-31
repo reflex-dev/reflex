@@ -17,9 +17,7 @@ from ..base import (
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 
 
-class RadioGroupRoot(
-    RadixThemesComponentPropsOverride, RadixThemesComponent
-):
+class RadioGroupRoot(RadixThemesComponentPropsOverride, RadixThemesComponent):
     """A set of interactive radio buttons where only one can be selected at a time."""
 
     tag = "RadioGroup.Root"

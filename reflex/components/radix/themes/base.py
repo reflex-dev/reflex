@@ -264,5 +264,7 @@ class RadixThemesComponentPropsOverride(Component):
         for prop in cls._get_props_to_convert():
             if prop in props:
                 prop_value = props[prop]
-                props[prop] = str(prop_value) if not isinstance(prop_value, Var) else prop_value
+                props[prop] = (
+                    str(prop_value) if not isinstance(prop_value, Var) else prop_value
+                )
         return props

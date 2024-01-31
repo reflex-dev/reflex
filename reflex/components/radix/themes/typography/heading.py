@@ -20,9 +20,7 @@ from .base import (
 )
 
 
-class Heading(
-    el.H1, RadixThemesComponentPropsOverride, RadixThemesComponent
-):
+class Heading(el.H1, RadixThemesComponentPropsOverride, RadixThemesComponent):
     """A foundational text primitive based on the <span> element."""
 
     tag = "Heading"
