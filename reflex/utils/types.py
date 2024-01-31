@@ -95,7 +95,7 @@ def is_literal(cls: GenericType) -> bool:
     return get_origin(cls) is Literal
 
 
-def get_literal_types(cls: GenericType) -> Union[Type, Tuple[Type, ...]]:
+def get_literal_types(cls: GenericType) -> Tuple[Type, ...]:
     """Obtain the types in a literal.
 
     Args:
@@ -116,10 +116,7 @@ def get_literal_types(cls: GenericType) -> Union[Type, Tuple[Type, ...]]:
     for item in types_of_literals:
         result_types.add(type(item))
 
-    if len(result_types) == 1:
-        return result_types.pop()
-    else:
-        return Union[tuple(result_types)]
+    return tuple(result_types)
 
 
 def is_optional(cls: GenericType) -> bool:

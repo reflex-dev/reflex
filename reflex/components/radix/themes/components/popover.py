@@ -4,10 +4,7 @@ from typing import Any, Dict, Literal
 from reflex import el
 from reflex.vars import Var
 
-from ..base import (
-    RadixThemesComponent,
-    RadixThemesComponentPropsOverride
-)
+from ..base import RadixThemesComponent, RadixThemesComponentPropsOverride
 
 
 class PopoverRoot(RadixThemesComponent):

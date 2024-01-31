@@ -267,7 +267,7 @@ class Component(BaseComponent, ABC):
                     # Get the passed type and the var type.
                     passed_type = kwargs[key]._var_type
                     expected_type = (
-                        types.get_literal_types(expected_type)
+                        Union[types.get_literal_types(expected_type)]
                         if types.is_literal(expected_type)
                         else expected_type
                     )
@@ -276,7 +276,7 @@ class Component(BaseComponent, ABC):
                     passed_type = type(value)
                     expected_type = fields[key].outer_type_
                     expected_type = (
-                        types.get_literal_types(expected_type)
+                        Union[types.get_literal_types(expected_type)]
                         if types.is_literal(expected_type)
                         else expected_type
                     )

@@ -6,7 +6,7 @@ from reflex.vars import Var
 from ..base import (
     LiteralRadius,
     RadixThemesComponent,
-    RadixThemesComponentPropsOverride
+    RadixThemesComponentPropsOverride,
 )
 
 
