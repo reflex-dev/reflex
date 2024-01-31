@@ -1667,13 +1667,13 @@ ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"
 
 [[package]]
 name = "reflex-hosting-cli"
-version = "0.1.6"
+version = "0.1.7"
 description = "Reflex Hosting CLI"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "reflex_hosting_cli-0.1.6-py3-none-any.whl", hash = "sha256:22f727c28da15d9a28ebe7806d435befd9dab2ffe7143acc445d3c2bce3a4fb2"},
-    {file = "reflex_hosting_cli-0.1.6.tar.gz", hash = "sha256:5217321ab0b2e17bf4ecc2d486ac36b11bdfb596dd77b19b90c1bce66e2f0177"},
+    {file = "reflex_hosting_cli-0.1.7-py3-none-any.whl", hash = "sha256:1cd6e9923b0afe7078c2a4095bba658bdb24c3fd155be354f48b49f90b69b283"},
+    {file = "reflex_hosting_cli-0.1.7.tar.gz", hash = "sha256:07971042a610f06a80f2048b2089eb4c2b7ea507043e648fe325585f0e31bfdc"},
 ]
 
 [package.dependencies]
