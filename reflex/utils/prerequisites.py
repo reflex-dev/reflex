@@ -16,7 +16,7 @@ import zipfile
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
-from typing import Callable
+from typing import Callable, Optional
 
 import httpx
 import pkg_resources
@@ -824,10 +824,48 @@ def validate_frontend_dependencies(init=True):
         validate_bun()
 
 
-def initialize_frontend_dependencies():
-    """Initialize all the frontend dependencies."""
+def ensure_reflex_installation_id() -> Optional[int]:
+    """Ensures that a reflex distinct id has been generated and stored in the reflex directory.
+
+    Returns:
+        Distinct id.
+    """
+    try:
+        initialize_reflex_user_directory()
+        installation_id_file = os.path.join(constants.Reflex.DIR, "installation_id")
+
+        installation_id = None
+        if os.path.exists(installation_id_file):
+            try:
+                with open(installation_id_file, "r") as f:
+                    installation_id = int(f.read())
+            except Exception:
+                # If anything goes wrong at all... just regenerate.
+                # Like what? Examples:
+                #     - file not exists
+                #     - file not readable
+                #     - content not parseable as an int
+                pass
+
+        if installation_id is None:
+            installation_id = random.getrandbits(128)
+            with open(installation_id_file, "w") as f:
+                f.write(str(installation_id))
+        # If we get here, installation_id is definitely set
+        return installation_id
+    except Exception as e:
+        console.debug(f"Failed to ensure reflex installation id: {e}")
+        return None
+
+
+def initialize_reflex_user_directory():
+    """Initialize the reflex user directory."""
     # Create the reflex directory.
     path_ops.mkdir(constants.Reflex.DIR)
+
+
+def initialize_frontend_dependencies():
+    """Initialize all the frontend dependencies."""
     # validate dependencies before install
     validate_frontend_dependencies()
     # Install the frontend dependencies.
