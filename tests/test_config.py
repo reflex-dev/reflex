@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 from typing import Any, Dict
 
@@ -200,3 +201,21 @@ def test_replace_defaults(
     c._set_persistent(**set_persistent_vars)
     for key, value in exp_config_values.items():
         assert getattr(c, key) == value
+
+
+def reflex_dir_constant():
+    return rx.constants.Reflex.DIR
+
+
+def test_reflex_dir_env_var(monkeypatch, tmp_path):
+    """Test that the REFLEX_DIR environment variable is used to set the Reflex.DIR constant.
+
+    Args:
+        monkeypatch: The pytest monkeypatch object.
+        tmp_path: The pytest tmp_path object.
+    """
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
+
+    mp_ctx = multiprocessing.get_context(method="spawn")
+    with mp_ctx.Pool(processes=1) as pool:
+        assert pool.apply(reflex_dir_constant) == str(tmp_path)
