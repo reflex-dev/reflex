@@ -516,18 +516,15 @@ def _generate_namespace_call_functiondef(
     clz = classes[clz_name]
 
     # Determine which class is wrapped by the namespace __call__ method
-    component_class_name, dot, func_name = clz.__call__.__func__.__qualname__.partition(
-        "."
-    )
-    component_clz = classes[component_class_name]
+    component_clz = clz.__call__.__self__
 
     # Only generate for create functions
-    if func_name != "create":
+    if clz.__call__.__func__.__name__ != "create":
         return None
 
     definition = _generate_component_create_functiondef(
         node=None,
-        clz=component_clz,
+        clz=component_clz,  # type: ignore
         type_hint_globals=type_hint_globals,
     )
     definition.name = "__call__"
