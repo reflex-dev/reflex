@@ -216,5 +216,6 @@ def test_reflex_dir_env_var(monkeypatch, tmp_path):
     """
     monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
 
-    with multiprocessing.Pool(processes=1) as pool:
+    mp_ctx = multiprocessing.get_context(method="spawn")
+    with mp_ctx.Pool(processes=1) as pool:
         assert pool.apply(reflex_dir_constant) == str(tmp_path)
