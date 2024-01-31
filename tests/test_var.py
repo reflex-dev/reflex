@@ -316,6 +316,59 @@ def test_basic_operations(TestObj):
         str(BaseVar(_var_name="foo", _var_type=list).reverse())
         == "{[...foo].reverse()}"
     )
+    assert str(BaseVar(_var_name="foo", _var_type=str)._type()) == "{typeof foo}"  # type: ignore
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=str)._type() == str)  # type: ignore
+        == "{(typeof foo === `string`)}"
+    )
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=str)._type() == str)  # type: ignore
+        == "{(typeof foo === `string`)}"
+    )
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=str)._type() == int)  # type: ignore
+        == "{(typeof foo === `number`)}"
+    )
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=str)._type() == list)  # type: ignore
+        == "{(typeof foo === `Array`)}"
+    )
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=str)._type() == float)  # type: ignore
+        == "{(typeof foo === `number`)}"
+    )
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=str)._type() == tuple)  # type: ignore
+        == "{(typeof foo === `Array`)}"
+    )
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=str)._type() == dict)  # type: ignore
+        == "{(typeof foo === `Object`)}"
+    )
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=str)._type() != str)  # type: ignore
+        == "{(typeof foo !== `string`)}"
+    )
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=str)._type() != int)  # type: ignore
+        == "{(typeof foo !== `number`)}"
+    )
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=str)._type() != list)  # type: ignore
+        == "{(typeof foo !== `Array`)}"
+    )
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=str)._type() != float)  # type: ignore
+        == "{(typeof foo !== `number`)}"
+    )
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=str)._type() != tuple)  # type: ignore
+        == "{(typeof foo !== `Array`)}"
+    )
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=str)._type() != dict)  # type: ignore
+        == "{(typeof foo !== `Object`)}"
+    )
 
 
 @pytest.mark.parametrize(

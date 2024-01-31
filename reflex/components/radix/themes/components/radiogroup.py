@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import reflex as rx
 from reflex.components.component import Component
@@ -97,7 +97,11 @@ class HighLevelRadioGroup(RadioGroupRoot):
     size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
 
     @classmethod
-    def create(cls, items: Var[List[str]], **props) -> Component:
+    def create(
+        cls,
+        items: Var[List[Optional[Union[str, int, float, list, dict, bool]]]],
+        **props
+    ) -> Component:
         """Create a radio group component.
 
         Args:
@@ -110,29 +114,49 @@ class HighLevelRadioGroup(RadioGroupRoot):
         direction = props.pop("direction", "column")
         gap = props.pop("gap", "2")
         size = props.pop("size", "2")
+        default_value = props.pop("default_value", "")
 
-        def radio_group_item(value: str) -> Component:
+        # convert only non-strings to json(JSON.stringify) so quotes are not rendered
+        # for string literal types.
+        if (
+            type(default_value) is str
+            or isinstance(default_value, Var)
+            and default_value._var_type is str
+        ):
+            default_value = Var.create(default_value, _var_is_string=True)  # type: ignore
+        else:
+            default_value = (
+                Var.create(default_value).to_string()._replace(_var_is_local=False)  # type: ignore
+            )
+
+        def radio_group_item(value: str | Var) -> Component:
+            item_value = Var.create(value)  # type: ignore
+            item_value = rx.cond(
+                item_value._type() == str,  # type: ignore
+                item_value,
+                item_value.to_string()._replace(_var_is_local=False),  # type: ignore
+            )._replace(_var_type=str)
+
             return Text.create(
                 Flex.create(
-                    RadioGroupItem.create(value=value),
-                    value,
+                    RadioGroupItem.create(value=item_value),
+                    item_value,
                     gap="2",
                 ),
                 size=size,
                 as_="label",
             )
 
-        if isinstance(items, Var):
-            child = [rx.foreach(items, radio_group_item)]
-        else:
-            child = [radio_group_item(value) for value in items]  #  type: ignore
+        items = Var.create(items)  # type: ignore
+        children = [rx.foreach(items, radio_group_item)]
 
         return RadioGroupRoot.create(
             Flex.create(
-                *child,
+                *children,
                 direction=direction,
                 gap=gap,
             ),
             size=size,
+            default_value=default_value,
             **props,
         )
