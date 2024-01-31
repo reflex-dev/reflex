@@ -6,6 +6,7 @@ from reflex.components.component import Component
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.vars import Var
+from reflex.constants import EventTriggers
 
 from ..base import (
     LiteralAccentColor,
@@ -62,7 +63,7 @@ class RadioGroupRoot(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_value_change": lambda e0: [e0],
+            EventTriggers.ON_VALUE_CHANGE: lambda e0: [e0],
         }
 
 

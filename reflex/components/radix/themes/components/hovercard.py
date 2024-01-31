@@ -3,6 +3,7 @@ from typing import Any, Dict, Literal
 
 from reflex import el
 from reflex.vars import Var
+from reflex.constants import EventTriggers
 
 from ..base import (
     RadixThemesComponent,
@@ -34,7 +35,7 @@ class HoverCardRoot(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: [e0],
+            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
         }
 
 

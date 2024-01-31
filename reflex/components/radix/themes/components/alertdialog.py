@@ -1,6 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
+from reflex.constants import EventTriggers
 from reflex import el
 from reflex.vars import Var
 
@@ -25,7 +26,7 @@ class AlertDialogRoot(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: [e0],
+            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
         }
 
 
@@ -54,9 +55,9 @@ class AlertDialogContent(el.Div, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_auto_focus": lambda e0: [e0],
-            "on_close_auto_focus": lambda e0: [e0],
-            "on_escape_key_down": lambda e0: [e0],
+            EventTriggers.ON_OPEN_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
         }
 
 
