@@ -5,12 +5,11 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
+class TableRoot(el.Table, RadixThemesComponent):
     """A semantic table for presenting tabular data."""
 
     tag = "Table.Root"
@@ -22,13 +21,13 @@ class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
     variant: Var[Literal["surface", "ghost"]]
 
 
-class TableHeader(el.Thead, CommonMarginProps, RadixThemesComponent):
+class TableHeader(el.Thead, RadixThemesComponent):
     """The header of the table defines column names and other non-data elements."""
 
     tag = "Table.Header"
 
 
-class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
+class TableRow(el.Tr, RadixThemesComponent):
     """A row containing table cells."""
 
     tag = "Table.Row"
@@ -37,7 +36,7 @@ class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
     align: Var[Literal["start", "center", "end", "baseline"]]
 
 
-class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
+class TableColumnHeaderCell(el.Th, RadixThemesComponent):
     """A table cell that is semantically treated as a column header."""
 
     tag = "Table.ColumnHeaderCell"
@@ -49,13 +48,13 @@ class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
     width: Var[Union[str, int]]
 
 
-class TableBody(el.Tbody, CommonMarginProps, RadixThemesComponent):
+class TableBody(el.Tbody, RadixThemesComponent):
     """The body of the table contains the data rows."""
 
     tag = "Table.Body"
 
 
-class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
+class TableCell(el.Td, RadixThemesComponent):
     """A cell containing data."""
 
     tag = "Table.Cell"
@@ -67,7 +66,7 @@ class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
     width: Var[Union[str, int]]
 
 
-class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
+class TableRowHeaderCell(el.Th, RadixThemesComponent):
     """A table cell that is semantically treated as a row header."""
 
     tag = "Table.RowHeaderCell"

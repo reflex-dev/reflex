@@ -4,12 +4,11 @@ from typing import Any, Dict, Literal
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class TabsRoot(CommonMarginProps, RadixThemesComponent):
+class TabsRoot(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.Root"
@@ -38,13 +37,13 @@ class TabsRoot(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class TabsList(CommonMarginProps, RadixThemesComponent):
+class TabsList(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.List"
 
 
-class TabsTrigger(CommonMarginProps, RadixThemesComponent):
+class TabsTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.Trigger"
@@ -56,7 +55,7 @@ class TabsTrigger(CommonMarginProps, RadixThemesComponent):
     disabled: Var[bool]
 
 
-class TabsContent(CommonMarginProps, RadixThemesComponent):
+class TabsContent(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.Content"

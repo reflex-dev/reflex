@@ -5,12 +5,11 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class PopoverRoot(CommonMarginProps, RadixThemesComponent):
+class PopoverRoot(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Popover.Root"
@@ -33,13 +32,13 @@ class PopoverRoot(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class PopoverTrigger(CommonMarginProps, RadixThemesComponent):
+class PopoverTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Popover.Trigger"
 
 
-class PopoverContent(el.Div, CommonMarginProps, RadixThemesComponent):
+class PopoverContent(el.Div, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Popover.Content"
@@ -79,7 +78,7 @@ class PopoverContent(el.Div, CommonMarginProps, RadixThemesComponent):
         }
 
 
-class PopoverClose(CommonMarginProps, RadixThemesComponent):
+class PopoverClose(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Popover.Close"

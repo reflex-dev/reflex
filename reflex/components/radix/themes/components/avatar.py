@@ -4,7 +4,6 @@ from typing import Literal
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
     LiteralSize,
@@ -12,7 +11,7 @@ from ..base import (
 )
 
 
-class Avatar(CommonMarginProps, RadixThemesComponent):
+class Avatar(RadixThemesComponent):
     """An image element with a fallback for representing the user."""
 
     tag = "Avatar"
