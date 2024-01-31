@@ -83,7 +83,6 @@ class DialogRoot(RadixThemesComponent):
             ]
         ] = None,
         open: Optional[Union[Var[bool], bool]] = None,
-        modal: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -150,7 +149,6 @@ class DialogRoot(RadixThemesComponent):
             color: map to CSS default color property.
             color_scheme: map to radix color property.
             open: The controlled open state of the dialog.
-            modal: The modality of the dialog. When set to true, interaction with outside elements will be disabled and only dialog content will be visible to screen readers.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

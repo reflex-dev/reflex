@@ -1,10 +1,10 @@
 """A AspectRatio component."""
 
-from reflex.components.chakra.layout.base import ChakraLayoutComponent
+from reflex.components.chakra import ChakraComponent
 from reflex.vars import Var
 
 
-class AspectRatio(ChakraLayoutComponent):
+class AspectRatio(ChakraComponent):
     """AspectRatio component is used to embed responsive videos and maps, etc."""
 
     tag = "AspectRatio"

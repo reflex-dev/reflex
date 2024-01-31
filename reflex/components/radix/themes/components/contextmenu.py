@@ -50,7 +50,7 @@ class ContextMenuContent(RadixThemesComponent):
     variant: Var[Literal["solid", "soft"]]
 
     # Override theme color for button
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the button with higher contrast color against background
     high_contrast: Var[bool]
@@ -121,7 +121,7 @@ class ContextMenuItem(RadixThemesComponent):
     tag = "ContextMenu.Item"
 
     # Override theme color for button
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Shortcut to render a menu item as a link
     shortcut: Var[str]

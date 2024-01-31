@@ -8,13 +8,7 @@ from reflex.components.core.foreach import Foreach
 from reflex.vars import Var
 
 
-class BaseList(ChakraComponent):
-    """The base class for all Chakra list components."""
-
-    library = "@chakra-ui/layout@2.3.1"
-
-
-class List(BaseList):
+class List(ChakraComponent):
     """Display a list of items."""
 
     tag = "List"
@@ -50,7 +44,7 @@ class List(BaseList):
         return super().create(*children, **props)
 
 
-class ListItem(BaseList):
+class ListItem(ChakraComponent):
     """A single list item."""
 
     tag = "ListItem"

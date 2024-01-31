@@ -1118,7 +1118,7 @@ class HighLevelSelect(SelectRoot):
         items: Optional[Union[Var[List[str]], List[str]]] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
         label: Optional[Union[Var[str], str]] = None,
-        color: Optional[
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -1270,7 +1270,7 @@ class HighLevelSelect(SelectRoot):
             items: The items of the select.
             placeholder: The placeholder of the select.
             label: The label of the select.
-            color: The color of the select.
+            color_scheme: The color of the select.
             high_contrast: Whether to render the select with higher contrast color against background.
             variant: The variant of the select.
             radius: The radius of the select.

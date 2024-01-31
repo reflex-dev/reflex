@@ -413,6 +413,9 @@ class Textarea(BaseHTML):
     # Visible number of lines in the text control
     rows: Var[Union[str, int, bool]]
 
+    # The controlled value of the textarea, read only unless used with on_change
+    value: Var[Union[str, int, bool]]
+
     # How the text in the textarea is to be wrapped when submitting the form
     wrap: Var[Union[str, int, bool]]
 

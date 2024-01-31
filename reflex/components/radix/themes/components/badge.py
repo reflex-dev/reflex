@@ -23,7 +23,7 @@ class Badge(el.Span, RadixThemesComponent):
     size: Var[Literal["1", "2"]]
 
     # Color theme of the badge
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the badge with higher contrast color against background
     high_contrast: Var[bool]

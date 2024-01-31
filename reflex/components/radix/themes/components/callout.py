@@ -9,9 +9,10 @@ from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
-    LiteralVariant,
     RadixThemesComponent,
 )
+
+CalloutVariant = Literal["soft", "surface", "outline"]
 
 
 class CalloutRoot(el.Div, RadixThemesComponent):
@@ -22,14 +23,14 @@ class CalloutRoot(el.Div, RadixThemesComponent):
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
 
-    # Button size "1" - "4"
+    # Size "1" - "3"
     size: Var[Literal["1", "2", "3"]]
 
-    # Variant of button: "solid" | "soft" | "outline" | "ghost"
-    variant: Var[LiteralVariant]
+    # Variant of button: "soft" | "surface" | "outline"
+    variant: Var[CalloutVariant]
 
     # Override theme color for button
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the button with higher contrast color against background
     high_contrast: Var[bool]
@@ -74,6 +75,3 @@ class Callout(CalloutRoot):
             CalloutText.create(text),
             **props,
         )
-
-
-callout = Callout.create

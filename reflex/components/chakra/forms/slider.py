@@ -11,13 +11,7 @@ from reflex.vars import Var
 LiteralLayout = Literal["horizontal", "vertical"]
 
 
-class BaseSlider(ChakraComponent):
-    """Base componemt of all chakra sliders."""
-
-    library = "@chakra-ui/slider@2.1.0"
-
-
-class Slider(BaseSlider):
+class Slider(ChakraComponent):
     """The wrapper that provides context and functionality for all children."""
 
     tag = "Slider"
@@ -112,19 +106,19 @@ class Slider(BaseSlider):
         return super().create(*children, **props)
 
 
-class SliderTrack(BaseSlider):
+class SliderTrack(ChakraComponent):
     """The empty part of the slider that shows the track."""
 
     tag = "SliderTrack"
 
 
-class SliderFilledTrack(BaseSlider):
+class SliderFilledTrack(ChakraComponent):
     """The filled part of the slider."""
 
     tag = "SliderFilledTrack"
 
 
-class SliderThumb(BaseSlider):
+class SliderThumb(ChakraComponent):
     """The handle that's used to change the slider value."""
 
     tag = "SliderThumb"
@@ -133,7 +127,7 @@ class SliderThumb(BaseSlider):
     box_size: Var[str]
 
 
-class SliderMark(BaseSlider):
+class SliderMark(ChakraComponent):
     """The label or mark that shows names for specific slider values."""
 
     tag = "SliderMark"

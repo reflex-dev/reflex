@@ -8,10 +8,10 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import List
-from reflex.components.chakra.layout.base import ChakraLayoutComponent
+from reflex.components.chakra import ChakraComponent
 from reflex.vars import Var
 
-class Grid(ChakraLayoutComponent):
+class Grid(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -104,7 +104,7 @@ class Grid(ChakraLayoutComponent):
         """
         ...
 
-class GridItem(ChakraLayoutComponent):
+class GridItem(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -197,7 +197,7 @@ class GridItem(ChakraLayoutComponent):
         """
         ...
 
-class ResponsiveGrid(ChakraLayoutComponent):
+class ResponsiveGrid(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore

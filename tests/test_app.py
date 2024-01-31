@@ -1222,7 +1222,7 @@ def test_app_wrap_compile_theme(compilable_app):
         "function AppWrap({children}) {"
         "return ("
         "<RadixThemesColorModeProvider>"
-        "<RadixThemesTheme accentColor={`plum`}>"
+        "<RadixThemesTheme accentColor={`plum`} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
@@ -1251,7 +1251,7 @@ def test_app_wrap_priority(compilable_app):
         tag = "Fragment2"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(45, "Text"): Text.create()}
+            return {(50, "Text"): Text.create()}
 
     class Fragment3(Component):
         tag = "Fragment3"

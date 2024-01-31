@@ -43,7 +43,7 @@ class Heading(el.H1, RadixThemesComponent):
     trim: Var[LiteralTextTrim]
 
     # Overrides the accent color inherited from the Theme.
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the text with higher contrast color
     high_contrast: Var[bool]

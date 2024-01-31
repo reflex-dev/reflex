@@ -27,3 +27,5 @@ jobs:
       - run: |
           poetry run pip install pre-commit
           poetry run pre-commit run --all-files
+        env:
+          SKIP: update-pyi-files

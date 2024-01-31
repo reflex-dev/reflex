@@ -23,7 +23,7 @@ class Avatar(RadixThemesComponent):
     size: Var[LiteralSize]
 
     # Color theme of the avatar
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the avatar with higher contrast color against background
     high_contrast: Var[bool]

@@ -17,9 +17,6 @@ class DialogRoot(RadixThemesComponent):
     # The controlled open state of the dialog.
     open: Var[bool]
 
-    # The modality of the dialog. When set to true, interaction with outside elements will be disabled and only dialog content will be visible to screen readers.
-    modal: Var[bool]
-
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 

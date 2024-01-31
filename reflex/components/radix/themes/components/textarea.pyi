@@ -32,7 +32,7 @@ class TextArea(RadixThemesComponent, el.Textarea):
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
-        color: Optional[
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -125,6 +125,9 @@ class TextArea(RadixThemesComponent, el.Textarea):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         rows: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        value: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
         wrap: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
@@ -237,7 +240,7 @@ class TextArea(RadixThemesComponent, el.Textarea):
             *children: The children of the component.
             size: The size of the text area: "1" | "2" | "3"
             variant: The variant of the text area
-            color: The color of the text area
+            color_scheme: The color of the text area
             auto_complete: Whether the form control should have autocomplete enabled
             auto_focus: Automatically focuses the textarea when the page loads
             cols: Visible width of the text control, in average character widths
@@ -251,6 +254,7 @@ class TextArea(RadixThemesComponent, el.Textarea):
             read_only: Indicates whether the textarea is read-only
             required: Indicates that the textarea is required
             rows: Visible number of lines in the text control
+            value: The controlled value of the textarea, read only unless used with on_change
             wrap: How the text in the textarea is to be wrapped when submitting the form
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.

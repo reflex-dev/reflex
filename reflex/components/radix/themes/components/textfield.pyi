@@ -333,7 +333,7 @@ class TextFieldInput(el.Input, TextFieldRoot):
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
-        color: Optional[
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -544,7 +544,7 @@ class TextFieldInput(el.Input, TextFieldRoot):
             value: Value of the input
             width: The width of the input (only for type="image")
             variant: Variant of text field: "classic" | "surface" | "soft"
-            color: Override theme color for text field
+            color_scheme: Override theme color for text field
             radius: Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
@@ -744,7 +744,7 @@ class Input(RadixThemesComponent):
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
-        color: Optional[
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -889,7 +889,7 @@ class Input(RadixThemesComponent):
             icon: The icon to render before the input.
             size: Text field size "1" - "3"
             variant: Variant of text field: "classic" | "surface" | "soft"
-            color: Override theme color for text field
+            color_scheme: Override theme color for text field
             radius: Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
             auto_complete: Whether the input should have autocomplete enabled
             default_value: The value of the input when initially rendered.

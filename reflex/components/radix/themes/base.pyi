@@ -7,8 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Literal
+from typing import Any, Literal
 from reflex.components import Component
+from reflex.components.tags import Tag
 from reflex.utils import imports
 from reflex.vars import Var
 
@@ -321,6 +322,8 @@ class RadixThemesComponent(Component):
             A new component instance.
         """
         ...
+    @classmethod
+    def get_fields(cls) -> dict[str, Any]: ...
 
 class Theme(RadixThemesComponent):
     @overload

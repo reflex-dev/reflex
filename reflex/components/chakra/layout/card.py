@@ -12,31 +12,25 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class BaseCard(ChakraComponent):
-    """The base class for all Chakra Card components."""
-
-    library = "@chakra-ui/card@2.2.0"
-
-
-class CardHeader(BaseCard):
+class CardHeader(ChakraComponent):
     """The wrapper that contains a card's header."""
 
     tag = "CardHeader"
 
 
-class CardBody(BaseCard):
+class CardBody(ChakraComponent):
     """The wrapper that houses the card's main content."""
 
     tag = "CardBody"
 
 
-class CardFooter(BaseCard):
+class CardFooter(ChakraComponent):
     """The footer that houses the card actions."""
 
     tag = "CardFooter"
 
 
-class Card(BaseCard):
+class Card(ChakraComponent):
     """The parent wrapper that provides context for its children."""
 
     tag = "Card"

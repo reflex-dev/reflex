@@ -14,13 +14,7 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class BaseMenu(ChakraComponent):
-    """The base class for all Chakra menu components."""
-
-    library = "@chakra-ui/menu@2.2.1"
-
-
-class Menu(BaseMenu):
+class Menu(ChakraComponent):
     """The wrapper component provides context, state, and focus management."""
 
     tag = "Menu"
@@ -118,7 +112,7 @@ class Menu(BaseMenu):
         return super().create(*children, **props)
 
 
-class MenuButton(BaseMenu):
+class MenuButton(ChakraComponent):
     """The trigger for the menu list. Must be a direct child of Menu."""
 
     tag = "MenuButton"
@@ -133,7 +127,7 @@ class MenuButton(BaseMenu):
     as_: Var[str]
 
 
-class MenuList(BaseMenu):
+class MenuList(ChakraComponent):
     """The wrapper for the menu items. Must be a direct child of Menu."""
 
     tag = "MenuList"
@@ -160,7 +154,7 @@ class MenuList(BaseMenu):
         return super().create(*children, **props)
 
 
-class MenuItem(BaseMenu):
+class MenuItem(ChakraComponent):
     """The trigger that handles menu selection. Must be a direct child of a MenuList."""
 
     tag = "MenuItem"
@@ -181,7 +175,7 @@ class MenuItem(BaseMenu):
     is_focusable: Var[bool]
 
 
-class MenuItemOption(BaseMenu):
+class MenuItemOption(ChakraComponent):
     """The checkable menu item, to be used with MenuOptionGroup."""
 
     tag = "MenuItemOption"
@@ -211,13 +205,13 @@ class MenuItemOption(BaseMenu):
     value: Var[str]
 
 
-class MenuGroup(BaseMenu):
+class MenuGroup(ChakraComponent):
     """A wrapper to group related menu items."""
 
     tag = "MenuGroup"
 
 
-class MenuOptionGroup(BaseMenu):
+class MenuOptionGroup(ChakraComponent):
     """A wrapper for checkable menu items (radio and checkbox)."""
 
     tag = "MenuOptionGroup"
@@ -229,7 +223,7 @@ class MenuOptionGroup(BaseMenu):
     value: Var[str]
 
 
-class MenuDivider(BaseMenu):
+class MenuDivider(ChakraComponent):
     """A visual separator for menu items and groups."""
 
     tag = "MenuDivider"
