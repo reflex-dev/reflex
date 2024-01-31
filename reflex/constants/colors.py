@@ -55,10 +55,10 @@ class Color:
 
     def __format__(self, format_spec: str) -> str:
         """Format the color as a CSS color string.
-    
+
         Args:
             format_spec (str): The format specification for the color string.
-            
+
         Returns:
             str: The CSS color string
         """
@@ -66,4 +66,3 @@ class Color:
             return f"var(--{self.color}-a{self.shade})"
         else:
             return f"var(--{self.color}-{self.shade})"
-    
