@@ -2,6 +2,7 @@
 from typing import Any, Dict, Literal
 
 from reflex.vars import Var
+from reflex.constants import EventTriggers
 
 from ..base import (
     RadixThemesComponent,
@@ -33,7 +34,7 @@ class TabsRoot(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_value_change": lambda e0: [e0],
+            EventTriggers.ON_VALUE_CHANGE: lambda e0: [e0],
         }
 
 

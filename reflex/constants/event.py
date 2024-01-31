@@ -83,6 +83,7 @@ class EventTriggers(SimpleNamespace):
     ON_OPEN_CHANGE = "on_open_change"
     ON_OPEN_AUTO_FOCUS = "on_open_auto_focus"
     ON_CLOSE_AUTO_FOCUS = "on_close_auto_focus"
+    ON_FOCUS_OUTSIDE = "on_focus_outside"
     ON_ESCAPE_KEY_DOWN = "on_escape_key_down"
     ON_POINTER_DOWN_OUTSIDE = "on_pointer_down_outside"
     ON_INTERACT_OUTSIDE = "on_interact_outside"
@@ -91,3 +92,5 @@ class EventTriggers(SimpleNamespace):
     ON_MOUNT = "on_mount"
     ON_UNMOUNT = "on_unmount"
     ON_CLEAR_SERVER_ERRORS = "on_clear_server_errors"
+    ON_VALUE_CHANGE = "on_value_change"
+    ON_VALUE_COMMIT = "on_value_commit"

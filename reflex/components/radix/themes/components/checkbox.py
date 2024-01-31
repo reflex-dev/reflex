@@ -5,6 +5,7 @@ from reflex.components.component import Component
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.vars import Var
+from reflex.constants import EventTriggers
 
 from ..base import (
     LiteralAccentColor,
@@ -62,7 +63,7 @@ class Checkbox(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_checked_change": lambda e0: [e0],
+            EventTriggers.ON_CHECKED_CHANGE: lambda e0: [e0],
         }
 
 
