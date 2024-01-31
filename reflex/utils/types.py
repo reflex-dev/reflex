@@ -95,7 +95,7 @@ def is_literal(cls: GenericType) -> bool:
     return get_origin(cls) is Literal
 
 
-def get_literal_types(cls: GenericType) -> Tuple[Type]:
+def get_literal_types(cls: GenericType) -> Tuple[Type, ...]:  # type: ignore
     """Obtain the types in a literal.
 
     Args:
