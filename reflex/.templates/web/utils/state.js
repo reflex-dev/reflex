@@ -154,19 +154,14 @@ export const applyEvent = async (event, socket) => {
   }
 
   if (event.name == "_download") {
-    console.log("Download event triggered with payload:", event.payload);
     const a = document.createElement('a');
     a.hidden = true;
-    // a.href = event.payload.url;
     let url = event.payload.url
     if (event.payload.data !== undefined) {
       url = URL.createObjectURL(new Blob([event.payload.data]));
     }
     a.href = url
-    console.log("Anchor element created with href:", a.href);
-    if (event.payload.filename)
-      a.download = event.payload.filename;
-      console.log("Download attribute set with filename:", a.download);
+    a.download = event.payload.filename;
     a.click();
     a.remove();
     if (event.payload.data !== undefined) {

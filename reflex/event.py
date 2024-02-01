@@ -552,7 +552,11 @@ def set_clipboard(content: str) -> EventSpec:
     )
 
 
-def download(url: str | Var | None = None, filename: Optional[str | Var] = None, data: str | None = None) -> EventSpec:
+def download(
+    url: str | Var | None = None,
+    filename: Optional[str | Var] = None,
+    data: str | None = None,
+) -> EventSpec:
     """Download the file at a given path.
 
     Args:
@@ -566,9 +570,6 @@ def download(url: str | Var | None = None, filename: Optional[str | Var] = None,
     Returns:
         EventSpec: An event to download the associated file.
     """
-    if isinstance(url, Var) and filename is None:
-        filename = ""
-
     if isinstance(url, str):
         if not url.startswith("/"):
             raise ValueError("The URL argument should start with a /")
@@ -576,32 +577,17 @@ def download(url: str | Var | None = None, filename: Optional[str | Var] = None,
         # if filename is not provided, infer it from url
         if filename is None:
             filename = url.rpartition("/")[-1]
-    
-    if url is None:
-        if filename is None:
-            filename = "download.txt"
 
-        return server_side(
-            "_download",
-            get_fn_signature(download),
-            filename=filename,
-            data=data,
-        )
+    if filename is None:
+        filename = ""
 
-    if data is None:
-        return server_side(
-            "_download",
-            get_fn_signature(download),
-            url=url,
-            filename=filename,
-        )
+    args = {"url": url, "filename": filename, "data": data}
+    filtered_args = {k: v for k, v in args.items() if v is not None}
 
     return server_side(
         "_download",
         get_fn_signature(download),
-        url=url,
-        filename=filename,
-        data=data,
+        **filtered_args,
     )
 
 
