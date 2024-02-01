@@ -185,6 +185,7 @@ class App(Base):
         # Set up the API.
         self.api = FastAPI()
         self.add_cors()
+        self.add_default_endpoints()
 
         if self.state:
             # Set up the state manager.
@@ -241,9 +242,12 @@ class App(Base):
         return self.api
 
     def add_default_endpoints(self):
-        """Add the default endpoints."""
+        """Add default api endpoints (ping)"""
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
+
+    def add_optional_endpoints(self):
+        """Add optional api endpoints (_upload)"""
 
         # To upload files.
         if Upload.is_used:
@@ -655,8 +659,8 @@ class App(Base):
         if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
 
-        # Add the default endpoints, ping and _upload (if used)
-        self.add_default_endpoints()
+        # Add the optional endpoints (_upload)
+        self.add_optional_endpoints()
 
         if not self._should_compile():
             return
