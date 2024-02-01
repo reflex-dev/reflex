@@ -41,7 +41,7 @@ def UploadFile():
 
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=UploadState.router.session.client_token,
                 is_read_only=True,
                 id="token",

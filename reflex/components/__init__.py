@@ -10,7 +10,7 @@ from .gridjs import *
 from .lucide import icon
 from .markdown import *
 from .moment import *
-from .next import NextLink, next_link, image
+from .next import NextLink, image, next_link
 from .plotly import *
 from .radix import *
 from .react_player import *

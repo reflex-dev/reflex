@@ -27,28 +27,28 @@ def FormSubmit():
     @app.add_page
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=FormState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
             rx.form(
                 rx.vstack(
-                    rx.input(id="name_input"),
-                    rx.hstack(rx.pin_input(length=4, id="pin_input")),
-                    rx.number_input(id="number_input"),
+                    rx.chakra.input(id="name_input"),
+                    rx.hstack(rx.chakra.pin_input(length=4, id="pin_input")),
+                    rx.chakra.number_input(id="number_input"),
                     rx.checkbox(id="bool_input"),
                     rx.switch(id="bool_input2"),
                     rx.checkbox(id="bool_input3"),
                     rx.switch(id="bool_input4"),
                     rx.slider(id="slider_input"),
-                    rx.range_slider(id="range_input"),
+                    rx.chakra.range_slider(id="range_input"),
                     rx.radio_group(["option1", "option2"], id="radio_input"),
                     rx.radio_group(FormState.var_options, id="radio_input_var"),
                     rx.select(["option1", "option2"], id="select_input"),
                     rx.select(FormState.var_options, id="select_input_var"),
                     rx.text_area(id="text_area_input"),
-                    rx.input(
+                    rx.chakra.input(
                         id="debounce_input",
                         debounce_timeout=0,
                         on_change=rx.console_log,
@@ -80,35 +80,35 @@ def FormSubmitName():
     @app.add_page
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=FormState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
             rx.form(
                 rx.vstack(
-                    rx.input(name="name_input"),
-                    rx.hstack(rx.pin_input(length=4, name="pin_input")),
-                    rx.number_input(name="number_input"),
+                    rx.chakra.input(name="name_input"),
+                    rx.hstack(rx.chakra.pin_input(length=4, name="pin_input")),
+                    rx.chakra.number_input(name="number_input"),
                     rx.checkbox(name="bool_input"),
                     rx.switch(name="bool_input2"),
                     rx.checkbox(name="bool_input3"),
                     rx.switch(name="bool_input4"),
                     rx.slider(name="slider_input"),
-                    rx.range_slider(name="range_input"),
+                    rx.chakra.range_slider(name="range_input"),
                     rx.radio_group(FormState.options, name="radio_input"),
                     rx.select(FormState.options, name="select_input"),
                     rx.text_area(name="text_area_input"),
-                    rx.input_group(
-                        rx.input_left_element(rx.icon(tag="chevron_right")),
-                        rx.input(
+                    rx.chakra.input_group(
+                        rx.chakra.input_left_element(rx.icon(tag="chevron_right")),
+                        rx.chakra.input(
                             name="debounce_input",
                             debounce_timeout=0,
                             on_change=rx.console_log,
                         ),
-                        rx.input_right_element(rx.icon(tag="chevron_left")),
+                        rx.chakra.input_right_element(rx.icon(tag="chevron_left")),
                     ),
-                    rx.button_group(
+                    rx.chakra.button_group(
                         rx.button("Submit", type_="submit"),
                         rx.icon_button(FormState.val, icon=rx.icon(tag="add")),
                         variant="outline",

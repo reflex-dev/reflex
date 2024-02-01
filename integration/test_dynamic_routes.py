@@ -35,13 +35,15 @@ def DynamicRoute():
 
     def index():
         return rx.fragment(
-            rx.input(
+            rx.chakra.input(
                 value=DynamicState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.input(value=DynamicState.page_id, is_read_only=True, id="page_id"),
-            rx.input(
+            rx.chakra.input(
+                value=DynamicState.page_id, is_read_only=True, id="page_id"
+            ),
+            rx.chakra.input(
                 value=DynamicState.router.page.raw_path,
                 is_read_only=True,
                 id="raw_path",
@@ -52,8 +54,8 @@ def DynamicRoute():
                 "next", href="/page/" + DynamicState.next_page, id="link_page_next"  # type: ignore
             ),
             rx.link("missing", href="/missing", id="link_missing"),
-            rx.list(
-                rx.foreach(DynamicState.order, lambda i: rx.list_item(rx.text(i))),  # type: ignore
+            rx.chakra.list(
+                rx.foreach(DynamicState.order, lambda i: rx.chakra.list_item(rx.text(i))),  # type: ignore
             ),
         )
 
