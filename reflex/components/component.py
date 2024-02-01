@@ -652,10 +652,7 @@ class Component(BaseComponent, ABC):
         """Replace the prop names in the render dictionary.
 
         Args:
-            render_dict: The render dictionary with all the component props and event handlers.
-
-        Returns:
-            None
+            rendered_dict: The render dictionary with all the component props and event handlers.
         """
         for ix, prop in enumerate(rendered_dict["props"]):
             for old_prop, new_prop in self._rename_props.items():
