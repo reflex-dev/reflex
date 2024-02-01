@@ -40,12 +40,6 @@ class TabsRoot(RadixThemesComponent):
             EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 
-    def render(self) -> dict:
-        """Render the component."""
-        render_dict = super().render()
-        self._replace_prop_names(render_dict)
-        return render_dict
-
 
 class TabsList(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""

@@ -72,9 +72,3 @@ class Slider(RadixThemesComponent):
             EventTriggers.ON_CHANGE: lambda e0: [e0],
             EventTriggers.ON_VALUE_COMMIT: lambda e0: [e0],
         }
-
-    def render(self) -> dict:
-        """Render the component."""
-        render_dict = super().render()
-        self._replace_prop_names(render_dict)
-        return render_dict

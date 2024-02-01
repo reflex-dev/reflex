@@ -12,15 +12,14 @@ import reflex as rx
 from reflex.components.component import Component
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.vars import Var
 from reflex.constants import EventTriggers
+from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralSize, RadixThemesComponent
 
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 
 class RadioGroupRoot(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
-    def render(self) -> dict: ...
     @overload
     @classmethod
     def create(  # type: ignore

@@ -21,7 +21,6 @@ LiteralSwitchSize = Literal["1", "2", "3", "4"]
 
 class Switch(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
-    def render(self) -> dict: ...
     @overload
     @classmethod
     def create(  # type: ignore
