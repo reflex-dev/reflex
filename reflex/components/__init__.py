@@ -7,9 +7,10 @@ from .component import NoSSRComponent as NoSSRComponent
 from .core import *
 from .datadisplay import *
 from .gridjs import *
+from .lucide import icon
 from .markdown import *
 from .moment import *
-from .next import NextLink, next_link
+from .next import NextLink, next_link, image
 from .plotly import *
 from .radix import *
 from .react_player import *

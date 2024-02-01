@@ -25,6 +25,7 @@ _ALL_COMPONENTS = [
     "debounce_input",
     # Base
     "fragment",
+    "image",
     "script",
     # Responsive
     "desktop_only",
@@ -75,6 +76,7 @@ _ALL_COMPONENTS = [
     "scroll_area",
     "section",
     "select",
+    "separator",
     # "separator" (divider?),
     "slider",
     "spacer",
@@ -98,6 +100,7 @@ _ALL_COMPONENTS = [
     "editor",
     "EditorButtonList",
     "EditorOptions",
+    "icon",
 ]
 
 _MAPPING = {
