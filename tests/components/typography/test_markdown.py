@@ -37,7 +37,7 @@ def test_set_component_map():
     """Test setting the component map."""
     component_map = {
         "h1": lambda value: rx.box(
-            rx.heading(value, as_="h1", size="2xl"), padding="1em"
+            rx.chakra.heading(value, as_="h1", size="2xl"), padding="1em"
         ),
         "p": lambda value: rx.box(rx.text(value), padding="1em"),
     }

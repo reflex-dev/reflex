@@ -471,12 +471,14 @@ def test_custom_component_wrapper():
             color=color,
         )
 
+    from reflex.components.radix.themes.typography.text import Text
+
     ccomponent = my_component(
         rx.text("child"), width=Var.create(1), color=Var.create("red")
     )
     assert isinstance(ccomponent, CustomComponent)
     assert len(ccomponent.children) == 1
-    assert isinstance(ccomponent.children[0], rx.Text)
+    assert isinstance(ccomponent.children[0], Text)
 
     component = ccomponent.get_component(ccomponent)
     assert isinstance(component, Box)
@@ -578,7 +580,7 @@ def test_unsupported_parent_components(component5):
         component5: component with valid parent of "Text" only
     """
     with pytest.raises(ValueError) as err:
-        rx.Box(children=[component5.create()])
+        rx.box(component5.create())
     assert (
         err.value.args[0]
         == f"The component `{component5.__name__}` can only be a child of the components: `{component5._valid_parents[0]}`. Got `Box` instead."
@@ -608,10 +610,10 @@ def test_component_with_only_valid_children(fixture, request):
 @pytest.mark.parametrize(
     "component,rendered",
     [
-        (rx.text("hi"), "<Text>\n  {`hi`}\n</Text>"),
+        (rx.text("hi"), "<RadixThemesText>\n  {`hi`}\n</RadixThemesText>"),
         (
-            rx.box(rx.heading("test", size="md")),
-            "<Box>\n  <Heading size={`md`}>\n  {`test`}\n</Heading>\n</Box>",
+            rx.box(rx.chakra.heading("test", size="md")),
+            "<RadixThemesBox>\n  <Heading size={`md`}>\n  {`test`}\n</Heading>\n</RadixThemesBox>",
         ),
     ],
 )

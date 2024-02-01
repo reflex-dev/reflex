@@ -14,6 +14,7 @@ from reflex.components import connection_banner as connection_banner
 from reflex.components import connection_modal as connection_modal
 from reflex.components import debounce_input as debounce_input
 from reflex.components import fragment as fragment
+from reflex.components import image as image
 from reflex.components import script as script
 from reflex.components import desktop_only as desktop_only
 from reflex.components import mobile_and_tablet as mobile_and_tablet
@@ -58,6 +59,7 @@ from reflex.components import radio_group as radio_group
 from reflex.components import scroll_area as scroll_area
 from reflex.components import section as section
 from reflex.components import select as select
+from reflex.components import separator as separator
 from reflex.components import slider as slider
 from reflex.components import spacer as spacer
 from reflex.components import switch as switch
@@ -77,6 +79,7 @@ from reflex.components import video as video
 from reflex.components import editor as editor
 from reflex.components import EditorButtonList as EditorButtonList
 from reflex.components import EditorOptions as EditorOptions
+from reflex.components import icon as icon
 from reflex.components.component import Component as Component
 from reflex.components.component import NoSSRComponent as NoSSRComponent
 from reflex.components.component import memo as memo
