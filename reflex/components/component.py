@@ -652,7 +652,6 @@ class Component(BaseComponent, ABC):
             autofocus=self.autofocus,
         )
         self._replace_prop_names(rendered_dict)
-        self._replace_prop_names(rendered_dict)
         return rendered_dict
 
     def _replace_prop_names(self, rendered_dict) -> None:
