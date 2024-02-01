@@ -68,9 +68,3 @@ class Switch(RadixThemesComponent):
             **super().get_event_triggers(),
             EventTriggers.ON_CHANGE: lambda checked: [checked],
         }
-
-    def render(self) -> dict:
-        """Render the component."""
-        render_dict = super().render()
-        self._replace_prop_names(render_dict)
-        return render_dict

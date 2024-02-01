@@ -648,9 +648,10 @@ class Component(BaseComponent, ABC):
             ),
             autofocus=self.autofocus,
         )
+        self._replace_prop_names(rendered_dict)
         return rendered_dict
 
-    def _replace_prop_names(self, render_dict) -> None:
+    def _replace_prop_names(self, rendered_dict) -> None:
         """Replace the prop names in the render dictionary.
 
         Args:
@@ -659,10 +660,10 @@ class Component(BaseComponent, ABC):
         Returns:
             None
         """
-        for ix, prop in enumerate(render_dict["props"]):
+        for ix, prop in enumerate(rendered_dict["props"]):
             for old_prop, new_prop in self._rename_props.items():
                 if prop.startswith(old_prop):
-                    render_dict["props"][ix] = prop.replace(old_prop, new_prop)
+                    rendered_dict["props"][ix] = prop.replace(old_prop, new_prop)
 
     def _validate_component_children(self, children: List[Component]):
         """Validate the children components.

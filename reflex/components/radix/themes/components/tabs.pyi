@@ -8,13 +8,12 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, Literal
-from reflex.vars import Var
 from reflex.constants import EventTriggers
+from reflex.vars import Var
 from ..base import RadixThemesComponent
 
 class TabsRoot(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
-    def render(self) -> dict: ...
     @overload
     @classmethod
     def create(  # type: ignore

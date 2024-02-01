@@ -8,8 +8,8 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, Literal
-from reflex.constants import EventTriggers
 from reflex import el
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import LiteralSize, RadixThemesComponent
 

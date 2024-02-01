@@ -10,15 +10,14 @@ from reflex.style import Style
 from typing import Any, Dict, List, Literal, Union
 import reflex as rx
 from reflex.components.component import Component
-from reflex.vars import Var
 from reflex.constants import EventTriggers
+from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 LiteralButtonSize = Literal[1, 2, 3, 4]
 
 class SelectRoot(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
-    def render(self) -> dict: ...
     @overload
     @classmethod
     def create(  # type: ignore

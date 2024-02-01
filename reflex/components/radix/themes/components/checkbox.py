@@ -66,20 +66,8 @@ class Checkbox(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            # "on_change": lambda e0: [e0],
             EventTriggers.ON_CHANGE: lambda e0: [e0],
-            # EventTriggers.ON_CHECKED_CHANGE: lambda e0: [e0],
         }
-
-    # class level attrbute of the names that you want to replace
-
-    def render(self) -> dict:
-        """Render the component."""
-        render_dict = super().render()
-        print(render_dict)
-        self._replace_prop_names(render_dict)
-        print(render_dict)
-        return render_dict
 
 
 class HighLevelCheckbox(Checkbox):
