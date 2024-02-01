@@ -19,7 +19,7 @@ LiteralSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 LiteralVariant = Literal["classic", "solid", "soft", "surface", "outline", "ghost"]
 LiteralAppearance = Literal["inherit", "light", "dark"]
 LiteralGrayColor = Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]
-LiteralPanelBackground = Literal["solid", "transparent"]
+LiteralPanelBackground = Literal["solid", "translucent"]
 LiteralRadius = Literal["none", "small", "medium", "large", "full"]
 LiteralScaling = Literal["90%", "95%", "100%", "105%", "110%"]
 LiteralAccentColor = Literal[
@@ -470,7 +470,7 @@ class Theme(RadixThemesComponent):
             ]
         ] = None,
         panel_background: Optional[
-            Union[Var[Literal["solid", "transparent"]], Literal["solid", "transparent"]]
+            Union[Var[Literal["solid", "translucent"]], Literal["solid", "translucent"]]
         ] = None,
         radius: Optional[
             Union[
@@ -546,13 +546,13 @@ class Theme(RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            has_background: Whether to apply the themes background color to the theme node.
-            appearance: Override light or dark mode theme: "inherit" | "light" | "dark"
+            has_background: Whether to apply the themes background color to the theme node. Defaults to True.
+            appearance: Override light or dark mode theme: "inherit" | "light" | "dark". Defaults to "inherit".
             accent_color: The color used for default buttons, typography, backgrounds, etc
-            gray_color: The shade of gray
-            panel_background: Whether panel backgrounds are transparent: "solid" | "transparent" (default)
-            radius: Element border radius: "none" | "small" | "medium" | "large" | "full"
-            scaling: Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%"
+            gray_color: The shade of gray, defaults to "auto".
+            panel_background: Whether panel backgrounds are translucent: "solid" | "translucent" (default)
+            radius: Element border radius: "none" | "small" | "medium" | "large" | "full". Defaults to "medium".
+            scaling: Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%". Defaults to "100%"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
