@@ -11,12 +11,14 @@ from typing import Any, Dict, List, Literal, Union
 import reflex as rx
 from reflex.components.component import Component
 from reflex.vars import Var
+from reflex.constants import EventTriggers
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 LiteralButtonSize = Literal[1, 2, 3, 4]
 
 class SelectRoot(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
+    def render(self) -> dict: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -100,8 +102,12 @@ class SelectRoot(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -149,9 +155,6 @@ class SelectRoot(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_value_change: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
         **props
     ) -> "SelectRoot":
         """Create a new component instance.
@@ -165,17 +168,18 @@ class SelectRoot(RadixThemesComponent):
             color_scheme: map to radix color property.
             size: The size of the select: "1" | "2" | "3"
             default_value: The value of the select when initially rendered. Use when you do not need to control the state of the select.
-            value: The controlled value of the select. Should be used in conjunction with on_value_change.
+            value: The controlled value of the select. Should be used in conjunction with on_change.
             default_open: The open state of the select when it is initially rendered. Use when you do not need to control its open state.
             open: The controlled open state of the select. Must be used in conjunction with on_open_change.
             name: The name of the select control when submitting the form.
             disabled: When True, prevents the user from interacting with select.
             required: When True, indicates that the user must select a value before the owning form can be submitted.
-            style: The style of the component.
+            style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -271,6 +275,7 @@ class SelectTrigger(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -336,6 +341,7 @@ class SelectTrigger(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -443,6 +449,7 @@ class SelectContent(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -521,6 +528,7 @@ class SelectContent(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -603,6 +611,7 @@ class SelectGroup(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -665,6 +674,7 @@ class SelectGroup(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -749,6 +759,7 @@ class SelectItem(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -813,6 +824,7 @@ class SelectItem(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -895,6 +907,7 @@ class SelectLabel(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -957,6 +970,7 @@ class SelectLabel(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -1039,6 +1053,7 @@ class SelectSeparator(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -1101,6 +1116,7 @@ class SelectSeparator(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -1209,8 +1225,12 @@ class HighLevelSelect(SelectRoot):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -1258,9 +1278,6 @@ class HighLevelSelect(SelectRoot):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_value_change: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
         **props
     ) -> "HighLevelSelect":
         """Create a select component.
@@ -1277,17 +1294,18 @@ class HighLevelSelect(SelectRoot):
             width: The width of the select.
             size: The size of the select: "1" | "2" | "3"
             default_value: The value of the select when initially rendered. Use when you do not need to control the state of the select.
-            value: The controlled value of the select. Should be used in conjunction with on_value_change.
+            value: The controlled value of the select. Should be used in conjunction with on_change.
             default_open: The open state of the select when it is initially rendered. Use when you do not need to control its open state.
             open: The controlled open state of the select. Must be used in conjunction with on_open_change.
             name: The name of the select control when submitting the form.
             disabled: When True, prevents the user from interacting with select.
             required: When True, indicates that the user must select a value before the owning form can be submitted.
-            style: The style of the component.
+            style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Additional properties to apply to the select component.
 

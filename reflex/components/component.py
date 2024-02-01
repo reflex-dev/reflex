@@ -155,8 +155,8 @@ class Component(BaseComponent, ABC):
     # only components that are allowed as children
     _valid_children: List[str] = []
 
-    # only components that are allowed as parent
-    _valid_parents: List[str] = []
+    # props to change the name of
+    _rename_props: Dict[str, str] = {}
 
     # custom attribute
     custom_attrs: Dict[str, Union[Var, str]] = {}
@@ -647,6 +647,20 @@ class Component(BaseComponent, ABC):
         )
         return rendered_dict
 
+    def _replace_prop_names(self, render_dict) -> None:
+        """Replace the prop names in the render dictionary.
+
+        Args:
+            render_dict: The render dictionary with all the component props and event handlers.
+
+        Returns:
+            None
+        """
+        for ix, prop in enumerate(render_dict["props"]):
+            for old_prop, new_prop in self._rename_props.items():
+                if prop.startswith(old_prop):
+                    render_dict["props"][ix] = prop.replace(old_prop, new_prop)
+
     def _validate_component_children(self, children: List[Component]):
         """Validate the children components.
 
@@ -654,8 +668,7 @@ class Component(BaseComponent, ABC):
             children: The children of the component.
 
         """
-        skip_parentable = all(child._valid_parents == [] for child in children)
-        if not self._invalid_children and not self._valid_children and skip_parentable:
+        if not self._invalid_children and not self._valid_children:
             return
 
         comp_name = type(self).__name__
@@ -675,15 +688,6 @@ class Component(BaseComponent, ABC):
                     f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
                 )
 
-        def validate_vaild_parent(child_name, valid_parents):
-            if comp_name not in valid_parents:
-                valid_parent_list = ", ".join(
-                    [f"`{v_parent}`" for v_parent in valid_parents]
-                )
-                raise ValueError(
-                    f"The component `{child_name}` can only be a child of the components: {valid_parent_list}. Got `{comp_name}` instead."
-                )
-
         for child in children:
             name = type(child).__name__
 
@@ -692,9 +696,6 @@ class Component(BaseComponent, ABC):
 
             if self._valid_children:
                 validate_valid_child(name)
-
-            if child._valid_parents:
-                validate_vaild_parent(name, child._valid_parents)
 
     @staticmethod
     def _get_vars_from_event_triggers(
@@ -739,7 +740,7 @@ class Component(BaseComponent, ABC):
                 vars.append(prop_var)
 
         # Style keeps track of its own VarData instance, so embed in a temp Var that is yielded.
-        if self.style:
+        if isinstance(self.style, dict) and self.style or isinstance(self.style, Var):
             vars.append(
                 BaseVar(
                     _var_name="style",

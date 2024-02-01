@@ -65,7 +65,6 @@ class EventTriggers(SimpleNamespace):
     ON_CHANGE = "on_change"
     ON_CHANGE_END = "on_change_end"
     ON_CHANGE_START = "on_change_start"
-    ON_CHECKED_CHANGE = "on_checked_change"
     ON_COMPLETE = "on_complete"
     ON_CONTEXT_MENU = "on_context_menu"
     ON_DOUBLE_CLICK = "on_double_click"
@@ -92,5 +91,4 @@ class EventTriggers(SimpleNamespace):
     ON_MOUNT = "on_mount"
     ON_UNMOUNT = "on_unmount"
     ON_CLEAR_SERVER_ERRORS = "on_clear_server_errors"
-    ON_VALUE_CHANGE = "on_value_change"
     ON_VALUE_COMMIT = "on_value_commit"

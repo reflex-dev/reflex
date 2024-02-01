@@ -4,8 +4,8 @@ from typing import Any, Dict, Literal
 from reflex.components.component import Component
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.vars import Var
 from reflex.constants import EventTriggers
+from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -55,6 +55,9 @@ class Checkbox(RadixThemesComponent):
     # The value of the checkbox control when submitting the form.
     value: Var[str]
 
+    # Props to rename
+    _rename_props = {"onChange": "onCheckedChange"}
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -63,8 +66,20 @@ class Checkbox(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            EventTriggers.ON_CHECKED_CHANGE: lambda e0: [e0],
+            # "on_change": lambda e0: [e0],
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
+            # EventTriggers.ON_CHECKED_CHANGE: lambda e0: [e0],
         }
+
+    # class level attrbute of the names that you want to replace
+
+    def render(self) -> dict:
+        """Render the component."""
+        render_dict = super().render()
+        print(render_dict)
+        self._replace_prop_names(render_dict)
+        print(render_dict)
+        return render_dict
 
 
 class HighLevelCheckbox(Checkbox):
@@ -95,7 +110,10 @@ class HighLevelCheckbox(Checkbox):
 
         return Text.create(
             Flex.create(
-                Checkbox.create(size=size, **props),
+                Checkbox.create(
+                    size=size,
+                    **props,
+                ),
                 text,
                 gap=gap,
             ),

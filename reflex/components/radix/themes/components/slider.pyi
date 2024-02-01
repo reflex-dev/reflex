@@ -9,10 +9,12 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Literal, Union
 from reflex.vars import Var
+from reflex.constants import EventTriggers
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 class Slider(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
+    def render(self) -> dict: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -120,8 +122,12 @@ class Slider(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -166,9 +172,6 @@ class Slider(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_value_change: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
         on_value_commit: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -196,11 +199,12 @@ class Slider(RadixThemesComponent):
             step: The step value of the slider.
             disabled: Whether the slider is disabled
             orientation: The orientation of the slider.
-            style: The style of the component.
+            style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
