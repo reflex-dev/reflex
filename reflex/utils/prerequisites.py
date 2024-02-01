@@ -10,6 +10,7 @@ import os
 import platform
 import random
 import re
+import shutil
 import stat
 import sys
 import tempfile
@@ -1229,3 +1230,125 @@ def fetch_app_templates() -> dict[str, str] | None:
     except (TypeError, KeyError, json.JSONDecodeError) as tkje:
         console.info(f"Unable to process server response for app templates: {tkje}")
         return None
+
+
+def validate_template(
+    template: str | None, template_name_to_url: dict[str, str]
+) -> str:
+    """Validate a given template name is valid or prompt user to select one.
+
+    Args:
+        template: The name of the template to validate. If None, user will be prompted to select a template.
+        template_name_to_url: The dictionary of template names to download URLs.
+
+    Raises:
+        Exit: If template is directly provided in the command flag and is invalid.
+
+    Returns:
+        A valid template name.
+    """
+    if template is not None:
+        # If user selects a template, it needs to exist
+        if (
+            template not in template_name_to_url
+            and template != constants.Templates.Kind.BLANK.value
+        ):
+            console.error(f"Template `{template}` not found.")
+            raise typer.Exit(1)
+    else:
+        template = prompt_for_template(list(template_name_to_url.keys()))
+        console.debug(f"User selected template: {template}")
+    return template
+
+
+def create_config_init_app_from_remote_template(
+    app_name: str, template: str, template_name_to_url: dict[str, str]
+):
+    """Create new rxconfig and initialize app using a remote template.
+
+    Args:
+        app_name: The name of the app.
+        template: A valid template name.
+        template_name_to_url: The dictionary of template names to download URLs.
+
+    Raises:
+        Exit: If any download, file operations fail or unexpected zip file format.
+
+    """
+    # Create a temp directory for the zip download
+    try:
+        temp_dir = tempfile.mkdtemp()
+    except OSError as ose:
+        console.error(f"Failed to create temp directory for download: {ose}")
+        raise typer.Exit(1) from ose
+    # Use httpx GET with redirects to download the zip file
+    zip_file_path = Path(temp_dir) / "template.zip"
+    try:
+        # Note: following redirects can be risky
+        response = httpx.get(template_name_to_url[template], follow_redirects=True)
+        console.debug(f"Server responded download request: {response}")
+        response.raise_for_status()
+    except httpx.HTTPError as he:
+        console.error(f"Failed to download the template: {he}")
+        raise typer.Exit(1) from he
+    try:
+        with open(zip_file_path, "wb") as f:
+            f.write(response.content)
+            console.debug(f"Downloaded the zip to {zip_file_path}")
+    except OSError as ose:
+        console.error(f"Unable to write the downloaded zip to disk {ose}")
+        raise typer.Exit(1) from ose
+
+    # Create a temp directory for the zip extraction
+    try:
+        unzip_dir = Path(tempfile.mkdtemp())
+    except OSError as ose:
+        console.error(f"Failed to create temp directory for extracting zip: {ose}")
+        raise typer.Exit(1) from ose
+    try:
+        zipfile.ZipFile(zip_file_path).extractall(path=unzip_dir)
+        # The zip file downloaded from github looks like
+        # repo-name-branch/**/*, so we need to remove the top level directory
+        if len(subdirs := os.listdir(unzip_dir)) != 1:
+            console.error(f"Expected one directory in the zip, found {subdirs}")
+            raise typer.Exit(1)
+        template_dir = unzip_dir / subdirs[0]
+        console.debug(f"Template folder is located at {template_dir}")
+    except Exception as uze:
+        console.error(f"Failed to unzip the template: {uze}")
+        raise typer.Exit(1) from uze
+
+    # Move the rxconfig file here first
+    path_ops.mv(str(template_dir / constants.Config.FILE), constants.Config.FILE)
+    new_config = get_config(reload=True)
+    # Get the template app's name from rxconfig in case it is different than
+    # the source code repo name on github
+    template_name = new_config.app_name
+
+    # Prompt for Reflex App name change
+    default_app_name = app_name
+    app_name = console.ask(
+        "Choose the name for your app. [Enter] to use default.",
+        default=default_app_name,
+    )
+    while True:
+        try:
+            validate_app_name(app_name)
+            break
+        except typer.Exit:
+            app_name = console.ask(
+                "Choose the name for your app. [Enter] to use default.",
+                default=default_app_name,
+            )
+    console.debug(f"Using App name {app_name}.")
+
+    create_config(app_name)
+    initialize_app_directory(
+        app_name,
+        template_name=template_name,
+        template_code_dir_name=template_name,
+        template_dir=template_dir,
+    )
+    # Clean up the temp directories
+    shutil.rmtree(temp_dir)
+    shutil.rmtree(unzip_dir)

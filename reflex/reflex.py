@@ -4,14 +4,10 @@ from __future__ import annotations
 
 import atexit
 import os
-import shutil
-import tempfile
 import webbrowser
-import zipfile
 from pathlib import Path
 from typing import List, Optional
 
-import httpx
 import typer
 import typer.core
 from reflex_cli.deployments import deployments_cli
@@ -20,7 +16,7 @@ from reflex_cli.utils import dependency
 from reflex import constants
 from reflex.config import get_config
 from reflex.custom_components.custom_components import custom_components_cli
-from reflex.utils import console, path_ops, telemetry
+from reflex.utils import console, telemetry
 
 # Disable typer+rich integration for help panels
 typer.core.rich = False  # type: ignore
@@ -98,111 +94,20 @@ def _init(
         # Fetch App templates from the backend server
         template_name_to_url = prerequisites.fetch_app_templates() or {}
         console.debug(f"Available templates: {template_name_to_url}")
-        if template is not None:
-            # If user selects a template, it needs to exist
-            if (
-                template not in template_name_to_url
-                and template != constants.Templates.Kind.BLANK.value
-            ):
-                console.error(f"Template `{template}` not found.")
-                raise typer.Exit(1)
-        else:
-            template = prerequisites.prompt_for_template(
-                list(template_name_to_url.keys())
-            )
-            console.debug(f"User selected template: {template}")
 
+        template = prerequisites.validate_template(
+            template=template, template_name_to_url=template_name_to_url
+        )
         if template == constants.Templates.Kind.BLANK.value:
             # Default app creation behavior: a blank app
             prerequisites.create_config(app_name)
             prerequisites.initialize_app_directory(app_name)
         else:
-            # TODO: curl the requirements.txt file first to check compatibility
-            # https://raw.githubusercontent.com/<owner>/<repo>/main/requirements.txt
-            # Create a temp directory for the zip download
-            try:
-                temp_dir = tempfile.mkdtemp()
-            except OSError as ose:
-                console.error(f"Failed to create temp directory for download: {ose}")
-                raise typer.Exit(1) from ose
-            # Use httpx GET with redirects to download the zip file
-            zip_file_path = Path(temp_dir) / "template.zip"
-            try:
-                # Note: following redirects can be risky
-                response = httpx.get(
-                    template_name_to_url[template], follow_redirects=True
-                )
-                console.debug(f"Server responded download request: {response}")
-                response.raise_for_status()
-            except httpx.HTTPError as he:
-                console.error(f"Failed to download the template: {he}")
-                raise typer.Exit(1) from he
-            try:
-                with open(zip_file_path, "wb") as f:
-                    f.write(response.content)
-                    console.debug(f"Downloaded the zip to {zip_file_path}")
-            except OSError as ose:
-                console.error(f"Unable to write the downloaded zip to disk {ose}")
-                raise typer.Exit(1) from ose
-
-            # Create a temp directory for the zip extraction
-            try:
-                unzip_dir = Path(tempfile.mkdtemp())
-            except OSError as ose:
-                console.error(
-                    f"Failed to create temp directory for extracting zip: {ose}"
-                )
-                raise typer.Exit(1) from ose
-            try:
-                zipfile.ZipFile(zip_file_path).extractall(path=unzip_dir)
-                # The zip file downloaded from github looks like
-                # repo-name-branch/**/*, so we need to remove the top level directory
-                if len(subdirs := os.listdir(unzip_dir)) != 1:
-                    console.error(f"Expected one directory in the zip, found {subdirs}")
-                    raise typer.Exit(1)
-                template_dir = unzip_dir / subdirs[0]
-                console.debug(f"Template folder is located at {template_dir}")
-            except Exception as uze:
-                console.error(f"Failed to unzip the template: {uze}")
-                raise typer.Exit(1) from uze
-
-            # Move the rxconfig file here first
-            path_ops.mv(
-                str(template_dir / constants.Config.FILE), constants.Config.FILE
+            prerequisites.create_config_init_app_from_remote_template(
+                app_name=app_name,
+                template=template,
+                template_name_to_url=template_name_to_url,
             )
-            new_config = get_config(reload=True)
-            # Get the template app's name from rxconfig in case it is different than
-            # the source code repo name on github
-            template_name = new_config.app_name
-
-            # Prompt for Reflex App name change
-            default_app_name = app_name
-            app_name = console.ask(
-                "Choose the name for your app. [Enter] to use default.",
-                default=default_app_name,
-            )
-            while True:
-                try:
-                    prerequisites.validate_app_name(app_name)
-                    break
-                except typer.Exit:
-                    app_name = console.ask(
-                        "Choose the name for your app. [Enter] to use default.",
-                        default=default_app_name,
-                    )
-            console.debug(f"Using App name {app_name}.")
-
-            prerequisites.create_config(app_name)
-            prerequisites.initialize_app_directory(
-                app_name,
-                template_name=template_name,
-                template_code_dir_name=template_name,
-                template_dir=template_dir,
-            )
-            # Clean up the temp directories
-            shutil.rmtree(temp_dir)
-            shutil.rmtree(unzip_dir)
-
         telemetry.send("init")
     else:
         telemetry_event = "reinit"
