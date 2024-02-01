@@ -55,6 +55,9 @@ class Switch(RadixThemesComponent):
     # Override theme radius for switch: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
 
+    # Props to rename
+    _rename_props = {"onChange": "onCheckedChange"}
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
 
@@ -63,5 +66,11 @@ class Switch(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            EventTriggers.ON_CHECKED_CHANGE: lambda checked: [checked],
+            EventTriggers.ON_CHANGE: lambda checked: [checked],
         }
+
+    def render(self) -> dict:
+        """Render the component."""
+        render_dict = super().render()
+        self._replace_prop_names(render_dict)
+        return render_dict

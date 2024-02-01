@@ -1,8 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
-from reflex.vars import Var
 from reflex.constants import EventTriggers
+from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,

@@ -21,6 +21,7 @@ LiteralSwitchSize = Literal["1", "2", "3", "4"]
 
 class Switch(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
+    def render(self) -> dict: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -117,11 +118,12 @@ class Switch(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_checked_change: Optional[
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -188,11 +190,12 @@ class Switch(RadixThemesComponent):
             variant: Variant of switch: "solid" | "soft" | "outline" | "ghost"
             high_contrast: Whether to render the switch with higher contrast color against background
             radius: Override theme radius for switch: "none" | "small" | "medium" | "large" | "full"
-            style: The style of the component.
+            style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 

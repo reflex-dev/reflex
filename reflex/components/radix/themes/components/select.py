@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Literal, Union
 
 import reflex as rx
 from reflex.components.component import Component
-from reflex.vars import Var
 from reflex.constants import EventTriggers
+from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -26,7 +26,7 @@ class SelectRoot(RadixThemesComponent):
     # The value of the select when initially rendered. Use when you do not need to control the state of the select.
     default_value: Var[str]
 
-    # The controlled value of the select. Should be used in conjunction with on_value_change.
+    # The controlled value of the select. Should be used in conjunction with on_change.
     value: Var[str]
 
     # The open state of the select when it is initially rendered. Use when you do not need to control its open state.
@@ -44,6 +44,9 @@ class SelectRoot(RadixThemesComponent):
     # When True, indicates that the user must select a value before the owning form can be submitted.
     required: Var[bool]
 
+    # Props to rename
+    _rename_props = {"onChange": "onValueChange"}
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -53,8 +56,14 @@ class SelectRoot(RadixThemesComponent):
         return {
             **super().get_event_triggers(),
             EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
-            EventTriggers.ON_VALUE_CHANGE: lambda e0: [e0],
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
+
+    def render(self) -> dict:
+        """Render the component."""
+        render_dict = super().render()
+        self._replace_prop_names(render_dict)
+        return render_dict
 
 
 class SelectTrigger(RadixThemesComponent):

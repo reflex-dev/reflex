@@ -1,8 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
-from reflex.vars import Var
 from reflex.constants import EventTriggers
+from reflex.vars import Var
 
 from ..base import (
     RadixThemesComponent,
@@ -26,6 +26,9 @@ class TabsRoot(RadixThemesComponent):
     # The orientation of the tabs.
     orientation: Var[Literal["horizontal", "vertical"]]
 
+    # Props to rename
+    _rename_props = {"onChange": "onValueChange"}
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -34,8 +37,14 @@ class TabsRoot(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            EventTriggers.ON_VALUE_CHANGE: lambda e0: [e0],
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
+
+    def render(self) -> dict:
+        """Render the component."""
+        render_dict = super().render()
+        self._replace_prop_names(render_dict)
+        return render_dict
 
 
 class TabsList(RadixThemesComponent):

@@ -2,8 +2,8 @@
 from typing import Any, Dict, Literal
 
 from reflex import el
-from reflex.vars import Var
 from reflex.constants import EventTriggers
+from reflex.vars import Var
 
 from ..base import (
     RadixThemesComponent,
