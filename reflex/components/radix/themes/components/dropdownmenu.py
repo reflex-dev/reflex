@@ -43,6 +43,8 @@ class DropdownMenuRoot(RadixThemesComponent):
     # The reading direction of submenus when applicable. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
     dir: Var[LiteralDirType]
 
+    _invalid_children = ["DropdownMenuItem"]
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -62,6 +64,10 @@ class DropdownMenuTrigger(RadixThemesComponent):
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
     as_child: Var[bool]
+
+    _valid_parents = ["DropdownMenuRoot"]
+
+    _invalid_children = ["DropdownMenuContent"]
 
 
 class DropdownMenuContent(RadixThemesComponent):
@@ -146,6 +152,8 @@ class DropdownMenuSubTrigger(RadixThemesComponent):
 
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
+
+    _valid_parents = ["DropdownMenuContent", "DropdownMenuSub"]
 
 
 class DropdownMenuSub(RadixThemesComponent):
@@ -232,6 +240,8 @@ class DropdownMenuSubContent(RadixThemesComponent):
             EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
         }
 
+    _valid_parents = ["DropdownMenuSub"]
+
 
 class DropdownMenuItem(RadixThemesComponent):
     """The Dropdown Menu Item Component."""
@@ -263,6 +273,8 @@ class DropdownMenuItem(RadixThemesComponent):
             **super().get_event_triggers(),
             EventTriggers.ON_SELECT: lambda e0: [e0.target.value],
         }
+
+    _valid_parents = ["DropdownMenuContent", "DropdownMenuSubContent"]
 
 
 class DropdownMenuSeparator(RadixThemesComponent):
