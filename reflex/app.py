@@ -46,7 +46,7 @@ from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
-from reflex.components.core.upload import UploadFilesProvider
+from reflex.components.core.upload import Upload
 from reflex.components.radix import themes
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
@@ -246,7 +246,7 @@ class App(Base):
         self.api.get(str(constants.Endpoint.PING))(ping)
 
         # To upload files.
-        if UploadFilesProvider.is_used:
+        if Upload.is_used:
             self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
     def add_cors(self):
@@ -655,6 +655,9 @@ class App(Base):
         if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
 
+        # Add the default endpoints, ping and _upload (if used)
+        self.add_default_endpoints()
+
         if not self._should_compile():
             return
 
@@ -823,8 +826,6 @@ class App(Base):
 
         for output_path, code in compile_results:
             compiler_utils.write_page(output_path, code)
-
-        self.add_default_endpoints()
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
