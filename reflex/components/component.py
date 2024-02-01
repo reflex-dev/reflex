@@ -677,7 +677,8 @@ class Component(BaseComponent, ABC):
             children: The children of the component.
 
         """
-        if not self._invalid_children and not self._valid_children:
+        skip_parentable = all(child._valid_parents == [] for child in children)
+        if not self._invalid_children and not self._valid_children and skip_parentable:
             return
 
         comp_name = type(self).__name__
@@ -697,6 +698,15 @@ class Component(BaseComponent, ABC):
                     f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
                 )
 
+        def validate_vaild_parent(child_name, valid_parents):
+            if comp_name not in valid_parents:
+                valid_parent_list = ", ".join(
+                    [f"`{v_parent}`" for v_parent in valid_parents]
+                )
+                raise ValueError(
+                    f"The component `{child_name}` can only be a child of the components: {valid_parent_list}. Got `{comp_name}` instead."
+                )
+
         for child in children:
             name = type(child).__name__
 
@@ -705,6 +715,9 @@ class Component(BaseComponent, ABC):
 
             if self._valid_children:
                 validate_valid_child(name)
+
+            if child._valid_parents:
+                validate_vaild_parent(name, child._valid_parents)
 
     @staticmethod
     def _get_vars_from_event_triggers(
