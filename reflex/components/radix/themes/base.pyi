@@ -698,6 +698,7 @@ class ThemePanel(RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
+            default_open: Whether the panel is open. Defaults to False.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
