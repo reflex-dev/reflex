@@ -6,6 +6,7 @@ import reflex as rx
 from reflex.components.component import Component
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
@@ -34,10 +35,10 @@ class RadioGroupRoot(RadixThemesComponent):
     # Whether to render the radio group with higher contrast color against background
     high_contrast: Var[bool]
 
-    # The controlled value of the radio item to check. Should be used in conjunction with on_value_change.
+    # The controlled value of the radio item to check. Should be used in conjunction with on_change.
     value: Var[str]
 
-    # The initial value of checked radio item. Should be used in conjunction with onValueChange.
+    # The initial value of checked radio item. Should be used in conjunction with on_change.
     default_value: Var[str]
 
     # Whether the radio group is disabled
@@ -55,6 +56,9 @@ class RadioGroupRoot(RadixThemesComponent):
     # When true, keyboard navigation will loop from last item to first, and vice versa.
     loop: Var[bool]
 
+    # Props to rename
+    _rename_props = {"onChange": "onValueChange"}
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -63,7 +67,7 @@ class RadioGroupRoot(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_value_change": lambda e0: [e0],
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 
 
@@ -72,7 +76,7 @@ class RadioGroupItem(RadixThemesComponent):
 
     tag = "RadioGroup.Item"
 
-    # The value of the radio item to check. Should be used in conjunction with on_value_change.
+    # The value of the radio item to check. Should be used in conjunction with on_change.
     value: Var[str]
 
     # When true, prevents the user from interacting with the radio item.

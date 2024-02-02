@@ -5,6 +5,7 @@ from typing import Any, Dict, Literal
 from reflex.components.component import Component
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
@@ -55,6 +56,9 @@ class Checkbox(RadixThemesComponent):
     # The value of the checkbox control when submitting the form.
     value: Var[str]
 
+    # Props to rename
+    _rename_props = {"onChange": "onCheckedChange"}
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -63,7 +67,7 @@ class Checkbox(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_checked_change": lambda e0: [e0],
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 
 
@@ -95,7 +99,10 @@ class HighLevelCheckbox(Checkbox):
 
         return Text.create(
             Flex.create(
-                Checkbox.create(size=size, **props),
+                Checkbox.create(
+                    size=size,
+                    **props,
+                ),
                 text,
                 gap=gap,
             ),
@@ -107,7 +114,6 @@ class HighLevelCheckbox(Checkbox):
 class CheckboxNamespace(SimpleNamespace):
     """Checkbox components namespace."""
 
-    root = staticmethod(Checkbox.create)
     __call__ = staticmethod(HighLevelCheckbox.create)
 
 

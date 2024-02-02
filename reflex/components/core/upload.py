@@ -98,23 +98,6 @@ class UploadFilesProvider(Component):
     library = f"/{Dirs.CONTEXTS_PATH}"
     tag = "UploadFilesProvider"
 
-    is_used: ClassVar[bool] = False
-
-    @classmethod
-    def create(cls, *children, **props) -> Component:
-        """Create an UploadFilesProvider component.
-
-        Args:
-            *children: The children of the component.
-            **props: The properties of the component.
-
-        Returns:
-            The UploadFilesProvider component.
-        """
-        cls.is_used = True
-
-        return super().create(*children, **props)
-
 
 class Upload(Component):
     """A file upload component."""
@@ -154,6 +137,9 @@ class Upload(Component):
     # Whether to disable using the space/enter keys to upload.
     no_keyboard: Var[bool]
 
+    # Marked True when any Upload component is created.
+    is_used: ClassVar[bool] = False
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create an upload component.
@@ -165,6 +151,9 @@ class Upload(Component):
         Returns:
             The upload component.
         """
+        # Mark the Upload component as used in the app.
+        cls.is_used = True
+
         # get only upload component props
         supported_props = cls.get_props()
         upload_props = {

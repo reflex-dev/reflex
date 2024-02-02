@@ -12,6 +12,7 @@ from typing import Any, Dict, Literal
 from reflex.components.component import Component
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralSize, LiteralVariant, RadixThemesComponent
 
@@ -109,11 +110,12 @@ class Checkbox(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_checked_change: Optional[
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -179,11 +181,12 @@ class Checkbox(RadixThemesComponent):
             required: Whether the checkbox is required
             name: The name of the checkbox control when submitting the form.
             value: The value of the checkbox control when submitting the form.
-            style: The style of the component.
+            style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -289,11 +292,12 @@ class HighLevelCheckbox(Checkbox):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_checked_change: Optional[
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -357,11 +361,12 @@ class HighLevelCheckbox(Checkbox):
             required: Whether the checkbox is required
             name: The name of the checkbox control when submitting the form.
             value: The value of the checkbox control when submitting the form.
-            style: The style of the component.
+            style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Additional properties to apply to the checkbox item.
 
@@ -371,8 +376,6 @@ class HighLevelCheckbox(Checkbox):
         ...
 
 class CheckboxNamespace(SimpleNamespace):
-    root = staticmethod(Checkbox.create)
-
     @staticmethod
     def __call__(
         *children,
@@ -467,11 +470,12 @@ class CheckboxNamespace(SimpleNamespace):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_checked_change: Optional[
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -535,11 +539,12 @@ class CheckboxNamespace(SimpleNamespace):
             required: Whether the checkbox is required
             name: The name of the checkbox control when submitting the form.
             value: The value of the checkbox control when submitting the form.
-            style: The style of the component.
+            style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Additional properties to apply to the checkbox item.
 

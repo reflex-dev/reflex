@@ -2,6 +2,7 @@
 from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
@@ -26,7 +27,7 @@ class ContextMenuRoot(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: [e0],
+            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
         }
 
 
@@ -70,11 +71,11 @@ class ContextMenuContent(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_close_auto_focus": lambda e0: [e0],
-            "on_escape_key_down": lambda e0: [e0],
-            "on_pointer_down_outside": lambda e0: [e0],
-            "on_focus_outside": lambda e0: [e0],
-            "on_interact_outside": lambda e0: [e0],
+            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
+            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
+            EventTriggers.ON_FOCUS_OUTSIDE: lambda e0: [e0],
+            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
         }
 
 
@@ -109,10 +110,10 @@ class ContextMenuSubContent(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_escape_key_down": lambda e0: [e0],
-            "on_pointer_down_outside": lambda e0: [e0],
-            "on_focus_outside": lambda e0: [e0],
-            "on_interact_outside": lambda e0: [e0],
+            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
+            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
+            EventTriggers.ON_FOCUS_OUTSIDE: lambda e0: [e0],
+            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
         }
 
 
@@ -137,7 +138,7 @@ class ContextMenuSeparator(RadixThemesComponent):
 class ContextMenu(SimpleNamespace):
     """ContextMenu components namespace."""
 
-    root = __call__ = staticmethod(ContextMenuRoot.create)
+    root = staticmethod(ContextMenuRoot.create)
     trigger = staticmethod(ContextMenuTrigger.create)
     content = staticmethod(ContextMenuContent.create)
     sub = staticmethod(ContextMenuSub.create)
