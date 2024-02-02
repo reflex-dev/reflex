@@ -61,7 +61,7 @@ def UploadFile():
             rx.box(
                 rx.foreach(
                     rx.selected_files,
-                    lambda f: rx.text(f),
+                    lambda f: rx.text(f, as_="p"),
                 ),
                 id="selected_files",
             ),
@@ -91,7 +91,7 @@ def UploadFile():
             rx.box(
                 rx.foreach(
                     rx.selected_files("secondary"),
-                    lambda f: rx.text(f),
+                    lambda f: rx.text(f, as_="p"),
                 ),
                 id="selected_files_secondary",
             ),

@@ -61,7 +61,7 @@ def Table():
                             rx.chakra.th("Location"),
                         )
                     ),
-                    rx.tbody(  # type: ignore
+                    rx.chakra.tbody(  # type: ignore
                         rx.chakra.tr(  # type: ignore
                             rx.chakra.td("John"),
                             rx.chakra.td(30),
