@@ -1,6 +1,7 @@
 """The colors used in Reflex are a wrapper around https://www.radix-ui.com/colors."""
 from dataclasses import dataclass
 from typing import Literal
+from reflex import color_mode_cond
 
 ColorType = Literal[
     "gray",
@@ -53,16 +54,28 @@ class Color:
     # Whether to use the alpha variant of the color
     alpha: bool = False
 
+    # The light mode variants of the color
+    light: tuple[ColorType, ShadeType, bool] = None
+
+    # The dark mode variants of the color
+    dark: tuple[ColorType, ShadeType, bool] = None
+
+    def format_color(self, color: ColorType, shade: ShadeType) -> str:
+        """Format a color as a CSS color string."""
+        return f"var(--{color}-{'a' if self.alpha else ''}{shade})"
+
     def __format__(self, format_spec: str) -> str:
-        """Format the color as a CSS color string.
+        """Format the color as a CSS color string."""
 
-        Args:
-            format_spec (str): The format specification for the color string.
+        if self.light and self.dark:
+            return color_mode_cond(
+                self.format_color(*self.light),
+                self.format_color(*self.dark)
+            )
 
-        Returns:
-            str: The CSS color string
-        """
-        if self.alpha:
-            return f"var(--{self.color}-a{self.shade})"
-        else:
-            return f"var(--{self.color}-{self.shade})"
+        if self.light or self.dark:
+            raise ValueError("Both light and dark mode must be specified if you only want to use one shade provide color, shad, and/or alpha directly to rx.color")
+
+        return self.format_color(self.color, self.shade)
+
+
