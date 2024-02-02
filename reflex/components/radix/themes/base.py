@@ -201,6 +201,7 @@ class ThemePanel(RadixThemesComponent):
 
     tag = "ThemePanel"
 
+    # Whether the panel is open. Defaults to False.
     default_open: Var[bool]
 
 
