@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Type
+from typing import Any, Callable, Type
 from urllib.parse import urlparse
 
 from pydantic.fields import ModelField
@@ -290,7 +290,7 @@ def create_theme(style: ComponentStyle) -> dict:
         The base style for the app.
     """
     # Get the global style from the style dict.
-    style_rules = Style({k: v for k, v in style.items() if not isinstance(k, type)})
+    style_rules = Style({k: v for k, v in style.items() if not isinstance(k, Callable)})
 
     root_style = {
         # Root styles.

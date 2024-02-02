@@ -13,6 +13,7 @@ import reflex as rx
 from reflex.components.component import Component
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralSize, RadixThemesComponent
 
@@ -115,8 +116,12 @@ class RadioGroupRoot(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -161,9 +166,6 @@ class RadioGroupRoot(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_value_change: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
         **props
     ) -> "RadioGroupRoot":
         """Create a new component instance.
@@ -178,18 +180,19 @@ class RadioGroupRoot(RadixThemesComponent):
             size: The size of the radio group: "1" | "2" | "3"
             variant: The variant of the radio group
             high_contrast: Whether to render the radio group with higher contrast color against background
-            value: The controlled value of the radio item to check. Should be used in conjunction with on_value_change.
-            default_value: The initial value of checked radio item. Should be used in conjunction with onValueChange.
+            value: The controlled value of the radio item to check. Should be used in conjunction with on_change.
+            default_value: The initial value of checked radio item. Should be used in conjunction with on_change.
             disabled: Whether the radio group is disabled
             name: The name of the group. Submitted with its owning form as part of a name/value pair.
             required: Whether the radio group is required
             orientation: The orientation of the component.
             loop: When true, keyboard navigation will loop from last item to first, and vice versa.
-            style: The style of the component.
+            style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -275,6 +278,7 @@ class RadioGroupItem(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -332,7 +336,7 @@ class RadioGroupItem(RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            value: The value of the radio item to check. Should be used in conjunction with on_value_change.
+            value: The value of the radio item to check. Should be used in conjunction with on_change.
             disabled: When true, prevents the user from interacting with the radio item.
             required: When true, indicates that the user must check the radio item before the owning form can be submitted.
             style: The style of the component.
@@ -340,6 +344,7 @@ class RadioGroupItem(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -456,8 +461,12 @@ class HighLevelRadioGroup(RadioGroupRoot):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -502,9 +511,6 @@ class HighLevelRadioGroup(RadioGroupRoot):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_value_change: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
         **props
     ) -> "HighLevelRadioGroup":
         """Create a radio group component.
@@ -518,18 +524,19 @@ class HighLevelRadioGroup(RadioGroupRoot):
             variant: The variant of the radio group
             color_scheme: The color of the radio group
             high_contrast: Whether to render the radio group with higher contrast color against background
-            value: The controlled value of the radio item to check. Should be used in conjunction with on_value_change.
-            default_value: The initial value of checked radio item. Should be used in conjunction with onValueChange.
+            value: The controlled value of the radio item to check. Should be used in conjunction with on_change.
+            default_value: The initial value of checked radio item. Should be used in conjunction with on_change.
             disabled: Whether the radio group is disabled
             name: The name of the group. Submitted with its owning form as part of a name/value pair.
             required: Whether the radio group is required
             orientation: The orientation of the component.
             loop: When true, keyboard navigation will loop from last item to first, and vice versa.
-            style: The style of the component.
+            style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Additional properties to apply to the accordion item.
 
@@ -647,8 +654,12 @@ class RadioGroup(SimpleNamespace):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -693,9 +704,6 @@ class RadioGroup(SimpleNamespace):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_value_change: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
         **props
     ) -> "HighLevelRadioGroup":
         """Create a radio group component.
@@ -709,18 +717,19 @@ class RadioGroup(SimpleNamespace):
             variant: The variant of the radio group
             color_scheme: The color of the radio group
             high_contrast: Whether to render the radio group with higher contrast color against background
-            value: The controlled value of the radio item to check. Should be used in conjunction with on_value_change.
-            default_value: The initial value of checked radio item. Should be used in conjunction with onValueChange.
+            value: The controlled value of the radio item to check. Should be used in conjunction with on_change.
+            default_value: The initial value of checked radio item. Should be used in conjunction with on_change.
             disabled: Whether the radio group is disabled
             name: The name of the group. Submitted with its owning form as part of a name/value pair.
             required: Whether the radio group is required
             orientation: The orientation of the component.
             loop: When true, keyboard navigation will loop from last item to first, and vice versa.
-            style: The style of the component.
+            style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Additional properties to apply to the accordion item.
 

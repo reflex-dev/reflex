@@ -2,6 +2,7 @@
 from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
@@ -26,6 +27,9 @@ class TabsRoot(RadixThemesComponent):
     # The orientation of the tabs.
     orientation: Var[Literal["horizontal", "vertical"]]
 
+    # Props to rename
+    _rename_props = {"onChange": "onValueChange"}
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -34,7 +38,7 @@ class TabsRoot(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_value_change": lambda e0: [e0],
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 
 
