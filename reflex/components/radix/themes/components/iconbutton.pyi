@@ -9,6 +9,10 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
 from reflex import el
+from reflex.components.component import Component
+from reflex.components.core import match
+from reflex.components.lucide import Icon
+from reflex.style import Style
 from reflex.vars import Var
 from ..base import (
     LiteralAccentColor,
@@ -25,7 +29,16 @@ class IconButton(el.Button, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
+        ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
+                Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
+            ]
+        ] = None,
         color_scheme: Optional[
             Union[
                 Var[
@@ -86,16 +99,6 @@ class IconButton(el.Button, RadixThemesComponent):
                     "bronze",
                     "gray",
                 ],
-            ]
-        ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        size: Optional[
-            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
-        ] = None,
-        variant: Optional[
-            Union[
-                Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
-                Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
@@ -229,18 +232,14 @@ class IconButton(el.Button, RadixThemesComponent):
         ] = None,
         **props
     ) -> "IconButton":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a IconButton component.
 
         Args:
-            *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
+            *children: The children of the component.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             size: Button size "1" - "4"
             variant: Variant of button: "classic" | "solid" | "soft" | "surface" | "outline" | "ghost"
+            color_scheme: Override theme color for button
             high_contrast: Whether to render the button with higher contrast color against background
             radius: Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
             auto_focus: Automatically focuses the button when the page loads
@@ -278,10 +277,13 @@ class IconButton(el.Button, RadixThemesComponent):
             autofocus: Whether the component should take the focus once the page is loaded
             _rename_props: props to change the name of
             custom_attrs: custom attribute
-            **props: Component properties.
+            **props: The properties of the component.
+
+        Raises:
+            ValueError: If no children are passed.
 
         Returns:
-            A new component instance.
+            The IconButton component.
         """
         ...
 
