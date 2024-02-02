@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Literal, Union
 
 import reflex as rx
 from reflex.components.component import Component
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
@@ -25,7 +26,7 @@ class SelectRoot(RadixThemesComponent):
     # The value of the select when initially rendered. Use when you do not need to control the state of the select.
     default_value: Var[str]
 
-    # The controlled value of the select. Should be used in conjunction with on_value_change.
+    # The controlled value of the select. Should be used in conjunction with on_change.
     value: Var[str]
 
     # The open state of the select when it is initially rendered. Use when you do not need to control its open state.
@@ -43,6 +44,9 @@ class SelectRoot(RadixThemesComponent):
     # When True, indicates that the user must select a value before the owning form can be submitted.
     required: Var[bool]
 
+    # Props to rename
+    _rename_props = {"onChange": "onValueChange"}
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -51,8 +55,8 @@ class SelectRoot(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: [e0],
-            "on_value_change": lambda e0: [e0],
+            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 
 
@@ -111,9 +115,9 @@ class SelectContent(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_close_auto_focus": lambda e0: [e0],
-            "on_escape_key_down": lambda e0: [e0],
-            "on_pointer_down_outside": lambda e0: [e0],
+            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
+            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
         }
 
 

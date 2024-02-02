@@ -2,6 +2,7 @@
 from typing import Any, Dict, Literal
 
 from reflex import el
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
@@ -25,7 +26,7 @@ class DialogRoot(RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: [e0],
+            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
         }
 
 
@@ -57,11 +58,11 @@ class DialogContent(el.Div, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_auto_focus": lambda e0: [e0],
-            "on_close_auto_focus": lambda e0: [e0],
-            "on_escape_key_down": lambda e0: [e0],
-            "on_pointer_down_outside": lambda e0: [e0],
-            "on_interact_outside": lambda e0: [e0],
+            EventTriggers.ON_OPEN_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
+            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
+            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
         }
 
 
