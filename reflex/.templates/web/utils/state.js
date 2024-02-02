@@ -594,7 +594,12 @@ export const getRefValue = (ref) => {
     return;
   }
   if (ref.current.type == "checkbox") {
-    return ref.current.checked;
+    return ref.current.checked;  // chakra
+  } else if (ref.current.className.includes("rt-CheckboxButton") || ref.current.className.includes("rt-SwitchButton")) {
+    return ref.current.ariaChecked == "true";  // radix
+  } else if (ref.current.className.includes("rt-SliderRoot")) {
+    // find the actual slider
+    return ref.current.querySelector(".rt-SliderThumb").ariaValueNow;
   } else {
     //querySelector(":checked") is needed to get value from radio_group
     return ref.current.value || (ref.current.querySelector(':checked') && ref.current.querySelector(':checked').value);
