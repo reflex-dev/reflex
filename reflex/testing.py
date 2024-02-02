@@ -189,7 +189,9 @@ class AppHarness:
         if isinstance(app_source, str):
             return app_source
         source = inspect.getsource(app_source)
-        source = re.sub(r"^\s*def\s+\w+\s*\(.*?\):", "", source, flags=re.DOTALL)
+        source = re.sub(
+            r"^\s*def\s+\w+\s*\(.*?\)(\s+->\s+\w+)?:", "", source, flags=re.DOTALL
+        )
         return textwrap.dedent(source)
 
     def _initialize_app(self):
