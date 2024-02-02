@@ -8,7 +8,7 @@ from reflex.components.component import BaseComponent, Component, MemoizationLea
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.utils import format, imports
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import BaseVar, Var, VarData, ConditionalVar
 
 _IS_TRUE_IMPORT = {
     f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="isTrue")},
@@ -168,7 +168,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         var_datas.append(c2._var_data)
 
     # Create the conditional var.
-    return cond_var._replace(
+    a=  cond_var._replace(
         _var_name=format.format_cond(
             cond=cond_var._var_full_name,
             true_value=c1,
@@ -179,4 +179,6 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         _var_is_local=False,
         _var_full_name_needs_state_prefix=False,
         merge_var_data=VarData.merge(*var_datas),
+        _var_cond_data = ConditionalVar.create(cond=cond_var, comp1=Var.create(c1), comp2=Var.create(c2))
     )
+    return a

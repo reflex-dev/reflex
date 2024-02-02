@@ -1,6 +1,7 @@
 """Define a state var."""
 from __future__ import annotations
 
+from abc import ABC
 import contextlib
 import dataclasses
 import dis
@@ -108,6 +109,30 @@ def get_unique_variable_name() -> str:
         USED_VARIABLES.add(name)
         return name
     return get_unique_variable_name()
+
+
+class ConditionalVar(Base, ABC):
+    cond: Var
+
+    @classmethod
+    def create(cls, cond, is_match_var = False, **kwargs):
+        if is_match_var:
+            if not "match_cases" in kwargs and "default" in kwargs:
+                raise ValueError("match_cases and default args are required for creating match var")
+            return MatchVar(cond=cond, **kwargs)
+        else:
+            if not "comp1" and "comp2" in kwargs:
+                raise ValueError("The True and False arguments are required for creating a cond var")
+            return CondVar(cond=cond, **kwargs)
+
+
+class CondVar(ConditionalVar):
+    comp1: Var
+    comp2: Optional[Var]
+
+class MatchVar(ConditionalVar):
+    match_cases: List[Tuple[Var, ...]]
+    default: BaseVar
 
 
 class VarData(Base):
@@ -289,6 +314,8 @@ class Var:
     # Extra metadata associated with the Var
     _var_data: Optional[VarData]
 
+    _var_cond_data: Optional[ConditionalVar] = None
+
     @classmethod
     def create(
         cls, value: Any, _var_is_local: bool = True, _var_is_string: bool = False
@@ -400,6 +427,7 @@ class Var:
             _var_data=VarData.merge(
                 kwargs.get("_var_data", self._var_data), merge_var_data
             ),
+            _var_cond_data = kwargs.pop("_var_cond_data", self._var_cond_data)
         )
         return BaseVar(**field_values)
 
@@ -1652,6 +1680,8 @@ class BaseVar(Var):
     # Extra metadata associated with the Var
     _var_data: Optional[VarData] = dataclasses.field(default=None)
 
+    _var_cond_data: Optional[ConditionalVar] = dataclasses.field(default=None)
+
     def __hash__(self) -> int:
         """Define a hash function for a var.
 
@@ -1959,3 +1989,8 @@ class CallableVar(BaseVar):
             The Var returned from calling the function.
         """
         return self.fn(*args, **kwargs)
+
+
+# resolve type definitions
+MatchVar.update_forward_refs()
+CondVar.update_forward_refs()
