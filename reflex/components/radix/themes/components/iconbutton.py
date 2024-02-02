@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from typing import Literal
 
 from reflex import el
@@ -86,5 +87,5 @@ class IconButton(el.Button, RadixThemesComponent):
                 )
         return super().create(*children, **props)
 
-    def _apply_theme(self, theme: Component | None):
+    def _apply_theme(self, theme: Component):
         self.style = Style({"padding": "6px", **self.style})
