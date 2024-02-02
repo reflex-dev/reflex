@@ -82,7 +82,7 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
 class Table(SimpleNamespace):
     """Table components namespace."""
 
-    root = __call__ = staticmethod(TableRoot.create)
+    root = staticmethod(TableRoot.create)
     header = staticmethod(TableHeader.create)
     body = staticmethod(TableBody.create)
     row = staticmethod(TableRow.create)

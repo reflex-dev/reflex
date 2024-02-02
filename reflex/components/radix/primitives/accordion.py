@@ -627,7 +627,7 @@ class Accordion(SimpleNamespace):
     content = staticmethod(AccordionContent.create)
     header = staticmethod(AccordionHeader.create)
     item = staticmethod(accordion_item)
-    root = __call__ = staticmethod(AccordionRoot.create)
+    root = staticmethod(AccordionRoot.create)
     trigger = staticmethod(AccordionTrigger.create)
 
 

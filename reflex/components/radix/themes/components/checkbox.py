@@ -114,7 +114,6 @@ class HighLevelCheckbox(Checkbox):
 class CheckboxNamespace(SimpleNamespace):
     """Checkbox components namespace."""
 
-    root = staticmethod(Checkbox.create)
     __call__ = staticmethod(HighLevelCheckbox.create)
 
 
