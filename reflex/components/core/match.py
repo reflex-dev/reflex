@@ -237,7 +237,7 @@ class Match(MemoizationLeaf):
             default._var_data,  # type: ignore
         ]
 
-        a =  match_cond_var._replace(
+        return match_cond_var._replace(
             _var_name=format.format_match(
                 cond=match_cond_var._var_name_unwrapped,
                 match_cases=match_cases,  # type: ignore
@@ -250,7 +250,7 @@ class Match(MemoizationLeaf):
             merge_var_data=VarData.merge(*var_data),
             _var_cond_data=ConditionalVar.create(is_match_var=True, cond=match_cond_var, match_cases=match_cases, default=default)
         )
-        return a
+
     def _render(self) -> Tag:
         return MatchTag(
             cond=self.cond, match_cases=self.match_cases, default=self.default
