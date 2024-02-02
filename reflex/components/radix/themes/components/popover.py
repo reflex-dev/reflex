@@ -89,7 +89,7 @@ class PopoverClose(RadixThemesComponent):
 class Popover(SimpleNamespace):
     """Popover components namespace."""
 
-    root = __call__ = staticmethod(PopoverRoot.create)
+    root = staticmethod(PopoverRoot.create)
     trigger = staticmethod(PopoverTrigger.create)
     content = staticmethod(PopoverContent.create)
     close = staticmethod(PopoverClose.create)

@@ -138,7 +138,7 @@ class ContextMenuSeparator(RadixThemesComponent):
 class ContextMenu(SimpleNamespace):
     """ContextMenu components namespace."""
 
-    root = __call__ = staticmethod(ContextMenuRoot.create)
+    root = staticmethod(ContextMenuRoot.create)
     trigger = staticmethod(ContextMenuTrigger.create)
     content = staticmethod(ContextMenuContent.create)
     sub = staticmethod(ContextMenuSub.create)

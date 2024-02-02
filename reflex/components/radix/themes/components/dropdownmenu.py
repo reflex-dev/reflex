@@ -111,7 +111,7 @@ class DropdownMenuSeparator(RadixThemesComponent):
 class DropdownMenu(SimpleNamespace):
     """DropdownMenu components namespace."""
 
-    root = __call__ = staticmethod(DropdownMenuRoot.create)
+    root = staticmethod(DropdownMenuRoot.create)
     trigger = staticmethod(DropdownMenuTrigger.create)
     content = staticmethod(DropdownMenuContent.create)
     sub_trigger = staticmethod(DropdownMenuSubTrigger.create)

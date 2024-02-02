@@ -376,8 +376,6 @@ class HighLevelCheckbox(Checkbox):
         ...
 
 class CheckboxNamespace(SimpleNamespace):
-    root = staticmethod(Checkbox.create)
-
     @staticmethod
     def __call__(
         *children,

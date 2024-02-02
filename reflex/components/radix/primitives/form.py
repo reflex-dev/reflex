@@ -297,7 +297,7 @@ class Form(SimpleNamespace):
     field = staticmethod(FormField.create)
     label = staticmethod(FormLabel.create)
     message = staticmethod(FormMessage.create)
-    root = __call__ = staticmethod(FormRoot.create)
+    root = staticmethod(FormRoot.create)
     submit = staticmethod(FormSubmit.create)
     validity_state = staticmethod(FormValidityState.create)
 

@@ -98,7 +98,7 @@ class AlertDialogCancel(RadixThemesComponent):
 class AlertDialog(SimpleNamespace):
     """AlertDialog components namespace."""
 
-    root = __call__ = staticmethod(AlertDialogRoot.create)
+    root = staticmethod(AlertDialogRoot.create)
     trigger = staticmethod(AlertDialogTrigger.create)
     content = staticmethod(AlertDialogContent.create)
     title = staticmethod(AlertDialogTitle.create)
