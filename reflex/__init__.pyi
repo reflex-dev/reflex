@@ -9,6 +9,7 @@ from reflex import compiler as compiler
 from reflex.compiler.utils import get_asset_path as get_asset_path
 from reflex.components import cond as cond
 from reflex.components import foreach as foreach
+from reflex.components import html as html
 from reflex.components import match as match
 from reflex.components import connection_banner as connection_banner
 from reflex.components import connection_modal as connection_modal

@@ -83,7 +83,6 @@ grid_item = GridItem.create
 heading = Heading.create
 highlight = Highlight.create
 hstack = Hstack.create
-html = Html.create
 icon = Icon.create
 icon_button = IconButton.create
 image = Image.create

@@ -18,6 +18,7 @@ _ALL_COMPONENTS = [
     # Core
     "cond",
     "foreach",
+    "html",
     "match",
     # "color_mode_cond",
     "connection_banner",
