@@ -242,13 +242,12 @@ class App(Base):
         return self.api
 
     def add_default_endpoints(self):
-        """Add default api endpoints (ping)"""
+        """Add default api endpoints (ping)."""
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
 
     def add_optional_endpoints(self):
-        """Add optional api endpoints (_upload)"""
-
+        """Add optional api endpoints (_upload)."""
         # To upload files.
         if Upload.is_used:
             self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
