@@ -42,7 +42,7 @@ def TestEventAction():
 
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=EventActionState.router.session.client_token,
                 is_read_only=True,
                 id="token",
@@ -121,10 +121,10 @@ def TestEventAction():
                     "custom-prevent-default"
                 ).prevent_default,
             ),
-            rx.list(
+            rx.chakra.list(
                 rx.foreach(
                     EventActionState.order,  # type: ignore
-                    rx.list_item,
+                    rx.chakra.list_item,
                 ),
             ),
             on_click=EventActionState.on_click("outer"),  # type: ignore
