@@ -91,7 +91,7 @@ _ALL_COMPONENTS = [
     "tabs",
     "text",
     "text_area",
-    # "text_field" (input)
+    "text_field",
     "theme",
     "theme_panel",
     "tooltip",

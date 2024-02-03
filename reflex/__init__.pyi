@@ -73,6 +73,7 @@ from reflex.components import table as table
 from reflex.components import tabs as tabs
 from reflex.components import text as text
 from reflex.components import text_area as text_area
+from reflex.components import text_field as text_field
 from reflex.components import theme as theme
 from reflex.components import theme_panel as theme_panel
 from reflex.components import tooltip as tooltip
