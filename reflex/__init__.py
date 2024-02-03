@@ -70,11 +70,12 @@ _ALL_COMPONENTS = [
     # "icon" (lucide)
     "icon_button",
     "inset",
+    "input",
     "kbd",
     "link",
     "popover",
     "progress",
-    # "quote",
+    "quote",
     "radio_group",
     "scroll_area",
     "section",
