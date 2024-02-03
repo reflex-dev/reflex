@@ -50,7 +50,8 @@ def get_base_component_map() -> dict[str, Callable]:
     Returns:
         The base component map.
     """
-    from reflex.components.chakra.datadisplay.code import Code, CodeBlock
+    from reflex.components.chakra.datadisplay.code import Code
+    from reflex.components.datadisplay.code import CodeBlock
 
     return {
         "h1": lambda value: Heading.create(
@@ -164,7 +165,8 @@ class Markdown(Component):
 
     def _get_imports(self) -> imports.ImportDict:
         # Import here to avoid circular imports.
-        from reflex.components.chakra.datadisplay.code import Code, CodeBlock
+        from reflex.components.chakra.datadisplay.code import Code
+        from reflex.components.datadisplay.code import CodeBlock
 
         imports = super()._get_imports()
 

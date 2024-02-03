@@ -72,6 +72,7 @@ from reflex.components import theme as theme
 from reflex.components import theme_panel as theme_panel
 from reflex.components import tooltip as tooltip
 from reflex.components import vstack as vstack
+from reflex.components import code_block as code_block
 from reflex.components import data_editor as data_editor
 from reflex.components import data_editor_theme as data_editor_theme
 from reflex.components import plotly as plotly

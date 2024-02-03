@@ -93,6 +93,7 @@ _ALL_COMPONENTS = [
     "tooltip",
     "vstack",
     # Other
+    "code_block",
     "data_editor",
     "data_editor_theme",
     "plotly",
