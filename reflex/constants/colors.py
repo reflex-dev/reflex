@@ -42,7 +42,16 @@ ShadeType = Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
 
 def format_color(color: ColorType, shade: ShadeType, alpha: bool) -> str:
-    """Format a color as a CSS color string."""
+    """Format a color as a CSS color string.
+
+    Args:
+        color: The color to use.
+        shade: The shade of the color to use.
+        alpha: Whether to use the alpha variant of the color.
+
+    Returns:
+        The formatted color.
+    """
     return f"var(--{color}-{'a' if alpha else ''}{shade})"
 
 
@@ -64,5 +73,8 @@ class Color:
 
         Args:
             format_spec: The format specifier to use.
+
+        Returns:
+            The formatted color.
         """
         return format_color(self.color, self.shade, self.alpha)
