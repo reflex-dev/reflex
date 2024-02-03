@@ -253,6 +253,7 @@ _MAPPING = {
     "reflex.compiler.utils": ["get_asset_path"],
     "reflex.components": _ALL_COMPONENTS + ["chakra", "next"],
     "reflex.components.component": ["memo"],
+    "reflex.components.core": ["color"],
     "reflex.components.el": ["el"],
     "reflex.components.lucide": ["lucide"],
     "reflex.components.radix": ["radix"],
