@@ -914,7 +914,11 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger("blib2to3.pgen2.driver").setLevel(logging.INFO)
 
-    targets = sys.argv[1:] if len(sys.argv) > 1 else ["reflex/components"]
+    targets = (
+        [arg for arg in sys.argv[1:] if not arg.startswith("tests")]
+        if len(sys.argv) > 1
+        else ["reflex/components"]
+    )
     logger.info(f"Running .pyi generator for {targets}")
 
     changed_files = _get_changed_files()
