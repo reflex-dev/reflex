@@ -16,6 +16,7 @@ from reflex.utils.format import to_snake_case
 
 _ALL_COMPONENTS = [
     # Core
+    "Cond",
     "cond",
     "foreach",
     "html",
@@ -26,6 +27,7 @@ _ALL_COMPONENTS = [
     "debounce_input",
     # Base
     "fragment",
+    "Fragment",
     "image",
     "script",
     # Responsive
@@ -82,6 +84,7 @@ _ALL_COMPONENTS = [
     "slider",
     "spacer",
     # "strong" (bold?)
+    "stack",
     "switch",
     "table",
     "tabs",
@@ -96,6 +99,7 @@ _ALL_COMPONENTS = [
     "code_block",
     "data_editor",
     "data_editor_theme",
+    "data_table",
     "plotly",
     "audio",
     "video",
@@ -103,6 +107,7 @@ _ALL_COMPONENTS = [
     "EditorButtonList",
     "EditorOptions",
     "icon",
+    "markdown",
 ]
 
 _MAPPING = {

@@ -28,6 +28,8 @@ from .textarea import text_area as text_area
 from .textfield import text_field as text_field
 from .tooltip import tooltip as tooltip
 
+input = text_field
+
 __all__ = [
     "alert_dialog",
     "aspect_ratio",
@@ -43,6 +45,7 @@ __all__ = [
     "hover_card",
     "icon_button",
     "icon",
+    "input",
     "inset",
     "popover",
     "radio_group",
