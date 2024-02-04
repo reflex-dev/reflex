@@ -2,6 +2,7 @@
 
 from . import layout as layout
 from .banner import ConnectionBanner, ConnectionModal
+from .colors import color
 from .cond import Cond, cond
 from .debounce import DebounceInput
 from .foreach import Foreach

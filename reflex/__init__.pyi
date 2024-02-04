@@ -447,6 +447,7 @@ from reflex.components import NoSSRComponent as NoSSRComponent
 from reflex.components import chakra as chakra
 from reflex.components import next as next
 from reflex.components.component import memo as memo
+from reflex.components.core import color as color
 from reflex.components import el as el
 from reflex.components import lucide as lucide
 from reflex.components import radix as radix
