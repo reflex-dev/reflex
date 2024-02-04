@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Type
 
 import pytest
 
+from reflex import color
 from reflex.base import Base
-from reflex import color   
 from reflex.utils import serializers
 from reflex.vars import Var
 
