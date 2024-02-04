@@ -337,11 +337,11 @@ class Component(BaseComponent, ABC):
             if value._var_type is not EventChain:
                 raise ValueError(f"Invalid event chain: {value}")
             return value
-        elif isinstance(value, EventChain):
+        if isinstance(value, EventChain):
             # Trust that the caller knows what they're doing passing an EventChain directly
             return value
 
-        arg_spec = triggers.get(event_trigger, lambda: [])
+        arg_spec = triggers.get(event_trigger, list)
 
         wrapped = False
         # If the input is a single event handler, wrap it in a list.
@@ -403,12 +403,11 @@ class Component(BaseComponent, ABC):
                 args_spec=None,
                 event_actions=event_actions,
             )
-        else:
-            return EventChain(
-                events=events,
-                args_spec=arg_spec,  # type: ignore
-                event_actions=event_actions,
-            )
+        return EventChain(
+            events=events,
+            args_spec=arg_spec,  # type: ignore
+            event_actions=event_actions,
+        )
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers for the component.
@@ -417,21 +416,21 @@ class Component(BaseComponent, ABC):
             The event triggers.
         """
         return {
-            EventTriggers.ON_FOCUS: lambda: [],
-            EventTriggers.ON_BLUR: lambda: [],
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_CONTEXT_MENU: lambda: [],
-            EventTriggers.ON_DOUBLE_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_OUT: lambda: [],
-            EventTriggers.ON_MOUSE_OVER: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
-            EventTriggers.ON_SCROLL: lambda: [],
-            EventTriggers.ON_MOUNT: lambda: [],
-            EventTriggers.ON_UNMOUNT: lambda: [],
+            EventTriggers.ON_FOCUS: list,
+            EventTriggers.ON_BLUR: list,
+            EventTriggers.ON_CLICK: list,
+            EventTriggers.ON_CONTEXT_MENU: list,
+            EventTriggers.ON_DOUBLE_CLICK: list,
+            EventTriggers.ON_MOUSE_DOWN: list,
+            EventTriggers.ON_MOUSE_ENTER: list,
+            EventTriggers.ON_MOUSE_LEAVE: list,
+            EventTriggers.ON_MOUSE_MOVE: list,
+            EventTriggers.ON_MOUSE_OUT: list,
+            EventTriggers.ON_MOUSE_OVER: list,
+            EventTriggers.ON_MOUSE_UP: list,
+            EventTriggers.ON_SCROLL: list,
+            EventTriggers.ON_MOUNT: list,
+            EventTriggers.ON_UNMOUNT: list,
         }
 
     def __repr__(self) -> str:
@@ -1024,11 +1023,7 @@ class Component(BaseComponent, ABC):
             Set of internally managed hooks.
         """
         return (
-            set(
-                hook
-                for hook in [self._get_mount_lifecycle_hook(), self._get_ref_hook()]
-                if hook
-            )
+            {hook for hook in [self._get_mount_lifecycle_hook(), self._get_ref_hook()] if hook}
             | self._get_vars_hooks()
             | self._get_events_hooks()
             | self._get_special_hooks()
@@ -1142,7 +1137,7 @@ class Component(BaseComponent, ABC):
         # Store the components in a set to avoid duplicates.
         components = self._get_app_wrap_components()
 
-        for component in tuple(components.values()):
+        for component in components.values():
             components.update(component.get_app_wrap_components())
 
         # Add the app wrap components for the children.

@@ -35,8 +35,8 @@ from starlette_admin.contrib.sqla.view import ModelView
 from reflex import constants
 from reflex.admin import AdminDash
 from reflex.base import Base
-from reflex.compiler import compiler
-from reflex.compiler import utils as compiler_utils
+from reflex.compiler import compiler, utils as compiler_utils
+
 from reflex.compiler.compiler import ExecutorSafeFunctions
 from reflex.components import connection_modal
 from reflex.components.base.app_wrap import AppWrap
@@ -602,7 +602,7 @@ class App(Base):
         prerequisites.install_frontend_packages(page_imports, get_config())
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
-        for component in tuple(app_wrappers.values()):
+        for component in app_wrappers.values():
             app_wrappers.update(component.get_app_wrap_components())
         order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
         root = parent = copy.deepcopy(app_wrappers[order[0]])
@@ -756,7 +756,7 @@ class App(Base):
         # Use a forking process pool, if possible.  Much faster, especially for large sites.
         # Fallback to ThreadPoolExecutor as something that will always work.
         executor = None
-        if platform.system() in ("Linux", "Darwin"):
+        if platform.system() in {"Linux", "Darwin"}:
             executor = concurrent.futures.ProcessPoolExecutor(
                 mp_context=multiprocessing.get_context("fork")
             )
