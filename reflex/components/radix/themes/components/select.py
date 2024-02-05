@@ -77,7 +77,7 @@ class SelectTrigger(RadixThemesComponent):
     # The placeholder of the select trigger
     placeholder: Var[str]
 
-    _valid_parents = ["SelectRoot"]
+    _valid_parents: list[str] = ["SelectRoot"]
 
 
 class SelectContent(RadixThemesComponent):
@@ -128,7 +128,7 @@ class SelectGroup(RadixThemesComponent):
 
     tag = "Select.Group"
 
-    _valid_parents = ["SelectContent"]
+    _valid_parents: list[str] = ["SelectContent"]
 
 
 class SelectItem(RadixThemesComponent):
@@ -142,7 +142,7 @@ class SelectItem(RadixThemesComponent):
     # Whether the select item is disabled
     disabled: Var[bool]
 
-    _valid_parents = ["SelectGroup", "SelectContent"]
+    _valid_parents: list[str] = ["SelectGroup", "SelectContent"]
 
 
 class SelectLabel(RadixThemesComponent):
@@ -150,7 +150,7 @@ class SelectLabel(RadixThemesComponent):
 
     tag = "Select.Label"
 
-    _valid_parents = ["SelectGroup"]
+    _valid_parents: list[str] = ["SelectGroup"]
 
 
 class SelectSeparator(RadixThemesComponent):

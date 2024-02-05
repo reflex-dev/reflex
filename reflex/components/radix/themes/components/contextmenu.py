@@ -137,7 +137,7 @@ class ContextMenuItem(RadixThemesComponent):
     # Shortcut to render a menu item as a link
     shortcut: Var[str]
 
-    _valid_parents = ["ContextMenuContent", "ContextMenuSubContent"]
+    _valid_parents: list[str] = ["ContextMenuContent", "ContextMenuSubContent"]
 
 
 class ContextMenuSeparator(RadixThemesComponent):

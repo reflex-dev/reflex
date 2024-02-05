@@ -53,7 +53,7 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
     # width of the column
     width: Var[Union[str, int]]
 
-    _invalid_children: List[str] = [
+    _invalid_children: list[str] = [
         "TableBody",
         "TableHeader",
         "TableRow",
@@ -68,7 +68,7 @@ class TableBody(el.Tbody, RadixThemesComponent):
 
     tag = "Table.Body"
 
-    _invalid_children: List[str] = [
+    _invalid_children: list[str] = [
         "TableHeader",
         "TableRowHeaderCell",
         "TableColumnHeaderCell",
@@ -89,7 +89,7 @@ class TableCell(el.Td, RadixThemesComponent):
     # width of the column
     width: Var[Union[str, int]]
 
-    _invalid_children: List[str] = [
+    _invalid_children: list[str] = [
         "TableBody",
         "TableHeader",
         "TableRowHeaderCell",
@@ -109,7 +109,7 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
     # width of the column
     width: Var[Union[str, int]]
 
-    _invalid_children: List[str] = [
+    _invalid_children: list[str] = [
         "TableBody",
         "TableHeader",
         "TableRow",

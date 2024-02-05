@@ -416,7 +416,7 @@ class AccordionRoot(AccordionComponent):
     # The var_data associated with the component.
     _var_data: VarData = VarData()  # type: ignore
 
-    _valid_children = ["AccordionItem"]
+    _valid_children: list[str] = ["AccordionItem"]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -508,9 +508,13 @@ class AccordionItem(AccordionComponent):
     # When true, prevents the user from interacting with the item.
     disabled: Var[bool]
 
-    _valid_children = ["AccordionHeader", "AccordionTrigger", "AccordionContent"]
+    _valid_children: list[str] = [
+        "AccordionHeader",
+        "AccordionTrigger",
+        "AccordionContent",
+    ]
 
-    _valid_parents = ["AccordionRoot"]
+    _valid_parents: list[str] = ["AccordionRoot"]
 
     def _apply_theme(self, theme: Component):
         self.style = Style(

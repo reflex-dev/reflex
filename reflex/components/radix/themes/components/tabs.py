@@ -58,7 +58,7 @@ class TabsTrigger(RadixThemesComponent):
     # Whether the tab is disabled
     disabled: Var[bool]
 
-    _valid_parents = ["TabsList"]
+    _valid_parents: list[str] = ["TabsList"]
 
 
 class TabsContent(RadixThemesComponent):
