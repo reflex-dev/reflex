@@ -77,6 +77,8 @@ class SelectTrigger(RadixThemesComponent):
     # The placeholder of the select trigger
     placeholder: Var[str]
 
+    _valid_parents = ["SelectRoot"]
+
 
 class SelectContent(RadixThemesComponent):
     """The component that pops out when the select is open."""
@@ -126,6 +128,8 @@ class SelectGroup(RadixThemesComponent):
 
     tag = "Select.Group"
 
+    _valid_parents = ["SelectContent"]
+
 
 class SelectItem(RadixThemesComponent):
     """The component that contains the select items."""
@@ -138,11 +142,15 @@ class SelectItem(RadixThemesComponent):
     # Whether the select item is disabled
     disabled: Var[bool]
 
+    _valid_parents = ["SelectGroup", "SelectContent"]
+
 
 class SelectLabel(RadixThemesComponent):
     """Used to render the label of a group, it isn't focusable using arrow keys."""
 
     tag = "Select.Label"
+
+    _valid_parents = ["SelectGroup"]
 
 
 class SelectSeparator(RadixThemesComponent):

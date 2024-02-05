@@ -58,6 +58,8 @@ class TabsTrigger(RadixThemesComponent):
     # Whether the tab is disabled
     disabled: Var[bool]
 
+    _valid_parents = ["TabsList"]
+
 
 class TabsContent(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
