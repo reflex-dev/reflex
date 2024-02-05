@@ -92,3 +92,4 @@ class EventTriggers(SimpleNamespace):
     ON_UNMOUNT = "on_unmount"
     ON_CLEAR_SERVER_ERRORS = "on_clear_server_errors"
     ON_VALUE_COMMIT = "on_value_commit"
+    ON_SELECT = "on_select"

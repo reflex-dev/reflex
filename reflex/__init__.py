@@ -9,7 +9,6 @@ from __future__ import annotations
 import importlib
 from typing import Type
 
-from reflex.constants.colors import Color as color
 from reflex.page import page as page
 from reflex.utils import console
 from reflex.utils.format import to_snake_case
@@ -254,6 +253,7 @@ _MAPPING = {
     "reflex.compiler.utils": ["get_asset_path"],
     "reflex.components": _ALL_COMPONENTS + ["chakra", "next"],
     "reflex.components.component": ["memo"],
+    "reflex.components.core": ["color"],
     "reflex.components.el": ["el"],
     "reflex.components.lucide": ["lucide"],
     "reflex.components.radix": ["radix"],
