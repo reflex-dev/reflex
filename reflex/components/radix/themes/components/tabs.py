@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -58,7 +58,7 @@ class TabsTrigger(RadixThemesComponent):
     # Whether the tab is disabled
     disabled: Var[bool]
 
-    _valid_parents: list[str] = ["TabsList"]
+    _valid_parents: List[str] = ["TabsList"]
 
 
 class TabsContent(RadixThemesComponent):

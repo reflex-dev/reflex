@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Literal, Union
+from typing import List, Literal, Union
 
 from reflex import el
 from reflex.vars import Var
@@ -26,9 +26,9 @@ class TableHeader(el.Thead, RadixThemesComponent):
 
     tag = "Table.Header"
 
-    _invalid_children: list[str] = ["TableBody"]
+    _invalid_children: List[str] = ["TableBody"]
 
-    _valid_parents: list[str] = ["TableRoot"]
+    _valid_parents: List[str] = ["TableRoot"]
 
 
 class TableRow(el.Tr, RadixThemesComponent):
@@ -39,7 +39,7 @@ class TableRow(el.Tr, RadixThemesComponent):
     # The alignment of the row
     align: Var[Literal["start", "center", "end", "baseline"]]
 
-    _invalid_children: list[str] = ["TableBody", "TableHeader", "TableRow"]
+    _invalid_children: List[str] = ["TableBody", "TableHeader", "TableRow"]
 
 
 class TableColumnHeaderCell(el.Th, RadixThemesComponent):
@@ -53,7 +53,7 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
     # width of the column
     width: Var[Union[str, int]]
 
-    _invalid_children: list[str] = [
+    _invalid_children: List[str] = [
         "TableBody",
         "TableHeader",
         "TableRow",
@@ -68,14 +68,14 @@ class TableBody(el.Tbody, RadixThemesComponent):
 
     tag = "Table.Body"
 
-    _invalid_children: list[str] = [
+    _invalid_children: List[str] = [
         "TableHeader",
         "TableRowHeaderCell",
         "TableColumnHeaderCell",
         "TableCell",
     ]
 
-    _valid_parents: list[str] = ["TableRoot"]
+    _valid_parents: List[str] = ["TableRoot"]
 
 
 class TableCell(el.Td, RadixThemesComponent):
@@ -89,7 +89,7 @@ class TableCell(el.Td, RadixThemesComponent):
     # width of the column
     width: Var[Union[str, int]]
 
-    _invalid_children: list[str] = [
+    _invalid_children: List[str] = [
         "TableBody",
         "TableHeader",
         "TableRowHeaderCell",
@@ -109,7 +109,7 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
     # width of the column
     width: Var[Union[str, int]]
 
-    _invalid_children: list[str] = [
+    _invalid_children: List[str] = [
         "TableBody",
         "TableHeader",
         "TableRow",
