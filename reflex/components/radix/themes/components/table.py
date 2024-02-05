@@ -39,12 +39,7 @@ class TableRow(el.Tr, RadixThemesComponent):
     # The alignment of the row
     align: Var[Literal["start", "center", "end", "baseline"]]
 
-    _invalid_children: List[str] = [
-        "TableBody",
-        "TableHeader",
-        "TableRowHeaderCell",
-        "TableColumnHeaderCell",
-    ]
+    _invalid_children: List[str] = ["TableBody", "TableHeader", "TableRow"]
 
 
 class TableColumnHeaderCell(el.Th, RadixThemesComponent):
@@ -94,7 +89,13 @@ class TableCell(el.Td, RadixThemesComponent):
     # width of the column
     width: Var[Union[str, int]]
 
-    _invalid_children: List[str] = ["TableBody", "TableHeader"]
+    _invalid_children: List[str] = [
+        "TableBody",
+        "TableHeader",
+        "TableRowHeaderCell",
+        "TableColumnHeaderCell",
+        "TableCell",
+    ]
 
 
 class TableRowHeaderCell(el.Th, RadixThemesComponent):
