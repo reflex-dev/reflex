@@ -18,7 +18,7 @@ class ContextMenuRoot(RadixThemesComponent):
     # The modality of the context menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
     modal: Var[bool]
 
-    _invalid_children = ["ContextMenuItem"]
+    _invalid_children: list[str] = ["ContextMenuItem"]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -40,9 +40,9 @@ class ContextMenuTrigger(RadixThemesComponent):
     # Whether the trigger is disabled
     disabled: Var[bool]
 
-    _valid_parents = ["ContextMenuRoot"]
+    _valid_parents: list[str] = ["ContextMenuRoot"]
 
-    _invalid_children = ["ContextMenuContent"]
+    _invalid_children: list[str] = ["ContextMenuContent"]
 
 
 class ContextMenuContent(RadixThemesComponent):
@@ -98,7 +98,7 @@ class ContextMenuSubTrigger(RadixThemesComponent):
     # Whether the trigger is disabled
     disabled: Var[bool]
 
-    _valid_parents = ["ContextMenuContent", "ContextMenuSub"]
+    _valid_parents: list[str] = ["ContextMenuContent", "ContextMenuSub"]
 
 
 class ContextMenuSubContent(RadixThemesComponent):
@@ -109,7 +109,7 @@ class ContextMenuSubContent(RadixThemesComponent):
     # When true, keyboard navigation will loop from last item to first, and vice versa.
     loop: Var[bool]
 
-    _valid_parents = ["ContextMenuSub"]
+    _valid_parents: list[str] = ["ContextMenuSub"]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.

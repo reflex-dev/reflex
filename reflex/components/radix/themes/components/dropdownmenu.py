@@ -226,6 +226,8 @@ class DropdownMenuSubContent(RadixThemesComponent):
     # Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
     hide_when_detached: Var[bool]
 
+    _valid_parents: list[str] = ["DropdownMenuSub"]
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -239,8 +241,6 @@ class DropdownMenuSubContent(RadixThemesComponent):
             EventTriggers.ON_FOCUS_OUTSIDE: lambda e0: [e0],
             EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
         }
-
-    _valid_parents = ["DropdownMenuSub"]
 
 
 class DropdownMenuItem(RadixThemesComponent):
