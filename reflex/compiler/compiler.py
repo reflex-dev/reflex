@@ -460,7 +460,12 @@ def remove_tailwind_from_postcss() -> tuple[str, str]:
 
 
 def purge_web_pages_dir():
-    """Empty out .web directory."""
+    """Empty out .web/pages directory."""
+    if _is_dev_mode() and os.environ.get("REFLEX_PERSIST_WEB_DIR"):
+        # Skip purging the web directory in dev mode if REFLEX_PERSIST_WEB_DIR is set.
+        return
+
+    # Empty out the web pages directory.
     utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
 
 
