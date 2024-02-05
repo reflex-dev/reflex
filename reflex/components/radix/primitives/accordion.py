@@ -385,7 +385,7 @@ class AccordionRoot(AccordionComponent):
             )
 
         # prepare the color_scheme var to be used in an f-string(strip off the wrapping curly brace)
-        color_scheme = (
+        color_scheme = Var.create(
             self.color_scheme if self.color_scheme is not None else global_color_scheme
         )._replace(_var_is_string=False)
 
