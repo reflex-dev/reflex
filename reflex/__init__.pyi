@@ -12,6 +12,10 @@ from reflex.components import cond as cond
 from reflex.components import foreach as foreach
 from reflex.components import html as html
 from reflex.components import match as match
+from reflex.components import color_mode_cond as color_mode_cond
+from reflex.components import color_mode_switch as color_mode_switch
+from reflex.components import color_mode_icon as color_mode_icon
+from reflex.components import color_mode_button as color_mode_button
 from reflex.components import connection_banner as connection_banner
 from reflex.components import connection_modal as connection_modal
 from reflex.components import debounce_input as debounce_input
