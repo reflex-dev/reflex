@@ -7,6 +7,7 @@ from reflex import base as base
 from reflex.base import Base as Base
 from reflex import compiler as compiler
 from reflex.compiler.utils import get_asset_path as get_asset_path
+from reflex.components import color as color
 from reflex.components import cond as cond
 from reflex.components import foreach as foreach
 from reflex.components import html as html
@@ -93,6 +94,7 @@ from reflex.components.component import NoSSRComponent as NoSSRComponent
 from reflex.components.component import memo as memo
 from reflex.components import chakra as chakra
 from reflex.components import el as el
+from reflex.components import next as next
 from reflex.components import radix as radix
 from reflex.components import recharts as recharts
 from reflex.components.moment.moment import MomentDelta as MomentDelta

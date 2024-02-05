@@ -9,13 +9,13 @@ from __future__ import annotations
 import importlib
 from typing import Type
 
-from reflex.constants.colors import Color as color
 from reflex.page import page as page
 from reflex.utils import console
 from reflex.utils.format import to_snake_case
 
 _ALL_COMPONENTS = [
     # Core
+    "color",
     "cond",
     "foreach",
     "html",
@@ -119,6 +119,7 @@ _MAPPING = {
     "reflex.components.component": ["Component", "NoSSRComponent", "memo"],
     "reflex.components.chakra": ["chakra"],
     "reflex.components.el": ["el"],
+    "reflex.components.next": ["next"],
     "reflex.components.radix": ["radix"],
     "reflex.components.recharts": ["recharts"],
     "reflex.components.moment.moment": ["MomentDelta"],

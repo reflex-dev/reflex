@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Type
 import pytest
 
 from reflex.base import Base
-from reflex.constants.colors import Color as color
+from reflex.components.core.colors import color
 from reflex.utils import serializers
 from reflex.vars import Var
 
