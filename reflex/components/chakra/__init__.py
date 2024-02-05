@@ -49,7 +49,6 @@ circle = Circle.create
 circular_progress = CircularProgress.create
 circular_progress_label = CircularProgressLabel.create
 code = Code.create
-code_block = CodeBlock.create
 collapse = Collapse.create
 color_mode_button = ColorModeButton.create
 color_mode_icon = ColorModeIcon.create

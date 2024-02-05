@@ -26,6 +26,7 @@ _ALL_COMPONENTS = [
     "debounce_input",
     # Base
     "fragment",
+    "Fragment",
     "image",
     "script",
     # Responsive
@@ -68,11 +69,12 @@ _ALL_COMPONENTS = [
     # "icon" (lucide)
     "icon_button",
     "inset",
+    "input",
     "kbd",
     "link",
     "popover",
     "progress",
-    # "quote",
+    "quote",
     "radio_group",
     "scroll_area",
     "section",
@@ -82,19 +84,21 @@ _ALL_COMPONENTS = [
     "slider",
     "spacer",
     # "strong" (bold?)
+    "stack",
     "switch",
     "table",
     "tabs",
     "text",
     "text_area",
-    # "text_field" (input)
     "theme",
     "theme_panel",
     "tooltip",
     "vstack",
     # Other
+    "code_block",
     "data_editor",
     "data_editor_theme",
+    "data_table",
     "plotly",
     "audio",
     "video",
@@ -102,6 +106,7 @@ _ALL_COMPONENTS = [
     "EditorButtonList",
     "EditorOptions",
     "icon",
+    "markdown",
 ]
 
 _MAPPING = {
