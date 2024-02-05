@@ -31,18 +31,6 @@ def _encode_var(value: Var) -> str: ...
 def _decode_var(value: str) -> tuple[VarData, str]: ...
 def _extract_var_data(value: Iterable) -> list[VarData | None]: ...
 
-class ConditionalVar(Base, ABC):
-    cond: Var
-    @classmethod
-    def create(cls, cond, is_match_var=False, **kwargs): ...
-class CondVar(ConditionalVar):
-    comp1: Var[Any]
-    comp2: Optional[Var[Any]]
-
-class MatchVar(ConditionalVar):
-    match_cases: List[Tuple[Var, ...]]
-    default: Var[Any]
-
 class VarData(Base):
     state: str
     imports: dict[str, set[ImportVar]]
@@ -136,6 +124,7 @@ class BaseVar(Var):
     _var_is_string: bool = False
     _var_full_name_needs_state_prefix: bool = False
     _var_data: VarData | None = None
+    _var_cond_data: ConditionalVar | None = None
     def __hash__(self) -> int: ...
     def get_default_value(self) -> Any: ...
     def get_setter_name(self, include_state: bool = ...) -> str: ...
@@ -158,3 +147,15 @@ def cached_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
 class CallableVar(BaseVar):
     def __init__(self, fn: Callable[..., BaseVar]): ...
     def __call__(self, *args, **kwargs) -> BaseVar: ...
+
+class ConditionalVar(Base, ABC):
+    cond: Var
+    @classmethod
+    def create(cls, cond, is_match_var=False, **kwargs): ...
+class CondVar(ConditionalVar):
+    comp1: Var[Any]
+    comp2: Optional[Var[Any]]
+
+class MatchVar(ConditionalVar):
+    match_cases: List[Tuple[Var, ...]]
+    default: Var[Any]

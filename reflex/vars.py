@@ -111,30 +111,6 @@ def get_unique_variable_name() -> str:
     return get_unique_variable_name()
 
 
-class ConditionalVar(Base, ABC):
-    cond: Var
-
-    @classmethod
-    def create(cls, cond, is_match_var = False, **kwargs):
-        if is_match_var:
-            if not "match_cases" in kwargs and "default" in kwargs:
-                raise ValueError("match_cases and default args are required for creating match var")
-            return MatchVar(cond=cond, **kwargs)
-        else:
-            if not "comp1" and "comp2" in kwargs:
-                raise ValueError("The True and False arguments are required for creating a cond var")
-            return CondVar(cond=cond, **kwargs)
-
-
-class CondVar(ConditionalVar):
-    comp1: Var[Any]
-    comp2: Optional[Var[Any]]
-
-
-class MatchVar(ConditionalVar):
-    match_cases: List[Tuple[Var, ...]]
-    default: Var[Any]
-
 
 class VarData(Base):
     """Metadata associated with a Var."""
@@ -1992,6 +1968,26 @@ class CallableVar(BaseVar):
         return self.fn(*args, **kwargs)
 
 
-# resolve type definitions
-CondVar.update_forward_refs()
-MatchVar.update_forward_refs()
+class ConditionalVar(Base, ABC):
+    cond: Var
+
+    @classmethod
+    def create(cls, cond, is_match_var = False, **kwargs):
+        if is_match_var:
+            if not "match_cases" in kwargs and "default" in kwargs:
+                raise ValueError("match_cases and default args are required for creating match var")
+            return MatchVar(cond=cond, **kwargs)
+        else:
+            if not "comp1" and "comp2" in kwargs:
+                raise ValueError("The True and False arguments are required for creating a cond var")
+            return CondVar(cond=cond, **kwargs)
+
+
+class CondVar(ConditionalVar):
+    comp1: Var[Any]
+    comp2: Optional[Var[Any]]
+
+
+class MatchVar(ConditionalVar):
+    match_cases: List[Tuple[Var, ...]]
+    default: Var[Any]
