@@ -471,6 +471,7 @@ class ContextMenuContent(RadixThemesComponent):
             variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
             high_contrast: Whether to render the button with higher contrast color against background
             align_offset: The vertical distance in pixels from the anchor.
+            avoid_collisions: When true, overrides the side and aligns preferences to prevent collisions with boundary edges.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
