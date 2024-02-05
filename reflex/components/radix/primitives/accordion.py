@@ -336,7 +336,7 @@ class AccordionRoot(AccordionComponent):
     variant: Var[LiteralAccordionRootVariant] = "classic"  # type: ignore
 
     # The color scheme of the accordion.
-    color_scheme: Var[LiteralAccentColor] = "green"  # type: ignore
+    color_scheme: Var[LiteralAccentColor]  # type: ignore
 
     # dynamic themes of the accordion generated at compile time.
     _dynamic_themes: Var[dict]
@@ -357,11 +357,11 @@ class AccordionRoot(AccordionComponent):
         """
         comp = super().create(*children, **props)
 
-        if not comp.color_scheme._var_state:  # type: ignore
+        if comp.color_scheme is not None and not comp.color_scheme._var_state:  # type: ignore
             # mark the vars of color string literals as strings so they can be formatted properly when performing a var operation.
             comp.color_scheme._var_is_string = True  # type: ignore
 
-        if not comp.variant._var_state:  # type: ignore
+        if comp.variant is not None and not comp.variant._var_state:  # type: ignore
             # mark the vars of variant string literals as strings so they are formatted properly in the match condition.
             comp.variant._var_is_string = True  # type: ignore
 
@@ -376,8 +376,18 @@ class AccordionRoot(AccordionComponent):
         return {"css": self._dynamic_themes._merge(format_as_emotion(self.style))}  # type: ignore
 
     def _apply_theme(self, theme: Component):
+        global_color_scheme = getattr(theme, "accent_color", None)
+
+        if global_color_scheme is None and self.color_scheme is None:
+            raise ValueError(
+                "`color_scheme` cannot be None. Either set the `color_scheme` prop on the accordion "
+                "component or set the `accent_color` prop in your global theme."
+            )
+
         # prepare the color_scheme var to be used in an f-string(strip off the wrapping curly brace)
-        color_scheme = self.color_scheme._replace(_var_is_string=False)
+        color_scheme = (
+            self.color_scheme if self.color_scheme is not None else global_color_scheme
+        )._replace(_var_is_string=False)
 
         accordion_theme_root = get_theme_accordion_root(
             variant=self.variant, color_scheme=color_scheme
