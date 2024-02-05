@@ -127,12 +127,13 @@ class ConditionalVar(Base, ABC):
 
 
 class CondVar(ConditionalVar):
-    comp1: Var
-    comp2: Optional[Var]
+    comp1: Var[Any]
+    comp2: Optional[Var[Any]]
+
 
 class MatchVar(ConditionalVar):
     match_cases: List[Tuple[Var, ...]]
-    default: BaseVar
+    default: Var[Any]
 
 
 class VarData(Base):
@@ -1992,5 +1993,5 @@ class CallableVar(BaseVar):
 
 
 # resolve type definitions
-MatchVar.update_forward_refs()
 CondVar.update_forward_refs()
+MatchVar.update_forward_refs()
