@@ -7,7 +7,6 @@ from reflex import base as base
 from reflex.base import Base as Base
 from reflex import compiler as compiler
 from reflex.compiler.utils import get_asset_path as get_asset_path
-from reflex.components import Cond as Cond
 from reflex.components import cond as cond
 from reflex.components import foreach as foreach
 from reflex.components import html as html
@@ -73,7 +72,6 @@ from reflex.components import table as table
 from reflex.components import tabs as tabs
 from reflex.components import text as text
 from reflex.components import text_area as text_area
-from reflex.components import text_field as text_field
 from reflex.components import theme as theme
 from reflex.components import theme_panel as theme_panel
 from reflex.components import tooltip as tooltip
