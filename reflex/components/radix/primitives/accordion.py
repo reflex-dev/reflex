@@ -387,7 +387,9 @@ class AccordionRoot(AccordionComponent):
         # prepare the color_scheme var to be used in an f-string(strip off the wrapping curly brace)
         color_scheme = Var.create(
             self.color_scheme if self.color_scheme is not None else global_color_scheme
-        )._replace(_var_is_string=False)
+        )._replace(
+            _var_is_string=False
+        )  # type: ignore
 
         accordion_theme_root = get_theme_accordion_root(
             variant=self.variant, color_scheme=color_scheme
