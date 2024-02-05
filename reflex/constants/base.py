@@ -88,14 +88,14 @@ class ReflexHostingCLI(SimpleNamespace):
 class Templates(SimpleNamespace):
     """Constants related to Templates."""
 
-    # Dynamically get the enum values from the .templates folder
+    # Dynamically get the enum values from the .templates folder.
     template_dir = os.path.join(Reflex.ROOT_DIR, Reflex.MODULE_NAME, ".templates/apps")
     template_dirs = next(os.walk(template_dir))[1]
 
-    # Create an enum value for each directory in the .templates folder
+    # Create an enum value for each directory in the .templates folder.
     Kind = Enum("Kind", {template.upper(): template for template in template_dirs})
 
-    # The route on Reflex backend to query which templates are available and their URLs
+    # The route on Reflex backend to query which templates are available and their URLs.
     APP_TEMPLATES_ROUTE = "/app-templates"
 
     class Dirs(SimpleNamespace):

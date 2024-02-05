@@ -63,7 +63,7 @@ def main(
 
 def _init(
     name: str,
-    template: Optional[str] = None,
+    template: str | None = None,
     loglevel: constants.LogLevel = config.loglevel,
 ):
     """Initialize a new Reflex app in the given directory."""
@@ -85,38 +85,13 @@ def _init(
 
     prerequisites.ensure_reflex_installation_id()
 
-    # When upgrading to 0.4, show migration instructions.
-    if prerequisites.should_show_rx_chakra_migration_instructions():
-        prerequisites.show_rx_chakra_migration_instructions()
-
-    # Set up the app directory, only if the config doesn't exist.
-    if not os.path.exists(constants.Config.FILE):
-        # Fetch App templates from the backend server
-        template_name_to_url = prerequisites.fetch_app_templates() or {}
-        console.debug(f"Available templates: {template_name_to_url}")
-
-        template = prerequisites.validate_template(
-            template=template, template_name_to_url=template_name_to_url
-        )
-        if template == constants.Templates.Kind.BLANK.value:
-            # Default app creation behavior: a blank app
-            prerequisites.create_config(app_name)
-            prerequisites.initialize_app_directory(app_name)
-        else:
-            prerequisites.create_config_init_app_from_remote_template(
-                app_name=app_name,
-                template=template,
-                template_name_to_url=template_name_to_url,
-            )
-        telemetry.send("init")
-    else:
-        telemetry_event = "reinit"
+    prerequisites.initialize_app(app_name, template)
 
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
 
     # Send the telemetry event after the .web folder is initialized.
-    telemetry.send(telemetry_event)
+    # telemetry.send(telemetry_event)
 
     # Migrate Pynecone projects to Reflex.
     prerequisites.migrate_to_reflex()

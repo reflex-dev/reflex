@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
-
 from rich.console import Console
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from rich.prompt import Prompt
@@ -151,8 +149,8 @@ def error(msg: str, **kwargs):
 
 def ask(
     question: str,
-    choices: Optional[List[str]] = None,
-    default: Optional[str] = None,
+    choices: list[str] | None = None,
+    default: str | None = None,
     show_choices: bool = True,
 ) -> str:
     """Takes a prompt question and optionally a list of choices
