@@ -16,7 +16,6 @@ from reflex.utils.format import to_snake_case
 
 _ALL_COMPONENTS = [
     # Core
-    "Cond",
     "cond",
     "foreach",
     "html",
