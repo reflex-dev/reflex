@@ -84,7 +84,7 @@ def _compile_contexts(state: Optional[Type[BaseState]]) -> str:
             is_dev_mode=_is_dev_mode(),
         )
         if state
-        else templates.CONTEXT.render(is_dev_mode=_is_dev_mode)
+        else templates.CONTEXT.render(is_dev_mode=_is_dev_mode())
     )
 
 
