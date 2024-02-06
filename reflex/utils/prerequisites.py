@@ -29,7 +29,6 @@ from redis.asyncio import Redis
 import reflex
 from reflex import constants, model
 from reflex.compiler import templates
-from reflex.components import ChakraComponent
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 
@@ -999,6 +998,8 @@ def migrate_to_rx_chakra():
 
 
 def _get_rx_chakra_component_to_migrate() -> set[str]:
+    from reflex.components import ChakraComponent
+
     rx_chakra_names = set(dir(reflex.chakra))
 
     names_to_migrate = set()
