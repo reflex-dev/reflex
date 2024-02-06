@@ -1,6 +1,6 @@
 import json
 import typing
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import pytest
 from pandas import DataFrame
@@ -1268,7 +1268,7 @@ def test_var_name_unwrapped(var, expected):
 
 
 def assert_cond_var_cond_data(
-    cond_data: CondVarMetaData, cond: Var | None, comp1: Var | None, comp2: Var | None
+    cond_data: CondVarMetaData, cond: Optional[Var], comp1: Optional[Var], comp2: Optional[Var]
 ):
     assert cond_data is not None
     assert isinstance(cond_data, CondVarMetaData)
@@ -1287,9 +1287,9 @@ def assert_cond_var_cond_data(
 
 def assert_match_var_cond_data(
     cond_data: MatchVarMetaData,
-    cond: Var | None,
+    cond: Optional[Var],
     match_cases: List[Tuple[Var, ...]],
-    default: Var | None,
+    default: Optional[Var],
 ):
     assert cond_data is not None
     assert isinstance(cond_data, MatchVarMetaData)
