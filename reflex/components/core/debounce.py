@@ -23,7 +23,7 @@ class DebounceInput(Component):
     min_length: Var[int]
 
     # Time to wait between end of input and triggering on_change
-    debounce_timeout: Var[int]
+    debounce_timeout: Var[int] = 300
 
     # If true, notify when Enter key is pressed
     force_notify_by_enter: Var[bool]
