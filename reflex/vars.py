@@ -1986,6 +1986,9 @@ class ConditionalVarMetaData(Base, ABC):
 
         Returns:
             The Var meta data.
+
+        Raises:
+            ValueError: When insufficient kwargs are passed for creating respective meta data.
         """
         if is_match_var:
             if "match_cases" not in kwargs and "default" in kwargs:
