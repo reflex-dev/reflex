@@ -13,7 +13,7 @@ import reflex as rx
 from reflex.components import el
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
-from reflex.components.radix.themes.components.icons import Icon
+from reflex.components.lucide.icon import Icon
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralRadius, LiteralSize, RadixThemesComponent

@@ -13,7 +13,6 @@ from .dialog import dialog as dialog
 from .dropdownmenu import dropdown_menu as dropdown_menu
 from .hovercard import hover_card as hover_card
 from .iconbutton import icon_button as icon_button
-from .icons import icon as icon
 from .inset import inset as inset
 from .popover import popover as popover
 from .radiogroup import radio_group as radio_group
@@ -44,7 +43,6 @@ __all__ = [
     "dropdown_menu",
     "hover_card",
     "icon_button",
-    "icon",
     "input",
     "inset",
     "popover",
