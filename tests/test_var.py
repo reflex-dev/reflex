@@ -1268,28 +1268,28 @@ def test_var_name_unwrapped(var, expected):
 
 
 def assert_cond_var_cond_data(
-    cond_data: CondVarMetaData, cond: Var, comp1: Var, comp2: Var
+    cond_data: CondVarMetaData, cond: Var | None, comp1: Var | None, comp2: Var | None
 ):
     assert cond_data is not None
     assert isinstance(cond_data, CondVarMetaData)
-    assert cond_data.cond._var_full_name == cond._var_full_name
-    assert cond_data.comp1._var_full_name == comp1._var_full_name
-    assert cond_data.comp2._var_full_name == comp2._var_full_name
+    assert cond_data.cond._var_full_name == cond._var_full_name if cond is not None else cond  # type: ignore
+    assert cond_data.comp1._var_full_name == comp1._var_full_name if comp1 is not None else comp1  # type: ignore
+    assert cond_data.comp2._var_full_name == comp2._var_full_name if comp2 is not None else comp2  # type: ignore
 
 
 def assert_match_var_cond_data(
     cond_data: MatchVarMetaData,
-    cond: Var,
+    cond: Var | None,
     match_cases: List[Tuple[Var, ...]],
-    default: Var,
+    default: Var | None,
 ):
     assert cond_data is not None
     assert isinstance(cond_data, MatchVarMetaData)
-    assert cond_data.cond._var_full_name == cond._var_full_name
+    assert cond_data.cond._var_full_name == cond._var_full_name if cond is not None else cond  # type: ignore
     for match_case1, match_case2 in zip(cond_data.match_cases, match_cases):
         for case1, case2 in zip(match_case1, match_case2):
-            assert case1._var_full_name == case2._var_full_name
-    assert cond_data.default._var_full_name == default._var_full_name
+            assert case1._var_full_name == case2._var_full_name  # type: ignore
+    assert cond_data.default._var_full_name == default._var_full_name if default is not None else default  # type: ignore
 
 
 def test_cond_var_cond_data():
@@ -1297,7 +1297,7 @@ def test_cond_var_cond_data():
     value = rx.cond(True, "first", "second")
     cond_var_data = value._var_cond_data
     assert_cond_var_cond_data(
-        cond_var_data, Var.create(True), Var.create("first"), Var.create("second")
+        cond_var_data, Var.create(True), Var.create("first"), Var.create("second")  # type: ignore
     )
 
     # Test cases with nested rx.cond
@@ -1308,22 +1308,20 @@ def test_cond_var_cond_data():
     )
     cond_var_data = value._var_cond_data
     assert_cond_var_cond_data(
-        cond_var_data,
+        cond_var_data,  # type: ignore
         Var.create(True),
         Var.create("first"),
         Var.create(
             "isTrue(true) ? `second` : isTrue(a_test_state.bool_cond) ? `third` : `fourth`"
-        )._replace(_var_data=cond_var_data.comp2._var_data, _var_is_local=False),
+        ),
     )
 
-    cond_var_data = cond_var_data.comp2._var_cond_data
+    cond_var_data = cond_var_data.comp2._var_cond_data  # type: ignore
     assert_cond_var_cond_data(
         cond_var_data,
         Var.create(True),
         Var.create("second"),
-        Var.create("isTrue(a_test_state.bool_cond) ? `third` : `fourth`")._replace(
-            _var_data=cond_var_data.comp2._var_data, _var_is_local=False
-        ),
+        Var.create("isTrue(a_test_state.bool_cond) ? `third` : `fourth`"),
     )
 
 
@@ -1336,9 +1334,9 @@ def test_match_var_cond_data():
     )
 
     assert_match_var_cond_data(
-        match_value._var_cond_data,
+        match_value._var_cond_data,  # type: ignore
         Var.create("condition"),
-        [
+        [  # type: ignore
             (Var.create(case), Var.create(return_value))
             for case, return_value in {
                 "first": "first_return_value",
@@ -1368,7 +1366,7 @@ def test_match_var_cond_data():
         ("second", rx.cond(True, "second_true", "second_false")),
         "default_value",
     )
-    match_cond_var_data = match_value._var_cond_data
+    match_cond_var_data = match_value._var_cond_data  # type: ignore
     match_case_dict = {
         "first": "(() => { switch (JSON.stringify(`nested_condition`)) {case JSON.stringify(`nested_first`):  return "
         "(isTrue(true) ? `return_nested_first_truth` : `return_nested_first_false`);  break;"
@@ -1379,7 +1377,7 @@ def test_match_var_cond_data():
     assert_match_var_cond_data(
         match_cond_var_data,
         Var.create("condition"),
-        [
+        [  # type: ignore
             (Var.create(case), Var.create(return_value))
             for case, return_value in match_case_dict.items()
         ],
@@ -1396,7 +1394,7 @@ def test_match_var_cond_data():
     assert_match_var_cond_data(
         match_cond_var_data,
         Var.create("nested_condition"),
-        [
+        [  # type: ignore
             (Var.create(case), Var.create(return_value))
             for case, return_value in match_case_dict.items()
         ],
@@ -1410,9 +1408,7 @@ def test_match_var_cond_data():
         cond_var_data,
         Var.create(True),
         Var.create("return_nested_first_truth"),
-        Var.create("return_nested_first_false")._replace(
-            _var_data=cond_var_data.comp2._var_data, _var_is_local=False
-        ),
+        Var.create("return_nested_first_false"),
     )
 
     # Test the first nested default case (rx.cond(True, "nested_default_true", ...))
@@ -1421,20 +1417,16 @@ def test_match_var_cond_data():
         cond_var_data,
         Var.create(True),
         Var.create("nested_default_true"),
-        Var.create("nested_default_false")._replace(
-            _var_data=cond_var_data.comp2._var_data, _var_is_local=False
-        ),
+        Var.create("nested_default_false"),
     )
 
     # Test the second match case ("second": rx.cond(...))
-    second_match_case_tuple = match_value._var_cond_data.match_cases[1]
+    second_match_case_tuple = match_value._var_cond_data.match_cases[1]  # type: ignore
     cond_var_data = second_match_case_tuple[-1]._var_cond_data
 
     assert_cond_var_cond_data(
         cond_var_data,
         Var.create(True),
         Var.create("second_true"),
-        Var.create("second_false")._replace(
-            _var_data=cond_var_data.comp2._var_data, _var_is_local=False
-        ),
+        Var.create("second_false"),
     )

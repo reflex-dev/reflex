@@ -45,7 +45,7 @@ class Var:
     _var_is_string: bool = False
     _var_full_name_needs_state_prefix: bool = False
     _var_data: VarData | None = None
-    _var_cond_data: ConditionalVar | None = None
+    _var_cond_data: ConditionalVarMetaData | None = None
     @classmethod
     def create(
         cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False
@@ -124,7 +124,7 @@ class BaseVar(Var):
     _var_is_string: bool = False
     _var_full_name_needs_state_prefix: bool = False
     _var_data: VarData | None = None
-    _var_cond_data: ConditionalVar | None = None
+    _var_cond_data: ConditionalVarMetaData | None = None
     def __hash__(self) -> int: ...
     def get_default_value(self) -> Any: ...
     def get_setter_name(self, include_state: bool = ...) -> str: ...
@@ -151,7 +151,7 @@ class CallableVar(BaseVar):
 class ConditionalVarMetaData(Base, ABC):
     cond: Var
     @classmethod
-    def create(cls, cond, is_match_var=False, **kwargs): ...
+    def create(cls, cond, is_match_var=False, **kwargs) -> CondVarMetaData | MatchVarMetaData: ...
 
 class CondVarMetaData(ConditionalVarMetaData):
     comp1: Var[Any]
