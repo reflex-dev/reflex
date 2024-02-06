@@ -119,6 +119,7 @@ _MAPPING = {
     "reflex.components.component": ["Component", "NoSSRComponent", "memo"],
     "reflex.components.chakra": ["chakra"],
     "reflex.components.el": ["el"],
+    "reflex.components.lucide": ["lucide"],
     "reflex.components.next": ["next"],
     "reflex.components.radix": ["radix"],
     "reflex.components.recharts": ["recharts"],
