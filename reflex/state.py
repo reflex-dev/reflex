@@ -1880,6 +1880,7 @@ class LocalStorage(ClientStorageBase, str):
     """Represents a state Var that is stored in localStorage in the browser."""
 
     name: str | None
+    sync: bool = False
 
     def __new__(
         cls,
@@ -1888,6 +1889,7 @@ class LocalStorage(ClientStorageBase, str):
         errors: str | None = None,
         /,
         name: str | None = None,
+        sync: bool = False,
     ) -> "LocalStorage":
         """Create a client-side localStorage (str).
 
@@ -1896,6 +1898,7 @@ class LocalStorage(ClientStorageBase, str):
             encoding: The encoding to use.
             errors: The error handling scheme to use.
             name: The name of the storage key on the client side.
+            sync: Whether changes should be propagated to other tabs.
 
         Returns:
             The client-side localStorage object.
@@ -1905,6 +1908,7 @@ class LocalStorage(ClientStorageBase, str):
         else:
             inst = super().__new__(cls, object)
         inst.name = name
+        inst.sync = sync
         return inst
 
 

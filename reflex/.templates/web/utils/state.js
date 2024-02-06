@@ -21,6 +21,9 @@ let token;
 // Key for the token in the session storage.
 const TOKEN_KEY = "token";
 
+// Used for python setter construction.
+const SETTER_PREFIX = "set_";
+
 // create cookie instance
 const cookies = new Cookies();
 
@@ -562,6 +565,38 @@ export const useEventLoop = (
       })()
     }
   })
+
+
+  // localStorage event handling
+  useEffect(() => {
+    const storage_to_state_map = {};
+
+    if (client_storage.local_storage && typeof window !== "undefined") {
+      for (const state_key in client_storage.local_storage) {
+        const options = client_storage.local_storage[state_key];
+        if (options.sync) {
+          const local_storage_value_key = options.name || state_key;
+          const frags = state_key.split(".");
+          frags[frags.length - 1] = SETTER_PREFIX + frags[frags.length - 1];
+          storage_to_state_map[local_storage_value_key] = frags.join(".");
+        }
+      }
+    }
+
+    // e is StorageEvent
+    const handleStorage = (e) => {
+      if (storage_to_state_map[e.key]) {
+        const event = Event(storage_to_state_map[e.key], {
+          value: e.newValue,
+        });
+        addEvents([event], e);
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  });
+
 
   // Route after the initial page hydration.
   useEffect(() => {
