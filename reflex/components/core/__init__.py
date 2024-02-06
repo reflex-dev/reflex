@@ -6,6 +6,7 @@ from .colors import color
 from .cond import Cond, cond
 from .debounce import DebounceInput
 from .foreach import Foreach
+from .html import Html
 from .match import Match
 from .responsive import (
     desktop_only,
@@ -20,5 +21,6 @@ connection_banner = ConnectionBanner.create
 connection_modal = ConnectionModal.create
 debounce_input = DebounceInput.create
 foreach = Foreach.create
+html = Html.create
 match = Match.create
 upload = Upload.create

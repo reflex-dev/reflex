@@ -13,3 +13,6 @@ class AspectRatio(RadixThemesComponent):
 
     # The ratio of the width to the height of the element
     ratio: Var[Union[float, int]]
+
+
+aspect_ratio = AspectRatio.create

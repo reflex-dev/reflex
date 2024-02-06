@@ -43,7 +43,7 @@ class S(BaseState):
 def test_render_child_props():
     """DebounceInput should render props from child component."""
     tag = rx.debounce_input(
-        rx.input(
+        rx.chakra.input(
             foo="bar",
             baz="quuc",
             value="real",
@@ -71,7 +71,7 @@ def test_render_child_props_recursive():
         rx.debounce_input(
             rx.debounce_input(
                 rx.debounce_input(
-                    rx.input(
+                    rx.chakra.input(
                         foo="bar",
                         baz="quuc",
                         value="real",
@@ -103,7 +103,7 @@ def test_render_child_props_recursive():
 
 def test_full_control_implicit_debounce():
     """DebounceInput is used when value and on_change are used together."""
-    tag = rx.input(
+    tag = rx.chakra.input(
         value=S.value,
         on_change=S.on_change,
     )._render()

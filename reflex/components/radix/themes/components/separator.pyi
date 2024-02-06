@@ -171,3 +171,5 @@ class Separator(RadixThemesComponent):
             A new component instance.
         """
         ...
+
+separator = Separator.create

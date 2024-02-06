@@ -286,3 +286,5 @@ class IconButton(el.Button, RadixThemesComponent):
             The IconButton component.
         """
         ...
+
+icon_button = IconButton.create

@@ -160,3 +160,5 @@ class Tooltip(RadixThemesComponent):
             The created component.
         """
         ...
+
+tooltip = Tooltip.create

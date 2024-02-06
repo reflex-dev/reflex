@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Optional
 
 from reflex.components.component import Component
@@ -67,20 +68,26 @@ class ProgressIndicator(ProgressComponent):
         )
 
 
-progress_root = ProgressRoot.create
-progress_indicator = ProgressIndicator.create
+class Progress(SimpleNamespace):
+    """High level API for progress bar."""
+
+    root = staticmethod(ProgressRoot.create)
+    indicator = staticmethod(ProgressIndicator.create)
+
+    @staticmethod
+    def __call__(**props) -> Component:
+        """High level API for progress bar.
+
+        Args:
+            **props: The props of the progress bar
+
+        Returns:
+            The progress bar.
+        """
+        return ProgressRoot.create(
+            ProgressIndicator.create(value=props.get("value")),
+            **props,
+        )
 
 
-def progress(**props):
-    """High level API for progress bar.
-
-    Args:
-        **props: The props of the progress bar
-
-    Returns:
-        The progress bar.
-    """
-    return progress_root(
-        progress_indicator(value=props.get("value")),
-        **props,
-    )
+progress = Progress()

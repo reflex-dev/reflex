@@ -72,3 +72,6 @@ class Slider(RadixThemesComponent):
             EventTriggers.ON_CHANGE: lambda e0: [e0],
             EventTriggers.ON_VALUE_COMMIT: lambda e0: [e0],
         }
+
+
+slider = Slider.create

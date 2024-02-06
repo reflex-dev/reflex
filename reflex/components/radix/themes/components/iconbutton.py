@@ -89,3 +89,6 @@ class IconButton(el.Button, RadixThemesComponent):
 
     def _apply_theme(self, theme: Component):
         self.style = Style({"padding": "6px", **self.style})
+
+
+icon_button = IconButton.create

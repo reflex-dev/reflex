@@ -41,7 +41,7 @@ def UploadFile():
 
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=UploadState.router.session.client_token,
                 is_read_only=True,
                 id="token",
@@ -61,7 +61,7 @@ def UploadFile():
             rx.box(
                 rx.foreach(
                     rx.selected_files,
-                    lambda f: rx.text(f),
+                    lambda f: rx.text(f, as_="p"),
                 ),
                 id="selected_files",
             ),
@@ -91,7 +91,7 @@ def UploadFile():
             rx.box(
                 rx.foreach(
                     rx.selected_files("secondary"),
-                    lambda f: rx.text(f),
+                    lambda f: rx.text(f, as_="p"),
                 ),
                 id="selected_files_secondary",
             ),

@@ -800,3 +800,6 @@ class RadixThemesColorModeProvider(Component):
             TypeError: If an invalid child is passed.
         """
         ...
+
+theme = Theme.create
+theme_panel = ThemePanel.create

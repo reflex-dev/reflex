@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+from types import SimpleNamespace
 from typing import Literal, Union
 
 from reflex import el
@@ -76,3 +77,18 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
 
     # width of the column
     width: Var[Union[str, int]]
+
+
+class Table(SimpleNamespace):
+    """Table components namespace."""
+
+    root = staticmethod(TableRoot.create)
+    header = staticmethod(TableHeader.create)
+    body = staticmethod(TableBody.create)
+    row = staticmethod(TableRow.create)
+    cell = staticmethod(TableCell.create)
+    column_header_cell = staticmethod(TableColumnHeaderCell.create)
+    row_header_cell = staticmethod(TableRowHeaderCell.create)
+
+
+table = Table()

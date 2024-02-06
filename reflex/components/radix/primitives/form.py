@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from hashlib import md5
+from types import SimpleNamespace
 from typing import Any, Dict, Iterator, Literal
 
 from jinja2 import Environment
@@ -289,14 +290,16 @@ class FormSubmit(FormComponent):
     alias = "RadixFormSubmit"
 
 
-# High Level API
-Form = FormRoot
+class Form(SimpleNamespace):
+    """Form components."""
 
-form_root = FormRoot.create
-form_field = FormField.create
-form_label = FormLabel.create
-form_control = FormControl.create
-form_message = FormMessage.create
-form_validity_state = FormValidityState.create
-form_submit = FormSubmit.create
-form = Form.create
+    control = staticmethod(FormControl.create)
+    field = staticmethod(FormField.create)
+    label = staticmethod(FormLabel.create)
+    message = staticmethod(FormMessage.create)
+    root = staticmethod(FormRoot.create)
+    submit = staticmethod(FormSubmit.create)
+    validity_state = staticmethod(FormValidityState.create)
+
+
+form = Form()

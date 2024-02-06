@@ -181,3 +181,5 @@ class ScrollArea(RadixThemesComponent):
             A new component instance.
         """
         ...
+
+scroll_area = ScrollArea.create

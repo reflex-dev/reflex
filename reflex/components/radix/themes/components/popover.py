@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
 from reflex import el
@@ -83,3 +84,15 @@ class PopoverClose(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Popover.Close"
+
+
+class Popover(SimpleNamespace):
+    """Popover components namespace."""
+
+    root = staticmethod(PopoverRoot.create)
+    trigger = staticmethod(PopoverTrigger.create)
+    content = staticmethod(PopoverContent.create)
+    close = staticmethod(PopoverClose.create)
+
+
+popover = Popover()

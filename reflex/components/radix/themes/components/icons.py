@@ -50,6 +50,9 @@ class Icon(RadixIconComponent):
         return super().create(*children, **props)
 
 
+icon = Icon.create
+
+
 ICON_ABSTRACT: List[str] = [
     "hamburger_menu",
     "cross_1",

@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from types import SimpleNamespace
 from typing import Any, Dict, Literal
 from reflex.components.component import Component
 from reflex.components.core import cond, match
@@ -577,3 +578,12 @@ class AccordionContent(AccordionComponent):
         ...
 
 def accordion_item(header: Component, content: Component, **props) -> Component: ...
+
+class Accordion(SimpleNamespace):
+    content = staticmethod(AccordionContent.create)
+    header = staticmethod(AccordionHeader.create)
+    item = staticmethod(accordion_item)
+    root = staticmethod(AccordionRoot.create)
+    trigger = staticmethod(AccordionTrigger.create)
+
+accordion = Accordion()

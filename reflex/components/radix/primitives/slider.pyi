@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from types import SimpleNamespace
 from typing import Any, Dict, List, Literal
 from reflex.components.component import Component
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
@@ -454,9 +455,13 @@ class SliderThumb(SliderComponent):
         """
         ...
 
-slider_root = SliderRoot.create
-slider_track = SliderTrack.create
-slider_range = SliderRange.create
-slider_thumb = SliderThumb.create
+class Slider(SimpleNamespace):
+    root = staticmethod(SliderRoot.create)
+    track = staticmethod(SliderTrack.create)
+    range = staticmethod(SliderRange.create)
+    thumb = staticmethod(SliderThumb.create)
 
-def slider(**props) -> Component: ...
+    @staticmethod
+    def __call__(**props) -> Component: ...
+
+slider = Slider()

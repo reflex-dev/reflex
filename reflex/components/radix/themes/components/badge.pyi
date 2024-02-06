@@ -235,3 +235,5 @@ class Badge(el.Span, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+badge = Badge.create

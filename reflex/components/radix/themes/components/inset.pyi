@@ -247,3 +247,5 @@ class Inset(el.Div, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+inset = Inset.create

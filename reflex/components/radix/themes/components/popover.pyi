@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from types import SimpleNamespace
 from typing import Any, Dict, Literal
 from reflex import el
 from reflex.constants import EventTriggers
@@ -705,3 +706,11 @@ class PopoverClose(RadixThemesComponent):
             A new component instance.
         """
         ...
+
+class Popover(SimpleNamespace):
+    root = staticmethod(PopoverRoot.create)
+    trigger = staticmethod(PopoverTrigger.create)
+    content = staticmethod(PopoverContent.create)
+    close = staticmethod(PopoverClose.create)
+
+popover = Popover()

@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
 
 import reflex as rx
@@ -164,3 +165,14 @@ class HighLevelRadioGroup(RadioGroupRoot):
             default_value=default_value,
             **props,
         )
+
+
+class RadioGroup(SimpleNamespace):
+    """RadioGroup components namespace."""
+
+    root = staticmethod(RadioGroupRoot.create)
+    item = staticmethod(RadioGroupItem.create)
+    __call__ = staticmethod(HighLevelRadioGroup.create)
+
+
+radio_group = RadioGroup()

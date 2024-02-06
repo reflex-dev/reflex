@@ -8,6 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from hashlib import md5
+from types import SimpleNamespace
 from typing import Any, Dict, Iterator, Literal
 from jinja2 import Environment
 from reflex.components.component import Component
@@ -751,12 +752,13 @@ class FormSubmit(FormComponent):
         """
         ...
 
-Form = FormRoot
-form_root = FormRoot.create
-form_field = FormField.create
-form_label = FormLabel.create
-form_control = FormControl.create
-form_message = FormMessage.create
-form_validity_state = FormValidityState.create
-form_submit = FormSubmit.create
-form = Form.create
+class Form(SimpleNamespace):
+    control = staticmethod(FormControl.create)
+    field = staticmethod(FormField.create)
+    label = staticmethod(FormLabel.create)
+    message = staticmethod(FormMessage.create)
+    root = staticmethod(FormRoot.create)
+    submit = staticmethod(FormSubmit.create)
+    validity_state = staticmethod(FormValidityState.create)
+
+form = Form()

@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from types import SimpleNamespace
 from typing import Any, Dict, Literal, Union
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -1343,3 +1344,15 @@ class DropdownMenuSeparator(RadixThemesComponent):
             A new component instance.
         """
         ...
+
+class DropdownMenu(SimpleNamespace):
+    root = staticmethod(DropdownMenuRoot.create)
+    trigger = staticmethod(DropdownMenuTrigger.create)
+    content = staticmethod(DropdownMenuContent.create)
+    sub_trigger = staticmethod(DropdownMenuSubTrigger.create)
+    sub = staticmethod(DropdownMenuSub.create)
+    sub_content = staticmethod(DropdownMenuSubContent.create)
+    item = staticmethod(DropdownMenuItem.create)
+    separator = staticmethod(DropdownMenuSeparator.create)
+
+dropdown_menu = DropdownMenu()

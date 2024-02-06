@@ -284,3 +284,5 @@ class Button(el.Button, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+button = Button.create

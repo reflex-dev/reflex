@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
 from reflex.constants import EventTriggers
@@ -132,3 +133,19 @@ class ContextMenuSeparator(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Separator"
+
+
+class ContextMenu(SimpleNamespace):
+    """ContextMenu components namespace."""
+
+    root = staticmethod(ContextMenuRoot.create)
+    trigger = staticmethod(ContextMenuTrigger.create)
+    content = staticmethod(ContextMenuContent.create)
+    sub = staticmethod(ContextMenuSub.create)
+    sub_trigger = staticmethod(ContextMenuSubTrigger.create)
+    sub_content = staticmethod(ContextMenuSubContent.create)
+    item = staticmethod(ContextMenuItem.create)
+    separator = staticmethod(ContextMenuSeparator.create)
+
+
+context_menu = ContextMenu()
