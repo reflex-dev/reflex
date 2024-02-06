@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 from reflex.components.component import Component
 from reflex.components.core import cond, match
 from reflex.components.lucide.icon import Icon
