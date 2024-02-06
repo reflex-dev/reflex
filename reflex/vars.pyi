@@ -19,6 +19,7 @@ from typing import (
     Set,
     Type,
     Union,
+    overload,
     _GenericAlias,  # type: ignore
 )
 
@@ -136,6 +137,16 @@ class ComputedVar(Var):
     def _deps(self, objclass: Type, obj: Optional[FunctionType] = ...) -> Set[str]: ...
     def mark_dirty(self, instance) -> None: ...
     def _determine_var_type(self) -> Type: ...
+    @overload
+    def __init__(
+        self,
+        fget: Callable[[BaseState], Any],
+        fset: Callable[[BaseState, Any], None] | None = None,
+        fdel: Callable[[BaseState], Any] | None = None,
+        doc: str | None = None,
+        **kwargs,
+    ) -> None: ...
+    @overload
     def __init__(self, func) -> None: ...
 
 def cached_var(fget: Callable[[Any], Any]) -> ComputedVar: ...

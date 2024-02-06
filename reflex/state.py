@@ -356,8 +356,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for mixin in cls._mixins():
             for name, value in mixin.__dict__.items():
                 if isinstance(value, ComputedVar):
-                    cls.computed_vars[value._var_name] = value._var_set_state(cls)
-                    cls.vars[value._var_name] = value
+                    fget = cls._copy_fn(value.fget)
+                    newcv = ComputedVar(fget=fget, _var_name=value._var_name)
+                    newcv._var_set_state(cls)
+                    setattr(cls, name, newcv)
+                    cls.computed_vars[newcv._var_name] = newcv
+                    cls.vars[newcv._var_name] = newcv
                     continue
                 if events.get(name) is not None:
                     continue
@@ -365,8 +369,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     continue
                 if parent_state is not None and parent_state.event_handlers.get(name):
                     continue
+                value = cls._copy_fn(value)
                 value.__qualname__ = f"{cls.__name__}.{name}"
-                setattr(cls, name, value)
                 events[name] = value
 
         for name, fn in events.items():
@@ -375,6 +379,26 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             setattr(cls, name, handler)
 
         cls._init_var_dependency_dicts()
+
+    @staticmethod
+    def _copy_fn(fn: Callable) -> Callable:
+        """Copy a function. Used to copy ComputedVars and EventHandlers from mixins.
+
+        Args:
+            fn: The function to copy.
+
+        Returns:
+            The copied function.
+        """
+        newfn = FunctionType(
+            fn.__code__,
+            fn.__globals__,
+            name=fn.__name__,
+            argdefs=fn.__defaults__,
+            closure=fn.__closure__,
+        )
+        newfn.__annotations__ = fn.__annotations__
+        return newfn
 
     @staticmethod
     def _item_is_event_handler(name: str, value: Any) -> bool:
@@ -391,6 +415,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             not name.startswith("_")
             and isinstance(value, Callable)
             and not isinstance(value, EventHandler)
+            and hasattr(value, "__code__")
         )
 
     @classmethod
