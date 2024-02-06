@@ -1272,8 +1272,16 @@ def assert_cond_var_cond_data(
 ):
     assert cond_data is not None
     assert isinstance(cond_data, CondVarMetaData)
-    assert cond_data.cond._var_full_name == cond._var_full_name if cond is not None else cond  # type: ignore
-    assert cond_data.comp1._var_full_name == comp1._var_full_name if comp1 is not None else comp1  # type: ignore
+    assert (
+        cond_data.cond._var_full_name == cond._var_full_name
+        if cond is not None
+        else cond
+    )
+    assert (
+        cond_data.comp1._var_full_name == comp1._var_full_name
+        if comp1 is not None
+        else comp1
+    )
     assert cond_data.comp2._var_full_name == comp2._var_full_name if comp2 is not None else comp2  # type: ignore
 
 
@@ -1375,7 +1383,7 @@ def test_match_var_cond_data():
         "second": "isTrue(true) ? `second_true` : `second_false`",
     }
     assert_match_var_cond_data(
-        match_cond_var_data,
+        match_cond_var_data,  # type: ignore
         Var.create("condition"),
         [  # type: ignore
             (Var.create(case), Var.create(return_value))
@@ -1385,7 +1393,7 @@ def test_match_var_cond_data():
     )
 
     # Test the first match case ("first": rx.match(...))
-    first_match_case_tuple = match_cond_var_data.match_cases[0]
+    first_match_case_tuple = match_cond_var_data.match_cases[0]  # type: ignore
     match_cond_var_data = first_match_case_tuple[-1]._var_cond_data
     match_case_dict = {
         "nested_first": "isTrue(true) ? `return_nested_first_truth` : `return_nested_first_false`",

@@ -151,7 +151,9 @@ class CallableVar(BaseVar):
 class ConditionalVarMetaData(Base, ABC):
     cond: Var
     @classmethod
-    def create(cls, cond, is_match_var=False, **kwargs) -> CondVarMetaData | MatchVarMetaData: ...
+    def create(
+        cls, cond, is_match_var=False, **kwargs
+    ) -> CondVarMetaData | MatchVarMetaData: ...
 
 class CondVarMetaData(ConditionalVarMetaData):
     comp1: Var[Any]
