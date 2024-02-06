@@ -148,14 +148,15 @@ class CallableVar(BaseVar):
     def __init__(self, fn: Callable[..., BaseVar]): ...
     def __call__(self, *args, **kwargs) -> BaseVar: ...
 
-class ConditionalVar(Base, ABC):
+class ConditionalVarMetaData(Base, ABC):
     cond: Var
     @classmethod
     def create(cls, cond, is_match_var=False, **kwargs): ...
-class CondVar(ConditionalVar):
+
+class CondVarMetaData(ConditionalVarMetaData):
     comp1: Var[Any]
     comp2: Optional[Var[Any]]
 
-class MatchVar(ConditionalVar):
+class MatchVarMetaData(ConditionalVarMetaData):
     match_cases: List[Tuple[Var, ...]]
     default: Var[Any]

@@ -5,13 +5,10 @@ from typing import Dict, List, Set, Tuple
 import pytest
 from pandas import DataFrame
 
+import reflex as rx
 from reflex.base import Base
 from reflex.state import BaseState
-from reflex.vars import (
-    BaseVar,
-    ComputedVar,
-    Var,
-)
+from reflex.vars import BaseVar, ComputedVar, CondVarMetaData, MatchVarMetaData, Var
 
 test_vars = [
     BaseVar(_var_name="prop1", _var_type=int),
@@ -29,6 +26,7 @@ class ATestState(BaseState):
 
     value: str
     dict_val: Dict[str, List] = {}
+    bool_cond: bool = True
 
 
 @pytest.fixture
@@ -1267,3 +1265,176 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List
 )
 def test_var_name_unwrapped(var, expected):
     assert var._var_name_unwrapped == expected
+
+
+def assert_cond_var_cond_data(
+    cond_data: CondVarMetaData, cond: Var, comp1: Var, comp2: Var
+):
+    assert cond_data is not None
+    assert isinstance(cond_data, CondVarMetaData)
+    assert cond_data.cond._var_full_name == cond._var_full_name
+    assert cond_data.comp1._var_full_name == comp1._var_full_name
+    assert cond_data.comp2._var_full_name == comp2._var_full_name
+
+
+def assert_match_var_cond_data(
+    cond_data: MatchVarMetaData,
+    cond: Var,
+    match_cases: List[Tuple[Var, ...]],
+    default: Var,
+):
+    assert cond_data is not None
+    assert isinstance(cond_data, MatchVarMetaData)
+    assert cond_data.cond._var_full_name == cond._var_full_name
+    for match_case1, match_case2 in zip(cond_data.match_cases, match_cases):
+        for case1, case2 in zip(match_case1, match_case2):
+            assert case1._var_full_name == case2._var_full_name
+    assert cond_data.default._var_full_name == default._var_full_name
+
+
+def test_cond_var_cond_data():
+
+    value = rx.cond(True, "first", "second")
+    cond_var_data = value._var_cond_data
+    assert_cond_var_cond_data(
+        cond_var_data, Var.create(True), Var.create("first"), Var.create("second")
+    )
+
+    # Test cases with nested rx.cond
+    value = rx.cond(
+        True,
+        "first",
+        rx.cond(True, "second", rx.cond(ATestState.bool_cond, "third", "fourth")),
+    )
+    cond_var_data = value._var_cond_data
+    assert_cond_var_cond_data(
+        cond_var_data,
+        Var.create(True),
+        Var.create("first"),
+        Var.create(
+            "isTrue(true) ? `second` : isTrue(a_test_state.bool_cond) ? `third` : `fourth`"
+        )._replace(_var_data=cond_var_data.comp2._var_data, _var_is_local=False),
+    )
+
+    cond_var_data = cond_var_data.comp2._var_cond_data
+    assert_cond_var_cond_data(
+        cond_var_data,
+        Var.create(True),
+        Var.create("second"),
+        Var.create("isTrue(a_test_state.bool_cond) ? `third` : `fourth`")._replace(
+            _var_data=cond_var_data.comp2._var_data, _var_is_local=False
+        ),
+    )
+
+
+def test_match_var_cond_data():
+    match_value = rx.match(
+        "condition",
+        ("first", "first_return_value"),
+        ("second", "second_return_value"),
+        "default_value",
+    )
+
+    assert_match_var_cond_data(
+        match_value._var_cond_data,
+        Var.create("condition"),
+        [
+            (Var.create(case), Var.create(return_value))
+            for case, return_value in {
+                "first": "first_return_value",
+                "second": "second_return_value",
+            }.items()
+        ],
+        Var.create("default_value"),
+    )
+
+    # Test cases with nested match(and conds)
+    match_value = rx.match(
+        "condition",
+        (
+            "first",
+            rx.match(
+                "nested_condition",
+                (
+                    "nested_first",
+                    rx.cond(
+                        True, "return_nested_first_truth", "return_nested_first_false"
+                    ),
+                ),
+                ("nested_second", "return_nested_second"),
+                rx.cond(True, "nested_default_true", "nested_default_false"),
+            ),
+        ),
+        ("second", rx.cond(True, "second_true", "second_false")),
+        "default_value",
+    )
+    match_cond_var_data = match_value._var_cond_data
+    match_case_dict = {
+        "first": "(() => { switch (JSON.stringify(`nested_condition`)) {case JSON.stringify(`nested_first`):  return "
+        "(isTrue(true) ? `return_nested_first_truth` : `return_nested_first_false`);  break;"
+        "case JSON.stringify(`nested_second`):  return (`return_nested_second`);  break;"
+        "default:  return (isTrue(true) ? `nested_default_true` : `nested_default_false`);  break;};})()",
+        "second": "isTrue(true) ? `second_true` : `second_false`",
+    }
+    assert_match_var_cond_data(
+        match_cond_var_data,
+        Var.create("condition"),
+        [
+            (Var.create(case), Var.create(return_value))
+            for case, return_value in match_case_dict.items()
+        ],
+        Var.create("default_value"),
+    )
+
+    # Test the first match case ("first": rx.match(...))
+    first_match_case_tuple = match_cond_var_data.match_cases[0]
+    match_cond_var_data = first_match_case_tuple[-1]._var_cond_data
+    match_case_dict = {
+        "nested_first": "isTrue(true) ? `return_nested_first_truth` : `return_nested_first_false`",
+        "nested_second": "return_nested_second",
+    }
+    assert_match_var_cond_data(
+        match_cond_var_data,
+        Var.create("nested_condition"),
+        [
+            (Var.create(case), Var.create(return_value))
+            for case, return_value in match_case_dict.items()
+        ],
+        Var.create("isTrue(true) ? `nested_default_true` : `nested_default_false`"),
+    )
+
+    # Test the first match case of the nested rx.match in the first case ("nested_first", rx.cond(...))
+    first_nested_match_case_tuple = match_cond_var_data.match_cases[0]
+    cond_var_data = first_nested_match_case_tuple[-1]._var_cond_data
+    assert_cond_var_cond_data(
+        cond_var_data,
+        Var.create(True),
+        Var.create("return_nested_first_truth"),
+        Var.create("return_nested_first_false")._replace(
+            _var_data=cond_var_data.comp2._var_data, _var_is_local=False
+        ),
+    )
+
+    # Test the first nested default case (rx.cond(True, "nested_default_true", ...))
+    cond_var_data = match_cond_var_data.default._var_cond_data
+    assert_cond_var_cond_data(
+        cond_var_data,
+        Var.create(True),
+        Var.create("nested_default_true"),
+        Var.create("nested_default_false")._replace(
+            _var_data=cond_var_data.comp2._var_data, _var_is_local=False
+        ),
+    )
+
+    # Test the second match case ("second": rx.cond(...))
+    second_match_case_tuple = match_value._var_cond_data.match_cases[1]
+    cond_var_data = second_match_case_tuple[-1]._var_cond_data
+
+    assert_cond_var_cond_data(
+        cond_var_data,
+        Var.create(True),
+        Var.create("second_true"),
+        Var.create("second_false")._replace(
+            _var_data=cond_var_data.comp2._var_data, _var_is_local=False
+        ),
+    )

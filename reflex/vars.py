@@ -1,7 +1,6 @@
 """Define a state var."""
 from __future__ import annotations
 
-from abc import ABC
 import contextlib
 import dataclasses
 import dis
@@ -11,6 +10,7 @@ import random
 import re
 import string
 import sys
+from abc import ABC
 from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -109,7 +109,6 @@ def get_unique_variable_name() -> str:
         USED_VARIABLES.add(name)
         return name
     return get_unique_variable_name()
-
 
 
 class VarData(Base):
@@ -291,7 +290,7 @@ class Var:
     # Extra metadata associated with the Var
     _var_data: Optional[VarData]
 
-    _var_cond_data: Optional[ConditionalVar] = None
+    _var_cond_data: Optional[ConditionalVarMetaData] = None
 
     @classmethod
     def create(
@@ -404,7 +403,7 @@ class Var:
             _var_data=VarData.merge(
                 kwargs.get("_var_data", self._var_data), merge_var_data
             ),
-            _var_cond_data = kwargs.pop("_var_cond_data", self._var_cond_data)
+            _var_cond_data=kwargs.pop("_var_cond_data", self._var_cond_data),
         )
         return BaseVar(**field_values)
 
@@ -1657,7 +1656,7 @@ class BaseVar(Var):
     # Extra metadata associated with the Var
     _var_data: Optional[VarData] = dataclasses.field(default=None)
 
-    _var_cond_data: Optional[ConditionalVar] = dataclasses.field(default=None)
+    _var_cond_data: Optional[ConditionalVarMetaData] = dataclasses.field(default=None)
 
     def __hash__(self) -> int:
         """Define a hash function for a var.
@@ -1968,26 +1967,48 @@ class CallableVar(BaseVar):
         return self.fn(*args, **kwargs)
 
 
-class ConditionalVar(Base, ABC):
+class ConditionalVarMetaData(Base, ABC):
+    """Meta data associated with cond and match vars."""
+
     cond: Var
 
     @classmethod
-    def create(cls, cond, is_match_var = False, **kwargs):
+    def create(
+        cls, cond, is_match_var=False, **kwargs
+    ) -> MatchVarMetaData | CondVarMetaData:
+        """Create a Var meta data for a cond or match BaseVar.
+
+        Args:
+            cond: The cond/match condition.
+            is_match_var: Whether to create meta data for match BaseVar.
+            **kwargs: additional props from cond or match components.
+
+        Returns:
+            The Var meta data.
+        """
         if is_match_var:
-            if not "match_cases" in kwargs and "default" in kwargs:
-                raise ValueError("match_cases and default args are required for creating match var")
-            return MatchVar(cond=cond, **kwargs)
+            if "match_cases" not in kwargs and "default" in kwargs:
+                raise ValueError(
+                    "match_cases and default args are required for creating match var"
+                )
+            return MatchVarMetaData(cond=cond, **kwargs)
         else:
             if not "comp1" and "comp2" in kwargs:
-                raise ValueError("The True and False arguments are required for creating a cond var")
-            return CondVar(cond=cond, **kwargs)
+                raise ValueError(
+                    "The True and False arguments are required for creating a cond var"
+                )
+            return CondVarMetaData(cond=cond, **kwargs)
 
 
-class CondVar(ConditionalVar):
+class CondVarMetaData(ConditionalVarMetaData):
+    """Meta data associated with cond vars."""
+
     comp1: Var[Any]
     comp2: Optional[Var[Any]]
 
 
-class MatchVar(ConditionalVar):
+class MatchVarMetaData(ConditionalVarMetaData):
+    """Meta data associated with match vars."""
+
     match_cases: List[Tuple[Var, ...]]
     default: Var[Any]

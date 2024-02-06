@@ -8,7 +8,7 @@ from reflex.components.tags import MatchTag, Tag
 from reflex.style import Style
 from reflex.utils import format, imports, types
 from reflex.utils.exceptions import MatchTypeError
-from reflex.vars import BaseVar, Var, VarData, ConditionalVar
+from reflex.vars import BaseVar, ConditionalVarMetaData, Var, VarData
 
 
 class Match(MemoizationLeaf):
@@ -248,7 +248,12 @@ class Match(MemoizationLeaf):
             _var_full_name_needs_state_prefix=False,
             _var_is_string=False,
             merge_var_data=VarData.merge(*var_data),
-            _var_cond_data=ConditionalVar.create(is_match_var=True, cond=match_cond_var, match_cases=match_cases, default=default)
+            _var_cond_data=ConditionalVarMetaData.create(
+                is_match_var=True,
+                cond=match_cond_var,
+                match_cases=match_cases,
+                default=default,
+            ),
         )
 
     def _render(self) -> Tag:
