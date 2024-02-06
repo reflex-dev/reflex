@@ -955,8 +955,8 @@ def should_show_rx_chakra_migration_instructions() -> bool:
 
     if existing_init_reflex_version is None:
         # They clone a reflex app from git for the first time.
-        # If we don't ask... the reflex app would simply not work (if needed migration)
-        # If we ask... danger is only that they need to say "no". If they say "yes" by mistake, they can recover from git
+        # That app may or may not be 0.4 compatible.
+        # So let's just show these instructions THIS TIME.
         return True
 
     if constants.Reflex.VERSION < "0.4":
