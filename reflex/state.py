@@ -241,7 +241,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         self._init_event_handlers()
 
         # Create a fresh copy of the backend variables for this instance
-        self._backend_vars = copy.deepcopy(self.backend_vars)
+        self._backend_vars = copy.deepcopy({name: item for name, item in self.backend_vars.items() if name not in self.computed_vars})
 
     def _init_event_handlers(self, state: BaseState | None = None):
         """Initialize event handlers.
@@ -278,6 +278,22 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return f"{self.__class__.__name__}({self.dict()})"
 
     @classmethod
+    def _get_computed_vars(cls) -> list[ComputedVar]:
+        """Helper function to get all computed vars of a instance.
+
+        Returns:
+            A list of computed vars.
+        """
+
+        return [
+            v
+            for mixin in cls.__mro__
+            if mixin is cls or not issubclass(mixin, (BaseState, ABC))
+            for v in mixin.__dict__.values()
+            if isinstance(v, ComputedVar)
+        ]
+
+    @classmethod
     def __init_subclass__(cls, **kwargs):
         """Do some magic for the subclass initialization.
 
@@ -294,6 +310,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Reset subclass tracking for this class.
         cls.class_subclasses = set()
+
+        # Get computed vars.
+        computed_vars = cls._get_computed_vars()
 
         # Get the parent vars.
         parent_state = cls.get_parent_state()
@@ -327,9 +346,22 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if types.is_backend_variable(name, cls)
             and name not in cls.inherited_backend_vars
             and not isinstance(value, FunctionType)
+            and not isinstance(value, ComputedVar)
         }
 
-        cls.backend_vars = {**cls.inherited_backend_vars, **new_backend_vars}
+        # Get backend computed vars
+        backend_computed_vars = {
+            v._var_name: v._var_set_state(cls)
+            for v in computed_vars
+            if types.is_backend_variable(v._var_name, cls)
+            and v._var_name not in cls.inherited_backend_vars
+        }
+
+        cls.backend_vars = {
+            **cls.inherited_backend_vars,
+            **cls.new_backend_vars,
+            **backend_computed_vars,
+        }
 
         # Set the base and computed vars.
         cls.base_vars = {
@@ -341,8 +373,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         }
         cls.computed_vars = {
             v._var_name: v._var_set_state(cls)
-            for v in cls.__dict__.values()
-            if isinstance(v, ComputedVar)
+            for v in computed_vars
         }
         cls.vars = {
             **cls.inherited_vars,
