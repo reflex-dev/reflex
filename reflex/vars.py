@@ -439,7 +439,6 @@ class Var:
             and self._var_full_name_needs_state_prefix
             == other._var_full_name_needs_state_prefix
             and self._var_data == other._var_data
-            and self._var_cond_data == other._var_cond_data
         )
 
     def _merge(self, other) -> Var:
