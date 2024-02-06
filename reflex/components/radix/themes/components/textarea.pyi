@@ -13,11 +13,11 @@ from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import CommonMarginProps, LiteralAccentColor, RadixThemesComponent
+from ..base import LiteralAccentColor, RadixThemesComponent
 
 LiteralTextAreaSize = Literal["1", "2", "3"]
 
-class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
+class TextArea(RadixThemesComponent, el.Textarea):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -92,48 +92,6 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
                     "bronze",
                     "gray",
                 ],
-            ]
-        ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         auto_complete: Optional[
@@ -219,6 +177,7 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -283,13 +242,6 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
             size: The size of the text area: "1" | "2" | "3"
             variant: The variant of the text area
             color_scheme: The color of the text area
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             auto_complete: Whether the form control should have autocomplete enabled
             auto_focus: Automatically focuses the textarea when the page loads
             cols: Visible width of the text control, in average character widths
@@ -327,6 +279,7 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the component.
 

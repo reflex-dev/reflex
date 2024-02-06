@@ -1667,22 +1667,24 @@ ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"
 
 [[package]]
 name = "reflex-hosting-cli"
-version = "0.1.3"
+version = "0.1.7"
 description = "Reflex Hosting CLI"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "reflex_hosting_cli-0.1.3-py3-none-any.whl", hash = "sha256:4e7755f24f7fd5b669dd06414e3a41d50acd008650ba6e5d8387a7f29a4a6f3b"},
-    {file = "reflex_hosting_cli-0.1.3.tar.gz", hash = "sha256:e7e9de2e0abe1df448ad59b9dee17c73da449449ec74fc10ab913f46057ecd8b"},
+    {file = "reflex_hosting_cli-0.1.7-py3-none-any.whl", hash = "sha256:1cd6e9923b0afe7078c2a4095bba658bdb24c3fd155be354f48b49f90b69b283"},
+    {file = "reflex_hosting_cli-0.1.7.tar.gz", hash = "sha256:07971042a610f06a80f2048b2089eb4c2b7ea507043e648fe325585f0e31bfdc"},
 ]
 
 [package.dependencies]
+charset-normalizer = ">=3.3.2,<4.0.0"
 coverage = ">=7.3.2,<8.0.0"
 httpx = ">=0.24.0,<0.25.0"
 pipdeptree = ">=2.13.1,<3.0.0"
 pipreqs = ">=0.4.13,<0.5.0"
 platformdirs = ">=3.10.0,<4.0.0"
 pydantic = ">=1.10.2,<2.0.0"
+python-dateutil = ">=2.8.2,<3.0.0"
 rich = ">=13.0.0,<14.0.0"
 tabulate = ">=0.9.0,<0.10.0"
 typer = ">=0.4.2,<1"

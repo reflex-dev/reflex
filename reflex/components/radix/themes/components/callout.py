@@ -8,7 +8,6 @@ from reflex.components.radix.themes.components.icons import Icon
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     RadixThemesComponent,
 )
@@ -16,7 +15,7 @@ from ..base import (
 CalloutVariant = Literal["soft", "surface", "outline"]
 
 
-class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
+class CalloutRoot(el.Div, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Callout.Root"
@@ -37,13 +36,13 @@ class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
     high_contrast: Var[bool]
 
 
-class CalloutIcon(el.Div, CommonMarginProps, RadixThemesComponent):
+class CalloutIcon(el.Div, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Callout.Icon"
 
 
-class CalloutText(el.P, CommonMarginProps, RadixThemesComponent):
+class CalloutText(el.P, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Callout.Text"

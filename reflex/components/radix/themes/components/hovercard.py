@@ -2,15 +2,15 @@
 from typing import Any, Dict, Literal
 
 from reflex import el
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class HoverCardRoot(CommonMarginProps, RadixThemesComponent):
+class HoverCardRoot(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "HoverCard.Root"
@@ -35,17 +35,17 @@ class HoverCardRoot(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: [e0],
+            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
         }
 
 
-class HoverCardTrigger(CommonMarginProps, RadixThemesComponent):
+class HoverCardTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "HoverCard.Trigger"
 
 
-class HoverCardContent(el.Div, CommonMarginProps, RadixThemesComponent):
+class HoverCardContent(el.Div, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "HoverCard.Content"

@@ -80,6 +80,10 @@ def _init(
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
+    prerequisites.initialize_reflex_user_directory()
+
+    prerequisites.ensure_reflex_installation_id()
+
     # Set up the app directory, only if the config doesn't exist.
     if not os.path.exists(constants.Config.FILE):
         if template is None:

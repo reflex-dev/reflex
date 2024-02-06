@@ -485,7 +485,7 @@ def test_create_reflex_dir(mocker, is_windows):
         "reflex.utils.prerequisites.path_ops.mkdir", mocker.Mock()
     )
 
-    prerequisites.initialize_frontend_dependencies()
+    prerequisites.initialize_reflex_user_directory()
 
     assert create_cmd.called
 

@@ -1,16 +1,16 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     RadixThemesComponent,
 )
 
 
-class ContextMenuRoot(CommonMarginProps, RadixThemesComponent):
+class ContextMenuRoot(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Root"
@@ -26,11 +26,11 @@ class ContextMenuRoot(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: [e0],
+            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
         }
 
 
-class ContextMenuTrigger(CommonMarginProps, RadixThemesComponent):
+class ContextMenuTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Trigger"
@@ -39,7 +39,7 @@ class ContextMenuTrigger(CommonMarginProps, RadixThemesComponent):
     disabled: Var[bool]
 
 
-class ContextMenuContent(CommonMarginProps, RadixThemesComponent):
+class ContextMenuContent(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Content"
@@ -70,21 +70,21 @@ class ContextMenuContent(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_close_auto_focus": lambda e0: [e0],
-            "on_escape_key_down": lambda e0: [e0],
-            "on_pointer_down_outside": lambda e0: [e0],
-            "on_focus_outside": lambda e0: [e0],
-            "on_interact_outside": lambda e0: [e0],
+            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
+            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
+            EventTriggers.ON_FOCUS_OUTSIDE: lambda e0: [e0],
+            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
         }
 
 
-class ContextMenuSub(CommonMarginProps, RadixThemesComponent):
+class ContextMenuSub(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Sub"
 
 
-class ContextMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
+class ContextMenuSubTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.SubTrigger"
@@ -93,7 +93,7 @@ class ContextMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
     disabled: Var[bool]
 
 
-class ContextMenuSubContent(CommonMarginProps, RadixThemesComponent):
+class ContextMenuSubContent(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.SubContent"
@@ -109,14 +109,14 @@ class ContextMenuSubContent(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_escape_key_down": lambda e0: [e0],
-            "on_pointer_down_outside": lambda e0: [e0],
-            "on_focus_outside": lambda e0: [e0],
-            "on_interact_outside": lambda e0: [e0],
+            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
+            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
+            EventTriggers.ON_FOCUS_OUTSIDE: lambda e0: [e0],
+            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
         }
 
 
-class ContextMenuItem(CommonMarginProps, RadixThemesComponent):
+class ContextMenuItem(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Item"
@@ -128,7 +128,7 @@ class ContextMenuItem(CommonMarginProps, RadixThemesComponent):
     shortcut: Var[str]
 
 
-class ContextMenuSeparator(CommonMarginProps, RadixThemesComponent):
+class ContextMenuSeparator(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Separator"

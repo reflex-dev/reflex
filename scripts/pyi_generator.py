@@ -703,7 +703,7 @@ class PyiGenerator:
     current_module: Any = {}
 
     def _write_pyi_file(self, module_path: Path, source: str):
-        relpath = _relative_to_pwd(module_path)
+        relpath = str(_relative_to_pwd(module_path)).replace("\\", "/")
         pyi_content = [
             f'"""Stub file for {relpath}"""',
             "# ------------------- DO NOT EDIT ----------------------",
@@ -731,9 +731,12 @@ class PyiGenerator:
         logger.info(f"Wrote {relpath}")
 
     def _scan_file(self, module_path: Path):
-        #  module_import = str(module_path.with_suffix("")).replace("/", ".")
         module_import = (
-            _relative_to_pwd(module_path).with_suffix("").as_posix().replace("/", ".")
+            _relative_to_pwd(module_path)
+            .with_suffix("")
+            .as_posix()
+            .replace("/", ".")
+            .replace("\\", ".")
         )
         module = importlib.import_module(module_import)
         logger.debug(f"Read {module_path}")

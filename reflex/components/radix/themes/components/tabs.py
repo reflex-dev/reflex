@@ -1,15 +1,15 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class TabsRoot(CommonMarginProps, RadixThemesComponent):
+class TabsRoot(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.Root"
@@ -26,6 +26,9 @@ class TabsRoot(CommonMarginProps, RadixThemesComponent):
     # The orientation of the tabs.
     orientation: Var[Literal["horizontal", "vertical"]]
 
+    # Props to rename
+    _rename_props = {"onChange": "onValueChange"}
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -34,17 +37,17 @@ class TabsRoot(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_value_change": lambda e0: [e0],
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 
 
-class TabsList(CommonMarginProps, RadixThemesComponent):
+class TabsList(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.List"
 
 
-class TabsTrigger(CommonMarginProps, RadixThemesComponent):
+class TabsTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.Trigger"
@@ -56,7 +59,7 @@ class TabsTrigger(CommonMarginProps, RadixThemesComponent):
     disabled: Var[bool]
 
 
-class TabsContent(CommonMarginProps, RadixThemesComponent):
+class TabsContent(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.Content"

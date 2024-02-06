@@ -11,18 +11,13 @@ from typing import Any, Dict, Literal
 from reflex.components.component import Component
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
+from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import (
-    CommonMarginProps,
-    LiteralAccentColor,
-    LiteralSize,
-    LiteralVariant,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, LiteralSize, LiteralVariant, RadixThemesComponent
 
 LiteralCheckboxSize = Literal["1", "2", "3"]
 
-class Checkbox(CommonMarginProps, RadixThemesComponent):
+class Checkbox(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
@@ -109,58 +104,17 @@ class Checkbox(CommonMarginProps, RadixThemesComponent):
         required: Optional[Union[Var[bool], bool]] = None,
         name: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[str], str]] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_checked_change: Optional[
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -226,18 +180,12 @@ class Checkbox(CommonMarginProps, RadixThemesComponent):
             required: Whether the checkbox is required
             name: The name of the checkbox control when submitting the form.
             value: The value of the checkbox control when submitting the form.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
-            style: The style of the component.
+            style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -338,58 +286,17 @@ class HighLevelCheckbox(Checkbox):
         required: Optional[Union[Var[bool], bool]] = None,
         name: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[str], str]] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_checked_change: Optional[
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -453,18 +360,12 @@ class HighLevelCheckbox(Checkbox):
             required: Whether the checkbox is required
             name: The name of the checkbox control when submitting the form.
             value: The value of the checkbox control when submitting the form.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
-            style: The style of the component.
+            style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Additional properties to apply to the checkbox item.
 

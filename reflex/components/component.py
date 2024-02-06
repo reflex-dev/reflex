@@ -115,7 +115,7 @@ class BaseComponent(Base, ABC):
 
 
 # Map from component to styling.
-ComponentStyle = Dict[Union[str, Type[BaseComponent]], Any]
+ComponentStyle = Dict[Union[str, Type[BaseComponent], Callable], Any]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
 
 
@@ -157,6 +157,9 @@ class Component(BaseComponent, ABC):
 
     # only components that are allowed as parent
     _valid_parents: List[str] = []
+
+    # props to change the name of
+    _rename_props: Dict[str, str] = {}
 
     # custom attribute
     custom_attrs: Dict[str, Union[Var, str]] = {}
@@ -600,10 +603,13 @@ class Component(BaseComponent, ABC):
         Returns:
             The component with the additional style.
         """
+        component_style = None
         if type(self) in style:
             # Extract the style for this component.
             component_style = Style(style[type(self)])
-
+        if self.create in style:
+            component_style = Style(style[self.create])
+        if component_style is not None:
             # Only add style props that are not overridden.
             component_style = {
                 k: v for k, v in component_style.items() if k not in self.style
@@ -645,7 +651,23 @@ class Component(BaseComponent, ABC):
             ),
             autofocus=self.autofocus,
         )
+        self._replace_prop_names(rendered_dict)
         return rendered_dict
+
+    def _replace_prop_names(self, rendered_dict) -> None:
+        """Replace the prop names in the render dictionary.
+
+        Args:
+            rendered_dict: The render dictionary with all the component props and event handlers.
+        """
+        # fast path
+        if not self._rename_props:
+            return
+
+        for ix, prop in enumerate(rendered_dict["props"]):
+            for old_prop, new_prop in self._rename_props.items():
+                if prop.startswith(old_prop):
+                    rendered_dict["props"][ix] = prop.replace(old_prop, new_prop)
 
     def _validate_component_children(self, children: List[Component]):
         """Validate the children components.
@@ -739,7 +761,7 @@ class Component(BaseComponent, ABC):
                 vars.append(prop_var)
 
         # Style keeps track of its own VarData instance, so embed in a temp Var that is yielded.
-        if self.style:
+        if isinstance(self.style, dict) and self.style or isinstance(self.style, Var):
             vars.append(
                 BaseVar(
                     _var_name="style",

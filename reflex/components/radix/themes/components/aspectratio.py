@@ -3,13 +3,10 @@ from typing import Union
 
 from reflex.vars import Var
 
-from ..base import (
-    CommonMarginProps,
-    RadixThemesComponent,
-)
+from ..base import RadixThemesComponent
 
 
-class AspectRatio(CommonMarginProps, RadixThemesComponent):
+class AspectRatio(RadixThemesComponent):
     """Displays content with a desired ratio."""
 
     tag = "AspectRatio"

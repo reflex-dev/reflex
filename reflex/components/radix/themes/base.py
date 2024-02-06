@@ -15,7 +15,7 @@ LiteralSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 LiteralVariant = Literal["classic", "solid", "soft", "surface", "outline", "ghost"]
 LiteralAppearance = Literal["inherit", "light", "dark"]
 LiteralGrayColor = Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]
-LiteralPanelBackground = Literal["solid", "transparent"]
+LiteralPanelBackground = Literal["solid", "translucent"]
 LiteralRadius = Literal["none", "small", "medium", "large", "full"]
 LiteralScaling = Literal["90%", "95%", "100%", "105%", "110%"]
 LiteralAccentColor = Literal[
@@ -148,25 +148,25 @@ class Theme(RadixThemesComponent):
 
     tag = "Theme"
 
-    # Whether to apply the themes background color to the theme node.
+    # Whether to apply the themes background color to the theme node. Defaults to True.
     has_background: Var[bool]
 
-    # Override light or dark mode theme: "inherit" | "light" | "dark"
+    # Override light or dark mode theme: "inherit" | "light" | "dark". Defaults to "inherit".
     appearance: Var[LiteralAppearance]
 
     # The color used for default buttons, typography, backgrounds, etc
     accent_color: Var[LiteralAccentColor]
 
-    # The shade of gray
+    # The shade of gray, defaults to "auto".
     gray_color: Var[LiteralGrayColor]
 
-    # Whether panel backgrounds are transparent: "solid" | "transparent" (default)
+    # Whether panel backgrounds are translucent: "solid" | "translucent" (default)
     panel_background: Var[LiteralPanelBackground]
 
-    # Element border radius: "none" | "small" | "medium" | "large" | "full"
+    # Element border radius: "none" | "small" | "medium" | "large" | "full". Defaults to "medium".
     radius: Var[LiteralRadius]
 
-    # Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%"
+    # Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%". Defaults to "100%"
     scaling: Var[LiteralScaling]
 
     def _get_imports(self) -> imports.ImportDict:
@@ -201,6 +201,7 @@ class ThemePanel(RadixThemesComponent):
 
     tag = "ThemePanel"
 
+    # Whether the panel is open. Defaults to False.
     default_open: Var[bool]
 
 

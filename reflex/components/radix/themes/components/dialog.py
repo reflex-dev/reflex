@@ -2,15 +2,15 @@
 from typing import Any, Dict, Literal
 
 from reflex import el
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class DialogRoot(CommonMarginProps, RadixThemesComponent):
+class DialogRoot(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Root"
@@ -26,23 +26,23 @@ class DialogRoot(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: [e0],
+            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
         }
 
 
-class DialogTrigger(CommonMarginProps, RadixThemesComponent):
+class DialogTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Trigger"
 
 
-class DialogTitle(CommonMarginProps, RadixThemesComponent):
+class DialogTitle(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Title"
 
 
-class DialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
+class DialogContent(el.Div, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Content"
@@ -58,21 +58,21 @@ class DialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_auto_focus": lambda e0: [e0],
-            "on_close_auto_focus": lambda e0: [e0],
-            "on_escape_key_down": lambda e0: [e0],
-            "on_pointer_down_outside": lambda e0: [e0],
-            "on_interact_outside": lambda e0: [e0],
+            EventTriggers.ON_OPEN_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
+            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
+            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
         }
 
 
-class DialogDescription(CommonMarginProps, RadixThemesComponent):
+class DialogDescription(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Description"
 
 
-class DialogClose(CommonMarginProps, RadixThemesComponent):
+class DialogClose(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Close"

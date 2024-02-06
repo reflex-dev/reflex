@@ -1,17 +1,17 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, List, Literal, Union
 
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
     RadixThemesComponent,
 )
 
 
-class Slider(CommonMarginProps, RadixThemesComponent):
+class Slider(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Slider"
@@ -58,6 +58,9 @@ class Slider(CommonMarginProps, RadixThemesComponent):
     # The orientation of the slider.
     orientation: Var[Literal["horizontal", "vertical"]]
 
+    # Props to rename
+    _rename_props = {"onChange": "onValueChange"}
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -66,6 +69,6 @@ class Slider(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_value_change": lambda e0: [e0],
-            "on_value_commit": lambda e0: [e0],
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
+            EventTriggers.ON_VALUE_COMMIT: lambda e0: [e0],
         }

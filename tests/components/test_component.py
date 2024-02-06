@@ -268,6 +268,23 @@ def test_add_style(component1, component2):
     assert c2.style["color"] == "black"
 
 
+def test_add_style_create(component1, component2):
+    """Test that adding style works with the create method.
+
+    Args:
+        component1: A test component.
+        component2: A test component.
+    """
+    style = {
+        component1.create: Style({"color": "white"}),
+        component2.create: Style({"color": "black"}),
+    }
+    c1 = component1().add_style(style)  # type: ignore
+    c2 = component2().add_style(style)  # type: ignore
+    assert c1.style["color"] == "white"
+    assert c2.style["color"] == "black"
+
+
 def test_get_imports(component1, component2):
     """Test getting the imports of a component.
 

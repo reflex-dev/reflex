@@ -87,6 +87,15 @@ REPLACED_NAMES = {
     "deps": "_deps",
 }
 
+PYTHON_JS_TYPE_MAP = {
+    (int, float): "number",
+    (str,): "string",
+    (bool,): "boolean",
+    (list, tuple): "Array",
+    (dict,): "Object",
+    (None,): "null",
+}
+
 
 def get_unique_variable_name() -> str:
     """Get a unique variable name.
@@ -739,13 +748,13 @@ class Var:
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
-            operation_name = f"{op}{self._var_full_name}"
+            operation_name = f"{op}{get_operand_full_name(self)}"
             # apply function to operands
             if fn is not None:
                 operation_name = (
                     f"{fn}({operation_name})"
                     if not invoke_fn
-                    else f"{self._var_full_name}.{fn}()"
+                    else f"{get_operand_full_name(self)}.{fn}()"
                 )
 
         return self._replace(
@@ -839,7 +848,20 @@ class Var:
             _var_is_string=False,
         )
 
-    def __eq__(self, other: Var) -> Var:
+    def _type(self) -> Var:
+        """Get the type of the Var in Javascript.
+
+        Returns:
+            A var representing the type check.
+        """
+        return self._replace(
+            _var_name=f"typeof {self._var_full_name}",
+            _var_type=str,
+            _var_is_string=False,
+            _var_full_name_needs_state_prefix=False,
+        )
+
+    def __eq__(self, other: Union[Var, Type]) -> Var:
         """Perform an equality comparison.
 
         Args:
@@ -848,9 +870,12 @@ class Var:
         Returns:
             A var representing the equality comparison.
         """
+        for python_types, js_type in PYTHON_JS_TYPE_MAP.items():
+            if not isinstance(other, Var) and other in python_types:
+                return self.compare("===", Var.create(js_type, _var_is_string=True))  # type: ignore
         return self.compare("===", other)
 
-    def __ne__(self, other: Var) -> Var:
+    def __ne__(self, other: Union[Var, Type]) -> Var:
         """Perform an inequality comparison.
 
         Args:
@@ -859,6 +884,9 @@ class Var:
         Returns:
             A var representing the inequality comparison.
         """
+        for python_types, js_type in PYTHON_JS_TYPE_MAP.items():
+            if not isinstance(other, Var) and other in python_types:
+                return self.compare("!==", Var.create(js_type, _var_is_string=True))  # type: ignore
         return self.compare("!==", other)
 
     def __gt__(self, other: Var) -> Var:
