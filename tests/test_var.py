@@ -1268,7 +1268,10 @@ def test_var_name_unwrapped(var, expected):
 
 
 def assert_cond_var_cond_data(
-    cond_data: CondVarMetaData, cond: Optional[Var], comp1: Optional[Var], comp2: Optional[Var]
+    cond_data: CondVarMetaData,
+    cond: Optional[Var],
+    comp1: Optional[Var],
+    comp2: Optional[Var],
 ):
     assert cond_data is not None
     assert isinstance(cond_data, CondVarMetaData)
