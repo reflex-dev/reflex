@@ -7,7 +7,6 @@ from .colormodeswitch import (
     ColorModeIcon,
     ColorModeScript,
     ColorModeSwitch,
-    color_mode_cond,
 )
 from .date_picker import DatePicker
 from .date_time_picker import DateTimePicker
@@ -47,8 +46,6 @@ from .switch import Switch
 from .textarea import TextArea
 from .time_picker import TimePicker
 
-helpers = [
-    "color_mode_cond",
-]
+helpers = []
 
 __all__ = [f for f in dir() if f[0].isupper()] + helpers  # type: ignore
