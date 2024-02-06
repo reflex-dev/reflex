@@ -29,8 +29,8 @@ from redis.asyncio import Redis
 import reflex
 from reflex import constants, model
 from reflex.compiler import templates
-from reflex.config import Config, get_config
 from reflex.components import ChakraComponent
+from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 
 
