@@ -98,9 +98,6 @@ class ContextMenuSubContent(RadixThemesComponent):
 
     tag = "ContextMenu.SubContent"
 
-    # When true, keyboard navigation will loop from last item to first, and vice versa.
-    loop: Var[bool]
-
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 

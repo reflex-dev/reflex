@@ -14,9 +14,6 @@ class TabsRoot(RadixThemesComponent):
 
     tag = "Tabs.Root"
 
-    # The variant of the tab
-    variant: Var[Literal["surface", "ghost"]]
-
     # The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
     default_value: Var[str]
 
@@ -45,6 +42,9 @@ class TabsList(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.List"
+
+    # Tabs size "1" - "2"
+    size: Var[Literal["1", "2"]]
 
 
 class TabsTrigger(RadixThemesComponent):

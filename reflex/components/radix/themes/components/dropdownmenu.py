@@ -44,6 +44,18 @@ class DropdownMenuContent(RadixThemesComponent):
 
     tag = "DropdownMenu.Content"
 
+    # Button size "1" - "4"
+    size: Var[Literal["1", "2"]]
+
+    # Variant of button: "solid" | "soft" | "outline" | "ghost"
+    variant: Var[Literal["solid", "soft"]]
+
+    # Override theme color for button
+    color_scheme: Var[LiteralAccentColor]
+
+    # Whether to render the button with higher contrast color against background
+    high_contrast: Var[bool]
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -75,18 +87,6 @@ class DropdownMenuSubContent(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "DropdownMenu.SubContent"
-
-    # Button size "1" - "4"
-    size: Var[Literal["1", "2"]]
-
-    # Variant of button: "solid" | "soft" | "outline" | "ghost"
-    variant: Var[Literal["solid", "soft"]]
-
-    # Override theme color for button
-    color_scheme: Var[LiteralAccentColor]
-
-    # Whether to render the button with higher contrast color against background
-    high_contrast: Var[bool]
 
 
 class DropdownMenuItem(RadixThemesComponent):

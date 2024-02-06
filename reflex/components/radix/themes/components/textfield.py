@@ -89,9 +89,6 @@ class TextFieldSlot(RadixThemesComponent):
     # Override theme color for text field slot
     color_scheme: Var[LiteralAccentColor]
 
-    # Override the gap spacing between slot and input: "1" - "9"
-    gap: Var[LiteralSize]
-
 
 class Input(RadixThemesComponent):
     """High level wrapper for the Input component."""
