@@ -429,7 +429,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             mixin
             for mixin in cls.__mro__
             if not issubclass(mixin, (BaseState, ABC))
-            and mixin is not pydantic.BaseModel
+            and mixin not in [pydantic.BaseModel, Base]
         ]
 
     @classmethod
