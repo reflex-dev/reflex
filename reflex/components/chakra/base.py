@@ -15,7 +15,6 @@ class ChakraComponent(Component):
     library = "@chakra-ui/react@2.6.1"
     lib_dependencies: List[str] = [
         "@chakra-ui/system@2.5.7",
-        "focus-visible@5.2.0",
         "framer-motion@10.16.4",
     ]
 
@@ -25,25 +24,6 @@ class ChakraComponent(Component):
         return {
             (60, "ChakraProvider"): chakra_provider,
         }
-
-    def get_imports(self) -> imports.ImportDict:
-        """Chakra requires focus-visible and imported into each page.
-
-        This allows the GlobalStyle defined by the ChakraProvider to hide the blue border.
-
-        Returns:
-            The imports for the component.
-        """
-        return imports.merge_imports(
-            super().get_imports(),
-            {
-                "": {
-                    imports.ImportVar(
-                        tag="focus-visible/dist/focus-visible", install=False
-                    )
-                }
-            },
-        )
 
     def _get_style(self) -> dict:
         """Get the style for the component.
@@ -65,23 +45,9 @@ class ChakraComponent(Component):
             dep: [imports.ImportVar(tag=None, render=False)]
             for dep in [
                 "@chakra-ui/system@2.5.7",
-                "focus-visible@5.2.0",
                 "framer-motion@10.16.4",
             ]
         }
-
-
-class Global(Component):
-    """The emotion/react Global styling component."""
-
-    library = "@emotion/react@^11.11.0"
-    lib_dependencies: List[str] = [
-        "@emotion/styled@^11.11.0",
-    ]
-
-    tag = "Global"
-
-    styles: Var[str]
 
 
 class ChakraProvider(ChakraComponent):
@@ -99,7 +65,6 @@ class ChakraProvider(ChakraComponent):
             A new ChakraProvider component.
         """
         return super().create(
-            Global.create(styles=Var.create("GlobalStyles", _var_is_local=False)),
             theme=Var.create("extendTheme(theme)", _var_is_local=False),
         )
 
@@ -111,21 +76,7 @@ class ChakraProvider(ChakraComponent):
         _imports.setdefault("/utils/theme.js", []).append(
             imports.ImportVar(tag="theme", is_default=True),
         )
-        _imports.setdefault(Global.__fields__["library"].default, []).append(
-            imports.ImportVar(tag="css", is_default=False),
-        )
         return _imports
-
-    def _get_custom_code(self) -> str | None:
-        return """
-const GlobalStyles = css`
-  /* Hide the blue border around Chakra components. */
-  .js-focus-visible :focus:not([data-focus-visible-added]) {
-    outline: none;
-    box-shadow: none;
-  }
-`;
-"""
 
     @staticmethod
     @lru_cache(maxsize=None)
