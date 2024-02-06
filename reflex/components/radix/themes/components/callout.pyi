@@ -12,7 +12,7 @@ from typing import Literal, Union
 import reflex as rx
 from reflex import el
 from reflex.components.component import Component
-from reflex.components.radix.themes.components.icons import Icon
+from reflex.components.lucide.icon import Icon
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
