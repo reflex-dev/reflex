@@ -1,6 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
+from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -35,7 +36,7 @@ class Slider(RadixThemesComponent):
     radius: Var[LiteralRadius]
 
     # The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
-    default_value: Var[List[Union[float, int]]]
+    default_value: Var[Union[List[Union[float, int]], float, int]]
 
     # The controlled value of the slider. Must be used in conjunction with onValueChange.
     value: Var[List[Union[float, int]]]
@@ -72,3 +73,37 @@ class Slider(RadixThemesComponent):
             EventTriggers.ON_CHANGE: lambda e0: [e0],
             EventTriggers.ON_VALUE_COMMIT: lambda e0: [e0],
         }
+
+    @classmethod
+    def create(
+        cls,
+        *children,
+        width: Optional[str] = "100%",
+        **props,
+    ) -> Component:
+        """Create a Slider component.
+
+        Args:
+            *children: The children of the component.
+            width: The width of the slider.
+            **props: The properties of the component.
+
+        Returns:
+            The component.
+        """
+        default_value = props.pop("default_value", [50])
+
+        if isinstance(default_value, Var):
+            if issubclass(default_value._var_type, (int, float)):
+                default_value = [default_value]
+
+        elif isinstance(default_value, (int, float)):
+            default_value = [default_value]
+
+        style = props.setdefault("style", {})
+        style.update(
+            {
+                "width": width,
+            }
+        )
+        return super().create(*children, default_value=default_value, **props)
