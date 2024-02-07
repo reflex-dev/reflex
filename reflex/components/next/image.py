@@ -1,8 +1,7 @@
 """Image component from next/image."""
 
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Dict, Literal
 
-from reflex.utils import types
 from reflex.vars import Var
 
 from .base import NextComponent
@@ -19,10 +18,10 @@ class Image(NextComponent):
     src: Var[Any]
 
     # Represents the rendered width in pixels, so it will affect how large the image appears.
-    width: Var[Any]
+    width: Var[int]
 
     # Represents the rendered height in pixels, so it will affect how large the image appears.
-    height: Var[Any]
+    height: Var[int]
 
     # Used to describe the image for screen readers and search engines.
     alt: Var[str]
@@ -70,43 +69,17 @@ class Image(NextComponent):
     def create(
         cls,
         *children,
-        width: Optional[Union[int, str]] = None,
-        height: Optional[Union[int, str]] = None,
         **props,
     ):
         """Create an Image component from next/image.
 
         Args:
             *children: The children of the component.
-            width: The width of the image.
-            height: The height of the image.
             **props:The props of the component.
 
         Returns:
             _type_: _description_
         """
-        style = props.get("style", {})
-        DEFAULT_W_H = "100%"
-
-        def check_prop_type(prop_name, prop_value):
-            if types.check_prop_in_allowed_types(prop_value, allowed_types=[int]):
-                props[prop_name] = prop_value
-
-            elif types.check_prop_in_allowed_types(prop_value, allowed_types=[str]):
-                props[prop_name] = 0
-                style[prop_name] = prop_value
-            else:
-                props[prop_name] = 0
-                style[prop_name] = DEFAULT_W_H
-
-        check_prop_type("width", width)
-        check_prop_type("height", height)
-
-        props["style"] = style
-
-        # mysteriously, following `sizes` prop is needed to avoid blury images.
-        props["sizes"] = "100vw"
-
         src = props.get("src", None)
         if src is not None and not isinstance(src, (Var)):
             props["src"] = Var.create(value=src, _var_is_string=True)

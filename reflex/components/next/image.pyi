@@ -7,8 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal, Optional, Union
-from reflex.utils import types
+from typing import Any, Dict, Literal
 from reflex.vars import Var
 from .base import NextComponent
 
@@ -19,9 +18,9 @@ class Image(NextComponent):
     def create(  # type: ignore
         cls,
         *children,
-        width: Optional[Union[str, int]] = None,
-        height: Optional[Union[str, int]] = None,
         src: Optional[Union[Var[Any], Any]] = None,
+        width: Optional[Union[Var[int], int]] = None,
+        height: Optional[Union[Var[int], int]] = None,
         alt: Optional[Union[Var[str], str]] = None,
         loader: Optional[Union[Var[Any], Any]] = None,
         fill: Optional[Union[Var[bool], bool]] = None,
@@ -97,9 +96,9 @@ class Image(NextComponent):
 
         Args:
             *children: The children of the component.
-            width: The width of the image.
-            height: The height of the image.
             src: This can be either an absolute external URL, or an internal path
+            width: Represents the rendered width in pixels, so it will affect how large the image appears.
+            height: Represents the rendered height in pixels, so it will affect how large the image appears.
             alt: Used to describe the image for screen readers and search engines.
             loader: A custom function used to resolve image URLs.
             fill: A boolean that causes the image to fill the parent element, which is useful when the width and height are unknown. Default to True
