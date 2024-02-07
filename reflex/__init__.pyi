@@ -12,6 +12,7 @@ from reflex.components import cond as cond
 from reflex.components import foreach as foreach
 from reflex.components import html as html
 from reflex.components import match as match
+from reflex.components import color_mode_cond as color_mode_cond
 from reflex.components import connection_banner as connection_banner
 from reflex.components import connection_modal as connection_modal
 from reflex.components import debounce_input as debounce_input
@@ -97,6 +98,7 @@ from reflex.components import el as el
 from reflex.components import lucide as lucide
 from reflex.components import next as next
 from reflex.components import radix as radix
+from reflex.components.radix import color_mode as color_mode
 from reflex.components import recharts as recharts
 from reflex.components.moment.moment import MomentDelta as MomentDelta
 from reflex import config as config
@@ -134,7 +136,6 @@ from reflex.state import Cookie as Cookie
 from reflex.state import LocalStorage as LocalStorage
 from reflex.state import State as State
 from reflex import style as style
-from reflex.style import color_mode as color_mode
 from reflex.style import toggle_color_mode as toggle_color_mode
 from reflex import testing as testing
 from reflex import utils as utils

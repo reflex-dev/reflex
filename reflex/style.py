@@ -12,6 +12,9 @@ from reflex.vars import BaseVar, Var, VarData
 
 VarData.update_forward_refs()  # Ensure all type definitions are resolved
 
+LIGHT_COLOR_MODE: str = "light"
+DARK_COLOR_MODE: str = "dark"
+
 # Reference the global ColorModeContext
 color_mode_var_data = VarData(  # type: ignore
     imports={

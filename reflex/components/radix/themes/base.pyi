@@ -335,69 +335,7 @@ class Theme(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
-        color_scheme: Optional[
-            Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
-            ]
-        ] = None,
+        color_mode: Optional[LiteralAppearance | None] = None,
         has_background: Optional[Union[Var[bool], bool]] = None,
         appearance: Optional[
             Union[
@@ -542,15 +480,11 @@ class Theme(RadixThemesComponent):
         ] = None,
         **props
     ) -> "Theme":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a new Radix Theme specification.
 
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
+            color_mode: map to appearance prop.
             has_background: Whether to apply the themes background color to the theme node. Defaults to True.
             appearance: Override light or dark mode theme: "inherit" | "light" | "dark". Defaults to "inherit".
             accent_color: The color used for default buttons, typography, backgrounds, etc

@@ -7,6 +7,7 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
+from reflex.style import LIGHT_COLOR_MODE, color_mode
 from reflex.utils import format, imports
 from reflex.vars import BaseVar, Var, VarData
 
@@ -179,4 +180,21 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         _var_is_local=False,
         _var_full_name_needs_state_prefix=False,
         merge_var_data=VarData.merge(*var_datas),
+    )
+
+
+def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
+    """Create a component or Prop based on color_mode.
+
+    Args:
+        light: The component or prop to render if color_mode is default
+        dark: The component or prop to render if color_mode is non-default
+
+    Returns:
+        The conditional component or prop.
+    """
+    return cond(
+        color_mode == LIGHT_COLOR_MODE,
+        light,
+        dark,
     )
