@@ -42,7 +42,7 @@ class AlertDialogContent(el.Div, RadixThemesComponent):
     tag = "AlertDialog.Content"
 
     # The size of the content.
-    size: Var[Literal["1", "2", "3", "4"]]
+    size: Var[LiteralContentSize]
 
     # Whether to force mount the content on open.
     force_mount: Var[bool]

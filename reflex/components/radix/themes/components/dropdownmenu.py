@@ -44,16 +44,16 @@ class DropdownMenuContent(RadixThemesComponent):
 
     tag = "DropdownMenu.Content"
 
-    # Button size "1" - "4"
+    # Dropdown menu size "1" - "2"
     size: Var[Literal["1", "2"]]
 
-    # Variant of button: "solid" | "soft" | "outline" | "ghost"
+    # Variant of dropdown menu: "solid" | "soft" | "outline" | "ghost"
     variant: Var[Literal["solid", "soft"]]
 
-    # Override theme color for button
+    # Override theme color for dropdown menu
     color_scheme: Var[LiteralAccentColor]
 
-    # Whether to render the button with higher contrast color against background
+    # Whether to render the dropdown menu with higher contrast color against background
     high_contrast: Var[bool]
 
     def get_event_triggers(self) -> Dict[str, Any]:
