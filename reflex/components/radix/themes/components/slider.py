@@ -92,8 +92,14 @@ class Slider(RadixThemesComponent):
             The component.
         """
         default_value = props.pop("default_value", [50])
-        if isinstance(default_value, (int, float)):
+
+        if isinstance(default_value, Var):
+            if issubclass(default_value._var_type, (int, float)):
+                default_value = [default_value]
+
+        elif isinstance(default_value, (int, float)):
             default_value = [default_value]
+
         style = props.setdefault("style", {})
         style.update(
             {

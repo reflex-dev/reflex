@@ -7,10 +7,10 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Literal, Union, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
+from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from reflex.components.component import Component
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 class Slider(RadixThemesComponent):
