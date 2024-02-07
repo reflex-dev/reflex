@@ -1,7 +1,6 @@
 """Shims the real reflex app module for running backend server (uvicorn or gunicorn).
 Only the app attribute is explicitly exposed.
 """
-import time
 from concurrent.futures import ThreadPoolExecutor
 
 from reflex import constants
@@ -13,7 +12,6 @@ if "app" != constants.CompileVars.APP:
 app_module = get_app(reload=False)
 app = getattr(app_module, constants.CompileVars.APP)
 ThreadPoolExecutor(max_workers=1).submit(app.compile_)
-print(f"compile started at {time.time()}")
 
 # ensure only "app" is exposed.
 del app_module
@@ -21,5 +19,3 @@ del get_app
 del get_compiled_app
 del constants
 del ThreadPoolExecutor
-
-print(f"backend app import complete at {time.time()}")
