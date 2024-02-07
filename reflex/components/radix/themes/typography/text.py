@@ -28,7 +28,7 @@ class Text(el.Span, RadixThemesComponent):
     as_child: Var[bool]
 
     # Change the default rendered element into a semantically appropriate alternative (cannot be used with asChild)
-    as_: Var[str]
+    as_: Var[str] = "p"
 
     # Text size: "1" - "9"
     size: Var[LiteralTextSize]
