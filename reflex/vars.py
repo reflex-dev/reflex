@@ -1612,8 +1612,10 @@ class Var:
             if types.is_generic_alias(self._var_type)
             else self._var_type
         )
-        print(f"var name: {self._var_name} | type_: {type_}")
         wrapped_var = str(self)
+
+        if type_ == Any:
+            return wrapped_var.strip("{}")
         return (
             wrapped_var
             if not self._var_state
