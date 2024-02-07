@@ -1612,7 +1612,7 @@ class Var:
             if types.is_generic_alias(self._var_type)
             else self._var_type
         )
-
+        print(f"var name: {self._var_name} | type_: {type_}")
         wrapped_var = str(self)
         return (
             wrapped_var
