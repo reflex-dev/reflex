@@ -6,7 +6,6 @@ from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
-    LiteralRadius,
     RadixThemesComponent,
 )
 
@@ -31,8 +30,8 @@ class Slider(RadixThemesComponent):
     # Whether to render the button with higher contrast color against background
     high_contrast: Var[bool]
 
-    # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    # Override theme radius for button: "none" | "small" | "full"
+    radius: Var[Literal["none", "small", "full"]]
 
     # The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
     default_value: Var[List[Union[float, int]]]

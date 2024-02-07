@@ -6,8 +6,6 @@ from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
-    LiteralRadius,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
@@ -52,8 +50,8 @@ class Switch(RadixThemesComponent):
     # Whether to render the switch with higher contrast color against background
     high_contrast: Var[bool]
 
-    # Override theme radius for switch: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    # Override theme radius for switch: "none" | "small" | "full"
+    radius: Var[Literal["none", "small", "full"]]
 
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}

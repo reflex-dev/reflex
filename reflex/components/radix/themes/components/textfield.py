@@ -12,7 +12,6 @@ from reflex.vars import Var
 from ..base import (
     LiteralAccentColor,
     LiteralRadius,
-    LiteralSize,
     RadixThemesComponent,
 )
 

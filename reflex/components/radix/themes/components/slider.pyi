@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Any, Dict, List, Literal, Union
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
+from ..base import LiteralAccentColor, RadixThemesComponent
 
 class Slider(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
@@ -95,8 +95,7 @@ class Slider(RadixThemesComponent):
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
-                Literal["none", "small", "medium", "large", "full"],
+                Var[Literal["none", "small", "full"]], Literal["none", "small", "full"]
             ]
         ] = None,
         default_value: Optional[
@@ -189,7 +188,7 @@ class Slider(RadixThemesComponent):
             size: Button size "1" - "3"
             variant: Variant of button
             high_contrast: Whether to render the button with higher contrast color against background
-            radius: Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
+            radius: Override theme radius for button: "none" | "small" | "full"
             default_value: The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
             value: The controlled value of the slider. Must be used in conjunction with onValueChange.
             name: The name of the slider. Submitted with its owning form as part of a name/value pair.

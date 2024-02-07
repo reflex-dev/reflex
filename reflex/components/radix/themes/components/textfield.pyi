@@ -650,12 +650,6 @@ class TextFieldSlot(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        gap: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -719,7 +713,6 @@ class TextFieldSlot(RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            gap: Override the gap spacing between slot and input: "1" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
