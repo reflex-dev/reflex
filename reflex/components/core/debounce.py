@@ -7,6 +7,8 @@ from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.vars import Var, VarData
 
+DEFAULT_DEBOUNCE_TIMEOUT = 300
+
 
 class DebounceInput(Component):
     """The DebounceInput component is used to buffer input events on the client side.
@@ -23,7 +25,7 @@ class DebounceInput(Component):
     min_length: Var[int]
 
     # Time to wait between end of input and triggering on_change
-    debounce_timeout: Var[int]
+    debounce_timeout: Var[int] = DEFAULT_DEBOUNCE_TIMEOUT  # type: ignore
 
     # If true, notify when Enter key is pressed
     force_notify_by_enter: Var[bool]

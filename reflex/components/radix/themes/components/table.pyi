@@ -8,7 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
-from typing import Literal, Union
+from typing import List, Literal, Union
 from reflex import el
 from reflex.vars import Var
 from ..base import RadixThemesComponent

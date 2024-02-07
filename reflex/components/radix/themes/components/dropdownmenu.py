@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 from types import SimpleNamespace
-from typing import Any, Dict, Literal, Union
+from typing import Any, Dict, List, Literal, Union
 
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -44,6 +44,8 @@ class DropdownMenuRoot(RadixThemesComponent):
     # The reading direction of submenus when applicable. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
     dir: Var[LiteralDirType]
 
+    _invalid_children: List[str] = ["DropdownMenuItem"]
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -63,6 +65,10 @@ class DropdownMenuTrigger(RadixThemesComponent):
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
     as_child: Var[bool]
+
+    _valid_parents: List[str] = ["DropdownMenuRoot"]
+
+    _invalid_children: List[str] = ["DropdownMenuContent"]
 
 
 class DropdownMenuContent(RadixThemesComponent):
@@ -148,6 +154,8 @@ class DropdownMenuSubTrigger(RadixThemesComponent):
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
 
+    _valid_parents: List[str] = ["DropdownMenuContent", "DropdownMenuSub"]
+
 
 class DropdownMenuSub(RadixThemesComponent):
     """Contains all the parts of a submenu."""
@@ -219,6 +227,8 @@ class DropdownMenuSubContent(RadixThemesComponent):
     # Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
     hide_when_detached: Var[bool]
 
+    _valid_parents: List[str] = ["DropdownMenuSub"]
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -253,6 +263,8 @@ class DropdownMenuItem(RadixThemesComponent):
 
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
+
+    _valid_parents: List[str] = ["DropdownMenuContent", "DropdownMenuSubContent"]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.

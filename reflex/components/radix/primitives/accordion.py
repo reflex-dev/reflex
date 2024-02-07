@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 
 from reflex.components.component import Component
 from reflex.components.core import match
@@ -344,6 +344,8 @@ class AccordionRoot(AccordionComponent):
     # The var_data associated with the component.
     _var_data: VarData = VarData()  # type: ignore
 
+    _valid_children: List[str] = ["AccordionItem"]
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create the Accordion root component.
@@ -450,6 +452,14 @@ class AccordionItem(AccordionComponent):
 
     # When true, prevents the user from interacting with the item.
     disabled: Var[bool]
+
+    _valid_children: List[str] = [
+        "AccordionHeader",
+        "AccordionTrigger",
+        "AccordionContent",
+    ]
+
+    _valid_parents: List[str] = ["AccordionRoot"]
 
     def _apply_theme(self, theme: Component):
         self.style = Style(

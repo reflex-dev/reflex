@@ -1274,7 +1274,6 @@ def test_app_wrap_priority(compilable_app):
         "return ("
         "<Box>"
         "<ChakraProvider theme={extendTheme(theme)}>"
-        "<Global styles={GlobalStyles}/>"
         "<ChakraColorModeProvider>"
         "<Text>"
         "<Fragment2>"
