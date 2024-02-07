@@ -256,9 +256,9 @@ def format_cond(
 
     def create_cond_part_var(cond_part):
         return Var.create_safe(
-                cond_part,
-                _var_is_string=type(cond_part) is str or isinstance(cond_part, Color),
-            )
+            cond_part,
+            _var_is_string=type(cond_part) is str or isinstance(cond_part, Color),
+        )
 
     # Format prop conds.
     if is_prop:
