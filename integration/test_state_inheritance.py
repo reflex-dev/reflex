@@ -324,19 +324,49 @@ def test_state_inheritance(
 
     child1_other_mixin_btn = driver.find_element(By.ID, "child1-other-mixin-btn")
     child1_other_mixin_btn.click()
-    assert child1_other_mixin.text == "Child1.clicked.1"
-    assert child1_computed_other_mixin.text == "Child1.clicked.1"
+    child1_other_mixin_value = state_inheritance.poll_for_content(
+        child1_other_mixin, exp_not_equal="other_mixin"
+    )
+    child1_computed_mixin_value = state_inheritance.poll_for_content(
+        child1_computed_other_mixin, exp_not_equal="other_mixin"
+    )
+    assert child1_other_mixin_value == "Child1.clicked.1"
+    assert child1_computed_mixin_value == "Child1.clicked.1"
 
     child2_other_mixin_btn = driver.find_element(By.ID, "child2-other-mixin-btn")
     child2_other_mixin_btn.click()
-    assert child2_other_mixin.text == "Child2.clicked.1"
-    assert child2_computed_other_mixin.text == "Child2.clicked.1"
-    assert child3_other_mixin.text == "Child2.clicked.1"
-    assert child3_computed_other_mixin.text == "Child2.clicked.1"
+    child2_other_mixin_value = state_inheritance.poll_for_content(
+        child2_other_mixin, exp_not_equal="other_mixin"
+    )
+    child2_computed_mixin_value = state_inheritance.poll_for_content(
+        child2_computed_other_mixin, exp_not_equal="other_mixin"
+    )
+    child3_other_mixin_value = state_inheritance.poll_for_content(
+        child3_other_mixin, exp_not_equal="other_mixin"
+    )
+    child3_computed_mixin_value = state_inheritance.poll_for_content(
+        child3_computed_other_mixin, exp_not_equal="other_mixin"
+    )
+    assert child2_other_mixin_value == "Child2.clicked.1"
+    assert child2_computed_mixin_value == "Child2.clicked.1"
+    assert child3_other_mixin_value == "Child2.clicked.1"
+    assert child3_computed_mixin_value == "Child2.clicked.1"
 
     child3_other_mixin_btn = driver.find_element(By.ID, "child3-other-mixin-btn")
     child3_other_mixin_btn.click()
+    child2_other_mixin_value = state_inheritance.poll_for_content(
+        child2_other_mixin, exp_not_equal="other_mixin"
+    )
+    child2_computed_mixin_value = state_inheritance.poll_for_content(
+        child2_computed_other_mixin, exp_not_equal="other_mixin"
+    )
+    child3_other_mixin_value = state_inheritance.poll_for_content(
+        child3_other_mixin, exp_not_equal="other_mixin"
+    )
+    child3_computed_mixin_value = state_inheritance.poll_for_content(
+        child3_computed_other_mixin, exp_not_equal="other_mixin"
+    )
+    assert child2_other_mixin_value == "Child2.clicked.2"
+    assert child2_computed_mixin_value == "Child2.clicked.2"
     assert child3_other_mixin.text == "Child2.clicked.2"
     assert child3_computed_other_mixin.text == "Child2.clicked.2"
-    assert child2_other_mixin.text == "Child2.clicked.2"
-    assert child2_computed_other_mixin.text == "Child2.clicked.2"
