@@ -7,9 +7,10 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Union, Optional
 from reflex.constants import EventTriggers
 from reflex.vars import Var
+from reflex.components.component import Component
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 class Slider(RadixThemesComponent):
@@ -19,7 +20,17 @@ class Slider(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
+        width: Optional[str] = "100%",
+        as_child: Optional[Union[Var[bool], bool]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "surface", "soft"]],
+                Literal["classic", "surface", "soft"],
+            ]
+        ] = None,
         color_scheme: Optional[
             Union[
                 Var[
@@ -82,16 +93,6 @@ class Slider(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
-        ] = None,
-        variant: Optional[
-            Union[
-                Var[Literal["classic", "surface", "soft"]],
-                Literal["classic", "surface", "soft"],
-            ]
-        ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         radius: Optional[
             Union[
@@ -100,7 +101,10 @@ class Slider(RadixThemesComponent):
             ]
         ] = None,
         default_value: Optional[
-            Union[Var[List[Union[float, int]]], List[Union[float, int]]]
+            Union[
+                Var[Union[List[Union[float, int]], float, int]],
+                Union[List[Union[float, int]], float, int],
+            ]
         ] = None,
         value: Optional[
             Union[Var[List[Union[float, int]]], List[Union[float, int]]]
@@ -176,18 +180,15 @@ class Slider(RadixThemesComponent):
         ] = None,
         **props
     ) -> "Slider":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a Slider component.
 
         Args:
-            *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
+            *children: The children of the component.
+            width: The width of the slider.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             size: Button size "1" - "3"
             variant: Variant of button
+            color_scheme: Override theme color for button
             high_contrast: Whether to render the button with higher contrast color against background
             radius: Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
             default_value: The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
@@ -205,9 +206,9 @@ class Slider(RadixThemesComponent):
             autofocus: Whether the component should take the focus once the page is loaded
             _rename_props: props to change the name of
             custom_attrs: custom attribute
-            **props: Component properties.
+            **props: The properties of the component.
 
         Returns:
-            A new component instance.
+            The component.
         """
         ...
