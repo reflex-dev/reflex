@@ -63,6 +63,10 @@ def _compile_theme(theme: dict) -> str:
     return templates.THEME.render(theme=theme)
 
 
+def _is_dev_mode() -> bool:
+    return os.environ.get("REFLEX_ENV_MODE", "dev") == "dev"
+
+
 def _compile_contexts(state: Optional[Type[BaseState]]) -> str:
     """Compile the initial state and contexts.
 
@@ -72,16 +76,15 @@ def _compile_contexts(state: Optional[Type[BaseState]]) -> str:
     Returns:
         The compiled context file.
     """
-    is_dev_mode = os.environ.get("REFLEX_ENV_MODE", "dev") == "dev"
     return (
         templates.CONTEXT.render(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
-            is_dev_mode=is_dev_mode,
+            is_dev_mode=_is_dev_mode(),
         )
         if state
-        else templates.CONTEXT.render(is_dev_mode=is_dev_mode)
+        else templates.CONTEXT.render(is_dev_mode=_is_dev_mode())
     )
 
 
@@ -238,7 +241,12 @@ def _compile_stateful_components(
 
         # When the component is referenced by more than one page, render it
         # to be included in the STATEFUL_COMPONENTS module.
-        if isinstance(component, StatefulComponent) and component.references > 1:
+        # Skip this step in dev mode, thereby avoiding potential hot reload errors for larger apps
+        if (
+            isinstance(component, StatefulComponent)
+            and component.references > 1
+            and not _is_dev_mode()
+        ):
             # Reset this flag to render the actual component.
             component.rendered_as_shared = False
 
@@ -452,7 +460,12 @@ def remove_tailwind_from_postcss() -> tuple[str, str]:
 
 
 def purge_web_pages_dir():
-    """Empty out .web directory."""
+    """Empty out .web/pages directory."""
+    if _is_dev_mode() and os.environ.get("REFLEX_PERSIST_WEB_DIR"):
+        # Skip purging the web directory in dev mode if REFLEX_PERSIST_WEB_DIR is set.
+        return
+
+    # Empty out the web pages directory.
     utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
 
 
