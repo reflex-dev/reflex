@@ -17,4 +17,4 @@ def color(color: ColorType, shade: ShadeType = 7, alpha: bool = False) -> Color:
     Returns:
         The color object.
     """
-    return Var.create(Color(color, shade, alpha))._replace(_var_is_string=True)
+    return Var.create(Color(color, shade, alpha))._replace(_var_is_string=True)  # type: ignore

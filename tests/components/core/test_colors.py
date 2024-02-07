@@ -17,7 +17,7 @@ class ColorState(rx.State):
         (rx.color("mint", 3), "{`var(--mint-3)`}"),
         (rx.color("mint", 3, True), "{`var(--mint-a3)`}"),
         (
-            rx.color(ColorState.color, ColorState.shade),
+            rx.color(ColorState.color, ColorState.shade),  # type: ignore
             "{`var(--${state__color_state.color}-${state__color_state.shade})`}",
         ),
     ],
@@ -34,7 +34,7 @@ def test_color(color, expected):
             "{isTrue(true) ? `var(--mint-7)` : `var(--tomato-5)`}",
         ),
         (
-            rx.cond(True, rx.color(ColorState.color), rx.color(ColorState.color, 5)),
+            rx.cond(True, rx.color(ColorState.color), rx.color(ColorState.color, 5)),  # type: ignore
             "{isTrue(true) ? `var(--${state__color_state.color}-7)` : `var(--${state__color_state.color}-5)`}",
         ),
         (
@@ -42,7 +42,7 @@ def test_color(color, expected):
                 "condition",
                 ("first", rx.color("mint")),
                 ("second", rx.color("tomato", 5)),
-                rx.color(ColorState.color, 2),
+                rx.color(ColorState.color, 2),  # type: ignore
             ),
             "{(() => { switch (JSON.stringify(`condition`)) {case JSON.stringify(`first`):  return (`var(--mint-7)`);"
             "  break;case JSON.stringify(`second`):  return (`var(--tomato-5)`);  break;default:  "
@@ -51,9 +51,9 @@ def test_color(color, expected):
         (
             rx.match(
                 "condition",
-                ("first", rx.color(ColorState.color)),
-                ("second", rx.color(ColorState.color, 5)),
-                rx.color(ColorState.color, 2),
+                ("first", rx.color(ColorState.color)),  # type: ignore
+                ("second", rx.color(ColorState.color, 5)),  # type: ignore
+                rx.color(ColorState.color, 2),  # type: ignore
             ),
             "{(() => { switch (JSON.stringify(`condition`)) {case JSON.stringify(`first`):  "
             "return (`var(--${state__color_state.color}-7)`);  break;case JSON.stringify(`second`):  "
