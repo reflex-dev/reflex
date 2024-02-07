@@ -39,6 +39,7 @@ breakpoints = ["0", "30em", "48em", "62em", "80em", "96em"]
 
 STYLE_PROP_SHORTHAND_MAPPING = {
     "paddingX": ("padding-inline-start", "padding-inline-end"),
+    "paddingY": ("padding-top", "padding-bottom"),
     "marginX": ("margin-inline-start", "margin-inline-end"),
     "marginY": ("margin-top", "margin-bottom"),
     "bg": ("background",),
