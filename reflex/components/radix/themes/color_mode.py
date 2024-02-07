@@ -16,10 +16,13 @@ rx.text(
 """
 from __future__ import annotations
 
+import dataclasses
+
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond
 from reflex.components.lucide.icon import Icon
 from reflex.style import LIGHT_COLOR_MODE, color_mode, toggle_color_mode
+from reflex.vars import BaseVar
 
 from .components.button import Button
 from .components.switch import Switch
@@ -95,6 +98,12 @@ class ColorModeButton(Button):
         )
 
 
-color_mode_icon = ColorModeIcon.create
-color_mode_switch = ColorModeSwitch.create
-color_mode_button = ColorModeButton.create
+class ColorModeNamespace(BaseVar):
+    """Namespace for color mode components."""
+
+    icon = staticmethod(ColorModeIcon.create)
+    switch = staticmethod(ColorModeSwitch.create)
+    button = staticmethod(ColorModeButton.create)
+
+
+color_mode_var_and_namespace = ColorModeNamespace(**dataclasses.asdict(color_mode))

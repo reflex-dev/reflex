@@ -46,6 +46,4 @@ from .switch import Switch
 from .textarea import TextArea
 from .time_picker import TimePicker
 
-helpers = []
-
-__all__ = [f for f in dir() if f[0].isupper()] + helpers  # type: ignore
+__all__ = [f for f in dir() if f[0].isupper()]  # type: ignore
