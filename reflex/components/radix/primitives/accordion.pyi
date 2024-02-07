@@ -10,9 +10,10 @@ from reflex.style import Style
 from types import SimpleNamespace
 from typing import Any, Dict, Literal
 from reflex.components.component import Component
-from reflex.components.core import cond, match
+from reflex.components.core import match
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
+from reflex.components.radix.themes.base import LiteralAccentColor
 from reflex.style import (
     Style,
     convert_dict_to_style_and_format_emotion,
@@ -148,7 +149,66 @@ class AccordionRoot(AccordionComponent):
             ]
         ] = None,
         color_scheme: Optional[
-            Union[Var[Literal["primary", "accent"]], Literal["primary", "accent"]]
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
         ] = None,
         _dynamic_themes: Optional[Union[Var[dict], dict]] = None,
         _var_data: Optional[VarData] = None,
