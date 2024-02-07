@@ -36,7 +36,7 @@ class Slider(RadixThemesComponent):
     radius: Var[LiteralRadius]
 
     # The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
-    default_value: Var[Union[List[Union[float, int]], Union[float, int]]]
+    default_value: Var[Union[List[Union[float, int]], float, int]]
 
     # The controlled value of the slider. Must be used in conjunction with onValueChange.
     value: Var[List[Union[float, int]]]
