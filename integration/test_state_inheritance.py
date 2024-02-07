@@ -1,5 +1,6 @@
 """Test state inheritance."""
 
+import time
 from typing import Generator
 
 import pytest
@@ -17,6 +18,7 @@ def raises_alert(driver: WebDriver, element: str) -> None:
     """
     btn = driver.find_element(By.ID, element)
     btn.click()
+    time.sleep(0.2)  # wait for the alert to appear
     alert = driver.switch_to.alert
     assert alert.text == "clicked"
     alert.accept()
