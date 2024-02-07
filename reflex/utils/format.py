@@ -10,7 +10,6 @@ import sys
 from typing import TYPE_CHECKING, Any, List, Union
 
 from reflex import constants
-from reflex.constants.colors import Color
 from reflex.utils import exceptions, serializers, types
 from reflex.utils.serializers import serialize
 from reflex.vars import BaseVar, Var
@@ -255,10 +254,7 @@ def format_cond(
     cond = f"isTrue({cond})"
 
     def create_cond_part_var(cond_part):
-        return Var.create_safe(
-            cond_part,
-            _var_is_string=type(cond_part) is str or isinstance(cond_part, Color),
-        )
+        return Var.create_safe(cond_part, _var_is_string=type(cond_part) is str)
 
     # Format prop conds.
     if is_prop:
