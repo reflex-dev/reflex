@@ -319,7 +319,7 @@ try:
         image.save(buff, format=getattr(image, "format", None) or "PNG")
         image_bytes = buff.getvalue()
         base64_image = base64.b64encode(image_bytes).decode("utf-8")
-        mime_type = getattr(image, "get_format_mimetype", lambda: "image/png")()
+        mime_type = getattr(image, "get_format", lambda: "image/png")()
         return f"data:{mime_type};base64,{base64_image}"
 
 except ImportError:
