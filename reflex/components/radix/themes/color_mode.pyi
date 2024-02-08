@@ -107,12 +107,12 @@ class ColorModeSwitch(Switch):
         name: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[str], str]] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
-                Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
+                Var[Literal["classic", "surface", "soft"]],
+                Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
@@ -180,8 +180,7 @@ class ColorModeSwitch(Switch):
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
-                Literal["none", "small", "medium", "large", "full"],
+                Var[Literal["none", "small", "full"]], Literal["none", "small", "full"]
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -253,10 +252,10 @@ class ColorModeSwitch(Switch):
             name: The name of the switch (when submitting a form)
             value: The value associated with the "on" position
             size: Switch size "1" - "4"
-            variant: Variant of switch: "solid" | "soft" | "outline" | "ghost"
+            variant: Variant of switch: "classic" | "surface" | "soft"
             color_scheme: Override theme color for switch
             high_contrast: Whether to render the switch with higher contrast color against background
-            radius: Override theme radius for switch: "none" | "small" | "medium" | "large" | "full"
+            radius: Override theme radius for switch: "none" | "small" | "full"
             style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -359,9 +358,7 @@ class ColorModeButton(Button):
         auto_focus: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        disabled: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
         form: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         form_action: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]

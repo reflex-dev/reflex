@@ -768,7 +768,7 @@ class EventState(rx.State):
             id="direct-prop",
         ),
         pytest.param(
-            rx.text(as_=f"foo{TEST_VAR}bar"),
+            rx.text(as_=f"foo{TEST_VAR}bar"),  # type: ignore
             [FORMATTED_TEST_VAR],
             id="fstring-prop",
         ),
