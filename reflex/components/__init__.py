@@ -7,7 +7,7 @@ from .component import Component
 from .component import NoSSRComponent as NoSSRComponent
 from .core import *
 from .datadisplay import *
-from .el.elements.media import Img
+from .el import img as image
 from .gridjs import *
 from .markdown import *
 from .moment import *
@@ -18,5 +18,3 @@ from .react_player import *
 from .suneditor import *
 
 icon = lucide.icon
-image = Img.create
-del Img
