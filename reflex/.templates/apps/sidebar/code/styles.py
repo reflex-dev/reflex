@@ -45,8 +45,8 @@ base_style = {
 }
 
 markdown_style = {
-    "code": lambda text: rx.code(text, color="#1F1944", bg="#EAE4FD"),
-    "a": lambda text, **props: rx.link(
+    "code": lambda text: rx.chakra.code(text, color="#1F1944", bg="#EAE4FD"),
+    "a": lambda text, **props: rx.chakra.link(
         text,
         **props,
         font_weight="bold",

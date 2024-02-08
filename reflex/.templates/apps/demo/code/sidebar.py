@@ -12,15 +12,15 @@ def sidebar_header() -> rx.Component:
     Returns:
         rx.Component: The sidebar header component.
     """
-    return rx.hstack(
-        rx.image(
+    return rx.chakra.hstack(
+        rx.chakra.image(
             src="/icon.svg",
             height="2em",
         ),
-        rx.spacer(),
-        rx.link(
-            rx.center(
-                rx.image(
+        rx.chakra.spacer(),
+        rx.chakra.link(
+            rx.chakra.center(
+                rx.chakra.image(
                     src="/github.svg",
                     height="3em",
                     padding="0.5em",
@@ -46,10 +46,10 @@ def sidebar_footer() -> rx.Component:
     Returns:
         rx.Component: The sidebar footer component.
     """
-    return rx.hstack(
-        rx.link(
-            rx.center(
-                rx.image(
+    return rx.chakra.hstack(
+        rx.chakra.link(
+            rx.chakra.center(
+                rx.chakra.image(
                     src="/paneleft.svg",
                     height="2em",
                     padding="0.5em",
@@ -65,15 +65,15 @@ def sidebar_footer() -> rx.Component:
             left=rx.cond(State.sidebar_displayed, "0px", "20.5em"),
             **overlapping_button_style,
         ),
-        rx.spacer(),
-        rx.link(
-            rx.text(
+        rx.chakra.spacer(),
+        rx.chakra.link(
+            rx.chakra.text(
                 "Docs",
             ),
             href="https://reflex.dev/docs/getting-started/introduction/",
         ),
-        rx.link(
-            rx.text(
+        rx.chakra.link(
+            rx.chakra.text(
                 "Blog",
             ),
             href="https://reflex.dev/blog/",
@@ -95,14 +95,14 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
     Returns:
         rx.Component: The sidebar item component.
     """
-    return rx.link(
-        rx.hstack(
-            rx.image(
+    return rx.chakra.link(
+        rx.chakra.hstack(
+            rx.chakra.image(
                 src=icon,
                 height="2.5em",
                 padding="0.5em",
             ),
-            rx.text(
+            rx.chakra.text(
                 text,
             ),
             bg=rx.cond(
@@ -131,10 +131,10 @@ def sidebar() -> rx.Component:
     Returns:
         rx.Component: The sidebar component.
     """
-    return rx.box(
-        rx.vstack(
+    return rx.chakra.box(
+        rx.chakra.vstack(
             sidebar_header(),
-            rx.vstack(
+            rx.chakra.vstack(
                 sidebar_item(
                     "Welcome",
                     "/github.svg",
@@ -165,7 +165,7 @@ def sidebar() -> rx.Component:
                 align_items="flex-start",
                 padding="1em",
             ),
-            rx.spacer(),
+            rx.chakra.spacer(),
             sidebar_footer(),
             height="100dvh",
         ),
