@@ -12,9 +12,9 @@ from typing import Any, Dict, Literal
 from reflex import el
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import LiteralSize, RadixThemesComponent
+from ..base import RadixThemesComponent
 
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
+LiteralContentSize = Literal["1", "2", "3", "4"]
 
 class AlertDialogRoot(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
@@ -385,10 +385,7 @@ class AlertDialogContent(el.Div, RadixThemesComponent):
             ]
         ] = None,
         size: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
+            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
         ] = None,
         force_mount: Optional[Union[Var[bool], bool]] = None,
         access_key: Optional[

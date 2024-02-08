@@ -111,9 +111,7 @@ class IconButton(el.Button, RadixThemesComponent):
         auto_focus: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        disabled: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
         form: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         form_action: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]

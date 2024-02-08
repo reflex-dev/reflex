@@ -17,7 +17,7 @@ class Button(BaseHTML):
     auto_focus: Var[Union[str, int, bool]]
 
     # Disables the button
-    disabled: Var[Union[str, int, bool]]
+    disabled: Var[bool]
 
     # Associates the button with a form (by id)
     form: Var[Union[str, int, bool]]

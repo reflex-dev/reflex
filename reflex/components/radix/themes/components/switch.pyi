@@ -10,14 +10,9 @@ from reflex.style import Style
 from typing import Any, Dict, Literal
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import (
-    LiteralAccentColor,
-    LiteralRadius,
-    LiteralVariant,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
 
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
+LiteralSwitchSize = Literal["1", "2", "3"]
 
 class Switch(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
@@ -97,19 +92,18 @@ class Switch(RadixThemesComponent):
         name: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[str], str]] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
-                Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
+                Var[Literal["classic", "surface", "soft"]],
+                Literal["classic", "surface", "soft"],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
-                Literal["none", "small", "medium", "large", "full"],
+                Var[Literal["none", "small", "full"]], Literal["none", "small", "full"]
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -186,9 +180,9 @@ class Switch(RadixThemesComponent):
             name: The name of the switch (when submitting a form)
             value: The value associated with the "on" position
             size: Switch size "1" - "4"
-            variant: Variant of switch: "solid" | "soft" | "outline" | "ghost"
+            variant: Variant of switch: "classic" | "surface" | "soft"
             high_contrast: Whether to render the switch with higher contrast color against background
-            radius: Override theme radius for switch: "none" | "small" | "medium" | "large" | "full"
+            radius: Override theme radius for switch: "none" | "small" | "full"
             style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.

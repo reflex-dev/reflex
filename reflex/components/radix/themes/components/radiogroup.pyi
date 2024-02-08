@@ -104,13 +104,6 @@ class RadioGroupRoot(RadixThemesComponent):
         disabled: Optional[Union[Var[bool], bool]] = None,
         name: Optional[Union[Var[str], str]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
-        orientation: Optional[
-            Union[
-                Var[Literal["horizontal", "vertical"]],
-                Literal["horizontal", "vertical"],
-            ]
-        ] = None,
-        loop: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -185,8 +178,6 @@ class RadioGroupRoot(RadixThemesComponent):
             disabled: Whether the radio group is disabled
             name: The name of the group. Submitted with its owning form as part of a name/value pair.
             required: Whether the radio group is required
-            orientation: The orientation of the component.
-            loop: When true, keyboard navigation will loop from last item to first, and vice versa.
             style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -353,7 +344,7 @@ class RadioGroupItem(RadixThemesComponent):
         """
         ...
 
-class HighLevelRadioGroup(RadioGroupRoot):
+class HighLevelRadioGroup(RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -449,13 +440,6 @@ class HighLevelRadioGroup(RadioGroupRoot):
         disabled: Optional[Union[Var[bool], bool]] = None,
         name: Optional[Union[Var[str], str]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
-        orientation: Optional[
-            Union[
-                Var[Literal["horizontal", "vertical"]],
-                Literal["horizontal", "vertical"],
-            ]
-        ] = None,
-        loop: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -464,9 +448,6 @@ class HighLevelRadioGroup(RadioGroupRoot):
         _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -520,7 +501,7 @@ class HighLevelRadioGroup(RadioGroupRoot):
             items: The items of the radio group.
             direction: The direction of the radio group.
             gap: The gap between the items of the radio group.
-            size: The size of the radio group: "1" | "2" | "3"
+            size: The size of the radio group.
             variant: The variant of the radio group
             color_scheme: The color of the radio group
             high_contrast: Whether to render the radio group with higher contrast color against background
@@ -529,8 +510,6 @@ class HighLevelRadioGroup(RadioGroupRoot):
             disabled: Whether the radio group is disabled
             name: The name of the group. Submitted with its owning form as part of a name/value pair.
             required: Whether the radio group is required
-            orientation: The orientation of the component.
-            loop: When true, keyboard navigation will loop from last item to first, and vice versa.
             style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.

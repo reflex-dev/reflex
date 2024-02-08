@@ -384,7 +384,9 @@ class PopoverContent(el.Div, RadixThemesComponent):
                 ],
             ]
         ] = None,
-        size: Optional[Union[Var[Literal[1, 2, 3, 4]], Literal[1, 2, 3, 4]]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
+        ] = None,
         side: Optional[
             Union[
                 Var[Literal["top", "right", "bottom", "left"]],

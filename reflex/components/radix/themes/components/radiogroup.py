@@ -50,12 +50,6 @@ class RadioGroupRoot(RadixThemesComponent):
     # Whether the radio group is required
     required: Var[bool]
 
-    # The orientation of the component.
-    orientation: Var[Literal["horizontal", "vertical"]]
-
-    # When true, keyboard navigation will loop from last item to first, and vice versa.
-    loop: Var[bool]
-
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
@@ -86,7 +80,7 @@ class RadioGroupItem(RadixThemesComponent):
     required: Var[bool]
 
 
-class HighLevelRadioGroup(RadioGroupRoot):
+class HighLevelRadioGroup(RadixThemesComponent):
     """High level wrapper for the RadioGroup component."""
 
     # The items of the radio group.
@@ -100,6 +94,33 @@ class HighLevelRadioGroup(RadioGroupRoot):
 
     # The size of the radio group.
     size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
+
+    # The variant of the radio group
+    variant: Var[Literal["classic", "surface", "soft"]]
+
+    # The color of the radio group
+    color_scheme: Var[LiteralAccentColor]
+
+    # Whether to render the radio group with higher contrast color against background
+    high_contrast: Var[bool]
+
+    # The controlled value of the radio item to check. Should be used in conjunction with on_change.
+    value: Var[str]
+
+    # The initial value of checked radio item. Should be used in conjunction with on_change.
+    default_value: Var[str]
+
+    # Whether the radio group is disabled
+    disabled: Var[bool]
+
+    # The name of the group. Submitted with its owning form as part of a name/value pair.
+    name: Var[str]
+
+    # Whether the radio group is required
+    required: Var[bool]
+
+    # Props to rename
+    _rename_props = {"onChange": "onValueChange"}
 
     @classmethod
     def create(
