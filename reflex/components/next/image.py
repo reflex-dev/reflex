@@ -84,26 +84,19 @@ class Image(NextComponent):
             _type_: _description_
         """
         if "width" not in props or "height" not in props:
-            # props.pop("width", None)
-            # props.pop("height", None)
             if "width" in props:
-                props["width"] = f"{props['width']}px"
-            if "height" in props:
-                props["height"] = f"{props['height']}px"
-                # return Box.create(
-                #     Img.create(*children, **props),
-                #     width=props.get("width", None),
-                #     height=props.get("height", None),
-                # )
-                return Div.create(
-                    Img.create(*children, **props),
-                    style={
-                        "width": props.get("width", None),
-                        "height": props.get("height", None),
-                        "border": props.get("border", None),
-                    },
-                )
+                props.setdefault("style", {})
+                props["style"]["height"] = "auto"
+                props["style"]["width"] = f"{props['width']}px"
+            elif "height" in props:
+                props.setdefault("style", {})
+                props["style"]["width"] = "auto"
+                props["style"]["height"] = f"{props['height']}px"
+            props["style"]["border"] = props.get(
+                "border", "none"
+            )  # to remove when Img properly get css props to style
             return Img.create(*children, **props)
+
         src = props.get("src", None)
         if src is not None and not isinstance(src, (Var)):
             props["src"] = Var.create(value=src, _var_is_string=True)
