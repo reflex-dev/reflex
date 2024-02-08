@@ -998,7 +998,7 @@ def migrate_to_rx_chakra():
 
 
 def _get_rx_chakra_component_to_migrate() -> set[str]:
-    from reflex.components import ChakraComponent
+    from reflex.components.chakra import ChakraComponent
 
     rx_chakra_names = set(dir(reflex.chakra))
 
