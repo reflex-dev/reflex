@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Any, Dict, Literal
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import LiteralAccentColor, LiteralVariant, RadixThemesComponent
+from ..base import LiteralAccentColor, RadixThemesComponent
 
 LiteralSwitchSize = Literal["1", "2", "3"]
 

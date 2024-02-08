@@ -11,7 +11,7 @@ from typing import Any, Dict, Literal
 from reflex import el
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import LiteralSize, RadixThemesComponent
+from ..base import RadixThemesComponent
 
 LiteralContentSize = Literal["1", "2", "3", "4"]
 
