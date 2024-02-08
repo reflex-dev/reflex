@@ -4,6 +4,8 @@ https://www.radix-ui.com/themes/docs/theme/typography
 """
 from __future__ import annotations
 
+from typing import Literal
+
 from reflex import el
 from reflex.vars import Var
 
@@ -18,6 +20,8 @@ from .base import (
     LiteralTextWeight,
 )
 
+LiteralType = Literal["p", "label", "div", "span"]
+
 
 class Text(el.Span, RadixThemesComponent):
     """A foundational text primitive based on the <span> element."""
@@ -28,7 +32,7 @@ class Text(el.Span, RadixThemesComponent):
     as_child: Var[bool]
 
     # Change the default rendered element into a semantically appropriate alternative (cannot be used with asChild)
-    as_: Var[str]
+    as_: Var[LiteralType] = "p"  # type: ignore
 
     # Text size: "1" - "9"
     size: Var[LiteralTextSize]
