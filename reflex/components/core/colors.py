@@ -2,10 +2,11 @@
 
 from reflex.constants.colors import Color, ColorType, ShadeType
 from reflex.utils.types import validate_parameter_literals
+from reflex.vars import Var
 
 
 @validate_parameter_literals
-def color(color: ColorType, shade: ShadeType = 7, alpha: bool = False) -> Color:
+def color(color: ColorType, shade: ShadeType = 7, alpha: bool = False) -> Var:
     """Create a color object.
 
     Args:
@@ -16,4 +17,4 @@ def color(color: ColorType, shade: ShadeType = 7, alpha: bool = False) -> Color:
     Returns:
         The color object.
     """
-    return Color(color, shade, alpha)
+    return Var.create(Color(color, shade, alpha))._replace(_var_is_string=True)  # type: ignore

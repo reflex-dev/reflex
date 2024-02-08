@@ -1612,13 +1612,13 @@ class Var:
             if types.is_generic_alias(self._var_type)
             else self._var_type
         )
-
         wrapped_var = str(self)
+
         return (
             wrapped_var
             if not self._var_state
-            and issubclass(type_, dict)
-            or issubclass(type_, Style)
+            and types._issubclass(type_, dict)
+            or types._issubclass(type_, Style)
             else wrapped_var.strip("{}")
         )
 
