@@ -1614,13 +1614,11 @@ class Var:
         )
         wrapped_var = str(self)
 
-        if type_ == Any:
-            return wrapped_var.strip("{}")
         return (
             wrapped_var
             if not self._var_state
-            and issubclass(type_, dict)
-            or issubclass(type_, Style)
+            and types._issubclass(type_, dict)
+            or types._issubclass(type_, Style)
             else wrapped_var.strip("{}")
         )
 
