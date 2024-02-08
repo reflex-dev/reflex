@@ -34,7 +34,8 @@ class WebsocketTargetURL(Bare):
 
     def _get_imports(self) -> imports.ImportDict:
         return {
-            "/utils/state.js": [imports.ImportVar(tag="getEventURL")],
+            "/utils/state.js": [imports.ImportVar(tag="getBackendURL")],
+            "/env.json": [imports.ImportVar(tag="env", is_default=True)],
         }
 
     @classmethod
@@ -44,7 +45,7 @@ class WebsocketTargetURL(Bare):
         Returns:
             The websocket target URL component.
         """
-        return super().create(contents="{getEventURL().href}")
+        return super().create(contents="{getBackendURL(env.EVENT).href}")
 
 
 def default_connection_error() -> list[str | Var | Component]:
