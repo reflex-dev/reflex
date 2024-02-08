@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 from types import SimpleNamespace
-from typing import Literal, Union
+from typing import List, Literal, Union
 
 from reflex import el
 from reflex.vars import Var
@@ -27,6 +27,10 @@ class TableHeader(el.Thead, RadixThemesComponent):
 
     tag = "Table.Header"
 
+    _invalid_children: List[str] = ["TableBody"]
+
+    _valid_parents: List[str] = ["TableRoot"]
+
 
 class TableRow(el.Tr, RadixThemesComponent):
     """A row containing table cells."""
@@ -35,6 +39,8 @@ class TableRow(el.Tr, RadixThemesComponent):
 
     # The alignment of the row
     align: Var[Literal["start", "center", "end", "baseline"]]
+
+    _invalid_children: List[str] = ["TableBody", "TableHeader", "TableRow"]
 
 
 class TableColumnHeaderCell(el.Th, RadixThemesComponent):
@@ -48,11 +54,29 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
     # width of the column
     width: Var[Union[str, int]]
 
+    _invalid_children: List[str] = [
+        "TableBody",
+        "TableHeader",
+        "TableRow",
+        "TableCell",
+        "TableColumnHeaderCell",
+        "TableRowHeaderCell",
+    ]
+
 
 class TableBody(el.Tbody, RadixThemesComponent):
     """The body of the table contains the data rows."""
 
     tag = "Table.Body"
+
+    _invalid_children: List[str] = [
+        "TableHeader",
+        "TableRowHeaderCell",
+        "TableColumnHeaderCell",
+        "TableCell",
+    ]
+
+    _valid_parents: List[str] = ["TableRoot"]
 
 
 class TableCell(el.Td, RadixThemesComponent):
@@ -66,6 +90,14 @@ class TableCell(el.Td, RadixThemesComponent):
     # width of the column
     width: Var[Union[str, int]]
 
+    _invalid_children: List[str] = [
+        "TableBody",
+        "TableHeader",
+        "TableRowHeaderCell",
+        "TableColumnHeaderCell",
+        "TableCell",
+    ]
+
 
 class TableRowHeaderCell(el.Th, RadixThemesComponent):
     """A table cell that is semantically treated as a row header."""
@@ -77,6 +109,15 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
 
     # width of the column
     width: Var[Union[str, int]]
+
+    _invalid_children: List[str] = [
+        "TableBody",
+        "TableHeader",
+        "TableRow",
+        "TableCell",
+        "TableColumnHeaderCell",
+        "TableRowHeaderCell",
+    ]
 
 
 class Table(SimpleNamespace):

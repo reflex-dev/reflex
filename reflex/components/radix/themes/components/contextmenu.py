@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 from types import SimpleNamespace
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -18,6 +18,8 @@ class ContextMenuRoot(RadixThemesComponent):
 
     # The modality of the context menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
     modal: Var[bool]
+
+    _invalid_children: List[str] = ["ContextMenuItem"]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -38,6 +40,10 @@ class ContextMenuTrigger(RadixThemesComponent):
 
     # Whether the trigger is disabled
     disabled: Var[bool]
+
+    _valid_parents: List[str] = ["ContextMenuRoot"]
+
+    _invalid_children: List[str] = ["ContextMenuContent"]
 
 
 class ContextMenuContent(RadixThemesComponent):
@@ -60,7 +66,7 @@ class ContextMenuContent(RadixThemesComponent):
     # The vertical distance in pixels from the anchor.
     align_offset: Var[int]
 
-    # When true, overrides the side andalign preferences to prevent collisions with boundary edges.
+    # When true, overrides the side and aligns preferences to prevent collisions with boundary edges.
     avoid_collisions: Var[bool]
 
     def get_event_triggers(self) -> Dict[str, Any]:
@@ -93,6 +99,8 @@ class ContextMenuSubTrigger(RadixThemesComponent):
     # Whether the trigger is disabled
     disabled: Var[bool]
 
+    _valid_parents: List[str] = ["ContextMenuContent", "ContextMenuSub"]
+
 
 class ContextMenuSubContent(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
@@ -101,6 +109,8 @@ class ContextMenuSubContent(RadixThemesComponent):
 
     # When true, keyboard navigation will loop from last item to first, and vice versa.
     loop: Var[bool]
+
+    _valid_parents: List[str] = ["ContextMenuSub"]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -127,6 +137,8 @@ class ContextMenuItem(RadixThemesComponent):
 
     # Shortcut to render a menu item as a link
     shortcut: Var[str]
+
+    _valid_parents: List[str] = ["ContextMenuContent", "ContextMenuSubContent"]
 
 
 class ContextMenuSeparator(RadixThemesComponent):

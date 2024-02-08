@@ -4,6 +4,7 @@ Anything imported here will be available in the default Reflex import as `rx.*`.
 To signal to typecheckers that something should be reexported,
 we use the Flask "import name as name" syntax.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -20,7 +21,7 @@ _ALL_COMPONENTS = [
     "foreach",
     "html",
     "match",
-    # "color_mode_cond",
+    "color_mode_cond",
     "connection_banner",
     "connection_modal",
     "debounce_input",
@@ -107,6 +108,9 @@ _ALL_COMPONENTS = [
     "EditorOptions",
     "icon",
     "markdown",
+    "list_item",
+    "unordered_list",
+    "ordered_list",
 ]
 
 _MAPPING = {
@@ -121,7 +125,7 @@ _MAPPING = {
     "reflex.components.el": ["el"],
     "reflex.components.lucide": ["lucide"],
     "reflex.components.next": ["next"],
-    "reflex.components.radix": ["radix"],
+    "reflex.components.radix": ["radix", "color_mode"],
     "reflex.components.recharts": ["recharts"],
     "reflex.components.moment.moment": ["MomentDelta"],
     "reflex.config": ["config", "Config", "DBConfig"],
@@ -150,7 +154,7 @@ _MAPPING = {
     "reflex.page": ["page"],
     "reflex.route": ["route"],
     "reflex.state": ["state", "var", "Cookie", "LocalStorage", "State"],
-    "reflex.style": ["style", "color_mode", "toggle_color_mode"],
+    "reflex.style": ["style", "toggle_color_mode"],
     "reflex.testing": ["testing"],
     "reflex.utils": ["utils"],
     "reflex.vars": ["vars", "cached_var", "Var"],

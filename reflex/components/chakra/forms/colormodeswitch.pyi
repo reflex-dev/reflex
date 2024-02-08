@@ -7,21 +7,16 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any
 from reflex.components.chakra import ChakraComponent
 from reflex.components.chakra.media.icon import Icon
-from reflex.components.component import BaseComponent, Component
-from reflex.components.core.cond import Cond, cond
-from reflex.style import color_mode, toggle_color_mode
-from reflex.vars import Var
+from reflex.components.component import BaseComponent
+from reflex.components.core.cond import Cond, color_mode_cond
+from reflex.style import LIGHT_COLOR_MODE, color_mode, toggle_color_mode
 from .button import Button
 from .switch import Switch
 
-DEFAULT_COLOR_MODE: str
 DEFAULT_LIGHT_ICON: Icon
 DEFAULT_DARK_ICON: Icon
-
-def color_mode_cond(light: Any, dark: Any = None) -> Var | Component: ...
 
 class ColorModeIcon(Cond):
     @overload

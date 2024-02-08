@@ -169,6 +169,24 @@ class Theme(RadixThemesComponent):
     # Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%". Defaults to "100%"
     scaling: Var[LiteralScaling]
 
+    @classmethod
+    def create(
+        cls, *children, color_mode: LiteralAppearance | None = None, **props
+    ) -> Component:
+        """Create a new Radix Theme specification.
+
+        Args:
+            *children: Child components.
+            color_mode: map to appearance prop.
+            **props: Component properties.
+
+        Returns:
+            A new component instance.
+        """
+        if color_mode is not None:
+            props["appearance"] = props.pop("color_mode")
+        return super().create(*children, **props)
+
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
             super()._get_imports(),

@@ -12,6 +12,8 @@ from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.vars import Var, VarData
 
+DEFAULT_DEBOUNCE_TIMEOUT = 300
+
 class DebounceInput(Component):
     @overload
     @classmethod

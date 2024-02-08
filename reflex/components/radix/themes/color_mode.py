@@ -7,8 +7,8 @@ rx.text(
     "Hover over me",
     _hover={
         "background": rx.color_mode_cond(
-            light="var(--chakra-colors-gray-200)",
-            dark="var(--chakra-colors-gray-700)",
+            light="var(--accent-2)",
+            dark="var(--accent-4)",
         ),
     },
 )
@@ -16,14 +16,16 @@ rx.text(
 """
 from __future__ import annotations
 
-from reflex.components.chakra import ChakraComponent
-from reflex.components.chakra.media.icon import Icon
+import dataclasses
+
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond
+from reflex.components.lucide.icon import Icon
 from reflex.style import LIGHT_COLOR_MODE, color_mode, toggle_color_mode
+from reflex.vars import BaseVar
 
-from .button import Button
-from .switch import Switch
+from .components.button import Button
+from .components.switch import Switch
 
 DEFAULT_LIGHT_ICON: Icon = Icon.create(tag="sun")
 DEFAULT_DARK_ICON: Icon = Icon.create(tag="moon")
@@ -54,7 +56,7 @@ class ColorModeIcon(Cond):
 
 
 class ColorModeSwitch(Switch):
-    """Switch for toggling chakra light / dark mode via toggle_color_mode."""
+    """Switch for toggling light / dark mode via toggle_color_mode."""
 
     @classmethod
     def create(cls, *children, **props):
@@ -87,7 +89,7 @@ class ColorModeButton(Button):
             **props: The props to pass to the component.
 
         Returns:
-            The switch component.
+            The button component.
         """
         return Button.create(
             *children,
@@ -96,8 +98,12 @@ class ColorModeButton(Button):
         )
 
 
-class ColorModeScript(ChakraComponent):
-    """Chakra color mode script."""
+class ColorModeNamespace(BaseVar):
+    """Namespace for color mode components."""
 
-    tag = "ColorModeScript"
-    initialColorMode = LIGHT_COLOR_MODE
+    icon = staticmethod(ColorModeIcon.create)
+    switch = staticmethod(ColorModeSwitch.create)
+    button = staticmethod(ColorModeButton.create)
+
+
+color_mode_var_and_namespace = ColorModeNamespace(**dataclasses.asdict(color_mode))
