@@ -333,7 +333,7 @@ def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
 
 
 def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
-    """Validate a value is a valid literal.
+    """Check that a value is a valid literal.
 
     Args:
         key: The prop name.
@@ -342,7 +342,7 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
         comp_name: Name of the component.
 
     Raises:
-        ValueError: When the valur is not a valid literal.
+        ValueError: When the value is not a valid literal.
     """
     from reflex.vars import Var
 
