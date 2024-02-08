@@ -376,9 +376,6 @@ class Img(BaseHTML):
         decoding: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        height: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         intrinsicsize: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -399,9 +396,6 @@ class Img(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         use_map: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        width: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         access_key: Optional[
@@ -510,7 +504,6 @@ class Img(BaseHTML):
             border: Border width around the image
             cross_origin: Configures the CORS requests for the image
             decoding: How the image should be decoded
-            height: The intrinsic height of the image
             intrinsicsize: Specifies an intrinsic size for the image
             ismap: Whether the image is a server-side image map
             loading: Specifies the loading behavior of the image
@@ -519,7 +512,6 @@ class Img(BaseHTML):
             src: URL of the image to display
             src_set: A set of source sizes and URLs for responsive images
             use_map: The name of the map to use with the image
-            width: The intrinsic width of the image
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
