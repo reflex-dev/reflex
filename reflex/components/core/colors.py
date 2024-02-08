@@ -5,9 +5,7 @@ from reflex.utils.types import validate_parameter_literals
 
 
 @validate_parameter_literals
-def color(
-    color: ColorType, shade: ShadeType = 7, alpha: bool = False, *args, **kwargs
-) -> Color:
+def color(color: ColorType, shade: ShadeType = 7, alpha: bool = False) -> Color:
     """Create a color object.
 
     Args:
