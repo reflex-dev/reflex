@@ -48,7 +48,7 @@ class DialogContent(el.Div, RadixThemesComponent):
     tag = "Dialog.Content"
 
     # DialogContent size "1" - "4"
-    size: Var[Literal[1, 2, 3, 4]]
+    size: Var[Literal["1", "2", "3", "4"]]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.

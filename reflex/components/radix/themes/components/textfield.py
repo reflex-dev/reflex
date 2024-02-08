@@ -12,7 +12,6 @@ from reflex.vars import Var
 from ..base import (
     LiteralAccentColor,
     LiteralRadius,
-    LiteralSize,
     RadixThemesComponent,
 )
 
@@ -82,9 +81,6 @@ class TextFieldSlot(RadixThemesComponent):
 
     # Override theme color for text field slot
     color_scheme: Var[LiteralAccentColor]
-
-    # Override the gap spacing between slot and input: "1" - "9"
-    gap: Var[LiteralSize]
 
 
 class Input(RadixThemesComponent):

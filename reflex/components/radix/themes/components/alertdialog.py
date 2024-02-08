@@ -5,9 +5,9 @@ from reflex import el
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from ..base import LiteralSize, RadixThemesComponent
+from ..base import RadixThemesComponent
 
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
+LiteralContentSize = Literal["1", "2", "3", "4"]
 
 
 class AlertDialogRoot(RadixThemesComponent):
@@ -42,7 +42,7 @@ class AlertDialogContent(el.Div, RadixThemesComponent):
     tag = "AlertDialog.Content"
 
     # The size of the content.
-    size: Var[LiteralSize]
+    size: Var[LiteralContentSize]
 
     # Whether to force mount the content on open.
     force_mount: Var[bool]
