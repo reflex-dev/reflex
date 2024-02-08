@@ -2,9 +2,12 @@
 
 from typing import Any, Dict, Literal
 
+from reflex.components.el import Img, Div
 from reflex.vars import Var
 
 from .base import NextComponent
+
+from reflex.components.radix.themes.layout.box import Box
 
 
 class Image(NextComponent):
@@ -80,6 +83,27 @@ class Image(NextComponent):
         Returns:
             _type_: _description_
         """
+        if "width" not in props or "height" not in props:
+            # props.pop("width", None)
+            # props.pop("height", None)
+            if "width" in props:
+                props["width"] = f"{props['width']}px"
+            if "height" in props:
+                props["height"] = f"{props['height']}px"
+                # return Box.create(
+                #     Img.create(*children, **props),
+                #     width=props.get("width", None),
+                #     height=props.get("height", None),
+                # )
+                return Div.create(
+                    Img.create(*children, **props),
+                    style={
+                        "width": props.get("width", None),
+                        "height": props.get("height", None),
+                        "border": props.get("border", None),
+                    },
+                )
+            return Img.create(*children, **props)
         src = props.get("src", None)
         if src is not None and not isinstance(src, (Var)):
             props["src"] = Var.create(value=src, _var_is_string=True)
