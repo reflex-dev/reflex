@@ -387,8 +387,9 @@ def validate_parameter_literals(func):
         # validate kwargs.
         for key, value in kwargs.items():
             annotation = annotations.get(key)
-            if annotation:
-                validate_literal(key, value, annotation, func.__name__)
+            if not annotation or annotation is inspect.Parameter.empty:
+                continue
+            validate_literal(key, value, annotation, func.__name__)
         return func(*args, **kwargs)
 
     return wrapper
