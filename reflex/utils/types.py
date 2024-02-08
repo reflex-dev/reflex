@@ -348,7 +348,7 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
 
     if (
         is_literal(expected_type)
-        and not isinstance(value, Var)
+        and not isinstance(value, Var)  # validating vars is not supported yet.
         and value not in expected_type.__args__
     ):
         allowed_values = expected_type.__args__
@@ -385,7 +385,7 @@ def validate_parameter_literals(func):
             validate_literal(param, arg, annotations[param], func.__name__)
 
         # validate kwargs.
-        for key, value in kwargs:
+        for key, value in kwargs.items():
             annotation = annotations.get(key)
             if annotation:
                 validate_literal(key, value, annotation, func.__name__)
