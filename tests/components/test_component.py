@@ -627,7 +627,7 @@ def test_component_with_only_valid_children(fixture, request):
 @pytest.mark.parametrize(
     "component,rendered",
     [
-        (rx.text("hi"), "<RadixThemesText>\n  {`hi`}\n</RadixThemesText>"),
+        (rx.text("hi"), "<RadixThemesText as={`p`}>\n  {`hi`}\n</RadixThemesText>"),
         (
             rx.box(rx.chakra.heading("test", size="md")),
             "<RadixThemesBox>\n  <Heading size={`md`}>\n  {`test`}\n</Heading>\n</RadixThemesBox>",
@@ -768,7 +768,7 @@ class EventState(rx.State):
             id="direct-prop",
         ),
         pytest.param(
-            rx.text(as_=f"foo{TEST_VAR}bar"),  # type: ignore
+            rx.heading(as_=f"foo{TEST_VAR}bar"),
             [FORMATTED_TEST_VAR],
             id="fstring-prop",
         ),
