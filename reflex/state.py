@@ -1421,6 +1421,7 @@ class State(BaseState):
     def __getstate__(self):
         state = super().__getstate__()
         # Never serialize parent_state or substates
+        state["__dict__"] = state["__dict__"].copy()
         state["__dict__"]["parent_state"] = None
         state["__dict__"]["substates"] = {}
         return state
