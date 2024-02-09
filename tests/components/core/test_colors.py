@@ -1,6 +1,7 @@
 import pytest
 
 import reflex as rx
+from reflex.vars import Var
 
 
 class ColorState(rx.State):
@@ -11,23 +12,35 @@ class ColorState(rx.State):
     shade: int = 4
 
 
+def create_color_var(color):
+    return Var.create(color)
+
+
 @pytest.mark.parametrize(
     "color, expected",
     [
-        (rx.color("mint"), "{`var(--mint-7)`}"),
-        (rx.color("mint", 3), "{`var(--mint-3)`}"),
-        (rx.color("mint", 3, True), "{`var(--mint-a3)`}"),
+        (create_color_var(rx.color("mint")), "var(--mint-7)"),
+        (create_color_var(rx.color("mint", 3)), "var(--mint-3)"),
+        (create_color_var(rx.color("mint", 3, True)), "var(--mint-a3)"),
         (
-            rx.color(ColorState.color, ColorState.shade),  # type: ignore
-            "{`var(--${state__color_state.color}-${state__color_state.shade})`}",
+            create_color_var(rx.color(ColorState.color, ColorState.shade)),  # type: ignore
+            "var(--${state__color_state.color}-${state__color_state.shade})",
         ),
         (
-            rx.color(f"{ColorState.color}", f"{ColorState.shade}"),  # type: ignore
-            "{`var(--${state__color_state.color}-${state__color_state.shade})`}",
+            create_color_var(rx.color(f"{ColorState.color}", f"{ColorState.shade}")),  # type: ignore
+            "var(--${state__color_state.color}-${state__color_state.shade})",
         ),
         (
-            rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}"),  # type: ignore
-            "{`var(--${state__color_state.color_part}ato-${state__color_state.shade})`}",
+            create_color_var(rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}")),  # type: ignore
+            "var(--${state__color_state.color_part}ato-${state__color_state.shade})",
+        ),
+        (
+            create_color_var(f'{rx.color(ColorState.color, f"{ColorState.shade}")}'),  # type: ignore
+            "var(--${state__color_state.color}-${state__color_state.shade})",
+        ),
+        (
+            create_color_var(f'{rx.color(f"{ColorState.color}", f"{ColorState.shade}")}'),  # type: ignore
+            "var(--${state__color_state.color}-${state__color_state.shade})",
         ),
     ],
 )
