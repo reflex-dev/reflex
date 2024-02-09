@@ -10,6 +10,7 @@ from reflex.style import Style
 from types import SimpleNamespace
 from typing import Optional
 from reflex.components.component import Component
+from reflex.components.radix.primitives.accordion import DEFAULT_ANIMATION_DURATION
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.style import Style
 from reflex.vars import Var
