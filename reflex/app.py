@@ -926,7 +926,9 @@ async def process(
         }
     )
     # Get the state for the session exclusively.
-    async with app.state_manager.modify_state(event.token) as state:
+    substate = event.name.rpartition(".")[0]
+    # Get the state for the session exclusively.
+    async with app.state_manager.modify_state(event.token + "_" + substate) as state:
         # re-assign only when the value is different
         if state.router_data != router_data:
             # assignment will recurse into substates and force recalculation of

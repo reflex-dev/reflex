@@ -213,7 +213,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # The router data for the current page
     router: RouterData = RouterData()
 
-    def __init__(self, *args, parent_state: BaseState | None = None, **kwargs):
+    def __init__(self, *args, parent_state: BaseState | None = None, init_substates: bool = True, **kwargs):
         """Initialize the state.
 
         Args:
@@ -225,9 +225,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         kwargs["parent_state"] = parent_state
         super().__init__(*args, **kwargs)
 
-        # Setup the substates.
-        for substate in self.get_substates():
-            self.substates[substate.get_name()] = substate(parent_state=self)
+        # Setup the substates (for memory state manager).
+        if init_substates:
+            for substate in self.get_substates():
+                self.substates[substate.get_name()] = substate(parent_state=self)
         # Convert the event handlers to functions.
         self._init_event_handlers()
 
@@ -1405,6 +1406,13 @@ class State(BaseState):
             type(self).set_is_hydrated(True),  # type: ignore
         ]
 
+    def __getstate__(self):
+        state = super().__getstate__()
+        # Never serialize parent_state or substates
+        state["__dict__"]["parent_state"] = None
+        state["__dict__"]["substates"] = {}
+        return state
+
 
 class StateProxy(wrapt.ObjectProxy):
     """Proxy of a state instance to control mutability of vars for a background task.
@@ -1717,20 +1725,57 @@ class StateManagerRedis(StateManager):
         b"evicted",
     }
 
-    async def get_state(self, token: str) -> BaseState:
+    async def get_state(self, token: str, top_level: bool = True, get_substates: bool = True, parent_state: BaseState | None = None) -> BaseState:
         """Get the state for a token.
 
         Args:
             token: The token to get the state for.
+            top_level: If true, return an instance of the top-level state.
+            get_substates: If true, also retrieve substates
+            parent_state: If provided, use this parent_state instead of getting it from redis.
 
         Returns:
             The state for the token.
         """
+        print(f"Getting redis state for {token}")
         redis_state = await self.redis.get(token)
-        if redis_state is None:
-            await self.set_state(token, self.state())
-            return await self.get_state(token)
-        return cloudpickle.loads(redis_state)
+
+        if redis_state is not None:
+            state = cloudpickle.loads(redis_state)
+
+            # populate parent and substates
+            if parent_state is None:
+                # retrieve the parent state
+                parent_state_key = token.rpartition(".")[0]
+                parent_state = await self.get_state(parent_state_key, top_level=False, get_substates=False)
+            state.parent_state = parent_state
+            if get_substates:
+                # retrieve all substates
+                for substate_cls in state_cls.get_substates():
+                    substate_name = substate_cls.get_name()
+                    substate_key = token + "." + substate_name
+                    state.substates[substate_name] = await self.get_state(substate_key, top_level=False, parent_state=state)
+            if top_level:
+                while type(state) != self.state and state.parent_state is not None:
+                    state = state.parent_state
+            return state
+
+        # Have to create a new entry for this token
+        client_token, _, state_path = token.partition("_")
+        if state_path:
+            state_cls = self.state.get_class_substate(tuple(state_path.split(".")))
+        else:
+            state_cls = self.state
+        if parent_state is None:
+            # retrieve the parent state to initialize event handlers
+            parent_state_key = client_token + "_" + state_path.rpartition(".")[0]
+            parent_state = await self.get_state(parent_state_key, get_substates=False)
+        await self.set_state(
+            token,
+            state_cls(parent_state=parent_state, _client_token=client_token, init_substates=False),
+            save_related_states=False,
+        )
+        return await self.get_state(token, top_level=top_level, get_substates=get_substates, parent_state=parent_state)
 
     async def set_state(
         self, token: str, state: BaseState, lock_id: bytes | None = None
@@ -1756,6 +1801,12 @@ class StateManagerRedis(StateManager):
                 "or use `@rx.background` decorator for long-running tasks."
             )
         await self.redis.set(token, cloudpickle.dumps(state), ex=self.token_expiration)
+        if state.parent_state is not None:
+            parent_state_key = token.rpartition(".")[0]
+            await self.set_state(parent_state_key, state.parent_state, lock_id=lock_id)
+        for substate_name, substate in state.substates.items():
+            substate_key = token + "." + substate_name
+            await self.set_state(substate_key, substate, lock_id=lock_id)
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
@@ -1782,7 +1833,8 @@ class StateManagerRedis(StateManager):
         Returns:
             The redis lock key for the token.
         """
-        return f"{token}_lock".encode()
+        client_token = token.partition("_")[0]
+        return f"{client_token}_lock".encode()
 
     async def _try_get_lock(self, lock_key: bytes, lock_id: bytes) -> bool | None:
         """Try to get a redis lock for a token.
