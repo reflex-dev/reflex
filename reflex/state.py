@@ -913,6 +913,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             **super().__getattribute__("inherited_backend_vars"),
         }
         if name in inherited_vars:
+            parent_state = super().__getattribute__("parent_state")
+            if parent_state is None:
+                breakpoint()
+                raise ValueError(
+                    "The value of state cannot be None when accessing an inherited var."
+                )
             return getattr(super().__getattribute__("parent_state"), name)
 
         backend_vars = super().__getattribute__("_backend_vars")
@@ -1258,6 +1264,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Recursively find the substate deltas.
         substates = self.substates
         for substate in self.dirty_substates.union(self._always_dirty_substates):
+            if substate not in substates:
+                continue  # substate not loaded at this time, no delta
             delta.update(substates[substate].get_delta())
 
         # Format the delta.
@@ -1285,6 +1293,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for var in self.dirty_vars:
             for substate_name in self._substate_var_dependencies[var]:
                 self.dirty_substates.add(substate_name)
+                if substate_name not in substates:
+                    continue
                 substate = substates[substate_name]
                 substate.dirty_vars.add(var)
                 substate._mark_dirty()
@@ -1293,6 +1303,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """Reset the dirty vars."""
         # Recursively clean the substates.
         for substate in self.dirty_substates:
+            if substate not in self.substates:
+                continue
             self.substates[substate]._clean()
 
         # Clean this state.
@@ -1466,7 +1478,7 @@ class StateProxy(wrapt.ObjectProxy):
             This StateProxy instance in mutable mode.
         """
         self._self_actx = self._self_app.modify_state(
-            self.__wrapped__.router.session.client_token
+            self.__wrapped__.router.session.client_token + "_" + ".".join(self._self_substate_path)
         )
         mutable_state = await self._self_actx.__aenter__()
         super().__setattr__(
@@ -1663,6 +1675,7 @@ class StateManagerMemory(StateManager):
         Returns:
             The state for the token.
         """
+        token = token.partition("_")[0]
         if token not in self.states:
             self.states[token] = self.state()
         return self.states[token]
@@ -1686,6 +1699,7 @@ class StateManagerMemory(StateManager):
         Yields:
             The state for the token.
         """
+        token = token.partition("_")[0]
         if token not in self._states_locks:
             async with self._state_manager_lock:
                 if token not in self._states_locks:
@@ -1737,7 +1751,12 @@ class StateManagerRedis(StateManager):
         Returns:
             The state for the token.
         """
-        print(f"Getting redis state for {token}")
+        client_token, _, state_path = token.partition("_")
+        if state_path:
+            state_cls = self.state.get_class_substate(tuple(state_path.split(".")))
+        else:
+            state_cls = self.state
+        print(f"Getting redis state for {token} {state_cls}")
         redis_state = await self.redis.get(token)
 
         if redis_state is not None:
@@ -1746,9 +1765,15 @@ class StateManagerRedis(StateManager):
             # populate parent and substates
             if parent_state is None:
                 # retrieve the parent state
-                parent_state_key = token.rpartition(".")[0]
-                parent_state = await self.get_state(parent_state_key, top_level=False, get_substates=False)
-            state.parent_state = parent_state
+                parent_state_name = state_path.rpartition(".")[0]
+                if parent_state_name:
+                    parent_state_key = token.rpartition(".")[0]
+                    parent_state = await self.get_state(parent_state_key, top_level=False, get_substates=False)
+            # Set up Bidirectional linkage
+            if parent_state is not None:
+                parent_state.substates[state.get_name()] = state
+                print(f"Set parent state {parent_state.get_name()} for {state.get_name()}")
+                state.parent_state = parent_state
             if get_substates:
                 # retrieve all substates
                 for substate_cls in state_cls.get_substates():
@@ -1761,24 +1786,20 @@ class StateManagerRedis(StateManager):
             return state
 
         # Have to create a new entry for this token
-        client_token, _, state_path = token.partition("_")
-        if state_path:
-            state_cls = self.state.get_class_substate(tuple(state_path.split(".")))
-        else:
-            state_cls = self.state
         if parent_state is None:
-            # retrieve the parent state to initialize event handlers
-            parent_state_key = client_token + "_" + state_path.rpartition(".")[0]
-            parent_state = await self.get_state(parent_state_key, get_substates=False)
+            parent_state_name = state_path.rpartition(".")[0]
+            if parent_state_name:
+                # retrieve the parent state to initialize event handlers
+                parent_state_key = client_token + "_" + parent_state_name
+                parent_state = await self.get_state(parent_state_key, get_substates=False)
         await self.set_state(
             token,
             state_cls(parent_state=parent_state, _client_token=client_token, init_substates=False),
-            save_related_states=False,
         )
         return await self.get_state(token, top_level=top_level, get_substates=get_substates, parent_state=parent_state)
 
     async def set_state(
-        self, token: str, state: BaseState, lock_id: bytes | None = None
+        self, token: str, state: BaseState, lock_id: bytes | None = None, set_substates: bool = True, set_parent_state: bool = True
     ):
         """Set the state for a token.
 
@@ -1786,6 +1807,8 @@ class StateManagerRedis(StateManager):
             token: The token to set the state for.
             state: The state to set.
             lock_id: If provided, the lock_key must be set to this value to set the state.
+            set_substates: If True, write substates to redis
+            set_parent_state: If True, write parent state to redis
 
         Raises:
             LockExpiredError: If lock_id is provided and the lock for the token is not held by that ID.
@@ -1800,13 +1823,18 @@ class StateManagerRedis(StateManager):
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
                 "or use `@rx.background` decorator for long-running tasks."
             )
-        await self.redis.set(token, cloudpickle.dumps(state), ex=self.token_expiration)
-        if state.parent_state is not None:
+        state_path = token.partition("_")[2]
+        if state_path and state.get_full_name() != state_path:
+            state = state.get_substate(tuple(state_path.split(".")))
+        if state.parent_state is not None and set_parent_state:
             parent_state_key = token.rpartition(".")[0]
-            await self.set_state(parent_state_key, state.parent_state, lock_id=lock_id)
-        for substate_name, substate in state.substates.items():
-            substate_key = token + "." + substate_name
-            await self.set_state(substate_key, substate, lock_id=lock_id)
+            await self.set_state(parent_state_key, state.parent_state, lock_id=lock_id, set_substates=False)
+        if set_substates:
+            for substate_name, substate in state.substates.items():
+                substate_key = token + "." + substate_name
+                await self.set_state(substate_key, substate, lock_id=lock_id, set_parent_state=False)
+        print(f"Setting redis state for {token} {type(state)}")
+        await self.redis.set(token, cloudpickle.dumps(state), ex=self.token_expiration)
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:

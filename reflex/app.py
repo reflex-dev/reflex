@@ -926,9 +926,7 @@ async def process(
         }
     )
     # Get the state for the session exclusively.
-    substate = event.name.rpartition(".")[0]
-    # Get the state for the session exclusively.
-    async with app.state_manager.modify_state(event.token + "_" + substate) as state:
+    async with app.state_manager.modify_state(event.substate_token) as state:
         # re-assign only when the value is different
         if state.router_data != router_data:
             # assignment will recurse into substates and force recalculation of
@@ -1004,7 +1002,8 @@ def upload(app: App):
             )
 
         # Get the state for the session.
-        state = await app.state_manager.get_state(token)
+        substate_token = token + "_" + handler.rpartition(".")[0]
+        state = await app.state_manager.get_state(substate_token)
 
         # get the current session ID
         # get the current state(parent state/substate)
@@ -1051,7 +1050,7 @@ def upload(app: App):
                 Each state update as JSON followed by a new line.
             """
             # Process the event.
-            async with app.state_manager.modify_state(token) as state:
+            async with app.state_manager.modify_state(event.substate_token) as state:
                 async for update in state._process(event):
                     # Postprocess the event.
                     update = await app.postprocess(state, event, update)

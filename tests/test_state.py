@@ -1836,7 +1836,8 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         "private",
     ]
 
-    assert (await mock_app.state_manager.get_state(token)).order == exp_order
+    substate_token = f"{token}_{BackgroundTaskState.get_name()}"
+    assert (await mock_app.state_manager.get_state(substate_token)).order == exp_order
 
     assert mock_app.event_namespace is not None
     emit_mock = mock_app.event_namespace.emit
@@ -1913,7 +1914,8 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
         await task
     assert not mock_app.background_tasks
 
-    assert (await mock_app.state_manager.get_state(token)).order == [
+    substate_token = f"{token}_{BackgroundTaskState.get_name()}"
+    assert (await mock_app.state_manager.get_state(substate_token)).order == [
         "reset",
     ]
 
