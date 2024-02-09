@@ -225,13 +225,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             *args: The args to pass to the Pydantic init method.
             parent_state: The parent state.
+            init_substates: Whether to initialize the substates in this instance.
             **kwargs: The kwargs to pass to the Pydantic init method.
 
         """
         kwargs["parent_state"] = parent_state
         super().__init__(*args, **kwargs)
 
-        # Setup the substates (for memory state manager).
+        # Setup the substates (for memory state manager only).
         if init_substates:
             for substate in self.get_substates():
                 self.substates[substate.get_name()] = substate(parent_state=self)
@@ -919,12 +920,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             **super().__getattribute__("inherited_backend_vars"),
         }
         if name in inherited_vars:
-            parent_state = super().__getattribute__("parent_state")
-            if parent_state is None:
-                breakpoint()
-                raise ValueError(
-                    "The value of state cannot be None when accessing an inherited var."
-                )
             return getattr(super().__getattribute__("parent_state"), name)
 
         backend_vars = super().__getattribute__("_backend_vars")
@@ -1015,7 +1010,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.substates.values():
             substate._reset_client_storage()
 
-    def get_substate(self, path: Sequence[str]) -> BaseState | None:
+    def get_substate(self, path: Sequence[str]) -> BaseState:
         """Get the substate.
 
         Args:
@@ -1425,6 +1420,16 @@ class State(BaseState):
         ]
 
     def __getstate__(self):
+        """Get the state for redis serialization.
+
+        This method is called by cloudpickle to serialize the object.
+
+        It explicitly removes parent_state and substates because those are serialized separately
+        by the StateManagerRedis to allow for better horizontal scaling as state size increases.
+
+        Returns:
+            The state dict for serialization.
+        """
         state = super().__getstate__()
         # Never serialize parent_state or substates
         state["__dict__"] = state["__dict__"].copy()
