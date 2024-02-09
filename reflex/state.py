@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import copy
+import datetime
+import enum
 import functools
 import inspect
 import os
@@ -120,24 +122,46 @@ class PageData(Base):
             self.params = router_data.get(constants.RouteVar.QUERY, {})
 
 
+class SessionStatus(enum.Enum):
+    """The status of the session."""
+
+    INITIAL = "initial"
+    CONNECTED = "connected"
+    DISCONNECTED = "disconnected"
+    RECONNECTED = "reconnected"
+
+
 class SessionData(Base):
     """An object containing session data."""
 
     client_token: str = ""
     client_ip: str = ""
     session_id: str = ""
+    status: SessionStatus = SessionStatus.INITIAL
+    # also represents disconnected_at if status is DISCONNECTED
+    last_event: datetime.datetime = datetime.datetime.now()
 
-    def __init__(self, router_data: Optional[dict] = None):
-        """Initalize the SessionData object based on router_data.
+    def update(self, router_data: Optional[dict] = None):
+        """Update the session data based on the router_data.
 
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
-        if router_data:
-            self.client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
-            self.client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
-            self.session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
+        self.last_event = datetime.datetime.now()
+        if not router_data:
+            return
+        self.client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
+        self.client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
+        new_session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
+        print(
+            f"current_session_id: {self.session_id}, new_session_id: {new_session_id}"
+        )
+        if self.session_id and new_session_id and self.session_id != new_session_id:
+            self.status = SessionStatus.RECONNECTED
+            print("Reconnected")
+        else:
+            self.status = SessionStatus.CONNECTED
+        self.session_id = new_session_id
 
 
 class RouterData(Base):
@@ -154,7 +178,15 @@ class RouterData(Base):
             router_data: the router_data dict.
         """
         super().__init__()
-        self.session = SessionData(router_data)
+        self.update(router_data)
+
+    def update(self, router_data: Optional[dict] = None):
+        """Update the router data based on the router_data.
+
+        Args:
+            router_data: the router_data dict.
+        """
+        self.session.update(router_data)
         self.headers = HeaderData(router_data)
         self.page = PageData(router_data)
 
