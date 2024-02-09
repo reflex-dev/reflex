@@ -1813,7 +1813,7 @@ class StateManagerRedis(StateManager):
                 # retrieve the parent state to initialize event handlers
                 parent_state_key = client_token + "_" + parent_state_name
                 parent_state = await self.get_state(
-                    parent_state_key, get_substates=False
+                    parent_state_key, top_level=False, get_substates=False
                 )
         await self.set_state(
             token,
