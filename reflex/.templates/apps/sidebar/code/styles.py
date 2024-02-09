@@ -36,12 +36,12 @@ overlapping_button_style = {
 }
 
 base_style = {
-    rx.MenuButton: {
+    rx.chakra.MenuButton: {
         "width": "3em",
         "height": "3em",
         **overlapping_button_style,
     },
-    rx.MenuItem: hover_accent_bg,
+    rx.chakra.MenuItem: hover_accent_bg,
 }
 
 markdown_style = {

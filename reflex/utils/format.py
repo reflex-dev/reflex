@@ -253,24 +253,20 @@ def format_cond(
     # Use Python truthiness.
     cond = f"isTrue({cond})"
 
+    def create_var(cond_part):
+        return Var.create_safe(cond_part, _var_is_string=type(cond_part) is str)
+
     # Format prop conds.
     if is_prop:
-        if not isinstance(true_value, Var):
-            true_value = Var.create_safe(
-                true_value,
-                _var_is_string=type(true_value) is str,
-            )
+        true_value = create_var(true_value)
         prop1 = true_value._replace(
             _var_is_local=True,
         )
-        if not isinstance(false_value, Var):
-            false_value = Var.create_safe(
-                false_value,
-                _var_is_string=type(false_value) is str,
-            )
+
+        false_value = create_var(false_value)
         prop2 = false_value._replace(_var_is_local=True)
-        prop1, prop2 = str(prop1), str(prop2)  # avoid f-string semantics for Var
-        return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
+        # unwrap '{}' to avoid f-string semantics for Var
+        return f"{cond} ? {prop1._var_name_unwrapped} : {prop2._var_name_unwrapped}"
 
     # Format component conds.
     return wrap(f"{cond} ? {true_value} : {false_value}", "{")

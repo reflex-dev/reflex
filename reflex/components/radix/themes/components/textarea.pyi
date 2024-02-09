@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Union
 from reflex import el
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
@@ -94,41 +94,21 @@ class TextArea(RadixThemesComponent, el.Textarea):
                 ],
             ]
         ] = None,
-        auto_complete: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        auto_focus: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        cols: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        dirname: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        disabled: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
+        auto_complete: Optional[Union[Var[bool], bool]] = None,
+        auto_focus: Optional[Union[Var[bool], bool]] = None,
+        dirname: Optional[Union[Var[str], str]] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
         form: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        max_length: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        min_length: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        name: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        placeholder: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        read_only: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        required: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        rows: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        value: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        wrap: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        max_length: Optional[Union[Var[int], int]] = None,
+        min_length: Optional[Union[Var[int], int]] = None,
+        name: Optional[Union[Var[str], str]] = None,
+        placeholder: Optional[Union[Var[str], str]] = None,
+        read_only: Optional[Union[Var[bool], bool]] = None,
+        required: Optional[Union[Var[bool], bool]] = None,
+        rows: Optional[Union[Var[str], str]] = None,
+        value: Optional[Union[Var[str], str]] = None,
+        wrap: Optional[Union[Var[str], str]] = None,
+        cols: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -244,7 +224,6 @@ class TextArea(RadixThemesComponent, el.Textarea):
             color_scheme: The color of the text area
             auto_complete: Whether the form control should have autocomplete enabled
             auto_focus: Automatically focuses the textarea when the page loads
-            cols: Visible width of the text control, in average character widths
             dirname: Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
             disabled: Disables the textarea
             form: Associates the textarea with a form (by id)
@@ -257,6 +236,7 @@ class TextArea(RadixThemesComponent, el.Textarea):
             rows: Visible number of lines in the text control
             value: The controlled value of the textarea, read only unless used with on_change
             wrap: How the text in the textarea is to be wrapped when submitting the form
+            cols: Visible width of the text control, in average character widths
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.

@@ -95,9 +95,6 @@ class Img(BaseHTML):
     # How the image should be decoded
     decoding: Var[Union[str, int, bool]]
 
-    # The intrinsic height of the image
-    height: Var[Union[str, int, bool]]
-
     # Specifies an intrinsic size for the image
     intrinsicsize: Var[Union[str, int, bool]]
 
@@ -121,9 +118,6 @@ class Img(BaseHTML):
 
     # The name of the map to use with the image
     use_map: Var[Union[str, int, bool]]
-
-    # The intrinsic width of the image
-    width: Var[Union[str, int, bool]]
 
 
 class Map(BaseHTML):
