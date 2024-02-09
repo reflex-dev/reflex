@@ -213,7 +213,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # The router data for the current page
     router: RouterData = RouterData()
 
-    def __init__(self, *args, parent_state: BaseState | None = None, init_substates: bool = True, **kwargs):
+    def __init__(
+        self,
+        *args,
+        parent_state: BaseState | None = None,
+        init_substates: bool = True,
+        **kwargs,
+    ):
         """Initialize the state.
 
         Args:
@@ -1479,7 +1485,9 @@ class StateProxy(wrapt.ObjectProxy):
             This StateProxy instance in mutable mode.
         """
         self._self_actx = self._self_app.modify_state(
-            self.__wrapped__.router.session.client_token + "_" + ".".join(self._self_substate_path)
+            self.__wrapped__.router.session.client_token
+            + "_"
+            + ".".join(self._self_substate_path)
         )
         mutable_state = await self._self_actx.__aenter__()
         super().__setattr__(
@@ -1740,7 +1748,13 @@ class StateManagerRedis(StateManager):
         b"evicted",
     }
 
-    async def get_state(self, token: str, top_level: bool = True, get_substates: bool = True, parent_state: BaseState | None = None) -> BaseState:
+    async def get_state(
+        self,
+        token: str,
+        top_level: bool = True,
+        get_substates: bool = True,
+        parent_state: BaseState | None = None,
+    ) -> BaseState:
         """Get the state for a token.
 
         Args:
@@ -1769,18 +1783,24 @@ class StateManagerRedis(StateManager):
                 parent_state_name = state_path.rpartition(".")[0]
                 if parent_state_name:
                     parent_state_key = token.rpartition(".")[0]
-                    parent_state = await self.get_state(parent_state_key, top_level=False, get_substates=False)
+                    parent_state = await self.get_state(
+                        parent_state_key, top_level=False, get_substates=False
+                    )
             # Set up Bidirectional linkage
             if parent_state is not None:
                 parent_state.substates[state.get_name()] = state
-                print(f"Set parent state {parent_state.get_name()} for {state.get_name()}")
+                print(
+                    f"Set parent state {parent_state.get_name()} for {state.get_name()}"
+                )
                 state.parent_state = parent_state
             if get_substates:
                 # retrieve all substates
                 for substate_cls in state_cls.get_substates():
                     substate_name = substate_cls.get_name()
                     substate_key = token + "." + substate_name
-                    state.substates[substate_name] = await self.get_state(substate_key, top_level=False, parent_state=state)
+                    state.substates[substate_name] = await self.get_state(
+                        substate_key, top_level=False, parent_state=state
+                    )
             if top_level:
                 while type(state) != self.state and state.parent_state is not None:
                     state = state.parent_state
@@ -1792,15 +1812,31 @@ class StateManagerRedis(StateManager):
             if parent_state_name:
                 # retrieve the parent state to initialize event handlers
                 parent_state_key = client_token + "_" + parent_state_name
-                parent_state = await self.get_state(parent_state_key, get_substates=False)
+                parent_state = await self.get_state(
+                    parent_state_key, get_substates=False
+                )
         await self.set_state(
             token,
-            state_cls(parent_state=parent_state, _client_token=client_token, init_substates=False),
+            state_cls(
+                parent_state=parent_state,
+                _client_token=client_token,
+                init_substates=False,
+            ),
         )
-        return await self.get_state(token, top_level=top_level, get_substates=get_substates, parent_state=parent_state)
+        return await self.get_state(
+            token,
+            top_level=top_level,
+            get_substates=get_substates,
+            parent_state=parent_state,
+        )
 
     async def set_state(
-        self, token: str, state: BaseState, lock_id: bytes | None = None, set_substates: bool = True, set_parent_state: bool = True
+        self,
+        token: str,
+        state: BaseState,
+        lock_id: bytes | None = None,
+        set_substates: bool = True,
+        set_parent_state: bool = True,
     ):
         """Set the state for a token.
 
@@ -1829,11 +1865,18 @@ class StateManagerRedis(StateManager):
             state = state.get_substate(tuple(state_path.split(".")))
         if state.parent_state is not None and set_parent_state:
             parent_state_key = token.rpartition(".")[0]
-            await self.set_state(parent_state_key, state.parent_state, lock_id=lock_id, set_substates=False)
+            await self.set_state(
+                parent_state_key,
+                state.parent_state,
+                lock_id=lock_id,
+                set_substates=False,
+            )
         if set_substates:
             for substate_name, substate in state.substates.items():
                 substate_key = token + "." + substate_name
-                await self.set_state(substate_key, substate, lock_id=lock_id, set_parent_state=False)
+                await self.set_state(
+                    substate_key, substate, lock_id=lock_id, set_parent_state=False
+                )
         print(f"Setting redis state for {token} {type(state)}")
         await self.redis.set(token, cloudpickle.dumps(state), ex=self.token_expiration)
 
@@ -1936,6 +1979,7 @@ class StateManagerRedis(StateManager):
         state_is_locked = True
 
         try:
+            print(f"Take lock on {token} {lock_key} {lock_id}")
             yield lock_id
         except LockExpiredError:
             state_is_locked = False
