@@ -10,7 +10,7 @@ from reflex.style import Style
 from types import SimpleNamespace
 from typing import Any, Dict, List, Literal
 from reflex.components.component import Component
-from reflex.components.core import match
+from reflex.components.core.match import Match
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor

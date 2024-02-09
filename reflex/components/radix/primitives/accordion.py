@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from typing import Any, Dict, List, Literal
 
 from reflex.components.component import Component
-from reflex.components.core import match
+from reflex.components.core.match import Match
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor
@@ -37,7 +37,7 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseV
     Returns:
         The theme for the accordion root component.
     """
-    return match(  # type: ignore
+    return Match.create(  # type: ignore
         variant,
         (
             "soft",
@@ -86,7 +86,7 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseV
                 "background_color": f"var(--{color_scheme}-9)",
                 "box_shadow": "0 2px 10px var(--black-a4)",
             }
-        )
+        ),
         # defaults to classic
     )
 
@@ -140,7 +140,7 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
     Returns:
         The theme for the accordion trigger component.
     """
-    return match(  # type: ignore
+    return Match.create(  # type: ignore
         variant,
         (
             "soft",
@@ -240,7 +240,7 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
     Returns:
         The theme for the accordion content component.
     """
-    return match(  # type: ignore
+    return Match.create(  # type: ignore
         variant,
         (
             "outline",
@@ -270,12 +270,12 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
             {
                 "overflow": "hidden",
                 "font_size": "10px",
-                "color": match(
+                "color": Match.create(
                     variant,
                     ("classic", f"var(--{color_scheme}-9-contrast)"),
                     f"var(--{color_scheme}-11)",
                 ),
-                "background_color": match(
+                "background_color": Match.create(
                     variant,
                     ("classic", f"var(--{color_scheme}-9)"),
                     f"var(--{color_scheme}-3)",
@@ -344,7 +344,7 @@ class AccordionRoot(AccordionComponent):
     # The var_data associated with the component.
     _var_data: VarData = VarData()  # type: ignore
 
-    _valid_children: List[str] = ["AccordionItem"]
+    _valid_children: List[str] = ["AccordionItem", "Foreach"]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
