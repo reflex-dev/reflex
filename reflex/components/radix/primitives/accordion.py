@@ -339,7 +339,7 @@ class AccordionRoot(AccordionComponent):
     color_scheme: Var[LiteralAccentColor]  # type: ignore
 
     # dynamic themes of the accordion generated at compile time.
-    _dynamic_themes: Var[dict]
+    _dynamic_themes: Var[dict] = Var.create({})
 
     # The var_data associated with the component.
     _var_data: VarData = VarData()  # type: ignore
@@ -375,7 +375,9 @@ class AccordionRoot(AccordionComponent):
         Returns:
             The dictionary of the component style as value and the style notation as key.
         """
-        return {"css": self._dynamic_themes._merge(format_as_emotion(self.style))}  # type: ignore
+        return {"css": self._dynamic_themes._merge(
+            format_as_emotion(self.style)) if self._dynamic_themes is not None else format_as_emotion(
+            self.style)}  # type: ignore
 
     def _apply_theme(self, theme: Component):
         global_color_scheme = getattr(theme, "accent_color", None)
