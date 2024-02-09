@@ -11,12 +11,6 @@ class Canvas(BaseHTML):
 
     tag = "canvas"
 
-    # The height of the canvas in CSS pixels
-    height: Var[Union[str, int, bool]]
-
-    # The width of the canvas in CSS pixels
-    width: Var[Union[str, int, bool]]
-
 
 class Noscript(BaseHTML):
     """Display the noscript element."""
