@@ -120,9 +120,6 @@ class BaseList(Flex, LayoutComponent):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         p: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -292,7 +289,6 @@ class BaseList(Flex, LayoutComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             p: Padding: "0" - "9"
             px: Padding horizontal: "0" - "9"
             py: Padding vertical: "0" - "9"
@@ -406,9 +402,6 @@ class UnorderedList(BaseList):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         p: Optional[
@@ -580,7 +573,6 @@ class UnorderedList(BaseList):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             p: Padding: "0" - "9"
             px: Padding horizontal: "0" - "9"
             py: Padding vertical: "0" - "9"
@@ -711,9 +703,6 @@ class OrderedList(BaseList):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         p: Optional[
@@ -885,7 +874,6 @@ class OrderedList(BaseList):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             p: Padding: "0" - "9"
             px: Padding horizontal: "0" - "9"
             py: Padding vertical: "0" - "9"
@@ -964,9 +952,6 @@ class ListItem(Li):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1041,7 +1026,6 @@ class ListItem(Li):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

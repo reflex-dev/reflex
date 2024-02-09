@@ -78,9 +78,6 @@ class A(BaseHTML):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -164,7 +161,6 @@ class A(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -226,9 +222,6 @@ class Abbr(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -305,7 +298,6 @@ class Abbr(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -367,9 +359,6 @@ class B(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -446,7 +435,6 @@ class B(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -508,9 +496,6 @@ class Bdi(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -587,7 +572,6 @@ class Bdi(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -649,9 +633,6 @@ class Bdo(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -728,7 +709,6 @@ class Bdo(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -790,9 +770,6 @@ class Br(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -869,7 +846,6 @@ class Br(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -931,9 +907,6 @@ class Cite(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -1010,7 +983,6 @@ class Cite(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1072,9 +1044,6 @@ class Code(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -1151,7 +1120,6 @@ class Code(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1216,9 +1184,6 @@ class Data(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -1296,7 +1261,6 @@ class Data(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1358,9 +1322,6 @@ class Dfn(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -1437,7 +1398,6 @@ class Dfn(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1499,9 +1459,6 @@ class Em(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -1578,7 +1535,6 @@ class Em(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1640,9 +1596,6 @@ class I(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -1719,7 +1672,6 @@ class I(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1781,9 +1733,6 @@ class Kbd(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -1860,7 +1809,6 @@ class Kbd(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1922,9 +1870,6 @@ class Mark(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -2001,7 +1946,6 @@ class Mark(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2064,9 +2008,6 @@ class Q(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -2144,7 +2085,6 @@ class Q(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2206,9 +2146,6 @@ class Rp(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -2285,7 +2222,6 @@ class Rp(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2347,9 +2283,6 @@ class Rt(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -2426,7 +2359,6 @@ class Rt(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2488,9 +2420,6 @@ class Ruby(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -2567,7 +2496,6 @@ class Ruby(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2629,9 +2557,6 @@ class S(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -2708,7 +2633,6 @@ class S(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2770,9 +2694,6 @@ class Samp(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -2849,7 +2770,6 @@ class Samp(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2911,9 +2831,6 @@ class Small(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -2990,7 +2907,6 @@ class Small(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -3052,9 +2968,6 @@ class Span(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -3131,7 +3044,6 @@ class Span(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -3193,9 +3105,6 @@ class Strong(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -3272,7 +3181,6 @@ class Strong(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -3334,9 +3242,6 @@ class Sub(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -3413,7 +3318,6 @@ class Sub(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -3475,9 +3379,6 @@ class Sup(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -3554,7 +3455,6 @@ class Sup(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -3619,9 +3519,6 @@ class Time(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -3699,7 +3596,6 @@ class Time(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -3761,9 +3657,6 @@ class U(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -3840,7 +3733,6 @@ class U(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -3902,9 +3794,6 @@ class Wbr(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -3981,7 +3870,6 @@ class Wbr(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
