@@ -7,6 +7,7 @@ class ColorState(rx.State):
     """Test color state."""
 
     color: str = "mint"
+    color_part: str = "tom"
     shade: int = 4
 
 
@@ -19,6 +20,14 @@ class ColorState(rx.State):
         (
             rx.color(ColorState.color, ColorState.shade),  # type: ignore
             "{`var(--${state__color_state.color}-${state__color_state.shade})`}",
+        ),
+        (
+            rx.color(f"{ColorState.color}", f"{ColorState.shade}"),  # type: ignore
+            "{`var(--${state__color_state.color}-${state__color_state.shade})`}",
+        ),
+        (
+            rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}"),  # type: ignore
+            "{`var(--${state__color_state.color_part}ato-${state__color_state.shade})`}",
         ),
     ],
 )
