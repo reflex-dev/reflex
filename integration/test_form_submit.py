@@ -221,7 +221,11 @@ async def test_submit(driver, form_submit: AppHarness):
     submit_input.click()
 
     async def get_form_data():
-        return (await form_submit.get_state(token)).substates["form_state"].form_data
+        return (
+            (await form_submit.get_state(f"{token}_state.form_state"))
+            .substates["form_state"]
+            .form_data
+        )
 
     # wait for the form data to arrive at the backend
     form_data = await AppHarness._poll_for_async(get_form_data)

@@ -1770,13 +1770,17 @@ class StateManagerRedis(StateManager):
 
         Returns:
             The state for the token.
+
+        Raises:
+            RuntimeError: when the state_cls is not specified in the token
         """
         client_token, _, state_path = token.partition("_")
         if state_path:
             state_cls = self.state.get_class_substate(tuple(state_path.split(".")))
         else:
-            state_cls = self.state
-        print(f"Getting redis state for {token} {state_cls}")
+            raise RuntimeError(
+                "StateManagerRedis requires token to be specified in the form of {token}_{state_full_name}"
+            )
         redis_state = await self.redis.get(token)
 
         if redis_state is not None:
@@ -1794,9 +1798,6 @@ class StateManagerRedis(StateManager):
             # Set up Bidirectional linkage
             if parent_state is not None:
                 parent_state.substates[state.get_name()] = state
-                print(
-                    f"Set parent state {parent_state.get_name()} for {state.get_name()}"
-                )
                 state.parent_state = parent_state
             if get_substates:
                 # retrieve all substates
@@ -1882,7 +1883,6 @@ class StateManagerRedis(StateManager):
                 await self.set_state(
                     substate_key, substate, lock_id=lock_id, set_parent_state=False
                 )
-        print(f"Setting redis state for {token} {type(state)}")
         await self.redis.set(token, cloudpickle.dumps(state), ex=self.token_expiration)
 
     @contextlib.asynccontextmanager
@@ -1984,7 +1984,6 @@ class StateManagerRedis(StateManager):
         state_is_locked = True
 
         try:
-            print(f"Take lock on {token} {lock_key} {lock_id}")
             yield lock_id
         except LockExpiredError:
             state_is_locked = False
