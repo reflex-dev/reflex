@@ -1,4 +1,5 @@
 """Define a state var."""
+
 from __future__ import annotations
 
 import contextlib
@@ -122,7 +123,7 @@ class VarData(Base):
     # Hooks that need to be present in the component to render this var
     hooks: Set[str] = set()
 
-    interpolated_positions: List[tuple[int, int]] = []
+    interpolations: List[tuple[int, int]] = []
 
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None:
@@ -137,21 +138,21 @@ class VarData(Base):
         state = ""
         _imports = {}
         hooks = set()
-        interpolated_positions = []
+        interpolations = []
         for var_data in others:
             if var_data is None:
                 continue
             state = state or var_data.state
             _imports = imports.merge_imports(_imports, var_data.imports)
             hooks.update(var_data.hooks)
-            interpolated_positions += var_data.interpolated_positions
+            interpolations += var_data.interpolations
 
         return (
             cls(
                 state=state,
                 imports=_imports,
                 hooks=hooks,
-                interpolated_positions=interpolated_positions,
+                interpolations=interpolations,
             )
             or None
         )
@@ -162,9 +163,7 @@ class VarData(Base):
         Returns:
             True if any field is set to a non-default value.
         """
-        return bool(
-            self.state or self.imports or self.hooks or self.interpolated_positions
-        )
+        return bool(self.state or self.imports or self.hooks or self.interpolations)
 
     def __eq__(self, other: Any) -> bool:
         """Check if two var data objects are equal.
@@ -179,7 +178,7 @@ class VarData(Base):
             return False
         return (
             self.state == other.state
-            and self.interpolated_positions == other.interpolated_positions
+            and self.interpolations == other.interpolations
             and self.hooks == other.hooks
             and imports.collapse_imports(self.imports)
             == imports.collapse_imports(other.imports)
@@ -193,7 +192,7 @@ class VarData(Base):
         """
         return {
             "state": self.state,
-            "interpolated_positions": list(self.interpolated_positions),
+            "interpolations": list(self.interpolations),
             "imports": {
                 lib: [import_var.dict() for import_var in import_vars]
                 for lib, import_vars in self.imports.items()
@@ -258,9 +257,7 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
 
             if string_length is not None:
                 realstart = start + offset
-                var_data.interpolated_positions = [
-                    (realstart, realstart + string_length)
-                ]
+                var_data.interpolations = [(realstart, realstart + string_length)]
 
             var_datas.append(var_data)
 

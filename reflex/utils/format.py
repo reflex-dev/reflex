@@ -7,7 +7,7 @@ import json
 import os
 import re
 import sys
-from typing import TYPE_CHECKING, Any, List, Union
+from typing import TYPE_CHECKING, Any, List, Union, cast
 
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
@@ -224,10 +224,8 @@ def format_f_string_prop(prop: BaseVar) -> str:
         The formatted string.
     """
 
-    var_data: VarData = prop._var_data
-
     s = prop._var_full_name
-    interps = var_data.interpolated_positions
+    interps = cast(VarData, prop._var_data).interpolations
 
     parts: List[str] = []
     for i, (start, end) in enumerate(interps):
@@ -377,7 +375,7 @@ def format_prop(
             if not prop._var_is_local or prop._var_is_string:
                 return str(prop)
             if types._issubclass(prop._var_type, str):
-                if prop._var_data and prop._var_data.interpolated_positions:
+                if prop._var_data and prop._var_data.interpolations:
                     return format_f_string_prop(prop)
                 return format_string(prop._var_full_name)
             prop = prop._var_full_name
