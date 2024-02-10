@@ -25,6 +25,7 @@ from pydantic.fields import ModelField
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 
+from reflex import constants
 from reflex.base import Base
 from reflex.utils import serializers
 
@@ -332,6 +333,18 @@ def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
     return type_ in allowed_types
 
 
+def is_encoded_fstring(value) -> bool:
+    """Check if a value is an encoded Var f-string.
+
+    Args:
+        value: The value string to check.
+
+    Returns:
+        Whether the value is an f-string
+    """
+    return isinstance(value, str) and constants.REFLEX_VAR_OPENING_TAG in value
+
+
 def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
     """Check that a value is a valid literal.
 
@@ -349,6 +362,7 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
     if (
         is_literal(expected_type)
         and not isinstance(value, Var)  # validating vars is not supported yet.
+        and not is_encoded_fstring(value)  # f-strings are not supported.
         and value not in expected_type.__args__
     ):
         allowed_values = expected_type.__args__

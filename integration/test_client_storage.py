@@ -204,6 +204,20 @@ async def test_client_side_state(
     set_sub_state_button = driver.find_element(By.ID, "set_sub_state")
     set_sub_sub_state_button = driver.find_element(By.ID, "set_sub_sub_state")
 
+    def set_sub(var: str, value: str):
+        AppHarness._poll_for(lambda: state_var_input.get_attribute("value") == "")
+        AppHarness._poll_for(lambda: input_value_input.get_attribute("value") == "")
+        state_var_input.send_keys(var)
+        input_value_input.send_keys(value)
+        set_sub_state_button.click()
+
+    def set_sub_sub(var: str, value: str):
+        AppHarness._poll_for(lambda: state_var_input.get_attribute("value") == "")
+        AppHarness._poll_for(lambda: input_value_input.get_attribute("value") == "")
+        state_var_input.send_keys(var)
+        input_value_input.send_keys(value)
+        set_sub_sub_state_button.click()
+
     # get a reference to all cookie and local storage elements
     c1 = driver.find_element(By.ID, "c1")
     c2 = driver.find_element(By.ID, "c2")
@@ -241,45 +255,19 @@ async def test_client_side_state(
     assert not local_storage_items
 
     # set some cookies and local storage values
-    state_var_input.send_keys("c1")
-    input_value_input.send_keys("c1 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c2")
-    input_value_input.send_keys("c2 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c4")
-    input_value_input.send_keys("c4 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c5")
-    input_value_input.send_keys("c5 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c6")
-    input_value_input.send_keys("c6 throwaway value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c6")
-    input_value_input.send_keys("c6 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c7")
-    input_value_input.send_keys("c7 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("l1")
-    input_value_input.send_keys("l1 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("l2")
-    input_value_input.send_keys("l2 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("l3")
-    input_value_input.send_keys("l3 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("l4")
-    input_value_input.send_keys("l4 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c1s")
-    input_value_input.send_keys("c1s value")
-    set_sub_sub_state_button.click()
-    state_var_input.send_keys("l1s")
-    input_value_input.send_keys("l1s value")
-    set_sub_sub_state_button.click()
+    set_sub("c1", "c1 value")
+    set_sub("c2", "c2 value")
+    set_sub("c4", "c4 value")
+    set_sub("c5", "c5 value")
+    set_sub("c6", "c6 throwaway value")
+    set_sub("c6", "c6 value")
+    set_sub("c7", "c7 value")
+    set_sub("l1", "l1 value")
+    set_sub("l2", "l2 value")
+    set_sub("l3", "l3 value")
+    set_sub("l4", "l4 value")
+    set_sub_sub("c1s", "c1s value")
+    set_sub_sub("l1s", "l1s value")
 
     exp_cookies = {
         "state.client_side_state.client_side_sub_state.c1": {
@@ -347,9 +335,7 @@ async def test_client_side_state(
     assert not cookies
 
     # Test cookie with expiry by itself to avoid timing flakiness
-    state_var_input.send_keys("c3")
-    input_value_input.send_keys("c3 value")
-    set_sub_state_button.click()
+    set_sub("c3", "c3 value")
     AppHarness._poll_for(
         lambda: "state.client_side_state.client_side_sub_state.c3"
         in cookie_info_map(driver)

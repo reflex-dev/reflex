@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
+from reflex.components.core.colors import Color
 from reflex.components.tags import MatchTag, Tag
 from reflex.style import Style
 from reflex.utils import format, imports, types
@@ -116,7 +117,8 @@ class Match(MemoizationLeaf):
         """
         _var_data = case_element._var_data if isinstance(case_element, Style) else None  # type: ignore
         case_element = Var.create(
-            case_element, _var_is_string=type(case_element) is str
+            case_element,
+            _var_is_string=type(case_element) is str or isinstance(case_element, Color),
         )
         if _var_data is not None:
             case_element._var_data = VarData.merge(case_element._var_data, _var_data)  # type: ignore
