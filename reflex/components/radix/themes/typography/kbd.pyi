@@ -127,9 +127,6 @@ class Kbd(el.Kbd, RadixThemesComponent):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -210,7 +207,6 @@ class Kbd(el.Kbd, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

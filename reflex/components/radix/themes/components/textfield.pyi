@@ -145,9 +145,6 @@ class TextFieldRoot(el.Div, RadixThemesComponent):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -230,7 +227,6 @@ class TextFieldRoot(el.Div, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -289,9 +285,6 @@ class TextFieldInput(el.Input, TextFieldRoot):
         form_target: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        height: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         list: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         max: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         max_length: Optional[
@@ -325,9 +318,6 @@ class TextFieldInput(el.Input, TextFieldRoot):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         value: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        width: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         variant: Optional[
@@ -444,9 +434,6 @@ class TextFieldInput(el.Input, TextFieldRoot):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -528,7 +515,6 @@ class TextFieldInput(el.Input, TextFieldRoot):
             form_method: HTTP method to use for sending form data (for type="submit" buttons)
             form_no_validate: Bypasses form validation when submitting (for type="submit" buttons)
             form_target: Specifies where to display the response after submitting the form (for type="submit" buttons)
-            height: The height of the input (only for type="image")
             list: References a datalist for suggested options
             max: Specifies the maximum value for the input
             max_length: Specifies the maximum number of characters allowed in the input
@@ -546,7 +532,6 @@ class TextFieldInput(el.Input, TextFieldRoot):
             type: Specifies the type of input
             use_map: Name of the image map used with the input
             value: Value of the input
-            width: The width of the input (only for type="image")
             variant: Variant of text field: "classic" | "surface" | "soft"
             color_scheme: Override theme color for text field
             radius: Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
@@ -566,7 +551,6 @@ class TextFieldInput(el.Input, TextFieldRoot):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
