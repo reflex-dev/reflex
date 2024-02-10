@@ -218,7 +218,10 @@ def _encode_var(value: Var) -> str:
         data["string_length"] = len(final_value)
         data_json = value._var_data.__config__.json_dumps(data, default=serialize)
 
-        return f"<reflex.Var>{data_json}</reflex.Var>" + final_value
+        return (
+            f"{constants.REFLEX_VAR_OPENING_TAG}{data_json}{constants.REFLEX_VAR_CLOSING_TAG}"
+            + final_value
+        )
 
     return str(value)
 
@@ -236,7 +239,10 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
     if isinstance(value, str):
         offset = 0
 
-        pattern = re.compile(r"<reflex.Var>(.*?)</reflex.Var>", flags=re.DOTALL)
+        pattern = re.compile(
+            rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}",
+            flags=re.DOTALL,
+        )
         while m := pattern.search(value):
             start, end = m.span()
             value = value[:start] + value[end:]

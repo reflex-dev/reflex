@@ -1,4 +1,5 @@
 """Create a list of components from an iterable."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Optional, overload
@@ -8,6 +9,7 @@ from reflex.components.component import BaseComponent, Component, MemoizationLea
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.style import LIGHT_COLOR_MODE, color_mode
+from reflex.constants.colors import Color
 from reflex.utils import format, imports
 from reflex.vars import BaseVar, Var, VarData
 
@@ -112,18 +114,15 @@ class Cond(MemoizationLeaf):
 
 
 @overload
-def cond(condition: Any, c1: Component, c2: Any) -> Component:
-    ...
+def cond(condition: Any, c1: Component, c2: Any) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Component) -> Component:
-    ...
+def cond(condition: Any, c1: Component) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Any, c2: Any) -> Var:
-    ...
+def cond(condition: Any, c1: Any, c2: Any) -> Var: ...
 
 
 def cond(condition: Any, c1: Any, c2: Any = None):
@@ -167,6 +166,17 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         raise ValueError("For conditional vars, the second argument must be set.")
     if isinstance(c2, Var):
         var_datas.append(c2._var_data)
+
+    def create_var(cond_part):
+        return Var.create_safe(
+            cond_part,
+            _var_is_string=type(cond_part) is str or isinstance(cond_part, Color),
+        )
+
+    # convert the truth and false cond parts into vars so the _var_data can be obtained.
+    c1 = create_var(c1)
+    c2 = create_var(c2)
+    var_datas.extend([c1._var_data, c2._var_data])
 
     # Create the conditional var.
     return cond_var._replace(
