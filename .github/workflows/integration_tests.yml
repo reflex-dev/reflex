@@ -125,7 +125,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: reflex-dev/reflex-web
-          ref: reflex-0.4.0
+          ref: masenf/windows-0.4.0
           path: reflex-web
 
       - name: Install Requirements for reflex-web
