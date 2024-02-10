@@ -122,6 +122,8 @@ class VarData(Base):
     # Hooks that need to be present in the component to render this var
     hooks: Set[str] = set()
 
+    interpolated_positions: List[tuple[int, int]] = []
+
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None:
         """Merge multiple var data objects.
@@ -135,17 +137,21 @@ class VarData(Base):
         state = ""
         _imports = {}
         hooks = set()
+        interpolated_positions = []
         for var_data in others:
             if var_data is None:
                 continue
             state = state or var_data.state
             _imports = imports.merge_imports(_imports, var_data.imports)
             hooks.update(var_data.hooks)
+            interpolated_positions += var_data.interpolated_positions
+
         return (
             cls(
                 state=state,
                 imports=_imports,
                 hooks=hooks,
+                interpolated_positions=interpolated_positions,
             )
             or None
         )
@@ -156,7 +162,9 @@ class VarData(Base):
         Returns:
             True if any field is set to a non-default value.
         """
-        return bool(self.state or self.imports or self.hooks)
+        return bool(
+            self.state or self.imports or self.hooks or self.interpolated_positions
+        )
 
     def __eq__(self, other: Any) -> bool:
         """Check if two var data objects are equal.
@@ -171,6 +179,7 @@ class VarData(Base):
             return False
         return (
             self.state == other.state
+            and self.interpolated_positions == other.interpolated_positions
             and self.hooks == other.hooks
             and imports.collapse_imports(self.imports)
             == imports.collapse_imports(other.imports)
@@ -184,6 +193,7 @@ class VarData(Base):
         """
         return {
             "state": self.state,
+            "interpolated_positions": list(self.interpolated_positions),
             "imports": {
                 lib: [import_var.dict() for import_var in import_vars]
                 for lib, import_vars in self.imports.items()
@@ -202,7 +212,15 @@ def _encode_var(value: Var) -> str:
         The encoded var.
     """
     if value._var_data:
-        return f"<reflex.Var>{value._var_data.json()}</reflex.Var>" + str(value)
+        from reflex.utils.serializers import serialize
+
+        final_value = str(value)
+        data = value._var_data.dict()
+        data["string_length"] = len(final_value)
+        data_json = value._var_data.__config__.json_dumps(data, default=serialize)
+
+        return f"<reflex.Var>{data_json}</reflex.Var>" + final_value
+
     return str(value)
 
 
@@ -217,18 +235,37 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
     """
     var_datas = []
     if isinstance(value, str):
-        # Extract the state name from a formatted var
-        while m := re.match(
-            pattern=r"(.*)<reflex.Var>(.*)</reflex.Var>(.*)",
-            string=value,
-            flags=re.DOTALL,  # Ensure . matches newline characters.
-        ):
-            value = m.group(1) + m.group(3)
+        offset = 0
+
+        pattern = re.compile(r"<reflex.Var>(.*?)</reflex.Var>", flags=re.DOTALL)
+        while m := pattern.search(value):
+            start, end = m.span()
+            value = value[:start] + value[end:]
+
+            from reflex.utils.serializers import serialize
+
+            var_data_config = VarData().__config__
+            data = var_data_config.json_loads(m.group(1))
+            string_length = data.pop("string_length", None)
+
+            data_json = var_data_config.json_dumps(data, default=serialize)
+
             try:
-                var_datas.append(VarData.parse_raw(m.group(2)))
+                var_data = VarData.parse_raw(data_json)
             except pydantic.ValidationError:
                 # If the VarData is invalid, it was probably json-encoded twice...
-                var_datas.append(VarData.parse_raw(json.loads(f'"{m.group(2)}"')))
+                var_data = VarData.parse_raw(json.loads(f'"{m.group(1)}"'))
+
+            if string_length is not None:
+                realstart = start + offset
+                var_data.interpolated_positions = [
+                    (realstart, realstart + string_length)
+                ]
+
+            var_datas.append(var_data)
+
+            offset += end - start
+
     if var_datas:
         return VarData.merge(*var_datas), value
     return None, value
