@@ -340,7 +340,7 @@ async def test_initialize_with_state(test_state: Type[ATestState], token: str):
     assert app.state == test_state
 
     # Get a state for a given token.
-    state = await app.state_manager.get_state(token)
+    state = await app.state_manager.get_state(f"{token}_{test_state.get_full_name()}")
     assert isinstance(state, test_state)
     assert state.var == 0  # type: ignore
 
@@ -358,8 +358,8 @@ async def test_set_and_get_state(test_state):
     app = App(state=test_state)
 
     # Create two tokens.
-    token1 = str(uuid.uuid4())
-    token2 = str(uuid.uuid4())
+    token1 = str(uuid.uuid4()) + f"_{test_state.get_full_name()}"
+    token2 = str(uuid.uuid4()) + f"_{test_state.get_full_name()}"
 
     # Get the default state for each token.
     state1 = await app.state_manager.get_state(token1)
