@@ -164,7 +164,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             prop = descriptor.property
             if not isinstance(prop, Relationship):
                 return None
-            return prop.mapper.class_
+            class_ = prop.mapper.class_
+            if prop.uselist:
+                return list[class_]
+            else:
+                return class_
     elif isinstance(cls, type) and issubclass(cls, Model):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)
