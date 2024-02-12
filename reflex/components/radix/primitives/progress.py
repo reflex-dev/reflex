@@ -28,7 +28,7 @@ class ProgressRoot(ProgressComponent):
     # The maximum progress value.
     max: Var[int]
 
-    def _apply_theme(self, theme: Component | None):
+    def _apply_theme(self, theme: Component):
         self.style = Style(
             {
                 "position": "relative",
@@ -52,7 +52,7 @@ class ProgressIndicator(ProgressComponent):
     # The current progress value.
     value: Var[Optional[int]]
 
-    def _apply_theme(self, theme: Component | None):
+    def _apply_theme(self, theme: Component):
         self.style = Style(
             {
                 "background-color": "white",

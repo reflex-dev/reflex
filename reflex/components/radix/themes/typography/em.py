@@ -7,12 +7,11 @@ from __future__ import annotations
 from reflex import el
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class Em(el.Em, CommonMarginProps, RadixThemesComponent):
+class Em(el.Em, RadixThemesComponent):
     """Marks text to stress emphasis."""
 
     tag = "Em"

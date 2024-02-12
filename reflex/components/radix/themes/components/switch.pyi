@@ -10,17 +10,11 @@ from reflex.style import Style
 from typing import Any, Dict, Literal
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import (
-    CommonMarginProps,
-    LiteralAccentColor,
-    LiteralRadius,
-    LiteralVariant,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
 
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
+LiteralSwitchSize = Literal["1", "2", "3"]
 
-class Switch(CommonMarginProps, RadixThemesComponent):
+class Switch(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
@@ -98,61 +92,18 @@ class Switch(CommonMarginProps, RadixThemesComponent):
         name: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[str], str]] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
-                Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
+                Var[Literal["classic", "surface", "soft"]],
+                Literal["classic", "surface", "soft"],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
-                Literal["none", "small", "medium", "large", "full"],
-            ]
-        ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["none", "small", "full"]], Literal["none", "small", "full"]
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -160,11 +111,12 @@ class Switch(CommonMarginProps, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_checked_change: Optional[
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -228,21 +180,15 @@ class Switch(CommonMarginProps, RadixThemesComponent):
             name: The name of the switch (when submitting a form)
             value: The value associated with the "on" position
             size: Switch size "1" - "4"
-            variant: Variant of switch: "solid" | "soft" | "outline" | "ghost"
+            variant: Variant of switch: "classic" | "surface" | "soft"
             high_contrast: Whether to render the switch with higher contrast color against background
-            radius: Override theme radius for switch: "none" | "small" | "medium" | "large" | "full"
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
-            style: The style of the component.
+            radius: Override theme radius for switch: "none" | "small" | "full"
+            style: Props to rename  The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 

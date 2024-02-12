@@ -1,21 +1,18 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class TabsRoot(CommonMarginProps, RadixThemesComponent):
+class TabsRoot(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.Root"
-
-    # The variant of the tab
-    variant: Var[Literal["surface", "ghost"]]
 
     # The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
     default_value: Var[str]
@@ -26,6 +23,9 @@ class TabsRoot(CommonMarginProps, RadixThemesComponent):
     # The orientation of the tabs.
     orientation: Var[Literal["horizontal", "vertical"]]
 
+    # Props to rename
+    _rename_props = {"onChange": "onValueChange"}
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -34,17 +34,20 @@ class TabsRoot(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_value_change": lambda e0: [e0],
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 
 
-class TabsList(CommonMarginProps, RadixThemesComponent):
+class TabsList(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.List"
 
+    # Tabs size "1" - "2"
+    size: Var[Literal["1", "2"]]
 
-class TabsTrigger(CommonMarginProps, RadixThemesComponent):
+
+class TabsTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.Trigger"
@@ -55,8 +58,10 @@ class TabsTrigger(CommonMarginProps, RadixThemesComponent):
     # Whether the tab is disabled
     disabled: Var[bool]
 
+    _valid_parents: List[str] = ["TabsList"]
 
-class TabsContent(CommonMarginProps, RadixThemesComponent):
+
+class TabsContent(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.Content"

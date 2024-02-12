@@ -4,13 +4,12 @@ from typing import Literal
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralRadius,
     RadixThemesComponent,
 )
 
 
-class ScrollArea(CommonMarginProps, RadixThemesComponent):
+class ScrollArea(RadixThemesComponent):
     """Custom styled, cross-browser scrollable area using native functionality."""
 
     tag = "ScrollArea"

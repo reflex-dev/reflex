@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 
 from reflex.components.component import Component
 from reflex.components.core import cond, match
+from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
-from reflex.components.radix.themes.components.icons import Icon
 from reflex.style import (
     Style,
     convert_dict_to_style_and_format_emotion,
@@ -416,6 +416,8 @@ class AccordionRoot(AccordionComponent):
     # The var_data associated with the component.
     _var_data: VarData = VarData()  # type: ignore
 
+    _valid_children: List[str] = ["AccordionItem"]
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create the Accordion root component.
@@ -505,6 +507,14 @@ class AccordionItem(AccordionComponent):
 
     # When true, prevents the user from interacting with the item.
     disabled: Var[bool]
+
+    _valid_children: List[str] = [
+        "AccordionHeader",
+        "AccordionTrigger",
+        "AccordionContent",
+    ]
+
+    _valid_parents: List[str] = ["AccordionRoot"]
 
     def _apply_theme(self, theme: Component):
         self.style = Style(

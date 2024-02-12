@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Type
 import pytest
 
 from reflex.base import Base
-from reflex.constants.colors import Color as color
+from reflex.components.core.colors import Color
 from reflex.utils import serializers
 from reflex.vars import Var
 
@@ -170,8 +170,8 @@ class BaseSubclass(Base):
             [datetime.timedelta(1, 1, 1), datetime.timedelta(1, 1, 2)],
             '["1 day, 0:00:01.000001", "1 day, 0:00:01.000002"]',
         ),
-        (color("slate", shade=1), "var(--slate-1)"),
-        (color("orange", shade=1, alpha=True), "var(--orange-a1)"),
+        (Color(color="slate", shade=1), "var(--slate-1)"),
+        (Color(color="orange", shade=1, alpha=True), "var(--orange-a1)"),
     ],
 )
 def test_serialize(value: Any, expected: str):

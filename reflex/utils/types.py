@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import contextlib
+import inspect
 import types
+from functools import wraps
 from typing import (
     Any,
     Callable,
@@ -18,10 +20,12 @@ from typing import (
     get_type_hints,
 )
 
+import sqlalchemy
 from pydantic.fields import ModelField
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import DeclarativeBase, Mapped
+from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 
+from reflex import constants
 from reflex.base import Base
 from reflex.utils import serializers
 
@@ -105,6 +109,21 @@ def is_optional(cls: GenericType) -> bool:
     return is_union(cls) and type(None) in get_args(cls)
 
 
+def get_property_hint(attr: Any | None) -> GenericType | None:
+    """Check if an attribute is a property and return its type hint.
+
+    Args:
+        attr: The descriptor to check.
+
+    Returns:
+        The type hint of the property, if it is a property, else None.
+    """
+    if not isinstance(attr, (property, hybrid_property)):
+        return None
+    hints = get_type_hints(attr.fget)
+    return hints.get("return", None)
+
+
 def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None:
     """Check if an attribute can be accessed on the cls and return its type.
 
@@ -119,6 +138,9 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     """
     from reflex.model import Model
 
+    attr = getattr(cls, name, None)
+    if hint := get_property_hint(attr):
+        return hint
     if hasattr(cls, "__fields__") and name in cls.__fields__:
         # pydantic models
         field = cls.__fields__[name]
@@ -129,7 +151,21 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             # Ensure frontend uses null coalescing when accessing.
             type_ = Optional[type_]
         return type_
-    elif isinstance(cls, type) and issubclass(cls, (Model, DeclarativeBase)):
+    elif isinstance(cls, type) and issubclass(cls, DeclarativeBase):
+        insp = sqlalchemy.inspect(cls)
+        if name in insp.columns:
+            return insp.columns[name].type.python_type
+        if name not in insp.all_orm_descriptors.keys():
+            return None
+        descriptor = insp.all_orm_descriptors[name]
+        if hint := get_property_hint(descriptor):
+            return hint
+        if isinstance(descriptor, QueryableAttribute):
+            prop = descriptor.property
+            if not isinstance(prop, Relationship):
+                return None
+            return prop.mapper.class_
+    elif isinstance(cls, type) and issubclass(cls, Model):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)
         if name in hints:
@@ -140,11 +176,6 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             if isinstance(type_, ModelField):
                 return type_.type_  # SQLAlchemy v1.4
             return type_
-        if name in cls.__dict__:
-            value = cls.__dict__[name]
-            if isinstance(value, hybrid_property):
-                hints = get_type_hints(value.fget)
-                return hints.get("return", None)
     elif is_union(cls):
         # Check in each arg of the annotation.
         for arg in get_args(cls):
@@ -300,6 +331,82 @@ def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
 
     type_ = prop._var_type if _isinstance(prop, Var) else type(prop)
     return type_ in allowed_types
+
+
+def is_encoded_fstring(value) -> bool:
+    """Check if a value is an encoded Var f-string.
+
+    Args:
+        value: The value string to check.
+
+    Returns:
+        Whether the value is an f-string
+    """
+    return isinstance(value, str) and constants.REFLEX_VAR_OPENING_TAG in value
+
+
+def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
+    """Check that a value is a valid literal.
+
+    Args:
+        key: The prop name.
+        value: The prop value to validate.
+        expected_type: The expected type(literal type).
+        comp_name: Name of the component.
+
+    Raises:
+        ValueError: When the value is not a valid literal.
+    """
+    from reflex.vars import Var
+
+    if (
+        is_literal(expected_type)
+        and not isinstance(value, Var)  # validating vars is not supported yet.
+        and not is_encoded_fstring(value)  # f-strings are not supported.
+        and value not in expected_type.__args__
+    ):
+        allowed_values = expected_type.__args__
+        if value not in allowed_values:
+            value_str = ",".join(
+                [str(v) if not isinstance(v, str) else f"'{v}'" for v in allowed_values]
+            )
+            raise ValueError(
+                f"prop value for {str(key)} of the `{comp_name}` component should be one of the following: {value_str}. Got '{value}' instead"
+            )
+
+
+def validate_parameter_literals(func):
+    """Decorator to check that the arguments passed to a function
+    correspond to the correct function parameter if it (the parameter)
+    is a literal type.
+
+    Args:
+        func: The function to validate.
+
+    Returns:
+        The wrapper function.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        func_params = list(inspect.signature(func).parameters.items())
+        annotations = {param[0]: param[1].annotation for param in func_params}
+
+        # validate args
+        for param, arg in zip(annotations.keys(), args):
+            if annotations[param] is inspect.Parameter.empty:
+                continue
+            validate_literal(param, arg, annotations[param], func.__name__)
+
+        # validate kwargs.
+        for key, value in kwargs.items():
+            annotation = annotations.get(key)
+            if not annotation or annotation is inspect.Parameter.empty:
+                continue
+            validate_literal(key, value, annotation, func.__name__)
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 # Store this here for performance.

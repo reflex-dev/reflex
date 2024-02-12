@@ -7,17 +7,17 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Union
 from reflex import el
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import CommonMarginProps, LiteralAccentColor, RadixThemesComponent
+from ..base import LiteralAccentColor, RadixThemesComponent
 
 LiteralTextAreaSize = Literal["1", "2", "3"]
 
-class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
+class TextArea(RadixThemesComponent, el.Textarea):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -94,83 +94,21 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
                 ],
             ]
         ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        auto_complete: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        auto_focus: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        cols: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        dirname: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        disabled: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
+        auto_complete: Optional[Union[Var[bool], bool]] = None,
+        auto_focus: Optional[Union[Var[bool], bool]] = None,
+        dirname: Optional[Union[Var[str], str]] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
         form: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        max_length: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        min_length: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        name: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        placeholder: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        read_only: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        required: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        rows: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        value: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        wrap: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        max_length: Optional[Union[Var[int], int]] = None,
+        min_length: Optional[Union[Var[int], int]] = None,
+        name: Optional[Union[Var[str], str]] = None,
+        placeholder: Optional[Union[Var[str], str]] = None,
+        read_only: Optional[Union[Var[bool], bool]] = None,
+        required: Optional[Union[Var[bool], bool]] = None,
+        rows: Optional[Union[Var[str], str]] = None,
+        value: Optional[Union[Var[str], str]] = None,
+        wrap: Optional[Union[Var[str], str]] = None,
+        cols: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -219,6 +157,7 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
+        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -283,16 +222,8 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
             size: The size of the text area: "1" | "2" | "3"
             variant: The variant of the text area
             color_scheme: The color of the text area
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             auto_complete: Whether the form control should have autocomplete enabled
             auto_focus: Automatically focuses the textarea when the page loads
-            cols: Visible width of the text control, in average character widths
             dirname: Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
             disabled: Disables the textarea
             form: Associates the textarea with a form (by id)
@@ -305,6 +236,7 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
             rows: Visible number of lines in the text control
             value: The controlled value of the textarea, read only unless used with on_change
             wrap: How the text in the textarea is to be wrapped when submitting the form
+            cols: Visible width of the text control, in average character widths
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -327,6 +259,7 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
+            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the component.
 

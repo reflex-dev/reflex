@@ -3,10 +3,10 @@ from typing import Any, Dict, List, Literal, Union
 
 import reflex as rx
 from reflex.components.component import Component
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
     RadixThemesComponent,
@@ -15,7 +15,7 @@ from ..base import (
 LiteralButtonSize = Literal[1, 2, 3, 4]
 
 
-class SelectRoot(CommonMarginProps, RadixThemesComponent):
+class SelectRoot(RadixThemesComponent):
     """Displays a list of options for the user to pick from, triggered by a button."""
 
     tag = "Select.Root"
@@ -26,7 +26,7 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
     # The value of the select when initially rendered. Use when you do not need to control the state of the select.
     default_value: Var[str]
 
-    # The controlled value of the select. Should be used in conjunction with on_value_change.
+    # The controlled value of the select. Should be used in conjunction with on_change.
     value: Var[str]
 
     # The open state of the select when it is initially rendered. Use when you do not need to control its open state.
@@ -44,6 +44,9 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
     # When True, indicates that the user must select a value before the owning form can be submitted.
     required: Var[bool]
 
+    # Props to rename
+    _rename_props = {"onChange": "onValueChange"}
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -52,12 +55,12 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: [e0],
-            "on_value_change": lambda e0: [e0],
+            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 
 
-class SelectTrigger(CommonMarginProps, RadixThemesComponent):
+class SelectTrigger(RadixThemesComponent):
     """The button that toggles the select."""
 
     tag = "Select.Trigger"
@@ -74,8 +77,10 @@ class SelectTrigger(CommonMarginProps, RadixThemesComponent):
     # The placeholder of the select trigger
     placeholder: Var[str]
 
+    _valid_parents: List[str] = ["SelectRoot"]
 
-class SelectContent(CommonMarginProps, RadixThemesComponent):
+
+class SelectContent(RadixThemesComponent):
     """The component that pops out when the select is open."""
 
     tag = "Select.Content"
@@ -112,19 +117,21 @@ class SelectContent(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_close_auto_focus": lambda e0: [e0],
-            "on_escape_key_down": lambda e0: [e0],
-            "on_pointer_down_outside": lambda e0: [e0],
+            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
+            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
         }
 
 
-class SelectGroup(CommonMarginProps, RadixThemesComponent):
+class SelectGroup(RadixThemesComponent):
     """Used to group multiple items."""
 
     tag = "Select.Group"
 
+    _valid_parents: List[str] = ["SelectContent"]
 
-class SelectItem(CommonMarginProps, RadixThemesComponent):
+
+class SelectItem(RadixThemesComponent):
     """The component that contains the select items."""
 
     tag = "Select.Item"
@@ -135,14 +142,18 @@ class SelectItem(CommonMarginProps, RadixThemesComponent):
     # Whether the select item is disabled
     disabled: Var[bool]
 
+    _valid_parents: List[str] = ["SelectGroup", "SelectContent"]
 
-class SelectLabel(CommonMarginProps, RadixThemesComponent):
+
+class SelectLabel(RadixThemesComponent):
     """Used to render the label of a group, it isn't focusable using arrow keys."""
 
     tag = "Select.Label"
 
+    _valid_parents: List[str] = ["SelectGroup"]
 
-class SelectSeparator(CommonMarginProps, RadixThemesComponent):
+
+class SelectSeparator(RadixThemesComponent):
     """Used to visually separate items in the Select."""
 
     tag = "Select.Separator"

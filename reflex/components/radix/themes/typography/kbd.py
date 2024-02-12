@@ -8,7 +8,6 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 from .base import (
@@ -16,7 +15,7 @@ from .base import (
 )
 
 
-class Kbd(el.Kbd, CommonMarginProps, RadixThemesComponent):
+class Kbd(el.Kbd, RadixThemesComponent):
     """Represents keyboard input or a hotkey."""
 
     tag = "Kbd"

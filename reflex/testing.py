@@ -102,7 +102,7 @@ class AppHarness:
     """AppHarness executes a reflex app in-process for testing."""
 
     app_name: str
-    app_source: Optional[types.FunctionType | types.ModuleType]
+    app_source: Optional[types.FunctionType | types.ModuleType] | str
     app_path: pathlib.Path
     app_module_path: pathlib.Path
     app_module: Optional[types.ModuleType] = None
@@ -119,7 +119,7 @@ class AppHarness:
     def create(
         cls,
         root: pathlib.Path,
-        app_source: Optional[types.FunctionType | types.ModuleType] = None,
+        app_source: Optional[types.FunctionType | types.ModuleType | str] = None,
         app_name: Optional[str] = None,
     ) -> "AppHarness":
         """Create an AppHarness instance at root.
@@ -127,9 +127,12 @@ class AppHarness:
         Args:
             root: the directory that will contain the app under test.
             app_source: if specified, the source code from this function or module is used
-                as the main module for the app. If unspecified, then root must already
-                contain a working reflex app and will be used directly.
+                as the main module for the app. It may also be the raw source code text, as a str.
+                If unspecified, then root must already contain a working reflex app and will be used directly.
             app_name: provide the name of the app, otherwise will be derived from app_source or root.
+
+        Raises:
+            ValueError: when app_source is a string and app_name is not provided.
 
         Returns:
             AppHarness instance
@@ -139,6 +142,10 @@ class AppHarness:
                 app_name = root.name.lower()
             elif isinstance(app_source, functools.partial):
                 app_name = app_source.func.__name__.lower()
+            elif isinstance(app_source, str):
+                raise ValueError(
+                    "app_name must be provided when app_source is a string."
+                )
             else:
                 app_name = app_source.__name__.lower()
         return cls(
@@ -170,17 +177,21 @@ class AppHarness:
         glbs.update(overrides)
         return glbs
 
-    def _get_source_from_func(self, func: Any) -> str:
-        """Get the source from a function or module object.
+    def _get_source_from_app_source(self, app_source: Any) -> str:
+        """Get the source from app_source.
 
         Args:
-            func: function or module object
+            app_source: function or module or str
 
         Returns:
             source code
         """
-        source = inspect.getsource(func)
-        source = re.sub(r"^\s*def\s+\w+\s*\(.*?\):", "", source, flags=re.DOTALL)
+        if isinstance(app_source, str):
+            return app_source
+        source = inspect.getsource(app_source)
+        source = re.sub(
+            r"^\s*def\s+\w+\s*\(.*?\)(\s+->\s+\w+)?:", "", source, flags=re.DOTALL
+        )
         return textwrap.dedent(source)
 
     def _initialize_app(self):
@@ -194,7 +205,7 @@ class AppHarness:
             source_code = "\n".join(
                 [
                     "\n".join(f"{k} = {v!r}" for k, v in app_globals.items()),
-                    self._get_source_from_func(self.app_source),
+                    self._get_source_from_app_source(self.app_source),
                 ]
             )
             with chdir(self.app_path):

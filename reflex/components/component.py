@@ -115,7 +115,7 @@ class BaseComponent(Base, ABC):
 
 
 # Map from component to styling.
-ComponentStyle = Dict[Union[str, Type[BaseComponent]], Any]
+ComponentStyle = Dict[Union[str, Type[BaseComponent], Callable], Any]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
 
 
@@ -155,6 +155,12 @@ class Component(BaseComponent, ABC):
     # only components that are allowed as children
     _valid_children: List[str] = []
 
+    # only components that are allowed as parent
+    _valid_parents: List[str] = []
+
+    # props to change the name of
+    _rename_props: Dict[str, str] = {}
+
     # custom attribute
     custom_attrs: Dict[str, Union[Var, str]] = {}
 
@@ -193,7 +199,6 @@ class Component(BaseComponent, ABC):
 
         Raises:
             TypeError: If an invalid prop is passed.
-            ValueError: If a prop value is invalid.
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
@@ -243,17 +248,10 @@ class Component(BaseComponent, ABC):
                         raise TypeError
 
                     expected_type = fields[key].outer_type_.__args__[0]
-
-                    if (
-                        types.is_literal(expected_type)
-                        and value not in expected_type.__args__
-                    ):
-                        allowed_values = expected_type.__args__
-                        if value not in allowed_values:
-                            raise ValueError(
-                                f"prop value for {key} of the `{type(self).__name__}` component should be one of the following: {','.join(allowed_values)}. Got '{value}' instead"
-                            )
-
+                    # validate literal fields.
+                    types.validate_literal(
+                        key, value, expected_type, type(self).__name__
+                    )
                     # Get the passed type and the var type.
                     passed_type = kwargs[key]._var_type
                     expected_type = (
@@ -597,10 +595,13 @@ class Component(BaseComponent, ABC):
         Returns:
             The component with the additional style.
         """
+        component_style = None
         if type(self) in style:
             # Extract the style for this component.
             component_style = Style(style[type(self)])
-
+        if self.create in style:
+            component_style = Style(style[self.create])
+        if component_style is not None:
             # Only add style props that are not overridden.
             component_style = {
                 k: v for k, v in component_style.items() if k not in self.style
@@ -642,7 +643,23 @@ class Component(BaseComponent, ABC):
             ),
             autofocus=self.autofocus,
         )
+        self._replace_prop_names(rendered_dict)
         return rendered_dict
+
+    def _replace_prop_names(self, rendered_dict) -> None:
+        """Replace the prop names in the render dictionary.
+
+        Args:
+            rendered_dict: The render dictionary with all the component props and event handlers.
+        """
+        # fast path
+        if not self._rename_props:
+            return
+
+        for ix, prop in enumerate(rendered_dict["props"]):
+            for old_prop, new_prop in self._rename_props.items():
+                if prop.startswith(old_prop):
+                    rendered_dict["props"][ix] = prop.replace(old_prop, new_prop)
 
     def _validate_component_children(self, children: List[Component]):
         """Validate the children components.
@@ -651,7 +668,8 @@ class Component(BaseComponent, ABC):
             children: The children of the component.
 
         """
-        if not self._invalid_children and not self._valid_children:
+        skip_parentable = all(child._valid_parents == [] for child in children)
+        if not self._invalid_children and not self._valid_children and skip_parentable:
             return
 
         comp_name = type(self).__name__
@@ -671,6 +689,15 @@ class Component(BaseComponent, ABC):
                     f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
                 )
 
+        def validate_vaild_parent(child_name, valid_parents):
+            if comp_name not in valid_parents:
+                valid_parent_list = ", ".join(
+                    [f"`{v_parent}`" for v_parent in valid_parents]
+                )
+                raise ValueError(
+                    f"The component `{child_name}` can only be a child of the components: {valid_parent_list}. Got `{comp_name}` instead."
+                )
+
         for child in children:
             name = type(child).__name__
 
@@ -679,6 +706,9 @@ class Component(BaseComponent, ABC):
 
             if self._valid_children:
                 validate_valid_child(name)
+
+            if child._valid_parents:
+                validate_vaild_parent(name, child._valid_parents)
 
     @staticmethod
     def _get_vars_from_event_triggers(
@@ -723,7 +753,7 @@ class Component(BaseComponent, ABC):
                 vars.append(prop_var)
 
         # Style keeps track of its own VarData instance, so embed in a temp Var that is yielded.
-        if self.style:
+        if isinstance(self.style, dict) and self.style or isinstance(self.style, Var):
             vars.append(
                 BaseVar(
                     _var_name="style",

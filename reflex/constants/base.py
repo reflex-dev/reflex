@@ -61,10 +61,14 @@ class Reflex(SimpleNamespace):
 
     # Files and directories used to init a new project.
     # The directory to store reflex dependencies.
-    DIR = (
+    # Get directory value from enviroment variables if it exists.
+    _dir = os.environ.get("REFLEX_DIR", "")
+
+    DIR = _dir or (
         # on windows, we use C:/Users/<username>/AppData/Local/reflex.
         # on macOS, we use ~/Library/Application Support/reflex.
         # on linux, we use ~/.local/share/reflex.
+        # If user sets REFLEX_DIR envroment variable use that instead.
         PlatformDirs(MODULE_NAME, False).user_data_dir
     )
     # The root directory of the reflex library.
@@ -183,3 +187,6 @@ SKIP_COMPILE_ENV_VAR = "__REFLEX_SKIP_COMPILE"
 # Testing os env set by pytest when running a test case.
 PYTEST_CURRENT_TEST = "PYTEST_CURRENT_TEST"
 RELOAD_CONFIG = "__REFLEX_RELOAD_CONFIG"
+
+REFLEX_VAR_OPENING_TAG = "<reflex.Var>"
+REFLEX_VAR_CLOSING_TAG = "</reflex.Var>"

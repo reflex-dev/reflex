@@ -5,12 +5,11 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class Card(el.Div, CommonMarginProps, RadixThemesComponent):
+class Card(el.Div, RadixThemesComponent):
     """Container that groups related content and actions."""
 
     tag = "Card"

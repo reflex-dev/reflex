@@ -1,16 +1,15 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Literal, Union
+from typing import List, Literal, Union
 
 from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
+class TableRoot(el.Table, RadixThemesComponent):
     """A semantic table for presenting tabular data."""
 
     tag = "Table.Root"
@@ -22,13 +21,17 @@ class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
     variant: Var[Literal["surface", "ghost"]]
 
 
-class TableHeader(el.Thead, CommonMarginProps, RadixThemesComponent):
+class TableHeader(el.Thead, RadixThemesComponent):
     """The header of the table defines column names and other non-data elements."""
 
     tag = "Table.Header"
 
+    _invalid_children: List[str] = ["TableBody"]
 
-class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
+    _valid_parents: List[str] = ["TableRoot"]
+
+
+class TableRow(el.Tr, RadixThemesComponent):
     """A row containing table cells."""
 
     tag = "Table.Row"
@@ -36,8 +39,10 @@ class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
     # The alignment of the row
     align: Var[Literal["start", "center", "end", "baseline"]]
 
+    _invalid_children: List[str] = ["TableBody", "TableHeader", "TableRow"]
 
-class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
+
+class TableColumnHeaderCell(el.Th, RadixThemesComponent):
     """A table cell that is semantically treated as a column header."""
 
     tag = "Table.ColumnHeaderCell"
@@ -48,14 +53,32 @@ class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
     # width of the column
     width: Var[Union[str, int]]
 
+    _invalid_children: List[str] = [
+        "TableBody",
+        "TableHeader",
+        "TableRow",
+        "TableCell",
+        "TableColumnHeaderCell",
+        "TableRowHeaderCell",
+    ]
 
-class TableBody(el.Tbody, CommonMarginProps, RadixThemesComponent):
+
+class TableBody(el.Tbody, RadixThemesComponent):
     """The body of the table contains the data rows."""
 
     tag = "Table.Body"
 
+    _invalid_children: List[str] = [
+        "TableHeader",
+        "TableRowHeaderCell",
+        "TableColumnHeaderCell",
+        "TableCell",
+    ]
 
-class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
+    _valid_parents: List[str] = ["TableRoot"]
+
+
+class TableCell(el.Td, RadixThemesComponent):
     """A cell containing data."""
 
     tag = "Table.Cell"
@@ -66,8 +89,16 @@ class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
     # width of the column
     width: Var[Union[str, int]]
 
+    _invalid_children: List[str] = [
+        "TableBody",
+        "TableHeader",
+        "TableRowHeaderCell",
+        "TableColumnHeaderCell",
+        "TableCell",
+    ]
 
-class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
+
+class TableRowHeaderCell(el.Th, RadixThemesComponent):
     """A table cell that is semantically treated as a row header."""
 
     tag = "Table.RowHeaderCell"
@@ -77,3 +108,12 @@ class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
 
     # width of the column
     width: Var[Union[str, int]]
+
+    _invalid_children: List[str] = [
+        "TableBody",
+        "TableHeader",
+        "TableRow",
+        "TableCell",
+        "TableColumnHeaderCell",
+        "TableRowHeaderCell",
+    ]

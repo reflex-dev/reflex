@@ -5,14 +5,13 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
     RadixThemesComponent,
 )
 
 
-class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
+class Badge(el.Span, RadixThemesComponent):
     """A stylized badge element."""
 
     tag = "Badge"

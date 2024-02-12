@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import glob
 import importlib
+import inspect
 import json
 import os
 import platform
@@ -16,7 +17,7 @@ import zipfile
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
-from typing import Callable
+from typing import Callable, Optional
 
 import httpx
 import pkg_resources
@@ -25,6 +26,7 @@ from alembic.util.exc import CommandError
 from packaging import version
 from redis.asyncio import Redis
 
+import reflex
 from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, get_config
@@ -824,10 +826,48 @@ def validate_frontend_dependencies(init=True):
         validate_bun()
 
 
-def initialize_frontend_dependencies():
-    """Initialize all the frontend dependencies."""
+def ensure_reflex_installation_id() -> Optional[int]:
+    """Ensures that a reflex distinct id has been generated and stored in the reflex directory.
+
+    Returns:
+        Distinct id.
+    """
+    try:
+        initialize_reflex_user_directory()
+        installation_id_file = os.path.join(constants.Reflex.DIR, "installation_id")
+
+        installation_id = None
+        if os.path.exists(installation_id_file):
+            try:
+                with open(installation_id_file, "r") as f:
+                    installation_id = int(f.read())
+            except Exception:
+                # If anything goes wrong at all... just regenerate.
+                # Like what? Examples:
+                #     - file not exists
+                #     - file not readable
+                #     - content not parseable as an int
+                pass
+
+        if installation_id is None:
+            installation_id = random.getrandbits(128)
+            with open(installation_id_file, "w") as f:
+                f.write(str(installation_id))
+        # If we get here, installation_id is definitely set
+        return installation_id
+    except Exception as e:
+        console.debug(f"Failed to ensure reflex installation id: {e}")
+        return None
+
+
+def initialize_reflex_user_directory():
+    """Initialize the reflex user directory."""
     # Create the reflex directory.
     path_ops.mkdir(constants.Reflex.DIR)
+
+
+def initialize_frontend_dependencies():
+    """Initialize all the frontend dependencies."""
     # validate dependencies before install
     validate_frontend_dependencies()
     # Install the frontend dependencies.
@@ -898,6 +938,110 @@ def prompt_for_template() -> constants.Templates.Kind:
 
     # Return the template.
     return constants.Templates.Kind(template)
+
+
+def should_show_rx_chakra_migration_instructions() -> bool:
+    """Should we show the migration instructions for rx.chakra.* => rx.*?.
+
+    Returns:
+        bool: True if we should show the migration instructions.
+    """
+    if os.getenv("REFLEX_PROMPT_MIGRATE_TO_RX_CHAKRA") == "yes":
+        return True
+
+    with open(constants.Dirs.REFLEX_JSON, "r") as f:
+        data = json.load(f)
+        existing_init_reflex_version = data.get("version", None)
+
+    if existing_init_reflex_version is None:
+        # They clone a reflex app from git for the first time.
+        # That app may or may not be 0.4 compatible.
+        # So let's just show these instructions THIS TIME.
+        return True
+
+    if constants.Reflex.VERSION < "0.4":
+        return False
+    else:
+        return existing_init_reflex_version < "0.4"
+
+
+def show_rx_chakra_migration_instructions():
+    """Show the migration instructions for rx.chakra.* => rx.*."""
+    console.log(
+        "Prior to reflex 0.4.0, rx.* components are based on Chakra UI. They are now based on Radix UI. To stick to Chakra UI, use rx.chakra.*."
+    )
+    console.log("")
+    console.log(
+        "[bold]Run `reflex script keep-chakra` to automatically update your app."
+    )
+    console.log("")
+    console.log("For more details, please see https://TODO")  # TODO add link to docs
+
+
+def migrate_to_rx_chakra():
+    """Migrate rx.button => r.chakra.button, etc."""
+    file_pattern = os.path.join(get_config().app_name, "**/*.py")
+    file_list = glob.glob(file_pattern, recursive=True)
+
+    # Populate with all rx.<x> components that have been moved to rx.chakra.<x>
+    patterns = {
+        rf"\brx\.{name}\b": f"rx.chakra.{name}"
+        for name in _get_rx_chakra_component_to_migrate()
+    }
+
+    for file_path in file_list:
+        with FileInput(file_path, inplace=True) as file:
+            for _line_num, line in enumerate(file):
+                for old, new in patterns.items():
+                    line = re.sub(old, new, line)
+                print(line, end="")
+
+
+def _get_rx_chakra_component_to_migrate() -> set[str]:
+    from reflex.components import ChakraComponent
+
+    rx_chakra_names = set(dir(reflex.chakra))
+
+    names_to_migrate = set()
+    whitelist = {
+        "CodeBlock",
+        "ColorModeIcon",
+        "MultiSelect",
+        "MultiSelectOption",
+        "base",
+        "code_block",
+        "color_mode_cond",
+        "color_mode_icon",
+        "multi_select",
+        "multi_select_option",
+    }
+    for rx_chakra_name in sorted(rx_chakra_names):
+        if rx_chakra_name.startswith("_"):
+            continue
+
+        rx_chakra_object = getattr(reflex.chakra, rx_chakra_name)
+        try:
+            if (
+                inspect.ismethod(rx_chakra_object)
+                and inspect.isclass(rx_chakra_object.__self__)
+                and issubclass(rx_chakra_object.__self__, ChakraComponent)
+            ):
+                names_to_migrate.add(rx_chakra_name)
+
+            elif inspect.isclass(rx_chakra_object) and issubclass(
+                rx_chakra_object, ChakraComponent
+            ):
+                names_to_migrate.add(rx_chakra_name)
+                pass
+            else:
+                # For the given rx.chakra.<x>, does rx.<x> exist?
+                # And of these, should we include in migration?
+                if hasattr(reflex, rx_chakra_name) and rx_chakra_name in whitelist:
+                    names_to_migrate.add(rx_chakra_name)
+
+        except Exception:
+            raise
+    return names_to_migrate
 
 
 def migrate_to_reflex():
