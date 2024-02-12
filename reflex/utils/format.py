@@ -228,11 +228,15 @@ def format_f_string_prop(prop: BaseVar) -> str:
     interps = cast(VarData, prop._var_data).interpolations
 
     parts: List[str] = []
-    for i, (start, end) in enumerate(interps):
-        prev_end = interps[i - 1][1] if i > 0 else 0
-        parts.append(_escape_js_string(s[prev_end:start]))
-        parts.append(s[start:end])
-    parts.append(_escape_js_string(s[interps[-1][1] :]))
+
+    if interps:
+        for i, (start, end) in enumerate(interps):
+            prev_end = interps[i - 1][1] if i > 0 else 0
+            parts.append(_escape_js_string(s[prev_end:start]))
+            parts.append(s[start:end])
+        parts.append(_escape_js_string(s[interps[-1][1] :]))
+    else:
+        parts.append(_escape_js_string(s))
 
     return _wrap_js_string("".join(parts))
 
