@@ -107,8 +107,10 @@ def get_uploaded_files_dir() -> Path:
     return uploaded_files_dir
 
 
-uploaded_files_url_prefix = Var.create_safe("${getBackendURL(env.UPLOAD)}")._replace(
-    merge_var_data=VarData(
+uploaded_files_url_prefix: Var = Var.create_safe(
+    "${getBackendURL(env.UPLOAD)}"
+)._replace(
+    merge_var_data=VarData(  # type: ignore
         imports={
             f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="getBackendURL")},
             "/env.json": {imports.ImportVar(tag="env", is_default=True)},
