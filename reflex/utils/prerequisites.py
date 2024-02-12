@@ -1003,18 +1003,17 @@ def _get_rx_chakra_component_to_migrate() -> set[str]:
     rx_chakra_names = set(dir(reflex.chakra))
 
     names_to_migrate = set()
+
+    # whitelist names will always be rewritten as rx.chakra.<x>
     whitelist = {
-        "CodeBlock",
         "ColorModeIcon",
         "MultiSelect",
         "MultiSelectOption",
-        "base",
-        "code_block",
-        "color_mode_cond",
         "color_mode_icon",
         "multi_select",
         "multi_select_option",
     }
+
     for rx_chakra_name in sorted(rx_chakra_names):
         if rx_chakra_name.startswith("_"):
             continue
@@ -1032,12 +1031,8 @@ def _get_rx_chakra_component_to_migrate() -> set[str]:
                 rx_chakra_object, ChakraComponent
             ):
                 names_to_migrate.add(rx_chakra_name)
-                pass
-            else:
-                # For the given rx.chakra.<x>, does rx.<x> exist?
-                # And of these, should we include in migration?
-                if hasattr(reflex, rx_chakra_name) and rx_chakra_name in whitelist:
-                    names_to_migrate.add(rx_chakra_name)
+            elif rx_chakra_name in whitelist:
+                names_to_migrate.add(rx_chakra_name)
 
         except Exception:
             raise
