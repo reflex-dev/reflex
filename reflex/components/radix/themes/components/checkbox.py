@@ -11,11 +11,11 @@ from reflex.vars import Var
 from ..base import (
     LiteralAccentColor,
     LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
 LiteralCheckboxSize = Literal["1", "2", "3"]
+LiteralCheckboxVariant = Literal["classic", "surface", "soft"]
 
 
 class Checkbox(RadixThemesComponent):
@@ -26,16 +26,16 @@ class Checkbox(RadixThemesComponent):
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
 
-    # Button size "1" - "3"
+    # Checkbox size "1" - "3"
     size: Var[LiteralCheckboxSize]
 
-    # Variant of button: "solid" | "soft" | "outline" | "ghost"
-    variant: Var[LiteralVariant]
+    # Variant of checkbox: "classic" | "surface" | "soft"
+    variant: Var[LiteralCheckboxVariant]
 
-    # Override theme color for button
+    # Override theme color for checkbox
     color_scheme: Var[LiteralAccentColor]
 
-    # Whether to render the button with higher contrast color against background
+    # Whether to render the checkbox with higher contrast color against background
     high_contrast: Var[bool]
 
     # Whether the checkbox is checked by default
@@ -71,8 +71,10 @@ class Checkbox(RadixThemesComponent):
         }
 
 
-class HighLevelCheckbox(Checkbox):
+class HighLevelCheckbox(RadixThemesComponent):
     """A checkbox component with a label."""
+
+    tag = "Checkbox"
 
     # The text label for the checkbox.
     text: Var[str]
@@ -80,8 +82,52 @@ class HighLevelCheckbox(Checkbox):
     # The gap between the checkbox and the label.
     gap: Var[LiteralSize]
 
-    # The size of the checkbox.
+    # The size of the checkbox "1" - "3".
     size: Var[LiteralCheckboxSize]
+
+    # Change the default rendered element for the one passed as a child, merging their props and behavior.
+    as_child: Var[bool]
+
+    # Variant of checkbox: "classic" | "surface" | "soft"
+    variant: Var[LiteralCheckboxVariant]
+
+    # Override theme color for checkbox
+    color_scheme: Var[LiteralAccentColor]
+
+    # Whether to render the checkbox with higher contrast color against background
+    high_contrast: Var[bool]
+
+    # Whether the checkbox is checked by default
+    default_checked: Var[bool]
+
+    # Whether the checkbox is checked
+    checked: Var[bool]
+
+    # Whether the checkbox is disabled
+    disabled: Var[bool]
+
+    # Whether the checkbox is required
+    required: Var[bool]
+
+    # The name of the checkbox control when submitting the form.
+    name: Var[str]
+
+    # The value of the checkbox control when submitting the form.
+    value: Var[str]
+
+    # Props to rename
+    _rename_props = {"onChange": "onCheckedChange"}
+
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the events triggers signatures for the component.
+
+        Returns:
+            The signatures of the event triggers.
+        """
+        return {
+            **super().get_event_triggers(),
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
+        }
 
     @classmethod
     def create(cls, text: Var[str] = Var.create_safe(""), **props) -> Component:
