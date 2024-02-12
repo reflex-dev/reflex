@@ -293,11 +293,11 @@ class FormSubmit(FormComponent):
 class Form(SimpleNamespace):
     """Form components."""
 
+    root = __call__ = staticmethod(FormRoot.create)
     control = staticmethod(FormControl.create)
     field = staticmethod(FormField.create)
     label = staticmethod(FormLabel.create)
     message = staticmethod(FormMessage.create)
-    root = staticmethod(FormRoot.create)
     submit = staticmethod(FormSubmit.create)
     validity_state = staticmethod(FormValidityState.create)
 
