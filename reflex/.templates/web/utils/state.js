@@ -64,7 +64,7 @@ export const getToken = () => {
   if (token) {
     return token;
   }
-  if (window) {
+  if (typeof window !== 'undefined') {
     if (!window.sessionStorage.getItem(TOKEN_KEY)) {
       window.sessionStorage.setItem(TOKEN_KEY, generateUUID());
     }
@@ -81,7 +81,7 @@ export const getToken = () => {
 export const getBackendURL = (url_str) => {
   // Get backend URL object from the endpoint.
   const endpoint = new URL(url_str);
-  if (window && SAME_DOMAIN_HOSTNAMES.includes(endpoint.hostname)) {
+  if ((typeof window !== 'undefined') && SAME_DOMAIN_HOSTNAMES.includes(endpoint.hostname)) {
     // Use the frontend domain to access the backend
     const frontend_hostname = window.location.hostname;
     endpoint.hostname = frontend_hostname;
