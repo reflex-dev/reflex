@@ -14,7 +14,7 @@ from reflex.components.chakra.overlay.modal import Modal
 from reflex.components.chakra.typography import Text
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
-from reflex.constants import Hooks, Imports
+from reflex.constants import Dirs, Hooks, Imports
 from reflex.utils import imports
 from reflex.vars import Var, VarData
 
