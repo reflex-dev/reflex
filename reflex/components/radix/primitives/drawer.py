@@ -32,6 +32,8 @@ class DrawerRoot(DrawerComponent):
 
     tag = "Drawer.Root"
 
+    alias = "Radix"+tag
+
     # Whether the drawer is open or not.
     open: Var[bool]
 
@@ -83,6 +85,8 @@ class DrawerTrigger(DrawerComponent):
 
     tag = "Drawer.Trigger"
 
+    alias = "Radix"+tag
+
     as_child: Var[bool]
 
 
@@ -90,6 +94,8 @@ class DrawerPortal(DrawerComponent):
     """Portals your drawer into the body."""
 
     tag = "Drawer.Portal"
+    
+    alias = "Radix"+tag
 
 
 # Based on https://www.radix-ui.com/primitives/docs/components/dialog#content
@@ -97,6 +103,8 @@ class DrawerContent(DrawerComponent):
     """Content that should be rendered in the drawer."""
 
     tag = "Drawer.Content"
+
+    alias = "Radix"+tag
 
     # Style set partially based on the source code at https://ui.shadcn.com/docs/components/drawer
     def _get_style(self) -> dict:
@@ -146,6 +154,8 @@ class DrawerOverlay(DrawerComponent):
 
     tag = "Drawer.Overlay"
 
+    alias = "Radix"+tag
+
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
     def _get_style(self) -> dict:
         """Get the style for the component.
@@ -177,11 +187,15 @@ class DrawerClose(DrawerComponent):
 
     tag = "Drawer.Close"
 
+    alias = "Radix"+tag
+
 
 class DrawerTitle(DrawerComponent):
     """A title for the drawer."""
 
     tag = "Drawer.Title"
+
+    alias = "Radix"+tag
 
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
     def _get_style(self) -> dict:
@@ -210,6 +224,8 @@ class DrawerDescription(DrawerComponent):
     """A description for the drawer."""
 
     tag = "Drawer.Description"
+
+    alias = "Radix"+tag
 
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
     def _get_style(self) -> dict:
