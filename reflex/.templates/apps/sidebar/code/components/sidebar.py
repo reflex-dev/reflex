@@ -11,17 +11,17 @@ def sidebar_header() -> rx.Component:
     Returns:
         The sidebar header component.
     """
-    return rx.hstack(
+    return rx.chakra.hstack(
         # The logo.
-        rx.image(
+        rx.chakra.image(
             src="/icon.svg",
             height="2em",
         ),
-        rx.spacer(),
+        rx.chakra.spacer(),
         # Link to Reflex GitHub repo.
-        rx.link(
-            rx.center(
-                rx.image(
+        rx.chakra.link(
+            rx.chakra.center(
+                rx.chakra.image(
                     src="/github.svg",
                     height="3em",
                     padding="0.5em",
@@ -47,14 +47,14 @@ def sidebar_footer() -> rx.Component:
     Returns:
         The sidebar footer component.
     """
-    return rx.hstack(
-        rx.spacer(),
-        rx.link(
-            rx.text("Docs"),
+    return rx.chakra.hstack(
+        rx.chakra.spacer(),
+        rx.chakra.link(
+            rx.chakra.text("Docs"),
             href="https://reflex.dev/docs/getting-started/introduction/",
         ),
-        rx.link(
-            rx.text("Blog"),
+        rx.chakra.link(
+            rx.chakra.text("Blog"),
             href="https://reflex.dev/blog/",
         ),
         width="100%",
@@ -79,14 +79,14 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
         (rx.State.router.page.path == "/") & text == "Home"
     )
 
-    return rx.link(
-        rx.hstack(
-            rx.image(
+    return rx.chakra.link(
+        rx.chakra.hstack(
+            rx.chakra.image(
                 src=icon,
                 height="2.5em",
                 padding="0.5em",
             ),
-            rx.text(
+            rx.chakra.text(
                 text,
             ),
             bg=rx.cond(
@@ -118,10 +118,10 @@ def sidebar() -> rx.Component:
     # Get all the decorated pages and add them to the sidebar.
     from reflex.page import get_decorated_pages
 
-    return rx.box(
-        rx.vstack(
+    return rx.chakra.box(
+        rx.chakra.vstack(
             sidebar_header(),
-            rx.vstack(
+            rx.chakra.vstack(
                 *[
                     sidebar_item(
                         text=page.get("title", page["route"].strip("/").capitalize()),
@@ -135,7 +135,7 @@ def sidebar() -> rx.Component:
                 align_items="flex-start",
                 padding="1em",
             ),
-            rx.spacer(),
+            rx.chakra.spacer(),
             sidebar_footer(),
             height="100dvh",
         ),
