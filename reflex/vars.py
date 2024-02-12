@@ -238,39 +238,44 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
     if isinstance(value, str):
         offset = 0
 
-        pattern = re.compile(
-            rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}",
-            flags=re.DOTALL,
-        )
+        # Lazy load serialize function
+        from reflex.utils.serializers import serialize
+
+        # Initialize some methods for serializing/deserializing json.
+        var_data_config = VarData().__config__
+        json_loads = lambda obj: var_data_config.json_loads(obj)
+        json_dumps = lambda obj: var_data_config.json_dumps(obj, default=serialize)
+
+        # Compile regex for finding reflex var tags.
+        pattern_re = rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
+        pattern = re.compile(pattern_re, flags=re.DOTALL)
+
+        # Find all tags.
         while m := pattern.search(value):
             start, end = m.span()
             value = value[:start] + value[end:]
 
-            from reflex.utils.serializers import serialize
-
-            var_data_config = VarData().__config__
-            data = var_data_config.json_loads(m.group(1))
+            # Read the JSON, pull out the string length, write back to JSON.
+            data = json_loads(m.group(1))
             string_length = data.pop("string_length", None)
+            data_json = json_dumps(data)
 
-            data_json = var_data_config.json_dumps(data, default=serialize)
-
+            # Parse the JSON as VarData.
             try:
                 var_data = VarData.parse_raw(data_json)
             except pydantic.ValidationError:
                 # If the VarData is invalid, it was probably json-encoded twice...
-                var_data = VarData.parse_raw(json.loads(f'"{m.group(1)}"'))
+                var_data = VarData.parse_raw(json.loads(f'"{data_json}"'))
 
+            # Use string length to compute positions of interpolations.
             if string_length is not None:
                 realstart = start + offset
                 var_data.interpolations = [(realstart, realstart + string_length)]
 
             var_datas.append(var_data)
-
             offset += end - start
 
-    if var_datas:
-        return VarData.merge(*var_datas), value
-    return None, value
+    return VarData.merge(*var_datas) if var_datas else None, value
 
 
 def _extract_var_data(value: Iterable) -> list[VarData | None]:
