@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -13,9 +13,6 @@ class TabsRoot(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.Root"
-
-    # The variant of the tab
-    variant: Var[Literal["surface", "ghost"]]
 
     # The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
     default_value: Var[str]
@@ -46,6 +43,9 @@ class TabsList(RadixThemesComponent):
 
     tag = "Tabs.List"
 
+    # Tabs size "1" - "2"
+    size: Var[Literal["1", "2"]]
+
 
 class TabsTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
@@ -57,6 +57,8 @@ class TabsTrigger(RadixThemesComponent):
 
     # Whether the tab is disabled
     disabled: Var[bool]
+
+    _valid_parents: List[str] = ["TabsList"]
 
 
 class TabsContent(RadixThemesComponent):

@@ -2,7 +2,7 @@
 import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
-import env from "env.json";
+import env from "/env.json";
 import Cookies from "universal-cookie";
 import { useEffect, useReducer, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
@@ -77,18 +77,23 @@ export const getToken = () => {
 };
 
 /**
- * Get the URL for the websocket connection
- * @returns The websocket URL object.
+ * Get the URL for the backend server
+ * @param url_str The URL string to parse.
+ * @returns The given URL modified to point to the actual backend server.
  */
-export const getEventURL = () => {
+export const getBackendURL = (url_str) => {
   // Get backend URL object from the endpoint.
-  const endpoint = new URL(EVENTURL);
+  const endpoint = new URL(url_str);
   if (SAME_DOMAIN_HOSTNAMES.includes(endpoint.hostname)) {
     // Use the frontend domain to access the backend
     const frontend_hostname = window.location.hostname;
     endpoint.hostname = frontend_hostname;
-    if (window.location.protocol === "https:" && endpoint.protocol === "ws:") {
-      endpoint.protocol = "wss:";
+    if (window.location.protocol === "https:") {
+      if (endpoint.protocol === "ws:") {
+        endpoint.protocol = "wss:";
+      } else if (endpoint.protocol === "http:") {
+        endpoint.protocol = "https:";
+      }
       endpoint.port = "";  // Assume websocket is on https port via load balancer.
     }
   }
@@ -299,7 +304,7 @@ export const connect = async (
   client_storage = {},
 ) => {
   // Get backend URL object from the endpoint.
-  const endpoint = getEventURL()
+  const endpoint = getBackendURL(EVENTURL)
 
   // Create the socket.
   socket.current = io(endpoint.href, {
@@ -400,7 +405,7 @@ export const uploadFiles = async (handler, files, upload_id, on_upload_progress,
   upload_controllers[upload_id] = controller
 
   try {
-    return await axios.post(UPLOADURL, formdata, config)
+    return await axios.post(getBackendURL(UPLOADURL), formdata, config)
   } catch (error) {
     if (error.response) {
       // The request was made and the server responded with a status code

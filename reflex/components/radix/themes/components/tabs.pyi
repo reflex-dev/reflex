@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import RadixThemesComponent
@@ -81,9 +81,6 @@ class TabsRoot(RadixThemesComponent):
                     "gray",
                 ],
             ]
-        ] = None,
-        variant: Optional[
-            Union[Var[Literal["surface", "ghost"]], Literal["surface", "ghost"]]
         ] = None,
         default_value: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[str], str]] = None,
@@ -159,7 +156,6 @@ class TabsRoot(RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            variant: The variant of the tab
             default_value: The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
             value: The controlled value of the tab that should be active. Use when you need to control the state of the tabs.
             orientation: The orientation of the tabs.
@@ -246,6 +242,7 @@ class TabsList(RadixThemesComponent):
                 ],
             ]
         ] = None,
+        size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -309,6 +306,7 @@ class TabsList(RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
+            size: Tabs size "1" - "2"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

@@ -7,10 +7,13 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from typing import Literal
 from reflex import el
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextAlign, LiteralTextSize, LiteralTextTrim, LiteralTextWeight
+
+LiteralType = Literal["p", "label", "div", "span"]
 
 class Text(el.Span, RadixThemesComponent):
     @overload
@@ -82,7 +85,12 @@ class Text(el.Span, RadixThemesComponent):
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
-        as_: Optional[Union[Var[str], str]] = None,
+        as_: Optional[
+            Union[
+                Var[Literal["p", "label", "div", "span"]],
+                Literal["p", "label", "div", "span"],
+            ]
+        ] = None,
         size: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],

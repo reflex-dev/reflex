@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Tuple
 
 from reflex import constants
 from reflex.event import EventChain
@@ -36,6 +36,15 @@ toggle_color_mode = BaseVar(
 )
 
 breakpoints = ["0", "30em", "48em", "62em", "80em", "96em"]
+
+STYLE_PROP_SHORTHAND_MAPPING = {
+    "paddingX": ("padding-inline-start", "padding-inline-end"),
+    "paddingY": ("padding-top", "padding-bottom"),
+    "marginX": ("margin-inline-start", "margin-inline-end"),
+    "marginY": ("margin-top", "margin-bottom"),
+    "bg": ("background",),
+    "bgColor": ("background-color",),
+}
 
 
 def media_query(breakpoint_index: int):
@@ -107,19 +116,41 @@ def convert(style_dict):
     """
     var_data = None  # Track import/hook data from any Vars in the style dict.
     out = {}
+
+    def update_out_dict(return_value, keys_to_update):
+        for k in keys_to_update:
+            out[k] = return_value
+
     for key, value in style_dict.items():
-        key = format.to_camel_case(key, allow_hyphens=True)
+        keys = format_style_key(key)
         if isinstance(value, dict):
             # Recursively format nested style dictionaries.
-            out[key], new_var_data = convert(value)
+            return_val, new_var_data = convert(value)
+            update_out_dict(return_val, keys)
         elif isinstance(value, list):
             # Responsive value is a list of dict or value
-            out[key], new_var_data = convert_list(value)
+            return_val, new_var_data = convert_list(value)
+            update_out_dict(return_val, keys)
         else:
-            out[key], new_var_data = convert_item(value)
+            return_val, new_var_data = convert_item(value)
+            update_out_dict(return_val, keys)
         # Combine all the collected VarData instances.
         var_data = VarData.merge(var_data, new_var_data)
     return out, var_data
+
+
+def format_style_key(key: str) -> Tuple[str, ...]:
+    """Convert style keys to camel case and convert shorthand
+    styles names to their corresponding css names.
+
+    Args:
+        key: The style key to convert.
+
+    Returns:
+        Tuple of css style names corresponding to the key provided.
+    """
+    key = format.to_camel_case(key, allow_hyphens=True)
+    return STYLE_PROP_SHORTHAND_MAPPING.get(key, (key,))
 
 
 class Style(dict):

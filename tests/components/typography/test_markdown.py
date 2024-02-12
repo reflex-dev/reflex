@@ -56,4 +56,8 @@ def test_pass_custom_styles():
     md = Markdown.create("# Hello", custom_styles={"h1": {"color": "red"}})
 
     comp = md.get_component("h1")  # type: ignore
-    assert comp.style == {"color": "red", "marginY": "0.5em"}
+    assert comp.style == {
+        "color": "red",
+        "margin-bottom": "0.5em",
+        "margin-top": "0.5em",
+    }

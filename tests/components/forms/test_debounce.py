@@ -3,6 +3,7 @@
 import pytest
 
 import reflex as rx
+from reflex.components.core.debounce import DEFAULT_DEBOUNCE_TIMEOUT
 from reflex.state import BaseState
 from reflex.vars import BaseVar
 
@@ -107,7 +108,7 @@ def test_full_control_implicit_debounce():
         value=S.value,
         on_change=S.on_change,
     )._render()
-    assert tag.props["debounceTimeout"]._var_name == "50"
+    assert tag.props["debounceTimeout"]._var_name == str(DEFAULT_DEBOUNCE_TIMEOUT)
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""
@@ -119,7 +120,7 @@ def test_full_control_implicit_debounce_text_area():
         value=S.value,
         on_change=S.on_change,
     )._render()
-    assert tag.props["debounceTimeout"]._var_name == "50"
+    assert tag.props["debounceTimeout"]._var_name == str(DEFAULT_DEBOUNCE_TIMEOUT)
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""

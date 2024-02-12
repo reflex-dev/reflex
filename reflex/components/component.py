@@ -199,7 +199,6 @@ class Component(BaseComponent, ABC):
 
         Raises:
             TypeError: If an invalid prop is passed.
-            ValueError: If a prop value is invalid.
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
@@ -249,17 +248,10 @@ class Component(BaseComponent, ABC):
                         raise TypeError
 
                     expected_type = fields[key].outer_type_.__args__[0]
-
-                    if (
-                        types.is_literal(expected_type)
-                        and value not in expected_type.__args__
-                    ):
-                        allowed_values = expected_type.__args__
-                        if value not in allowed_values:
-                            raise ValueError(
-                                f"prop value for {key} of the `{type(self).__name__}` component should be one of the following: {','.join(allowed_values)}. Got '{value}' instead"
-                            )
-
+                    # validate literal fields.
+                    types.validate_literal(
+                        key, value, expected_type, type(self).__name__
+                    )
                     # Get the passed type and the var type.
                     passed_type = kwargs[key]._var_type
                     expected_type = (

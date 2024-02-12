@@ -20,6 +20,19 @@ test_style = [
         {"::-webkit-scrollbar": {"display": "none"}},
         {"::-webkit-scrollbar": {"display": "none"}},
     ),
+    ({"margin_y": "2rem"}, {"margin-bottom": "2rem", "margin-top": "2rem"}),
+    ({"marginY": "2rem"}, {"margin-bottom": "2rem", "margin-top": "2rem"}),
+    (
+        {"::-webkit-scrollbar": {"bgColor": "red"}},
+        {"::-webkit-scrollbar": {"background-color": "red"}},
+    ),
+    (
+        {"paddingX": ["2rem", "3rem"]},
+        {
+            "padding-inline-start": ["2rem", "3rem"],
+            "padding-inline-end": ["2rem", "3rem"],
+        },
+    ),
 ]
 
 

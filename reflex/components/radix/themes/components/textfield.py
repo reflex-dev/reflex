@@ -12,7 +12,6 @@ from reflex.vars import Var
 from ..base import (
     LiteralAccentColor,
     LiteralRadius,
-    LiteralSize,
     RadixThemesComponent,
 )
 
@@ -54,15 +53,9 @@ class TextFieldInput(el.Input, TextFieldRoot):
         Returns:
             The component.
         """
-        if (
-            isinstance(props.get("value"), Var) and props.get("on_change")
-        ) or "debounce_timeout" in props:
-            # Currently default to 50ms, which appears to be a good balance
-            debounce_timeout = props.pop("debounce_timeout", 50)
+        if props.get("value") is not None and props.get("on_change"):
             # create a debounced input if the user requests full control to avoid typing jank
-            return DebounceInput.create(
-                super().create(*children, **props), debounce_timeout=debounce_timeout
-            )
+            return DebounceInput.create(super().create(*children, **props))
         return super().create(*children, **props)
 
     def get_event_triggers(self) -> Dict[str, Any]:
@@ -88,9 +81,6 @@ class TextFieldSlot(RadixThemesComponent):
 
     # Override theme color for text field slot
     color_scheme: Var[LiteralAccentColor]
-
-    # Override the gap spacing between slot and input: "1" - "9"
-    gap: Var[LiteralSize]
 
 
 class Input(RadixThemesComponent):

@@ -202,7 +202,10 @@ def _encode_var(value: Var) -> str:
         The encoded var.
     """
     if value._var_data:
-        return f"<reflex.Var>{value._var_data.json()}</reflex.Var>" + str(value)
+        return (
+            f"{constants.REFLEX_VAR_OPENING_TAG}{value._var_data.json()}{constants.REFLEX_VAR_CLOSING_TAG}"
+            + str(value)
+        )
     return str(value)
 
 
@@ -219,7 +222,7 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
     if isinstance(value, str):
         # Extract the state name from a formatted var
         while m := re.match(
-            pattern=r"(.*)<reflex.Var>(.*)</reflex.Var>(.*)",
+            pattern=rf"(.*){constants.REFLEX_VAR_OPENING_TAG}(.*){constants.REFLEX_VAR_CLOSING_TAG}(.*)",
             string=value,
             flags=re.DOTALL,  # Ensure . matches newline characters.
         ):
@@ -1612,13 +1615,13 @@ class Var:
             if types.is_generic_alias(self._var_type)
             else self._var_type
         )
-
         wrapped_var = str(self)
+
         return (
             wrapped_var
             if not self._var_state
-            and issubclass(type_, dict)
-            or issubclass(type_, Style)
+            and types._issubclass(type_, dict)
+            or types._issubclass(type_, Style)
             else wrapped_var.strip("{}")
         )
 
