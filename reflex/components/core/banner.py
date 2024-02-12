@@ -9,7 +9,7 @@ from reflex.components.chakra.overlay.modal import Modal
 from reflex.components.chakra.typography import Text
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
-from reflex.constants import Hooks, Imports
+from reflex.constants import Dirs, Hooks, Imports
 from reflex.utils import imports
 from reflex.vars import Var, VarData
 
@@ -34,7 +34,7 @@ class WebsocketTargetURL(Bare):
 
     def _get_imports(self) -> imports.ImportDict:
         return {
-            "/utils/state.js": [imports.ImportVar(tag="getBackendURL")],
+            f"/{Dirs.STATE_PATH}": [imports.ImportVar(tag="getBackendURL")],
             "/env.json": [imports.ImportVar(tag="env", is_default=True)],
         }
 
