@@ -253,12 +253,12 @@ class App(Base):
         if Upload.is_used:
             self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
-        # To access uploaded files.
-        self.api.mount(
-            str(constants.Endpoint.UPLOAD),
-            StaticFiles(directory=get_uploaded_files_dir()),
-            name="uploaded_files",
-        )
+            # To access uploaded files.
+            self.api.mount(
+                str(constants.Endpoint.UPLOAD),
+                StaticFiles(directory=get_uploaded_files_dir()),
+                name="uploaded_files",
+            )
 
     def add_cors(self):
         """Add CORS middleware to the app."""
