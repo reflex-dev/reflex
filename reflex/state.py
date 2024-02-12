@@ -1405,6 +1405,23 @@ class State(BaseState):
             type(self).set_is_hydrated(True),  # type: ignore
         ]
 
+    def update_vars_internal(self, vars: dict[str, Any]) -> None:
+        """Apply updates to fully qualified state vars.
+
+        The keys in `vars` should be in the form of `{state.get_full_name()}.{var_name}`,
+        and each value will be set on the appropriate substate instance.
+
+        This function is primarily used to apply cookie and local storage
+        updates from the frontend to the appropriate substate.
+
+        Args:
+            vars: The fully qualified vars and values to update.
+        """
+        for var, value in vars.items():
+            state_name, _, var_name = var.rpartition(".")
+            var_state = self.get_substate(state_name.split("."))
+            setattr(var_state, var_name, value)
+
 
 class StateProxy(wrapt.ObjectProxy):
     """Proxy of a state instance to control mutability of vars for a background task.
