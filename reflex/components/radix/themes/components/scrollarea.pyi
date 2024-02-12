@@ -9,7 +9,7 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
 from reflex.vars import Var
-from ..base import LiteralRadius, RadixThemesComponent
+from ..base import RadixThemesComponent
 
 class ScrollArea(RadixThemesComponent):
     @overload
@@ -78,13 +78,6 @@ class ScrollArea(RadixThemesComponent):
                     "bronze",
                     "gray",
                 ],
-            ]
-        ] = None,
-        size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
-        radius: Optional[
-            Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
-                Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
         scrollbars: Optional[
@@ -163,8 +156,6 @@ class ScrollArea(RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            size: The size of the radio group: "1" | "2" | "3"
-            radius: The radius of the radio group
             scrollbars: The alignment of the scroll area
             type_: Describes the nature of scrollbar visibility, similar to how the scrollbar preferences in MacOS control visibility of native scrollbars. "auto" | "always" | "scroll" | "hover"
             scroll_hide_delay: If type is set to either "scroll" or "hover", this prop determines the length of time, in milliseconds, before the scrollbars are hidden after the user stops interacting with scrollbars.
