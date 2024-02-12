@@ -4,7 +4,7 @@ from typing import Literal
 
 from reflex import el
 from reflex.components.component import Component
-from reflex.components.core import match
+from reflex.components.core.match import Match
 from reflex.components.lucide import Icon
 from reflex.style import Style
 from reflex.vars import Var
@@ -77,7 +77,7 @@ class IconButton(el.Button, RadixThemesComponent):
                 }
                 children[0].size = RADIX_TO_LUCIDE_SIZE[props["size"]]
             else:
-                children[0].size = match(
+                children[0].size = Match.create(
                     props["size"],
                     ("1", "12px"),
                     ("2", "24px"),
