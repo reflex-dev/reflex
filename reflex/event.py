@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import inspect
+from base64 import b64encode
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -555,7 +556,7 @@ def set_clipboard(content: str) -> EventSpec:
 def download(
     url: str | Var | None = None,
     filename: Optional[str | Var] = None,
-    data: str | None = None,
+    data: str | bytes | None = None,
 ) -> EventSpec:
     """Download the file at a given path.
 
@@ -581,13 +582,18 @@ def download(
     if filename is None:
         filename = ""
 
-    args = {"url": url, "filename": filename, "data": data}
-    filtered_args = {k: v for k, v in args.items() if v is not None}
+    if data is not None:
+        if isinstance(data, str):
+            url = "data:text/plain," + data
+        else:
+            b64_data = b64encode(data).decode("utf-8")
+            url = "data:application/octet-stream;base64," + b64_data
 
     return server_side(
         "_download",
         get_fn_signature(download),
-        **filtered_args,
+        url=url,
+        filename=filename,
     )
 
 

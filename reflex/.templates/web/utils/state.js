@@ -156,17 +156,10 @@ export const applyEvent = async (event, socket) => {
   if (event.name == "_download") {
     const a = document.createElement('a');
     a.hidden = true;
-    let url = event.payload.url
-    if (event.payload.data !== undefined) {
-      url = URL.createObjectURL(new Blob([event.payload.data]));
-    }
-    a.href = url
+    a.href = event.payload.url
     a.download = event.payload.filename;
     a.click();
     a.remove();
-    if (event.payload.data !== undefined) {
-      URL.revokeObjectURL(url);
-    }
     return false;
   }
 
