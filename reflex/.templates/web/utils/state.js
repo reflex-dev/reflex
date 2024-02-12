@@ -81,7 +81,7 @@ export const getToken = () => {
 export const getBackendURL = (url_str) => {
   // Get backend URL object from the endpoint.
   const endpoint = new URL(url_str);
-  if (SAME_DOMAIN_HOSTNAMES.includes(endpoint.hostname)) {
+  if (window && SAME_DOMAIN_HOSTNAMES.includes(endpoint.hostname)) {
     // Use the frontend domain to access the backend
     const frontend_hostname = window.location.hostname;
     endpoint.hostname = frontend_hostname;
