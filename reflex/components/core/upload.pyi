@@ -7,6 +7,8 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+import os
+from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional, Union
 from reflex import constants
 from reflex.components.chakra.forms.input import Input
@@ -27,6 +29,11 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
 @CallableEventSpec
 def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec: ...
 def cancel_upload(upload_id: str) -> EventSpec: ...
+def get_uploaded_files_dir() -> Path: ...
+
+uploaded_files_url_prefix: Var
+
+def get_uploaded_file_url(file_path: str) -> str: ...
 
 class UploadFilesProvider(Component):
     @overload

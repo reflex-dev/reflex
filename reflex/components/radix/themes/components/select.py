@@ -13,8 +13,6 @@ from ..base import (
     RadixThemesComponent,
 )
 
-LiteralButtonSize = Literal[1, 2, 3, 4]
-
 
 class SelectRoot(RadixThemesComponent):
     """Displays a list of options for the user to pick from, triggered by a button."""
