@@ -175,9 +175,11 @@ class VarData(Base):
         """
         if not isinstance(other, VarData):
             return False
+
+        # Don't compare interpolations - that's added in by the decoder, and
+        # not part of the vardata itself.
         return (
             self.state == other.state
-            and self.interpolations == other.interpolations
             and self.hooks == other.hooks
             and imports.collapse_imports(self.imports)
             == imports.collapse_imports(other.imports)
@@ -238,13 +240,14 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
     if isinstance(value, str):
         offset = 0
 
-        # Lazy load serialize function
-        from reflex.utils.serializers import serialize
-
-        # Initialize some methods for serializing/deserializing json.
+        # Initialize some methods for reading json.
         var_data_config = VarData().__config__
-        json_loads = lambda obj: var_data_config.json_loads(obj)
-        json_dumps = lambda obj: var_data_config.json_dumps(obj, default=serialize)
+
+        def json_loads(s):
+            try:
+                return var_data_config.json_loads(s)
+            except json.decoder.JSONDecodeError:
+                return var_data_config.json_loads(var_data_config.json_loads(f'"{s}"'))
 
         # Compile regex for finding reflex var tags.
         pattern_re = rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
@@ -255,17 +258,12 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
             start, end = m.span()
             value = value[:start] + value[end:]
 
-            # Read the JSON, pull out the string length, write back to JSON.
+            # Read the JSON, pull out the string length, parse the rest as VarData.
+            print("\n=== loading", m.group(1))
             data = json_loads(m.group(1))
+            print("=== loaded", data)
             string_length = data.pop("string_length", None)
-            data_json = json_dumps(data)
-
-            # Parse the JSON as VarData.
-            try:
-                var_data = VarData.parse_raw(data_json)
-            except pydantic.ValidationError:
-                # If the VarData is invalid, it was probably json-encoded twice...
-                var_data = VarData.parse_raw(json.loads(f'"{data_json}"'))
+            var_data = VarData.parse_obj(data)
 
             # Use string length to compute positions of interpolations.
             if string_length is not None:
