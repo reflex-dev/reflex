@@ -259,9 +259,7 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
             value = value[:start] + value[end:]
 
             # Read the JSON, pull out the string length, parse the rest as VarData.
-            print("\n=== loading", m.group(1))
             data = json_loads(m.group(1))
-            print("=== loaded", data)
             string_length = data.pop("string_length", None)
             var_data = VarData.parse_obj(data)
 
