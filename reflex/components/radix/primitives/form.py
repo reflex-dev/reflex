@@ -9,7 +9,7 @@ from typing import Any, Dict, Iterator, Literal
 from jinja2 import Environment
 
 from reflex.components.component import Component
-from reflex.components.radix.themes.components.textfield import TextFieldInput
+from reflex.components.radix.themes.components.text_field import TextFieldInput
 from reflex.components.tags.tag import Tag
 from reflex.constants.base import Dirs
 from reflex.constants.event import EventTriggers

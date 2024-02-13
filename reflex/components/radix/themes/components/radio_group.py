@@ -196,4 +196,4 @@ class RadioGroup(SimpleNamespace):
     __call__ = staticmethod(HighLevelRadioGroup.create)
 
 
-radio_group = RadioGroup()
+radio = radio_group = RadioGroup()
