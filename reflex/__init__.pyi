@@ -27,6 +27,8 @@ from reflex.components import tablet_and_desktop as tablet_and_desktop
 from reflex.components import tablet_only as tablet_only
 from reflex.components import cancel_upload as cancel_upload
 from reflex.components import clear_selected_files as clear_selected_files
+from reflex.components import get_upload_dir as get_upload_dir
+from reflex.components import get_upload_url as get_upload_url
 from reflex.components import selected_files as selected_files
 from reflex.components import upload as upload
 from reflex.components import accordion as accordion

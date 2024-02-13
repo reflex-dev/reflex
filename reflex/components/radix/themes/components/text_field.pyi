@@ -9,11 +9,9 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
 from typing import Any, Dict, Literal
-import reflex as rx
 from reflex.components import el
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
-from reflex.components.lucide.icon import Icon
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
@@ -712,7 +710,6 @@ class Input(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        icon: Optional[Union[Var[str], str]] = None,
         size: Optional[
             Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
@@ -797,7 +794,9 @@ class Input(RadixThemesComponent):
         min_length: Optional[Union[Var[str], str]] = None,
         name: Optional[Union[Var[str], str]] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
+        read_only: Optional[Union[Var[bool], bool]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
+        type: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -864,7 +863,6 @@ class Input(RadixThemesComponent):
         """Create an Input component.
 
         Args:
-            icon: The icon to render before the input.
             size: Text field size "1" - "3"
             variant: Variant of text field: "classic" | "surface" | "soft"
             color_scheme: Override theme color for text field
@@ -876,7 +874,9 @@ class Input(RadixThemesComponent):
             min_length: Specifies the minimum number of characters required in the input
             name: Name of the input, used when sending form data
             placeholder: Placeholder text in the input
+            read_only: Indicates whether the input is read-only
             required: Indicates that the input is required
+            type: Specifies the type of input
             value: Value of the input
             style: The style of the component.
             key: A unique key for the component.
@@ -900,7 +900,6 @@ class TextField(SimpleNamespace):
     @staticmethod
     def __call__(
         *children,
-        icon: Optional[Union[Var[str], str]] = None,
         size: Optional[
             Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
@@ -985,7 +984,9 @@ class TextField(SimpleNamespace):
         min_length: Optional[Union[Var[str], str]] = None,
         name: Optional[Union[Var[str], str]] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
+        read_only: Optional[Union[Var[bool], bool]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
+        type: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1052,7 +1053,6 @@ class TextField(SimpleNamespace):
         """Create an Input component.
 
         Args:
-            icon: The icon to render before the input.
             size: Text field size "1" - "3"
             variant: Variant of text field: "classic" | "surface" | "soft"
             color_scheme: Override theme color for text field
@@ -1064,7 +1064,9 @@ class TextField(SimpleNamespace):
             min_length: Specifies the minimum number of characters required in the input
             name: Name of the input, used when sending form data
             placeholder: Placeholder text in the input
+            read_only: Indicates whether the input is read-only
             required: Indicates that the input is required
+            type: Specifies the type of input
             value: Value of the input
             style: The style of the component.
             key: A unique key for the component.

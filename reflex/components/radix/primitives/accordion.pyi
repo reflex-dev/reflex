@@ -625,7 +625,9 @@ class AccordionContent(AccordionComponent):
         """
         ...
 
-def accordion_item(header: Component, content: Component, **props) -> Component: ...
+def accordion_item(
+    header: Component | Var, content: Component | Var, **props
+) -> Component: ...
 
 class Accordion(SimpleNamespace):
     content = staticmethod(AccordionContent.create)

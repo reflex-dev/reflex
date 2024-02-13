@@ -39,6 +39,8 @@ _ALL_COMPONENTS = [
     # Upload
     "cancel_upload",
     "clear_selected_files",
+    "get_upload_dir",
+    "get_upload_url",
     "selected_files",
     "upload",
     # Radix
