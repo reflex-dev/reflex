@@ -687,7 +687,10 @@ def test_stateful_banner():
 
 TEST_VAR = Var.create_safe("test")._replace(
     merge_var_data=VarData(
-        hooks={"useTest"}, imports={"test": {ImportVar(tag="test")}}, state="Test"
+        hooks={"useTest"},
+        imports={"test": {ImportVar(tag="test")}},
+        state="Test",
+        interpolations=[],
     )
 )
 FORMATTED_TEST_VAR = Var.create(f"foo{TEST_VAR}bar")
