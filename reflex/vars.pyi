@@ -1,4 +1,5 @@
 """ Generated with stubgen from mypy, then manually edited, do not regen."""
+from __future__ import annotations
 
 from dataclasses import dataclass
 from _typeshed import Incomplete
