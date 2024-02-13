@@ -6,12 +6,12 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
+from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 
-class DrawerComponent(RadixPrimitiveComponentWithClassName):
+class DrawerComponent(RadixPrimitiveComponent):
     """A Drawer component."""
 
     library = "vaul"
@@ -37,35 +37,28 @@ class DrawerRoot(DrawerComponent):
     # Whether the drawer is open or not.
     open: Var[bool]
 
-    # Enable background scaling,
-    # it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
+    # Enable background scaling, it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
     should_scale_background: Var[bool]
 
     # Number between 0 and 1 that determines when the drawer should be closed.
     close_threshold: Var[float]
 
-    # Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible.
-    # Also Accept px values, which doesn't take screen height into account.
+    # Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
     snap_points: Optional[List[Union[str, float]]]
 
-    # Index of a snapPoint from which the overlay fade should be applied.
-    # Defaults to the last snap point.
-    # TODO: will it accept -1 then?
+    # Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point.
     fade_from_index: Var[int]
 
     # Duration for which the drawer is not draggable after scrolling content inside of the drawer. Defaults to 500ms
     scroll_lock_timeout: Var[int]
 
-    # When `False`, it allows to interact with elements outside of the drawer without closing it.
-    # Defaults to `True`.
+    # When `False`, it allows to interact with elements outside of the drawer without closing it. Defaults to `True`.
     modal: Var[bool]
 
     # Direction of the drawer. Defaults to `"bottom"`
     direction: Var[LiteralDirectionType]
 
-    # When `True`, it prevents scroll restoration
-    # when the drawer is closed after a navigation happens inside of it.
-    # Defaults to `True`.
+    # When `True`, it prevents scroll restoration. Defaults to `True`.
     preventScrollRestoration: Var[bool]
 
     def get_event_triggers(self) -> Dict[str, Any]:
@@ -87,7 +80,8 @@ class DrawerTrigger(DrawerComponent):
 
     alias = "Vaul" + tag
 
-    as_child: Var[bool]
+    # Defaults to true, if the first child acts as the trigger.
+    as_child: Var[bool] = True # type: ignore
 
 
 class DrawerPortal(DrawerComponent):
@@ -170,7 +164,7 @@ class DrawerOverlay(DrawerComponent):
             "bottom": "0",
             "top": "0",
             "z_index": 50,
-            "background": "rgba(0, 0, 0, 0.8)",
+            "background": "rgba(0, 0, 0, 0.5)",
         }
         style = self.style or {}
         base_style.update(style)
