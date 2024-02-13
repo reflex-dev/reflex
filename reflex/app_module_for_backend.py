@@ -12,7 +12,9 @@ if "app" != constants.CompileVars.APP:
 app_module = get_app(reload=False)
 app = getattr(app_module, constants.CompileVars.APP)
 # Force background compile errors to print eagerly
-ThreadPoolExecutor(max_workers=1).submit(app.compile_).add_done_callback(lambda f: f.result())
+ThreadPoolExecutor(max_workers=1).submit(app.compile_).add_done_callback(
+    lambda f: f.result()
+)
 
 # ensure only "app" is exposed.
 del app_module
