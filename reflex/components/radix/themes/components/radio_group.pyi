@@ -26,7 +26,15 @@ class RadioGroupRoot(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "surface", "soft"]],
+                Literal["classic", "surface", "soft"],
+            ]
+        ] = None,
         color_scheme: Optional[
             Union[
                 Var[
@@ -87,15 +95,6 @@ class RadioGroupRoot(RadixThemesComponent):
                     "bronze",
                     "gray",
                 ],
-            ]
-        ] = None,
-        size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
-        ] = None,
-        variant: Optional[
-            Union[
-                Var[Literal["classic", "surface", "soft"]],
-                Literal["classic", "surface", "soft"],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
@@ -167,17 +166,16 @@ class RadioGroupRoot(RadixThemesComponent):
 
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
             size: The size of the radio group: "1" | "2" | "3"
             variant: The variant of the radio group
+            color_scheme: The color of the radio group
             high_contrast: Whether to render the radio group with higher contrast color against background
             value: The controlled value of the radio item to check. Should be used in conjunction with on_change.
             default_value: The initial value of checked radio item. Should be used in conjunction with on_change.
             disabled: Whether the radio group is disabled
             name: The name of the group. Submitted with its owning form as part of a name/value pair.
             required: Whether the radio group is required
-            style: Props to rename  The style of the component.
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
@@ -196,69 +194,6 @@ class RadioGroupItem(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
-        color_scheme: Optional[
-            Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
-            ]
-        ] = None,
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
@@ -322,8 +257,6 @@ class RadioGroupItem(RadixThemesComponent):
 
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
             value: The value of the radio item to check. Should be used in conjunction with on_change.
             disabled: When true, prevents the user from interacting with the radio item.
             required: When true, indicates that the user must check the radio item before the owning form can be submitted.
@@ -505,7 +438,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
             disabled: Whether the radio group is disabled
             name: The name of the group. Submitted with its owning form as part of a name/value pair.
             required: Whether the radio group is required
-            style: Props to rename  The style of the component.
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
@@ -684,7 +617,7 @@ class RadioGroup(SimpleNamespace):
             disabled: Whether the radio group is disabled
             name: The name of the group. Submitted with its owning form as part of a name/value pair.
             required: Whether the radio group is required
-            style: Props to rename  The style of the component.
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.

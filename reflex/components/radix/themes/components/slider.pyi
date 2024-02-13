@@ -197,7 +197,7 @@ class Slider(RadixThemesComponent):
             step: The step value of the slider.
             disabled: Whether the slider is disabled
             orientation: The orientation of the slider.
-            style: Props to rename  The style of the component.
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
