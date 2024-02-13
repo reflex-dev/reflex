@@ -7,12 +7,12 @@ import json
 import os
 import re
 import sys
-from typing import TYPE_CHECKING, Any, List, Union, cast
+from typing import TYPE_CHECKING, Any, List, Union
 
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
 from reflex.utils.serializers import serialize
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import BaseVar, Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -223,7 +223,6 @@ def format_f_string_prop(prop: BaseVar) -> str:
     Returns:
         The formatted string.
     """
-
     s = prop._var_full_name
     var_data = prop._var_data
     interps = var_data.interpolations if var_data else []
@@ -378,11 +377,10 @@ def format_prop(
         if isinstance(prop, Var):
             if not prop._var_is_local or prop._var_is_string:
                 return str(prop)
-            if isinstance(prop, BaseVar):
-                if types._issubclass(prop._var_type, str):
-                    if prop._var_data and prop._var_data.interpolations:
-                        return format_f_string_prop(prop)
-                    return format_string(prop._var_full_name)
+            if isinstance(prop, BaseVar) and types._issubclass(prop._var_type, str):
+                if prop._var_data and prop._var_data.interpolations:
+                    return format_f_string_prop(prop)
+                return format_string(prop._var_full_name)
             prop = prop._var_full_name
 
         # Handle event props.

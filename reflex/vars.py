@@ -31,8 +31,6 @@ from typing import (
     get_type_hints,
 )
 
-import pydantic
-
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format, imports, serializers, types
@@ -125,7 +123,7 @@ class VarData(Base):
     # Positions of interpolated strings. This is used by the decoder to figure
     # out where the interpolations are and only escape the non-interpolated
     # segments.
-    interpolations: List[tuple[int, int]] = []
+    interpolations: List[Tuple[int, int]] = []
 
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None:

@@ -18,6 +18,7 @@ from typing import (
     List,
     Optional,
     Set,
+    Tuple,
     Type,
     Union,
     overload,
@@ -35,7 +36,7 @@ class VarData(Base):
     state: str
     imports: dict[str, set[ImportVar]]
     hooks: set[str]
-    interpolations: List[tuple[int, int]]
+    interpolations: List[Tuple[int, int]]
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None: ...
 
