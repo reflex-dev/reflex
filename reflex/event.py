@@ -556,9 +556,9 @@ def set_clipboard(content: str) -> EventSpec:
 def download(
     url: str | Var | None = None,
     filename: Optional[str | Var] = None,
-    data: str | bytes | None = None,
+    data: str | bytes | Var | None = None,
 ) -> EventSpec:
-    """Download the file at a given path.
+    """Download the file at a given path or with the specified data.
 
     Args:
         url : The URL to the file to download.
@@ -571,6 +571,8 @@ def download(
     Returns:
         EventSpec: An event to download the associated file.
     """
+    from reflex.components.core.cond import cond
+
     if isinstance(url, str):
         if not url.startswith("/"):
             raise ValueError("The URL argument should start with a /")
@@ -585,6 +587,17 @@ def download(
     if data is not None:
         if isinstance(data, str):
             url = "data:text/plain," + data
+        elif isinstance(data, Var):
+            is_data_url = data._replace(
+                _var_name=(
+                    f"typeof {data._var_full_name} == 'string' && "
+                    f"{data._var_full_name}.startsWith('data:')"
+                ),
+                _var_type=bool,
+                _var_is_string=False,
+                _var_full_name_needs_state_prefix=False,
+            )
+            url = cond(is_data_url, data, "data:text/plain," + data.to_string())  # type: ignore
         else:
             b64_data = b64encode(data).decode("utf-8")
             url = "data:application/octet-stream;base64," + b64_data
