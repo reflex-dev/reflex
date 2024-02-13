@@ -142,6 +142,9 @@ class HighLevelCheckbox(RadixThemesComponent):
         """
         spacing = props.pop("spacing", "2")
         size = props.pop("size", "2")
+        flex_props = {}
+        if "gap" in props:
+            flex_props["gap"] = props.pop("gap", None)
 
         return Text.create(
             Flex.create(
@@ -151,7 +154,7 @@ class HighLevelCheckbox(RadixThemesComponent):
                 ),
                 text,
                 spacing=spacing,
-                **props,
+                **flex_props,
             ),
             as_="label",
             size=size,
