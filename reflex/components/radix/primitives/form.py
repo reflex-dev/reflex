@@ -290,16 +290,24 @@ class FormSubmit(FormComponent):
     alias = "RadixFormSubmit"
 
 
-class Form(SimpleNamespace):
+# This class is created mainly for reflex-web docs.
+class Form(FormRoot):
+    """The Form component."""
+
+    pass
+
+
+class FormNamespace(SimpleNamespace):
     """Form components."""
 
-    root = __call__ = staticmethod(FormRoot.create)
+    root = staticmethod(FormRoot.create)
     control = staticmethod(FormControl.create)
     field = staticmethod(FormField.create)
     label = staticmethod(FormLabel.create)
     message = staticmethod(FormMessage.create)
     submit = staticmethod(FormSubmit.create)
     validity_state = staticmethod(FormValidityState.create)
+    __call__ = staticmethod(Form.create)
 
 
-form = Form()
+form = FormNamespace()
