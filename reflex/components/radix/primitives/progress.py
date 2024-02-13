@@ -88,7 +88,6 @@ class Progress(SimpleNamespace):
         Returns:
             The progress bar.
         """
-
         style = props.setdefault("style", {})
         style.update({"width": width})
 
