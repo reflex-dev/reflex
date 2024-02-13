@@ -82,13 +82,18 @@ class Progress(SimpleNamespace):
         """High level API for progress bar.
 
         Args:
+            width: The width of the progerss bar
             **props: The props of the progress bar
 
         Returns:
             The progress bar.
         """
+
+        style = props.setdefault("style", {})
+        style.update({"width": width})
+
         return ProgressRoot.create(
-            ProgressIndicator.create(width=width, value=props.get("value")),
+            ProgressIndicator.create(value=props.get("value")),
             **props,
         )
 
