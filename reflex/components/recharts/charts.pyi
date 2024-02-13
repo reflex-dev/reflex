@@ -53,7 +53,6 @@ class ChartBase(RechartsCharts):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -86,7 +85,6 @@ class ChartBase(RechartsCharts):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the chart component.
 
@@ -132,7 +130,6 @@ class AreaChart(ChartBase):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -166,7 +163,6 @@ class AreaChart(ChartBase):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the chart component.
 
@@ -211,7 +207,6 @@ class BarChart(ChartBase):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -249,7 +244,6 @@ class BarChart(ChartBase):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the chart component.
 
@@ -289,7 +283,6 @@ class LineChart(ChartBase):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -322,7 +315,6 @@ class LineChart(ChartBase):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the chart component.
 
@@ -372,7 +364,6 @@ class ComposedChart(ChartBase):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -410,7 +401,6 @@ class ComposedChart(ChartBase):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the chart component.
 
@@ -451,7 +441,6 @@ class PieChart(ChartBase):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -481,7 +470,6 @@ class PieChart(ChartBase):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the chart component.
 
@@ -528,7 +516,6 @@ class RadarChart(ChartBase):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -567,7 +554,6 @@ class RadarChart(ChartBase):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the chart component.
 
@@ -617,7 +603,6 @@ class RadialBarChart(ChartBase):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -659,7 +644,6 @@ class RadialBarChart(ChartBase):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the chart component.
 
@@ -700,7 +684,6 @@ class ScatterChart(ChartBase):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -739,7 +722,6 @@ class ScatterChart(ChartBase):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the chart component.
 
@@ -773,7 +755,6 @@ class FunnelChart(RechartsCharts):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -806,7 +787,6 @@ class FunnelChart(RechartsCharts):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -840,7 +820,6 @@ class Treemap(RechartsCharts):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -907,7 +886,6 @@ class Treemap(RechartsCharts):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the chart component.
 
