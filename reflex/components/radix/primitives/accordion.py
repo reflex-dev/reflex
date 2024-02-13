@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 from reflex.components.component import Component
 from reflex.components.core.match import Match
@@ -469,14 +469,19 @@ class AccordionItem(AccordionComponent):
         )
 
     @classmethod
-    def create_high_level(
-        cls, header: Component | Var, content: Component | Var, **props
+    def create(
+        cls,
+        *children,
+        header: Optional[Component | Var] = None,
+        content: Optional[Component | Var] = None,
+        **props,
     ) -> Component:
         """Create an accordion item.
 
         Args:
             header: The header of the accordion item.
             content: The content of the accordion item.
+            *children: The list of children to use if header and content are not provided.
             **props: Additional properties to apply to the accordion item.
 
         Returns:
@@ -485,24 +490,20 @@ class AccordionItem(AccordionComponent):
         # The item requires a value to toggle (use the header as the default value).
         value = props.pop("value", header if isinstance(header, Var) else str(header))
 
-        return cls.create(
-            AccordionHeader.create(
-                AccordionTrigger.create(
-                    header,
-                    Icon.create(
-                        tag="chevron_down",
-                        class_name="AccordionChevron",
+        if (header is not None) and (content is not None):
+            children = [
+                AccordionHeader.create(
+                    AccordionTrigger.create(
+                        header,
+                        Icon.create(tag="chevron_down", class_name="AccordionChevron"),
+                        class_name="AccordionTrigger",
                     ),
-                    class_name="AccordionTrigger",
                 ),
-            ),
-            AccordionContent.create(
-                content,
-                class_name="AccordionContent",
-            ),
-            value=value,
-            **props,
-            class_name="AccordionItem",
+                AccordionContent.create(content, class_name="AccordionContent"),
+            ]
+
+        return super().create(
+            *children, value=value, **props, class_name="AccordionItem"
         )
 
 
@@ -582,7 +583,7 @@ class Accordion(SimpleNamespace):
 
     content = staticmethod(AccordionContent.create)
     header = staticmethod(AccordionHeader.create)
-    item = staticmethod(AccordionItem.create_high_level)
+    item = staticmethod(AccordionItem.create)
     root = staticmethod(AccordionRoot.create)
     trigger = staticmethod(AccordionTrigger.create)
 
