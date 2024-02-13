@@ -359,10 +359,11 @@ class AccordionItem(AccordionComponent):
         ] = None,
         **props
     ) -> "AccordionItem":
-        """Create the component.
+        """Create an accordion item.
 
         Args:
-            *children: The children of the component.
+            header: The header of the accordion item.
+            content: The content of the accordion item.
             value: A unique identifier for the item.
             disabled: When true, prevents the user from interacting with the item.
             as_child: Change the default rendered element for the one passed as a child.
@@ -372,13 +373,10 @@ class AccordionItem(AccordionComponent):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: Additional properties to apply to the accordion item.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            The accordion item.
         """
         ...
 
@@ -625,14 +623,10 @@ class AccordionContent(AccordionComponent):
         """
         ...
 
-def accordion_item(
-    header: Component | Var, content: Component | Var, **props
-) -> Component: ...
-
 class Accordion(SimpleNamespace):
     content = staticmethod(AccordionContent.create)
     header = staticmethod(AccordionHeader.create)
-    item = staticmethod(accordion_item)
+    item = staticmethod(AccordionItem.create)
     root = staticmethod(AccordionRoot.create)
     trigger = staticmethod(AccordionTrigger.create)
 
