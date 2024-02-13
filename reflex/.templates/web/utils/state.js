@@ -152,12 +152,12 @@ export const applyEvent = async (event, socket) => {
     navigator.clipboard.writeText(content);
     return false;
   }
+
   if (event.name == "_download") {
     const a = document.createElement('a');
     a.hidden = true;
-    a.href = event.payload.url;
-    if (event.payload.filename)
-      a.download = event.payload.filename;
+    a.href = event.payload.url
+    a.download = event.payload.filename;
     a.click();
     a.remove();
     return false;
