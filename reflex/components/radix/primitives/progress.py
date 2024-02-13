@@ -94,10 +94,10 @@ class Progress(SimpleNamespace):
         style = props.setdefault("style", {})
         style.update({"width": width})
 
-        max = props.pop("max", 100)
         return ProgressRoot.create(
-            ProgressIndicator.create(value=props.get("value"), max=max),
-            max=max,
+            ProgressIndicator.create(
+                value=props.get("value"), max=props.get("max", 100)
+            ),
             **props,
         )
 
