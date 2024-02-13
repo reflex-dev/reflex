@@ -111,7 +111,6 @@ class Checkbox(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -187,7 +186,6 @@ class Checkbox(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -204,7 +202,7 @@ class HighLevelCheckbox(RadixThemesComponent):
         cls,
         *children,
         text: Optional[Union[Var[str], str]] = None,
-        gap: Optional[
+        spacing: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
@@ -294,7 +292,6 @@ class HighLevelCheckbox(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -351,7 +348,7 @@ class HighLevelCheckbox(RadixThemesComponent):
         Args:
             text: The text of the label.
             text: The text label for the checkbox.
-            gap: The gap between the checkbox and the label.
+            spacing: The gap between the checkbox and the label.
             size: The size of the checkbox "1" - "3".
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             variant: Variant of checkbox: "classic" | "surface" | "soft"
@@ -368,7 +365,6 @@ class HighLevelCheckbox(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Additional properties to apply to the checkbox item.
 
@@ -382,7 +378,7 @@ class CheckboxNamespace(SimpleNamespace):
     def __call__(
         *children,
         text: Optional[Union[Var[str], str]] = None,
-        gap: Optional[
+        spacing: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
@@ -472,7 +468,6 @@ class CheckboxNamespace(SimpleNamespace):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -529,7 +524,7 @@ class CheckboxNamespace(SimpleNamespace):
         Args:
             text: The text of the label.
             text: The text label for the checkbox.
-            gap: The gap between the checkbox and the label.
+            spacing: The gap between the checkbox and the label.
             size: The size of the checkbox "1" - "3".
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             variant: Variant of checkbox: "classic" | "surface" | "soft"
@@ -546,7 +541,6 @@ class CheckboxNamespace(SimpleNamespace):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Additional properties to apply to the checkbox item.
 
