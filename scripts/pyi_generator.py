@@ -54,6 +54,7 @@ EXCLUDED_PROPS = [
     "special_props",
     "_invalid_children",
     "_memoization_mode",
+    "_rename_props",
     "_valid_children",
     "_valid_parents",
 ]
