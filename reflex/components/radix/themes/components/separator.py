@@ -29,4 +29,5 @@ class Separator(RadixThemesComponent):
     decorative: Var[bool]
 
 
-separator = Separator.create
+# Alias to divider.
+divider = separator = Separator.create

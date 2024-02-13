@@ -736,6 +736,9 @@ class Var:
             left_operand_full_name = get_operand_full_name(left_operand)
             right_operand_full_name = get_operand_full_name(right_operand)
 
+            left_operand_full_name = format.wrap(left_operand_full_name, "(")
+            right_operand_full_name = format.wrap(right_operand_full_name, "(")
+
             # apply function to operands
             if fn is not None:
                 if invoke_fn:

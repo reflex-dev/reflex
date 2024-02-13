@@ -8,7 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
-from typing import List, Literal, Union
+from typing import List, Literal
 from reflex import el
 from reflex.vars import Var
 from ..base import RadixThemesComponent
@@ -139,7 +139,6 @@ class TableRoot(el.Table, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -222,7 +221,6 @@ class TableRoot(el.Table, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -348,7 +346,6 @@ class TableHeader(el.Thead, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -428,7 +425,6 @@ class TableHeader(el.Thead, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -557,7 +553,6 @@ class TableRow(el.Tr, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -637,7 +632,6 @@ class TableRow(el.Tr, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -721,7 +715,6 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
                 Literal["start", "center", "end"],
             ]
         ] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         align: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -782,7 +775,6 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -841,7 +833,6 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
             color: map to CSS default color property.
             color_scheme: map to radix color property.
             justify: The justification of the column
-            width: width of the column
             align: Alignment of the content within the table header cell
             col_span: Number of columns a header cell should span
             headers: IDs of the headers associated with this header cell
@@ -868,7 +859,6 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -994,7 +984,6 @@ class TableBody(el.Tbody, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -1074,7 +1063,6 @@ class TableBody(el.Tbody, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -1158,7 +1146,6 @@ class TableCell(el.Td, RadixThemesComponent):
                 Literal["start", "center", "end"],
             ]
         ] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         align: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -1216,7 +1203,6 @@ class TableCell(el.Td, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -1275,7 +1261,6 @@ class TableCell(el.Td, RadixThemesComponent):
             color: map to CSS default color property.
             color_scheme: map to radix color property.
             justify: The justification of the column
-            width: width of the column
             align: Alignment of the content within the table cell
             col_span: Number of columns a cell should span
             headers: IDs of the headers associated with this cell
@@ -1301,7 +1286,6 @@ class TableCell(el.Td, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -1385,7 +1369,6 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
                 Literal["start", "center", "end"],
             ]
         ] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         align: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -1446,7 +1429,6 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -1505,7 +1487,6 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
             color: map to CSS default color property.
             color_scheme: map to radix color property.
             justify: The justification of the column
-            width: width of the column
             align: Alignment of the content within the table header cell
             col_span: Number of columns a header cell should span
             headers: IDs of the headers associated with this header cell
@@ -1532,7 +1513,6 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 

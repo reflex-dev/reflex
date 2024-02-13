@@ -915,11 +915,6 @@ class DropdownMenuSubContent(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
-        variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
-        ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         loop: Optional[Union[Var[bool], bool]] = None,
         force_mount: Optional[Union[Var[bool], bool]] = None,
@@ -1014,9 +1009,6 @@ class DropdownMenuSubContent(RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            size: Dropdown Menu Sub Content size "1" - "2"
-            variant: Variant of Dropdown Menu Sub Content: "solid" | "soft"
-            high_contrast: Whether to render the component with higher contrast color against background
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
             loop: When True, keyboard navigation will loop from last item to first, and vice versa. Defaults to False.
             force_mount: Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.

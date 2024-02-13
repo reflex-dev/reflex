@@ -72,7 +72,7 @@ def test_match_components():
     assert fifth_return_value_render["name"] == "RadixThemesText"
     assert fifth_return_value_render["children"][0]["contents"] == "{`fifth value`}"
 
-    assert match_cases[5][0]._var_name == "(match_state.num + 1)"
+    assert match_cases[5][0]._var_name == "((match_state.num) + (1))"
     assert match_cases[5][0]._var_type == int
     fifth_return_value_render = match_cases[5][1].render()
     assert fifth_return_value_render["name"] == "RadixThemesText"
@@ -102,7 +102,7 @@ def test_match_components():
             "(() => { switch (JSON.stringify(match_state.value)) {case JSON.stringify(1):  return (`first`);  break;case JSON.stringify(2): case JSON.stringify(3):  return "
             "(`second value`);  break;case JSON.stringify([1, 2]):  return (`third-value`);  break;case JSON.stringify(`random`):  "
             'return (`fourth_value`);  break;case JSON.stringify({"foo": "bar"}):  return (`fifth value`);  '
-            "break;case JSON.stringify((match_state.num + 1)):  return (`sixth value`);  break;case JSON.stringify(`${match_state.value} - string`):  "
+            "break;case JSON.stringify(((match_state.num) + (1))):  return (`sixth value`);  break;case JSON.stringify(`${match_state.value} - string`):  "
             "return (match_state.string);  break;case JSON.stringify(match_state.string):  return (`${match_state.value} - string`);  break;default:  "
             "return (`default value`);  break;};})()",
         ),
@@ -121,7 +121,7 @@ def test_match_components():
             "(() => { switch (JSON.stringify(match_state.value)) {case JSON.stringify(1):  return (`first`);  break;case JSON.stringify(2): case JSON.stringify(3):  return "
             "(`second value`);  break;case JSON.stringify([1, 2]):  return (`third-value`);  break;case JSON.stringify(`random`):  "
             'return (`fourth_value`);  break;case JSON.stringify({"foo": "bar"}):  return (`fifth value`);  '
-            "break;case JSON.stringify((match_state.num + 1)):  return (`sixth value`);  break;case JSON.stringify(`${match_state.value} - string`):  "
+            "break;case JSON.stringify(((match_state.num) + (1))):  return (`sixth value`);  break;case JSON.stringify(`${match_state.value} - string`):  "
             "return (match_state.string);  break;case JSON.stringify(match_state.string):  return (`${match_state.value} - string`);  break;default:  "
             "return (match_state.string);  break;};})()",
         ),

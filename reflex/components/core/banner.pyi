@@ -14,7 +14,7 @@ from reflex.components.chakra.overlay.modal import Modal
 from reflex.components.chakra.typography import Text
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
-from reflex.constants import Hooks, Imports
+from reflex.constants import Dirs, Hooks, Imports
 from reflex.utils import imports
 from reflex.vars import Var, VarData
 
@@ -34,7 +34,6 @@ class WebsocketTargetURL(Bare):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -103,7 +102,6 @@ class ConnectionBanner(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -173,7 +171,6 @@ class ConnectionModal(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]

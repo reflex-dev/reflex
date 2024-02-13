@@ -14,9 +14,10 @@ from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import LiteralAccentColor, LiteralSize, LiteralVariant, RadixThemesComponent
+from ..base import LiteralAccentColor, LiteralSize, RadixThemesComponent
 
 LiteralCheckboxSize = Literal["1", "2", "3"]
+LiteralCheckboxVariant = Literal["classic", "surface", "soft"]
 
 class Checkbox(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
@@ -94,8 +95,8 @@ class Checkbox(RadixThemesComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
-                Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
+                Var[Literal["classic", "surface", "soft"]],
+                Literal["classic", "surface", "soft"],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
@@ -110,7 +111,6 @@ class Checkbox(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -172,9 +172,9 @@ class Checkbox(RadixThemesComponent):
             color: map to CSS default color property.
             color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            size: Button size "1" - "3"
-            variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
-            high_contrast: Whether to render the button with higher contrast color against background
+            size: Checkbox size "1" - "3"
+            variant: Variant of checkbox: "classic" | "surface" | "soft"
+            high_contrast: Whether to render the checkbox with higher contrast color against background
             default_checked: Whether the checkbox is checked by default
             checked: Whether the checkbox is checked
             disabled: Whether the checkbox is disabled
@@ -186,7 +186,6 @@ class Checkbox(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -195,14 +194,15 @@ class Checkbox(RadixThemesComponent):
         """
         ...
 
-class HighLevelCheckbox(Checkbox):
+class HighLevelCheckbox(RadixThemesComponent):
+    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
         text: Optional[Union[Var[str], str]] = None,
-        gap: Optional[
+        spacing: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
@@ -214,8 +214,8 @@ class HighLevelCheckbox(Checkbox):
         as_child: Optional[Union[Var[bool], bool]] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
-                Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
+                Var[Literal["classic", "surface", "soft"]],
+                Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
@@ -292,7 +292,6 @@ class HighLevelCheckbox(Checkbox):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -349,12 +348,12 @@ class HighLevelCheckbox(Checkbox):
         Args:
             text: The text of the label.
             text: The text label for the checkbox.
-            gap: The gap between the checkbox and the label.
-            size: Button size "1" - "3"
+            spacing: The gap between the checkbox and the label.
+            size: The size of the checkbox "1" - "3".
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
-            color_scheme: Override theme color for button
-            high_contrast: Whether to render the button with higher contrast color against background
+            variant: Variant of checkbox: "classic" | "surface" | "soft"
+            color_scheme: Override theme color for checkbox
+            high_contrast: Whether to render the checkbox with higher contrast color against background
             default_checked: Whether the checkbox is checked by default
             checked: Whether the checkbox is checked
             disabled: Whether the checkbox is disabled
@@ -366,7 +365,6 @@ class HighLevelCheckbox(Checkbox):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Additional properties to apply to the checkbox item.
 
@@ -380,7 +378,7 @@ class CheckboxNamespace(SimpleNamespace):
     def __call__(
         *children,
         text: Optional[Union[Var[str], str]] = None,
-        gap: Optional[
+        spacing: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
@@ -392,8 +390,8 @@ class CheckboxNamespace(SimpleNamespace):
         as_child: Optional[Union[Var[bool], bool]] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
-                Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
+                Var[Literal["classic", "surface", "soft"]],
+                Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
@@ -470,7 +468,6 @@ class CheckboxNamespace(SimpleNamespace):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -527,12 +524,12 @@ class CheckboxNamespace(SimpleNamespace):
         Args:
             text: The text of the label.
             text: The text label for the checkbox.
-            gap: The gap between the checkbox and the label.
-            size: Button size "1" - "3"
+            spacing: The gap between the checkbox and the label.
+            size: The size of the checkbox "1" - "3".
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
-            color_scheme: Override theme color for button
-            high_contrast: Whether to render the button with higher contrast color against background
+            variant: Variant of checkbox: "classic" | "surface" | "soft"
+            color_scheme: Override theme color for checkbox
+            high_contrast: Whether to render the checkbox with higher contrast color against background
             default_checked: Whether the checkbox is checked by default
             checked: Whether the checkbox is checked
             disabled: Whether the checkbox is disabled
@@ -544,7 +541,6 @@ class CheckboxNamespace(SimpleNamespace):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Additional properties to apply to the checkbox item.
 

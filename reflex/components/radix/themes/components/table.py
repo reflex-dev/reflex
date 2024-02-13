@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 from types import SimpleNamespace
-from typing import List, Literal, Union
+from typing import List, Literal
 
 from reflex import el
 from reflex.vars import Var
@@ -51,9 +51,6 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
     # The justification of the column
     justify: Var[Literal["start", "center", "end"]]
 
-    # width of the column
-    width: Var[Union[str, int]]
-
     _invalid_children: List[str] = [
         "TableBody",
         "TableHeader",
@@ -87,9 +84,6 @@ class TableCell(el.Td, RadixThemesComponent):
     # The justification of the column
     justify: Var[Literal["start", "center", "end"]]
 
-    # width of the column
-    width: Var[Union[str, int]]
-
     _invalid_children: List[str] = [
         "TableBody",
         "TableHeader",
@@ -106,9 +100,6 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
 
     # The justification of the column
     justify: Var[Literal["start", "center", "end"]]
-
-    # width of the column
-    width: Var[Union[str, int]]
 
     _invalid_children: List[str] = [
         "TableBody",

@@ -185,18 +185,6 @@ class DropdownMenuSubContent(RadixThemesComponent):
 
     tag = "DropdownMenu.SubContent"
 
-    # Dropdown Menu Sub Content size "1" - "2"
-    size: Var[LiteralSizeType]
-
-    # Variant of Dropdown Menu Sub Content: "solid" | "soft"
-    variant: Var[LiteralVariantType]
-
-    # Override theme color for Dropdown Menu Sub Content
-    color_scheme: Var[LiteralAccentColor]
-
-    # Whether to render the component with higher contrast color against background
-    high_contrast: Var[bool]
-
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
     as_child: Var[bool]
 
@@ -297,4 +285,4 @@ class DropdownMenu(SimpleNamespace):
     separator = staticmethod(DropdownMenuSeparator.create)
 
 
-dropdown_menu = DropdownMenu()
+menu = dropdown_menu = DropdownMenu()

@@ -32,7 +32,7 @@ def index() -> rx.Component:
                     )
                 },
             ),
-            spacing="1.5em",
+            gap="1.5em",
             font_size="2em",
             padding_top="10%",
         ),

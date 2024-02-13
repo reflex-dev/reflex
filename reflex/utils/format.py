@@ -52,6 +52,10 @@ def get_close_char(open: str, close: str | None = None) -> str:
 def is_wrapped(text: str, open: str, close: str | None = None) -> bool:
     """Check if the given text is wrapped in the given open and close characters.
 
+    "(a) + (b)" --> False
+    "((abc))"   --> True
+    "(abc)"     --> True
+
     Args:
         text: The text to check.
         open: The open character.
@@ -61,7 +65,18 @@ def is_wrapped(text: str, open: str, close: str | None = None) -> bool:
         Whether the text is wrapped.
     """
     close = get_close_char(open, close)
-    return text.startswith(open) and text.endswith(close)
+    if not (text.startswith(open) and text.endswith(close)):
+        return False
+
+    depth = 0
+    for ch in text[:-1]:
+        if ch == open:
+            depth += 1
+        if ch == close:
+            depth -= 1
+        if depth == 0:  # it shouldn't close before the end
+            return False
+    return True
 
 
 def wrap(
