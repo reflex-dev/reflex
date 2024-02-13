@@ -468,6 +468,43 @@ class AccordionItem(AccordionComponent):
             }
         )
 
+    @classmethod
+    def create(
+        cls, header: Component | Var, content: Component | Var, **props
+    ) -> Component:
+        """Create an accordion item.
+
+        Args:
+            header: The header of the accordion item.
+            content: The content of the accordion item.
+            **props: Additional properties to apply to the accordion item.
+
+        Returns:
+            The accordion item.
+        """
+        # The item requires a value to toggle (use the header as the default value).
+        value = props.pop("value", header if isinstance(header, Var) else str(header))
+
+        return super().create(
+            AccordionHeader.create(
+                AccordionTrigger.create(
+                    header,
+                    Icon.create(
+                        tag="chevron_down",
+                        class_name="AccordionChevron",
+                    ),
+                    class_name="AccordionTrigger",
+                ),
+            ),
+            AccordionContent.create(
+                content,
+                class_name="AccordionContent",
+            ),
+            value=value,
+            **props,
+            class_name="AccordionItem",
+        )
+
 
 class AccordionHeader(AccordionComponent):
     """An accordion component."""
@@ -540,49 +577,12 @@ to {
 """
 
 
-def accordion_item(
-    header: Component | Var, content: Component | Var, **props
-) -> Component:
-    """Create an accordion item.
-
-    Args:
-        header: The header of the accordion item.
-        content: The content of the accordion item.
-        **props: Additional properties to apply to the accordion item.
-
-    Returns:
-        The accordion item.
-    """
-    # The item requires a value to toggle (use the header as the default value).
-    value = props.pop("value", header if isinstance(header, Var) else str(header))
-
-    return AccordionItem.create(
-        AccordionHeader.create(
-            AccordionTrigger.create(
-                header,
-                Icon.create(
-                    tag="chevron_down",
-                    class_name="AccordionChevron",
-                ),
-                class_name="AccordionTrigger",
-            ),
-        ),
-        AccordionContent.create(
-            content,
-            class_name="AccordionContent",
-        ),
-        value=value,
-        **props,
-        class_name="AccordionItem",
-    )
-
-
 class Accordion(SimpleNamespace):
     """Accordion component."""
 
     content = staticmethod(AccordionContent.create)
     header = staticmethod(AccordionHeader.create)
-    item = staticmethod(accordion_item)
+    item = staticmethod(AccordionItem.create)
     root = staticmethod(AccordionRoot.create)
     trigger = staticmethod(AccordionTrigger.create)
 
