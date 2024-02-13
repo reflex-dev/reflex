@@ -275,6 +275,6 @@ class Progress(SimpleNamespace):
     indicator = staticmethod(ProgressIndicator.create)
 
     @staticmethod
-    def __call__(**props) -> Component: ...
+    def __call__(width: Optional[str] = "100%", **props) -> Component: ...
 
 progress = Progress()

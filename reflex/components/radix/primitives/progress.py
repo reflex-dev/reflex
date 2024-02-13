@@ -65,7 +65,7 @@ class ProgressIndicator(ProgressComponent):
                 "&[data_state='loading']": {
                     "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms linear",
                 },
-                "transform": f"translateX(-{100 - self.value}%)",  # type: ignore
+                "transform": f"translateX(calc(-100% + {self.value}%))",  # type: ignore
                 "boxShadow": "inset 0 0 0 1px var(--gray-a5)",
             }
         )
@@ -78,15 +78,19 @@ class Progress(SimpleNamespace):
     indicator = staticmethod(ProgressIndicator.create)
 
     @staticmethod
-    def __call__(**props) -> Component:
+    def __call__(width: Optional[str] = "100%", **props) -> Component:
         """High level API for progress bar.
 
         Args:
+            width: The width of the progerss bar
             **props: The props of the progress bar
 
         Returns:
             The progress bar.
         """
+        style = props.setdefault("style", {})
+        style.update({"width": width})
+
         return ProgressRoot.create(
             ProgressIndicator.create(value=props.get("value")),
             **props,
