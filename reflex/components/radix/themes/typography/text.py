@@ -86,6 +86,7 @@ class TextNamespace(SimpleNamespace):
 
     __call__ = staticmethod(Text.create)
     em = staticmethod(Em.create)
+    kbd = staticmethod(Kbd.create)
     quote = staticmethod(Quote.create)
     strong = staticmethod(Strong.create)
 
