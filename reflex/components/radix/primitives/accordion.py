@@ -469,7 +469,7 @@ class AccordionItem(AccordionComponent):
         )
 
     @classmethod
-    def create(
+    def create_high_level(
         cls, header: Component | Var, content: Component | Var, **props
     ) -> Component:
         """Create an accordion item.
@@ -485,7 +485,7 @@ class AccordionItem(AccordionComponent):
         # The item requires a value to toggle (use the header as the default value).
         value = props.pop("value", header if isinstance(header, Var) else str(header))
 
-        return super().create(
+        return cls.create(
             AccordionHeader.create(
                 AccordionTrigger.create(
                     header,
@@ -582,7 +582,7 @@ class Accordion(SimpleNamespace):
 
     content = staticmethod(AccordionContent.create)
     header = staticmethod(AccordionHeader.create)
-    item = staticmethod(AccordionItem.create)
+    item = staticmethod(AccordionItem.create_high_level)
     root = staticmethod(AccordionRoot.create)
     trigger = staticmethod(AccordionTrigger.create)
 
