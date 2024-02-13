@@ -47,7 +47,7 @@ from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
-from reflex.components.core.upload import Upload, get_uploaded_files_dir
+from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
@@ -256,7 +256,7 @@ class App(Base):
             # To access uploaded files.
             self.api.mount(
                 str(constants.Endpoint.UPLOAD),
-                StaticFiles(directory=get_uploaded_files_dir()),
+                StaticFiles(directory=get_upload_dir()),
                 name="uploaded_files",
             )
 
