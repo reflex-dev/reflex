@@ -225,8 +225,8 @@ def format_f_string_prop(prop: BaseVar) -> str:
     """
 
     s = prop._var_full_name
-    interps = cast(VarData, prop._var_data).interpolations
-
+    var_data = prop._var_data
+    interps = var_data.interpolations if var_data else []
     parts: List[str] = []
 
     if interps:
@@ -378,10 +378,11 @@ def format_prop(
         if isinstance(prop, Var):
             if not prop._var_is_local or prop._var_is_string:
                 return str(prop)
-            if types._issubclass(prop._var_type, str):
-                if prop._var_data and prop._var_data.interpolations:
-                    return format_f_string_prop(prop)
-                return format_string(prop._var_full_name)
+            if isinstance(prop, BaseVar):
+                if types._issubclass(prop._var_type, str):
+                    if prop._var_data and prop._var_data.interpolations:
+                        return format_f_string_prop(prop)
+                    return format_string(prop._var_full_name)
             prop = prop._var_full_name
 
         # Handle event props.
