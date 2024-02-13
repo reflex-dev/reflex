@@ -8,7 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional
 from reflex.components.component import Component
 from reflex.components.core.match import Match
 from reflex.components.lucide.icon import Icon
@@ -303,6 +303,8 @@ class AccordionItem(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
+        header: Optional[Component | Var] = None,
+        content: Optional[Component | Var] = None,
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
@@ -364,6 +366,7 @@ class AccordionItem(AccordionComponent):
         Args:
             header: The header of the accordion item.
             content: The content of the accordion item.
+            *children: The list of children to use if header and content are not provided.
             value: A unique identifier for the item.
             disabled: When true, prevents the user from interacting with the item.
             as_child: Change the default rendered element for the one passed as a child.
