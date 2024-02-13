@@ -668,51 +668,43 @@ class Component(BaseComponent, ABC):
             children: The children of the component.
 
         """
-        skip_parentable = all(child._valid_parents == [] for child in children)
-        if not self._invalid_children and not self._valid_children and skip_parentable:
+        no_valid_parents_defined = all(child._valid_parents == [] for child in children)
+        if (
+            not self._invalid_children
+            and not self._valid_children
+            and no_valid_parents_defined
+        ):
             return
 
         comp_name = type(self).__name__
         allowed_components = ["Fragment", "Foreach", "Cond", "Match"]
 
-        def validate_invalid_child(child):
+        def validate_child(child):
             child_name = type(child).__name__
 
+            # Iterate through the immediate children of fragment
             if child_name == "Fragment":
                 for c in child.children:
-                    validate_invalid_child(c)
+                    validate_child(c)
 
             if child_name == "Cond":
-                validate_invalid_child(child.comp1)
-                validate_invalid_child(child.comp2)
+                validate_child(child.comp1)
+                validate_child(child.comp2)
 
             if child_name == "Match":
                 for cases in child.match_cases:
-                    validate_invalid_child(cases[-1])
-                validate_invalid_child(child.default)
+                    validate_child(cases[-1])
+                validate_child(child.default)
 
-            if child_name in self._invalid_children:
+            if self._invalid_children and child_name in self._invalid_children:
                 raise ValueError(
                     f"The component `{comp_name}` cannot have `{child_name}` as a child component"
                 )
 
-        def validate_valid_child(child):
-            child_name = type(child).__name__
-
-            if child_name == "Fragment":
-                for c in child.children:
-                    validate_valid_child(c)
-
-            if child_name == "Cond":
-                validate_valid_child(child.comp1)
-                validate_valid_child(child.comp2)
-
-            if child_name == "Match":
-                for cases in child.match_cases:
-                    validate_valid_child(cases[-1])
-                validate_valid_child(child.default)
-
-            if child_name not in [*self._valid_children, *allowed_components]:
+            if self._valid_children and child_name not in [
+                *self._valid_children,
+                *allowed_components,
+            ]:
                 valid_child_list = ", ".join(
                     [f"`{v_child}`" for v_child in self._valid_children]
                 )
@@ -720,40 +712,19 @@ class Component(BaseComponent, ABC):
                     f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
                 )
 
-        def validate_valid_parent(child):
-            child_name, valid_parents = type(child).__name__, child._valid_parents
-
-            if child_name == "Fragment":
-                for c in child.children:
-                    validate_valid_parent(c)
-
-            if child_name == "Cond":
-                validate_valid_parent(child.comp1)
-                validate_valid_parent(child.comp2)
-
-            if child_name == "Match":
-                for cases in child.match_cases:
-                    validate_valid_parent(cases[-1])
-                validate_valid_parent(child.default)
-
-            if comp_name not in [*valid_parents, *allowed_components]:
+            if child._valid_parents and comp_name not in [
+                *child._valid_parents,
+                *allowed_components,
+            ]:
                 valid_parent_list = ", ".join(
-                    [f"`{v_parent}`" for v_parent in valid_parents]
+                    [f"`{v_parent}`" for v_parent in child._valid_parents]
                 )
                 raise ValueError(
                     f"The component `{child_name}` can only be a child of the components: {valid_parent_list}. Got `{comp_name}` instead."
                 )
 
         for child in children:
-
-            if self._invalid_children:
-                validate_invalid_child(child)
-
-            if self._valid_children:
-                validate_valid_child(child)
-
-            if child._valid_parents:
-                validate_valid_parent(child)
+            validate_child(child)
 
     @staticmethod
     def _get_vars_from_event_triggers(
