@@ -57,7 +57,9 @@ class TextFieldInput(el.Input, TextFieldRoot):
         """
         if props.get("value") is not None and props.get("on_change"):
             # create a debounced input if the user requests full control to avoid typing jank
-            return DebounceInput.create(super().create(*children, **props))
+            return super().create(
+                DebounceInput.create(super().create(), as_child=True, **props)
+            )
         return super().create(*children, **props)
 
     def get_event_triggers(self) -> Dict[str, Any]:
