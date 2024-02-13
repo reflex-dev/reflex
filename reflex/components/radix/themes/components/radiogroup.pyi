@@ -109,7 +109,6 @@ class RadioGroupRoot(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -183,7 +182,6 @@ class RadioGroupRoot(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -269,7 +267,6 @@ class RadioGroupItem(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -335,7 +332,6 @@ class RadioGroupItem(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -357,7 +353,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
                 Literal["row", "column", "row-reverse", "column-reverse"],
             ]
         ] = None,
-        gap: Optional[
+        spacing: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
@@ -445,7 +441,6 @@ class HighLevelRadioGroup(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -500,7 +495,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
             items: The items of the radio group.
             items: The items of the radio group.
             direction: The direction of the radio group.
-            gap: The gap between the items of the radio group.
+            spacing: The gap between the items of the radio group.
             size: The size of the radio group.
             variant: The variant of the radio group
             color_scheme: The color of the radio group
@@ -515,7 +510,6 @@ class HighLevelRadioGroup(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Additional properties to apply to the accordion item.
 
@@ -538,7 +532,7 @@ class RadioGroup(SimpleNamespace):
                 Literal["row", "column", "row-reverse", "column-reverse"],
             ]
         ] = None,
-        gap: Optional[
+        spacing: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
@@ -626,7 +620,6 @@ class RadioGroup(SimpleNamespace):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -681,7 +674,7 @@ class RadioGroup(SimpleNamespace):
             items: The items of the radio group.
             items: The items of the radio group.
             direction: The direction of the radio group.
-            gap: The gap between the items of the radio group.
+            spacing: The gap between the items of the radio group.
             size: The size of the radio group.
             variant: The variant of the radio group
             color_scheme: The color of the radio group
@@ -696,7 +689,6 @@ class RadioGroup(SimpleNamespace):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Additional properties to apply to the accordion item.
 

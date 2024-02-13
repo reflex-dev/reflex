@@ -90,7 +90,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
     direction: Var[LiteralFlexDirection] = Var.create_safe("column")
 
     # The gap between the items of the radio group.
-    gap: Var[LiteralSize] = Var.create_safe("2")
+    spacing: Var[LiteralSize] = Var.create_safe("2")
 
     # The size of the radio group.
     size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
@@ -138,7 +138,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
             The created radio group component.
         """
         direction = props.pop("direction", "column")
-        gap = props.pop("gap", "2")
+        spacing = props.pop("spacing", "2")
         size = props.pop("size", "2")
         default_value = props.pop("default_value", "")
 
@@ -167,7 +167,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
                 Flex.create(
                     RadioGroupItem.create(value=item_value),
                     item_value,
-                    gap="2",
+                    spacing="2",
                 ),
                 size=size,
                 as_="label",
@@ -180,7 +180,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
             Flex.create(
                 *children,
                 direction=direction,
-                gap=gap,
+                spacing=spacing,
             ),
             size=size,
             default_value=default_value,

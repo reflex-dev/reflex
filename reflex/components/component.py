@@ -659,7 +659,7 @@ class Component(BaseComponent, ABC):
         for ix, prop in enumerate(rendered_dict["props"]):
             for old_prop, new_prop in self._rename_props.items():
                 if prop.startswith(old_prop):
-                    rendered_dict["props"][ix] = prop.replace(old_prop, new_prop)
+                    rendered_dict["props"][ix] = prop.replace(old_prop, new_prop, 1)
 
     def _validate_component_children(self, children: List[Component]):
         """Validate the children components.

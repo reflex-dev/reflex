@@ -80,12 +80,6 @@ class Center(Flex):
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
-        display: Optional[
-            Union[
-                Var[Literal["none", "inline-flex", "flex"]],
-                Literal["none", "inline-flex", "flex"],
-            ]
-        ] = None,
         direction: Optional[
             Union[
                 Var[Literal["row", "column", "row-reverse", "column-reverse"]],
@@ -110,7 +104,7 @@ class Center(Flex):
                 Literal["nowrap", "wrap", "wrap-reverse"],
             ]
         ] = None,
-        gap: Optional[
+        spacing: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
@@ -161,7 +155,6 @@ class Center(Flex):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -220,12 +213,11 @@ class Center(Flex):
             color: map to CSS default color property.
             color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            display: How to display the element: "none" | "inline-flex" | "flex"
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
             align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
             wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
-            gap: Gap between children: "0" - "9"
+            spacing: Gap between children: "0" - "9"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -247,7 +239,6 @@ class Center(Flex):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 

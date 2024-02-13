@@ -80,7 +80,7 @@ class HighLevelCheckbox(RadixThemesComponent):
     text: Var[str]
 
     # The gap between the checkbox and the label.
-    gap: Var[LiteralSize]
+    spacing: Var[LiteralSize]
 
     # The size of the checkbox "1" - "3".
     size: Var[LiteralCheckboxSize]
@@ -140,8 +140,11 @@ class HighLevelCheckbox(RadixThemesComponent):
         Returns:
             The checkbox component with a label.
         """
-        gap = props.pop("gap", "2")
+        spacing = props.pop("spacing", "2")
         size = props.pop("size", "2")
+        flex_props = {}
+        if "gap" in props:
+            flex_props["gap"] = props.pop("gap", None)
 
         return Text.create(
             Flex.create(
@@ -150,7 +153,8 @@ class HighLevelCheckbox(RadixThemesComponent):
                     **props,
                 ),
                 text,
-                gap=gap,
+                spacing=spacing,
+                **flex_props,
             ),
             as_="label",
             size=size,

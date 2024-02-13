@@ -58,6 +58,6 @@ def test_pass_custom_styles():
     comp = md.get_component("h1")  # type: ignore
     assert comp.style == {
         "color": "red",
-        "margin-bottom": "0.5em",
-        "margin-top": "0.5em",
+        "marginBottom": "0.5em",
+        "marginTop": "0.5em",
     }
