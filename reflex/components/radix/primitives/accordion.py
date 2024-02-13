@@ -339,7 +339,7 @@ class AccordionRoot(AccordionComponent):
     color_scheme: Var[LiteralAccentColor]  # type: ignore
 
     # dynamic themes of the accordion generated at compile time.
-    _dynamic_themes: Var[dict]
+    _dynamic_themes: Var[dict] = Var.create({})
 
     # The var_data associated with the component.
     _var_data: VarData = VarData()  # type: ignore
@@ -540,19 +540,23 @@ to {
 """
 
 
-def accordion_item(header: Component, content: Component, **props) -> Component:
+def accordion_item(
+    header: Component | Var, content: Component | Var, **props
+) -> Component:
     """Create an accordion item.
 
     Args:
-        header: The header of the accordion item.
-        content: The content of the accordion item.
+        header: The header of the accordion item. This could be a regular component
+                or a Var when you use a foreach
+        content: The content of the accordion item. This could be a regular component
+                or a Var when you use a foreach.
         **props: Additional properties to apply to the accordion item.
 
     Returns:
         The accordion item.
     """
     # The item requires a value to toggle (use the header as the default value).
-    value = props.pop("value", str(header))
+    value = props.pop("value", header if isinstance(header, Var) else str(header))
 
     return AccordionItem.create(
         AccordionHeader.create(
