@@ -1008,11 +1008,11 @@ def test_validate_valid_children():
     )
 
     valid_component1(
-        rx.cond(
+        rx.cond(  # type: ignore
             True,
             rx.fragment(valid_component2()),
             rx.fragment(
-                rx.foreach(Var.create([1, 2, 3]), lambda x: valid_component2(x))
+                rx.foreach(Var.create([1, 2, 3]), lambda x: valid_component2(x))  # type: ignore
             ),
         )
     )
@@ -1067,12 +1067,12 @@ def test_validate_valid_parents():
     )
 
     valid_component2(
-        rx.cond(
+        rx.cond(  # type: ignore
             True,
             rx.fragment(valid_component3()),
             rx.fragment(
                 rx.foreach(
-                    Var.create([1, 2, 3]),
+                    Var.create([1, 2, 3]),  # type: ignore
                     lambda x: valid_component2(valid_component3(x)),
                 )
             ),
@@ -1135,11 +1135,11 @@ def test_validate_invalid_children():
 
     with pytest.raises(ValueError):
         valid_component4(
-            rx.cond(
+            rx.cond(  # type: ignore
                 True,
                 rx.fragment(invalid_component()),
                 rx.fragment(
-                    rx.foreach(Var.create([1, 2, 3]), lambda x: invalid_component(x))
+                    rx.foreach(Var.create([1, 2, 3]), lambda x: invalid_component(x))  # type: ignore
                 ),
             )
         )
