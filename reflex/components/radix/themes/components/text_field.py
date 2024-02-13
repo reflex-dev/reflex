@@ -57,8 +57,14 @@ class TextFieldInput(el.Input, TextFieldRoot):
         """
         if props.get("value") is not None and props.get("on_change"):
             # create a debounced input if the user requests full control to avoid typing jank
+            debounce_props = {
+                "on_change": props.pop("on_change"),
+                "value": props.pop("value"),
+            }
             return super().create(
-                DebounceInput.create(super().create(), as_child=True, **props)
+                DebounceInput.create(
+                    super().create(**debounce_props), as_child=True, **props
+                )
             )
         return super().create(*children, **props)
 
