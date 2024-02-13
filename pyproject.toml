@@ -56,6 +56,7 @@ packaging = "^23.1"
 pipdeptree = "^2.13.0"
 reflex-hosting-cli = ">=0.1.2"
 charset-normalizer = "^3.3.2"
+pytest-xdist = "^3.5.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
