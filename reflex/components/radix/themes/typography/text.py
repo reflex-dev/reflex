@@ -85,9 +85,9 @@ class TextNamespace(SimpleNamespace):
     """Checkbox components namespace."""
 
     __call__ = staticmethod(Text.create)
-    em = Em.create
-    quote = Quote.create
-    strong = Strong.create
+    em = staticmethod(Em.create)
+    quote = staticmethod(Quote.create)
+    strong = staticmethod(Strong.create)
 
 
 text = TextNamespace()
