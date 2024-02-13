@@ -94,7 +94,7 @@ def cancel_upload(upload_id: str) -> EventSpec:
     return call_script(f"upload_controllers[{upload_id!r}]?.abort()")
 
 
-def get_uploaded_files_dir() -> Path:
+def get_upload_dir() -> Path:
     """Get the directory where uploaded files are stored.
 
     Returns:
@@ -119,7 +119,7 @@ uploaded_files_url_prefix: Var = Var.create_safe(
 )
 
 
-def get_uploaded_file_url(file_path: str) -> str:
+def get_upload_url(file_path: str) -> str:
     """Get the URL of an uploaded file.
 
     Args:
