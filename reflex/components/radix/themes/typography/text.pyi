@@ -1076,6 +1076,7 @@ class Strong(el.Strong, RadixThemesComponent):
 
 class TextNamespace(SimpleNamespace):
     em = staticmethod(Em.create)
+    kbd = staticmethod(Kbd.create)
     quote = staticmethod(Quote.create)
     strong = staticmethod(Strong.create)
 
