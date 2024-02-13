@@ -9,11 +9,15 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Optional
 from reflex.components.base.bare import Bare
-from reflex.components.chakra.layout import Box
-from reflex.components.chakra.overlay.modal import Modal
-from reflex.components.chakra.typography import Text
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
+from reflex.components.radix.themes.components.dialog import (
+    DialogContent,
+    DialogRoot,
+    DialogTitle,
+)
+from reflex.components.radix.themes.layout import Box
+from reflex.components.radix.themes.typography.text import Text
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.utils import imports
 from reflex.vars import Var, VarData
