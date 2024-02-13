@@ -26,7 +26,16 @@ class Checkbox(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "surface", "soft"]],
+                Literal["classic", "surface", "soft"],
+            ]
+        ] = None,
         color_scheme: Optional[
             Union[
                 Var[
@@ -87,16 +96,6 @@ class Checkbox(RadixThemesComponent):
                     "bronze",
                     "gray",
                 ],
-            ]
-        ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
-        ] = None,
-        variant: Optional[
-            Union[
-                Var[Literal["classic", "surface", "soft"]],
-                Literal["classic", "surface", "soft"],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
@@ -169,11 +168,10 @@ class Checkbox(RadixThemesComponent):
 
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             size: Checkbox size "1" - "3"
             variant: Variant of checkbox: "classic" | "surface" | "soft"
+            color_scheme: Override theme color for checkbox
             high_contrast: Whether to render the checkbox with higher contrast color against background
             default_checked: Whether the checkbox is checked by default
             checked: Whether the checkbox is checked
@@ -181,7 +179,7 @@ class Checkbox(RadixThemesComponent):
             required: Whether the checkbox is required
             name: The name of the checkbox control when submitting the form.
             value: The value of the checkbox control when submitting the form.
-            style: Props to rename  The style of the component.
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
@@ -360,7 +358,7 @@ class HighLevelCheckbox(RadixThemesComponent):
             required: Whether the checkbox is required
             name: The name of the checkbox control when submitting the form.
             value: The value of the checkbox control when submitting the form.
-            style: Props to rename  The style of the component.
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
@@ -536,7 +534,7 @@ class CheckboxNamespace(SimpleNamespace):
             required: Whether the checkbox is required
             name: The name of the checkbox control when submitting the form.
             value: The value of the checkbox control when submitting the form.
-            style: Props to rename  The style of the component.
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
