@@ -55,6 +55,9 @@ class ProgressIndicator(ProgressComponent):
     # The current progress value.
     value: Var[Optional[int]]
 
+    # The maximum progress value.
+    max: Var[Optional[int]]
+
     def _apply_theme(self, theme: Component):
         self.style = Style(
             {
@@ -65,7 +68,7 @@ class ProgressIndicator(ProgressComponent):
                 "&[data_state='loading']": {
                     "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms linear",
                 },
-                "transform": f"translateX(calc(-100% + {self.value}%))",  # type: ignore
+                "transform": f"translateX(calc(-100% + ({self.value} / {self.max} * 100%)))",  # type: ignore
                 "boxShadow": "inset 0 0 0 1px var(--gray-a5)",
             }
         )
@@ -91,8 +94,10 @@ class Progress(SimpleNamespace):
         style = props.setdefault("style", {})
         style.update({"width": width})
 
+        max = props.pop("max", 100)
         return ProgressRoot.create(
-            ProgressIndicator.create(value=props.get("value")),
+            ProgressIndicator.create(value=props.get("value"), max=max),
+            max=max,
             **props,
         )
 
