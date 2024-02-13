@@ -285,4 +285,4 @@ class DropdownMenu(SimpleNamespace):
     separator = staticmethod(DropdownMenuSeparator.create)
 
 
-dropdown_menu = DropdownMenu()
+menu = dropdown_menu = DropdownMenu()

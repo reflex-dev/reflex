@@ -4,6 +4,7 @@ https://www.radix-ui.com/themes/docs/theme/typography
 """
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Literal
 
 from reflex import el
@@ -51,3 +52,43 @@ class Text(el.Span, RadixThemesComponent):
 
     # Whether to render the text with higher contrast color
     high_contrast: Var[bool]
+
+
+class Em(el.Em, RadixThemesComponent):
+    """Marks text to stress emphasis."""
+
+    tag = "Em"
+
+
+class Kbd(el.Kbd, RadixThemesComponent):
+    """Represents keyboard input or a hotkey."""
+
+    tag = "Kbd"
+
+    # Text size: "1" - "9"
+    size: Var[LiteralTextSize]
+
+
+class Quote(el.Q, RadixThemesComponent):
+    """A short inline quotation."""
+
+    tag = "Quote"
+
+
+class Strong(el.Strong, RadixThemesComponent):
+    """Marks text to signify strong importance."""
+
+    tag = "Strong"
+
+
+class TextNamespace(SimpleNamespace):
+    """Checkbox components namespace."""
+
+    __call__ = staticmethod(Text.create)
+    em = staticmethod(Em.create)
+    kbd = staticmethod(Kbd.create)
+    quote = staticmethod(Quote.create)
+    strong = staticmethod(Strong.create)
+
+
+text = TextNamespace()
