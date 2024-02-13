@@ -546,10 +546,8 @@ def accordion_item(
     """Create an accordion item.
 
     Args:
-        header: The header of the accordion item. This could be a regular component
-                or a Var when you use a foreach
-        content: The content of the accordion item. This could be a regular component
-                or a Var when you use a foreach.
+        header: The header of the accordion item.
+        content: The content of the accordion item.
         **props: Additional properties to apply to the accordion item.
 
     Returns:
