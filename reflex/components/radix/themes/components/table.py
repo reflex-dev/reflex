@@ -73,7 +73,7 @@ class TableBody(el.Tbody, RadixThemesComponent):
         "TableCell",
     ]
 
-    _valid_parents: List[str] = ["TableRoot", "ScrollArea"]
+    _valid_parents: List[str] = ["TableRoot"]
 
 
 class TableCell(el.Td, RadixThemesComponent):
