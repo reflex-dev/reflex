@@ -20,7 +20,7 @@ LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 
 class IconButton(el.Button, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """A button designed specifically for usage with a single icon."""
 
     tag = "IconButton"
 
