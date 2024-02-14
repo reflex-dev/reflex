@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
 
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
+from reflex.components.radix.themes.base import Theme
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -141,6 +142,25 @@ class DrawerContent(DrawerComponent):
             EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0.target.value],
             EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0.target.value],
         }
+
+    @classmethod
+    def create(cls, *children, **props):
+        """Create a Drawer Content.
+         We wrap the Drawer content in an `rx.theme` to make radix themes definitions available to
+         rendered div in the DOM. This is because Vaul Drawer injects the Drawer overlay content in a sibling
+         div to the root div rendered by radix which contains styling definitions. Wrapping in `rx.theme`
+         makes the styling available to the overlay.
+
+        Args:
+            *children: The list of children to use if header and content are not provided.
+            **props: Additional properties to apply to the accordion item.
+
+        Returns:
+                 The drawer content.
+        """
+        comp = super().create(*children, **props)
+
+        return Theme.create(comp)
 
 
 class DrawerOverlay(DrawerComponent):
