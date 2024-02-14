@@ -8,7 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 from reflex.components.component import Component
 from reflex.components.core.match import Match
 from reflex.components.lucide.icon import Icon
@@ -20,7 +20,7 @@ from reflex.style import (
     format_as_emotion,
 )
 from reflex.utils import imports
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import BaseVar, Var, VarData, get_unique_variable_name
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
@@ -129,8 +129,12 @@ class AccordionRoot(AccordionComponent):
         type_: Optional[
             Union[Var[Literal["single", "multiple"]], Literal["single", "multiple"]]
         ] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
+        value: Optional[
+            Union[Var[Union[str, list[str]]], Union[str, list[str]]]
+        ] = None,
+        default_value: Optional[
+            Union[Var[Union[str, list[str]]], Union[str, list[str]]]
+        ] = None,
         collapsible: Optional[Union[Var[bool], bool]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,

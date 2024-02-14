@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.core.match import Match
@@ -16,7 +16,7 @@ from reflex.style import (
     format_as_emotion,
 )
 from reflex.utils import imports
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import BaseVar, Var, VarData, get_unique_variable_name
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
@@ -315,10 +315,10 @@ class AccordionRoot(AccordionComponent):
     type_: Var[LiteralAccordionType]
 
     # The value of the item to expand.
-    value: Var[str]
+    value: Var[Optional[Union[str, list[str]]]]
 
     # The default value of the item to expand.
-    default_value: Var[str]
+    default_value: Var[Optional[Union[str, list[str]]]]
 
     # Whether or not the accordion is collapsible.
     collapsible: Var[bool]
@@ -488,14 +488,18 @@ class AccordionItem(AccordionComponent):
             The accordion item.
         """
         # The item requires a value to toggle (use the header as the default value).
-        value = props.pop("value", header if isinstance(header, Var) else str(header))
+        value = props.pop("value", get_unique_variable_name())
 
         if (header is not None) and (content is not None):
             children = [
                 AccordionHeader.create(
                     AccordionTrigger.create(
                         header,
-                        Icon.create(tag="chevron_down", class_name="AccordionChevron"),
+                        Icon.create(
+                            tag="chevron_down",
+                            class_name="AccordionChevron",
+                            display="inline-block",
+                        ),
                         class_name="AccordionTrigger",
                     ),
                 ),
