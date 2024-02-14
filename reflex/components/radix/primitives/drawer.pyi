@@ -10,6 +10,7 @@ from reflex.style import Style
 from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
+from reflex.components.radix.themes.base import Theme
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -442,10 +443,14 @@ class DrawerContent(DrawerComponent):
         ] = None,
         **props
     ) -> "DrawerContent":
-        """Create the component.
+        """Create a Drawer Content.
+         We wrap the Drawer content in an `rx.theme` to make radix themes definitions available to
+         rendered div in the DOM. This is because Vaul Drawer injects the Drawer overlay content in a sibling
+         div to the root div rendered by radix which contains styling definitions. Wrapping in `rx.theme`
+         makes the styling available to the overlay.
 
         Args:
-            *children: The children of the component.
+            *children: The list of children to use if header and content are not provided.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -453,13 +458,10 @@ class DrawerContent(DrawerComponent):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: Additional properties to apply to the accordion item.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+                 The drawer content.
         """
         ...
 
