@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
@@ -12,7 +13,7 @@ from ..base import (
 
 
 class DialogRoot(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Root component for Dialog."""
 
     tag = "Dialog.Root"
 
@@ -32,19 +33,19 @@ class DialogRoot(RadixThemesComponent):
 
 
 class DialogTrigger(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Trigger an action or event, to open a Dialog modal."""
 
     tag = "Dialog.Trigger"
 
 
 class DialogTitle(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Title component to display inside a Dialog modal."""
 
     tag = "Dialog.Title"
 
 
 class DialogContent(el.Div, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Content component to display inside a Dialog modal."""
 
     tag = "Dialog.Content"
 
@@ -68,13 +69,13 @@ class DialogContent(el.Div, RadixThemesComponent):
 
 
 class DialogDescription(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Description component to display inside a Dialog modal."""
 
     tag = "Dialog.Description"
 
 
 class DialogClose(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Close button component to close an open Dialog modal."""
 
     tag = "Dialog.Close"
 
