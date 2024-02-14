@@ -344,7 +344,7 @@ class AccordionRoot(AccordionComponent):
     # The var_data associated with the component.
     _var_data: VarData = VarData()  # type: ignore
 
-    _valid_children: List[str] = ["AccordionItem", "Foreach"]
+    _valid_children: List[str] = ["AccordionItem"]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -404,10 +404,13 @@ class AccordionRoot(AccordionComponent):
         )
 
         # extract var_data from dynamic themes.
-        self._var_data = self._var_data.merge(  # type: ignore
-            accordion_theme_trigger._var_data,
-            accordion_theme_content._var_data,
-            accordion_theme_root._var_data,
+        self._var_data = (
+            self._var_data.merge(  # type: ignore
+                accordion_theme_trigger._var_data,
+                accordion_theme_content._var_data,
+                accordion_theme_root._var_data,
+            )
+            or self._var_data
         )
 
         self._dynamic_themes = Var.create(  # type: ignore
