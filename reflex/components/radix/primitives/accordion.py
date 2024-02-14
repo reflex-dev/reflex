@@ -344,7 +344,7 @@ class AccordionRoot(AccordionComponent):
     # The var_data associated with the component.
     _var_data: VarData = VarData()  # type: ignore
 
-    _valid_children: List[str] = ["AccordionItem", "Foreach"]
+    _valid_children: List[str] = ["AccordionItem"]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
