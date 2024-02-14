@@ -152,8 +152,8 @@ class DrawerContent(DrawerComponent):
          makes the styling available to the overlay.
 
         Args:
-            *children: The list of children to use if header and content are not provided.
-            **props: Additional properties to apply to the accordion item.
+            *children: The list of children to use.
+            **props: Additional properties to apply to the drawer content.
 
         Returns:
                  The drawer content.
