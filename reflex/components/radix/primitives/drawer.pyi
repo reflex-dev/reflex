@@ -9,11 +9,11 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
-from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
+from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-class DrawerComponent(RadixPrimitiveComponentWithClassName):
+class DrawerComponent(RadixPrimitiveComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -179,14 +179,14 @@ class DrawerRoot(DrawerComponent):
         Args:
             *children: The children of the component.
             open: Whether the drawer is open or not.
-            should_scale_background: Enable background scaling,  it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
+            should_scale_background: Enable background scaling, it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
             close_threshold: Number between 0 and 1 that determines when the drawer should be closed.
-            snap_points: Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible.  Also Accept px values, which doesn't take screen height into account.
-            fade_from_index: Index of a snapPoint from which the overlay fade should be applied.  Defaults to the last snap point.  TODO: will it accept -1 then?
+            snap_points: Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
+            fade_from_index: Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point.
             scroll_lock_timeout: Duration for which the drawer is not draggable after scrolling content inside of the drawer. Defaults to 500ms
-            modal: When `False`, it allows to interact with elements outside of the drawer without closing it.  Defaults to `True`.
+            modal: When `False`, it allows to interact with elements outside of the drawer without closing it. Defaults to `True`.
             direction: Direction of the drawer. Defaults to `"bottom"`
-            preventScrollRestoration: When `True`, it prevents scroll restoration  when the drawer is closed after a navigation happens inside of it.  Defaults to `True`.
+            preventScrollRestoration: When `True`, it prevents scroll restoration. Defaults to `True`.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -876,14 +876,14 @@ class Drawer(SimpleNamespace):
         Args:
             *children: The children of the component.
             open: Whether the drawer is open or not.
-            should_scale_background: Enable background scaling,  it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
+            should_scale_background: Enable background scaling, it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
             close_threshold: Number between 0 and 1 that determines when the drawer should be closed.
-            snap_points: Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible.  Also Accept px values, which doesn't take screen height into account.
-            fade_from_index: Index of a snapPoint from which the overlay fade should be applied.  Defaults to the last snap point.  TODO: will it accept -1 then?
+            snap_points: Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
+            fade_from_index: Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point.
             scroll_lock_timeout: Duration for which the drawer is not draggable after scrolling content inside of the drawer. Defaults to 500ms
-            modal: When `False`, it allows to interact with elements outside of the drawer without closing it.  Defaults to `True`.
+            modal: When `False`, it allows to interact with elements outside of the drawer without closing it. Defaults to `True`.
             direction: Direction of the drawer. Defaults to `"bottom"`
-            preventScrollRestoration: When `True`, it prevents scroll restoration  when the drawer is closed after a navigation happens inside of it.  Defaults to `True`.
+            preventScrollRestoration: When `True`, it prevents scroll restoration. Defaults to `True`.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
