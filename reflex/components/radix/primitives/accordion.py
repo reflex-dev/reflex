@@ -471,9 +471,9 @@ class AccordionItem(AccordionComponent):
     @classmethod
     def create(
         cls,
-        *children,
         header: Optional[Component | Var] = None,
         content: Optional[Component | Var] = None,
+        *children,
         **props,
     ) -> Component:
         """Create an accordion item.
