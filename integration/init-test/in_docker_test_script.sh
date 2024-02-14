@@ -22,4 +22,3 @@ pip install /reflex-repo
 
 echo "Running reflex init in test project dir"
 do_export blank
-do_export sidebar

@@ -62,7 +62,7 @@ def main(
 
 def _init(
     name: str,
-    template: constants.Templates.Kind | None = constants.Templates.Kind.BLANK,
+    template: str | None = None,
     loglevel: constants.LogLevel = config.loglevel,
 ):
     """Initialize a new Reflex app in the given directory."""
@@ -84,15 +84,7 @@ def _init(
 
     prerequisites.ensure_reflex_installation_id()
 
-    # Set up the app directory, only if the config doesn't exist.
-    if not os.path.exists(constants.Config.FILE):
-        if template is None:
-            template = prerequisites.prompt_for_template()
-        prerequisites.create_config(app_name)
-        prerequisites.initialize_app_directory(app_name, template)
-        telemetry.send("init")
-    else:
-        telemetry.send("reinit")
+    prerequisites.initialize_app(app_name, template)
 
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
@@ -118,7 +110,7 @@ def init(
     name: str = typer.Option(
         None, metavar="APP_NAME", help="The name of the app to initialize."
     ),
-    template: constants.Templates.Kind = typer.Option(
+    template: str = typer.Option(
         None,
         help="The template to initialize the app with.",
     ),
