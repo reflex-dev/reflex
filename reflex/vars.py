@@ -1396,6 +1396,31 @@ class Var:
             _var_type=str,
         )
 
+    def replace(self, old: str | Var[str], new: str | Var[str]) -> Var:
+        """Replace a string var with another string.
+
+        Args:
+            old: The string to replace.
+            new: The string to replace with.
+
+        Returns:
+            A var with the replaced string.
+
+        Raises:
+            TypeError: If the var is not a string.
+        """
+        if not types._issubclass(self._var_type, str):
+            raise TypeError(f"Cannot replace non-string var {self._var_full_name}.")
+
+        old = Var.create_safe(json.dumps(old)) if isinstance(old, str) else old
+        new = Var.create_safe(json.dumps(new)) if isinstance(new, str) else new
+
+        return self._replace(
+            _var_name=f"{self._var_name}.replace({old._var_full_name}, {new._var_full_name})",
+            _var_is_string=False,
+            merge_var_data=VarData.merge(old._var_data, new._var_data),
+        )
+
     def strip(self, other: str | Var[str] = " ") -> Var:
         """Strip a string var.
 
