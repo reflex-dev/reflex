@@ -361,6 +361,10 @@ def VarOperations():
                 id="str_contains",
             ),
             rx.text(
+                VarOperationState.str_var1.replace("ir", VarOperationState.str_var2).to_string(),
+                id="str_replace",
+            ),
+            rx.text(
                 VarOperationState.str_var1 | VarOperationState.str_var1, id="str_or_str"
             ),
             rx.text(
@@ -695,6 +699,7 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("str_and_str", "second"),
         ("str_or_str", "first"),
         ("str_contains", "true"),
+        ("str_replace", "fasst"),
         ("str_lower", "third"),
         ("str_upper", "THIRD"),
         ("str_split", '["a","long","string"]'),
