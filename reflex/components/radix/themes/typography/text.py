@@ -2,6 +2,7 @@
 
 https://www.radix-ui.com/themes/docs/theme/typography
 """
+
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -54,6 +55,12 @@ class Text(el.Span, RadixThemesComponent):
     high_contrast: Var[bool]
 
 
+class Span(Text):
+    """A variant of text rendering as <span> element."""
+
+    as_: Var[LiteralType] = "span"  # type: ignore
+
+
 class Em(el.Em, RadixThemesComponent):
     """Marks text to stress emphasis."""
 
@@ -89,6 +96,7 @@ class TextNamespace(SimpleNamespace):
     kbd = staticmethod(Kbd.create)
     quote = staticmethod(Quote.create)
     strong = staticmethod(Strong.create)
+    span = staticmethod(Span.create)
 
 
 text = TextNamespace()
