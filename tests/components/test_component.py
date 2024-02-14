@@ -1183,3 +1183,33 @@ def test_validate_invalid_children():
                 ),
             )
         )
+
+
+def test_rename_props():
+    """Test that _rename_props works and is inherited."""
+
+    class C1(Component):
+        tag = "C1"
+
+        prop1: Var[str]
+        prop2: Var[str]
+
+        _rename_props = {"prop1": "renamed_prop1", "prop2": "renamed_prop2"}
+
+    class C2(C1):
+        tag = "C2"
+
+        prop3: Var[str]
+
+        _rename_props = {"prop2": "subclass_prop2", "prop3": "renamed_prop3"}
+
+    c1 = C1.create(prop1="prop1_1", prop2="prop2_1")
+    rendered_c1 = c1.render()
+    assert "renamed_prop1={`prop1_1`}" in rendered_c1["props"]
+    assert "renamed_prop2={`prop2_1`}" in rendered_c1["props"]
+
+    c2 = C2.create(prop1="prop1_2", prop2="prop2_2", prop3="prop3_2")
+    rendered_c2 = c2.render()
+    assert "renamed_prop1={`prop1_2`}" in rendered_c2["props"]
+    assert "subclass_prop2={`prop2_2`}" in rendered_c2["props"]
+    assert "renamed_prop3={`prop3_2`}" in rendered_c2["props"]

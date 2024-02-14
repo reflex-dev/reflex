@@ -190,6 +190,14 @@ class Component(BaseComponent, ABC):
                 field.required = False
                 field.default = Var.create(field.default)
 
+        # Ensure renamed props from parent classes are applied to the subclass.
+        if cls._rename_props:
+            inherited_rename_props = {}
+            for parent in reversed(cls.mro()):
+                if issubclass(parent, Component) and parent._rename_props:
+                    inherited_rename_props.update(parent._rename_props)
+            cls._rename_props = inherited_rename_props
+
     def __init__(self, *args, **kwargs):
         """Initialize the component.
 
