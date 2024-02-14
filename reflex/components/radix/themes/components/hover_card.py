@@ -12,7 +12,7 @@ from ..base import (
 
 
 class HoverCardRoot(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """For sighted users to preview content available behind a link."""
 
     tag = "HoverCard.Root"
 
@@ -41,13 +41,13 @@ class HoverCardRoot(RadixThemesComponent):
 
 
 class HoverCardTrigger(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Wraps the link that will open the hover card."""
 
     tag = "HoverCard.Trigger"
 
 
 class HoverCardContent(el.Div, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Contains the content of the open hover card."""
 
     tag = "HoverCard.Content"
 
@@ -65,7 +65,7 @@ class HoverCardContent(el.Div, RadixThemesComponent):
 
 
 class HoverCard(SimpleNamespace):
-    """HoverCard components namespace."""
+    """For sighted users to preview content available behind a link."""
 
     root = __call__ = staticmethod(HoverCardRoot.create)
     trigger = staticmethod(HoverCardTrigger.create)

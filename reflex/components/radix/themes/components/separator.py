@@ -12,7 +12,7 @@ LiteralSeperatorSize = Literal["1", "2", "3", "4"]
 
 
 class Separator(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Visually or semantically separates content."""
 
     tag = "Separator"
 

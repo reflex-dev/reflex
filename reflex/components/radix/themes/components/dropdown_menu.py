@@ -141,7 +141,7 @@ class DropdownMenuContent(RadixThemesComponent):
 
 
 class DropdownMenuSubTrigger(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """An item that opens a submenu."""
 
     tag = "DropdownMenu.SubTrigger"
 

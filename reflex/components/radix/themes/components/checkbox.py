@@ -19,7 +19,7 @@ LiteralCheckboxVariant = Literal["classic", "surface", "soft"]
 
 
 class Checkbox(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Selects a single value, typically for submission in a form."""
 
     tag = "Checkbox"
 
