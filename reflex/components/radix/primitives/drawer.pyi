@@ -450,7 +450,7 @@ class DrawerContent(DrawerComponent):
          makes the styling available to the overlay.
 
         Args:
-            *children: The list of children to use if header and content are not provided.
+            *children: The list of children to use.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -458,7 +458,7 @@ class DrawerContent(DrawerComponent):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: Additional properties to apply to the accordion item.
+            **props: Additional properties to apply to the drawer content.
 
         Returns:
                  The drawer content.
