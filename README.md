@@ -125,8 +125,6 @@ def index():
             spacing="2",
             align_items="center",
             border_radius="10px",
-            background="white"
-            
         ),
         width="100%",
         height="100vh",
