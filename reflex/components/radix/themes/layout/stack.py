@@ -19,8 +19,6 @@ class Stack(Flex):
     def create(
         cls,
         *children,
-        justify: LiteralJustify = "start",
-        align: LiteralAlign = "center",
         spacing: LiteralSize = "2",
         **props,
     ) -> Component:
@@ -28,8 +26,6 @@ class Stack(Flex):
 
         Args:
             *children: The children of the stack.
-            justify: The justify of the stack elements.
-            align: The alignment of the stack elements.
             spacing: The spacing between each stack item.
             **props: The properties of the stack.
 
@@ -38,8 +34,6 @@ class Stack(Flex):
         """
         return super().create(
             *children,
-            align=align,
-            justify=justify,
             spacing=spacing,
             **props,
         )
