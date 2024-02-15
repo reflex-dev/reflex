@@ -219,7 +219,6 @@ class Component(BaseComponent, ABC):
         fields = self.get_fields()
         triggers = self.get_event_triggers().keys()
         props = self.get_props()
-        empty_props = []
 
         # Add any events triggers.
         if "event_triggers" not in kwargs:
@@ -236,11 +235,6 @@ class Component(BaseComponent, ABC):
                 field_type = fields[key].type_
 
             else:
-                continue
-
-            # Skip over None values.
-            if value is None:
-                empty_props.append(key)
                 continue
 
             # Check whether the key is a component prop.
@@ -282,10 +276,6 @@ class Component(BaseComponent, ABC):
 
         # Remove any keys that were added as events.
         for key in kwargs["event_triggers"]:
-            del kwargs[key]
-
-        # Delete any empty props.
-        for key in empty_props:
             del kwargs[key]
 
         # Add style props to the component.
