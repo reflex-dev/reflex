@@ -379,7 +379,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             setattr(cls, name, handler)
 
         cls._init_var_dependency_dicts()
-        
+
         for name in cls.new_backend_vars:
             setattr(cls, name, PrivateVarDescriptor())
 
@@ -2271,15 +2271,19 @@ def code_uses_state_contexts(javascript_code: str) -> bool:
     """
     return bool("useContext(StateContexts" in javascript_code)
 
+
 class PrivateVarDescriptor:
     """A descriptor to raise error in case private vars is accessed on thr frontend."""
 
     def __get__(self, *args, **kwargs):
         """Raise error on get value.
-        
+
 
         Args:
             *args: The args to pass to the function.
             **kwargs: The kwargs to pass to the function.
+
+        Raises:
+            TypeError: if a background variable is used in frontend.
         """
         raise TypeError("Backend Vars cannot be accessed on the frontend.")
