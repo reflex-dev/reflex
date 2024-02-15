@@ -487,7 +487,7 @@ class AccordionItem(AccordionComponent):
         Returns:
             The accordion item.
         """
-        # The item requires a value to toggle (use the header as the default value).
+        # The item requires a value to toggle (use a random unique name if not provided).
         value = props.pop("value", get_unique_variable_name())
 
         if (header is not None) and (content is not None):
