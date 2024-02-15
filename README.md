@@ -81,20 +81,20 @@ class State(rx.State):
     prompt = ""
     image_url = ""
     processing = False
-    made = False
+    complete = False
 
     def get_image(self):
         """Get the image from the prompt."""
         if self.prompt == "":
             return rx.window_alert("Prompt Empty")
 
-        self.processing, self.made = True, False
+        self.processing, self.complete = True, False
         yield
         response = openai_client.images.generate(
             prompt=self.prompt, n=1, size="1024x1024"
         )
         self.image_url = response.data[0].url
-        self.processing, self.made = False, True
+        self.processing, self.complete = False, True
 
 
 def index():
@@ -114,7 +114,7 @@ def index():
                 State.processing,
                 rx.chakra.circular_progress(is_indeterminate=True),
                 rx.cond(
-                    State.made,
+                    State.complete,
                     rx.image(
                         src=State.image_url,
                     ),
@@ -129,8 +129,8 @@ def index():
         ),
         width="100%",
         height="100vh",
+        background="radial-gradient(circle at 22% 11%,rgba(62, 180, 137,.20),hsla(0,0%,100%,0) 19%),radial-gradient(circle at 82% 25%,rgba(33,150,243,.18),hsla(0,0%,100%,0) 35%),radial-gradient(circle at 25% 61%,rgba(250, 128, 114, .28),hsla(0,0%,100%,0) 55%)",
     )
-
 
 # Add state and page to the app.
 app = rx.App()
@@ -167,7 +167,7 @@ class State(rx.State):
     prompt = ""
     image_url = ""
     processing = False
-    made = False
+    complete = False
 
 ```
 
@@ -183,13 +183,13 @@ def get_image(self):
     if self.prompt == "":
         return rx.window_alert("Prompt Empty")
 
-    self.processing, self.made = True, False
+    self.processing, self.complete = True, False
     yield
     response = openai_client.images.generate(
         prompt=self.prompt, n=1, size="1024x1024"
     )
     self.image_url = response.data[0].url
-    self.processing, self.made = False, True
+    self.processing, self.complete = False, True
 ```
 
 Within the state, we define functions called event handlers that change the state vars. Event handlers are the way that we can modify the state in Reflex. They can be called in response to user actions, such as clicking a button or typing in a text box. These actions are called events.
