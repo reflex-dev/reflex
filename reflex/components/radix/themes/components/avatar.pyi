@@ -9,7 +9,9 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
 from reflex.vars import Var
-from ..base import LiteralAccentColor, LiteralRadius, LiteralSize, RadixThemesComponent
+from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
+
+LiteralSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
 class Avatar(RadixThemesComponent):
     @overload
