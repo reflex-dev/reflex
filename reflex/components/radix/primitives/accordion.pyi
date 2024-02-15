@@ -130,10 +130,10 @@ class AccordionRoot(AccordionComponent):
             Union[Var[Literal["single", "multiple"]], Literal["single", "multiple"]]
         ] = None,
         value: Optional[
-            Union[Var[Union[str, list[str]]], Union[str, list[str]]]
+            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
         ] = None,
         default_value: Optional[
-            Union[Var[Union[str, list[str]]], Union[str, list[str]]]
+            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
         ] = None,
         collapsible: Optional[Union[Var[bool], bool]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,

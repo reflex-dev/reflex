@@ -315,10 +315,10 @@ class AccordionRoot(AccordionComponent):
     type_: Var[LiteralAccordionType]
 
     # The value of the item to expand.
-    value: Var[Optional[Union[str, list[str]]]]
+    value: Var[Optional[Union[str, List[str]]]]
 
     # The default value of the item to expand.
-    default_value: Var[Optional[Union[str, list[str]]]]
+    default_value: Var[Optional[Union[str, List[str]]]]
 
     # Whether or not the accordion is collapsible.
     collapsible: Var[bool]
