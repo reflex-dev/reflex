@@ -1,4 +1,5 @@
 """Stack components."""
+
 from __future__ import annotations
 
 from typing import Literal
@@ -35,6 +36,7 @@ class Stack(Flex):
         return super().create(
             *children,
             spacing=spacing,
+            align=props.pop("align", "start"),
             **props,
         )
 
