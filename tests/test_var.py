@@ -469,8 +469,8 @@ def test_var_indexing_types(var, type_):
     """Test that indexing returns valid types.
 
     Args:
-    var   : The list, typle base var.
-    type_ : The type on indexed object. 
+        var   : The list, typle base var.
+        type_ : The type on indexed object. 
 
     """
     assert var[2]._var_type == type_[0]
