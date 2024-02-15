@@ -72,57 +72,69 @@ Here is the complete code to create this. This is all done in one Python file!
 import reflex as rx
 import openai
 
-openai.api_key = "YOUR_API_KEY"
+openai_client =  openai.OpenAI(api_key="YOUR_API_KEY")
+
 
 class State(rx.State):
     """The app state."""
+
     prompt = ""
     image_url = ""
     processing = False
-    complete = False
+    made = False
 
     def get_image(self):
         """Get the image from the prompt."""
         if self.prompt == "":
             return rx.window_alert("Prompt Empty")
 
-        self.processing, self.complete = True, False
+        self.processing, self.made = True, False
         yield
-        response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
-        self.image_url = response["data"][0]["url"]
-        self.processing, self.complete = False, True
-        
+        response = openai_client.images.generate(
+            prompt=self.prompt, n=1, size="1024x1024"
+        )
+        self.image_url = response.data[0].url
+        self.processing, self.made = False, True
+
 
 def index():
     return rx.center(
         rx.vstack(
-            rx.heading("DALL·E"),
-            rx.input(placeholder="Enter a prompt", on_blur=State.set_prompt),
-            rx.button(
-                "Generate Image",
-                on_click=State.get_image,
-                is_loading=State.processing,
+            rx.heading("DALL-E", font_size="1.5em"),
+            rx.radix.text_field.root(
+                rx.input(
+                    placeholder="Enter a prompt..",
+                    on_blur=State.set_prompt,
+                    width="100%",
+                ),
                 width="100%",
             ),
+            rx.button("Generate Image", on_click=State.get_image, width="100%"),
             rx.cond(
-                State.complete,
-                     rx.image(
-                         src=State.image_url,
-                         height="25em",
-                         width="25em",
-                    )
+                State.processing,
+                rx.chakra.circular_progress(is_indeterminate=True),
+                rx.cond(
+                    State.made,
+                    rx.image(
+                        src=State.image_url,
+                    ),
+                ),
             ),
-            padding="2em",
-            shadow="lg",
-            border_radius="lg",
+            width="25em",
+            padding="1em",
+            spacing="2",
+            align_items="center",
+            border_radius="10px",
+            background="white",
         ),
         width="100%",
         height="100vh",
     )
 
+
 # Add state and page to the app.
 app = rx.App()
-app.add_page(index, title="reflex:DALL·E")
+app.add_page(index, title="Reflex:DALL-E")
 ```
 
 ## Let's break this down.
@@ -155,7 +167,8 @@ class State(rx.State):
     prompt = ""
     image_url = ""
     processing = False
-    complete = False
+    made = False
+
 ```
 
 The state defines all the variables (called vars) in an app that can change and the functions that change them.
@@ -170,11 +183,13 @@ def get_image(self):
     if self.prompt == "":
         return rx.window_alert("Prompt Empty")
 
-    self.processing, self.complete = True, False
+    self.processing, self.made = True, False
     yield
-    response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
-    self.image_url = response["data"][0]["url"]
-    self.processing, self.complete = False, True
+    response = openai_client.images.generate(
+        prompt=self.prompt, n=1, size="1024x1024"
+    )
+    self.image_url = response.data[0].url
+    self.processing, self.made = False, True
 ```
 
 Within the state, we define functions called event handlers that change the state vars. Event handlers are the way that we can modify the state in Reflex. They can be called in response to user actions, such as clicking a button or typing in a text box. These actions are called events.
