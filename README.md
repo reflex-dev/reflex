@@ -125,12 +125,13 @@ def index():
             spacing="2",
             align_items="center",
             border_radius="10px",
-            background="white",
+            background="white"
+            
         ),
         width="100%",
         height="100vh",
-        background="radial-gradient(circle at 22% 11%,rgba(62, 180, 137,.20),hsla(0,0%,100%,0) 19%),radial-gradient(circle at 82% 25%,rgba(33,150,243,.18),hsla(0,0%,100%,0) 35%),radial-gradient(circle at 25% 61%,rgba(250, 128, 114, .28),hsla(0,0%,100%,0) 55%)",
     )
+
 
 # Add state and page to the app.
 app = rx.App()
