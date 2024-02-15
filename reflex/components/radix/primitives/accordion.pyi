@@ -447,7 +447,7 @@ class AccordionHeader(AccordionComponent):
         ] = None,
         **props
     ) -> "AccordionHeader":
-        """Create the component.
+        """Create the Accordion header component.
 
         Args:
             *children: The children of the component.
@@ -458,13 +458,10 @@ class AccordionHeader(AccordionComponent):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the component.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            The Accordion header Component.
         """
         ...
 

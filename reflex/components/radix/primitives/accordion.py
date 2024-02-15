@@ -428,7 +428,9 @@ class AccordionRoot(AccordionComponent):
 
     def _get_imports(self):
         return imports.merge_imports(
-            super()._get_imports(), self._var_data.imports if self._var_data else {}
+            super()._get_imports(),
+            self._var_data.imports if self._var_data else {},
+            {"@emotion/react": [imports.ImportVar(tag="keyframes")]},
         )
 
     def get_event_triggers(self) -> Dict[str, Any]:
@@ -441,6 +443,26 @@ class AccordionRoot(AccordionComponent):
             **super().get_event_triggers(),
             "on_value_change": lambda e0: [e0],
         }
+
+    def _get_custom_code(self) -> str:
+        return """
+const slideDown = keyframes`
+from {
+  height: 0;
+}
+to {
+  height: var(--radix-accordion-content-height);
+}
+`
+const slideUp = keyframes`
+from {
+  height: var(--radix-accordion-content-height);
+}
+to {
+  height: 0;
+}
+`
+"""
 
 
 class AccordionItem(AccordionComponent):
@@ -493,6 +515,11 @@ class AccordionItem(AccordionComponent):
         # The item requires a value to toggle (use a random unique name if not provided).
         value = props.pop("value", get_unique_variable_name())
 
+        if "AccordionItem" not in (
+            cls_name := props.pop("class_name", "AccordionItem")
+        ):
+            cls_name = f"{cls_name} AccordionItem"
+
         if (header is not None) and (content is not None):
             children = [
                 AccordionHeader.create(
@@ -509,9 +536,7 @@ class AccordionItem(AccordionComponent):
                 AccordionContent.create(content, class_name="AccordionContent"),
             ]
 
-        return super().create(
-            *children, value=value, **props, class_name="AccordionItem"
-        )
+        return super().create(*children, value=value, **props, class_name=cls_name)
 
 
 class AccordionHeader(AccordionComponent):
@@ -521,12 +546,26 @@ class AccordionHeader(AccordionComponent):
 
     alias = "RadixAccordionHeader"
 
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the Accordion header component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The Accordion header Component.
+        """
+        if "AccordionHeader" not in (
+            cls_name := props.pop("class_name", "AccordionHeader")
+        ):
+            cls_name = f"{cls_name} AccordionHeader"
+
+        return super().create(*children, class_name=cls_name, **props)
+
     def _apply_theme(self, theme: Component):
-        self.style = Style(
-            {
-                **self.style,
-            }
-        )
+        self.style = Style({**self.style})
 
 
 class AccordionTrigger(AccordionComponent):
@@ -552,18 +591,10 @@ class AccordionTrigger(AccordionComponent):
         ):
             cls_name = f"{cls_name} AccordionTrigger"
 
-        return super().create(
-            *children,
-            class_name=cls_name,
-            **props,
-        )
+        return super().create(*children, class_name=cls_name, **props)
 
     def _apply_theme(self, theme: Component):
-        self.style = Style(
-            {
-                **self.style,
-            }
-        )
+        self.style = Style({**self.style})
 
 
 class AccordionIcon(Icon):
@@ -585,12 +616,7 @@ class AccordionIcon(Icon):
         ):
             cls_name = f"{cls_name} AccordionChevron"
 
-        return super().create(
-            *children,
-            tag="chevron_down",
-            class_name=cls_name,
-            **props,
-        )
+        return super().create(tag="chevron_down", class_name=cls_name, **props)
 
 
 class AccordionContent(AccordionComponent):
@@ -616,44 +642,16 @@ class AccordionContent(AccordionComponent):
         ):
             cls_name = f"{cls_name} AccordionContent"
 
-        return super().create(
-            *children,
-            class_name=cls_name,
-            **props,
-        )
+        return super().create(*children, class_name=cls_name, **props)
 
     def _apply_theme(self, theme: Component):
-        self.style = Style(
-            {
-                **self.style,
-            }
-        )
+        self.style = Style({**self.style})
 
-    def _get_imports(self):
-        return {
-            **super()._get_imports(),
-            "@emotion/react": [imports.ImportVar(tag="keyframes")],
-        }
-
-    def _get_custom_code(self) -> str:
-        return """
-const slideDown = keyframes`
-from {
-  height: 0;
-}
-to {
-  height: var(--radix-accordion-content-height);
-}
-`
-const slideUp = keyframes`
-from {
-  height: var(--radix-accordion-content-height);
-}
-to {
-  height: 0;
-}
-`
-"""
+    # def _get_imports(self):
+    #     return {
+    #         **super()._get_imports(),
+    #         "@emotion/react": [imports.ImportVar(tag="keyframes")],
+    #     }
 
 
 class Accordion(SimpleNamespace):
