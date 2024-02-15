@@ -585,9 +585,9 @@ class Var:
 
             # Get the type of the indexed var.
             if types.is_generic_alias(self._var_type):
-                index  = i if not isinstance(i, Var) else 0
+                index = i if not isinstance(i, Var) else 0
                 type_ = types.get_args(self._var_type)
-                type_ = type_[index%len(type_)]
+                type_ = type_[index % len(type_)]
             elif types._issubclass(self._var_type, str):
                 type_ = str
 

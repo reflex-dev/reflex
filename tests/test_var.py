@@ -458,6 +458,7 @@ def test_var_indexing_lists(var):
     # Test negative indexing.
     assert str(var[-1]) == f"{{{var._var_name}.at(-1)}}"
 
+
 @pytest.mark.parametrize(
     "var, type_",
     [
@@ -470,12 +471,11 @@ def test_var_indexing_types(var, type_):
 
     Args:
         var   : The list, typle base var.
-        type_ : The type on indexed object. 
+        type_ : The type on indexed object.
 
     """
     assert var[2]._var_type == type_[0]
     assert var[3]._var_type == type_[1]
-
 
 
 def test_var_indexing_str():
