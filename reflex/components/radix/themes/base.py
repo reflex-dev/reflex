@@ -11,7 +11,7 @@ from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
-LiteralSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+LiteralSpacing = Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 LiteralVariant = Literal["classic", "solid", "soft", "surface", "outline", "ghost"]
 LiteralAppearance = Literal["inherit", "light", "dark"]
 LiteralGrayColor = Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]
@@ -52,25 +52,25 @@ class CommonMarginProps(Component):
     """Many radix-themes elements accept shorthand margin props."""
 
     # Margin: "0" - "9"
-    m: Var[LiteralSize]
+    m: Var[LiteralSpacing]
 
     # Margin horizontal: "0" - "9"
-    mx: Var[LiteralSize]
+    mx: Var[LiteralSpacing]
 
     # Margin vertical: "0" - "9"
-    my: Var[LiteralSize]
+    my: Var[LiteralSpacing]
 
     # Margin top: "0" - "9"
-    mt: Var[LiteralSize]
+    mt: Var[LiteralSpacing]
 
     # Margin right: "0" - "9"
-    mr: Var[LiteralSize]
+    mr: Var[LiteralSpacing]
 
     # Margin bottom: "0" - "9"
-    mb: Var[LiteralSize]
+    mb: Var[LiteralSpacing]
 
     # Margin left: "0" - "9"
-    ml: Var[LiteralSize]
+    ml: Var[LiteralSpacing]
 
 
 class RadixThemesComponent(Component):

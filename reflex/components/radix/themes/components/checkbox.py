@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
@@ -10,7 +11,7 @@ from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
-    LiteralSize,
+    LiteralSpacing,
     RadixThemesComponent,
 )
 
@@ -80,7 +81,7 @@ class HighLevelCheckbox(RadixThemesComponent):
     text: Var[str]
 
     # The gap between the checkbox and the label.
-    spacing: Var[LiteralSize]
+    spacing: Var[LiteralSpacing]
 
     # The size of the checkbox "1" - "3".
     size: Var[LiteralCheckboxSize]

@@ -9,7 +9,7 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
 from reflex.components.component import Component
-from ..base import LiteralSize
+from ..base import LiteralSpacing
 from .flex import Flex
 
 LiteralJustify = Literal["start", "center", "end"]
@@ -21,7 +21,7 @@ class Stack(Flex):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSize] = "2",
+        spacing: Optional[LiteralSpacing] = "2",
         as_child: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
@@ -185,7 +185,7 @@ class VStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSize] = "2",
+        spacing: Optional[LiteralSpacing] = "2",
         as_child: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
@@ -349,7 +349,7 @@ class HStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSize] = "2",
+        spacing: Optional[LiteralSpacing] = "2",
         as_child: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[

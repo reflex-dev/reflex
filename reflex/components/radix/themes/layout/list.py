@@ -12,10 +12,6 @@ from reflex.vars import Var
 from .base import LayoutComponent
 from .flex import Flex
 
-# from reflex.vars import Var
-
-# from reflex.components.radix.themes.layout import LayoutComponent
-
 LiteralListStyleTypeUnordered = Literal[
     "none",
     "disc",

@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
 
@@ -11,7 +12,7 @@ from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
-    LiteralSize,
+    LiteralSpacing,
     RadixThemesComponent,
 )
 
@@ -90,7 +91,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
     direction: Var[LiteralFlexDirection] = Var.create_safe("column")
 
     # The gap between the items of the radio group.
-    spacing: Var[LiteralSize] = Var.create_safe("2")
+    spacing: Var[LiteralSpacing] = Var.create_safe("2")
 
     # The size of the radio group.
     size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
