@@ -982,7 +982,9 @@ def show_rx_chakra_migration_instructions():
         "[bold]Run `reflex script keep-chakra` to automatically update your app."
     )
     console.log("")
-    console.log("For more details, please see https://reflex.dev/blog/2024-02-15-reflex-v0.4.0")
+    console.log(
+        "For more details, please see https://reflex.dev/blog/2024-02-15-reflex-v0.4.0"
+    )
 
 
 def migrate_to_rx_chakra():
