@@ -1,11 +1,12 @@
 """Stack components."""
+
 from __future__ import annotations
 
 from typing import Literal
 
 from reflex.components.component import Component
 
-from ..base import LiteralSize
+from ..base import LiteralSpacing
 from .flex import Flex
 
 LiteralJustify = Literal["start", "center", "end"]
@@ -19,7 +20,7 @@ class Stack(Flex):
     def create(
         cls,
         *children,
-        spacing: LiteralSize = "2",
+        spacing: LiteralSpacing = "2",
         **props,
     ) -> Component:
         """Create a new instance of the component.

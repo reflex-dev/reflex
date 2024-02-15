@@ -1,4 +1,5 @@
 """Declarative layout and common spacing props."""
+
 from __future__ import annotations
 
 from typing import Dict, Literal
@@ -9,7 +10,7 @@ from reflex.vars import Var
 from ..base import (
     LiteralAlign,
     LiteralJustify,
-    LiteralSize,
+    LiteralSpacing,
     RadixThemesComponent,
 )
 
@@ -40,13 +41,13 @@ class Grid(el.Div, RadixThemesComponent):
     justify: Var[LiteralJustify]
 
     # Gap between children: "0" - "9"
-    spacing: Var[LiteralSize]
+    spacing: Var[LiteralSpacing]
 
     # Gap between children horizontal: "0" - "9"
-    spacing_x: Var[LiteralSize]
+    spacing_x: Var[LiteralSpacing]
 
     # Gap between children vertical: "0" - "9"
-    spacing_y: Var[LiteralSize]
+    spacing_y: Var[LiteralSpacing]
 
     # Reflex maps the "spacing" prop to "gap" prop.
     _rename_props: Dict[str, str] = {
