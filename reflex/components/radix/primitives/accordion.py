@@ -536,11 +536,60 @@ class AccordionTrigger(AccordionComponent):
 
     alias = "RadixAccordionTrigger"
 
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the Accordion trigger component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The Accordion trigger Component.
+        """
+        if "AccordionTrigger" not in (
+            cls_name := props.pop("class_name", "AccordionTrigger")
+        ):
+            cls_name = f"{cls_name} AccordionTrigger"
+
+        return super().create(
+            *children,
+            class_name=cls_name,
+            **props,
+        )
+
     def _apply_theme(self, theme: Component):
         self.style = Style(
             {
                 **self.style,
             }
+        )
+
+
+class AccordionIcon(Icon):
+    """An accordion icon component."""
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the Accordion icon component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The Accordion icon Component.
+        """
+        if "AccordionChevron" not in (
+            cls_name := props.pop("class_name", "AccordionChevron")
+        ):
+            cls_name = f"{cls_name} AccordionChevron"
+
+        return super().create(
+            *children,
+            tag="chevron_down",
+            class_name=cls_name,
+            **props,
         )
 
 
@@ -550,6 +599,28 @@ class AccordionContent(AccordionComponent):
     tag = "Content"
 
     alias = "RadixAccordionContent"
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the Accordion content component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The Accordion content Component.
+        """
+        if "AccordionContent" not in (
+            cls_name := props.pop("class_name", "AccordionContent")
+        ):
+            cls_name = f"{cls_name} AccordionContent"
+
+        return super().create(
+            *children,
+            class_name=cls_name,
+            **props,
+        )
 
     def _apply_theme(self, theme: Component):
         self.style = Style(
@@ -591,6 +662,7 @@ class Accordion(SimpleNamespace):
     content = staticmethod(AccordionContent.create)
     header = staticmethod(AccordionHeader.create)
     item = staticmethod(AccordionItem.create)
+    icon = staticmethod(AccordionIcon.create)
     root = staticmethod(AccordionRoot.create)
     trigger = staticmethod(AccordionTrigger.create)
 
