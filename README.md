@@ -101,15 +101,12 @@ def index():
     return rx.center(
         rx.vstack(
             rx.heading("DALL-E", font_size="1.5em"),
-            rx.radix.text_field.root(
-                rx.input(
+            rx.input(
                     placeholder="Enter a prompt..",
                     on_blur=State.set_prompt,
-                    width="100%",
-                ),
-                width="100%",
+                    width="25em",
             ),
-            rx.button("Generate Image", on_click=State.get_image, width="100%"),
+            rx.button("Generate Image", on_click=State.get_image,width="25em"),
             rx.cond(
                 State.processing,
                 rx.chakra.circular_progress(is_indeterminate=True),
@@ -117,12 +114,10 @@ def index():
                     State.complete,
                     rx.image(
                         src=State.image_url,
+                        width="20em"
                     ),
                 ),
             ),
-            width="25em",
-            padding="1em",
-            spacing="2",
             align_items="center",
             border_radius="10px",
         ),
