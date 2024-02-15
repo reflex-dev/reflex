@@ -525,15 +525,10 @@ class AccordionItem(AccordionComponent):
                 AccordionHeader.create(
                     AccordionTrigger.create(
                         header,
-                        Icon.create(
-                            tag="chevron_down",
-                            class_name="AccordionChevron",
-                            display="inline-block",
-                        ),
-                        class_name="AccordionTrigger",
+                        AccordionIcon.create(),
                     ),
                 ),
-                AccordionContent.create(content, class_name="AccordionContent"),
+                AccordionContent.create(content),
             ]
 
         return super().create(*children, value=value, **props, class_name=cls_name)
