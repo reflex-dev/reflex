@@ -96,7 +96,6 @@ class State(rx.State):
         self.image_url = response.data[0].url
         self.processing, self.complete = False, True
 
-
 def index():
     return rx.center(
         rx.vstack(
@@ -118,8 +117,7 @@ def index():
                     ),
                 ),
             ),
-            align_items="center",
-            border_radius="10px",
+            align="center",
         ),
         width="100%",
         height="100vh",
