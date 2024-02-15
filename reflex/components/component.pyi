@@ -70,7 +70,13 @@ class BaseComponent(Base, ABC):
     @abstractmethod
     def get_refs(self) -> set[str]: ...
 
-ComponentStyle = Dict[Union[str, Type[BaseComponent], Callable, SimpleNamespace], Any]
+class ComponentNamespace(SimpleNamespace): ...
+
+def evaluate_style_namespaces(style: ComponentStyle) -> dict: ...
+
+ComponentStyle = Dict[
+    Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
+]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
 
 class Component(BaseComponent, ABC):
@@ -385,7 +391,3 @@ class MemoizationLeaf(Component):
             The memoization leaf
         """
         ...
-
-class ComponentNamespace(SimpleNamespace): ...
-
-def evaluate_style_namespaces(style: ComponentStyle) -> dict: ...
