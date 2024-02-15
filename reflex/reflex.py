@@ -84,6 +84,10 @@ def _init(
 
     prerequisites.ensure_reflex_installation_id()
 
+    # When upgrading to 0.4, show migration instructions.
+    if prerequisites.should_show_rx_chakra_migration_instructions():
+        prerequisites.show_rx_chakra_migration_instructions()
+
     # Set up the app directory, only if the config doesn't exist.
     if not os.path.exists(constants.Config.FILE):
         if template is None:
@@ -99,9 +103,6 @@ def _init(
 
     # Migrate Pynecone projects to Reflex.
     prerequisites.migrate_to_reflex()
-
-    if prerequisites.should_show_rx_chakra_migration_instructions():
-        prerequisites.show_rx_chakra_migration_instructions()
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
