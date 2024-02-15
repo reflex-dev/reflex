@@ -7,10 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
 from typing import Any, Dict, Literal
 from reflex.components import el
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.debounce import DebounceInput
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -888,7 +887,7 @@ class Input(RadixThemesComponent):
         ...
     def get_event_triggers(self) -> Dict[str, Any]: ...
 
-class TextField(SimpleNamespace):
+class TextField(ComponentNamespace):
     root = staticmethod(TextFieldRoot.create)
     input = staticmethod(TextFieldInput.create)
     slot = staticmethod(TextFieldSlot.create)

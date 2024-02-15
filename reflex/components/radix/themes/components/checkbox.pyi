@@ -7,9 +7,8 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
 from typing import Any, Dict, Literal
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.constants import EventTriggers
@@ -371,7 +370,7 @@ class HighLevelCheckbox(RadixThemesComponent):
         """
         ...
 
-class CheckboxNamespace(SimpleNamespace):
+class CheckboxNamespace(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,

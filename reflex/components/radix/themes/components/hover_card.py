@@ -1,8 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
-from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
 from reflex import el
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -64,7 +64,7 @@ class HoverCardContent(el.Div, RadixThemesComponent):
     avoid_collisions: Var[bool]
 
 
-class HoverCard(SimpleNamespace):
+class HoverCard(ComponentNamespace):
     """For sighted users to preview content available behind a link."""
 
     root = __call__ = staticmethod(HoverCardRoot.create)

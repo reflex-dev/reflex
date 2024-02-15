@@ -6,6 +6,7 @@ import pytest
 
 import reflex as rx
 from reflex import style
+from reflex.components.component import evaluate_style_namespaces
 from reflex.style import Style
 from reflex.vars import Var
 
@@ -494,3 +495,11 @@ def test_style_via_component_with_state(
     assert comp.style._var_data == expected_get_style["css"]._var_data
     # Assert that style values are equal.
     compare_dict_of_var(comp._get_style(), expected_get_style)
+
+
+def test_evaluate_style_namespaces():
+    """Test that namespaces get converted to create functions."""
+    style_dict = {rx.text: {"color": "blue"}}
+    assert rx.text.__call__ not in style_dict
+    style_dict = evaluate_style_namespaces(style_dict)
+    assert rx.text.__call__ in style_dict

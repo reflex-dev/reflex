@@ -7,9 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
 from typing import Any, Dict, Literal
 from reflex import el
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import RadixThemesComponent
@@ -337,7 +337,7 @@ class HoverCardContent(el.Div, RadixThemesComponent):
         """
         ...
 
-class HoverCard(SimpleNamespace):
+class HoverCard(ComponentNamespace):
     root = staticmethod(HoverCardRoot.create)
     trigger = staticmethod(HoverCardTrigger.create)
     content = staticmethod(HoverCardContent.create)

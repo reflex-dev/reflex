@@ -7,8 +7,8 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
+from reflex.components.component import ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
 from reflex.constants import EventTriggers
@@ -789,7 +789,7 @@ class DrawerDescription(DrawerComponent):
         """
         ...
 
-class Drawer(SimpleNamespace):
+class Drawer(ComponentNamespace):
     root = staticmethod(DrawerRoot.create)
     trigger = staticmethod(DrawerTrigger.create)
     portal = staticmethod(DrawerPortal.create)

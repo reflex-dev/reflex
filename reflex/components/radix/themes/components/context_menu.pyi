@@ -7,8 +7,8 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -826,7 +826,7 @@ class ContextMenuSeparator(RadixThemesComponent):
         """
         ...
 
-class ContextMenu(SimpleNamespace):
+class ContextMenu(ComponentNamespace):
     root = staticmethod(ContextMenuRoot.create)
     trigger = staticmethod(ContextMenuTrigger.create)
     content = staticmethod(ContextMenuContent.create)

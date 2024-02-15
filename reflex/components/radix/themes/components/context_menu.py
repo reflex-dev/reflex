@@ -1,7 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal
 
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -147,7 +147,7 @@ class ContextMenuSeparator(RadixThemesComponent):
     tag = "ContextMenu.Separator"
 
 
-class ContextMenu(SimpleNamespace):
+class ContextMenu(ComponentNamespace):
     """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
 
     root = staticmethod(ContextMenuRoot.create)

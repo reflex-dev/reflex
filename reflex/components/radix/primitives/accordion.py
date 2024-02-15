@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.match import Match
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
@@ -585,7 +584,7 @@ to {
 """
 
 
-class Accordion(SimpleNamespace):
+class Accordion(ComponentNamespace):
     """Accordion component."""
 
     content = staticmethod(AccordionContent.create)

@@ -7,9 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
 from typing import List, Literal
 from reflex import el
+from reflex.components.component import ComponentNamespace
 from reflex.vars import Var
 from ..base import RadixThemesComponent
 
@@ -1066,7 +1066,7 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
         """
         ...
 
-class Table(SimpleNamespace):
+class Table(ComponentNamespace):
     root = staticmethod(TableRoot.create)
     header = staticmethod(TableHeader.create)
     body = staticmethod(TableBody.create)
