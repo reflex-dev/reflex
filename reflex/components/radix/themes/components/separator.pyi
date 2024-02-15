@@ -19,7 +19,9 @@ class Separator(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
+        ] = None,
         color_scheme: Optional[
             Union[
                 Var[
@@ -81,9 +83,6 @@ class Separator(RadixThemesComponent):
                     "gray",
                 ],
             ]
-        ] = None,
-        size: Optional[
-            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
         ] = None,
         orientation: Optional[
             Union[
@@ -152,9 +151,8 @@ class Separator(RadixThemesComponent):
 
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
             size: The size of the select: "1" | "2" | "3" | "4"
+            color_scheme: The color of the select
             orientation: The orientation of the separator.
             decorative: When true, signifies that it is purely visual, carries no semantic meaning, and ensures it is not present in the accessibility tree.
             style: The style of the component.

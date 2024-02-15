@@ -687,7 +687,10 @@ def test_stateful_banner():
 
 TEST_VAR = Var.create_safe("test")._replace(
     merge_var_data=VarData(
-        hooks={"useTest"}, imports={"test": {ImportVar(tag="test")}}, state="Test"
+        hooks={"useTest"},
+        imports={"test": {ImportVar(tag="test")}},
+        state="Test",
+        interpolations=[],
     )
 )
 FORMATTED_TEST_VAR = Var.create(f"foo{TEST_VAR}bar")
@@ -948,3 +951,235 @@ def test_instantiate_all_components():
         component = getattr(rx, component_name)
         if isinstance(component, type) and issubclass(component, Component):
             component.create()
+
+
+class InvalidParentComponent(Component):
+    """Invalid Parent Component."""
+
+    ...
+
+
+class ValidComponent1(Component):
+    """Test valid component."""
+
+    _valid_children = ["ValidComponent2"]
+
+
+class ValidComponent2(Component):
+    """Test valid component."""
+
+    ...
+
+
+class ValidComponent3(Component):
+    """Test valid component."""
+
+    _valid_parents = ["ValidComponent2"]
+
+
+class ValidComponent4(Component):
+    """Test valid component."""
+
+    _invalid_children = ["InvalidComponent"]
+
+
+class InvalidComponent(Component):
+    """Test invalid component."""
+
+    ...
+
+
+valid_component1 = ValidComponent1.create
+valid_component2 = ValidComponent2.create
+invalid_component = InvalidComponent.create
+valid_component3 = ValidComponent3.create
+invalid_parent = InvalidParentComponent.create
+valid_component4 = ValidComponent4.create
+
+
+def test_validate_valid_children():
+    valid_component1(valid_component2())
+    valid_component1(
+        rx.fragment(valid_component2()),
+    )
+    valid_component1(
+        rx.fragment(
+            rx.fragment(
+                rx.fragment(valid_component2()),
+            ),
+        ),
+    )
+
+    valid_component1(
+        rx.cond(  # type: ignore
+            True,
+            rx.fragment(valid_component2()),
+            rx.fragment(
+                rx.foreach(Var.create([1, 2, 3]), lambda x: valid_component2(x))  # type: ignore
+            ),
+        )
+    )
+
+    valid_component1(
+        rx.cond(
+            True,
+            valid_component2(),
+            rx.fragment(
+                rx.match(
+                    "condition",
+                    ("first", valid_component2()),
+                    rx.fragment(valid_component2(rx.text("default"))),
+                )
+            ),
+        )
+    )
+
+    valid_component1(
+        rx.match(
+            "condition",
+            ("first", valid_component2()),
+            ("second", "third", rx.fragment(valid_component2())),
+            (
+                "fourth",
+                rx.cond(True, valid_component2(), rx.fragment(valid_component2())),
+            ),
+            (
+                "fifth",
+                rx.match(
+                    "nested_condition",
+                    ("nested_first", valid_component2()),
+                    rx.fragment(valid_component2()),
+                ),
+                valid_component2(),
+            ),
+        )
+    )
+
+
+def test_validate_valid_parents():
+    valid_component2(valid_component3())
+    valid_component2(
+        rx.fragment(valid_component3()),
+    )
+    valid_component1(
+        rx.fragment(
+            valid_component2(
+                rx.fragment(valid_component3()),
+            ),
+        ),
+    )
+
+    valid_component2(
+        rx.cond(  # type: ignore
+            True,
+            rx.fragment(valid_component3()),
+            rx.fragment(
+                rx.foreach(
+                    Var.create([1, 2, 3]),  # type: ignore
+                    lambda x: valid_component2(valid_component3(x)),
+                )
+            ),
+        )
+    )
+
+    valid_component2(
+        rx.cond(
+            True,
+            valid_component3(),
+            rx.fragment(
+                rx.match(
+                    "condition",
+                    ("first", valid_component3()),
+                    rx.fragment(valid_component3(rx.text("default"))),
+                )
+            ),
+        )
+    )
+
+    valid_component2(
+        rx.match(
+            "condition",
+            ("first", valid_component3()),
+            ("second", "third", rx.fragment(valid_component3())),
+            (
+                "fourth",
+                rx.cond(True, valid_component3(), rx.fragment(valid_component3())),
+            ),
+            (
+                "fifth",
+                rx.match(
+                    "nested_condition",
+                    ("nested_first", valid_component3()),
+                    rx.fragment(valid_component3()),
+                ),
+                valid_component3(),
+            ),
+        )
+    )
+
+
+def test_validate_invalid_children():
+    with pytest.raises(ValueError):
+        valid_component4(invalid_component())
+
+    with pytest.raises(ValueError):
+        valid_component4(
+            rx.fragment(invalid_component()),
+        )
+
+    with pytest.raises(ValueError):
+        valid_component2(
+            rx.fragment(
+                valid_component4(
+                    rx.fragment(invalid_component()),
+                ),
+            ),
+        )
+
+    with pytest.raises(ValueError):
+        valid_component4(
+            rx.cond(  # type: ignore
+                True,
+                rx.fragment(invalid_component()),
+                rx.fragment(
+                    rx.foreach(Var.create([1, 2, 3]), lambda x: invalid_component(x))  # type: ignore
+                ),
+            )
+        )
+
+    with pytest.raises(ValueError):
+        valid_component4(
+            rx.cond(
+                True,
+                invalid_component(),
+                rx.fragment(
+                    rx.match(
+                        "condition",
+                        ("first", invalid_component()),
+                        rx.fragment(invalid_component(rx.text("default"))),
+                    )
+                ),
+            )
+        )
+
+    with pytest.raises(ValueError):
+        valid_component4(
+            rx.match(
+                "condition",
+                ("first", invalid_component()),
+                ("second", "third", rx.fragment(invalid_component())),
+                (
+                    "fourth",
+                    rx.cond(True, invalid_component(), rx.fragment(valid_component2())),
+                ),
+                (
+                    "fifth",
+                    rx.match(
+                        "nested_condition",
+                        ("nested_first", invalid_component()),
+                        rx.fragment(invalid_component()),
+                    ),
+                    invalid_component(),
+                ),
+            )
+        )

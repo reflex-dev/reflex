@@ -188,6 +188,7 @@ class ProgressIndicator(ProgressComponent):
         cls,
         *children,
         value: Optional[Union[Var[Optional[int]], Optional[int]]] = None,
+        max: Optional[Union[Var[Optional[int]], Optional[int]]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -247,6 +248,7 @@ class ProgressIndicator(ProgressComponent):
         Args:
             *children: The children of the component.
             value: The current progress value.
+            max: The maximum progress value.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.

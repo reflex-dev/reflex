@@ -188,6 +188,35 @@ def to_kebab_case(text: str) -> str:
     return to_snake_case(text).replace("_", "-")
 
 
+def _escape_js_string(string: str) -> str:
+    """Escape the string for use as a JS string literal.
+
+    Args:
+        string: The string to escape.
+
+    Returns:
+        The escaped string.
+    """
+    # Escape backticks.
+    string = string.replace(r"\`", "`")
+    string = string.replace("`", r"\`")
+    return string
+
+
+def _wrap_js_string(string: str) -> str:
+    """Wrap string so it looks like {`string`}.
+
+    Args:
+        string: The string to wrap.
+
+    Returns:
+        The wrapped string.
+    """
+    string = wrap(string, "`")
+    string = wrap(string, "{")
+    return string
+
+
 def format_string(string: str) -> str:
     """Format the given string as a JS string literal..
 
@@ -197,15 +226,33 @@ def format_string(string: str) -> str:
     Returns:
         The formatted string.
     """
-    # Escape backticks.
-    string = string.replace(r"\`", "`")
-    string = string.replace("`", r"\`")
+    return _wrap_js_string(_escape_js_string(string))
 
-    # Wrap the string so it looks like {`string`}.
-    string = wrap(string, "`")
-    string = wrap(string, "{")
 
-    return string
+def format_f_string_prop(prop: BaseVar) -> str:
+    """Format the string in a given prop as an f-string.
+
+    Args:
+        prop: The prop to format.
+
+    Returns:
+        The formatted string.
+    """
+    s = prop._var_full_name
+    var_data = prop._var_data
+    interps = var_data.interpolations if var_data else []
+    parts: List[str] = []
+
+    if interps:
+        for i, (start, end) in enumerate(interps):
+            prev_end = interps[i - 1][1] if i > 0 else 0
+            parts.append(_escape_js_string(s[prev_end:start]))
+            parts.append(s[start:end])
+        parts.append(_escape_js_string(s[interps[-1][1] :]))
+    else:
+        parts.append(_escape_js_string(s))
+
+    return _wrap_js_string("".join(parts))
 
 
 def format_var(var: Var) -> str:
@@ -345,7 +392,9 @@ def format_prop(
         if isinstance(prop, Var):
             if not prop._var_is_local or prop._var_is_string:
                 return str(prop)
-            if types._issubclass(prop._var_type, str):
+            if isinstance(prop, BaseVar) and types._issubclass(prop._var_type, str):
+                if prop._var_data and prop._var_data.interpolations:
+                    return format_f_string_prop(prop)
                 return format_string(prop._var_full_name)
             prop = prop._var_full_name
 

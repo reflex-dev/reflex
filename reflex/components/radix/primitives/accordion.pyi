@@ -8,7 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional
 from reflex.components.component import Component
 from reflex.components.core.match import Match
 from reflex.components.lucide.icon import Icon
@@ -303,6 +303,8 @@ class AccordionItem(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
+        header: Optional[Component | Var] = None,
+        content: Optional[Component | Var] = None,
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
@@ -359,10 +361,12 @@ class AccordionItem(AccordionComponent):
         ] = None,
         **props
     ) -> "AccordionItem":
-        """Create the component.
+        """Create an accordion item.
 
         Args:
-            *children: The children of the component.
+            header: The header of the accordion item.
+            content: The content of the accordion item.
+            *children: The list of children to use if header and content are not provided.
             value: A unique identifier for the item.
             disabled: When true, prevents the user from interacting with the item.
             as_child: Change the default rendered element for the one passed as a child.
@@ -372,13 +376,10 @@ class AccordionItem(AccordionComponent):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: Additional properties to apply to the accordion item.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            The accordion item.
         """
         ...
 
@@ -625,14 +626,10 @@ class AccordionContent(AccordionComponent):
         """
         ...
 
-def accordion_item(
-    header: Component | Var, content: Component | Var, **props
-) -> Component: ...
-
 class Accordion(SimpleNamespace):
     content = staticmethod(AccordionContent.create)
     header = staticmethod(AccordionHeader.create)
-    item = staticmethod(accordion_item)
+    item = staticmethod(AccordionItem.create)
     root = staticmethod(AccordionRoot.create)
     trigger = staticmethod(AccordionTrigger.create)
 
