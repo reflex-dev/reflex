@@ -72,7 +72,7 @@ Here is the complete code to create this. This is all done in one Python file!
 import reflex as rx
 import openai
 
-openai_client =  openai.OpenAI(api_key="YOUR_API_KEY")
+openai_client = openai.OpenAI()
 
 
 class State(rx.State):
