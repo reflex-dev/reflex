@@ -35,6 +35,7 @@ def index() -> rx.Component:
             gap="1.5em",
             font_size="2em",
             padding_top="10%",
+            align="center",
         ),
     )
 
