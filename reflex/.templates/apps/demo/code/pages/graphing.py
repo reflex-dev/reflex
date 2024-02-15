@@ -144,7 +144,7 @@ def graphing_page() -> rx.Component:
                 ),
                 rx.chakra.tab_panels(
                     rx.chakra.tab_panel(
-                        rx.chakra.code_block(
+                        rx.code_block(
                             graph_1_code,
                             language="python",
                             show_line_numbers=True,
@@ -154,7 +154,7 @@ def graphing_page() -> rx.Component:
                         padding_y=".25em",
                     ),
                     rx.chakra.tab_panel(
-                        rx.chakra.code_block(
+                        rx.code_block(
                             data_1_show,
                             language="python",
                             show_line_numbers=True,
@@ -217,7 +217,7 @@ def graphing_page() -> rx.Component:
                 ),
                 rx.chakra.tab_panels(
                     rx.chakra.tab_panel(
-                        rx.chakra.code_block(
+                        rx.code_block(
                             graph_2_code,
                             language="python",
                             show_line_numbers=True,
@@ -227,7 +227,7 @@ def graphing_page() -> rx.Component:
                         padding_y=".25em",
                     ),
                     rx.chakra.tab_panel(
-                        rx.chakra.code_block(
+                        rx.code_block(
                             graph_2_state,
                             language="python",
                             show_line_numbers=True,
