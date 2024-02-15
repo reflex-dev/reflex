@@ -498,7 +498,7 @@ def test_style_via_component_with_state(
 
 
 def test_evaluate_style_namespaces():
-    """Test that namespaces get converted to create functions."""
+    """Test that namespaces get converted to component create functions."""
     style_dict = {rx.text: {"color": "blue"}}
     assert rx.text.__call__ not in style_dict
     style_dict = evaluate_style_namespaces(style_dict)  # type: ignore
