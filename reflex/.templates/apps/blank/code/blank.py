@@ -18,12 +18,10 @@ def index() -> rx.Component:
         rx.vstack(
             rx.heading("Welcome to Reflex!", size="9"),
             rx.text("Get started by editing ", rx.code(filename)),
-            rx.link(
-                rx.button(
-                    "Check out our docs!",
-                    on_click=lambda: rx.redirect(docs_url),
-                    size="4",
-                ),
+            rx.button(
+                "Check out our docs!",
+                on_click=lambda: rx.redirect(docs_url),
+                size="4",
             ),
             align="center",
             spacing="7",
