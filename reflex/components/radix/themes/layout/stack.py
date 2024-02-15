@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from reflex.components.component import Component
 
-from ..base import LiteralAlign, LiteralSize
+from ..base import LiteralAlign, LiteralSpacing
 from .flex import Flex
 
 
@@ -15,7 +15,7 @@ class Stack(Flex):
     def create(
         cls,
         *children,
-        spacing: LiteralSize = "2",
+        spacing: LiteralSpacing = "2",
         align: LiteralAlign = "start",
         **props,
     ) -> Component:

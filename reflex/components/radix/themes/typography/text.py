@@ -22,7 +22,26 @@ from .base import (
     LiteralTextWeight,
 )
 
-LiteralType = Literal["p", "label", "div", "span"]
+LiteralType = Literal[
+    "p",
+    "label",
+    "div",
+    "span",
+    "b",
+    "i",
+    "u",
+    "abbr",
+    "cite",
+    "del",
+    "em",
+    "ins",
+    "kbd",
+    "mark",
+    "s",
+    "samp",
+    "sub",
+    "sup",
+]
 
 
 class Text(el.Span, RadixThemesComponent):

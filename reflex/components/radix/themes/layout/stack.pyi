@@ -8,7 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from reflex.components.component import Component
-from ..base import LiteralAlign, LiteralSize
+from ..base import LiteralAlign, LiteralSpacing
 from .flex import Flex
 
 class Stack(Flex):
@@ -17,7 +17,7 @@ class Stack(Flex):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSize] = "2",
+        spacing: Optional[LiteralSpacing] = "2",
         align: Optional[LiteralAlign] = "start",
         as_child: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
@@ -176,7 +176,7 @@ class VStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSize] = "2",
+        spacing: Optional[LiteralSpacing] = "2",
         align: Optional[LiteralAlign] = "start",
         as_child: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
@@ -335,7 +335,7 @@ class HStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSize] = "2",
+        spacing: Optional[LiteralSpacing] = "2",
         align: Optional[LiteralAlign] = "start",
         as_child: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[

@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from typing import Literal
 
 from reflex.vars import Var
@@ -6,9 +7,10 @@ from reflex.vars import Var
 from ..base import (
     LiteralAccentColor,
     LiteralRadius,
-    LiteralSize,
     RadixThemesComponent,
 )
+
+LiteralSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
 
 class Avatar(RadixThemesComponent):
