@@ -125,7 +125,7 @@ class AccordionRoot(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
-        type_: Optional[
+        type: Optional[
             Union[Var[Literal["single", "multiple"]], Literal["single", "multiple"]]
         ] = None,
         value: Optional[
@@ -274,7 +274,7 @@ class AccordionRoot(AccordionComponent):
 
         Args:
             *children: The children of the component.
-            type_: The type of accordion (single or multiple).
+            type: The type of accordion (single or multiple).
             value: The value of the item to expand.
             default_value: The default value of the item to expand.
             collapsible: Whether or not the accordion is collapsible.
