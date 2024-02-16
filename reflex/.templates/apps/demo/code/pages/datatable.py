@@ -306,7 +306,7 @@ def datatable_page() -> rx.Component:
                 ),
                 rx.chakra.tab_panels(
                     rx.chakra.tab_panel(
-                        rx.chakra.code_block(
+                        rx.code_block(
                             code_show,
                             language="python",
                             show_line_numbers=True,
@@ -316,7 +316,7 @@ def datatable_page() -> rx.Component:
                         padding_y=".25em",
                     ),
                     rx.chakra.tab_panel(
-                        rx.chakra.code_block(
+                        rx.code_block(
                             data_show,
                             language="python",
                             show_line_numbers=True,
@@ -326,7 +326,7 @@ def datatable_page() -> rx.Component:
                         padding_y=".25em",
                     ),
                     rx.chakra.tab_panel(
-                        rx.chakra.code_block(
+                        rx.code_block(
                             state_show,
                             language="python",
                             show_line_numbers=True,
@@ -336,7 +336,7 @@ def datatable_page() -> rx.Component:
                         padding_y=".25em",
                     ),
                     rx.chakra.tab_panel(
-                        rx.chakra.code_block(
+                        rx.code_block(
                             darkTheme_show,
                             language="python",
                             show_line_numbers=True,

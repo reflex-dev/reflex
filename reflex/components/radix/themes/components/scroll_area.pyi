@@ -23,7 +23,7 @@ class ScrollArea(RadixThemesComponent):
                 Literal["vertical", "horizontal", "both"],
             ]
         ] = None,
-        type_: Optional[
+        type: Optional[
             Union[
                 Var[Literal["auto", "always", "scroll", "hover"]],
                 Literal["auto", "always", "scroll", "hover"],
@@ -91,7 +91,7 @@ class ScrollArea(RadixThemesComponent):
         Args:
             *children: Child components.
             scrollbars: The alignment of the scroll area
-            type_: Describes the nature of scrollbar visibility, similar to how the scrollbar preferences in MacOS control visibility of native scrollbars. "auto" | "always" | "scroll" | "hover"
+            type: Describes the nature of scrollbar visibility, similar to how the scrollbar preferences in MacOS control visibility of native scrollbars. "auto" | "always" | "scroll" | "hover"
             scroll_hide_delay: If type is set to either "scroll" or "hover", this prop determines the length of time, in milliseconds, before the scrollbars are hidden after the user stops interacting with scrollbars.
             style: The style of the component.
             key: A unique key for the component.

@@ -7,15 +7,14 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
 import reflex as rx
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import LiteralAccentColor, LiteralSize, RadixThemesComponent
+from ..base import LiteralAccentColor, LiteralSpacing, RadixThemesComponent
 
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 
@@ -288,8 +287,8 @@ class HighLevelRadioGroup(RadixThemesComponent):
         ] = None,
         spacing: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         size: Optional[
@@ -451,7 +450,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
         """
         ...
 
-class RadioGroup(SimpleNamespace):
+class RadioGroup(ComponentNamespace):
     root = staticmethod(RadioGroupRoot.create)
     item = staticmethod(RadioGroupItem.create)
 
@@ -467,8 +466,8 @@ class RadioGroup(SimpleNamespace):
         ] = None,
         spacing: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         size: Optional[

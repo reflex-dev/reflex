@@ -150,7 +150,7 @@ def forms_page() -> rx.Component:
                 ),
                 rx.chakra.tab_panels(
                     rx.chakra.tab_panel(
-                        rx.chakra.code_block(
+                        rx.code_block(
                             forms_1_code,
                             language="python",
                             show_line_numbers=True,
@@ -160,7 +160,7 @@ def forms_page() -> rx.Component:
                         padding_y=".25em",
                     ),
                     rx.chakra.tab_panel(
-                        rx.chakra.code_block(
+                        rx.code_block(
                             forms_1_state,
                             language="python",
                             show_line_numbers=True,
@@ -223,7 +223,7 @@ def forms_page() -> rx.Component:
                 ),
                 rx.chakra.tab_panels(
                     rx.chakra.tab_panel(
-                        rx.chakra.code_block(
+                        rx.code_block(
                             forms_2_code,
                             language="python",
                             show_line_numbers=True,
@@ -233,7 +233,7 @@ def forms_page() -> rx.Component:
                         padding_y=".25em",
                     ),
                     rx.chakra.tab_panel(
-                        rx.chakra.code_block(
+                        rx.code_block(
                             forms_2_state,
                             language="python",
                             show_line_numbers=True,

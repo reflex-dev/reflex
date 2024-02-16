@@ -1,7 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal
 
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -12,7 +12,7 @@ from ..base import (
 
 
 class ContextMenuRoot(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
 
     tag = "ContextMenu.Root"
 
@@ -34,7 +34,7 @@ class ContextMenuRoot(RadixThemesComponent):
 
 
 class ContextMenuTrigger(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Wraps the element that will open the context menu."""
 
     tag = "ContextMenu.Trigger"
 
@@ -47,7 +47,7 @@ class ContextMenuTrigger(RadixThemesComponent):
 
 
 class ContextMenuContent(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The component that pops out when the context menu is open."""
 
     tag = "ContextMenu.Content"
 
@@ -86,13 +86,13 @@ class ContextMenuContent(RadixThemesComponent):
 
 
 class ContextMenuSub(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Contains all the parts of a submenu."""
 
     tag = "ContextMenu.Sub"
 
 
 class ContextMenuSubTrigger(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """An item that opens a submenu."""
 
     tag = "ContextMenu.SubTrigger"
 
@@ -103,7 +103,7 @@ class ContextMenuSubTrigger(RadixThemesComponent):
 
 
 class ContextMenuSubContent(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The component that pops out when a submenu is open."""
 
     tag = "ContextMenu.SubContent"
 
@@ -128,7 +128,7 @@ class ContextMenuSubContent(RadixThemesComponent):
 
 
 class ContextMenuItem(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The component that contains the context menu items."""
 
     tag = "ContextMenu.Item"
 
@@ -142,13 +142,13 @@ class ContextMenuItem(RadixThemesComponent):
 
 
 class ContextMenuSeparator(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Separates items in a context menu."""
 
     tag = "ContextMenu.Separator"
 
 
-class ContextMenu(SimpleNamespace):
-    """ContextMenu components namespace."""
+class ContextMenu(ComponentNamespace):
+    """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
 
     root = staticmethod(ContextMenuRoot.create)
     trigger = staticmethod(ContextMenuTrigger.create)

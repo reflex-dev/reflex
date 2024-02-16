@@ -1,9 +1,8 @@
 """List components."""
 
-from types import SimpleNamespace
 from typing import Iterable, Literal, Optional, Union
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
 from reflex.components.el.elements.typography import Li
 from reflex.style import Style
@@ -11,10 +10,6 @@ from reflex.vars import Var
 
 from .base import LayoutComponent
 from .flex import Flex
-
-# from reflex.vars import Var
-
-# from reflex.components.radix.themes.layout import LayoutComponent
 
 LiteralListStyleTypeUnordered = Literal[
     "none",
@@ -146,7 +141,7 @@ class ListItem(Li):
     ...
 
 
-class List(SimpleNamespace):
+class List(ComponentNamespace):
     """List components."""
 
     item = ListItem.create

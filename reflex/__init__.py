@@ -107,6 +107,7 @@ _ALL_COMPONENTS = [
     "list_item",
     "unordered_list",
     "ordered_list",
+    "moment",
 ]
 
 _MAPPING = {

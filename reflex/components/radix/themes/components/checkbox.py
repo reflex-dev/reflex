@@ -1,8 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
-from types import SimpleNamespace
+
 from typing import Any, Dict, Literal
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.constants import EventTriggers
@@ -10,7 +10,7 @@ from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
-    LiteralSize,
+    LiteralSpacing,
     RadixThemesComponent,
 )
 
@@ -19,7 +19,7 @@ LiteralCheckboxVariant = Literal["classic", "surface", "soft"]
 
 
 class Checkbox(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Selects a single value, typically for submission in a form."""
 
     tag = "Checkbox"
 
@@ -80,7 +80,7 @@ class HighLevelCheckbox(RadixThemesComponent):
     text: Var[str]
 
     # The gap between the checkbox and the label.
-    spacing: Var[LiteralSize]
+    spacing: Var[LiteralSpacing]
 
     # The size of the checkbox "1" - "3".
     size: Var[LiteralCheckboxSize]
@@ -161,7 +161,7 @@ class HighLevelCheckbox(RadixThemesComponent):
         )
 
 
-class CheckboxNamespace(SimpleNamespace):
+class CheckboxNamespace(ComponentNamespace):
     """Checkbox components namespace."""
 
     __call__ = staticmethod(HighLevelCheckbox.create)

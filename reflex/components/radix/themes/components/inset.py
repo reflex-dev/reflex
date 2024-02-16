@@ -12,7 +12,7 @@ LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 
 class Inset(el.Div, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Applies a negative margin to allow content to bleed into the surrounding container."""
 
     tag = "Inset"
 

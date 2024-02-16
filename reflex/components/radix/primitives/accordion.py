@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from types import SimpleNamespace
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.match import Match
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
@@ -16,7 +15,7 @@ from reflex.style import (
     format_as_emotion,
 )
 from reflex.utils import imports
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import BaseVar, Var, VarData, get_unique_variable_name
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
@@ -312,13 +311,13 @@ class AccordionRoot(AccordionComponent):
     alias = "RadixAccordionRoot"
 
     # The type of accordion (single or multiple).
-    type_: Var[LiteralAccordionType]
+    type: Var[LiteralAccordionType]
 
     # The value of the item to expand.
-    value: Var[str]
+    value: Var[Optional[Union[str, List[str]]]]
 
     # The default value of the item to expand.
-    default_value: Var[str]
+    default_value: Var[Optional[Union[str, List[str]]]]
 
     # Whether or not the accordion is collapsible.
     collapsible: Var[bool]
@@ -428,7 +427,9 @@ class AccordionRoot(AccordionComponent):
 
     def _get_imports(self):
         return imports.merge_imports(
-            super()._get_imports(), self._var_data.imports if self._var_data else {}
+            super()._get_imports(),
+            self._var_data.imports if self._var_data else {},
+            {"@emotion/react": [imports.ImportVar(tag="keyframes")]},
         )
 
     def get_event_triggers(self) -> Dict[str, Any]:
@@ -441,6 +442,26 @@ class AccordionRoot(AccordionComponent):
             **super().get_event_triggers(),
             "on_value_change": lambda e0: [e0],
         }
+
+    def _get_custom_code(self) -> str:
+        return """
+const slideDown = keyframes`
+from {
+  height: 0;
+}
+to {
+  height: var(--radix-accordion-content-height);
+}
+`
+const slideUp = keyframes`
+from {
+  height: var(--radix-accordion-content-height);
+}
+to {
+  height: 0;
+}
+`
+"""
 
 
 class AccordionItem(AccordionComponent):
@@ -490,24 +511,26 @@ class AccordionItem(AccordionComponent):
         Returns:
             The accordion item.
         """
-        # The item requires a value to toggle (use the header as the default value).
-        value = props.pop("value", header if isinstance(header, Var) else str(header))
+        # The item requires a value to toggle (use a random unique name if not provided).
+        value = props.pop("value", get_unique_variable_name())
+
+        if "AccordionItem" not in (
+            cls_name := props.pop("class_name", "AccordionItem")
+        ):
+            cls_name = f"{cls_name} AccordionItem"
 
         if (header is not None) and (content is not None):
             children = [
                 AccordionHeader.create(
                     AccordionTrigger.create(
                         header,
-                        Icon.create(tag="chevron_down", class_name="AccordionChevron"),
-                        class_name="AccordionTrigger",
+                        AccordionIcon.create(),
                     ),
                 ),
-                AccordionContent.create(content, class_name="AccordionContent"),
+                AccordionContent.create(content),
             ]
 
-        return super().create(
-            *children, value=value, **props, class_name="AccordionItem"
-        )
+        return super().create(*children, value=value, **props, class_name=cls_name)
 
 
 class AccordionHeader(AccordionComponent):
@@ -517,12 +540,26 @@ class AccordionHeader(AccordionComponent):
 
     alias = "RadixAccordionHeader"
 
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the Accordion header component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The Accordion header Component.
+        """
+        if "AccordionHeader" not in (
+            cls_name := props.pop("class_name", "AccordionHeader")
+        ):
+            cls_name = f"{cls_name} AccordionHeader"
+
+        return super().create(*children, class_name=cls_name, **props)
+
     def _apply_theme(self, theme: Component):
-        self.style = Style(
-            {
-                **self.style,
-            }
-        )
+        self.style = Style({**self.style})
 
 
 class AccordionTrigger(AccordionComponent):
@@ -532,12 +569,48 @@ class AccordionTrigger(AccordionComponent):
 
     alias = "RadixAccordionTrigger"
 
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the Accordion trigger component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The Accordion trigger Component.
+        """
+        if "AccordionTrigger" not in (
+            cls_name := props.pop("class_name", "AccordionTrigger")
+        ):
+            cls_name = f"{cls_name} AccordionTrigger"
+
+        return super().create(*children, class_name=cls_name, **props)
+
     def _apply_theme(self, theme: Component):
-        self.style = Style(
-            {
-                **self.style,
-            }
-        )
+        self.style = Style({**self.style})
+
+
+class AccordionIcon(Icon):
+    """An accordion icon component."""
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the Accordion icon component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The Accordion icon Component.
+        """
+        if "AccordionChevron" not in (
+            cls_name := props.pop("class_name", "AccordionChevron")
+        ):
+            cls_name = f"{cls_name} AccordionChevron"
+
+        return super().create(tag="chevron_down", class_name=cls_name, **props)
 
 
 class AccordionContent(AccordionComponent):
@@ -547,46 +620,41 @@ class AccordionContent(AccordionComponent):
 
     alias = "RadixAccordionContent"
 
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the Accordion content component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The Accordion content Component.
+        """
+        if "AccordionContent" not in (
+            cls_name := props.pop("class_name", "AccordionContent")
+        ):
+            cls_name = f"{cls_name} AccordionContent"
+
+        return super().create(*children, class_name=cls_name, **props)
+
     def _apply_theme(self, theme: Component):
-        self.style = Style(
-            {
-                **self.style,
-            }
-        )
+        self.style = Style({**self.style})
 
-    def _get_imports(self):
-        return {
-            **super()._get_imports(),
-            "@emotion/react": [imports.ImportVar(tag="keyframes")],
-        }
-
-    def _get_custom_code(self) -> str:
-        return """
-const slideDown = keyframes`
-from {
-  height: 0;
-}
-to {
-  height: var(--radix-accordion-content-height);
-}
-`
-const slideUp = keyframes`
-from {
-  height: var(--radix-accordion-content-height);
-}
-to {
-  height: 0;
-}
-`
-"""
+    # def _get_imports(self):
+    #     return {
+    #         **super()._get_imports(),
+    #         "@emotion/react": [imports.ImportVar(tag="keyframes")],
+    #     }
 
 
-class Accordion(SimpleNamespace):
+class Accordion(ComponentNamespace):
     """Accordion component."""
 
     content = staticmethod(AccordionContent.create)
     header = staticmethod(AccordionHeader.create)
     item = staticmethod(AccordionItem.create)
+    icon = staticmethod(AccordionIcon.create)
     root = staticmethod(AccordionRoot.create)
     trigger = staticmethod(AccordionTrigger.create)
 

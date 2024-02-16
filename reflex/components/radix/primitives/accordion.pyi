@@ -7,9 +7,8 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
-from typing import Any, Dict, List, Literal, Optional
-from reflex.components.component import Component
+from typing import Any, Dict, List, Literal, Optional, Union
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.match import Match
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
@@ -20,7 +19,7 @@ from reflex.style import (
     format_as_emotion,
 )
 from reflex.utils import imports
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import BaseVar, Var, VarData, get_unique_variable_name
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
@@ -126,11 +125,15 @@ class AccordionRoot(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
-        type_: Optional[
+        type: Optional[
             Union[Var[Literal["single", "multiple"]], Literal["single", "multiple"]]
         ] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
+        value: Optional[
+            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
+        ] = None,
+        default_value: Optional[
+            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
+        ] = None,
         collapsible: Optional[Union[Var[bool], bool]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
@@ -271,7 +274,7 @@ class AccordionRoot(AccordionComponent):
 
         Args:
             *children: The children of the component.
-            type_: The type of accordion (single or multiple).
+            type: The type of accordion (single or multiple).
             value: The value of the item to expand.
             default_value: The default value of the item to expand.
             collapsible: Whether or not the accordion is collapsible.
@@ -443,7 +446,7 @@ class AccordionHeader(AccordionComponent):
         ] = None,
         **props
     ) -> "AccordionHeader":
-        """Create the component.
+        """Create the Accordion header component.
 
         Args:
             *children: The children of the component.
@@ -454,13 +457,10 @@ class AccordionHeader(AccordionComponent):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the component.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            The Accordion header Component.
         """
         ...
 
@@ -524,7 +524,7 @@ class AccordionTrigger(AccordionComponent):
         ] = None,
         **props
     ) -> "AccordionTrigger":
-        """Create the component.
+        """Create the Accordion trigger component.
 
         Args:
             *children: The children of the component.
@@ -535,13 +535,88 @@ class AccordionTrigger(AccordionComponent):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the component.
 
         Returns:
-            The component.
+            The Accordion trigger Component.
+        """
+        ...
 
-        Raises:
-            TypeError: If an invalid child is passed.
+class AccordionIcon(Icon):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        size: Optional[Union[Var[int], int]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        **props
+    ) -> "AccordionIcon":
+        """Create the Accordion icon component.
+
+        Args:
+            *children: The children of the component.
+            size: The size of the icon in pixels.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
+
+        Returns:
+            The Accordion icon Component.
         """
         ...
 
@@ -605,7 +680,7 @@ class AccordionContent(AccordionComponent):
         ] = None,
         **props
     ) -> "AccordionContent":
-        """Create the component.
+        """Create the Accordion content component.
 
         Args:
             *children: The children of the component.
@@ -616,20 +691,18 @@ class AccordionContent(AccordionComponent):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the component.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            The Accordion content Component.
         """
         ...
 
-class Accordion(SimpleNamespace):
+class Accordion(ComponentNamespace):
     content = staticmethod(AccordionContent.create)
     header = staticmethod(AccordionHeader.create)
     item = staticmethod(AccordionItem.create)
+    icon = staticmethod(AccordionIcon.create)
     root = staticmethod(AccordionRoot.create)
     trigger = staticmethod(AccordionTrigger.create)
 

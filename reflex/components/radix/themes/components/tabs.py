@@ -1,7 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal
 
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -11,7 +11,7 @@ from ..base import (
 
 
 class TabsRoot(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Set of content sections to be displayed one at a time."""
 
     tag = "Tabs.Root"
 
@@ -40,7 +40,7 @@ class TabsRoot(RadixThemesComponent):
 
 
 class TabsList(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Contains the triggers that sit alongside the active content."""
 
     tag = "Tabs.List"
 
@@ -49,7 +49,7 @@ class TabsList(RadixThemesComponent):
 
 
 class TabsTrigger(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The button that activates its associated content."""
 
     tag = "Tabs.Trigger"
 
@@ -63,7 +63,7 @@ class TabsTrigger(RadixThemesComponent):
 
 
 class TabsContent(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Contains the content associated with each trigger."""
 
     tag = "Tabs.Content"
 
@@ -71,8 +71,8 @@ class TabsContent(RadixThemesComponent):
     value: Var[str]
 
 
-class Tabs(SimpleNamespace):
-    """Tabs components namespace."""
+class Tabs(ComponentNamespace):
+    """Set of content sections to be displayed one at a time."""
 
     root = __call__ = staticmethod(TabsRoot.create)
     list = staticmethod(TabsList.create)

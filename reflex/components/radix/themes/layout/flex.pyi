@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Dict, Literal
 from reflex import el
 from reflex.vars import Var
-from ..base import LiteralAlign, LiteralJustify, LiteralSize, RadixThemesComponent
+from ..base import LiteralAlign, LiteralJustify, LiteralSpacing, RadixThemesComponent
 
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 LiteralFlexWrap = Literal["nowrap", "wrap", "wrap-reverse"]
@@ -48,8 +48,8 @@ class Flex(el.Div, RadixThemesComponent):
         ] = None,
         spacing: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         access_key: Optional[

@@ -949,8 +949,15 @@ def should_show_rx_chakra_migration_instructions() -> bool:
     if os.getenv("REFLEX_PROMPT_MIGRATE_TO_RX_CHAKRA") == "yes":
         return True
 
-    with open(constants.Dirs.REFLEX_JSON, "r") as f:
-        data = json.load(f)
+    if not Path(constants.Config.FILE).exists():
+        # They are running reflex init for the first time.
+        return False
+
+    existing_init_reflex_version = None
+    reflex_json = Path(constants.Dirs.REFLEX_JSON)
+    if reflex_json.exists():
+        with reflex_json.open("r") as f:
+            data = json.load(f)
         existing_init_reflex_version = data.get("version", None)
 
     if existing_init_reflex_version is None:
@@ -975,7 +982,9 @@ def show_rx_chakra_migration_instructions():
         "[bold]Run `reflex script keep-chakra` to automatically update your app."
     )
     console.log("")
-    console.log("For more details, please see https://TODO")  # TODO add link to docs
+    console.log(
+        "For more details, please see https://reflex.dev/blog/2024-02-16-reflex-v0.4.0"
+    )
 
 
 def migrate_to_rx_chakra():

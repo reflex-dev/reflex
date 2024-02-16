@@ -1,7 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Union
 
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -141,7 +141,7 @@ class DropdownMenuContent(RadixThemesComponent):
 
 
 class DropdownMenuSubTrigger(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """An item that opens a submenu."""
 
     tag = "DropdownMenu.SubTrigger"
 
@@ -272,7 +272,7 @@ class DropdownMenuSeparator(RadixThemesComponent):
     tag = "DropdownMenu.Separator"
 
 
-class DropdownMenu(SimpleNamespace):
+class DropdownMenu(ComponentNamespace):
     """DropdownMenu components namespace."""
 
     root = staticmethod(DropdownMenuRoot.create)

@@ -3,10 +3,11 @@
 # Style based on https://ui.shadcn.com/docs/components/drawer
 from __future__ import annotations
 
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
 
+from reflex.components.component import ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
+from reflex.components.radix.themes.base import Theme
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -142,6 +143,25 @@ class DrawerContent(DrawerComponent):
             EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0.target.value],
         }
 
+    @classmethod
+    def create(cls, *children, **props):
+        """Create a Drawer Content.
+         We wrap the Drawer content in an `rx.theme` to make radix themes definitions available to
+         rendered div in the DOM. This is because Vaul Drawer injects the Drawer overlay content in a sibling
+         div to the root div rendered by radix which contains styling definitions. Wrapping in `rx.theme`
+         makes the styling available to the overlay.
+
+        Args:
+            *children: The list of children to use.
+            **props: Additional properties to apply to the drawer content.
+
+        Returns:
+                 The drawer content.
+        """
+        comp = super().create(*children, **props)
+
+        return Theme.create(comp)
+
 
 class DrawerOverlay(DrawerComponent):
     """A layer that covers the inert portion of the view when the dialog is open."""
@@ -241,7 +261,7 @@ class DrawerDescription(DrawerComponent):
         return self.style
 
 
-class Drawer(SimpleNamespace):
+class Drawer(ComponentNamespace):
     """A namespace for Drawer components."""
 
     root = __call__ = staticmethod(DrawerRoot.create)

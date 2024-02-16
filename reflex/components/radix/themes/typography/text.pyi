@@ -7,14 +7,33 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
 from typing import Literal
 from reflex import el
+from reflex.components.component import ComponentNamespace
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextAlign, LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
-LiteralType = Literal["p", "label", "div", "span"]
+LiteralType = Literal[
+    "p",
+    "label",
+    "div",
+    "span",
+    "b",
+    "i",
+    "u",
+    "abbr",
+    "cite",
+    "del",
+    "em",
+    "ins",
+    "kbd",
+    "mark",
+    "s",
+    "samp",
+    "sub",
+    "sup",
+]
 
 class Text(el.Span, RadixThemesComponent):
     @overload
@@ -25,8 +44,48 @@ class Text(el.Span, RadixThemesComponent):
         as_child: Optional[Union[Var[bool], bool]] = None,
         as_: Optional[
             Union[
-                Var[Literal["p", "label", "div", "span"]],
-                Literal["p", "label", "div", "span"],
+                Var[
+                    Literal[
+                        "p",
+                        "label",
+                        "div",
+                        "span",
+                        "b",
+                        "i",
+                        "u",
+                        "abbr",
+                        "cite",
+                        "del",
+                        "em",
+                        "ins",
+                        "kbd",
+                        "mark",
+                        "s",
+                        "samp",
+                        "sub",
+                        "sup",
+                    ]
+                ],
+                Literal[
+                    "p",
+                    "label",
+                    "div",
+                    "span",
+                    "b",
+                    "i",
+                    "u",
+                    "abbr",
+                    "cite",
+                    "del",
+                    "em",
+                    "ins",
+                    "kbd",
+                    "mark",
+                    "s",
+                    "samp",
+                    "sub",
+                    "sup",
+                ],
             ]
         ] = None,
         size: Optional[
@@ -261,8 +320,48 @@ class Span(Text):
         *children,
         as_: Optional[
             Union[
-                Var[Literal["p", "label", "div", "span"]],
-                Literal["p", "label", "div", "span"],
+                Var[
+                    Literal[
+                        "p",
+                        "label",
+                        "div",
+                        "span",
+                        "b",
+                        "i",
+                        "u",
+                        "abbr",
+                        "cite",
+                        "del",
+                        "em",
+                        "ins",
+                        "kbd",
+                        "mark",
+                        "s",
+                        "samp",
+                        "sub",
+                        "sup",
+                    ]
+                ],
+                Literal[
+                    "p",
+                    "label",
+                    "div",
+                    "span",
+                    "b",
+                    "i",
+                    "u",
+                    "abbr",
+                    "cite",
+                    "del",
+                    "em",
+                    "ins",
+                    "kbd",
+                    "mark",
+                    "s",
+                    "samp",
+                    "sub",
+                    "sup",
+                ],
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
@@ -1039,7 +1138,7 @@ class Strong(el.Strong, RadixThemesComponent):
         """
         ...
 
-class TextNamespace(SimpleNamespace):
+class TextNamespace(ComponentNamespace):
     em = staticmethod(Em.create)
     kbd = staticmethod(Kbd.create)
     quote = staticmethod(Quote.create)
@@ -1052,8 +1151,48 @@ class TextNamespace(SimpleNamespace):
         as_child: Optional[Union[Var[bool], bool]] = None,
         as_: Optional[
             Union[
-                Var[Literal["p", "label", "div", "span"]],
-                Literal["p", "label", "div", "span"],
+                Var[
+                    Literal[
+                        "p",
+                        "label",
+                        "div",
+                        "span",
+                        "b",
+                        "i",
+                        "u",
+                        "abbr",
+                        "cite",
+                        "del",
+                        "em",
+                        "ins",
+                        "kbd",
+                        "mark",
+                        "s",
+                        "samp",
+                        "sub",
+                        "sup",
+                    ]
+                ],
+                Literal[
+                    "p",
+                    "label",
+                    "div",
+                    "span",
+                    "b",
+                    "i",
+                    "u",
+                    "abbr",
+                    "cite",
+                    "del",
+                    "em",
+                    "ins",
+                    "kbd",
+                    "mark",
+                    "s",
+                    "samp",
+                    "sub",
+                    "sup",
+                ],
             ]
         ] = None,
         size: Optional[

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.style import Style
 from reflex.vars import Var
@@ -149,7 +148,7 @@ class SliderThumb(SliderComponent):
         )
 
 
-class Slider(SimpleNamespace):
+class Slider(ComponentNamespace):
     """High level API for slider."""
 
     root = staticmethod(SliderRoot.create)

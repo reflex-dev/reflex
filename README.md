@@ -72,10 +72,12 @@ Here is the complete code to create this. This is all done in one Python file!
 import reflex as rx
 import openai
 
-openai.api_key = "YOUR_API_KEY"
+openai_client = openai.OpenAI()
+
 
 class State(rx.State):
     """The app state."""
+
     prompt = ""
     image_url = ""
     processing = False
@@ -88,41 +90,40 @@ class State(rx.State):
 
         self.processing, self.complete = True, False
         yield
-        response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
-        self.image_url = response["data"][0]["url"]
+        response = openai_client.images.generate(
+            prompt=self.prompt, n=1, size="1024x1024"
+        )
+        self.image_url = response.data[0].url
         self.processing, self.complete = False, True
-        
 
 def index():
     return rx.center(
         rx.vstack(
-            rx.heading("DALL·E"),
-            rx.input(placeholder="Enter a prompt", on_blur=State.set_prompt),
-            rx.button(
-                "Generate Image",
-                on_click=State.get_image,
-                is_loading=State.processing,
-                width="100%",
+            rx.heading("DALL-E", font_size="1.5em"),
+            rx.input(
+                placeholder="Enter a prompt..",
+                on_blur=State.set_prompt,
+                width="25em",
             ),
+            rx.button("Generate Image", on_click=State.get_image, width="25em"),
             rx.cond(
-                State.complete,
-                     rx.image(
-                         src=State.image_url,
-                         height="25em",
-                         width="25em",
-                    )
+                State.processing,
+                rx.chakra.circular_progress(is_indeterminate=True),
+                rx.cond(
+                    State.complete,
+                    rx.image(src=State.image_url, width="20em"),
+                ),
             ),
-            padding="2em",
-            shadow="lg",
-            border_radius="lg",
+            align="center",
         ),
         width="100%",
         height="100vh",
     )
 
+
 # Add state and page to the app.
 app = rx.App()
-app.add_page(index, title="reflex:DALL·E")
+app.add_page(index, title="Reflex:DALL-E")
 ```
 
 ## Let's break this down.
@@ -156,6 +157,7 @@ class State(rx.State):
     image_url = ""
     processing = False
     complete = False
+
 ```
 
 The state defines all the variables (called vars) in an app that can change and the functions that change them.
@@ -172,8 +174,10 @@ def get_image(self):
 
     self.processing, self.complete = True, False
     yield
-    response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
-    self.image_url = response["data"][0]["url"]
+    response = openai_client.images.generate(
+        prompt=self.prompt, n=1, size="1024x1024"
+    )
+    self.image_url = response.data[0].url
     self.processing, self.complete = False, True
 ```
 

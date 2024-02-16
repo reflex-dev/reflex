@@ -1,11 +1,10 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from types import SimpleNamespace
 from typing import Literal, Union
 
 import reflex as rx
 from reflex import el
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.vars import Var
 
@@ -18,7 +17,7 @@ CalloutVariant = Literal["soft", "surface", "outline"]
 
 
 class CalloutRoot(el.Div, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Groups Icon and Text parts of a Callout."""
 
     tag = "Callout.Root"
 
@@ -39,19 +38,19 @@ class CalloutRoot(el.Div, RadixThemesComponent):
 
 
 class CalloutIcon(el.Div, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Provides width and height for the icon associated with the callout."""
 
     tag = "Callout.Icon"
 
 
 class CalloutText(el.P, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Renders the callout text. This component is based on the p element."""
 
     tag = "Callout.Text"
 
 
 class Callout(CalloutRoot):
-    """High level wrapper for the Callout component."""
+    """A short message to attract user's attention."""
 
     # The text of the callout.
     text: Var[str]
@@ -81,7 +80,7 @@ class Callout(CalloutRoot):
         )
 
 
-class CalloutNamespace(SimpleNamespace):
+class CalloutNamespace(ComponentNamespace):
     """Callout components namespace."""
 
     root = staticmethod(CalloutRoot.create)

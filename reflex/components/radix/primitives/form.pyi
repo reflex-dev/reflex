@@ -8,10 +8,9 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from hashlib import md5
-from types import SimpleNamespace
 from typing import Any, Dict, Iterator, Literal
 from jinja2 import Environment
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.components.text_field import TextFieldInput
 from reflex.components.tags.tag import Tag
 from reflex.constants.base import Dirs
@@ -826,7 +825,7 @@ class Form(FormRoot):
         """
         ...
 
-class FormNamespace(SimpleNamespace):
+class FormNamespace(ComponentNamespace):
     root = staticmethod(FormRoot.create)
     control = staticmethod(FormControl.create)
     field = staticmethod(FormField.create)

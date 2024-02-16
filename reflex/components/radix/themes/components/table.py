@@ -1,8 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
-from types import SimpleNamespace
 from typing import List, Literal
 
 from reflex import el
+from reflex.components.component import ComponentNamespace
 from reflex.vars import Var
 
 from ..base import (
@@ -111,7 +111,7 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
     ]
 
 
-class Table(SimpleNamespace):
+class Table(ComponentNamespace):
     """Table components namespace."""
 
     root = staticmethod(TableRoot.create)

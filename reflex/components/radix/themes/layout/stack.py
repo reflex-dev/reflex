@@ -1,15 +1,11 @@
 """Stack components."""
-from __future__ import annotations
 
-from typing import Literal
+from __future__ import annotations
 
 from reflex.components.component import Component
 
-from ..base import LiteralSize
+from ..base import LiteralAlign, LiteralSpacing
 from .flex import Flex
-
-LiteralJustify = Literal["start", "center", "end"]
-LiteralAlign = Literal["start", "center", "end", "stretch"]
 
 
 class Stack(Flex):
@@ -19,18 +15,16 @@ class Stack(Flex):
     def create(
         cls,
         *children,
-        justify: LiteralJustify = "start",
-        align: LiteralAlign = "center",
-        spacing: LiteralSize = "2",
+        spacing: LiteralSpacing = "2",
+        align: LiteralAlign = "start",
         **props,
     ) -> Component:
         """Create a new instance of the component.
 
         Args:
             *children: The children of the stack.
-            justify: The justify of the stack elements.
-            align: The alignment of the stack elements.
             spacing: The spacing between each stack item.
+            align: The alignment of the stack items.
             **props: The properties of the stack.
 
         Returns:
@@ -38,9 +32,8 @@ class Stack(Flex):
         """
         return super().create(
             *children,
-            align=align,
-            justify=justify,
             spacing=spacing,
+            align=align,
             **props,
         )
 

@@ -1,8 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
-from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
 from reflex import el
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -95,7 +95,7 @@ class AlertDialogCancel(RadixThemesComponent):
     tag = "AlertDialog.Cancel"
 
 
-class AlertDialog(SimpleNamespace):
+class AlertDialog(ComponentNamespace):
     """AlertDialog components namespace."""
 
     root = staticmethod(AlertDialogRoot.create)

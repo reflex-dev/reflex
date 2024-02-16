@@ -7,6 +7,7 @@ import typing
 from abc import ABC, abstractmethod
 from functools import lru_cache, wraps
 from hashlib import md5
+from types import SimpleNamespace
 from typing import (
     Any,
     Callable,
@@ -114,8 +115,38 @@ class BaseComponent(Base, ABC):
         """
 
 
+class ComponentNamespace(SimpleNamespace):
+    """A namespace to manage components with subcomponents."""
+
+    def __hash__(self) -> int:
+        """Get the hash of the namespace.
+
+
+        Returns:
+            The hash of the namespace.
+        """
+        return hash(self.__class__.__name__)
+
+
+def evaluate_style_namespaces(style: ComponentStyle) -> dict:
+    """Evaluate namespaces in the style.
+
+    Args:
+        style: The style to evaluate.
+
+    Returns:
+        The evaluated style.
+    """
+    return {
+        k.__call__ if isinstance(k, ComponentNamespace) else k: v
+        for k, v in style.items()
+    }
+
+
 # Map from component to styling.
-ComponentStyle = Dict[Union[str, Type[BaseComponent], Callable], Any]
+ComponentStyle = Dict[
+    Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
+]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
 
 
@@ -189,6 +220,14 @@ class Component(BaseComponent, ABC):
             if types._issubclass(field.type_, Var):
                 field.required = False
                 field.default = Var.create(field.default)
+
+        # Ensure renamed props from parent classes are applied to the subclass.
+        if cls._rename_props:
+            inherited_rename_props = {}
+            for parent in reversed(cls.mro()):
+                if issubclass(parent, Component) and parent._rename_props:
+                    inherited_rename_props.update(parent._rename_props)
+            cls._rename_props = inherited_rename_props
 
     def __init__(self, *args, **kwargs):
         """Initialize the component.
@@ -558,6 +597,21 @@ class Component(BaseComponent, ABC):
         """
         # Import here to avoid circular imports.
         from reflex.components.base.bare import Bare
+
+        # Translate deprecated props to new names.
+        new_prop_names = [
+            prop for prop in cls.get_props() if prop in ["type", "min", "max"]
+        ]
+        for prop in new_prop_names:
+            under_prop = f"{prop}_"
+            if under_prop in props:
+                console.deprecate(
+                    f"Underscore suffix for prop `{under_prop}`",
+                    reason=f"for consistency. Use `{prop}` instead.",
+                    deprecation_version="0.4.0",
+                    removal_version="0.5.0",
+                )
+                props[prop] = props.pop(under_prop)
 
         # Validate all the children.
         for child in children:
