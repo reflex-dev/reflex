@@ -599,10 +599,14 @@ class Component(BaseComponent, ABC):
         from reflex.components.base.bare import Bare
 
         # Translate deprecated props to new names.
-        known_props = cls.get_props()
-        for prop in ["type", "min", "max", "id"]:
+        new_prop_names = [
+            prop
+            for prop in cls.get_props()
+            if prop in ["type", "min", "max", "id"]
+        ]
+        for prop in new_prop_names:
             under_prop = f"{prop}_"
-            if under_prop in props and prop in known_props:
+            if under_prop in props:
                 console.deprecate(
                     f"Underscore suffix for prop `{under_prop}`",
                     reason=f"for consistency. Use `{prop}` instead.",
