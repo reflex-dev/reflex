@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Union
+from typing import Any, Union
 from reflex.vars import Var as Var
 from .base import BaseHTML
 
@@ -376,7 +376,7 @@ class Img(BaseHTML):
         sizes: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        src: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        src: Optional[Union[Var[Any], Any]] = None,
         src_set: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
