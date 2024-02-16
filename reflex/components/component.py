@@ -604,8 +604,8 @@ class Component(BaseComponent, ABC):
             under_prop = f"{prop}_"
             if under_prop in props and prop in known_props:
                 console.deprecate(
-                    f"Underscore suffix for builtin name `{under_prop}`",
-                    reason="for consistency",
+                    f"Underscore suffix for prop `{under_prop}`",
+                    reason=f"for consistency. Use `{prop}` instead.",
                     deprecation_version="0.4.0",
                     removal_version="0.5.0",
                 )
