@@ -1,5 +1,5 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
-from typing import Union
+from typing import Any, Union
 
 from reflex.vars import Var as Var
 
@@ -108,7 +108,7 @@ class Img(BaseHTML):
     sizes: Var[Union[str, int, bool]]
 
     # URL of the image to display
-    src: Var[Union[str, int, bool]]
+    src: Var[Any]
 
     # A set of source sizes and URLs for responsive images
     src_set: Var[Union[str, int, bool]]
