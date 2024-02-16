@@ -123,7 +123,7 @@ class Markdown(Component):
                 feature_name="rx.markdown custom_styles",
                 reason="Use the component_map prop instead.",
                 deprecation_version="0.2.9",
-                removal_version="0.4.0",
+                removal_version="0.5.0",
             )
 
         # Update the base component map with the custom component map.

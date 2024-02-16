@@ -174,7 +174,7 @@ class App(Base):
                     feature_name="`state` argument for App()",
                     reason="due to all `rx.State` subclasses being inferred.",
                     deprecation_version="0.3.5",
-                    removal_version="0.4.0",
+                    removal_version="0.5.0",
                 )
             if len(State.class_subclasses) > 0:
                 self.state = State
@@ -451,7 +451,7 @@ class App(Base):
                 feature_name="Passing script tags to add_page",
                 reason="Add script components as children to the page component instead",
                 deprecation_version="0.2.9",
-                removal_version="0.4.0",
+                removal_version="0.5.0",
             )
             component.children.extend(script_tags)
 
@@ -649,7 +649,7 @@ class App(Base):
             reason="Explicit calls to app.compile() are not needed."
             " Method will be removed in 0.4.0",
             deprecation_version="0.3.8",
-            removal_version="0.4.0",
+            removal_version="0.5.0",
         )
         return
 

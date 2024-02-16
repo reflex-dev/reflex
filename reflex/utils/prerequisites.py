@@ -203,7 +203,7 @@ def get_redis() -> Redis | None:
         feature_name="host[:port] style redis urls",
         reason="redis-py url syntax is now being used",
         deprecation_version="0.3.6",
-        removal_version="0.4.0",
+        removal_version="0.5.0",
     )
     redis_url, has_port, redis_port = config.redis_url.partition(":")
     if not has_port:
