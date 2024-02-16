@@ -2,11 +2,11 @@ name: unit-tests
 
 on:
   push:
-    branches: [ "main", "reflex-0.4.0" ]
+    branches: [ "main" ]
     paths-ignore:
       - '**/*.md'
   pull_request:
-    branches: [ "main", "reflex-0.4.0" ]
+    branches: [ "main" ]
     paths-ignore:
       - '**/*.md'
 
