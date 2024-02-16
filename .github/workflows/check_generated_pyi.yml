@@ -2,14 +2,14 @@ name: check-generated-pyi
 
 on:
   push:
-    branches: [ "main", "reflex-0.4.0" ]
+    branches: [ "main" ]
     # We don't just trigger on pyi_generator.py and the components dir, because
     # there are other things that can change the generator output
     # e.g. black version, reflex.Component, reflex.Var.
     paths-ignore:
       - '**/*.md'
   pull_request:
-    branches: [ "main", "reflex-0.4.0" ]
+    branches: [ "main" ]
     paths-ignore:
       - '**/*.md'
 
