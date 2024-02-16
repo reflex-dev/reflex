@@ -311,7 +311,7 @@ class AccordionRoot(AccordionComponent):
     alias = "RadixAccordionRoot"
 
     # The type of accordion (single or multiple).
-    type_: Var[LiteralAccordionType]
+    type: Var[LiteralAccordionType]
 
     # The value of the item to expand.
     value: Var[Optional[Union[str, List[str]]]]
