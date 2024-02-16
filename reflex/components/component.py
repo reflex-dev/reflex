@@ -600,9 +600,7 @@ class Component(BaseComponent, ABC):
 
         # Translate deprecated props to new names.
         new_prop_names = [
-            prop
-            for prop in cls.get_props()
-            if prop in ["type", "min", "max", "id"]
+            prop for prop in cls.get_props() if prop in ["type", "min", "max"]
         ]
         for prop in new_prop_names:
             under_prop = f"{prop}_"
