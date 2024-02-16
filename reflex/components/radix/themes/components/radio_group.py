@@ -87,7 +87,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
     items: Var[List[str]]
 
     # The direction of the radio group.
-    direction: Var[LiteralFlexDirection] = Var.create_safe("column")
+    direction: Var[LiteralFlexDirection]
 
     # The gap between the items of the radio group.
     spacing: Var[LiteralSpacing] = Var.create_safe("2")
