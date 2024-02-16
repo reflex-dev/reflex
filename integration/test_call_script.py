@@ -142,17 +142,17 @@ def CallScript():
     @app.add_page
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=CallScriptState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.input(
+            rx.chakra.input(
                 value=CallScriptState.inline_counter.to(str),  # type: ignore
                 id="inline_counter",
                 is_read_only=True,
             ),
-            rx.input(
+            rx.chakra.input(
                 value=CallScriptState.external_counter.to(str),  # type: ignore
                 id="external_counter",
                 is_read_only=True,

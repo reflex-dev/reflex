@@ -2,11 +2,11 @@ name: integration-tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main", "reflex-0.4.0" ]
     paths-ignore:
       - '**/*.md'
   pull_request:
-    branches: [ main ]
+    branches: [ "main", "reflex-0.4.0" ]
     paths-ignore:
       - '**/*.md'
 
@@ -125,7 +125,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: reflex-dev/reflex-web
-          ref: main
+          ref: reflex-0.4.0
           path: reflex-web
 
       - name: Install Requirements for reflex-web

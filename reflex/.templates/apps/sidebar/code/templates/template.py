@@ -25,19 +25,19 @@ def menu_button() -> rx.Component:
     """
     from reflex.page import get_decorated_pages
 
-    return rx.box(
-        rx.menu(
-            rx.menu_button(
-                rx.icon(
+    return rx.chakra.box(
+        rx.chakra.menu(
+            rx.chakra.menu_button(
+                rx.chakra.icon(
                     tag="hamburger",
                     size="4em",
                     color=styles.text_color,
                 ),
             ),
-            rx.menu_list(
+            rx.chakra.menu_list(
                 *[
-                    rx.menu_item(
-                        rx.link(
+                    rx.chakra.menu_item(
+                        rx.chakra.link(
                             page["title"],
                             href=page["route"],
                             width="100%",
@@ -45,12 +45,16 @@ def menu_button() -> rx.Component:
                     )
                     for page in get_decorated_pages()
                 ],
-                rx.menu_divider(),
-                rx.menu_item(
-                    rx.link("About", href="https://github.com/reflex-dev", width="100%")
+                rx.chakra.menu_divider(),
+                rx.chakra.menu_item(
+                    rx.chakra.link(
+                        "About", href="https://github.com/reflex-dev", width="100%"
+                    )
                 ),
-                rx.menu_item(
-                    rx.link("Contact", href="mailto:founders@=reflex.dev", width="100%")
+                rx.chakra.menu_item(
+                    rx.chakra.link(
+                        "Contact", href="mailto:founders@=reflex.dev", width="100%"
+                    )
                 ),
             ),
         ),
@@ -107,10 +111,10 @@ def template(
             on_load=on_load,
         )
         def templated_page():
-            return rx.hstack(
+            return rx.chakra.hstack(
                 sidebar(),
-                rx.box(
-                    rx.box(
+                rx.chakra.box(
+                    rx.chakra.box(
                         page_content(),
                         **styles.template_content_style,
                     ),

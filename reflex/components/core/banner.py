@@ -1,14 +1,19 @@
 """Banner components."""
+
 from __future__ import annotations
 
 from typing import Optional
 
 from reflex.components.base.bare import Bare
-from reflex.components.chakra.layout import Box
-from reflex.components.chakra.overlay.modal import Modal
-from reflex.components.chakra.typography import Text
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
+from reflex.components.radix.themes.components.dialog import (
+    DialogContent,
+    DialogRoot,
+    DialogTitle,
+)
+from reflex.components.radix.themes.layout import Box
+from reflex.components.radix.themes.typography.text import Text
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.utils import imports
 from reflex.vars import Var, VarData
@@ -105,9 +110,11 @@ class ConnectionModal(Component):
             comp = Text.create(*default_connection_error())
         return cond(
             has_connection_error,
-            Modal.create(
-                header="Connection Error",
-                body=comp,
-                is_open=has_connection_error,
+            DialogRoot.create(
+                DialogContent.create(
+                    DialogTitle.create("Connection Error"),
+                    comp,
+                ),
+                open=has_connection_error,
             ),
         )

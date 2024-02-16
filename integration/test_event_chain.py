@@ -124,7 +124,7 @@ def EventChain():
 
     app = rx.App(state=rx.State)
 
-    token_input = rx.input(
+    token_input = rx.chakra.input(
         value=State.router.session.client_token, is_read_only=True, id="token"
     )
 
@@ -132,7 +132,9 @@ def EventChain():
     def index():
         return rx.fragment(
             token_input,
-            rx.input(value=State.interim_value, is_read_only=True, id="interim_value"),
+            rx.chakra.input(
+                value=State.interim_value, is_read_only=True, id="interim_value"
+            ),
             rx.button(
                 "Return Event",
                 id="return_event",

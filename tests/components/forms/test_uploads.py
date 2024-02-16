@@ -72,10 +72,10 @@ def test_upload_component_render(upload_component):
     assert input["name"] == "Input"
     assert input["props"] == ["type={`file`}", "{...getInputProps()}"]
 
-    assert button["name"] == "Button"
+    assert button["name"] == "RadixThemesButton"
     assert button["children"][0]["contents"] == "{`select file`}"
 
-    assert text["name"] == "Text"
+    assert text["name"] == "RadixThemesText"
     assert (
         text["children"][0]["contents"]
         == "{`Drag and drop files here or click to select files`}"

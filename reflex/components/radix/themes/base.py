@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Dict, Literal
 
 from reflex.components import Component
 from reflex.components.tags import Tag
@@ -11,7 +11,7 @@ from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
-LiteralSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+LiteralSpacing = Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 LiteralVariant = Literal["classic", "solid", "soft", "surface", "outline", "ghost"]
 LiteralAppearance = Literal["inherit", "light", "dark"]
 LiteralGrayColor = Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]
@@ -52,25 +52,25 @@ class CommonMarginProps(Component):
     """Many radix-themes elements accept shorthand margin props."""
 
     # Margin: "0" - "9"
-    m: Var[LiteralSize]
+    m: Var[LiteralSpacing]
 
     # Margin horizontal: "0" - "9"
-    mx: Var[LiteralSize]
+    mx: Var[LiteralSpacing]
 
     # Margin vertical: "0" - "9"
-    my: Var[LiteralSize]
+    my: Var[LiteralSpacing]
 
     # Margin top: "0" - "9"
-    mt: Var[LiteralSize]
+    mt: Var[LiteralSpacing]
 
     # Margin right: "0" - "9"
-    mr: Var[LiteralSize]
+    mr: Var[LiteralSpacing]
 
     # Margin bottom: "0" - "9"
-    mb: Var[LiteralSize]
+    mb: Var[LiteralSpacing]
 
     # Margin left: "0" - "9"
-    ml: Var[LiteralSize]
+    ml: Var[LiteralSpacing]
 
 
 class RadixThemesComponent(Component):
@@ -78,12 +78,13 @@ class RadixThemesComponent(Component):
 
     library = "@radix-ui/themes@^2.0.0"
 
+    # "Fake" prop color_scheme is used to avoid shadowing CSS prop "color".
+    _rename_props: Dict[str, str] = {"colorScheme": "color"}
+
     @classmethod
     def create(
         cls,
         *children,
-        color: Var[str] = None,  # type: ignore
-        color_scheme: Var[LiteralAccentColor] = None,  # type: ignore
         **props,
     ) -> Component:
         """Create a new component instance.
@@ -93,19 +94,11 @@ class RadixThemesComponent(Component):
 
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
             **props: Component properties.
 
         Returns:
             A new component instance.
         """
-        if color is not None:
-            style = props.get("style", {})
-            style["color"] = color
-            props["style"] = style
-        if color_scheme is not None:
-            props["color"] = color_scheme
         component = super().create(*children, **props)
         if component.library is None:
             component.library = RadixThemesComponent.__fields__["library"].default
@@ -113,21 +106,6 @@ class RadixThemesComponent(Component):
             component.tag or component.__class__.__name__
         )
         return component
-
-    @classmethod
-    def get_fields(cls) -> dict[str, Any]:
-        """Get the pydantic fields for the component.
-
-        Returns:
-            Mapping of field name to ModelField instance.
-        """
-        fields = super().get_fields()
-        if "color_scheme" in fields:
-            # Treat "color" as a direct prop, so the translation of reflex "color_scheme"
-            # to "color" does not put the "color_scheme" value into the "style" prop.
-            fields["color"] = fields.pop("color_scheme")
-            fields["color"].required = False
-        return fields
 
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
@@ -168,6 +146,24 @@ class Theme(RadixThemesComponent):
 
     # Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%". Defaults to "100%"
     scaling: Var[LiteralScaling]
+
+    @classmethod
+    def create(
+        cls, *children, color_mode: LiteralAppearance | None = None, **props
+    ) -> Component:
+        """Create a new Radix Theme specification.
+
+        Args:
+            *children: Child components.
+            color_mode: map to appearance prop.
+            **props: Component properties.
+
+        Returns:
+            A new component instance.
+        """
+        if color_mode is not None:
+            props["appearance"] = color_mode
+        return super().create(*children, **props)
 
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
@@ -211,3 +207,7 @@ class RadixThemesColorModeProvider(Component):
     library = "/components/reflex/radix_themes_color_mode_provider.js"
     tag = "RadixThemesColorModeProvider"
     is_default = True
+
+
+theme = Theme.create
+theme_panel = ThemePanel.create

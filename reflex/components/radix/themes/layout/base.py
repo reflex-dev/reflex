@@ -1,4 +1,5 @@
 """Declarative layout and common spacing props."""
+
 from __future__ import annotations
 
 from typing import Literal
@@ -7,7 +8,7 @@ from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
-    LiteralSize,
+    LiteralSpacing,
     RadixThemesComponent,
 )
 
@@ -21,25 +22,25 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
     """
 
     # Padding: "0" - "9"
-    p: Var[LiteralSize]
+    p: Var[LiteralSpacing]
 
     # Padding horizontal: "0" - "9"
-    px: Var[LiteralSize]
+    px: Var[LiteralSpacing]
 
     # Padding vertical: "0" - "9"
-    py: Var[LiteralSize]
+    py: Var[LiteralSpacing]
 
     # Padding top: "0" - "9"
-    pt: Var[LiteralSize]
+    pt: Var[LiteralSpacing]
 
     # Padding right: "0" - "9"
-    pr: Var[LiteralSize]
+    pr: Var[LiteralSpacing]
 
     # Padding bottom: "0" - "9"
-    pb: Var[LiteralSize]
+    pb: Var[LiteralSpacing]
 
     # Padding left: "0" - "9"
-    pl: Var[LiteralSize]
+    pl: Var[LiteralSpacing]
 
     # Whether the element will take up the smallest possible space: "0" | "1"
     shrink: Var[LiteralBoolNumber]

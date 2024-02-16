@@ -1,3 +1,4 @@
 """Namespace for components provided by @radix-ui packages."""
 
-from . import primitives, themes
+from .primitives import *
+from .themes import *

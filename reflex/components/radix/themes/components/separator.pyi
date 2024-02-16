@@ -19,7 +19,9 @@ class Separator(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
+        ] = None,
         color_scheme: Optional[
             Union[
                 Var[
@@ -82,9 +84,6 @@ class Separator(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        size: Optional[
-            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
-        ] = None,
         orientation: Optional[
             Union[
                 Var[Literal["horizontal", "vertical"]],
@@ -97,7 +96,6 @@ class Separator(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -153,9 +151,8 @@ class Separator(RadixThemesComponent):
 
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
             size: The size of the select: "1" | "2" | "3" | "4"
+            color_scheme: The color of the select
             orientation: The orientation of the separator.
             decorative: When true, signifies that it is purely visual, carries no semantic meaning, and ensures it is not present in the accessibility tree.
             style: The style of the component.
@@ -163,7 +160,6 @@ class Separator(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -171,3 +167,5 @@ class Separator(RadixThemesComponent):
             A new component instance.
         """
         ...
+
+divider = separator = Separator.create

@@ -1,11 +1,10 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from typing import Any, Dict, Literal
 
-import reflex as rx
 from reflex.components import el
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.debounce import DebounceInput
-from reflex.components.radix.themes.components.icons import Icon
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -86,9 +85,6 @@ class TextFieldSlot(RadixThemesComponent):
 class Input(RadixThemesComponent):
     """High level wrapper for the Input component."""
 
-    # The icon to render before the input.
-    icon: Var[str]
-
     # Text field size "1" - "3"
     size: Var[LiteralTextFieldSize]
 
@@ -122,8 +118,14 @@ class Input(RadixThemesComponent):
     # Placeholder text in the input
     placeholder: Var[str]
 
+    # Indicates whether the input is read-only
+    read_only: Var[bool]
+
     # Indicates that the input is required
     required: Var[bool]
+
+    # Specifies the type of input
+    type: Var[str]
 
     # Value of the input
     value: Var[str]
@@ -138,34 +140,7 @@ class Input(RadixThemesComponent):
         Returns:
             The component.
         """
-        input_props = {
-            prop: props.pop(prop)
-            for prop in [
-                "auto_complete",
-                "default_value",
-                "disabled",
-                "max_length",
-                "min_length",
-                "name",
-                "placeholder",
-                "required",
-                "value",
-                "on_change",
-                "on_focus",
-                "on_blur",
-                "on_key_down",
-                "on_key_up",
-            ]
-            if prop in props
-        }
-
-        icon = props.pop("icon", None)
-
-        return TextFieldRoot.create(
-            TextFieldSlot.create(Icon.create(tag=icon)) if icon else rx.fragment(),
-            TextFieldInput.create(**input_props),
-            **props,
-        )
+        return TextFieldInput.create(**props)
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
@@ -181,3 +156,15 @@ class Input(RadixThemesComponent):
             EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
             EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
         }
+
+
+class TextField(ComponentNamespace):
+    """TextField components namespace."""
+
+    root = staticmethod(TextFieldRoot.create)
+    input = staticmethod(TextFieldInput.create)
+    slot = staticmethod(TextFieldSlot.create)
+    __call__ = staticmethod(Input.create)
+
+
+text_field = TextField()

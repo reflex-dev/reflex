@@ -18,7 +18,13 @@ class Badge(el.Span, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["solid", "soft", "surface", "outline"]],
+                Literal["solid", "soft", "surface", "outline"],
+            ]
+        ] = None,
+        size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
         color_scheme: Optional[
             Union[
                 Var[
@@ -81,13 +87,6 @@ class Badge(el.Span, RadixThemesComponent):
                 ],
             ]
         ] = None,
-        variant: Optional[
-            Union[
-                Var[Literal["solid", "soft", "surface", "outline"]],
-                Literal["solid", "soft", "surface", "outline"],
-            ]
-        ] = None,
-        size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         radius: Optional[
             Union[
@@ -135,15 +134,11 @@ class Badge(el.Span, RadixThemesComponent):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -199,10 +194,9 @@ class Badge(el.Span, RadixThemesComponent):
 
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
             variant: The variant of the badge
             size: The size of the badge
+            color_scheme: Color theme of the badge
             high_contrast: Whether to render the badge with higher contrast color against background
             radius: Override theme radius for badge: "none" | "small" | "medium" | "large" | "full"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
@@ -221,13 +215,11 @@ class Badge(el.Span, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -235,3 +227,5 @@ class Badge(el.Span, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+badge = Badge.create

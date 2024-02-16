@@ -1,6 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, List, Literal, Union
 
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -140,7 +141,7 @@ class DropdownMenuContent(RadixThemesComponent):
 
 
 class DropdownMenuSubTrigger(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """An item that opens a submenu."""
 
     tag = "DropdownMenu.SubTrigger"
 
@@ -183,18 +184,6 @@ class DropdownMenuSubContent(RadixThemesComponent):
     """The component that pops out when a submenu is open. Must be rendered inside DropdownMenuSub."""
 
     tag = "DropdownMenu.SubContent"
-
-    # Dropdown Menu Sub Content size "1" - "2"
-    size: Var[LiteralSizeType]
-
-    # Variant of Dropdown Menu Sub Content: "solid" | "soft"
-    variant: Var[LiteralVariantType]
-
-    # Override theme color for Dropdown Menu Sub Content
-    color_scheme: Var[LiteralAccentColor]
-
-    # Whether to render the component with higher contrast color against background
-    high_contrast: Var[bool]
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
     as_child: Var[bool]
@@ -281,3 +270,19 @@ class DropdownMenuSeparator(RadixThemesComponent):
     """Dropdown Menu Separator Component. Used to visually separate items in the dropdown menu."""
 
     tag = "DropdownMenu.Separator"
+
+
+class DropdownMenu(ComponentNamespace):
+    """DropdownMenu components namespace."""
+
+    root = staticmethod(DropdownMenuRoot.create)
+    trigger = staticmethod(DropdownMenuTrigger.create)
+    content = staticmethod(DropdownMenuContent.create)
+    sub_trigger = staticmethod(DropdownMenuSubTrigger.create)
+    sub = staticmethod(DropdownMenuSub.create)
+    sub_content = staticmethod(DropdownMenuSubContent.create)
+    item = staticmethod(DropdownMenuItem.create)
+    separator = staticmethod(DropdownMenuSeparator.create)
+
+
+menu = dropdown_menu = DropdownMenu()

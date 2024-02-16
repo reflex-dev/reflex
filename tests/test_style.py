@@ -6,6 +6,7 @@ import pytest
 
 import reflex as rx
 from reflex import style
+from reflex.components.component import evaluate_style_namespaces
 from reflex.style import Style
 from reflex.vars import Var
 
@@ -20,17 +21,17 @@ test_style = [
         {"::-webkit-scrollbar": {"display": "none"}},
         {"::-webkit-scrollbar": {"display": "none"}},
     ),
-    ({"margin_y": "2rem"}, {"margin-bottom": "2rem", "margin-top": "2rem"}),
-    ({"marginY": "2rem"}, {"margin-bottom": "2rem", "margin-top": "2rem"}),
+    ({"margin_y": "2rem"}, {"marginBottom": "2rem", "marginTop": "2rem"}),
+    ({"marginY": "2rem"}, {"marginBottom": "2rem", "marginTop": "2rem"}),
     (
         {"::-webkit-scrollbar": {"bgColor": "red"}},
-        {"::-webkit-scrollbar": {"background-color": "red"}},
+        {"::-webkit-scrollbar": {"backgroundColor": "red"}},
     ),
     (
         {"paddingX": ["2rem", "3rem"]},
         {
-            "padding-inline-start": ["2rem", "3rem"],
-            "padding-inline-end": ["2rem", "3rem"],
+            "paddingInlineStart": ["2rem", "3rem"],
+            "paddingInlineEnd": ["2rem", "3rem"],
         },
     ),
 ]
@@ -494,3 +495,11 @@ def test_style_via_component_with_state(
     assert comp.style._var_data == expected_get_style["css"]._var_data
     # Assert that style values are equal.
     compare_dict_of_var(comp._get_style(), expected_get_style)
+
+
+def test_evaluate_style_namespaces():
+    """Test that namespaces get converted to component create functions."""
+    style_dict = {rx.text: {"color": "blue"}}
+    assert rx.text.__call__ not in style_dict
+    style_dict = evaluate_style_namespaces(style_dict)  # type: ignore
+    assert rx.text.__call__ in style_dict

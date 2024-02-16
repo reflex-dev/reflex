@@ -55,18 +55,18 @@ def ClientSide():
 
     def index():
         return rx.fragment(
-            rx.input(
+            rx.chakra.input(
                 value=ClientSideState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.input(
+            rx.chakra.input(
                 placeholder="state var",
                 value=ClientSideState.state_var,
                 on_change=ClientSideState.set_state_var,  # type: ignore
                 id="state_var",
             ),
-            rx.input(
+            rx.chakra.input(
                 placeholder="input value",
                 value=ClientSideState.input_value,
                 on_change=ClientSideState.set_input_value,  # type: ignore

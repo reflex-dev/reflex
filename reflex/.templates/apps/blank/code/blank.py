@@ -1,4 +1,5 @@
 """Welcome to Reflex! This file outlines the steps to create a basic app."""
+
 from rxconfig import config
 
 import reflex as rx
@@ -10,35 +11,25 @@ filename = f"{config.app_name}/{config.app_name}.py"
 class State(rx.State):
     """The app state."""
 
-    pass
-
 
 def index() -> rx.Component:
-    return rx.fragment(
-        rx.color_mode_button(rx.color_mode_icon(), float="right"),
+    return rx.center(
+        rx.theme_panel(),
         rx.vstack(
-            rx.heading("Welcome to Reflex!", font_size="2em"),
-            rx.box("Get started by editing ", rx.code(filename, font_size="1em")),
-            rx.link(
+            rx.heading("Welcome to Reflex!", size="9"),
+            rx.text("Get started by editing ", rx.code(filename)),
+            rx.button(
                 "Check out our docs!",
-                href=docs_url,
-                border="0.1em solid",
-                padding="0.5em",
-                border_radius="0.5em",
-                _hover={
-                    "color": rx.color_mode_cond(
-                        light="rgb(107,99,246)",
-                        dark="rgb(179, 175, 255)",
-                    )
-                },
+                on_click=lambda: rx.redirect(docs_url),
+                size="4",
             ),
-            spacing="1.5em",
+            align="center",
+            spacing="7",
             font_size="2em",
-            padding_top="10%",
         ),
+        height="100vh",
     )
 
 
-# Create app instance and add index page.
 app = rx.App()
 app.add_page(index)

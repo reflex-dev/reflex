@@ -90,7 +90,7 @@ def StateInheritance():
 
     def index() -> rx.Component:
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 id="token", value=Base1.router.session.client_token, is_read_only=True
             ),
             # Base 1

@@ -1,11 +1,11 @@
 """A html component."""
 from typing import Dict
 
-from reflex.components.chakra.layout.box import Box
+from reflex.components.el.elements.typography import Div
 from reflex.vars import Var
 
 
-class Html(Box):
+class Html(Div):
     """Render the html.
 
     Returns:

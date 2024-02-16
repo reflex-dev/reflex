@@ -12,7 +12,7 @@ from ..base import (
 
 
 class Slider(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Provides user selection from a range of values."""
 
     tag = "Slider"
 
@@ -106,3 +106,6 @@ class Slider(RadixThemesComponent):
             }
         )
         return super().create(*children, default_value=default_value, **props)
+
+
+slider = Slider.create

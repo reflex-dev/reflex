@@ -31,8 +31,6 @@ from typing import (
     get_type_hints,
 )
 
-import pydantic
-
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format, imports, serializers, types
@@ -122,6 +120,11 @@ class VarData(Base):
     # Hooks that need to be present in the component to render this var
     hooks: Set[str] = set()
 
+    # Positions of interpolated strings. This is used by the decoder to figure
+    # out where the interpolations are and only escape the non-interpolated
+    # segments.
+    interpolations: List[Tuple[int, int]] = []
+
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None:
         """Merge multiple var data objects.
@@ -135,17 +138,21 @@ class VarData(Base):
         state = ""
         _imports = {}
         hooks = set()
+        interpolations = []
         for var_data in others:
             if var_data is None:
                 continue
             state = state or var_data.state
             _imports = imports.merge_imports(_imports, var_data.imports)
             hooks.update(var_data.hooks)
+            interpolations += var_data.interpolations
+
         return (
             cls(
                 state=state,
                 imports=_imports,
                 hooks=hooks,
+                interpolations=interpolations,
             )
             or None
         )
@@ -156,7 +163,7 @@ class VarData(Base):
         Returns:
             True if any field is set to a non-default value.
         """
-        return bool(self.state or self.imports or self.hooks)
+        return bool(self.state or self.imports or self.hooks or self.interpolations)
 
     def __eq__(self, other: Any) -> bool:
         """Check if two var data objects are equal.
@@ -169,6 +176,9 @@ class VarData(Base):
         """
         if not isinstance(other, VarData):
             return False
+
+        # Don't compare interpolations - that's added in by the decoder, and
+        # not part of the vardata itself.
         return (
             self.state == other.state
             and self.hooks == other.hooks
@@ -184,6 +194,7 @@ class VarData(Base):
         """
         return {
             "state": self.state,
+            "interpolations": list(self.interpolations),
             "imports": {
                 lib: [import_var.dict() for import_var in import_vars]
                 for lib, import_vars in self.imports.items()
@@ -202,10 +213,18 @@ def _encode_var(value: Var) -> str:
         The encoded var.
     """
     if value._var_data:
+        from reflex.utils.serializers import serialize
+
+        final_value = str(value)
+        data = value._var_data.dict()
+        data["string_length"] = len(final_value)
+        data_json = value._var_data.__config__.json_dumps(data, default=serialize)
+
         return (
-            f"{constants.REFLEX_VAR_OPENING_TAG}{value._var_data.json()}{constants.REFLEX_VAR_CLOSING_TAG}"
-            + str(value)
+            f"{constants.REFLEX_VAR_OPENING_TAG}{data_json}{constants.REFLEX_VAR_CLOSING_TAG}"
+            + final_value
         )
+
     return str(value)
 
 
@@ -220,21 +239,40 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
     """
     var_datas = []
     if isinstance(value, str):
-        # Extract the state name from a formatted var
-        while m := re.match(
-            pattern=rf"(.*){constants.REFLEX_VAR_OPENING_TAG}(.*){constants.REFLEX_VAR_CLOSING_TAG}(.*)",
-            string=value,
-            flags=re.DOTALL,  # Ensure . matches newline characters.
-        ):
-            value = m.group(1) + m.group(3)
+        offset = 0
+
+        # Initialize some methods for reading json.
+        var_data_config = VarData().__config__
+
+        def json_loads(s):
             try:
-                var_datas.append(VarData.parse_raw(m.group(2)))
-            except pydantic.ValidationError:
-                # If the VarData is invalid, it was probably json-encoded twice...
-                var_datas.append(VarData.parse_raw(json.loads(f'"{m.group(2)}"')))
-    if var_datas:
-        return VarData.merge(*var_datas), value
-    return None, value
+                return var_data_config.json_loads(s)
+            except json.decoder.JSONDecodeError:
+                return var_data_config.json_loads(var_data_config.json_loads(f'"{s}"'))
+
+        # Compile regex for finding reflex var tags.
+        pattern_re = rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
+        pattern = re.compile(pattern_re, flags=re.DOTALL)
+
+        # Find all tags.
+        while m := pattern.search(value):
+            start, end = m.span()
+            value = value[:start] + value[end:]
+
+            # Read the JSON, pull out the string length, parse the rest as VarData.
+            data = json_loads(m.group(1))
+            string_length = data.pop("string_length", None)
+            var_data = VarData.parse_obj(data)
+
+            # Use string length to compute positions of interpolations.
+            if string_length is not None:
+                realstart = start + offset
+                var_data.interpolations = [(realstart, realstart + string_length)]
+
+            var_datas.append(var_data)
+            offset += end - start
+
+    return VarData.merge(*var_datas) if var_datas else None, value
 
 
 def _extract_var_data(value: Iterable) -> list[VarData | None]:
@@ -735,6 +773,9 @@ class Var:
 
             left_operand_full_name = get_operand_full_name(left_operand)
             right_operand_full_name = get_operand_full_name(right_operand)
+
+            left_operand_full_name = format.wrap(left_operand_full_name, "(")
+            right_operand_full_name = format.wrap(right_operand_full_name, "(")
 
             # apply function to operands
             if fn is not None:

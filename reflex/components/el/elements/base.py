@@ -55,6 +55,3 @@ class BaseHTML(Element):
 
     # Defines a tooltip for the element.
     title: Var[Union[str, int, bool]]
-
-    # Specifies whether the content of an element should be translated or not.
-    translate: Var[Union[str, int, bool]]

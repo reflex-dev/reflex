@@ -30,7 +30,7 @@ class Input(ChakraComponent):
     placeholder: Var[str]
 
     # The type of input.
-    type_: Var[LiteralInputType] = "text"  # type: ignore
+    type_: Var[LiteralInputType]
 
     # The border color when the input is invalid.
     error_border_color: Var[str]
