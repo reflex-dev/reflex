@@ -162,7 +162,7 @@ class Theme(RadixThemesComponent):
             A new component instance.
         """
         if color_mode is not None:
-            props["appearance"] = props.pop("color_mode")
+            props["appearance"] = color_mode
         return super().create(*children, **props)
 
     def _get_imports(self) -> imports.ImportDict:
