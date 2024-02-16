@@ -62,11 +62,15 @@ class Tag(Base):
         Returns:
             The tag with the props added.
         """
+        from reflex.components.core.colors import Color
+
         self.props.update(
             {
                 format.to_camel_case(name, allow_hyphens=True): prop
                 if types._isinstance(prop, Union[EventChain, dict])
-                else Var.create(prop)
+                else Var.create(
+                    prop, _var_is_string=isinstance(prop, Color)
+                )  # rx.color is always a string
                 for name, prop in kwargs.items()
                 if self.is_valid_prop(prop)
             }

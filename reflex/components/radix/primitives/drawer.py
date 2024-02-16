@@ -119,12 +119,7 @@ class DrawerContent(DrawerComponent):
         }
         style = self.style or {}
         base_style.update(style)
-        self.style.update(
-            {
-                "css": base_style,
-            }
-        )
-        return self.style
+        return {"css": base_style}
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -188,12 +183,7 @@ class DrawerOverlay(DrawerComponent):
         }
         style = self.style or {}
         base_style.update(style)
-        self.style.update(
-            {
-                "css": base_style,
-            }
-        )
-        return self.style
+        return {"css": base_style}
 
 
 class DrawerClose(DrawerComponent):
@@ -226,12 +216,7 @@ class DrawerTitle(DrawerComponent):
         }
         style = self.style or {}
         base_style.update(style)
-        self.style.update(
-            {
-                "css": base_style,
-            }
-        )
-        return self.style
+        return {"css": base_style}
 
 
 class DrawerDescription(DrawerComponent):
@@ -253,12 +238,7 @@ class DrawerDescription(DrawerComponent):
         }
         style = self.style or {}
         base_style.update(style)
-        self.style.update(
-            {
-                "css": base_style,
-            }
-        )
-        return self.style
+        return {"css": base_style}
 
 
 class Drawer(ComponentNamespace):
