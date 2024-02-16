@@ -383,7 +383,7 @@ def get_asset_path(filename: str | None = None) -> str:
         The path of the asset.
     """
     console.deprecate(
-        feature_name="rx.asset_path",
+        feature_name="rx.get_asset_path",
         reason="Use rx.get_upload_dir() instead.",
         deprecation_version="0.4.0",
         removal_version="0.5.0",
