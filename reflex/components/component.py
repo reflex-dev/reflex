@@ -348,7 +348,7 @@ class Component(BaseComponent, ABC):
                     feature_name="EventChain",
                     reason="to avoid confusion, only use yield API",
                     deprecation_version="0.2.8",
-                    removal_version="0.4.0",
+                    removal_version="0.5.0",
                 )
             events: list[EventSpec] = []
             for v in value:
