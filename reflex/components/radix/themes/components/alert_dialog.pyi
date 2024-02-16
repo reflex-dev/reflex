@@ -7,9 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
 from typing import Any, Dict, Literal
 from reflex import el
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import RadixThemesComponent
@@ -647,7 +647,7 @@ class AlertDialogCancel(RadixThemesComponent):
         """
         ...
 
-class AlertDialog(SimpleNamespace):
+class AlertDialog(ComponentNamespace):
     root = staticmethod(AlertDialogRoot.create)
     trigger = staticmethod(AlertDialogTrigger.create)
     content = staticmethod(AlertDialogContent.create)

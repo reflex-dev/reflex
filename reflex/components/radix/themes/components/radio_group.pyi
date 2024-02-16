@@ -7,10 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
 import reflex as rx
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.constants import EventTriggers
@@ -451,7 +450,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
         """
         ...
 
-class RadioGroup(SimpleNamespace):
+class RadioGroup(ComponentNamespace):
     root = staticmethod(RadioGroupRoot.create)
     item = staticmethod(RadioGroupItem.create)
 

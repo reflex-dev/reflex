@@ -1,8 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
-from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
 from reflex import el
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -86,7 +86,7 @@ class PopoverClose(RadixThemesComponent):
     tag = "Popover.Close"
 
 
-class Popover(SimpleNamespace):
+class Popover(ComponentNamespace):
     """Floating element for displaying rich content, triggered by a button."""
 
     root = staticmethod(PopoverRoot.create)

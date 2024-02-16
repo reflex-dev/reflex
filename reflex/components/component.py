@@ -7,6 +7,7 @@ import typing
 from abc import ABC, abstractmethod
 from functools import lru_cache, wraps
 from hashlib import md5
+from types import SimpleNamespace
 from typing import (
     Any,
     Callable,
@@ -114,8 +115,38 @@ class BaseComponent(Base, ABC):
         """
 
 
+class ComponentNamespace(SimpleNamespace):
+    """A namespace to manage components with subcomponents."""
+
+    def __hash__(self) -> int:
+        """Get the hash of the namespace.
+
+
+        Returns:
+            The hash of the namespace.
+        """
+        return hash(self.__class__.__name__)
+
+
+def evaluate_style_namespaces(style: ComponentStyle) -> dict:
+    """Evaluate namespaces in the style.
+
+    Args:
+        style: The style to evaluate.
+
+    Returns:
+        The evaluated style.
+    """
+    return {
+        k.__call__ if isinstance(k, ComponentNamespace) else k: v
+        for k, v in style.items()
+    }
+
+
 # Map from component to styling.
-ComponentStyle = Dict[Union[str, Type[BaseComponent], Callable], Any]
+ComponentStyle = Dict[
+    Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
+]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
 
 

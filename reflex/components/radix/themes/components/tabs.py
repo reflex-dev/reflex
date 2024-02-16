@@ -1,7 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal
 
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -71,7 +71,7 @@ class TabsContent(RadixThemesComponent):
     value: Var[str]
 
 
-class Tabs(SimpleNamespace):
+class Tabs(ComponentNamespace):
     """Set of content sections to be displayed one at a time."""
 
     root = __call__ = staticmethod(TabsRoot.create)

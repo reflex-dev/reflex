@@ -1,9 +1,8 @@
 """List components."""
 
-from types import SimpleNamespace
 from typing import Iterable, Literal, Optional, Union
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
 from reflex.components.el.elements.typography import Li
 from reflex.style import Style
@@ -142,7 +141,7 @@ class ListItem(Li):
     ...
 
 
-class List(SimpleNamespace):
+class List(ComponentNamespace):
     """List components."""
 
     item = ListItem.create

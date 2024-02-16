@@ -1,10 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
 from reflex.components import el
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.debounce import DebounceInput
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -159,7 +158,7 @@ class Input(RadixThemesComponent):
         }
 
 
-class TextField(SimpleNamespace):
+class TextField(ComponentNamespace):
     """TextField components namespace."""
 
     root = staticmethod(TextFieldRoot.create)

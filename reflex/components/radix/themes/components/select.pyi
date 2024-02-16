@@ -7,10 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Union
 import reflex as rx
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
@@ -967,7 +966,7 @@ class HighLevelSelect(SelectRoot):
         """
         ...
 
-class Select(SimpleNamespace):
+class Select(ComponentNamespace):
     root = staticmethod(SelectRoot.create)
     trigger = staticmethod(SelectTrigger.create)
     content = staticmethod(SelectContent.create)

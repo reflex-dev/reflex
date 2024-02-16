@@ -39,7 +39,11 @@ from reflex.compiler import utils as compiler_utils
 from reflex.components import connection_modal
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.fragment import Fragment
-from reflex.components.component import Component, ComponentStyle
+from reflex.components.component import (
+    Component,
+    ComponentStyle,
+    evaluate_style_namespaces,
+)
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
@@ -682,10 +686,7 @@ class App(Base):
         # Store the compile results.
         compile_results = []
 
-        # Compile the pages in parallel.
-        custom_components = set()
-        # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
-        all_imports = {}
+        # Add the app wrappers.
         app_wrappers: Dict[tuple[int, str], Component] = {
             # Default app wrap component renders {children}
             (0, "AppWrap"): AppWrap.create()
@@ -694,6 +695,14 @@ class App(Base):
             # If a theme component was provided, wrap the app with it
             app_wrappers[(20, "Theme")] = self.theme
 
+        # Fix up the style.
+        self.style = evaluate_style_namespaces(self.style)
+
+        # Track imports and custom components found.
+        all_imports = {}
+        custom_components = set()
+
+        # Compile the pages in parallel.
         with progress, concurrent.futures.ThreadPoolExecutor() as thread_pool:
             fixed_pages = 7
             task = progress.add_task("Compiling:", total=len(self.pages) + fixed_pages)

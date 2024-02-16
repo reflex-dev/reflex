@@ -1,9 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Union
 
 import reflex as rx
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -236,7 +235,7 @@ class HighLevelSelect(SelectRoot):
         )
 
 
-class Select(SimpleNamespace):
+class Select(ComponentNamespace):
     """Select components namespace."""
 
     root = staticmethod(SelectRoot.create)

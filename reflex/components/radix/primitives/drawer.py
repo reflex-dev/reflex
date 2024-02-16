@@ -3,9 +3,9 @@
 # Style based on https://ui.shadcn.com/docs/components/drawer
 from __future__ import annotations
 
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
 
+from reflex.components.component import ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
 from reflex.constants import EventTriggers
@@ -261,7 +261,7 @@ class DrawerDescription(DrawerComponent):
         return self.style
 
 
-class Drawer(SimpleNamespace):
+class Drawer(ComponentNamespace):
     """A namespace for Drawer components."""
 
     root = __call__ = staticmethod(DrawerRoot.create)

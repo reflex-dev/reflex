@@ -7,11 +7,10 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
 from typing import Literal, Union
 import reflex as rx
 from reflex import el
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -715,7 +714,7 @@ class Callout(CalloutRoot):
         """
         ...
 
-class CalloutNamespace(SimpleNamespace):
+class CalloutNamespace(ComponentNamespace):
     root = staticmethod(CalloutRoot.create)
     icon = staticmethod(CalloutIcon.create)
     text = staticmethod(CalloutText.create)

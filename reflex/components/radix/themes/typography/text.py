@@ -5,10 +5,10 @@ https://www.radix-ui.com/themes/docs/theme/typography
 
 from __future__ import annotations
 
-from types import SimpleNamespace
 from typing import Literal
 
 from reflex import el
+from reflex.components.component import ComponentNamespace
 from reflex.vars import Var
 
 from ..base import (
@@ -107,7 +107,7 @@ class Strong(el.Strong, RadixThemesComponent):
     tag = "Strong"
 
 
-class TextNamespace(SimpleNamespace):
+class TextNamespace(ComponentNamespace):
     """Checkbox components namespace."""
 
     __call__ = staticmethod(Text.create)

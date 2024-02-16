@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 from hashlib import md5
-from types import SimpleNamespace
 from typing import Any, Dict, Iterator, Literal
 
 from jinja2 import Environment
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.components.text_field import TextFieldInput
 from reflex.components.tags.tag import Tag
 from reflex.constants.base import Dirs
@@ -297,7 +296,7 @@ class Form(FormRoot):
     pass
 
 
-class FormNamespace(SimpleNamespace):
+class FormNamespace(ComponentNamespace):
     """Form components."""
 
     root = staticmethod(FormRoot.create)

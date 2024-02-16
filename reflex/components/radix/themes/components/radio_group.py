@@ -1,10 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union
 
 import reflex as rx
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.constants import EventTriggers
@@ -189,7 +188,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
         )
 
 
-class RadioGroup(SimpleNamespace):
+class RadioGroup(ComponentNamespace):
     """RadioGroup components namespace."""
 
     root = staticmethod(RadioGroupRoot.create)

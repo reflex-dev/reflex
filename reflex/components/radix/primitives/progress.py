@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from types import SimpleNamespace
 from typing import Optional
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.accordion import DEFAULT_ANIMATION_DURATION
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.style import Style
@@ -74,7 +73,7 @@ class ProgressIndicator(ProgressComponent):
         )
 
 
-class Progress(SimpleNamespace):
+class Progress(ComponentNamespace):
     """High level API for progress bar."""
 
     root = staticmethod(ProgressRoot.create)

@@ -1,9 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.constants import EventTriggers
@@ -162,7 +161,7 @@ class HighLevelCheckbox(RadixThemesComponent):
         )
 
 
-class CheckboxNamespace(SimpleNamespace):
+class CheckboxNamespace(ComponentNamespace):
     """Checkbox components namespace."""
 
     __call__ = staticmethod(HighLevelCheckbox.create)

@@ -7,9 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from types import SimpleNamespace
 from typing import Literal
 from reflex import el
+from reflex.components.component import ComponentNamespace
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextAlign, LiteralTextSize, LiteralTextTrim, LiteralTextWeight
@@ -1138,7 +1138,7 @@ class Strong(el.Strong, RadixThemesComponent):
         """
         ...
 
-class TextNamespace(SimpleNamespace):
+class TextNamespace(ComponentNamespace):
     em = staticmethod(Em.create)
     kbd = staticmethod(Kbd.create)
     quote = staticmethod(Quote.create)

@@ -1,9 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from types import SimpleNamespace
 from typing import Any, Dict, Literal
 
 from reflex import el
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -80,7 +80,7 @@ class DialogClose(RadixThemesComponent):
     tag = "Dialog.Close"
 
 
-class Dialog(SimpleNamespace):
+class Dialog(ComponentNamespace):
     """Dialog components namespace."""
 
     root = __call__ = staticmethod(DialogRoot.create)
