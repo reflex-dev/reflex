@@ -598,6 +598,19 @@ class Component(BaseComponent, ABC):
         # Import here to avoid circular imports.
         from reflex.components.base.bare import Bare
 
+        # Translate deprecated props to new names.
+        known_props = cls.get_props()
+        for prop in ["type", "min", "max", "id"]:
+            under_prop = f"{prop}_"
+            if under_prop in props and prop in known_props:
+                console.deprecate(
+                    f"Underscore suffix for builtin name `{under_prop}`",
+                    reason="for consistency",
+                    deprecation_version="0.4.0",
+                    removal_version="0.5.0",
+                )
+                props[prop] = props.pop(under_prop)
+
         # Validate all the children.
         for child in children:
             # Make sure the child is a valid type.
