@@ -983,7 +983,7 @@ def show_rx_chakra_migration_instructions():
     )
     console.log("")
     console.log(
-        "For more details, please see https://reflex.dev/blog/2024-02-15-reflex-v0.4.0"
+        "For more details, please see https://reflex.dev/blog/2024-02-16-reflex-v0.4.0"
     )
 
 
