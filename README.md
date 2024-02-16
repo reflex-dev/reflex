@@ -101,20 +101,17 @@ def index():
         rx.vstack(
             rx.heading("DALL-E", font_size="1.5em"),
             rx.input(
-                    placeholder="Enter a prompt..",
-                    on_blur=State.set_prompt,
-                    width="25em",
+                placeholder="Enter a prompt..",
+                on_blur=State.set_prompt,
+                width="25em",
             ),
-            rx.button("Generate Image", on_click=State.get_image,width="25em"),
+            rx.button("Generate Image", on_click=State.get_image, width="25em"),
             rx.cond(
                 State.processing,
                 rx.chakra.circular_progress(is_indeterminate=True),
                 rx.cond(
                     State.complete,
-                    rx.image(
-                        src=State.image_url,
-                        width="20em"
-                    ),
+                    rx.image(src=State.image_url, width="20em"),
                 ),
             ),
             align="center",
