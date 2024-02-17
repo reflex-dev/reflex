@@ -8,7 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
-from reflex.components.component import Component
+from reflex.components.component import Component, MemoizationLeaf
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.next.link import NextLink
@@ -20,7 +20,7 @@ from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 LiteralLinkUnderline = Literal["auto", "hover", "always"]
 next_link = NextLink.create()
 
-class Link(RadixThemesComponent, A):
+class Link(RadixThemesComponent, A, MemoizationLeaf):
     @overload
     @classmethod
     def create(  # type: ignore

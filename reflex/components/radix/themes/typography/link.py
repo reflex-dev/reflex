@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from reflex.components.component import Component
+from reflex.components.component import Component, MemoizationLeaf
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.next.link import NextLink
@@ -28,7 +28,7 @@ LiteralLinkUnderline = Literal["auto", "hover", "always"]
 next_link = NextLink.create()
 
 
-class Link(RadixThemesComponent, A):
+class Link(RadixThemesComponent, A, MemoizationLeaf):
     """A semantic element for navigation between pages."""
 
     tag = "Link"
