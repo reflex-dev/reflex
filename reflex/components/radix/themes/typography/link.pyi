@@ -9,6 +9,7 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
 from reflex.components.component import Component
+from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.next.link import NextLink
 from reflex.utils import imports
@@ -113,6 +114,7 @@ class Link(RadixThemesComponent, A):
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
+        is_external: Optional[Union[Var[bool], bool]] = None,
         download: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -238,6 +240,7 @@ class Link(RadixThemesComponent, A):
             underline: Sets the visibility of the underline affordance: "auto" | "hover" | "always"
             color_scheme: Overrides the accent color inherited from the Theme.
             high_contrast: Whether to render the text with higher contrast color
+            is_external: If True, the link will open in a new tab
             download: Specifies that the target (the file specified in the href attribute) will be downloaded when a user clicks on the hyperlink.
             href: Specifies the URL of the page the link goes to
             href_lang: Specifies the language of the linked document

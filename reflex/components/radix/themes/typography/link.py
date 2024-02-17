@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Literal
 
 from reflex.components.component import Component
+from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.next.link import NextLink
 from reflex.utils import imports
@@ -53,6 +54,9 @@ class Link(RadixThemesComponent, A):
     # Whether to render the text with higher contrast color
     high_contrast: Var[bool]
 
+    # If True, the link will open in a new tab
+    is_external: Var[bool]
+
     def _get_imports(self) -> imports.ImportDict:
         return {**super()._get_imports(), **next_link._get_imports()}
 
@@ -70,12 +74,23 @@ class Link(RadixThemesComponent, A):
         Returns:
             Component: The link component
         """
+        is_external = props.pop("is_external", None)
+        if is_external is not None:
+            props["target"] = cond(is_external, "_blank", "")
         if props.get("href") is not None:
             if not len(children):
                 raise ValueError("Link without a child will not display")
             if "as_child" not in props:
+                # Extract props for the NextLink, the rest go to the Link/A element.
+                known_next_link_props = NextLink.get_props()
+                next_link_props = {}
+                for prop in props.copy():
+                    if prop in known_next_link_props:
+                        next_link_props[prop] = props.pop(prop)
                 # If user does not use `as_child`, by default we render using next_link to avoid page refresh during internal navigation
                 return super().create(
-                    NextLink.create(*children, **props), as_child=True
+                    NextLink.create(*children, **next_link_props),
+                    as_child=True,
+                    **props,
                 )
         return super().create(*children, **props)
