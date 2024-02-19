@@ -1800,12 +1800,15 @@ class ComputedVar(Var, property):
     # Whether to track dependencies and cache computed values
     _cache: bool = dataclasses.field(default=False)
 
+    _initial_value: Any | None = dataclasses.field(default=None)
+
     def __init__(
         self,
         fget: Callable[[BaseState], Any],
         fset: Callable[[BaseState, Any], None] | None = None,
         fdel: Callable[[BaseState], Any] | None = None,
         doc: str | None = None,
+        initial_value: Any | None = None,
         **kwargs,
     ):
         """Initialize a ComputedVar.
@@ -1815,8 +1818,10 @@ class ComputedVar(Var, property):
             fset: The setter function.
             fdel: The deleter function.
             doc: The docstring.
+            initial_value: The initial value of the computed var.
             **kwargs: additional attributes to set on the instance
         """
+        self._initial_value = initial_value
         property.__init__(self, fget, fset, fdel, doc)
         kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", self._determine_var_type())
@@ -1956,6 +1961,43 @@ class ComputedVar(Var, property):
         if "return" in hints:
             return hints["return"]
         return Any
+
+
+def computed_var(
+    fget: Callable[[BaseState], Any] | None = None,
+    fset: Callable[[BaseState, Any], None] | None = None,
+    fdel: Callable[[BaseState], Any] | None = None,
+    doc: str | None = None,
+    initial_value: Any | None = None,
+    **kwargs,
+) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
+    """A ComputedVar decorator with or without kwargs.
+
+    Args:
+        fget: The getter function.
+        fset: The setter function.
+        fdel: The deleter function.
+        doc: The docstring.
+        initial_value: The initial value of the computed var.
+        **kwargs: additional attributes to set on the instance
+
+    Returns:
+        A ComputedVar instance.
+    """
+    if fget is not None:
+        return ComputedVar(fget=fget)
+
+    def wrapper(fget):
+        return ComputedVar(
+            fget=fget,
+            fset=fset,
+            fdel=fdel,
+            doc=doc,
+            initial_value=initial_value,
+            **kwargs,
+        )
+
+    return wrapper
 
 
 def cached_var(fget: Callable[[Any], Any]) -> ComputedVar:
