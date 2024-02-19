@@ -166,7 +166,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                 return None
             class_ = prop.mapper.class_
             if prop.uselist:
-                return list[class_]
+                return List[class_]
             else:
                 return class_
     elif isinstance(cls, type) and issubclass(cls, Model):
