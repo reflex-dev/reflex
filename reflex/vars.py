@@ -2003,3 +2003,9 @@ class CallableVar(BaseVar):
             The Var returned from calling the function.
         """
         return self.fn(*args, **kwargs)
+
+
+unique_string_var = BaseVar(
+    _var_name="crypto.randomUUID()",
+    _var_type=str,
+)
