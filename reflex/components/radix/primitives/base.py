@@ -1,5 +1,5 @@
 """The base component for Radix primitives."""
-from typing import Dict, List
+from typing import List
 
 from reflex.components.component import Component
 from reflex.components.tags.tag import Tag
