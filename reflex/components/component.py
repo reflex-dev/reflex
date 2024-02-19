@@ -502,6 +502,14 @@ class Component(BaseComponent, ABC):
             if isinstance(child, Component):
                 child.apply_theme(theme)
 
+    def _exclude_props(self) -> list[str]:
+        """Props to exclude when adding the component props to the Tag.
+
+        Returns:
+            A list of component props to exclude.
+        """
+        return []
+
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         """Define how to render the component in React.
 
@@ -543,6 +551,10 @@ class Component(BaseComponent, ABC):
         )
         props.update(self._get_style())
         props.update(self.custom_attrs)
+
+        # remove excluded props from prop dict before adding to tag.
+        for prop_to_exclude in self._exclude_props():
+            del props[prop_to_exclude]
 
         return tag.add_props(**props)
 

@@ -463,6 +463,9 @@ to {
 `
 """
 
+    def _exclude_props(self) -> list[str]:
+        return ["color_scheme", "variant"]
+
 
 class AccordionItem(AccordionComponent):
     """An accordion component."""
