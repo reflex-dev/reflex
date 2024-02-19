@@ -10,6 +10,7 @@ import random
 import re
 import string
 import sys
+from abc import ABC
 from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -330,6 +331,8 @@ class Var:
     # Extra metadata associated with the Var
     _var_data: Optional[VarData]
 
+    _var_cond_data: Optional[ConditionalVarMetaData] = None
+
     @classmethod
     def create(
         cls, value: Any, _var_is_local: bool = True, _var_is_string: bool = False
@@ -441,6 +444,7 @@ class Var:
             _var_data=VarData.merge(
                 kwargs.get("_var_data", self._var_data), merge_var_data
             ),
+            _var_cond_data=kwargs.pop("_var_cond_data", self._var_cond_data),
         )
         return BaseVar(**field_values)
 
@@ -1696,6 +1700,8 @@ class BaseVar(Var):
     # Extra metadata associated with the Var
     _var_data: Optional[VarData] = dataclasses.field(default=None)
 
+    _var_cond_data: Optional[ConditionalVarMetaData] = dataclasses.field(default=None)
+
     def __hash__(self) -> int:
         """Define a hash function for a var.
 
@@ -2003,3 +2009,53 @@ class CallableVar(BaseVar):
             The Var returned from calling the function.
         """
         return self.fn(*args, **kwargs)
+
+
+class ConditionalVarMetaData(Base, ABC):
+    """Meta data associated with cond and match vars."""
+
+    cond: Var
+
+    @classmethod
+    def create(
+        cls, cond, is_match_var=False, **kwargs
+    ) -> MatchVarMetaData | CondVarMetaData:
+        """Create a Var meta data for a cond or match BaseVar.
+
+        Args:
+            cond: The cond/match condition.
+            is_match_var: Whether to create meta data for match BaseVar.
+            **kwargs: additional props from cond or match components.
+
+        Returns:
+            The Var meta data.
+
+        Raises:
+            ValueError: When insufficient kwargs are passed for creating respective meta data.
+        """
+        if is_match_var:
+            if "match_cases" not in kwargs and "default" in kwargs:
+                raise ValueError(
+                    "match_cases and default args are required for creating match var"
+                )
+            return MatchVarMetaData(cond=cond, **kwargs)
+        else:
+            if not "comp1" and "comp2" in kwargs:
+                raise ValueError(
+                    "The True and False arguments are required for creating a cond var"
+                )
+            return CondVarMetaData(cond=cond, **kwargs)
+
+
+class CondVarMetaData(ConditionalVarMetaData):
+    """Meta data associated with cond vars."""
+
+    comp1: Var[Any]
+    comp2: Optional[Var[Any]]
+
+
+class MatchVarMetaData(ConditionalVarMetaData):
+    """Meta data associated with match vars."""
+
+    match_cases: List[Tuple[Var, ...]]
+    default: Var[Any]

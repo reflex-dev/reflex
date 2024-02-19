@@ -10,7 +10,7 @@ from reflex.constants import Dirs
 from reflex.constants.colors import Color
 from reflex.style import LIGHT_COLOR_MODE, color_mode
 from reflex.utils import format, imports
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import BaseVar, ConditionalVarMetaData, Var, VarData
 
 _IS_TRUE_IMPORT = {
     f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="isTrue")},
@@ -192,6 +192,9 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         _var_is_local=False,
         _var_full_name_needs_state_prefix=False,
         merge_var_data=VarData.merge(*var_datas),
+        _var_cond_data=ConditionalVarMetaData.create(
+            cond=cond_var, comp1=Var.create(c1), comp2=Var.create(c2)
+        ),
     )
 
 
