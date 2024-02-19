@@ -7,7 +7,6 @@ from .center import Center, Circle, Square
 from .container import Container
 from .flex import Flex
 from .grid import Grid, GridItem, ResponsiveGrid
-from .html import Html
 from .spacer import Spacer
 from .stack import Hstack, Stack, Vstack
 from .wrap import Wrap, WrapItem

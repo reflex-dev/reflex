@@ -30,3 +30,6 @@ class Badge(el.Span, RadixThemesComponent):
 
     # Override theme radius for badge: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
+
+
+badge = Badge.create

@@ -23,9 +23,6 @@ class Col(BaseHTML):
     # Alignment of the content within the column
     align: Var[Union[str, int, bool]]
 
-    # Background color of the column
-    bgcolor: Var[Union[str, int, bool]]
-
     # Number of columns the col element spans
     span: Var[Union[str, int, bool]]
 
@@ -37,9 +34,6 @@ class Colgroup(BaseHTML):
 
     # Alignment of the content within the column group
     align: Var[Union[str, int, bool]]
-
-    # Background color of the column group
-    bgcolor: Var[Union[str, int, bool]]
 
     # Number of columns the colgroup element spans
     span: Var[Union[str, int, bool]]
@@ -53,15 +47,6 @@ class Table(BaseHTML):
     # Alignment of the table
     align: Var[Union[str, int, bool]]
 
-    # Background image for the table
-    background: Var[Union[str, int, bool]]
-
-    # Background color of the table
-    bgcolor: Var[Union[str, int, bool]]
-
-    # Specifies the width of the border around the table
-    border: Var[Union[str, int, bool]]
-
     # Provides a summary of the table's purpose and structure
     summary: Var[Union[str, int, bool]]
 
@@ -74,9 +59,6 @@ class Tbody(BaseHTML):
     # Alignment of the content within the table body
     align: Var[Union[str, int, bool]]
 
-    # Background color of the table body
-    bgcolor: Var[Union[str, int, bool]]
-
 
 class Td(BaseHTML):
     """Display the td element."""
@@ -85,12 +67,6 @@ class Td(BaseHTML):
 
     # Alignment of the content within the table cell
     align: Var[Union[str, int, bool]]
-
-    # Background image for the table cell
-    background: Var[Union[str, int, bool]]
-
-    # Background color of the table cell
-    bgcolor: Var[Union[str, int, bool]]
 
     # Number of columns a cell should span
     col_span: Var[Union[str, int, bool]]
@@ -110,9 +86,6 @@ class Tfoot(BaseHTML):
     # Alignment of the content within the table footer
     align: Var[Union[str, int, bool]]
 
-    # Background color of the table footer
-    bgcolor: Var[Union[str, int, bool]]
-
 
 class Th(BaseHTML):
     """Display the th element."""
@@ -121,12 +94,6 @@ class Th(BaseHTML):
 
     # Alignment of the content within the table header cell
     align: Var[Union[str, int, bool]]
-
-    # Background image for the table header cell
-    background: Var[Union[str, int, bool]]
-
-    # Background color of the table header cell
-    bgcolor: Var[Union[str, int, bool]]
 
     # Number of columns a header cell should span
     col_span: Var[Union[str, int, bool]]
@@ -157,6 +124,3 @@ class Tr(BaseHTML):
 
     # Alignment of the content within the table row
     align: Var[Union[str, int, bool]]
-
-    # Background color of the table row
-    bgcolor: Var[Union[str, int, bool]]

@@ -7,8 +7,8 @@ from typing import Any, Dict, Iterator, Literal
 
 from jinja2 import Environment
 
-from reflex.components.component import Component
-from reflex.components.radix.themes.components.textfield import TextFieldInput
+from reflex.components.component import Component, ComponentNamespace
+from reflex.components.radix.themes.components.text_field import TextFieldInput
 from reflex.components.tags.tag import Tag
 from reflex.constants.base import Dirs
 from reflex.constants.event import EventTriggers
@@ -289,14 +289,24 @@ class FormSubmit(FormComponent):
     alias = "RadixFormSubmit"
 
 
-# High Level API
-Form = FormRoot
+# This class is created mainly for reflex-web docs.
+class Form(FormRoot):
+    """The Form component."""
 
-form_root = FormRoot.create
-form_field = FormField.create
-form_label = FormLabel.create
-form_control = FormControl.create
-form_message = FormMessage.create
-form_validity_state = FormValidityState.create
-form_submit = FormSubmit.create
-form = Form.create
+    pass
+
+
+class FormNamespace(ComponentNamespace):
+    """Form components."""
+
+    root = staticmethod(FormRoot.create)
+    control = staticmethod(FormControl.create)
+    field = staticmethod(FormField.create)
+    label = staticmethod(FormLabel.create)
+    message = staticmethod(FormMessage.create)
+    submit = staticmethod(FormSubmit.create)
+    validity_state = staticmethod(FormValidityState.create)
+    __call__ = staticmethod(Form.create)
+
+
+form = FormNamespace()

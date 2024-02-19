@@ -21,16 +21,16 @@ def FullyControlledInput():
     @app.add_page
     def index():
         return rx.fragment(
-            rx.input(
+            rx.chakra.input(
                 value=State.router.session.client_token, is_read_only=True, id="token"
             ),
-            rx.input(
+            rx.chakra.input(
                 id="debounce_input_input",
                 on_change=State.set_text,  # type: ignore
                 value=State.text,
             ),
-            rx.input(value=State.text, id="value_input", is_read_only=True),
-            rx.input(on_change=State.set_text, id="on_change_input"),  # type: ignore
+            rx.chakra.input(value=State.text, id="value_input", is_read_only=True),
+            rx.chakra.input(on_change=State.set_text, id="on_change_input"),  # type: ignore
             rx.el.input(
                 value=State.text,
                 id="plain_value_input",

@@ -15,7 +15,7 @@ from starlette_admin.auth import AuthProvider
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
 
-import reflex.components.radix.themes as rdxt
+import reflex as rx
 from reflex import AdminDash, constants
 from reflex.app import (
     App,
@@ -24,7 +24,8 @@ from reflex.app import (
     process,
     upload,
 )
-from reflex.components import Box, Component, Cond, Fragment, Text
+from reflex.components import Component, Cond, Fragment
+from reflex.components.radix.themes.typography.text import Text
 from reflex.event import Event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
@@ -58,7 +59,7 @@ def index_page():
     """
 
     def index():
-        return Box.create("Index")
+        return rx.box("Index")
 
     return index
 
@@ -72,7 +73,7 @@ def about_page():
     """
 
     def about():
-        return Box.create("About")
+        return rx.box("About")
 
     return about
 
@@ -1172,7 +1173,7 @@ def test_overlay_component(
             exp_page_child,
         )
 
-    app.add_page(Box.create("Index"), route="/test")
+    app.add_page(rx.box("Index"), route="/test")
     page = app.pages["test"]
     if exp_page_child is not None:
         assert len(page.children) == 3
@@ -1212,7 +1213,7 @@ def test_app_wrap_compile_theme(compilable_app):
         compilable_app: compilable_app fixture.
     """
     app, web_dir = compilable_app
-    app.theme = rdxt.theme(accent_color="plum")
+    app.theme = rx.theme(accent_color="plum")
     app.compile_()
     app_js_contents = (web_dir / "pages" / "_app.js").read_text()
     app_js_lines = [
@@ -1245,13 +1246,13 @@ def test_app_wrap_priority(compilable_app):
         tag = "Fragment1"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(99, "Box"): Box.create()}
+            return {(99, "Box"): rx.chakra.box()}
 
     class Fragment2(Component):
         tag = "Fragment2"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(50, "Text"): Text.create()}
+            return {(50, "Text"): rx.chakra.text()}
 
     class Fragment3(Component):
         tag = "Fragment3"

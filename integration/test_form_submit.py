@@ -27,28 +27,28 @@ def FormSubmit():
     @app.add_page
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=FormState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.form(
+            rx.form.root(
                 rx.vstack(
-                    rx.input(id="name_input"),
-                    rx.hstack(rx.pin_input(length=4, id="pin_input")),
-                    rx.number_input(id="number_input"),
+                    rx.chakra.input(id="name_input"),
+                    rx.hstack(rx.chakra.pin_input(length=4, id="pin_input")),
+                    rx.chakra.number_input(id="number_input"),
                     rx.checkbox(id="bool_input"),
                     rx.switch(id="bool_input2"),
                     rx.checkbox(id="bool_input3"),
                     rx.switch(id="bool_input4"),
-                    rx.slider(id="slider_input"),
-                    rx.range_slider(id="range_input"),
-                    rx.radio_group(["option1", "option2"], id="radio_input"),
-                    rx.radio_group(FormState.var_options, id="radio_input_var"),
-                    rx.select(["option1", "option2"], id="select_input"),
-                    rx.select(FormState.var_options, id="select_input_var"),
+                    rx.slider(id="slider_input", default_value=[50], width="100%"),
+                    rx.chakra.range_slider(id="range_input"),
+                    rx.radio(["option1", "option2"], id="radio_input"),
+                    rx.radio(FormState.var_options, id="radio_input_var"),
+                    rx.chakra.select(["option1", "option2"], id="select_input"),
+                    rx.chakra.select(FormState.var_options, id="select_input_var"),
                     rx.text_area(id="text_area_input"),
-                    rx.input(
+                    rx.chakra.input(
                         id="debounce_input",
                         debounce_timeout=0,
                         on_change=rx.console_log,
@@ -80,37 +80,41 @@ def FormSubmitName():
     @app.add_page
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=FormState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.form(
+            rx.form.root(
                 rx.vstack(
-                    rx.input(name="name_input"),
-                    rx.hstack(rx.pin_input(length=4, name="pin_input")),
-                    rx.number_input(name="number_input"),
+                    rx.chakra.input(name="name_input"),
+                    rx.hstack(rx.chakra.pin_input(length=4, name="pin_input")),
+                    rx.chakra.number_input(name="number_input"),
                     rx.checkbox(name="bool_input"),
                     rx.switch(name="bool_input2"),
                     rx.checkbox(name="bool_input3"),
                     rx.switch(name="bool_input4"),
-                    rx.slider(name="slider_input"),
-                    rx.range_slider(name="range_input"),
-                    rx.radio_group(FormState.options, name="radio_input"),
-                    rx.select(FormState.options, name="select_input"),
+                    rx.slider(name="slider_input", default_value=[50], width="100%"),
+                    rx.chakra.range_slider(name="range_input"),
+                    rx.radio(FormState.options, name="radio_input"),
+                    rx.select(
+                        FormState.options,
+                        name="select_input",
+                        default_value=FormState.options[0],
+                    ),
                     rx.text_area(name="text_area_input"),
-                    rx.input_group(
-                        rx.input_left_element(rx.icon(tag="chevron_right")),
-                        rx.input(
+                    rx.chakra.input_group(
+                        rx.chakra.input_left_element(rx.icon(tag="chevron_right")),
+                        rx.chakra.input(
                             name="debounce_input",
                             debounce_timeout=0,
                             on_change=rx.console_log,
                         ),
-                        rx.input_right_element(rx.icon(tag="chevron_left")),
+                        rx.chakra.input_right_element(rx.icon(tag="chevron_left")),
                     ),
-                    rx.button_group(
+                    rx.chakra.button_group(
                         rx.button("Submit", type_="submit"),
-                        rx.icon_button(FormState.val, icon=rx.icon(tag="add")),
+                        rx.icon_button(FormState.val, icon=rx.icon(tag="plus")),
                         variant="outline",
                         is_attached=True,
                     ),
@@ -194,16 +198,16 @@ async def test_submit(driver, form_submit: AppHarness):
     for _ in range(3):
         buttons[1].click()
 
-    checkbox_input = driver.find_element(By.CLASS_NAME, "chakra-checkbox__control")
+    checkbox_input = driver.find_element(By.XPATH, "//button[@role='checkbox']")
     checkbox_input.click()
 
-    switch_input = driver.find_element(By.CLASS_NAME, "chakra-switch__track")
+    switch_input = driver.find_element(By.XPATH, "//button[@role='switch']")
     switch_input.click()
 
-    radio_buttons = driver.find_elements(By.CLASS_NAME, "chakra-radio__control")
+    radio_buttons = driver.find_elements(By.XPATH, "//button[@role='radio']")
     radio_buttons[1].click()
 
-    textarea_input = driver.find_element(By.CLASS_NAME, "chakra-textarea")
+    textarea_input = driver.find_element(By.TAG_NAME, "textarea")
     textarea_input.send_keys("Some", Keys.ENTER, "Text")
 
     debounce_input = driver.find_element(by, "debounce_input")
@@ -213,7 +217,7 @@ async def test_submit(driver, form_submit: AppHarness):
 
     prev_url = driver.current_url
 
-    submit_input = driver.find_element(By.CLASS_NAME, "chakra-button")
+    submit_input = driver.find_element(By.CLASS_NAME, "rt-Button")
     submit_input.click()
 
     async def get_form_data():

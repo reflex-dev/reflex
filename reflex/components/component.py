@@ -7,6 +7,7 @@ import typing
 from abc import ABC, abstractmethod
 from functools import lru_cache, wraps
 from hashlib import md5
+from types import SimpleNamespace
 from typing import (
     Any,
     Callable,
@@ -114,8 +115,38 @@ class BaseComponent(Base, ABC):
         """
 
 
+class ComponentNamespace(SimpleNamespace):
+    """A namespace to manage components with subcomponents."""
+
+    def __hash__(self) -> int:
+        """Get the hash of the namespace.
+
+
+        Returns:
+            The hash of the namespace.
+        """
+        return hash(self.__class__.__name__)
+
+
+def evaluate_style_namespaces(style: ComponentStyle) -> dict:
+    """Evaluate namespaces in the style.
+
+    Args:
+        style: The style to evaluate.
+
+    Returns:
+        The evaluated style.
+    """
+    return {
+        k.__call__ if isinstance(k, ComponentNamespace) else k: v
+        for k, v in style.items()
+    }
+
+
 # Map from component to styling.
-ComponentStyle = Dict[Union[str, Type[BaseComponent], Callable], Any]
+ComponentStyle = Dict[
+    Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
+]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
 
 
@@ -189,6 +220,14 @@ class Component(BaseComponent, ABC):
             if types._issubclass(field.type_, Var):
                 field.required = False
                 field.default = Var.create(field.default)
+
+        # Ensure renamed props from parent classes are applied to the subclass.
+        if cls._rename_props:
+            inherited_rename_props = {}
+            for parent in reversed(cls.mro()):
+                if issubclass(parent, Component) and parent._rename_props:
+                    inherited_rename_props.update(parent._rename_props)
+            cls._rename_props = inherited_rename_props
 
     def __init__(self, *args, **kwargs):
         """Initialize the component.
@@ -348,7 +387,7 @@ class Component(BaseComponent, ABC):
                     feature_name="EventChain",
                     reason="to avoid confusion, only use yield API",
                     deprecation_version="0.2.8",
-                    removal_version="0.4.0",
+                    removal_version="0.5.0",
                 )
             events: list[EventSpec] = []
             for v in value:
@@ -559,6 +598,21 @@ class Component(BaseComponent, ABC):
         # Import here to avoid circular imports.
         from reflex.components.base.bare import Bare
 
+        # Translate deprecated props to new names.
+        new_prop_names = [
+            prop for prop in cls.get_props() if prop in ["type", "min", "max"]
+        ]
+        for prop in new_prop_names:
+            under_prop = f"{prop}_"
+            if under_prop in props:
+                console.deprecate(
+                    f"Underscore suffix for prop `{under_prop}`",
+                    reason=f"for consistency. Use `{prop}` instead.",
+                    deprecation_version="0.4.0",
+                    removal_version="0.5.0",
+                )
+                props[prop] = props.pop(under_prop)
+
         # Validate all the children.
         for child in children:
             # Make sure the child is a valid type.
@@ -659,7 +713,7 @@ class Component(BaseComponent, ABC):
         for ix, prop in enumerate(rendered_dict["props"]):
             for old_prop, new_prop in self._rename_props.items():
                 if prop.startswith(old_prop):
-                    rendered_dict["props"][ix] = prop.replace(old_prop, new_prop)
+                    rendered_dict["props"][ix] = prop.replace(old_prop, new_prop, 1)
 
     def _validate_component_children(self, children: List[Component]):
         """Validate the children components.
@@ -668,20 +722,43 @@ class Component(BaseComponent, ABC):
             children: The children of the component.
 
         """
-        skip_parentable = all(child._valid_parents == [] for child in children)
-        if not self._invalid_children and not self._valid_children and skip_parentable:
+        no_valid_parents_defined = all(child._valid_parents == [] for child in children)
+        if (
+            not self._invalid_children
+            and not self._valid_children
+            and no_valid_parents_defined
+        ):
             return
 
         comp_name = type(self).__name__
+        allowed_components = ["Fragment", "Foreach", "Cond", "Match"]
 
-        def validate_invalid_child(child_name):
-            if child_name in self._invalid_children:
+        def validate_child(child):
+            child_name = type(child).__name__
+
+            # Iterate through the immediate children of fragment
+            if child_name == "Fragment":
+                for c in child.children:
+                    validate_child(c)
+
+            if child_name == "Cond":
+                validate_child(child.comp1)
+                validate_child(child.comp2)
+
+            if child_name == "Match":
+                for cases in child.match_cases:
+                    validate_child(cases[-1])
+                validate_child(child.default)
+
+            if self._invalid_children and child_name in self._invalid_children:
                 raise ValueError(
                     f"The component `{comp_name}` cannot have `{child_name}` as a child component"
                 )
 
-        def validate_valid_child(child_name):
-            if child_name not in self._valid_children:
+            if self._valid_children and child_name not in [
+                *self._valid_children,
+                *allowed_components,
+            ]:
                 valid_child_list = ", ".join(
                     [f"`{v_child}`" for v_child in self._valid_children]
                 )
@@ -689,26 +766,19 @@ class Component(BaseComponent, ABC):
                     f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
                 )
 
-        def validate_vaild_parent(child_name, valid_parents):
-            if comp_name not in valid_parents:
+            if child._valid_parents and comp_name not in [
+                *child._valid_parents,
+                *allowed_components,
+            ]:
                 valid_parent_list = ", ".join(
-                    [f"`{v_parent}`" for v_parent in valid_parents]
+                    [f"`{v_parent}`" for v_parent in child._valid_parents]
                 )
                 raise ValueError(
                     f"The component `{child_name}` can only be a child of the components: {valid_parent_list}. Got `{comp_name}` instead."
                 )
 
         for child in children:
-            name = type(child).__name__
-
-            if self._invalid_children:
-                validate_invalid_child(name)
-
-            if self._valid_children:
-                validate_valid_child(name)
-
-            if child._valid_parents:
-                validate_vaild_parent(name, child._valid_parents)
+            validate_child(child)
 
     @staticmethod
     def _get_vars_from_event_triggers(

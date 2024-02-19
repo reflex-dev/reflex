@@ -9,13 +9,13 @@ def modal() -> rx.Component:
     Returns:
         The modal component.
     """
-    return rx.modal(
-        rx.modal_overlay(
-            rx.modal_content(
-                rx.modal_header(
-                    rx.hstack(
-                        rx.text("Create new chat"),
-                        rx.icon(
+    return rx.chakra.modal(
+        rx.chakra.modal_overlay(
+            rx.chakra.modal_content(
+                rx.chakra.modal_header(
+                    rx.chakra.hstack(
+                        rx.chakra.text("Create new chat"),
+                        rx.chakra.icon(
                             tag="close",
                             font_size="sm",
                             on_click=State.toggle_modal,
@@ -27,8 +27,8 @@ def modal() -> rx.Component:
                         justify_content="space-between",
                     )
                 ),
-                rx.modal_body(
-                    rx.input(
+                rx.chakra.modal_body(
+                    rx.chakra.input(
                         placeholder="Type something...",
                         on_blur=State.set_new_chat_name,
                         bg="#222",
@@ -36,8 +36,8 @@ def modal() -> rx.Component:
                         _placeholder={"color": "#fffa"},
                     ),
                 ),
-                rx.modal_footer(
-                    rx.button(
+                rx.chakra.modal_footer(
+                    rx.chakra.button(
                         "Create",
                         bg="#5535d4",
                         box_shadow="md",

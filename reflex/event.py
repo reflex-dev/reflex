@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import inspect
+from base64 import b64encode
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -552,21 +553,26 @@ def set_clipboard(content: str) -> EventSpec:
     )
 
 
-def download(url: str | Var, filename: Optional[str | Var] = None) -> EventSpec:
-    """Download the file at a given path.
+def download(
+    url: str | Var | None = None,
+    filename: Optional[str | Var] = None,
+    data: str | bytes | Var | None = None,
+) -> EventSpec:
+    """Download the file at a given path or with the specified data.
 
     Args:
-        url : The URL to the file to download.
-        filename : The name that the file should be saved as after download.
+        url: The URL to the file to download.
+        filename: The name that the file should be saved as after download.
+        data: The data to download.
 
     Raises:
-        ValueError: If the URL provided is invalid.
+        ValueError: If the URL provided is invalid, both URL and data are provided,
+            or the data is not an expected type.
 
     Returns:
         EventSpec: An event to download the associated file.
     """
-    if isinstance(url, Var) and filename is None:
-        filename = ""
+    from reflex.components.core.cond import cond
 
     if isinstance(url, str):
         if not url.startswith("/"):
@@ -575,6 +581,42 @@ def download(url: str | Var, filename: Optional[str | Var] = None) -> EventSpec:
         # if filename is not provided, infer it from url
         if filename is None:
             filename = url.rpartition("/")[-1]
+
+    if filename is None:
+        filename = ""
+
+    if data is not None:
+        if url is not None:
+            raise ValueError("Cannot provide both URL and data to download.")
+
+        if isinstance(data, str):
+            # Caller provided a plain text string to download.
+            url = "data:text/plain," + data
+        elif isinstance(data, Var):
+            # Need to check on the frontend if the Var already looks like a data: URI.
+            is_data_url = data._replace(
+                _var_name=(
+                    f"typeof {data._var_full_name} == 'string' && "
+                    f"{data._var_full_name}.startsWith('data:')"
+                ),
+                _var_type=bool,
+                _var_is_string=False,
+                _var_full_name_needs_state_prefix=False,
+            )
+            # If it's a data: URI, use it as is, otherwise convert the Var to JSON in a data: URI.
+            url = cond(  # type: ignore
+                is_data_url,
+                data,
+                "data:text/plain," + data.to_string(),  # type: ignore
+            )
+        elif isinstance(data, bytes):
+            # Caller provided bytes, so base64 encode it as a data: URI.
+            b64_data = b64encode(data).decode("utf-8")
+            url = "data:application/octet-stream;base64," + b64_data
+        else:
+            raise ValueError(
+                f"Invalid data type {type(data)} for download. Use `str` or `bytes`."
+            )
 
     return server_side(
         "_download",
@@ -695,7 +737,7 @@ def call_event_handler(
             feature_name="EVENT_ARG API for triggers",
             reason="Replaced by new API using lambda allow arbitrary number of args",
             deprecation_version="0.2.8",
-            removal_version="0.4.0",
+            removal_version="0.5.0",
         )
         if len(args) == 1:
             return event_handler()

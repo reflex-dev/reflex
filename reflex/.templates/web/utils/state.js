@@ -64,7 +64,7 @@ export const getToken = () => {
   if (token) {
     return token;
   }
-  if (window) {
+  if (typeof window !== 'undefined') {
     if (!window.sessionStorage.getItem(TOKEN_KEY)) {
       window.sessionStorage.setItem(TOKEN_KEY, generateUUID());
     }
@@ -81,7 +81,7 @@ export const getToken = () => {
 export const getBackendURL = (url_str) => {
   // Get backend URL object from the endpoint.
   const endpoint = new URL(url_str);
-  if (SAME_DOMAIN_HOSTNAMES.includes(endpoint.hostname)) {
+  if ((typeof window !== 'undefined') && SAME_DOMAIN_HOSTNAMES.includes(endpoint.hostname)) {
     // Use the frontend domain to access the backend
     const frontend_hostname = window.location.hostname;
     endpoint.hostname = frontend_hostname;
@@ -152,12 +152,12 @@ export const applyEvent = async (event, socket) => {
     navigator.clipboard.writeText(content);
     return false;
   }
+
   if (event.name == "_download") {
     const a = document.createElement('a');
     a.hidden = true;
-    a.href = event.payload.url;
-    if (event.payload.filename)
-      a.download = event.payload.filename;
+    a.href = event.payload.url
+    a.download = event.payload.filename;
     a.click();
     a.remove();
     return false;
@@ -599,7 +599,12 @@ export const getRefValue = (ref) => {
     return;
   }
   if (ref.current.type == "checkbox") {
-    return ref.current.checked;
+    return ref.current.checked;  // chakra
+  } else if (ref.current.className.includes("rt-CheckboxButton") || ref.current.className.includes("rt-SwitchButton")) {
+    return ref.current.ariaChecked == "true";  // radix
+  } else if (ref.current.className.includes("rt-SliderRoot")) {
+    // find the actual slider
+    return ref.current.querySelector(".rt-SliderThumb").ariaValueNow;
   } else {
     //querySelector(":checked") is needed to get value from radio_group
     return ref.current.value || (ref.current.querySelector(':checked') && ref.current.querySelector(':checked').value);

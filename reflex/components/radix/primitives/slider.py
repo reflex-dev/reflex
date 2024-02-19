@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Literal
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.style import Style
 from reflex.vars import Var
@@ -148,34 +148,38 @@ class SliderThumb(SliderComponent):
         )
 
 
-slider_root = SliderRoot.create
-slider_track = SliderTrack.create
-slider_range = SliderRange.create
-slider_thumb = SliderThumb.create
+class Slider(ComponentNamespace):
+    """High level API for slider."""
+
+    root = staticmethod(SliderRoot.create)
+    track = staticmethod(SliderTrack.create)
+    range = staticmethod(SliderRange.create)
+    thumb = staticmethod(SliderThumb.create)
+
+    @staticmethod
+    def __call__(**props) -> Component:
+        """High level API for slider.
+
+        Args:
+            **props: The props of the slider.
+
+        Returns:
+            A slider component.
+        """
+        track = SliderTrack.create(SliderRange.create())
+        # if default_value is not set, the thumbs will not render properly but the slider will still work
+        if "default_value" in props:
+            children = [
+                track,
+                *[SliderThumb.create() for _ in props.get("default_value", [])],
+            ]
+        else:
+            children = [
+                track,
+                #     Foreach.create(props.get("value"), lambda e: SliderThumb.create()),  # foreach doesn't render Thumbs properly
+            ]
+
+        return SliderRoot.create(*children, **props)
 
 
-def slider(
-    **props,
-) -> Component:
-    """High level API for slider.
-
-    Args:
-        **props: The props of the slider.
-
-    Returns:
-        A slider component.
-    """
-    track = SliderTrack.create(SliderRange.create())
-    # if default_value is not set, the thumbs will not render properly but the slider will still work
-    if "default_value" in props:
-        children = [
-            track,
-            *[SliderThumb.create() for _ in props.get("default_value", [])],
-        ]
-    else:
-        children = [
-            track,
-            #     Foreach.create(props.get("value"), lambda e: SliderThumb.create()),  # foreach doesn't render Thumbs properly
-        ]
-
-    return slider_root(*children, **props)
+slider = Slider()

@@ -101,3 +101,6 @@ class TextArea(RadixThemesComponent, el.Textarea):
             EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
             EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
         }
+
+
+text_area = TextArea.create

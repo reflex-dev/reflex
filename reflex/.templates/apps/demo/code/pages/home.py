@@ -10,39 +10,39 @@ def home_page() -> rx.Component:
     Returns:
         rx.Component: The UI for the home page.
     """
-    return rx.box(
-        rx.vstack(
-            rx.heading(
+    return rx.chakra.box(
+        rx.chakra.vstack(
+            rx.chakra.heading(
                 "Welcome to Reflex! 👋",
                 font_size="3em",
             ),
-            rx.text(
+            rx.chakra.text(
                 "Reflex is an open-source app framework built specifically to allow you to build web apps in pure python. 👈 Select a demo from the sidebar to see some examples of what Reflex can do!",
             ),
-            rx.heading(
+            rx.chakra.heading(
                 "Things to check out:",
                 font_size="2em",
             ),
-            rx.unordered_list(
-                rx.list_item(
+            rx.chakra.unordered_list(
+                rx.chakra.list_item(
                     "Take a look at ",
-                    rx.link(
+                    rx.chakra.link(
                         "reflex.dev",
                         href="https://reflex.dev",
                         color="rgb(107,99,246)",
                     ),
                 ),
-                rx.list_item(
+                rx.chakra.list_item(
                     "Check out our ",
-                    rx.link(
+                    rx.chakra.link(
                         "docs",
                         href="https://reflex.dev/docs/getting-started/introduction/",
                         color="rgb(107,99,246)",
                     ),
                 ),
-                rx.list_item(
+                rx.chakra.list_item(
                     "Ask a question in our ",
-                    rx.link(
+                    rx.chakra.link(
                         "community",
                         href="https://discord.gg/T5WSbC2YtQ",
                         color="rgb(107,99,246)",

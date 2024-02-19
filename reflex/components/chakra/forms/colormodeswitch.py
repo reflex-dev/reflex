@@ -16,38 +16,17 @@ rx.text(
 """
 from __future__ import annotations
 
-from typing import Any
-
 from reflex.components.chakra import ChakraComponent
 from reflex.components.chakra.media.icon import Icon
-from reflex.components.component import BaseComponent, Component
-from reflex.components.core.cond import Cond, cond
-from reflex.style import color_mode, toggle_color_mode
-from reflex.vars import Var
+from reflex.components.component import BaseComponent
+from reflex.components.core.cond import Cond, color_mode_cond
+from reflex.style import LIGHT_COLOR_MODE, color_mode, toggle_color_mode
 
 from .button import Button
 from .switch import Switch
 
-DEFAULT_COLOR_MODE: str = "light"
 DEFAULT_LIGHT_ICON: Icon = Icon.create(tag="sun")
 DEFAULT_DARK_ICON: Icon = Icon.create(tag="moon")
-
-
-def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
-    """Create a component or Prop based on color_mode.
-
-    Args:
-        light: The component or prop to render if color_mode is default
-        dark: The component or prop to render if color_mode is non-default
-
-    Returns:
-        The conditional component or prop.
-    """
-    return cond(
-        color_mode == DEFAULT_COLOR_MODE,
-        light,
-        dark,
-    )
 
 
 class ColorModeIcon(Cond):
@@ -90,7 +69,7 @@ class ColorModeSwitch(Switch):
         """
         return Switch.create(
             *children,
-            is_checked=color_mode != DEFAULT_COLOR_MODE,
+            is_checked=color_mode != LIGHT_COLOR_MODE,
             on_change=toggle_color_mode,
             **props,
         )
@@ -121,4 +100,4 @@ class ColorModeScript(ChakraComponent):
     """Chakra color mode script."""
 
     tag = "ColorModeScript"
-    initialColorMode = "light"
+    initialColorMode = LIGHT_COLOR_MODE

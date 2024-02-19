@@ -114,3 +114,6 @@ class Tooltip(RadixThemesComponent):
             props[format.to_kebab_case(ARIA_LABEL_KEY)] = props.pop(ARIA_LABEL_KEY)
 
         return super().create(*children, **props)
+
+
+tooltip = Tooltip.create

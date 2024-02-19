@@ -53,9 +53,6 @@ class Hr(BaseHTML):
     # Used to specify the alignment of text content of The Element. this attribute is used in all elements.
     align: Var[Union[str, int, bool]]
 
-    # Used to specify the color of a Horizontal rule.
-    color: Var[Union[str, int, bool]]
-
 
 class Li(BaseHTML):
     """Display the li element."""
