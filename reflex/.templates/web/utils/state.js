@@ -341,7 +341,7 @@ export const connect = async (
  */
 export const uploadFiles = async (handler, files, upload_id, on_upload_progress, socket) => {
   // return if there's no file to upload
-  if (files.length == 0) {
+  if (files === undefined || files.length === 0) {
     return false;
   }
 
