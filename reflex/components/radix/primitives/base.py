@@ -13,9 +13,6 @@ class RadixPrimitiveComponent(Component):
     # Change the default rendered element for the one passed as a child.
     as_child: Var[bool]
 
-    # "Fake" prop color_scheme is used to avoid shadowing CSS prop "color".
-    _rename_props: Dict[str, str] = {"colorScheme": "color"}
-
     lib_dependencies: List[str] = ["@emotion/react@^11.11.1"]
 
 
