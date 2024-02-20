@@ -40,7 +40,7 @@ const upload_controllers = {};
  * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
  * @returns A UUID.
  */
-const generateUUID = () => {
+export const generateUUID = () => {
   let d = new Date().getTime(),
     d2 = (performance && performance.now && performance.now() * 1000) || 0;
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -346,7 +346,7 @@ export const connect = async (
  */
 export const uploadFiles = async (handler, files, upload_id, on_upload_progress, socket) => {
   // return if there's no file to upload
-  if (files.length == 0) {
+  if (files === undefined || files.length === 0) {
     return false;
   }
 

@@ -19,7 +19,7 @@ from reflex.style import (
     format_as_emotion,
 )
 from reflex.utils import imports
-from reflex.vars import BaseVar, Var, VarData, get_unique_variable_name
+from reflex.vars import BaseVar, Var, VarData, get_uuid_string_var
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
