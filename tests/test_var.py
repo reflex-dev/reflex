@@ -112,12 +112,14 @@ def StateWithInitialComputedVar():
 
     return StateWithInitialComputedVar
 
+
 @pytest.fixture
 def ChildWithInitialComputedVar(StateWithInitialComputedVar):
     class ChildWithInitialComputedVar(StateWithInitialComputedVar):
         @computed_var(initial_value="Initial value")
         def var_with_initial_value_child(self) -> str:
             return "Runtime value"
+
     return ChildWithInitialComputedVar
 
 
@@ -130,12 +132,14 @@ def StateWithRuntimeOnlyVar():
 
     return StateWithRuntimeOnlyVar
 
+
 @pytest.fixture
 def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
     class ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
         @computed_var(initial_value="Initial value")
         def var_runtime_only_child(self) -> str:
             raise ValueError("So nicht, mein Freund")
+
     return ChildWithRuntimeOnlyVar
 
 
