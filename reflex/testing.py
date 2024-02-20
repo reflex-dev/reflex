@@ -221,15 +221,22 @@ class AppHarness:
                 self.app_module_path.write_text(source_code)
         with chdir(self.app_path):
             # ensure config and app are reloaded when testing different app
-            reflex.config.get_config(reload=True)
+            config = reflex.config.get_config(reload=True)
+
             # reset rx.State subclasses
-            State.class_subclasses.clear()
+            from reflex.state import reload_state_module
+
+            reload_state_module(module=config.module)
             State.class_subclasses.update(INTERNAL_STATES)
             State._always_dirty_substates = set()
             State.get_class_substate.cache_clear()
+            reflex.utils.prerequisites.get_app()
+
+            reload_state_module(module=config.module)
+
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
-            # self.app_module.app.
+
             self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
         self.app_instance = self.app_module.app
         if isinstance(self.app_instance._state_manager, StateManagerRedis):

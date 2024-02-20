@@ -160,7 +160,15 @@ class FormRoot(FormComponent):
             **self.style,
         }
 
-    def _get_vars(self) -> Iterator[Var]:
+    def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
+        """Walk all Vars used in this form.
+
+        Args:
+            include_children: Whether to include Vars from children.
+
+        Yields:
+            Each var referenced by the form (props, styles, event handlers).
+        """
         yield from super()._get_vars()
         yield from self._get_form_refs().values()
 
