@@ -7,14 +7,17 @@ from typing import Optional
 from reflex.components.base.bare import Bare
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
+from reflex.components.el.elements.typography import Div
+from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.dialog import (
     DialogContent,
     DialogRoot,
     DialogTitle,
 )
-from reflex.components.radix.themes.layout import Box
+from reflex.components.radix.themes.layout import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.constants import Dirs, Hooks, Imports
+from reflex.state import State
 from reflex.utils import imports
 from reflex.vars import Var, VarData
 
@@ -24,12 +27,24 @@ connect_error_var_data: VarData = VarData(  # type: ignore
 )
 
 connection_error: Var = Var.create_safe(
-    value="(connectError !== null) ? connectError.message : ''",
+    value="(connectError.length > 0) ? connectError[connectError.length - 1].message : ''",
     _var_is_local=False,
     _var_is_string=False,
 )._replace(merge_var_data=connect_error_var_data)
-has_connection_error: Var = Var.create_safe(
-    value="connectError !== null",
+
+connection_errors_count: Var = Var.create_safe(
+    value="connectError.length",
+    _var_is_string=False,
+    _var_is_local=False,
+)._replace(merge_var_data=connect_error_var_data)
+
+has_connection_errors: Var = Var.create_safe(
+    value="connectError.length > 0",
+    _var_is_string=False,
+)._replace(_var_type=bool, merge_var_data=connect_error_var_data)
+
+has_too_many_connection_errors: Var = Var.create_safe(
+    value="connectError.length >= 2",
     _var_is_string=False,
 )._replace(_var_type=bool, merge_var_data=connect_error_var_data)
 
@@ -81,16 +96,20 @@ class ConnectionBanner(Component):
             The connection banner component.
         """
         if not comp:
-            comp = Box.create(
+            comp = Flex.create(
                 Text.create(
                     *default_connection_error(),
-                    bg="red",
-                    color="white",
+                    color="black",
+                    size="4",
                 ),
-                textAlign="center",
+                justify="center",
+                background_color="crimson",
+                width="100vw",
+                padding="5px",
+                position="fixed",
             )
 
-        return cond(has_connection_error, comp)
+        return cond(has_connection_errors, comp)
 
 
 class ConnectionModal(Component):
@@ -109,12 +128,68 @@ class ConnectionModal(Component):
         if not comp:
             comp = Text.create(*default_connection_error())
         return cond(
-            has_connection_error,
+            has_too_many_connection_errors,
             DialogRoot.create(
                 DialogContent.create(
                     DialogTitle.create("Connection Error"),
                     comp,
                 ),
-                open=has_connection_error,
+                open=has_too_many_connection_errors,
             ),
+        )
+
+
+class ConnectionPulser(Div):
+    """A connection pulser component."""
+
+    def _get_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
+            super()._get_imports(),
+            # self._var_data.imports if self._var_data else {},
+            {"@emotion/react": [imports.ImportVar(tag="keyframes")]},
+        )
+
+    def _get_custom_code(self) -> str | None:
+        return """
+const pulse = keyframes`
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+`
+"""
+
+    @classmethod
+    def create(cls, **props) -> Component:
+        """Create a connection pulser component.
+
+        Args:
+            **props: The properties of the component.
+
+        Returns:
+            The connection pulser component.
+        """
+        return super().create(
+            cond(
+                ~State.is_hydrated | has_connection_errors,  # type: ignore
+                Icon.create(
+                    "wifi_off",
+                    color="crimson",
+                    size=32,
+                    animation=Var.create(
+                        f"${{pulse}} 1s infinite", _var_is_string=True
+                    ),
+                    z_index=999,
+                    position="absolute",
+                    bottom="30px",
+                    right="30px",
+                    **props,
+                ),
+            ),
+            z_index=-999,
+            position="absolute",
+            width="100vw",
+            height="100vh",
         )
