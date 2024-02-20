@@ -554,7 +554,7 @@ class Component(BaseComponent, ABC):
 
         # remove excluded props from prop dict before adding to tag.
         for prop_to_exclude in self._exclude_props():
-            del props[prop_to_exclude]
+            props.pop(prop_to_exclude, None)
 
         return tag.add_props(**props)
 
