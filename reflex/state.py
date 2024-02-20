@@ -1320,6 +1320,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Args:
             include_computed: Whether to include computed vars.
+            initial: Whether to get the initial value of computed vars.
             **kwargs: Kwargs to pass to the pydantic dict method.
 
         Returns:
