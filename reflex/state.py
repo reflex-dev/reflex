@@ -1355,7 +1355,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self.get_full_name(): {k: variables[k] for k in sorted(variables)},
         }
         for substate_d in [
-            v.dict(include_computed=include_computed, **kwargs)
+            v.dict(include_computed=include_computed, initial=initial, **kwargs)
             for v in self.substates.values()
         ]:
             d.update(substate_d)
