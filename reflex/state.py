@@ -388,6 +388,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         cls._init_var_dependency_dicts()
 
+        for name in cls.new_backend_vars:
+            setattr(cls, name, PrivateVarDescriptor())
+
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
         """Copy a function. Used to copy ComputedVars and EventHandlers from mixins.
@@ -1391,6 +1394,24 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         pass
 
+    def __getstate__(self):
+        """Get the state for redis serialization.
+
+        This method is called by cloudpickle to serialize the object.
+
+        It explicitly removes parent_state and substates because those are serialized separately
+        by the StateManagerRedis to allow for better horizontal scaling as state size increases.
+
+        Returns:
+            The state dict for serialization.
+        """
+        state = super().__getstate__()
+        # Never serialize parent_state or substates
+        state["__dict__"] = state["__dict__"].copy()
+        state["__dict__"]["parent_state"] = None
+        state["__dict__"]["substates"] = {}
+        return state
+
 
 class State(BaseState):
     """The app Base State."""
@@ -1419,23 +1440,22 @@ class State(BaseState):
             type(self).set_is_hydrated(True),  # type: ignore
         ]
 
-    def __getstate__(self):
-        """Get the state for redis serialization.
+    def update_vars_internal(self, vars: dict[str, Any]) -> None:
+        """Apply updates to fully qualified state vars.
 
-        This method is called by cloudpickle to serialize the object.
+        The keys in `vars` should be in the form of `{state.get_full_name()}.{var_name}`,
+        and each value will be set on the appropriate substate instance.
 
-        It explicitly removes parent_state and substates because those are serialized separately
-        by the StateManagerRedis to allow for better horizontal scaling as state size increases.
+        This function is primarily used to apply cookie and local storage
+        updates from the frontend to the appropriate substate.
 
-        Returns:
-            The state dict for serialization.
+        Args:
+            vars: The fully qualified vars and values to update.
         """
-        state = super().__getstate__()
-        # Never serialize parent_state or substates
-        state["__dict__"] = state["__dict__"].copy()
-        state["__dict__"]["parent_state"] = None
-        state["__dict__"]["substates"] = {}
-        return state
+        for var, value in vars.items():
+            state_name, _, var_name = var.rpartition(".")
+            var_state = self.get_substate(state_name.split("."))
+            setattr(var_state, var_name, value)
 
 
 class StateProxy(wrapt.ObjectProxy):
@@ -2093,6 +2113,7 @@ class LocalStorage(ClientStorageBase, str):
     """Represents a state Var that is stored in localStorage in the browser."""
 
     name: str | None
+    sync: bool = False
 
     def __new__(
         cls,
@@ -2101,6 +2122,7 @@ class LocalStorage(ClientStorageBase, str):
         errors: str | None = None,
         /,
         name: str | None = None,
+        sync: bool = False,
     ) -> "LocalStorage":
         """Create a client-side localStorage (str).
 
@@ -2109,6 +2131,7 @@ class LocalStorage(ClientStorageBase, str):
             encoding: The encoding to use.
             errors: The error handling scheme to use.
             name: The name of the storage key on the client side.
+            sync: Whether changes should be propagated to other tabs.
 
         Returns:
             The client-side localStorage object.
@@ -2118,6 +2141,7 @@ class LocalStorage(ClientStorageBase, str):
         else:
             inst = super().__new__(cls, object)
         inst.name = name
+        inst.sync = sync
         return inst
 
 
@@ -2411,3 +2435,20 @@ def code_uses_state_contexts(javascript_code: str) -> bool:
         True if the code attempts to access a member of StateContexts.
     """
     return bool("useContext(StateContexts" in javascript_code)
+
+
+class PrivateVarDescriptor:
+    """A descriptor to raise error in case private vars is accessed on thr frontend."""
+
+    def __get__(self, *args, **kwargs):
+        """Raise error on get value.
+
+
+        Args:
+            *args: The args to pass to the function.
+            **kwargs: The kwargs to pass to the function.
+
+        Raises:
+            TypeError: if a background variable is used in frontend.
+        """
+        raise TypeError("Backend Vars cannot be accessed on the frontend.")

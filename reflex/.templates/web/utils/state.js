@@ -6,7 +6,7 @@ import env from "/env.json";
 import Cookies from "universal-cookie";
 import { useEffect, useReducer, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
-import { initialEvents, initialState, onLoadInternalEvent } from "utils/context.js"
+import { initialEvents, initialState, onLoadInternalEvent, state_name } from "utils/context.js"
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT
@@ -441,17 +441,14 @@ export const Event = (name, payload = {}, handler = null) => {
  * @returns payload dict of client storage values
  */
 export const hydrateClientStorage = (client_storage) => {
-  const client_storage_values = {
-    "cookies": {},
-    "local_storage": {}
-  }
+  const client_storage_values = {}
   if (client_storage.cookies) {
     for (const state_key in client_storage.cookies) {
       const cookie_options = client_storage.cookies[state_key]
       const cookie_name = cookie_options.name || state_key
       const cookie_value = cookies.get(cookie_name)
       if (cookie_value !== undefined) {
-        client_storage_values.cookies[state_key] = cookies.get(cookie_name)
+        client_storage_values[state_key] = cookies.get(cookie_name)
       }
     }
   }
@@ -460,7 +457,7 @@ export const hydrateClientStorage = (client_storage) => {
       const options = client_storage.local_storage[state_key]
       const local_storage_value = localStorage.getItem(options.name || state_key)
       if (local_storage_value !== null) {
-        client_storage_values.local_storage[state_key] = local_storage_value
+        client_storage_values[state_key] = local_storage_value
       }
     }
   }
@@ -567,6 +564,36 @@ export const useEventLoop = (
       })()
     }
   })
+
+
+  // localStorage event handling
+  useEffect(() => {
+    const storage_to_state_map = {};
+
+    if (client_storage.local_storage && typeof window !== "undefined") {
+      for (const state_key in client_storage.local_storage) {
+        const options = client_storage.local_storage[state_key];
+        if (options.sync) {
+          const local_storage_value_key = options.name || state_key;
+          storage_to_state_map[local_storage_value_key] = state_key;
+        }
+      }
+    }
+
+    // e is StorageEvent
+    const handleStorage = (e) => {
+      if (storage_to_state_map[e.key]) {
+        const vars = {}
+        vars[storage_to_state_map[e.key]] = e.newValue
+        const event = Event(`${state_name}.update_vars_internal`, {vars: vars})
+        addEvents([event], e);
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  });
+
 
   // Route after the initial page hydration.
   useEffect(() => {
