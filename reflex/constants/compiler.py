@@ -60,6 +60,8 @@ class CompileVars(SimpleNamespace):
     TO_EVENT = "Event"
     # The name of the internal on_load event.
     ON_LOAD_INTERNAL = "on_load_internal"
+    # The name of the internal event to update generic state vars.
+    UPDATE_VARS_INTERNAL = "update_vars_internal"
 
 
 class PageNames(SimpleNamespace):

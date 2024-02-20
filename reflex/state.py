@@ -1405,6 +1405,23 @@ class State(BaseState):
             type(self).set_is_hydrated(True),  # type: ignore
         ]
 
+    def update_vars_internal(self, vars: dict[str, Any]) -> None:
+        """Apply updates to fully qualified state vars.
+
+        The keys in `vars` should be in the form of `{state.get_full_name()}.{var_name}`,
+        and each value will be set on the appropriate substate instance.
+
+        This function is primarily used to apply cookie and local storage
+        updates from the frontend to the appropriate substate.
+
+        Args:
+            vars: The fully qualified vars and values to update.
+        """
+        for var, value in vars.items():
+            state_name, _, var_name = var.rpartition(".")
+            var_state = self.get_substate(state_name.split("."))
+            setattr(var_state, var_name, value)
+
 
 class StateProxy(wrapt.ObjectProxy):
     """Proxy of a state instance to control mutability of vars for a background task.
@@ -1949,6 +1966,7 @@ class LocalStorage(ClientStorageBase, str):
     """Represents a state Var that is stored in localStorage in the browser."""
 
     name: str | None
+    sync: bool = False
 
     def __new__(
         cls,
@@ -1957,6 +1975,7 @@ class LocalStorage(ClientStorageBase, str):
         errors: str | None = None,
         /,
         name: str | None = None,
+        sync: bool = False,
     ) -> "LocalStorage":
         """Create a client-side localStorage (str).
 
@@ -1965,6 +1984,7 @@ class LocalStorage(ClientStorageBase, str):
             encoding: The encoding to use.
             errors: The error handling scheme to use.
             name: The name of the storage key on the client side.
+            sync: Whether changes should be propagated to other tabs.
 
         Returns:
             The client-side localStorage object.
@@ -1974,6 +1994,7 @@ class LocalStorage(ClientStorageBase, str):
         else:
             inst = super().__new__(cls, object)
         inst.name = name
+        inst.sync = sync
         return inst
 
 

@@ -623,7 +623,9 @@ class Var:
 
             # Get the type of the indexed var.
             if types.is_generic_alias(self._var_type):
-                type_ = types.get_args(self._var_type)[0]
+                index = i if not isinstance(i, Var) else 0
+                type_ = types.get_args(self._var_type)
+                type_ = type_[index % len(type_)]
             elif types._issubclass(self._var_type, str):
                 type_ = str
 
@@ -2003,3 +2005,20 @@ class CallableVar(BaseVar):
             The Var returned from calling the function.
         """
         return self.fn(*args, **kwargs)
+
+
+def get_uuid_string_var() -> Var:
+    """Return a var that generates UUIDs via .web/utils/state.js.
+
+    Returns:
+        the var to generate UUIDs at runtime.
+    """
+    from reflex.utils.imports import ImportVar
+
+    unique_uuid_var_data = VarData(
+        imports={f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")}}  # type: ignore
+    )
+
+    return BaseVar(
+        _var_name="generateUUID()", _var_type=str, _var_data=unique_uuid_var_data
+    )
