@@ -475,9 +475,6 @@ class Var:
             _var_is_local=kwargs.pop("_var_is_local", self._var_is_local),
             _var_is_string=kwargs.pop("_var_is_string", self._var_is_string),
             _var_is_used=kwargs.pop("_var_is_used", self._var_is_used),
-            _var_used_attributes=kwargs.pop(
-                "_var_used_attributes", self._var_used_attributes
-            ),
             _var_full_name_needs_state_prefix=kwargs.pop(
                 "_var_full_name_needs_state_prefix",
                 self._var_full_name_needs_state_prefix,
