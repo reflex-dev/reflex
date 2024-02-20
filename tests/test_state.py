@@ -202,7 +202,7 @@ class GrandchildState2(ChildState2):
         return self.value
 
 
-mark_used(GrandchildState2.value)
+mark_used(GrandchildState2.cached)
 
 
 class GrandchildState3(ChildState3):
@@ -218,7 +218,7 @@ class GrandchildState3(ChildState3):
         return self.value
 
 
-mark_used(GrandchildState3.value)
+mark_used(GrandchildState3.computed)
 
 
 class DateTimeState(BaseState):
