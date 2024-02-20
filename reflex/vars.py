@@ -1800,7 +1800,7 @@ class ComputedVar(Var, property):
     # Whether to track dependencies and cache computed values
     _cache: bool = dataclasses.field(default=False)
 
-    _initial_value: Any | None = dataclasses.field(default=None)
+    _initial_value: Any | types.Unset = dataclasses.field(default_factory=types.Unset)
 
     def __init__(
         self,
@@ -1808,7 +1808,7 @@ class ComputedVar(Var, property):
         fset: Callable[[BaseState, Any], None] | None = None,
         fdel: Callable[[BaseState], Any] | None = None,
         doc: str | None = None,
-        initial_value: Any | None = None,
+        initial_value: Any | types.Unset = types.Unset(),
         **kwargs,
     ):
         """Initialize a ComputedVar.

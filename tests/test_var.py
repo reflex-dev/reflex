@@ -126,7 +126,7 @@ def ChildWithInitialComputedVar(StateWithInitialComputedVar):
 @pytest.fixture
 def StateWithRuntimeOnlyVar():
     class StateWithRuntimeOnlyVar(BaseState):
-        @computed_var(initial_value="Initial value")
+        @computed_var(initial_value=None)
         def var_runtime_only(self) -> str:
             raise ValueError("So nicht, mein Freund")
 
@@ -772,7 +772,7 @@ def test_computed_var_with_annotation_error(request, fixture, full_name):
         (
             "StateWithRuntimeOnlyVar",
             "var_runtime_only",
-            "Initial value",
+            None,
             None,
             True,
         ),
