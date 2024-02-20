@@ -459,6 +459,25 @@ def test_var_indexing_lists(var):
     assert str(var[-1]) == f"{{{var._var_name}.at(-1)}}"
 
 
+@pytest.mark.parametrize(
+    "var, type_",
+    [
+        (BaseVar(_var_name="list", _var_type=List[int]), [int, int]),
+        (BaseVar(_var_name="tuple", _var_type=Tuple[int, str]), [int, str]),
+    ],
+)
+def test_var_indexing_types(var, type_):
+    """Test that indexing returns valid types.
+
+    Args:
+        var   : The list, typle base var.
+        type_ : The type on indexed object.
+
+    """
+    assert var[2]._var_type == type_[0]
+    assert var[3]._var_type == type_[1]
+
+
 def test_var_indexing_str():
     """Test that we can index into str vars."""
     str_var = BaseVar(_var_name="str", _var_type=str)
