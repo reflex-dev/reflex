@@ -15,7 +15,7 @@ from reflex.style import (
     format_as_emotion,
 )
 from reflex.utils import imports
-from reflex.vars import BaseVar, Var, VarData, get_unique_variable_name
+from reflex.vars import BaseVar, Var, VarData, get_uuid_string_var
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
@@ -515,7 +515,7 @@ class AccordionItem(AccordionComponent):
             The accordion item.
         """
         # The item requires a value to toggle (use a random unique name if not provided).
-        value = props.pop("value", get_unique_variable_name())
+        value = props.pop("value", get_uuid_string_var())
 
         if "AccordionItem" not in (
             cls_name := props.pop("class_name", "AccordionItem")

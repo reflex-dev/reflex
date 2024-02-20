@@ -2003,3 +2003,20 @@ class CallableVar(BaseVar):
             The Var returned from calling the function.
         """
         return self.fn(*args, **kwargs)
+
+
+def get_uuid_string_var() -> Var:
+    """Return a var that generates UUIDs via .web/utils/state.js.
+
+    Returns:
+        the var to generate UUIDs at runtime.
+    """
+    from reflex.utils.imports import ImportVar
+
+    unique_uuid_var_data = VarData(
+        imports={f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")}}  # type: ignore
+    )
+
+    return BaseVar(
+        _var_name="generateUUID()", _var_type=str, _var_data=unique_uuid_var_data
+    )
