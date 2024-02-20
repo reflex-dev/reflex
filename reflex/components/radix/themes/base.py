@@ -152,7 +152,7 @@ class Theme(RadixThemesComponent):
         cls,
         *children,
         color_mode: LiteralAppearance | None = None,
-        use_panel: bool = False,
+        theme_panel: bool = False,
         **props,
     ) -> Component:
         """Create a new Radix Theme specification.
@@ -160,7 +160,7 @@ class Theme(RadixThemesComponent):
         Args:
             *children: Child components.
             color_mode: Map to appearance prop.
-            use_panel: Whether to include a panel for editing the theme.
+            theme_panel: Whether to include a panel for editing the theme.
             **props: Component properties.
 
         Returns:
@@ -168,7 +168,7 @@ class Theme(RadixThemesComponent):
         """
         if color_mode is not None:
             props["appearance"] = color_mode
-        if use_panel:
+        if theme_panel:
             children = [ThemePanel.create(), *children]
         return super().create(*children, **props)
 
