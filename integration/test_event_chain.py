@@ -298,7 +298,7 @@ def assert_token(event_chain: AppHarness, driver: WebDriver) -> str:
     token = event_chain.poll_for_value(token_input)
     assert token is not None
 
-    return token
+    return f"{token}_state.state"
 
 
 @pytest.mark.parametrize(

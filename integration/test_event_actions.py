@@ -207,7 +207,7 @@ def poll_for_order(
 
     async def _poll_for_order(exp_order: list[str]):
         async def _backend_state():
-            return await event_action.get_state(token)
+            return await event_action.get_state(f"{token}_state.event_action_state")
 
         async def _check():
             return (await _backend_state()).substates[
