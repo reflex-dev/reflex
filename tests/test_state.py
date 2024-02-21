@@ -1763,6 +1763,9 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
             grandchild_state.get_full_name(): {
                 "value2": 42,
             },
+            GrandchildState3.get_full_name(): {
+                "computed": "",
+            },
         }
     )
     assert mcall.kwargs["to"] == grandchild_state.get_sid()

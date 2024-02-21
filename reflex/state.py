@@ -294,6 +294,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Reset subclass tracking for this class.
         cls.class_subclasses = set()
 
+        # Reset dirty substate tracking for this class.
+        cls._always_dirty_substates = set()
+
         # Get the parent vars.
         parent_state = cls.get_parent_state()
         if parent_state is not None:
@@ -324,6 +327,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             name: value
             for name, value in cls.__dict__.items()
             if types.is_backend_variable(name, cls)
+            and name not in RESERVED_BACKEND_VAR_NAMES
             and name not in cls.inherited_backend_vars
             and not isinstance(value, FunctionType)
         }
@@ -483,7 +487,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
         # Any substate containing a ComputedVar with cache=False always needs to be recomputed
-        cls._always_dirty_substates = set()
         if cls._always_dirty_computed_vars:
             # Tell parent classes that this substate has always dirty computed vars
             state_name = cls.get_name()
@@ -1974,7 +1977,10 @@ class StateManagerRedis(StateManager):
                 substate_name = substate_cls.get_name()
                 substate_key = token + "." + substate_name
                 state.substates[substate_name] = await self.get_state(
-                    substate_key, top_level=False, parent_state=state
+                    substate_key,
+                    top_level=False,
+                    get_substates=get_substates,
+                    parent_state=state,
                 )
 
             # To retain compatibility with previous implementation, by default, we return
