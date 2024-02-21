@@ -1457,12 +1457,16 @@ async def test_state_manager_modify_state(
         token: A token.
         substate_token: A token + substate name for looking up in state manager.
     """
-    async with state_manager.modify_state(substate_token):
+    async with state_manager.modify_state(substate_token) as state:
         if isinstance(state_manager, StateManagerRedis):
             assert await state_manager.redis.get(f"{token}_lock")
         elif isinstance(state_manager, StateManagerMemory):
             assert token in state_manager._states_locks
             assert state_manager._states_locks[token].locked()
+        # Should be able to write proxy objects inside mutables
+        complex_1 = state.complex[1]
+        assert isinstance(complex_1, MutableProxy)
+        state.complex[3] = complex_1
     # lock should be dropped after exiting the context
     if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
