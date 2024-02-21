@@ -38,8 +38,8 @@ from reflex.vars import BaseVar, ComputedVar
 from .states import GenState
 
 CI = bool(os.environ.get("CI", False))
-LOCK_EXPIRATION = 2000 if CI else 100
-LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.2
+LOCK_EXPIRATION = 2000 if CI else 300
+LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.4
 
 
 formatted_router = {
@@ -1432,15 +1432,32 @@ def state_manager(request) -> Generator[StateManager, None, None]:
         asyncio.get_event_loop().run_until_complete(state_manager.close())
 
 
+@pytest.fixture()
+def substate_token(state_manager, token):
+    """A token + substate name for looking up in state manager.
+
+    Args:
+        state_manager: A state manager instance.
+        token: A token.
+
+    Returns:
+        Token concatenated with the state_manager's state full_name.
+    """
+    return f"{token}_{state_manager.state.get_full_name()}"
+
+
 @pytest.mark.asyncio
-async def test_state_manager_modify_state(state_manager: StateManager, token: str):
+async def test_state_manager_modify_state(
+    state_manager: StateManager, token: str, substate_token: str
+):
     """Test that the state manager can modify a state exclusively.
 
     Args:
         state_manager: A state manager instance.
         token: A token.
+        substate_token: A token + substate name for looking up in state manager.
     """
-    async with state_manager.modify_state(token):
+    async with state_manager.modify_state(substate_token):
         if isinstance(state_manager, StateManagerRedis):
             assert await state_manager.redis.get(f"{token}_lock")
         elif isinstance(state_manager, StateManagerMemory):
@@ -1461,21 +1478,24 @@ async def test_state_manager_modify_state(state_manager: StateManager, token: st
 
 
 @pytest.mark.asyncio
-async def test_state_manager_contend(state_manager: StateManager, token: str):
+async def test_state_manager_contend(
+    state_manager: StateManager, token: str, substate_token: str
+):
     """Multiple coroutines attempting to access the same state.
 
     Args:
         state_manager: A state manager instance.
         token: A token.
+        substate_token: A token + substate name for looking up in state manager.
     """
     n_coroutines = 10
     exp_num1 = 10
 
-    async with state_manager.modify_state(token) as state:
+    async with state_manager.modify_state(substate_token) as state:
         state.num1 = 0
 
     async def _coro():
-        async with state_manager.modify_state(token) as state:
+        async with state_manager.modify_state(substate_token) as state:
             await asyncio.sleep(0.01)
             state.num1 += 1
 
@@ -1484,7 +1504,7 @@ async def test_state_manager_contend(state_manager: StateManager, token: str):
     for f in asyncio.as_completed(tasks):
         await f
 
-    assert (await state_manager.get_state(token)).num1 == exp_num1
+    assert (await state_manager.get_state(substate_token)).num1 == exp_num1
 
     if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
@@ -1510,33 +1530,51 @@ def state_manager_redis() -> Generator[StateManager, None, None]:
     asyncio.get_event_loop().run_until_complete(state_manager.close())
 
 
+@pytest.fixture()
+def substate_token_redis(state_manager_redis, token):
+    """A token + substate name for looking up in state manager.
+
+    Args:
+        state_manager_redis: A state manager instance.
+        token: A token.
+
+    Returns:
+        Token concatenated with the state_manager's state full_name.
+    """
+    return f"{token}_{state_manager_redis.state.get_full_name()}"
+
+
 @pytest.mark.asyncio
-async def test_state_manager_lock_expire(state_manager_redis: StateManager, token: str):
+async def test_state_manager_lock_expire(
+    state_manager_redis: StateManager, token: str, substate_token_redis: str
+):
     """Test that the state manager lock expires and raises exception exiting context.
 
     Args:
         state_manager_redis: A state manager instance.
         token: A token.
+        substate_token_redis: A token + substate name for looking up in state manager.
     """
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
 
-    async with state_manager_redis.modify_state(token):
+    async with state_manager_redis.modify_state(substate_token_redis):
         await asyncio.sleep(0.01)
 
     with pytest.raises(LockExpiredError):
-        async with state_manager_redis.modify_state(token):
+        async with state_manager_redis.modify_state(substate_token_redis):
             await asyncio.sleep(LOCK_EXPIRE_SLEEP)
 
 
 @pytest.mark.asyncio
 async def test_state_manager_lock_expire_contend(
-    state_manager_redis: StateManager, token: str
+    state_manager_redis: StateManager, token: str, substate_token_redis: str
 ):
     """Test that the state manager lock expires and queued waiters proceed.
 
     Args:
         state_manager_redis: A state manager instance.
         token: A token.
+        substate_token_redis: A token + substate name for looking up in state manager.
     """
     exp_num1 = 4252
     unexp_num1 = 666
@@ -1546,7 +1584,7 @@ async def test_state_manager_lock_expire_contend(
     order = []
 
     async def _coro_blocker():
-        async with state_manager_redis.modify_state(token) as state:
+        async with state_manager_redis.modify_state(substate_token_redis) as state:
             order.append("blocker")
             await asyncio.sleep(LOCK_EXPIRE_SLEEP)
             state.num1 = unexp_num1
@@ -1554,7 +1592,7 @@ async def test_state_manager_lock_expire_contend(
     async def _coro_waiter():
         while "blocker" not in order:
             await asyncio.sleep(0.005)
-        async with state_manager_redis.modify_state(token) as state:
+        async with state_manager_redis.modify_state(substate_token_redis) as state:
             order.append("waiter")
             assert state.num1 != unexp_num1
             state.num1 = exp_num1
@@ -1568,7 +1606,7 @@ async def test_state_manager_lock_expire_contend(
     await tasks[1]
 
     assert order == ["blocker", "waiter"]
-    assert (await state_manager_redis.get_state(token)).num1 == exp_num1
+    assert (await state_manager_redis.get_state(substate_token_redis)).num1 == exp_num1
 
 
 @pytest.fixture(scope="function")
@@ -1643,7 +1681,8 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     assert sp.value2 == 42
 
     # Get the state from the state manager directly and check that the value is updated
-    gotten_state = await mock_app.state_manager.get_state(grandchild_state.get_token())
+    gc_token = f"{grandchild_state.get_token()}_{grandchild_state.get_full_name()}"
+    gotten_state = await mock_app.state_manager.get_state(gc_token)
     if isinstance(mock_app.state_manager, StateManagerMemory):
         # For in-process store, only one instance of the state exists
         assert gotten_state is parent_state
@@ -1836,7 +1875,8 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         "private",
     ]
 
-    assert (await mock_app.state_manager.get_state(token)).order == exp_order
+    substate_token = f"{token}_{BackgroundTaskState.get_name()}"
+    assert (await mock_app.state_manager.get_state(substate_token)).order == exp_order
 
     assert mock_app.event_namespace is not None
     emit_mock = mock_app.event_namespace.emit
@@ -1913,7 +1953,8 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
         await task
     assert not mock_app.background_tasks
 
-    assert (await mock_app.state_manager.get_state(token)).order == [
+    substate_token = f"{token}_{BackgroundTaskState.get_name()}"
+    assert (await mock_app.state_manager.get_state(substate_token)).order == [
         "reset",
     ]
 
