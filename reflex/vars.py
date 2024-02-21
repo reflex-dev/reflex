@@ -4,6 +4,7 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import dis
+import functools
 import inspect
 import json
 import random
@@ -1806,6 +1807,7 @@ class ComputedVar(Var, property):
         self,
         fget: Callable[[BaseState], Any],
         initial_value: Any | types.Unset = types.Unset(),
+        cache: bool = False,
         **kwargs,
     ):
         """Initialize a ComputedVar.
@@ -1813,9 +1815,11 @@ class ComputedVar(Var, property):
         Args:
             fget: The getter function.
             initial_value: The initial value of the computed var.
+            cache: Whether to cache the computed value.
             **kwargs: additional attributes to set on the instance
         """
         self._initial_value = initial_value
+        self._cache = cache
         property.__init__(self, fget)
         kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", self._determine_var_type())
@@ -1960,6 +1964,7 @@ class ComputedVar(Var, property):
 def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
     initial_value: Any | None = None,
+    cache: bool = False,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
     """A ComputedVar decorator with or without kwargs.
@@ -1967,39 +1972,28 @@ def computed_var(
     Args:
         fget: The getter function.
         initial_value: The initial value of the computed var.
+        cache: Whether to cache the computed value.
         **kwargs: additional attributes to set on the instance
 
     Returns:
         A ComputedVar instance.
     """
     if fget is not None:
-        return ComputedVar(fget=fget)
+        return ComputedVar(fget=fget, cache=cache)
 
     def wrapper(fget):
         return ComputedVar(
             fget=fget,
             initial_value=initial_value,
+            cache=cache,
             **kwargs,
         )
 
     return wrapper
 
 
-def cached_var(fget: Callable[[Any], Any]) -> ComputedVar:
-    """A field with computed getter that tracks other state dependencies.
-
-    The cached_var will only be recalculated when other state vars that it
-    depends on are modified.
-
-    Args:
-        fget: the function that calculates the variable value.
-
-    Returns:
-        ComputedVar that is recomputed when dependencies change.
-    """
-    cvar = ComputedVar(fget=fget)
-    cvar._cache = True
-    return cvar
+# Partial function of computed_var with cache=True
+cached_var = functools.partial(computed_var, cache=True)
 
 
 class CallableVar(BaseVar):
