@@ -127,7 +127,7 @@ def ChildWithInitialComputedVar(StateWithInitialComputedVar):
 def StateWithRuntimeOnlyVar():
     class StateWithRuntimeOnlyVar(BaseState):
         @computed_var(initial_value=None)
-        def var_runtime_only(self) -> str:
+        def var_raises_at_runtime(self) -> str:
             raise ValueError("So nicht, mein Freund")
 
     return StateWithRuntimeOnlyVar
@@ -137,7 +137,7 @@ def StateWithRuntimeOnlyVar():
 def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
     class ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
         @computed_var(initial_value="Initial value")
-        def var_runtime_only_child(self) -> str:
+        def var_raises_at_runtime_child(self) -> str:
             raise ValueError("So nicht, mein Freund")
 
     return ChildWithRuntimeOnlyVar
@@ -753,7 +753,7 @@ def test_computed_var_with_annotation_error(request, fixture, full_name):
 
 
 @pytest.mark.parametrize(
-    "fixture,var_name,expected_initial,expected_runtime,runtime_only",
+    "fixture,var_name,expected_initial,expected_runtime,raises_at_runtime",
     [
         (
             "StateWithInitialComputedVar",
@@ -771,14 +771,14 @@ def test_computed_var_with_annotation_error(request, fixture, full_name):
         ),
         (
             "StateWithRuntimeOnlyVar",
-            "var_runtime_only",
+            "var_raises_at_runtime",
             None,
             None,
             True,
         ),
         (
             "ChildWithRuntimeOnlyVar",
-            "var_runtime_only_child",
+            "var_raises_at_runtime_child",
             "Initial value",
             None,
             True,
@@ -786,7 +786,7 @@ def test_computed_var_with_annotation_error(request, fixture, full_name):
     ],
 )
 def test_state_with_initial_computed_var(
-    request, fixture, var_name, expected_initial, expected_runtime, runtime_only
+    request, fixture, var_name, expected_initial, expected_runtime, raises_at_runtime
 ):
     """Test that the initial and runtime values of a computed var are correct.
 
@@ -796,14 +796,14 @@ def test_state_with_initial_computed_var(
         var_name: The name of the computed var.
         expected_initial: The expected initial value of the computed var.
         expected_runtime: The expected runtime value of the computed var.
-        runtime_only: Whether the computed var is runtime only.
+        raises_at_runtime: Whether the computed var is runtime only.
     """
     state = request.getfixturevalue(fixture)()
     state_name = state.get_full_name()
     initial_dict = state.dict(initial=True)[state_name]
     assert initial_dict[var_name] == expected_initial
 
-    if runtime_only:
+    if raises_at_runtime:
         with pytest.raises(ValueError):
             state.dict()[state_name][var_name]
     else:
