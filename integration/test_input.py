@@ -1,5 +1,4 @@
 """Integration tests for text input and related components."""
-import time
 from typing import Generator
 
 import pytest
@@ -93,12 +92,13 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     # move cursor to home, then to the right and type characters
     debounce_input.send_keys(Keys.HOME, Keys.ARROW_RIGHT)
     debounce_input.send_keys("foo")
-    time.sleep(0.5)
+    assert AppHarness._poll_for(
+        lambda: fully_controlled_input.poll_for_value(value_input) == "ifoonitial"
+    )
     assert debounce_input.get_attribute("value") == "ifoonitial"
     assert (await fully_controlled_input.get_state(token)).substates[
         "state"
     ].text == "ifoonitial"
-    assert fully_controlled_input.poll_for_value(value_input) == "ifoonitial"
     assert fully_controlled_input.poll_for_value(plain_value_input) == "ifoonitial"
 
     # clear the input on the backend
@@ -114,12 +114,14 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
 
     # type more characters
     debounce_input.send_keys("getting testing done")
-    time.sleep(0.5)
+    assert AppHarness._poll_for(
+        lambda: fully_controlled_input.poll_for_value(value_input)
+        == "getting testing done"
+    )
     assert debounce_input.get_attribute("value") == "getting testing done"
     assert (await fully_controlled_input.get_state(token)).substates[
         "state"
     ].text == "getting testing done"
-    assert fully_controlled_input.poll_for_value(value_input) == "getting testing done"
     assert (
         fully_controlled_input.poll_for_value(plain_value_input)
         == "getting testing done"
@@ -127,21 +129,22 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
 
     # type into the on_change input
     on_change_input.send_keys("overwrite the state")
-    time.sleep(0.5)
+    assert AppHarness._poll_for(
+        lambda: fully_controlled_input.poll_for_value(value_input)
+        == "overwrite the state"
+    )
     assert debounce_input.get_attribute("value") == "overwrite the state"
     assert on_change_input.get_attribute("value") == "overwrite the state"
     assert (await fully_controlled_input.get_state(token)).substates[
         "state"
     ].text == "overwrite the state"
-    assert fully_controlled_input.poll_for_value(value_input) == "overwrite the state"
     assert (
         fully_controlled_input.poll_for_value(plain_value_input)
         == "overwrite the state"
     )
 
     clear_button.click()
-    time.sleep(0.5)
-    assert on_change_input.get_attribute("value") == ""
+    assert AppHarness._poll_for(lambda: on_change_input.get_attribute("value") == "")
     # potential bug: clearing the on_change field doesn't itself trigger on_change
     # assert backend_state.text == ""
     # assert debounce_input.get_attribute("value") == ""
