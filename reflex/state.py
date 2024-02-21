@@ -2032,15 +2032,22 @@ class StateManagerRedis(StateManager):
                     state.get_class_substate(tuple(substate_name.split(".")))
                     for substate_name in state_cls._always_dirty_substates
                 ]
+
+            tasks = {}
             # Retrieve necessary substates from redis.
             for substate_cls in fetch_substates:
                 substate_name = substate_cls.get_name()
-                state.substates[substate_name] = await self.get_state(
-                    token=_substate_key(client_token, substate_cls),
-                    top_level=False,
-                    get_substates=get_substates,
-                    parent_state=state,
+                tasks[substate_name] = asyncio.create_task(
+                    self.get_state(
+                        token=_substate_key(client_token, substate_cls),
+                        top_level=False,
+                        get_substates=get_substates,
+                        parent_state=state,
+                    )
                 )
+
+            for substate_name, substate_task in tasks.items():
+                state.substates[substate_name] = await substate_task
 
             # To retain compatibility with previous implementation, by default, we return
             # the top-level state by chasing `parent_state` pointers up the tree.
@@ -2109,12 +2116,18 @@ class StateManagerRedis(StateManager):
             raise RuntimeError(
                 f"Cannot `set_state` with mismatching token {token} and substate {state.get_full_name()}."
             )
+
         # Recursively set_state on all known substates.
+        tasks = []
         for substate in state.substates.values():
-            await self.set_state(
-                token=_substate_key(client_token, substate),
-                state=substate,
-                lock_id=lock_id,
+            tasks.append(
+                asyncio.create_task(
+                    self.set_state(
+                        token=_substate_key(client_token, substate),
+                        state=substate,
+                        lock_id=lock_id,
+                    )
+                )
             )
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
         await self.redis.set(
@@ -2122,6 +2135,10 @@ class StateManagerRedis(StateManager):
             cloudpickle.dumps(state),
             ex=self.token_expiration,
         )
+
+        # Wait for substates to be persisted.
+        for t in tasks:
+            await t
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
