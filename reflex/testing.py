@@ -220,6 +220,7 @@ class AppHarness:
             reflex.config.get_config(reload=True)
             # reset rx.State subclasses
             State.class_subclasses.clear()
+            State._always_dirty_substates = set()
             State.get_class_substate.cache_clear()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
