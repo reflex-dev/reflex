@@ -1872,6 +1872,10 @@ class ComputedVar(Var, property):
 
         Returns:
             A set of variable names accessed by the given obj.
+
+        Raises:
+            ValueError: if the function references the get_state, parent_state, or substates attributes
+                (cannot track deps in a related state, only implicitly via parent state).
         """
         d = set()
         if obj is None:
@@ -1895,6 +1899,8 @@ class ComputedVar(Var, property):
         if self_name is None:
             # cannot reference attributes on self if method takes no args
             return set()
+
+        invalid_names = ["get_state", "parent_state", "substates", "get_substate"]
         self_is_top_of_stack = False
         for instruction in dis.get_instructions(obj):
             if (
@@ -1913,6 +1919,8 @@ class ComputedVar(Var, property):
                     ref_obj = getattr(objclass, instruction.argval)
                 except Exception:
                     ref_obj = None
+                if instruction.argval in invalid_names:
+                    raise ValueError(f"Cached var {self._var_full_name} cannot access arbitrary state via `{instruction.argval}`.")
                 if callable(ref_obj):
                     # recurse into callable attributes
                     d.update(

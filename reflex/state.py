@@ -1035,6 +1035,77 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             raise ValueError(f"Invalid path: {path}")
         return self.substates[path[0]].get_substate(path[1:])
 
+    def _get_state_manager(self) -> StateManager:
+        app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        return app.state_manager
+
+    async def get_state(self, state_cls: BaseState) -> BaseState:
+        """Get an instance of the state associated with this token.
+
+        Allows for arbitrary access to sibling states from within an event handler.
+
+        Args:
+            state_cls: The class of the state.
+
+        Returns:
+            The state.
+        """
+        self_state_name = self.get_full_name()
+        target_state_name = state_cls.get_full_name()
+
+        # fast case - the requested state class is a substate, we already have it
+        if target_state_name.startswith(self_state_name):
+            print(f"Getting {target_state_name} as substate")
+            relative_target_state = target_state_name[len(self_state_name) + 1:].split(".")
+            return self.get_substate(tuple(relative_target_state))
+
+        # fast case - the requested state class is a parent, we already have it
+        if self_state_name.startswith(target_state_name):
+            print(f"Getting {target_state_name} as parent")
+            parent_state = self.parent_state
+            while parent_state.get_full_name() != target_state_name:
+                parent_state = parent_state.parent_state
+            return parent_state
+
+        # Find the common ancestor state of the current state and the target state.
+        common_ancestor_chrs = []
+        for char1, char2 in zip(self.get_full_name(), target_state_name):
+            if char1 != char2:
+                break
+            common_ancestor_chrs.append(char1)
+        common_ancestor_name = "".join(common_ancestor_chrs).rstrip(".")
+
+        # Chase parent pointers to find the instance of the common ancestor.
+        parent_state = self
+        while parent_state is not None and parent_state.get_full_name() != common_ancestor_name:
+            parent_state = parent_state.parent_state
+
+        # Get each individual state from the common ancestor down
+        state_manager = self._get_state_manager()
+        fetch_parent_states = [common_ancestor_name]
+        relative_target_state = target_state_name[len(common_ancestor_name) + 1:].split(".")
+        for ix, relative_parent_state_name in enumerate(relative_target_state):
+            fetch_parent_states.append(".".join([*fetch_parent_states[:ix+1], relative_parent_state_name]))
+
+        for parent_state_name in fetch_parent_states[1:-1]:
+            state_token = self.router.session.client_token + "_" + parent_state_name
+            print(f"Getting {state_token} as intermediate parent")
+            parent_state = await state_manager.get_state(
+                state_token,
+                top_level=False,
+                get_substates=False,
+                parent_state=parent_state,
+            )
+
+        # Then get the target state and all its substates.
+        print(f"Getting {target_state_name} as target sibling")
+        return await state_manager.get_state(
+            self.router.session.client_token + "_" + target_state_name,
+            top_level=False,
+            get_substates=True,
+            parent_state=parent_state,
+        )
+
     def _get_event_handler(
         self, event: Event
     ) -> tuple[BaseState | StateProxy, EventHandler]:
@@ -1265,11 +1336,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
 
+        # Propagate dirty var / computed var status into substates
+        substates = self.substates
+        for var in self.dirty_vars:
+            for substate_name in self._substate_var_dependencies[var]:
+                self.dirty_substates.add(substate_name)
+                substate = substates[substate_name]
+                substate.dirty_vars.add(var)
+                substate._mark_dirty()
+
         # Recursively find the substate deltas.
         substates = self.substates
         for substate in self.dirty_substates.union(self._always_dirty_substates):
-            if substate not in substates:
-                continue  # substate not loaded at this time, no delta
             delta.update(substates[substate].get_delta())
 
         # Format the delta.
@@ -1291,17 +1369,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # have to mark computed vars dirty to allow access to newly computed
         # values within the same ComputedVar function
         self._mark_dirty_computed_vars()
-
-        # Propagate dirty var / computed var status into substates
-        substates = self.substates
-        for var in self.dirty_vars:
-            for substate_name in self._substate_var_dependencies[var]:
-                self.dirty_substates.add(substate_name)
-                if substate_name not in substates:
-                    continue
-                substate = substates[substate_name]
-                substate.dirty_vars.add(var)
-                substate._mark_dirty()
 
     def _clean(self):
         """Reset the dirty vars."""
@@ -1826,14 +1893,25 @@ class StateManagerRedis(StateManager):
             if parent_state is not None:
                 parent_state.substates[state.get_name()] = state
                 state.parent_state = parent_state
+
+            # Populate substates.
             if get_substates:
-                # Retrieve all substates from redis.
-                for substate_cls in state_cls.get_substates():
-                    substate_name = substate_cls.get_name()
-                    substate_key = token + "." + substate_name
-                    state.substates[substate_name] = await self.get_state(
-                        substate_key, top_level=False, parent_state=state
-                    )
+                # All substates are requested.
+                fetch_substates = state_cls.get_substates()
+            else:
+                # Only _always_dirty_substates need to be fetched to recalc computed vars.
+                fetch_substates = [
+                    state.get_class_substate(tuple(substate_name.split(".")))
+                    for substate_name in state_cls._always_dirty_substates
+                ]
+            # Retrieve necessary substates from redis.
+            for substate_cls in fetch_substates:
+                substate_name = substate_cls.get_name()
+                substate_key = token + "." + substate_name
+                state.substates[substate_name] = await self.get_state(
+                    substate_key, top_level=False, parent_state=state
+                )
+
             # To retain compatibility with previous implementation, by default, we return
             # the top-level state by chasing `parent_state` pointers up the tree.
             if top_level:
@@ -1871,8 +1949,6 @@ class StateManagerRedis(StateManager):
         token: str,
         state: BaseState,
         lock_id: bytes | None = None,
-        set_substates: bool = True,
-        set_parent_state: bool = True,
     ):
         """Set the state for a token.
 
@@ -1880,11 +1956,10 @@ class StateManagerRedis(StateManager):
             token: The token to set the state for.
             state: The state to set.
             lock_id: If provided, the lock_key must be set to this value to set the state.
-            set_substates: If True, write substates to redis
-            set_parent_state: If True, write parent state to redis
 
         Raises:
             LockExpiredError: If lock_id is provided and the lock for the token is not held by that ID.
+            RuntimeError: If the state instance doesn't match the state name in the token.
         """
         # Check that we're holding the lock.
         if (
@@ -1896,28 +1971,24 @@ class StateManagerRedis(StateManager):
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
                 "or use `@rx.background` decorator for long-running tasks."
             )
-        # Find the substate associated with the token.
-        state_path = token.partition("_")[2]
-        if state_path and state.get_full_name() != state_path:
-            state = state.get_substate(tuple(state_path.split(".")))
-        # Persist the parent state separately, if requested.
-        if state.parent_state is not None and set_parent_state:
-            parent_state_key = token.rpartition(".")[0]
-            await self.set_state(
-                parent_state_key,
-                state.parent_state,
-                lock_id=lock_id,
-                set_substates=False,
+        client_token, _, substate_name = token.partition("_")
+        # If the substate name on the token doesn't match the instance name, it cannot have a parent.
+        if state.get_full_name() != substate_name and state.parent_state is not None:
+            raise RuntimeError(
+                f"Cannot `set_state` with mismatching token {token} and substate {state.get_full_name()}."
             )
-        # Persist the substates separately, if requested.
-        if set_substates:
-            for substate_name, substate in state.substates.items():
-                substate_key = token + "." + substate_name
-                await self.set_state(
-                    substate_key, substate, lock_id=lock_id, set_parent_state=False
-                )
+        # Recursively set_state on all known substates.
+        for substate in state.substates.values():
+            substate_key = client_token + "_" + substate.get_full_name()
+            await self.set_state(
+                substate_key, substate, lock_id=lock_id,
+            )
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
-        await self.redis.set(token, cloudpickle.dumps(state), ex=self.token_expiration)
+        await self.redis.set(
+            client_token + "_" + state.get_full_name(),
+            cloudpickle.dumps(state),
+            ex=self.token_expiration,
+        )
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
