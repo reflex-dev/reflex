@@ -153,6 +153,41 @@ RESERVED_BACKEND_VAR_NAMES = {
 }
 
 
+def _substate_key(
+    token: str,
+    state_cls_or_name: BaseState | Type[BaseState] | str | list[str],
+) -> str:
+    """Get the substate key.
+
+    Args:
+        token: The token of the state.
+        state_cls_or_name: The state class/instance or name or sequence of name parts.
+
+    Returns:
+        The substate key.
+    """
+    if isinstance(state_cls_or_name, BaseState) or (
+        isinstance(state_cls_or_name, type) and issubclass(state_cls_or_name, BaseState)
+    ):
+        state_cls_or_name = state_cls_or_name.get_full_name()
+    elif isinstance(state_cls_or_name, (list, tuple)):
+        state_cls_or_name = ".".join(state_cls_or_name)
+    return f"{token}_{state_cls_or_name}"
+
+
+def _split_substate_key(substate_key: str) -> tuple[str, str]:
+    """Split the substate key into token and state name.
+
+    Args:
+        substate_key: The substate key.
+
+    Returns:
+        Tuple of token and state name.
+    """
+    token, _, state_name = substate_key.partition("_")
+    return token, state_name
+
+
 def _is_testing_env() -> bool:
     """Check if the app is running in a testing environment.
 
@@ -1117,9 +1152,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Fetch all missing parent states and link them up to the common ancestor.
         parent_state = parent_states_by_name[common_ancestor_name]
         for parent_state_name in fetch_parent_states[1:-1]:
-            state_token = self.router.session.client_token + "_" + parent_state_name
             parent_state = await state_manager.get_state(
-                state_token,
+                token=_substate_key(
+                    self.router.session.client_token, parent_state_name
+                ),
                 top_level=False,
                 get_substates=False,
                 parent_state=parent_state,
@@ -1127,7 +1163,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Then get the target state and all its substates.
         return await state_manager.get_state(
-            self.router.session.client_token + "_" + state_cls.get_full_name(),
+            token=_substate_key(self.router.session.client_token, state_cls),
             top_level=False,
             get_substates=True,
             parent_state=parent_state,
@@ -1606,9 +1642,10 @@ class StateProxy(wrapt.ObjectProxy):
             This StateProxy instance in mutable mode.
         """
         self._self_actx = self._self_app.modify_state(
-            self.__wrapped__.router.session.client_token
-            + "_"
-            + ".".join(self._self_substate_path)
+            token=_substate_key(
+                self.__wrapped__.router.session.client_token,
+                self._self_substate_path,
+            )
         )
         mutable_state = await self._self_actx.__aenter__()
         super().__setattr__(
@@ -1868,7 +1905,7 @@ class StateManagerMemory(StateManager):
             The state for the token.
         """
         # Memory state manager ignores the substate suffix and always returns the top-level state.
-        token = token.partition("_")[0]
+        token = _split_substate_key(token)[0]
         if token not in self.states:
             self.states[token] = self.state(_reflex_internal_init=True)
         return self.states[token]
@@ -1893,7 +1930,7 @@ class StateManagerMemory(StateManager):
             The state for the token.
         """
         # Memory state manager ignores the substate suffix and always returns the top-level state.
-        token = token.partition("_")[0]
+        token = _split_substate_key(token)[0]
         if token not in self._states_locks:
             async with self._state_manager_lock:
                 if token not in self._states_locks:
@@ -1955,7 +1992,7 @@ class StateManagerRedis(StateManager):
             RuntimeError: when the state_cls is not specified in the token
         """
         # Split the actual token from the fully qualified substate name.
-        client_token, _, state_path = token.partition("_")
+        client_token, state_path = _split_substate_key(token)
         if state_path:
             # Get the State class associated with the given path.
             state_cls = self.state.get_class_substate(tuple(state_path.split(".")))
@@ -1998,9 +2035,8 @@ class StateManagerRedis(StateManager):
             # Retrieve necessary substates from redis.
             for substate_cls in fetch_substates:
                 substate_name = substate_cls.get_name()
-                substate_key = token + "." + substate_name
                 state.substates[substate_name] = await self.get_state(
-                    substate_key,
+                    token=_substate_key(client_token, substate_cls),
                     top_level=False,
                     get_substates=get_substates,
                     parent_state=state,
@@ -2018,9 +2054,10 @@ class StateManagerRedis(StateManager):
             parent_state_name = state_path.rpartition(".")[0]
             if parent_state_name:
                 # Retrieve the parent state to populate event handlers onto this substate.
-                parent_state_key = client_token + "_" + parent_state_name
                 parent_state = await self.get_state(
-                    parent_state_key, top_level=False, get_substates=False
+                    token=_substate_key(client_token, parent_state_name),
+                    top_level=False,
+                    get_substates=False,
                 )
         # Persist the new state class to redis.
         await self.set_state(
@@ -2066,7 +2103,7 @@ class StateManagerRedis(StateManager):
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
                 "or use `@rx.background` decorator for long-running tasks."
             )
-        client_token, _, substate_name = token.partition("_")
+        client_token, substate_name = _split_substate_key(token)
         # If the substate name on the token doesn't match the instance name, it cannot have a parent.
         if state.parent_state is not None and state.get_full_name() != substate_name:
             raise RuntimeError(
@@ -2074,15 +2111,14 @@ class StateManagerRedis(StateManager):
             )
         # Recursively set_state on all known substates.
         for substate in state.substates.values():
-            substate_key = client_token + "_" + substate.get_full_name()
             await self.set_state(
-                substate_key,
-                substate,
+                token=_substate_key(client_token, substate),
+                state=substate,
                 lock_id=lock_id,
             )
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
         await self.redis.set(
-            client_token + "_" + state.get_full_name(),
+            _substate_key(client_token, state),
             cloudpickle.dumps(state),
             ex=self.token_expiration,
         )
@@ -2113,7 +2149,7 @@ class StateManagerRedis(StateManager):
             The redis lock key for the token.
         """
         # All substates share the same lock domain, so ignore any substate path suffix.
-        client_token = token.partition("_")[0]
+        client_token = _split_substate_key(token)[0]
         return f"{client_token}_lock".encode()
 
     async def _try_get_lock(self, lock_key: bytes, lock_id: bytes) -> bool | None:

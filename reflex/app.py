@@ -69,6 +69,7 @@ from reflex.state import (
     State,
     StateManager,
     StateUpdate,
+    _substate_key,
     code_uses_state_contexts,
 )
 from reflex.utils import console, exceptions, format, prerequisites, types
@@ -1002,7 +1003,7 @@ def upload(app: App):
             )
 
         # Get the state for the session.
-        substate_token = token + "_" + handler.rpartition(".")[0]
+        substate_token = _substate_key(token, handler.rpartition(".")[0])
         state = await app.state_manager.get_state(substate_token)
 
         # get the current session ID

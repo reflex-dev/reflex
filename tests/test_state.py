@@ -30,6 +30,7 @@ from reflex.state import (
     StateManagerRedis,
     StateProxy,
     StateUpdate,
+    _substate_key,
 )
 from reflex.utils import prerequisites, types
 from reflex.utils.format import json_dumps
@@ -1484,7 +1485,7 @@ def substate_token(state_manager, token):
     Returns:
         Token concatenated with the state_manager's state full_name.
     """
-    return f"{token}_{state_manager.state.get_full_name()}"
+    return _substate_key(token, state_manager.state)
 
 
 @pytest.mark.asyncio
@@ -1582,7 +1583,7 @@ def substate_token_redis(state_manager_redis, token):
     Returns:
         Token concatenated with the state_manager's state full_name.
     """
-    return f"{token}_{state_manager_redis.state.get_full_name()}"
+    return _substate_key(token, state_manager_redis.state)
 
 
 @pytest.mark.asyncio
@@ -1738,8 +1739,9 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     assert sp.value2 == 42
 
     # Get the state from the state manager directly and check that the value is updated
-    gc_token = f"{grandchild_state.get_token()}_{grandchild_state.get_full_name()}"
-    gotten_state = await mock_app.state_manager.get_state(gc_token)
+    gotten_state = await mock_app.state_manager.get_state(
+        _substate_key(grandchild_state.router.session.client_token, grandchild_state)
+    )
     if isinstance(mock_app.state_manager, StateManagerMemory):
         # For in-process store, only one instance of the state exists
         assert gotten_state is parent_state
@@ -1935,8 +1937,11 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         "private",
     ]
 
-    substate_token = f"{token}_{BackgroundTaskState.get_name()}"
-    assert (await mock_app.state_manager.get_state(substate_token)).order == exp_order
+    assert (
+        await mock_app.state_manager.get_state(
+            _substate_key(token, BackgroundTaskState)
+        )
+    ).order == exp_order
 
     assert mock_app.event_namespace is not None
     emit_mock = mock_app.event_namespace.emit
@@ -2013,8 +2018,11 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
         await task
     assert not mock_app.background_tasks
 
-    substate_token = f"{token}_{BackgroundTaskState.get_name()}"
-    assert (await mock_app.state_manager.get_state(substate_token)).order == [
+    assert (
+        await mock_app.state_manager.get_state(
+            _substate_key(token, BackgroundTaskState)
+        )
+    ).order == [
         "reset",
     ]
 
@@ -2580,7 +2588,7 @@ async def test_get_state(mock_app: rx.App, token: str):
 
     # Get instance of ChildState2.
     test_state = await mock_app.state_manager.get_state(
-        f"{token}_{ChildState2.get_full_name()}"
+        _substate_key(token, ChildState2)
     )
     assert isinstance(test_state, TestState)
     if isinstance(mock_app.state_manager, StateManagerMemory):
@@ -2642,7 +2650,7 @@ async def test_get_state(mock_app: rx.App, token: str):
 
     # Get a fresh instance
     new_test_state = await mock_app.state_manager.get_state(
-        f"{token}_{ChildState2.get_full_name()}"
+        _substate_key(token, ChildState2)
     )
     assert isinstance(new_test_state, TestState)
     if isinstance(mock_app.state_manager, StateManagerMemory):

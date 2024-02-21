@@ -5,7 +5,7 @@ from typing import Generator
 import pytest
 
 import reflex as rx
-from reflex.state import BaseState, StateManager, StateManagerRedis
+from reflex.state import BaseState, StateManager, StateManagerRedis, _substate_key
 
 
 class Root(BaseState):
@@ -320,9 +320,7 @@ async def test_get_state_tree(
         exp_root_substates: The expected substates of the root state.
         exp_root_dict_keys: The expected keys of the root state dict.
     """
-    state = await state_manager_redis.get_state(
-        f"{token}_{substate_cls.get_full_name()}"
-    )
+    state = await state_manager_redis.get_state(_substate_key(token, substate_cls))
     assert isinstance(state, Root)
     assert sorted(state.substates) == sorted(exp_root_substates)
 
