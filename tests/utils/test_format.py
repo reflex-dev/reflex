@@ -13,8 +13,11 @@ from reflex.vars import BaseVar, Var
 from tests.test_state import (
     ChildState,
     ChildState2,
+    ChildState3,
     DateTimeState,
     GrandchildState,
+    GrandchildState2,
+    GrandchildState3,
     TestState,
 )
 
@@ -674,7 +677,10 @@ formatted_router = {
                     "value": "",
                 },
                 ChildState2.get_full_name(): {"value": ""},
+                ChildState3.get_full_name(): {"value": ""},
                 GrandchildState.get_full_name(): {"value2": ""},
+                GrandchildState2.get_full_name(): {"cached": ""},
+                GrandchildState3.get_full_name(): {"computed": ""},
             },
         ),
         (
