@@ -1039,7 +1039,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
         return app.state_manager
 
-    async def get_state(self, state_cls: BaseState) -> BaseState:
+    async def get_state(self, state_cls: Type[BaseState]) -> BaseState:
         """Get an instance of the state associated with this token.
 
         Allows for arbitrary access to sibling states from within an event handler.
@@ -1053,7 +1053,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             RuntimeError: If the state is not cached and redis is not used.
         """
-        target_state_name = state_cls.get_full_name()
+        target_state_parts = tuple(state_cls.get_full_name().split("."))
 
         # fast case - maybe we already have this state instance cached
         parent_states_by_name = {}
@@ -1063,23 +1063,21 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             parent_states_by_name[parent_state.get_full_name()] = parent_state
 
         try:
-            return parent_state.get_substate(tuple(target_state_name.split(".")))
+            return parent_state.get_substate(target_state_parts)
         except ValueError:
             pass
 
         # Find the common ancestor state of the current state and the target state.
-        common_ancestor_chrs = []
-        for char1, char2 in zip(self.get_full_name(), target_state_name):
-            if char1 != char2:
+        common_ancestor_parts = []
+        for part1, part2 in zip(self.get_full_name().split("."), target_state_parts):
+            if part1 != part2:
                 break
-            common_ancestor_chrs.append(char1)
-        common_ancestor_name = "".join(common_ancestor_chrs).rstrip(".")
+            common_ancestor_parts.append(part1)
+        common_ancestor_name = ".".join(common_ancestor_parts)
 
         # Determine all parent states from the common ancestor down.
         fetch_parent_states = [common_ancestor_name]
-        relative_target_state = target_state_name[
-            len(common_ancestor_name) + 1 :
-        ].split(".")
+        relative_target_state = target_state_parts[len(common_ancestor_parts) :]
         for ix, relative_parent_state_name in enumerate(relative_target_state):
             fetch_parent_states.append(
                 ".".join([*fetch_parent_states[: ix + 1], relative_parent_state_name])
@@ -1088,7 +1086,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         state_manager = self._get_state_manager()
         if not isinstance(state_manager, StateManagerRedis):
             raise RuntimeError(
-                f"Requested state {target_state_name} is not cached and cannot be accessed without redis.",
+                f"Requested state {target_state_parts} is not cached and cannot be accessed without redis.",
             )
         # Fetch all missing parent states and link them up to the common ancestor.
         parent_state = parent_states_by_name[common_ancestor_name]
@@ -1103,7 +1101,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Then get the target state and all its substates.
         return await state_manager.get_state(
-            self.router.session.client_token + "_" + target_state_name,
+            self.router.session.client_token + "_" + state_cls.get_full_name(),
             top_level=False,
             get_substates=True,
             parent_state=parent_state,
@@ -1634,7 +1632,15 @@ class StateProxy(wrapt.ObjectProxy):
 
         Returns:
             The value of the attribute.
+
+        Raises:
+            ImmutableStateError: If the state is not in mutable mode.
         """
+        if name in ["substates", "parent_state"] and not self._self_mutable:
+            raise ImmutableStateError(
+                "Background task StateProxy is immutable outside of a context "
+                "manager. Use `async with self` to modify state."
+            )
         value = super().__getattr__(name)
         if not name.startswith("_self_") and isinstance(value, MutableProxy):
             # ensure mutations to these containers are blocked unless proxy is _mutable
@@ -1682,40 +1688,6 @@ class StateProxy(wrapt.ObjectProxy):
             "manager. Use `async with self` to modify state."
         )
 
-    @property
-    def substates(self) -> dict[str, BaseState]:
-        """Only allow substate access with lock held.
-
-        Returns:
-            The substates.
-
-        Raises:
-            ImmutableStateError: If the state is not in mutable mode.
-        """
-        if not self._self_mutable:
-            raise ImmutableStateError(
-                "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
-            )
-        return self.__wrapped__.substates
-
-    @property
-    def parent_state(self) -> BaseState:
-        """Only allow parent state access with lock held.
-
-        Returns:
-            The parent state.
-
-        Raises:
-            ImmutableStateError: If the state is not in mutable mode.
-        """
-        if not self._self_mutable:
-            raise ImmutableStateError(
-                "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
-            )
-        return self.__wrapped__.parent_state
-
     def get_substate(self, path: Sequence[str]) -> BaseState:
         """Only allow substate access with lock held.
 
@@ -1735,7 +1707,7 @@ class StateProxy(wrapt.ObjectProxy):
             )
         return self.__wrapped__.get_substate(path)
 
-    async def get_state(self, state_cls: BaseState) -> BaseState:
+    async def get_state(self, state_cls: Type[BaseState]) -> BaseState:
         """Get an instance of the state associated with this token.
 
         Args:
@@ -1753,6 +1725,22 @@ class StateProxy(wrapt.ObjectProxy):
                 "manager. Use `async with self` to modify state."
             )
         return await self.__wrapped__.get_state(state_cls)
+
+    def _as_state_update(self, *args, **kwargs) -> StateUpdate:
+        """Temporarily allow mutability to access parent_state.
+
+        Args:
+            *args: The args to pass to the underlying state instance.
+            **kwargs: The kwargs to pass to the underlying state instance.
+
+        Returns:
+            The state update.
+        """
+        self._self_mutable = True
+        try:
+            return self.__wrapped__._as_state_update(*args, **kwargs)
+        finally:
+            self._self_mutable = False
 
 
 class StateUpdate(Base):
@@ -2050,7 +2038,7 @@ class StateManagerRedis(StateManager):
             )
         client_token, _, substate_name = token.partition("_")
         # If the substate name on the token doesn't match the instance name, it cannot have a parent.
-        if state.parent_state is None and state.get_full_name() != substate_name:
+        if state.parent_state is not None and state.get_full_name() != substate_name:
             raise RuntimeError(
                 f"Cannot `set_state` with mismatching token {token} and substate {state.get_full_name()}."
             )
