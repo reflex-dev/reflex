@@ -1,4 +1,5 @@
 """Define the reflex state specification."""
+
 from __future__ import annotations
 
 import asyncio
