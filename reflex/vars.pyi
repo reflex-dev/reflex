@@ -144,9 +144,6 @@ class ComputedVar(Var):
     def __init__(
         self,
         fget: Callable[[BaseState], Any],
-        fset: Callable[[BaseState, Any], None] | None = None,
-        fdel: Callable[[BaseState], Any] | None = None,
-        doc: str | None = None,
         **kwargs,
     ) -> None: ...
     @overload
@@ -155,9 +152,6 @@ class ComputedVar(Var):
 @overload
 def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
-    fset: Callable[[BaseState, Any], None] | None = None,
-    fdel: Callable[[BaseState], Any] | None = None,
-    doc: str | None = None,
     initial_value: Any | None = None,
     **kwargs,
 ) -> Callable[[Callable[[Any], Any]], ComputedVar]: ...

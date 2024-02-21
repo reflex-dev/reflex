@@ -1805,9 +1805,6 @@ class ComputedVar(Var, property):
     def __init__(
         self,
         fget: Callable[[BaseState], Any],
-        fset: Callable[[BaseState, Any], None] | None = None,
-        fdel: Callable[[BaseState], Any] | None = None,
-        doc: str | None = None,
         initial_value: Any | types.Unset = types.Unset(),
         **kwargs,
     ):
@@ -1815,14 +1812,11 @@ class ComputedVar(Var, property):
 
         Args:
             fget: The getter function.
-            fset: The setter function.
-            fdel: The deleter function.
-            doc: The docstring.
             initial_value: The initial value of the computed var.
             **kwargs: additional attributes to set on the instance
         """
         self._initial_value = initial_value
-        property.__init__(self, fget, fset, fdel, doc)
+        property.__init__(self, fget)
         kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", self._determine_var_type())
         BaseVar.__init__(self, **kwargs)  # type: ignore
@@ -1965,9 +1959,6 @@ class ComputedVar(Var, property):
 
 def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
-    fset: Callable[[BaseState, Any], None] | None = None,
-    fdel: Callable[[BaseState], Any] | None = None,
-    doc: str | None = None,
     initial_value: Any | None = None,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
@@ -1975,9 +1966,6 @@ def computed_var(
 
     Args:
         fget: The getter function.
-        fset: The setter function.
-        fdel: The deleter function.
-        doc: The docstring.
         initial_value: The initial value of the computed var.
         **kwargs: additional attributes to set on the instance
 
@@ -1990,9 +1978,6 @@ def computed_var(
     def wrapper(fget):
         return ComputedVar(
             fget=fget,
-            fset=fset,
-            fdel=fdel,
-            doc=doc,
             initial_value=initial_value,
             **kwargs,
         )
