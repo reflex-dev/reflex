@@ -502,6 +502,14 @@ class Component(BaseComponent, ABC):
             if isinstance(child, Component):
                 child.apply_theme(theme)
 
+    def _exclude_props(self) -> list[str]:
+        """Props to exclude when adding the component props to the Tag.
+
+        Returns:
+            A list of component props to exclude.
+        """
+        return []
+
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         """Define how to render the component in React.
 
@@ -543,6 +551,10 @@ class Component(BaseComponent, ABC):
         )
         props.update(self._get_style())
         props.update(self.custom_attrs)
+
+        # remove excluded props from prop dict before adding to tag.
+        for prop_to_exclude in self._exclude_props():
+            props.pop(prop_to_exclude, None)
 
         return tag.add_props(**props)
 
@@ -722,6 +734,11 @@ class Component(BaseComponent, ABC):
             children: The children of the component.
 
         """
+        from reflex.components.base.fragment import Fragment
+        from reflex.components.core.cond import Cond
+        from reflex.components.core.foreach import Foreach
+        from reflex.components.core.match import Match
+
         no_valid_parents_defined = all(child._valid_parents == [] for child in children)
         if (
             not self._invalid_children
@@ -731,21 +748,23 @@ class Component(BaseComponent, ABC):
             return
 
         comp_name = type(self).__name__
-        allowed_components = ["Fragment", "Foreach", "Cond", "Match"]
+        allowed_components = [
+            comp.__name__ for comp in (Fragment, Foreach, Cond, Match)
+        ]
 
         def validate_child(child):
             child_name = type(child).__name__
 
             # Iterate through the immediate children of fragment
-            if child_name == "Fragment":
+            if isinstance(child, Fragment):
                 for c in child.children:
                     validate_child(c)
 
-            if child_name == "Cond":
+            if isinstance(child, Cond):
                 validate_child(child.comp1)
                 validate_child(child.comp2)
 
-            if child_name == "Match":
+            if isinstance(child, Match):
                 for cases in child.match_cases:
                     validate_child(cases[-1])
                 validate_child(child.default)

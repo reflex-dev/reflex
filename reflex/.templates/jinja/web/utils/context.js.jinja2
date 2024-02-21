@@ -24,13 +24,19 @@ export const clientStorage = {}
 {% endif %}
 
 {% if state_name %}
-export const onLoadInternalEvent = () => [Event('{{state_name}}.{{const.on_load_internal}}')]
+export const state_name = "{{state_name}}"
+export const onLoadInternalEvent = () => [
+    Event('{{state_name}}.{{const.update_vars_internal}}', {vars: hydrateClientStorage(clientStorage)}),
+    Event('{{state_name}}.{{const.on_load_internal}}')
+]
 
 export const initialEvents = () => [
-    Event('{{state_name}}.{{const.hydrate}}', hydrateClientStorage(clientStorage)),
+    Event('{{state_name}}.{{const.hydrate}}'),
     ...onLoadInternalEvent()
 ]
 {% else %}
+export const state_name = undefined
+
 export const onLoadInternalEvent = () => []
 
 export const initialEvents = () => []

@@ -340,7 +340,7 @@ async def test_initialize_with_state(test_state: Type[ATestState], token: str):
     assert app.state == test_state
 
     # Get a state for a given token.
-    state = await app.state_manager.get_state(token)
+    state = await app.state_manager.get_state(f"{token}_{test_state.get_full_name()}")
     assert isinstance(state, test_state)
     assert state.var == 0  # type: ignore
 
@@ -358,8 +358,8 @@ async def test_set_and_get_state(test_state):
     app = App(state=test_state)
 
     # Create two tokens.
-    token1 = str(uuid.uuid4())
-    token2 = str(uuid.uuid4())
+    token1 = str(uuid.uuid4()) + f"_{test_state.get_full_name()}"
+    token2 = str(uuid.uuid4()) + f"_{test_state.get_full_name()}"
 
     # Get the default state for each token.
     state1 = await app.state_manager.get_state(token1)
@@ -744,18 +744,18 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     # The App state must be the "root" of the state tree
     app = App(state=State)
     app.event_namespace.emit = AsyncMock()  # type: ignore
-    current_state = await app.state_manager.get_state(token)
+    substate_token = f"{token}_{state.get_full_name()}"
+    current_state = await app.state_manager.get_state(substate_token)
     data = b"This is binary data"
 
     # Create a binary IO object and write data to it
     bio = io.BytesIO()
     bio.write(data)
 
-    state_name = state.get_full_name().partition(".")[2] or state.get_name()
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
         "reflex-client-token": token,
-        "reflex-event-handler": f"state.{state_name}.multi_handle_upload",
+        "reflex-event-handler": f"{state.get_full_name()}.multi_handle_upload",
     }
 
     file1 = UploadFile(
@@ -774,7 +774,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
             == StateUpdate(delta=delta, events=[], final=True).json() + "\n"
         )
 
-    current_state = await app.state_manager.get_state(token)
+    current_state = await app.state_manager.get_state(substate_token)
     state_dict = current_state.dict()[state.get_full_name()]
     assert state_dict["img_list"] == [
         "image1.jpg",
@@ -799,14 +799,12 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         token: a Token.
     """
     state._tmp_path = tmp_path
-    # The App state must be the "root" of the state tree
-    app = App(state=state if state is FileUploadState else FileStateBase1)
+    app = App(state=State)
 
-    state_name = state.get_full_name().partition(".")[2] or state.get_name()
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
         "reflex-client-token": token,
-        "reflex-event-handler": f"{state_name}.handle_upload2",
+        "reflex-event-handler": f"{state.get_full_name()}.handle_upload2",
     }
     file_mock = unittest.mock.Mock(filename="image1.jpg")
     fn = upload(app)
@@ -814,7 +812,7 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         await fn(request_mock, [file_mock])
     assert (
         err.value.args[0]
-        == f"`{state_name}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
+        == f"`{state.get_full_name()}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
     )
 
     if isinstance(app.state_manager, StateManagerRedis):
@@ -835,14 +833,12 @@ async def test_upload_file_background(state, tmp_path, token):
         token: a Token.
     """
     state._tmp_path = tmp_path
-    # The App state must be the "root" of the state tree
-    app = App(state=state if state is FileUploadState else FileStateBase1)
+    app = App(state=State)
 
-    state_name = state.get_full_name().partition(".")[2] or state.get_name()
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
         "reflex-client-token": token,
-        "reflex-event-handler": f"{state_name}.bg_upload",
+        "reflex-event-handler": f"{state.get_full_name()}.bg_upload",
     }
     file_mock = unittest.mock.Mock(filename="image1.jpg")
     fn = upload(app)
@@ -850,7 +846,7 @@ async def test_upload_file_background(state, tmp_path, token):
         await fn(request_mock, [file_mock])
     assert (
         err.value.args[0]
-        == f"@rx.background is not supported for upload handler `{state_name}.bg_upload`."
+        == f"@rx.background is not supported for upload handler `{state.get_full_name()}.bg_upload`."
     )
 
     if isinstance(app.state_manager, StateManagerRedis):
@@ -932,9 +928,10 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     }
     assert constants.ROUTER in app.state()._computed_var_dependencies
 
+    substate_token = f"{token}_{DynamicState.get_full_name()}"
     sid = "mock_sid"
     client_ip = "127.0.0.1"
-    state = await app.state_manager.get_state(token)
+    state = await app.state_manager.get_state(substate_token)
     assert state.dynamic == ""
     exp_vals = ["foo", "foobar", "baz"]
 
@@ -1004,7 +1001,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
         if isinstance(app.state_manager, StateManagerRedis):
             # When redis is used, the state is not updated until the processing is complete
-            state = await app.state_manager.get_state(token)
+            state = await app.state_manager.get_state(substate_token)
             assert state.dynamic == prev_exp_val
 
         # complete the processing
@@ -1012,7 +1009,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             await process_coro.__anext__()
 
         # check that router data was written to the state_manager store
-        state = await app.state_manager.get_state(token)
+        state = await app.state_manager.get_state(substate_token)
         assert state.dynamic == exp_val
 
         process_coro = process(
@@ -1087,7 +1084,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             await process_coro.__anext__()
 
         prev_exp_val = exp_val
-    state = await app.state_manager.get_state(token)
+    state = await app.state_manager.get_state(substate_token)
     assert state.loaded == len(exp_vals)
     assert state.counter == len(exp_vals)
     # print(f"Expected {exp_vals} rendering side effects, got {state.side_effect_counter}")
@@ -1124,7 +1121,7 @@ async def test_process_events(mocker, token: str):
     async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
         pass
 
-    assert (await app.state_manager.get_state(token)).value == 5
+    assert (await app.state_manager.get_state(event.substate_token)).value == 5
     assert app.postprocess.call_count == 6
 
     if isinstance(app.state_manager, StateManagerRedis):

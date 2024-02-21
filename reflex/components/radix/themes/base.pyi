@@ -265,6 +265,7 @@ class Theme(RadixThemesComponent):
         cls,
         *children,
         color_mode: Optional[LiteralAppearance | None] = None,
+        theme_panel: Optional[bool] = False,
         has_background: Optional[Union[Var[bool], bool]] = None,
         appearance: Optional[
             Union[
@@ -412,7 +413,8 @@ class Theme(RadixThemesComponent):
 
         Args:
             *children: Child components.
-            color_mode: map to appearance prop.
+            color_mode: Map to appearance prop.
+            theme_panel: Whether to include a panel for editing the theme.
             has_background: Whether to apply the themes background color to the theme node. Defaults to True.
             appearance: Override light or dark mode theme: "inherit" | "light" | "dark". Defaults to "inherit".
             accent_color: The color used for default buttons, typography, backgrounds, etc

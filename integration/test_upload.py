@@ -171,6 +171,7 @@ async def test_upload_file(
     # wait for the backend connection to send the token
     token = upload_file.poll_for_value(token_input)
     assert token is not None
+    substate_token = f"{token}_state.upload_state"
 
     suffix = "_secondary" if secondary else ""
 
@@ -191,7 +192,11 @@ async def test_upload_file(
 
     # look up the backend state and assert on uploaded contents
     async def get_file_data():
-        return (await upload_file.get_state(token)).substates["upload_state"]._file_data
+        return (
+            (await upload_file.get_state(substate_token))
+            .substates["upload_state"]
+            ._file_data
+        )
 
     file_data = await AppHarness._poll_for_async(get_file_data)
     assert isinstance(file_data, dict)
@@ -201,7 +206,7 @@ async def test_upload_file(
     selected_files = driver.find_element(By.ID, f"selected_files{suffix}")
     assert selected_files.text == exp_name
 
-    state = await upload_file.get_state(token)
+    state = await upload_file.get_state(substate_token)
     if secondary:
         # only the secondary form tracks progress and chain events
         assert state.substates["upload_state"].event_order.count("upload_progress") == 1
@@ -223,6 +228,7 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
     # wait for the backend connection to send the token
     token = upload_file.poll_for_value(token_input)
     assert token is not None
+    substate_token = f"{token}_state.upload_state"
 
     upload_box = driver.find_element(By.XPATH, "//input[@type='file']")
     assert upload_box
@@ -250,7 +256,11 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
 
     # look up the backend state and assert on uploaded contents
     async def get_file_data():
-        return (await upload_file.get_state(token)).substates["upload_state"]._file_data
+        return (
+            (await upload_file.get_state(substate_token))
+            .substates["upload_state"]
+            ._file_data
+        )
 
     file_data = await AppHarness._poll_for_async(get_file_data)
     assert isinstance(file_data, dict)
@@ -330,6 +340,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     # wait for the backend connection to send the token
     token = upload_file.poll_for_value(token_input)
     assert token is not None
+    substate_token = f"{token}_state.upload_state"
 
     upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[1]
     upload_button = driver.find_element(By.ID, f"upload_button_secondary")
@@ -347,7 +358,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     cancel_button.click()
 
     # look up the backend state and assert on progress
-    state = await upload_file.get_state(token)
+    state = await upload_file.get_state(substate_token)
     assert state.substates["upload_state"].progress_dicts
     assert exp_name not in state.substates["upload_state"]._file_data
 

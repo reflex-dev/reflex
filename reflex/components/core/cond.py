@@ -24,10 +24,10 @@ class Cond(MemoizationLeaf):
     cond: Var[Any]
 
     # The component to render if the cond is true.
-    comp1: BaseComponent = Fragment.create()
+    comp1: BaseComponent = None  # type: ignore
 
     # The component to render if the cond is false.
-    comp2: BaseComponent = Fragment.create()
+    comp2: BaseComponent = None  # type: ignore
 
     @classmethod
     def create(
