@@ -1339,15 +1339,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
 
-        # Propagate dirty var / computed var status into substates
-        substates = self.substates
-        for var in self.dirty_vars:
-            for substate_name in self._substate_var_dependencies[var]:
-                self.dirty_substates.add(substate_name)
-                substate = substates[substate_name]
-                substate.dirty_vars.add(var)
-                substate._mark_dirty()
-
         # Recursively find the substate deltas.
         substates = self.substates
         for substate in self.dirty_substates.union(self._always_dirty_substates):
@@ -1372,6 +1363,17 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # have to mark computed vars dirty to allow access to newly computed
         # values within the same ComputedVar function
         self._mark_dirty_computed_vars()
+        self._mark_dirty_substates()
+
+    def _mark_dirty_substates(self):
+        """Propagate dirty var / computed var status into substates."""
+        substates = self.substates
+        for var in self.dirty_vars:
+            for substate_name in self._substate_var_dependencies[var]:
+                self.dirty_substates.add(substate_name)
+                substate = substates[substate_name]
+                substate.dirty_vars.add(var)
+                substate._mark_dirty()
 
     def _clean(self):
         """Reset the dirty vars."""
