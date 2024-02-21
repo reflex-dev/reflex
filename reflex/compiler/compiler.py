@@ -351,7 +351,10 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     return output_path, code
 
 
-def compile_contexts(state: Optional[Type[BaseState]], theme: Component) -> tuple[str, str]:
+def compile_contexts(
+    state: Optional[Type[BaseState]],
+    theme: Component,
+) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:
