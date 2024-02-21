@@ -2363,6 +2363,21 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         return copy.deepcopy(self.__wrapped__, memo=memo)
 
+    def __reduce_ex__(self, protocol_version):
+        """Get the state for redis serialization.
+
+        This method is called by cloudpickle to serialize the object.
+
+        It explicitly serializes the wrapped object, stripping off the mutable proxy.
+
+        Args:
+            protocol_version: The protocol version.
+
+        Returns:
+            Tuple of (wrapped class, empty args, class __getstate__)
+        """
+        return self.__wrapped__.__reduce_ex__(protocol_version)
+
 
 @serializer
 def serialize_mutable_proxy(mp: MutableProxy) -> SerializedType:
