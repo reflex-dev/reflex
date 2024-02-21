@@ -139,6 +139,12 @@ class ChildState2(TestState):
     value: str
 
 
+class ChildState3(TestState):
+    """A child state fixture."""
+
+    value: str
+
+
 class GrandchildState(ChildState):
     """A grandchild state fixture."""
 
@@ -147,6 +153,32 @@ class GrandchildState(ChildState):
     def do_nothing(self):
         """Do something."""
         pass
+
+
+class GrandchildState2(ChildState2):
+    """A grandchild state fixture."""
+
+    @rx.cached_var
+    def cached(self) -> str:
+        """A cached var.
+
+        Returns:
+            The value.
+        """
+        return self.value
+
+
+class GrandchildState3(ChildState3):
+    """A great grandchild state fixture."""
+
+    @rx.var
+    def computed(self) -> str:
+        """A computed var.
+
+        Returns:
+            The value.
+        """
+        return self.value
 
 
 class DateTimeState(BaseState):
@@ -329,6 +361,9 @@ def test_dict(test_state):
         "test_state.child_state",
         "test_state.child_state.grandchild_state",
         "test_state.child_state2",
+        "test_state.child_state2.grandchild_state2",
+        "test_state.child_state3",
+        "test_state.child_state3.grandchild_state3",
     }
     test_state_dict = test_state.dict()
     assert set(test_state_dict) == substates
@@ -380,10 +415,11 @@ def test_get_parent_state():
 
 def test_get_substates():
     """Test getting the substates."""
-    assert TestState.get_substates() == {ChildState, ChildState2}
+    assert TestState.get_substates() == {ChildState, ChildState2, ChildState3}
     assert ChildState.get_substates() == {GrandchildState}
-    assert ChildState2.get_substates() == set()
+    assert ChildState2.get_substates() == {GrandchildState2}
     assert GrandchildState.get_substates() == set()
+    assert GrandchildState2.get_substates() == set()
 
 
 def test_get_name():
@@ -469,8 +505,8 @@ def test_set_parent_and_substates(test_state, child_state, grandchild_state):
         child_state: A child state.
         grandchild_state: A grandchild state.
     """
-    assert len(test_state.substates) == 2
-    assert set(test_state.substates) == {"child_state", "child_state2"}
+    assert len(test_state.substates) == 3
+    assert set(test_state.substates) == {"child_state", "child_state2", "child_state3"}
 
     assert child_state.parent_state == test_state
     assert len(child_state.substates) == 1
@@ -655,7 +691,7 @@ def test_reset(test_state, child_state):
     assert child_state.dirty_vars == {"count", "value"}
 
     # The dirty substates should be reset.
-    assert test_state.dirty_substates == {"child_state", "child_state2"}
+    assert test_state.dirty_substates == {"child_state", "child_state2", "child_state3"}
 
 
 @pytest.mark.asyncio
@@ -675,7 +711,10 @@ async def test_process_event_simple(test_state):
 
     # The delta should contain the changes, including computed vars.
     # assert update.delta == {"test_state": {"num1": 69, "sum": 72.14}}
-    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14, "upper": ""}}
+    assert update.delta == {
+        "test_state": {"num1": 69, "sum": 72.14, "upper": ""},
+        "test_state.child_state3.grandchild_state3": {"computed": ""},
+    }
     assert update.events == []
 
 
@@ -700,6 +739,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     assert update.delta == {
         "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state": {"value": "HI", "count": 24},
+        "test_state.child_state3.grandchild_state3": {"computed": ""},
     }
     test_state._clean()
 
@@ -715,6 +755,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     assert update.delta == {
         "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state.grandchild_state": {"value2": "new"},
+        "test_state.child_state3.grandchild_state3": {"computed": ""},
     }
 
 
@@ -1666,6 +1707,22 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
         # cannot directly modify state proxy outside of async context
         sp.value2 = 16
 
+    with pytest.raises(ImmutableStateError):
+        # Cannot get_state
+        await sp.get_state(ChildState)
+
+    with pytest.raises(ImmutableStateError):
+        # Cannot access get_substate
+        sp.get_substate([])
+
+    with pytest.raises(ImmutableStateError):
+        # Cannot access parent state
+        sp.parent_state.get_name()
+
+    with pytest.raises(ImmutableStateError):
+        # Cannot access substates
+        sp.substates[""]
+
     async with sp:
         assert sp._self_actx is not None
         assert sp._self_mutable  # proxy is mutable inside context
@@ -2506,3 +2563,120 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         OnLoadState.get_full_name(): {"num": 2}
     }
     assert (await state._process(events[2]).__anext__()).delta == exp_is_hydrated(state)
+
+
+@pytest.mark.asyncio
+async def test_get_state(mock_app: rx.App, token: str):
+    """Test that a get_state populates the top level state and delta calculation is correct.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+    mock_app.state_manager.state = mock_app.state = TestState
+
+    # Get instance of ChildState2.
+    test_state = await mock_app.state_manager.get_state(
+        f"{token}_{ChildState2.get_full_name()}"
+    )
+    assert isinstance(test_state, TestState)
+    if isinstance(mock_app.state_manager, StateManagerMemory):
+        # All substates are available
+        assert tuple(sorted(test_state.substates)) == (
+            "child_state",
+            "child_state2",
+            "child_state3",
+        )
+    else:
+        # Sibling states are only populated if they have computed vars
+        assert tuple(sorted(test_state.substates)) == ("child_state2", "child_state3")
+
+    # Because ChildState3 has a computed var, it is always dirty, and always populated.
+    assert (
+        test_state.substates["child_state3"].substates["grandchild_state3"].computed
+        == ""
+    )
+
+    # Get the child_state2 directly.
+    child_state2_direct = test_state.get_substate(["child_state2"])
+    child_state2_get_state = await test_state.get_state(ChildState2)
+    # These should be the same object.
+    assert child_state2_direct is child_state2_get_state
+
+    # Get arbitrary GrandchildState.
+    grandchild_state = await child_state2_get_state.get_state(GrandchildState)
+    assert isinstance(grandchild_state, GrandchildState)
+
+    # Now the original root should have all substates populated.
+    assert tuple(sorted(test_state.substates)) == (
+        "child_state",
+        "child_state2",
+        "child_state3",
+    )
+
+    # ChildState should be retrievable
+    child_state_direct = test_state.get_substate(["child_state"])
+    child_state_get_state = await test_state.get_state(ChildState)
+    # These should be the same object.
+    assert child_state_direct is child_state_get_state
+
+    # GrandchildState instance should be the same as the one retrieved from the child_state2.
+    assert grandchild_state is child_state_direct.get_substate(["grandchild_state"])
+    grandchild_state.value2 = "set_value"
+
+    assert test_state.get_delta() == {
+        TestState.get_full_name(): {
+            "sum": 3.14,
+            "upper": "",
+        },
+        GrandchildState.get_full_name(): {
+            "value2": "set_value",
+        },
+        GrandchildState3.get_full_name(): {
+            "computed": "",
+        },
+    }
+
+    # Get a fresh instance
+    new_test_state = await mock_app.state_manager.get_state(
+        f"{token}_{ChildState2.get_full_name()}"
+    )
+    assert isinstance(new_test_state, TestState)
+    if isinstance(mock_app.state_manager, StateManagerMemory):
+        # In memory, it's the same instance
+        assert new_test_state is test_state
+        test_state._clean()
+        # All substates are available
+        assert tuple(sorted(new_test_state.substates)) == (
+            "child_state",
+            "child_state2",
+            "child_state3",
+        )
+    else:
+        # With redis, we get a whole new instance
+        assert new_test_state is not test_state
+        # Sibling states are only populated if they have computed vars
+        assert tuple(sorted(new_test_state.substates)) == (
+            "child_state2",
+            "child_state3",
+        )
+
+    # Set a value on child_state2, should update cached var in grandchild_state2
+    child_state2 = new_test_state.get_substate(("child_state2",))
+    child_state2.value = "set_c2_value"
+
+    assert new_test_state.get_delta() == {
+        TestState.get_full_name(): {
+            "sum": 3.14,
+            "upper": "",
+        },
+        ChildState2.get_full_name(): {
+            "value": "set_c2_value",
+        },
+        GrandchildState2.get_full_name(): {
+            "cached": "set_c2_value",
+        },
+        GrandchildState3.get_full_name(): {
+            "computed": "",
+        },
+    }
