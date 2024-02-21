@@ -153,6 +153,15 @@ RESERVED_BACKEND_VAR_NAMES = {
 }
 
 
+def _is_testing_env() -> bool:
+    """Check if the app is running in a testing environment.
+
+    Returns:
+        True if the app is running in a testing environment, False otherwise.
+    """
+    return constants.PYTEST_CURRENT_TEST in os.environ
+
+
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -218,24 +227,39 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         *args,
         parent_state: BaseState | None = None,
         init_substates: bool = True,
+        _reflex_internal_init: bool = False,
         **kwargs,
     ):
         """Initialize the state.
+
+        DO NOT INSTANTIATE STATE CLASSES DIRECTLY! Use StateManager.get_state() instead.
 
         Args:
             *args: The args to pass to the Pydantic init method.
             parent_state: The parent state.
             init_substates: Whether to initialize the substates in this instance.
+            _reflex_internal_init: A flag to indicate that the state is being initialized by the framework.
             **kwargs: The kwargs to pass to the Pydantic init method.
 
+        Raises:
+            RuntimeError: If the state is instantiated directly by end user.
         """
+        if not _reflex_internal_init and not _is_testing_env():
+            raise RuntimeError(
+                "State classes should not be instantiated directly. The rx.App and its StateManager "
+                "are responsible for creating and tracking instances of State. "
+                "See https://reflex.dev/docs/state for further information."
+            )
         kwargs["parent_state"] = parent_state
         super().__init__(*args, **kwargs)
 
         # Setup the substates (for memory state manager only).
         if init_substates:
             for substate in self.get_substates():
-                self.substates[substate.get_name()] = substate(parent_state=self)
+                self.substates[substate.get_name()] = substate(
+                    parent_state=self,
+                    _reflex_internal_init=True,
+                )
         # Convert the event handlers to functions.
         self._init_event_handlers()
 
@@ -286,7 +310,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             ValueError: If a substate class shadows another.
         """
-        is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
         super().__init_subclass__(**kwargs)
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
@@ -305,7 +328,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
             # Check if another substate class with the same name has already been defined.
             if cls.__name__ in set(c.__name__ for c in parent_state.class_subclasses):
-                if is_testing_env:
+                if _is_testing_env():
                     # Clear existing subclass with same name when app is reloaded via
                     # utils.prerequisites.get_app(reload=True)
                     parent_state.class_subclasses = set(
@@ -1847,7 +1870,7 @@ class StateManagerMemory(StateManager):
         # Memory state manager ignores the substate suffix and always returns the top-level state.
         token = token.partition("_")[0]
         if token not in self.states:
-            self.states[token] = self.state()
+            self.states[token] = self.state(_reflex_internal_init=True)
         return self.states[token]
 
     async def set_state(self, token: str, state: BaseState):
@@ -2005,6 +2028,7 @@ class StateManagerRedis(StateManager):
             state_cls(
                 parent_state=parent_state,
                 init_substates=False,
+                _reflex_internal_init=True,
             ),
         )
         # After creating the state key, recursively call `get_state` to populate substates.

@@ -652,7 +652,7 @@ formatted_router = {
     "input, output",
     [
         (
-            TestState().dict(),  # type: ignore
+            TestState(_reflex_internal_init=True).dict(),  # type: ignore
             {
                 TestState.get_full_name(): {
                     "array": [1, 2, 3.14],
@@ -684,7 +684,7 @@ formatted_router = {
             },
         ),
         (
-            DateTimeState().dict(),
+            DateTimeState(_reflex_internal_init=True).dict(),  # type: ignore
             {
                 DateTimeState.get_full_name(): {
                     "d": "1989-11-09",
