@@ -9,12 +9,12 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Optional, Union
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.colors import color
 from reflex.components.radix.primitives.accordion import DEFAULT_ANIMATION_DURATION
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.components.radix.themes.base import LiteralAccentColor
 from reflex.style import Style
 from reflex.vars import Var
-from reflex.components.core.colors import color
 
 class ProgressComponent(RadixPrimitiveComponentWithClassName):
     @overload
@@ -312,7 +312,8 @@ class ProgressIndicator(ProgressComponent):
             *children: The children of the component.
             value: The current progress value.
             max: The maximum progress value.
-            as_child: The color scheme of the progress indicator.  Change the default rendered element for the one passed as a child.
+            color_scheme: The color scheme of the progress indicator.
+            as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
