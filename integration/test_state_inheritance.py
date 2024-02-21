@@ -355,7 +355,7 @@ def test_state_inheritance(
     child3_other_mixin_btn = driver.find_element(By.ID, "child3-other-mixin-btn")
     child3_other_mixin_btn.click()
     child2_other_mixin_value = state_inheritance.poll_for_content(
-        child2_other_mixin, exp_not_equal="other_mixin"
+        child2_other_mixin, exp_not_equal="Child2.clicked.1"
     )
     child2_computed_mixin_value = state_inheritance.poll_for_content(
         child2_computed_other_mixin, exp_not_equal="other_mixin"

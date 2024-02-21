@@ -518,8 +518,8 @@ async def test_client_side_state(
     set_sub("l6", "l6 value")
     l5 = driver.find_element(By.ID, "l5")
     l6 = driver.find_element(By.ID, "l6")
+    assert AppHarness._poll_for(lambda: l6.text == "l6 value")
     assert l5.text == "l5 value"
-    assert l6.text == "l6 value"
 
     # Switch back to main window.
     driver.switch_to.window(main_tab)
@@ -527,8 +527,8 @@ async def test_client_side_state(
     # The values should have updated automatically.
     l5 = driver.find_element(By.ID, "l5")
     l6 = driver.find_element(By.ID, "l6")
+    assert AppHarness._poll_for(lambda: l6.text == "l6 value")
     assert l5.text == "l5 value"
-    assert l6.text == "l6 value"
 
     # clear the cookie jar and local storage, ensure state reset to default
     driver.delete_all_cookies()
