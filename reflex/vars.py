@@ -1920,7 +1920,9 @@ class ComputedVar(Var, property):
                 except Exception:
                     ref_obj = None
                 if instruction.argval in invalid_names:
-                    raise ValueError(f"Cached var {self._var_full_name} cannot access arbitrary state via `{instruction.argval}`.")
+                    raise ValueError(
+                        f"Cached var {self._var_full_name} cannot access arbitrary state via `{instruction.argval}`."
+                    )
                 if callable(ref_obj):
                     # recurse into callable attributes
                     d.update(
