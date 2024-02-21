@@ -129,10 +129,10 @@ class DataTableState(State):
     ]
 
 
-code_show = """rx.hstack(
-    rx.divider(orientation="vertical", height="100vh", border="solid black 1px"),
-    rx.vstack(
-        rx.box(
+code_show = """rx.chakra.hstack(
+    rx.chakra.divider(orientation="vertical", height="100vh", border="solid black 1px"),
+    rx.chakra.vstack(
+        rx.chakra.box(
             rx.data_editor(
                 columns=DataTableState.cols,
                 data=DataTableState.data,
@@ -147,7 +147,7 @@ code_show = """rx.hstack(
                 height="80vh",
             ),
         ),
-        rx.spacer(),
+        rx.chakra.spacer(),
         height="100vh",
         spacing="25",
     ),
@@ -270,15 +270,15 @@ def datatable_page() -> rx.Component:
     Returns:
         rx.Component: The UI for the settings page.
     """
-    return rx.box(
-        rx.vstack(
-            rx.heading(
+    return rx.chakra.box(
+        rx.chakra.vstack(
+            rx.chakra.heading(
                 "Data Table Demo",
                 font_size="3em",
             ),
-            rx.hstack(
-                rx.vstack(
-                    rx.box(
+            rx.chakra.hstack(
+                rx.chakra.vstack(
+                    rx.chakra.box(
                         rx.data_editor(
                             columns=DataTableState.cols,
                             data=DataTableState.data,
@@ -292,20 +292,20 @@ def datatable_page() -> rx.Component:
                             width="80vw",
                         ),
                     ),
-                    rx.spacer(),
+                    rx.chakra.spacer(),
                     spacing="25",
                 ),
             ),
-            rx.tabs(
-                rx.tab_list(
-                    rx.tab("Code", style=tab_style),
-                    rx.tab("Data", style=tab_style),
-                    rx.tab("State", style=tab_style),
-                    rx.tab("Styling", style=tab_style),
+            rx.chakra.tabs(
+                rx.chakra.tab_list(
+                    rx.chakra.tab("Code", style=tab_style),
+                    rx.chakra.tab("Data", style=tab_style),
+                    rx.chakra.tab("State", style=tab_style),
+                    rx.chakra.tab("Styling", style=tab_style),
                     padding_x=0,
                 ),
-                rx.tab_panels(
-                    rx.tab_panel(
+                rx.chakra.tab_panels(
+                    rx.chakra.tab_panel(
                         rx.code_block(
                             code_show,
                             language="python",
@@ -315,7 +315,7 @@ def datatable_page() -> rx.Component:
                         padding_x=0,
                         padding_y=".25em",
                     ),
-                    rx.tab_panel(
+                    rx.chakra.tab_panel(
                         rx.code_block(
                             data_show,
                             language="python",
@@ -325,7 +325,7 @@ def datatable_page() -> rx.Component:
                         padding_x=0,
                         padding_y=".25em",
                     ),
-                    rx.tab_panel(
+                    rx.chakra.tab_panel(
                         rx.code_block(
                             state_show,
                             language="python",
@@ -335,7 +335,7 @@ def datatable_page() -> rx.Component:
                         padding_x=0,
                         padding_y=".25em",
                     ),
-                    rx.tab_panel(
+                    rx.chakra.tab_panel(
                         rx.code_block(
                             darkTheme_show,
                             language="python",

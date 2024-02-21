@@ -7,21 +7,16 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any
 from reflex.components.chakra import ChakraComponent
 from reflex.components.chakra.media.icon import Icon
-from reflex.components.component import BaseComponent, Component
-from reflex.components.core.cond import Cond, cond
-from reflex.style import color_mode, toggle_color_mode
-from reflex.vars import Var
+from reflex.components.component import BaseComponent
+from reflex.components.core.cond import Cond, color_mode_cond
+from reflex.style import LIGHT_COLOR_MODE, color_mode, toggle_color_mode
 from .button import Button
 from .switch import Switch
 
-DEFAULT_COLOR_MODE: str
 DEFAULT_LIGHT_ICON: Icon
 DEFAULT_DARK_ICON: Icon
-
-def color_mode_cond(light: Any, dark: Any = None) -> Var | Component: ...
 
 class ColorModeIcon(Cond):
     @overload
@@ -37,7 +32,6 @@ class ColorModeIcon(Cond):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -166,7 +160,6 @@ class ColorModeSwitch(Switch):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -238,7 +231,6 @@ class ColorModeSwitch(Switch):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The props to pass to the component.
 
@@ -326,7 +318,6 @@ class ColorModeButton(Button):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -396,7 +387,6 @@ class ColorModeButton(Button):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The props to pass to the component.
 
@@ -416,7 +406,6 @@ class ColorModeScript(ChakraComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -474,7 +463,6 @@ class ColorModeScript(ChakraComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The props of the component.
 

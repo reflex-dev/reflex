@@ -1,6 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, List, Literal
 
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -10,12 +11,9 @@ from ..base import (
 
 
 class TabsRoot(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Set of content sections to be displayed one at a time."""
 
     tag = "Tabs.Root"
-
-    # The variant of the tab
-    variant: Var[Literal["surface", "ghost"]]
 
     # The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
     default_value: Var[str]
@@ -42,13 +40,16 @@ class TabsRoot(RadixThemesComponent):
 
 
 class TabsList(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Contains the triggers that sit alongside the active content."""
 
     tag = "Tabs.List"
 
+    # Tabs size "1" - "2"
+    size: Var[Literal["1", "2"]]
+
 
 class TabsTrigger(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The button that activates its associated content."""
 
     tag = "Tabs.Trigger"
 
@@ -62,9 +63,21 @@ class TabsTrigger(RadixThemesComponent):
 
 
 class TabsContent(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Contains the content associated with each trigger."""
 
     tag = "Tabs.Content"
 
     # The value of the tab. Must be unique for each tab.
     value: Var[str]
+
+
+class Tabs(ComponentNamespace):
+    """Set of content sections to be displayed one at a time."""
+
+    root = __call__ = staticmethod(TabsRoot.create)
+    list = staticmethod(TabsList.create)
+    trigger = staticmethod(TabsTrigger.create)
+    content = staticmethod(TabsContent.create)
+
+
+tabs = Tabs()

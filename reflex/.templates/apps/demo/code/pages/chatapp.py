@@ -13,8 +13,8 @@ def chatapp_page() -> rx.Component:
     Returns:
         The UI for the main app.
     """
-    return rx.box(
-        rx.vstack(
+    return rx.chakra.box(
+        rx.chakra.vstack(
             navbar(),
             chat.chat(),
             chat.action_bar(),

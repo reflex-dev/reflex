@@ -7,6 +7,8 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
+from reflex.constants.colors import Color
+from reflex.style import LIGHT_COLOR_MODE, color_mode
 from reflex.utils import format, imports
 from reflex.vars import BaseVar, Var, VarData
 
@@ -22,10 +24,10 @@ class Cond(MemoizationLeaf):
     cond: Var[Any]
 
     # The component to render if the cond is true.
-    comp1: BaseComponent = Fragment.create()
+    comp1: BaseComponent = None  # type: ignore
 
     # The component to render if the cond is false.
-    comp2: BaseComponent = Fragment.create()
+    comp2: BaseComponent = None  # type: ignore
 
     @classmethod
     def create(
@@ -167,6 +169,17 @@ def cond(condition: Any, c1: Any, c2: Any = None):
     if isinstance(c2, Var):
         var_datas.append(c2._var_data)
 
+    def create_var(cond_part):
+        return Var.create_safe(
+            cond_part,
+            _var_is_string=type(cond_part) is str or isinstance(cond_part, Color),
+        )
+
+    # convert the truth and false cond parts into vars so the _var_data can be obtained.
+    c1 = create_var(c1)
+    c2 = create_var(c2)
+    var_datas.extend([c1._var_data, c2._var_data])
+
     # Create the conditional var.
     return cond_var._replace(
         _var_name=format.format_cond(
@@ -179,4 +192,21 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         _var_is_local=False,
         _var_full_name_needs_state_prefix=False,
         merge_var_data=VarData.merge(*var_datas),
+    )
+
+
+def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
+    """Create a component or Prop based on color_mode.
+
+    Args:
+        light: The component or prop to render if color_mode is default
+        dark: The component or prop to render if color_mode is non-default
+
+    Returns:
+        The conditional component or prop.
+    """
+    return cond(
+        color_mode == LIGHT_COLOR_MODE,
+        light,
+        dark,
     )

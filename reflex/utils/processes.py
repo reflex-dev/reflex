@@ -12,6 +12,7 @@ from typing import Callable, Generator, List, Optional, Tuple, Union
 
 import psutil
 import typer
+from redis.exceptions import RedisError
 
 from reflex.utils import console, path_ops, prerequisites
 
@@ -28,10 +29,20 @@ def kill(pid):
 def get_num_workers() -> int:
     """Get the number of backend worker processes.
 
+    Raises:
+        Exit: If unable to connect to Redis.
+
     Returns:
         The number of backend worker processes.
     """
-    return 1 if prerequisites.get_redis() is None else (os.cpu_count() or 1) * 2 + 1
+    if (redis_client := prerequisites.get_redis_sync()) is None:
+        return 1
+    try:
+        redis_client.ping()
+    except RedisError as re:
+        console.error(f"Unable to connect to Redis: {re}")
+        raise typer.Exit(1) from re
+    return (os.cpu_count() or 1) * 2 + 1
 
 
 def get_process_on_port(port) -> Optional[psutil.Process]:

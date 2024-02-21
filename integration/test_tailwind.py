@@ -30,7 +30,7 @@ def TailwindApp(
 
     def index():
         return rx.el.div(
-            rx.text(paragraph_text, class_name=paragraph_class_name),
+            rx.chakra.text(paragraph_text, class_name=paragraph_class_name),
             rx.el.p(paragraph_text, class_name=paragraph_class_name),
             rdxt.text(paragraph_text, as_="p", class_name=paragraph_class_name),
             id="p-content",

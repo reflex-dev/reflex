@@ -7,13 +7,14 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from types import SimpleNamespace
 from typing import Any, Dict, Literal
 from reflex import el
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import LiteralSize, RadixThemesComponent
+from ..base import RadixThemesComponent
 
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
+LiteralContentSize = Literal["1", "2", "3", "4"]
 
 class AlertDialogRoot(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
@@ -384,10 +385,7 @@ class AlertDialogContent(el.Div, RadixThemesComponent):
             ]
         ] = None,
         size: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
+            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
         ] = None,
         force_mount: Optional[Union[Var[bool], bool]] = None,
         access_key: Optional[
@@ -428,9 +426,6 @@ class AlertDialogContent(el.Div, RadixThemesComponent):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -523,7 +518,6 @@ class AlertDialogContent(el.Div, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1121,3 +1115,14 @@ class AlertDialogCancel(RadixThemesComponent):
             A new component instance.
         """
         ...
+
+class AlertDialog(SimpleNamespace):
+    root = staticmethod(AlertDialogRoot.create)
+    trigger = staticmethod(AlertDialogTrigger.create)
+    content = staticmethod(AlertDialogContent.create)
+    title = staticmethod(AlertDialogTitle.create)
+    description = staticmethod(AlertDialogDescription.create)
+    action = staticmethod(AlertDialogAction.create)
+    cancel = staticmethod(AlertDialogCancel.create)
+
+alert_dialog = AlertDialog()

@@ -10,14 +10,9 @@ from reflex.style import Style
 from typing import Any, Dict, Literal
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import (
-    LiteralAccentColor,
-    LiteralRadius,
-    LiteralVariant,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
 
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
+LiteralSwitchSize = Literal["1", "2", "3"]
 
 class Switch(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
@@ -26,7 +21,22 @@ class Switch(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
+        default_checked: Optional[Union[Var[bool], bool]] = None,
+        checked: Optional[Union[Var[bool], bool]] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
+        required: Optional[Union[Var[bool], bool]] = None,
+        name: Optional[Union[Var[str], str]] = None,
+        value: Optional[Union[Var[str], str]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "surface", "soft"]],
+                Literal["classic", "surface", "soft"],
+            ]
+        ] = None,
         color_scheme: Optional[
             Union[
                 Var[
@@ -89,27 +99,10 @@ class Switch(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        default_checked: Optional[Union[Var[bool], bool]] = None,
-        checked: Optional[Union[Var[bool], bool]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        size: Optional[
-            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
-        ] = None,
-        variant: Optional[
-            Union[
-                Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
-                Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
-            ]
-        ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
-                Literal["none", "small", "medium", "large", "full"],
+                Var[Literal["none", "small", "full"]], Literal["none", "small", "full"]
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -117,7 +110,6 @@ class Switch(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -176,8 +168,6 @@ class Switch(RadixThemesComponent):
 
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             default_checked: Whether the switch is checked by default
             checked: Whether the switch is checked
@@ -186,15 +176,15 @@ class Switch(RadixThemesComponent):
             name: The name of the switch (when submitting a form)
             value: The value associated with the "on" position
             size: Switch size "1" - "4"
-            variant: Variant of switch: "solid" | "soft" | "outline" | "ghost"
+            variant: Variant of switch: "classic" | "surface" | "soft"
+            color_scheme: Override theme color for switch
             high_contrast: Whether to render the switch with higher contrast color against background
-            radius: Override theme radius for switch: "none" | "small" | "medium" | "large" | "full"
-            style: Props to rename  The style of the component.
+            radius: Override theme radius for switch: "none" | "small" | "full"
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -202,3 +192,5 @@ class Switch(RadixThemesComponent):
             A new component instance.
         """
         ...
+
+switch = Switch.create

@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Literal
 from reflex import el
 from reflex.components.component import Component
-from reflex.components.core import match
+from reflex.components.core.match import Match
 from reflex.components.lucide import Icon
 from reflex.style import Style
 from reflex.vars import Var
@@ -111,9 +111,7 @@ class IconButton(el.Button, RadixThemesComponent):
         auto_focus: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        disabled: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
         form: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         form_action: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
@@ -173,9 +171,6 @@ class IconButton(el.Button, RadixThemesComponent):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -269,7 +264,6 @@ class IconButton(el.Button, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -286,3 +280,5 @@ class IconButton(el.Button, RadixThemesComponent):
             The IconButton component.
         """
         ...
+
+icon_button = IconButton.create

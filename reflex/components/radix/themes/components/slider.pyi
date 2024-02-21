@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
+from ..base import LiteralAccentColor, RadixThemesComponent
 
 class Slider(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
@@ -96,8 +96,7 @@ class Slider(RadixThemesComponent):
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
-                Literal["none", "small", "medium", "large", "full"],
+                Var[Literal["none", "small", "full"]], Literal["none", "small", "full"]
             ]
         ] = None,
         default_value: Optional[
@@ -125,7 +124,6 @@ class Slider(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -190,7 +188,7 @@ class Slider(RadixThemesComponent):
             variant: Variant of button
             color_scheme: Override theme color for button
             high_contrast: Whether to render the button with higher contrast color against background
-            radius: Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
+            radius: Override theme radius for button: "none" | "small" | "full"
             default_value: The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
             value: The controlled value of the slider. Must be used in conjunction with onValueChange.
             name: The name of the slider. Submitted with its owning form as part of a name/value pair.
@@ -199,12 +197,11 @@ class Slider(RadixThemesComponent):
             step: The step value of the slider.
             disabled: Whether the slider is disabled
             orientation: The orientation of the slider.
-            style: Props to rename  The style of the component.
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the component.
 
@@ -212,3 +209,5 @@ class Slider(RadixThemesComponent):
             The component.
         """
         ...
+
+slider = Slider.create

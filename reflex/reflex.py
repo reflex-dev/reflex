@@ -84,6 +84,10 @@ def _init(
 
     prerequisites.ensure_reflex_installation_id()
 
+    # When upgrading to 0.4, show migration instructions.
+    if prerequisites.should_show_rx_chakra_migration_instructions():
+        prerequisites.show_rx_chakra_migration_instructions()
+
     # Set up the app directory, only if the config doesn't exist.
     if not os.path.exists(constants.Config.FILE):
         if template is None:
@@ -336,6 +340,7 @@ def logout(
 
 
 db_cli = typer.Typer()
+script_cli = typer.Typer()
 
 
 def _skip_compile():
@@ -412,6 +417,17 @@ def makemigrations(
             console.error(
                 f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
             )
+
+
+@script_cli.command(
+    name="keep-chakra",
+    help="Change all rx.<component> references to rx.chakra.<component>, to preserve Chakra UI usage.",
+)
+def keep_chakra():
+    """Change all rx.<component> references to rx.chakra.<component>, to preserve Chakra UI usage."""
+    from reflex.utils import prerequisites
+
+    prerequisites.migrate_to_rx_chakra()
 
 
 @cli.command()
@@ -555,6 +571,7 @@ def demo(
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
+cli.add_typer(script_cli, name="script", help="Subcommands running helper scripts.")
 cli.add_typer(
     deployments_cli,
     name="deployments",

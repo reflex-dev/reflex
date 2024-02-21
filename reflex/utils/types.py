@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import contextlib
+import inspect
 import types
+from functools import wraps
 from typing import (
     Any,
     Callable,
     Iterable,
+    List,
     Literal,
     Optional,
     Type,
@@ -23,6 +26,7 @@ from pydantic.fields import ModelField
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 
+from reflex import constants
 from reflex.base import Base
 from reflex.utils import serializers
 
@@ -161,7 +165,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             prop = descriptor.property
             if not isinstance(prop, Relationship):
                 return None
-            return prop.mapper.class_
+            class_ = prop.mapper.class_
+            if prop.uselist:
+                return List[class_]
+            else:
+                return class_
     elif isinstance(cls, type) and issubclass(cls, Model):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)
@@ -328,6 +336,82 @@ def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
 
     type_ = prop._var_type if _isinstance(prop, Var) else type(prop)
     return type_ in allowed_types
+
+
+def is_encoded_fstring(value) -> bool:
+    """Check if a value is an encoded Var f-string.
+
+    Args:
+        value: The value string to check.
+
+    Returns:
+        Whether the value is an f-string
+    """
+    return isinstance(value, str) and constants.REFLEX_VAR_OPENING_TAG in value
+
+
+def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
+    """Check that a value is a valid literal.
+
+    Args:
+        key: The prop name.
+        value: The prop value to validate.
+        expected_type: The expected type(literal type).
+        comp_name: Name of the component.
+
+    Raises:
+        ValueError: When the value is not a valid literal.
+    """
+    from reflex.vars import Var
+
+    if (
+        is_literal(expected_type)
+        and not isinstance(value, Var)  # validating vars is not supported yet.
+        and not is_encoded_fstring(value)  # f-strings are not supported.
+        and value not in expected_type.__args__
+    ):
+        allowed_values = expected_type.__args__
+        if value not in allowed_values:
+            value_str = ",".join(
+                [str(v) if not isinstance(v, str) else f"'{v}'" for v in allowed_values]
+            )
+            raise ValueError(
+                f"prop value for {str(key)} of the `{comp_name}` component should be one of the following: {value_str}. Got '{value}' instead"
+            )
+
+
+def validate_parameter_literals(func):
+    """Decorator to check that the arguments passed to a function
+    correspond to the correct function parameter if it (the parameter)
+    is a literal type.
+
+    Args:
+        func: The function to validate.
+
+    Returns:
+        The wrapper function.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        func_params = list(inspect.signature(func).parameters.items())
+        annotations = {param[0]: param[1].annotation for param in func_params}
+
+        # validate args
+        for param, arg in zip(annotations.keys(), args):
+            if annotations[param] is inspect.Parameter.empty:
+                continue
+            validate_literal(param, arg, annotations[param], func.__name__)
+
+        # validate kwargs.
+        for key, value in kwargs.items():
+            annotation = annotations.get(key)
+            if not annotation or annotation is inspect.Parameter.empty:
+                continue
+            validate_literal(key, value, annotation, func.__name__)
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 # Store this here for performance.

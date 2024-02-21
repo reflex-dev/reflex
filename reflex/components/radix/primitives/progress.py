@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Optional
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
+from reflex.components.radix.primitives.accordion import DEFAULT_ANIMATION_DURATION
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.style import Style
 from reflex.vars import Var
@@ -33,10 +34,11 @@ class ProgressRoot(ProgressComponent):
             {
                 "position": "relative",
                 "overflow": "hidden",
-                "background": "black",
+                "background": "var(--gray-a3)",
                 "border_radius": "99999px",
-                "width": "300px",
-                "height": "25px",
+                "width": "100%",
+                "height": "20px",
+                "boxShadow": "inset 0 0 0 1px var(--gray-a5)",
                 **self.style,
             }
         )
@@ -52,35 +54,51 @@ class ProgressIndicator(ProgressComponent):
     # The current progress value.
     value: Var[Optional[int]]
 
+    # The maximum progress value.
+    max: Var[Optional[int]]
+
     def _apply_theme(self, theme: Component):
         self.style = Style(
             {
-                "background-color": "white",
+                "background-color": "var(--accent-9)",
                 "width": "100%",
                 "height": "100%",
-                "transition": f"transform 660ms linear",
+                f"transition": f"transform {DEFAULT_ANIMATION_DURATION}ms linear",
                 "&[data_state='loading']": {
-                    "transition": f"transform 660ms linear",
+                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms linear",
                 },
-                "transform": f"translateX(-{100 - self.value}%)",  # type: ignore
+                "transform": f"translateX(calc(-100% + ({self.value} / {self.max} * 100%)))",  # type: ignore
+                "boxShadow": "inset 0 0 0 1px var(--gray-a5)",
             }
         )
 
 
-progress_root = ProgressRoot.create
-progress_indicator = ProgressIndicator.create
+class Progress(ComponentNamespace):
+    """High level API for progress bar."""
+
+    root = staticmethod(ProgressRoot.create)
+    indicator = staticmethod(ProgressIndicator.create)
+
+    @staticmethod
+    def __call__(width: Optional[str] = "100%", **props) -> Component:
+        """High level API for progress bar.
+
+        Args:
+            width: The width of the progerss bar
+            **props: The props of the progress bar
+
+        Returns:
+            The progress bar.
+        """
+        style = props.setdefault("style", {})
+        style.update({"width": width})
+
+        return ProgressRoot.create(
+            ProgressIndicator.create(
+                value=props.get("value"), max=props.get("max", 100)
+            ),
+            **props,
+        )
 
 
-def progress(**props):
-    """High level API for progress bar.
-
-    Args:
-        **props: The props of the progress bar
-
-    Returns:
-        The progress bar.
-    """
-    return progress_root(
-        progress_indicator(value=props.get("value")),
-        **props,
-    )
+progress = Progress()

@@ -245,30 +245,30 @@ def test_basic_operations(TestObj):
     Args:
         TestObj: The test object.
     """
-    assert str(v(1) == v(2)) == "{(1 === 2)}"
-    assert str(v(1) != v(2)) == "{(1 !== 2)}"
-    assert str(v(1) < v(2)) == "{(1 < 2)}"
-    assert str(v(1) <= v(2)) == "{(1 <= 2)}"
-    assert str(v(1) > v(2)) == "{(1 > 2)}"
-    assert str(v(1) >= v(2)) == "{(1 >= 2)}"
-    assert str(v(1) + v(2)) == "{(1 + 2)}"
-    assert str(v(1) - v(2)) == "{(1 - 2)}"
-    assert str(v(1) * v(2)) == "{(1 * 2)}"
-    assert str(v(1) / v(2)) == "{(1 / 2)}"
-    assert str(v(1) // v(2)) == "{Math.floor(1 / 2)}"
-    assert str(v(1) % v(2)) == "{(1 % 2)}"
-    assert str(v(1) ** v(2)) == "{Math.pow(1 , 2)}"
-    assert str(v(1) & v(2)) == "{(1 && 2)}"
-    assert str(v(1) | v(2)) == "{(1 || 2)}"
+    assert str(v(1) == v(2)) == "{((1) === (2))}"
+    assert str(v(1) != v(2)) == "{((1) !== (2))}"
+    assert str(v(1) < v(2)) == "{((1) < (2))}"
+    assert str(v(1) <= v(2)) == "{((1) <= (2))}"
+    assert str(v(1) > v(2)) == "{((1) > (2))}"
+    assert str(v(1) >= v(2)) == "{((1) >= (2))}"
+    assert str(v(1) + v(2)) == "{((1) + (2))}"
+    assert str(v(1) - v(2)) == "{((1) - (2))}"
+    assert str(v(1) * v(2)) == "{((1) * (2))}"
+    assert str(v(1) / v(2)) == "{((1) / (2))}"
+    assert str(v(1) // v(2)) == "{Math.floor((1) / (2))}"
+    assert str(v(1) % v(2)) == "{((1) % (2))}"
+    assert str(v(1) ** v(2)) == "{Math.pow((1) , (2))}"
+    assert str(v(1) & v(2)) == "{((1) && (2))}"
+    assert str(v(1) | v(2)) == "{((1) || (2))}"
     assert str(v([1, 2, 3])[v(0)]) == "{[1, 2, 3].at(0)}"
     assert str(v({"a": 1, "b": 2})["a"]) == '{{"a": 1, "b": 2}["a"]}'
-    assert str(v("foo") == v("bar")) == '{("foo" === "bar")}'
+    assert str(v("foo") == v("bar")) == '{(("foo") === ("bar"))}'
     assert (
         str(
             Var.create("foo", _var_is_local=False)
             == Var.create("bar", _var_is_local=False)
         )
-        == "{(foo === bar)}"
+        == "{((foo) === (bar))}"
     )
     assert (
         str(
@@ -279,7 +279,7 @@ def test_basic_operations(TestObj):
                 _var_name="bar", _var_type=str, _var_is_string=True, _var_is_local=True
             )
         )
-        == "(`foo` === `bar`)"
+        == "((`foo`) === (`bar`))"
     )
     assert (
         str(
@@ -295,7 +295,7 @@ def test_basic_operations(TestObj):
                 _var_name="bar", _var_type=str, _var_is_string=True, _var_is_local=True
             )
         )
-        == "{(state.foo.bar === `bar`)}"
+        == "{((state.foo.bar) === (`bar`))}"
     )
     assert (
         str(BaseVar(_var_name="foo", _var_type=TestObj)._var_set_state("state").bar)
@@ -303,7 +303,7 @@ def test_basic_operations(TestObj):
     )
     assert str(abs(v(1))) == "{Math.abs(1)}"
     assert str(v([1, 2, 3]).length()) == "{[1, 2, 3].length}"
-    assert str(v([1, 2]) + v([3, 4])) == "{spreadArraysOrObjects([1, 2] , [3, 4])}"
+    assert str(v([1, 2]) + v([3, 4])) == "{spreadArraysOrObjects(([1, 2]) , ([3, 4]))}"
 
     # Tests for reverse operation
     assert str(v([1, 2, 3]).reverse()) == "{[...[1, 2, 3]].reverse()}"
@@ -319,55 +319,55 @@ def test_basic_operations(TestObj):
     assert str(BaseVar(_var_name="foo", _var_type=str)._type()) == "{typeof foo}"  # type: ignore
     assert (
         str(BaseVar(_var_name="foo", _var_type=str)._type() == str)  # type: ignore
-        == "{(typeof foo === `string`)}"
+        == "{((typeof foo) === (`string`))}"
     )
     assert (
         str(BaseVar(_var_name="foo", _var_type=str)._type() == str)  # type: ignore
-        == "{(typeof foo === `string`)}"
+        == "{((typeof foo) === (`string`))}"
     )
     assert (
         str(BaseVar(_var_name="foo", _var_type=str)._type() == int)  # type: ignore
-        == "{(typeof foo === `number`)}"
+        == "{((typeof foo) === (`number`))}"
     )
     assert (
         str(BaseVar(_var_name="foo", _var_type=str)._type() == list)  # type: ignore
-        == "{(typeof foo === `Array`)}"
+        == "{((typeof foo) === (`Array`))}"
     )
     assert (
         str(BaseVar(_var_name="foo", _var_type=str)._type() == float)  # type: ignore
-        == "{(typeof foo === `number`)}"
+        == "{((typeof foo) === (`number`))}"
     )
     assert (
         str(BaseVar(_var_name="foo", _var_type=str)._type() == tuple)  # type: ignore
-        == "{(typeof foo === `Array`)}"
+        == "{((typeof foo) === (`Array`))}"
     )
     assert (
         str(BaseVar(_var_name="foo", _var_type=str)._type() == dict)  # type: ignore
-        == "{(typeof foo === `Object`)}"
+        == "{((typeof foo) === (`Object`))}"
     )
     assert (
         str(BaseVar(_var_name="foo", _var_type=str)._type() != str)  # type: ignore
-        == "{(typeof foo !== `string`)}"
+        == "{((typeof foo) !== (`string`))}"
     )
     assert (
         str(BaseVar(_var_name="foo", _var_type=str)._type() != int)  # type: ignore
-        == "{(typeof foo !== `number`)}"
+        == "{((typeof foo) !== (`number`))}"
     )
     assert (
         str(BaseVar(_var_name="foo", _var_type=str)._type() != list)  # type: ignore
-        == "{(typeof foo !== `Array`)}"
+        == "{((typeof foo) !== (`Array`))}"
     )
     assert (
         str(BaseVar(_var_name="foo", _var_type=str)._type() != float)  # type: ignore
-        == "{(typeof foo !== `number`)}"
+        == "{((typeof foo) !== (`number`))}"
     )
     assert (
         str(BaseVar(_var_name="foo", _var_type=str)._type() != tuple)  # type: ignore
-        == "{(typeof foo !== `Array`)}"
+        == "{((typeof foo) !== (`Array`))}"
     )
     assert (
         str(BaseVar(_var_name="foo", _var_type=str)._type() != dict)  # type: ignore
-        == "{(typeof foo !== `Object`)}"
+        == "{((typeof foo) !== (`Object`))}"
     )
 
 
@@ -457,6 +457,25 @@ def test_var_indexing_lists(var):
 
     # Test negative indexing.
     assert str(var[-1]) == f"{{{var._var_name}.at(-1)}}"
+
+
+@pytest.mark.parametrize(
+    "var, type_",
+    [
+        (BaseVar(_var_name="list", _var_type=List[int]), [int, int]),
+        (BaseVar(_var_name="tuple", _var_type=Tuple[int, str]), [int, str]),
+    ],
+)
+def test_var_indexing_types(var, type_):
+    """Test that indexing returns valid types.
+
+    Args:
+        var   : The list, typle base var.
+        type_ : The type on indexed object.
+
+    """
+    assert var[2]._var_type == type_[0]
+    assert var[3]._var_type == type_[1]
 
 
 def test_var_indexing_str():
@@ -718,7 +737,7 @@ def test_computed_var_with_annotation_error(request, fixture, full_name):
         (f"{BaseVar(_var_name='var', _var_type=str)}", "${var}"),
         (
             f"testing f-string with {BaseVar(_var_name='myvar', _var_type=int)._var_set_state('state')}",
-            'testing f-string with $<reflex.Var>{"state": "state", "imports": {"/utils/context": [{"tag": "StateContexts", "is_default": false, "alias": null, "install": true, "render": true}], "react": [{"tag": "useContext", "is_default": false, "alias": null, "install": true, "render": true}]}, "hooks": ["const state = useContext(StateContexts.state)"]}</reflex.Var>{state.myvar}',
+            'testing f-string with $<reflex.Var>{"state": "state", "interpolations": [], "imports": {"/utils/context": [{"tag": "StateContexts", "is_default": false, "alias": null, "install": true, "render": true}], "react": [{"tag": "useContext", "is_default": false, "alias": null, "install": true, "render": true}]}, "hooks": ["const state = useContext(StateContexts.state)"], "string_length": 13}</reflex.Var>{state.myvar}',
         ),
         (
             f"testing local f-string {BaseVar(_var_name='x', _var_is_local=True, _var_type=str)}",
