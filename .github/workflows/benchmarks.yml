@@ -24,7 +24,7 @@ env:
 
 jobs:
   reflex-web:
-    if: secrets.DATABASE_URL
+    if: ${{ secrets.DATABASE_URL }} != ""
     strategy:
       fail-fast: false
       matrix:
