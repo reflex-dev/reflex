@@ -181,15 +181,14 @@ const pulse = keyframes`
                     animation=Var.create(
                         f"${{pulse}} 1s infinite", _var_is_string=True
                     ),
-                    z_index=999,
-                    position="absolute",
+                    z_index=9999,
+                    position="fixed",
                     bottom="30px",
                     right="30px",
                     **props,
                 ),
             ),
-            z_index=-999,
-            position="absolute",
+            position="fixed",
             width="100vw",
-            height="100vh",
+            height="0",
         )
