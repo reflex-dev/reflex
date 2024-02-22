@@ -785,7 +785,7 @@ class App(Base):
             submit_work(compiler.compile_theme, style=self.style)
 
             # Compile the contexts.
-            submit_work(compiler.compile_contexts, self.state)
+            submit_work(compiler.compile_contexts, self.state, self.theme)
 
             # Compile the Tailwind config.
             if config.tailwind is not None:
