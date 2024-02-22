@@ -48,4 +48,4 @@ class VStack(Stack):
 class HStack(Stack):
     """A horizontal stack component."""
 
-    direction: Var[LiteralFlexDirection] = Var.create_safe("row")
+    direction: Var[LiteralFlexDirection] = "row"  # type: ignore
