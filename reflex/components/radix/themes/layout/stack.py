@@ -41,12 +41,32 @@ class Stack(Flex):
 class VStack(Stack):
     """A vertical stack component."""
 
-    def _apply_theme(self, theme: Component):
-        self.style.update({"flex_direction": "column"})
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a new instance of the component.
+
+        Args:
+            *children: The children of the stack.
+            **props: The properties of the stack.
+
+        Returns:
+            The stack component.
+        """
+        return super().create(*children, direction="column", **props)
 
 
 class HStack(Stack):
     """A horizontal stack component."""
 
-    def _apply_theme(self, theme: Component):
-        self.style.update({"flex_direction": "row"})
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a new instance of the component.
+
+        Args:
+            *children: The children of the stack.
+            **props: The properties of the stack.
+
+        Returns:
+            The stack component.
+        """
+        return super().create(*children, direction="row", **props)
