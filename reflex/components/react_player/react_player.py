@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, Dict
+
 from reflex.components.component import NoSSRComponent
 from reflex.vars import Var
 
@@ -43,3 +45,28 @@ class ReactPlayer(NoSSRComponent):
 
     # Set the height of the player: ex:640px
     height: Var[str]
+
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the event triggers.
+
+        Returns:
+            The event triggers.
+        """
+        return {
+            "onReady": lambda: [],
+            "onStart": lambda: [],
+            "onPlay": lambda: [],
+            "onProgress": lambda e0: [e0],
+            "onDuration": lambda e0: [e0],
+            "onPause": lambda: [],
+            "onBuffer": lambda: [],
+            "onBufferEnd": lambda: [],
+            "onSeek": lambda second: [second],
+            "onPlaybackRateChange": lambda e0: [],
+            "onPlaybackQualityChange": lambda e0: [],
+            "on_ended": lambda: [],  # do not fire if loop=True
+            "on_error": lambda: [],
+            "on_click_preview": lambda: [],
+            "onEnablePIP": lambda: [],
+            "onDisablePIP": lambda: [],
+        }
