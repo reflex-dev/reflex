@@ -36,17 +36,17 @@ overlapping_button_style = {
 }
 
 base_style = {
-    rx.MenuButton: {
+    rx.chakra.MenuButton: {
         "width": "3em",
         "height": "3em",
         **overlapping_button_style,
     },
-    rx.MenuItem: hover_accent_bg,
+    rx.chakra.MenuItem: hover_accent_bg,
 }
 
 markdown_style = {
-    "code": lambda text: rx.code(text, color="#1F1944", bg="#EAE4FD"),
-    "a": lambda text, **props: rx.link(
+    "code": lambda text: rx.chakra.code(text, color="#1F1944", bg="#EAE4FD"),
+    "a": lambda text, **props: rx.chakra.link(
         text,
         **props,
         font_weight="bold",

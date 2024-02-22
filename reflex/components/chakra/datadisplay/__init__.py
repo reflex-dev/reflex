@@ -1,9 +1,7 @@
 """Data display components."""
 
 from .badge import Badge
-from .code import Code, CodeBlock
-from .code import LiteralCodeBlockTheme as LiteralCodeBlockTheme
-from .code import LiteralCodeLanguage as LiteralCodeLanguage
+from .code import Code
 from .divider import Divider
 from .keyboard_key import KeyboardKey as Kbd
 from .list import List, ListItem, OrderedList, UnorderedList

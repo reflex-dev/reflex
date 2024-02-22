@@ -2,7 +2,7 @@
 from typing import Any, Dict, List, Literal, Union
 
 import reflex as rx
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -11,8 +11,6 @@ from ..base import (
     LiteralRadius,
     RadixThemesComponent,
 )
-
-LiteralButtonSize = Literal[1, 2, 3, 4]
 
 
 class SelectRoot(RadixThemesComponent):
@@ -235,3 +233,19 @@ class HighLevelSelect(SelectRoot):
             ),
             **props,
         )
+
+
+class Select(ComponentNamespace):
+    """Select components namespace."""
+
+    root = staticmethod(SelectRoot.create)
+    trigger = staticmethod(SelectTrigger.create)
+    content = staticmethod(SelectContent.create)
+    group = staticmethod(SelectGroup.create)
+    item = staticmethod(SelectItem.create)
+    separator = staticmethod(SelectSeparator.create)
+    label = staticmethod(SelectLabel.create)
+    __call__ = staticmethod(HighLevelSelect.create)
+
+
+select = Select()

@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from types import SimpleNamespace
 from typing import Any, Dict, List, Literal
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -1234,3 +1235,15 @@ class ContextMenuSeparator(RadixThemesComponent):
             A new component instance.
         """
         ...
+
+class ContextMenu(SimpleNamespace):
+    root = staticmethod(ContextMenuRoot.create)
+    trigger = staticmethod(ContextMenuTrigger.create)
+    content = staticmethod(ContextMenuContent.create)
+    sub = staticmethod(ContextMenuSub.create)
+    sub_trigger = staticmethod(ContextMenuSubTrigger.create)
+    sub_content = staticmethod(ContextMenuSubContent.create)
+    item = staticmethod(ContextMenuItem.create)
+    separator = staticmethod(ContextMenuSeparator.create)
+
+context_menu = ContextMenu()

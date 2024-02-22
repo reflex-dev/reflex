@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Literal
+from typing import Any, Dict, Literal
 from reflex.components import Component
 from reflex.components.tags import Tag
 from reflex.utils import imports
@@ -15,7 +15,7 @@ from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
-LiteralSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+LiteralSpacing = Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 LiteralVariant = Literal["classic", "solid", "soft", "surface", "outline", "ghost"]
 LiteralAppearance = Literal["inherit", "light", "dark"]
 LiteralGrayColor = Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]
@@ -59,44 +59,44 @@ class CommonMarginProps(Component):
         *children,
         m: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mx: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         my: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mt: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mr: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mb: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         ml: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -104,7 +104,6 @@ class CommonMarginProps(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -169,7 +168,6 @@ class CommonMarginProps(Component):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -187,75 +185,11 @@ class RadixThemesComponent(Component):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
-        color_scheme: Optional[
-            Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -311,14 +245,11 @@ class RadixThemesComponent(Component):
 
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -326,8 +257,6 @@ class RadixThemesComponent(Component):
             A new component instance.
         """
         ...
-    @classmethod
-    def get_fields(cls) -> dict[str, Any]: ...
 
 class Theme(RadixThemesComponent):
     @overload
@@ -335,69 +264,8 @@ class Theme(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
-        color_scheme: Optional[
-            Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
-            ]
-        ] = None,
+        color_mode: Optional[LiteralAppearance | None] = None,
+        theme_panel: Optional[bool] = False,
         has_background: Optional[Union[Var[bool], bool]] = None,
         appearance: Optional[
             Union[
@@ -493,7 +361,6 @@ class Theme(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -542,15 +409,12 @@ class Theme(RadixThemesComponent):
         ] = None,
         **props
     ) -> "Theme":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a new Radix Theme specification.
 
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
+            color_mode: Map to appearance prop.
+            theme_panel: Whether to include a panel for editing the theme.
             has_background: Whether to apply the themes background color to the theme node. Defaults to True.
             appearance: Override light or dark mode theme: "inherit" | "light" | "dark". Defaults to "inherit".
             accent_color: The color used for default buttons, typography, backgrounds, etc
@@ -563,7 +427,6 @@ class Theme(RadixThemesComponent):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -578,76 +441,12 @@ class ThemePanel(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
-        color_scheme: Optional[
-            Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
-            ]
-        ] = None,
         default_open: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -703,15 +502,12 @@ class ThemePanel(RadixThemesComponent):
 
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
             default_open: Whether the panel is open. Defaults to False.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 
@@ -731,7 +527,6 @@ class RadixThemesColorModeProvider(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -789,7 +584,6 @@ class RadixThemesColorModeProvider(Component):
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The props of the component.
 
@@ -800,3 +594,6 @@ class RadixThemesColorModeProvider(Component):
             TypeError: If an invalid child is passed.
         """
         ...
+
+theme = Theme.create
+theme_panel = ThemePanel.create

@@ -1,4 +1,5 @@
 """ Generated with stubgen from mypy, then manually edited, do not regen."""
+from __future__ import annotations
 
 from dataclasses import dataclass
 from _typeshed import Incomplete
@@ -17,6 +18,7 @@ from typing import (
     List,
     Optional,
     Set,
+    Tuple,
     Type,
     Union,
     overload,
@@ -34,6 +36,7 @@ class VarData(Base):
     state: str
     imports: dict[str, set[ImportVar]]
     hooks: set[str]
+    interpolations: List[Tuple[int, int]]
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None: ...
 
@@ -154,3 +157,5 @@ def cached_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
 class CallableVar(BaseVar):
     def __init__(self, fn: Callable[..., BaseVar]): ...
     def __call__(self, *args, **kwargs) -> BaseVar: ...
+
+def get_uuid_string_var() -> Var: ...

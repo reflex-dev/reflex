@@ -14,9 +14,9 @@ def message(qa: QA) -> rx.Component:
     Returns:
         A component displaying the question/answer pair.
     """
-    return rx.box(
-        rx.box(
-            rx.text(
+    return rx.chakra.box(
+        rx.chakra.box(
+            rx.chakra.text(
                 qa.question,
                 bg=styles.border_color,
                 shadow=styles.shadow_light,
@@ -25,8 +25,8 @@ def message(qa: QA) -> rx.Component:
             text_align="right",
             margin_top="1em",
         ),
-        rx.box(
-            rx.text(
+        rx.chakra.box(
+            rx.chakra.text(
                 qa.answer,
                 bg=styles.accent_color,
                 shadow=styles.shadow_light,
@@ -45,8 +45,8 @@ def chat() -> rx.Component:
     Returns:
         A component displaying all the messages in a single conversation.
     """
-    return rx.vstack(
-        rx.box(rx.foreach(State.chats[State.current_chat], message)),
+    return rx.chakra.vstack(
+        rx.chakra.box(rx.foreach(State.chats[State.current_chat], message)),
         py="8",
         flex="1",
         width="100%",
@@ -55,7 +55,7 @@ def chat() -> rx.Component:
         align_self="center",
         overflow="hidden",
         padding_bottom="5em",
-        **styles.base_style[rx.Vstack],
+        **styles.base_style[rx.chakra.Vstack],
     )
 
 
@@ -65,12 +65,12 @@ def action_bar() -> rx.Component:
     Returns:
         The action bar to send a new message.
     """
-    return rx.box(
-        rx.vstack(
-            rx.form(
-                rx.form_control(
-                    rx.hstack(
-                        rx.input(
+    return rx.chakra.box(
+        rx.chakra.vstack(
+            rx.chakra.form(
+                rx.chakra.form_control(
+                    rx.chakra.hstack(
+                        rx.chakra.input(
                             placeholder="Type something...",
                             value=State.question,
                             on_change=State.set_question,
@@ -78,24 +78,24 @@ def action_bar() -> rx.Component:
                             _hover={"border_color": styles.accent_color},
                             style=styles.input_style,
                         ),
-                        rx.button(
+                        rx.chakra.button(
                             rx.cond(
                                 State.processing,
                                 loading_icon(height="1em"),
-                                rx.text("Send"),
+                                rx.chakra.text("Send"),
                             ),
                             type_="submit",
                             _hover={"bg": styles.accent_color},
                             style=styles.input_style,
                         ),
-                        **styles.base_style[rx.Hstack],
+                        **styles.base_style[rx.chakra.Hstack],
                     ),
                     is_disabled=State.processing,
                 ),
                 on_submit=State.process_question,
                 width="100%",
             ),
-            rx.text(
+            rx.chakra.text(
                 "ReflexGPT may return factually incorrect or misleading responses. Use discretion.",
                 font_size="xs",
                 color="#fff6",
@@ -104,7 +104,7 @@ def action_bar() -> rx.Component:
             width="100%",
             max_w="3xl",
             mx="auto",
-            **styles.base_style[rx.Vstack],
+            **styles.base_style[rx.chakra.Vstack],
         ),
         position="sticky",
         bottom="0",

@@ -56,19 +56,19 @@ graph_2_code = """rx.recharts.pie_chart(
     ),
     rx.recharts.graphing_tooltip(),
 ),
-rx.vstack(
+rx.chakra.vstack(
     rx.foreach(
         PieChartState.resource_types,
-        lambda type_, i: rx.hstack(
-            rx.button(
+        lambda type_, i: rx.chakra.hstack(
+            rx.chakra.button(
                 "-",
                 on_click=PieChartState.decrement(type_),
             ),
-            rx.text(
+            rx.chakra.text(
                 type_,
                 PieChartState.resources[i]["count"],
             ),
-            rx.button(
+            rx.chakra.button(
                 "+",
                 on_click=PieChartState.increment(type_),
             ),
@@ -111,17 +111,17 @@ def graphing_page() -> rx.Component:
     Returns:
         rx.Component: The UI for the dashboard page.
     """
-    return rx.box(
-        rx.vstack(
-            rx.heading(
+    return rx.chakra.box(
+        rx.chakra.vstack(
+            rx.chakra.heading(
                 "Graphing Demo",
                 font_size="3em",
             ),
-            rx.heading(
+            rx.chakra.heading(
                 "Composed Chart",
                 font_size="2em",
             ),
-            rx.stack(
+            rx.chakra.stack(
                 rx.recharts.composed_chart(
                     rx.recharts.area(data_key="uv", stroke="#8884d8", fill="#8884d8"),
                     rx.recharts.bar(data_key="amt", bar_size=20, fill="#413ea0"),
@@ -136,14 +136,14 @@ def graphing_page() -> rx.Component:
                 width="100%",
                 height="20em",
             ),
-            rx.tabs(
-                rx.tab_list(
-                    rx.tab("Code", style=tab_style),
-                    rx.tab("Data", style=tab_style),
+            rx.chakra.tabs(
+                rx.chakra.tab_list(
+                    rx.chakra.tab("Code", style=tab_style),
+                    rx.chakra.tab("Data", style=tab_style),
                     padding_x=0,
                 ),
-                rx.tab_panels(
-                    rx.tab_panel(
+                rx.chakra.tab_panels(
+                    rx.chakra.tab_panel(
                         rx.code_block(
                             graph_1_code,
                             language="python",
@@ -153,7 +153,7 @@ def graphing_page() -> rx.Component:
                         padding_x=0,
                         padding_y=".25em",
                     ),
-                    rx.tab_panel(
+                    rx.chakra.tab_panel(
                         rx.code_block(
                             data_1_show,
                             language="python",
@@ -171,8 +171,8 @@ def graphing_page() -> rx.Component:
                 width="100%",
                 padding_top=".5em",
             ),
-            rx.heading("Interactive Example", font_size="2em"),
-            rx.hstack(
+            rx.chakra.heading("Interactive Example", font_size="2em"),
+            rx.chakra.hstack(
                 rx.recharts.pie_chart(
                     rx.recharts.pie(
                         data=PieChartState.resources,
@@ -187,19 +187,19 @@ def graphing_page() -> rx.Component:
                     ),
                     rx.recharts.graphing_tooltip(),
                 ),
-                rx.vstack(
+                rx.chakra.vstack(
                     rx.foreach(
                         PieChartState.resource_types,
-                        lambda type_, i: rx.hstack(
-                            rx.button(
+                        lambda type_, i: rx.chakra.hstack(
+                            rx.chakra.button(
                                 "-",
                                 on_click=PieChartState.decrement(type_),
                             ),
-                            rx.text(
+                            rx.chakra.text(
                                 type_,
                                 PieChartState.resources[i]["count"],
                             ),
-                            rx.button(
+                            rx.chakra.button(
                                 "+",
                                 on_click=PieChartState.increment(type_),
                             ),
@@ -209,14 +209,14 @@ def graphing_page() -> rx.Component:
                 width="100%",
                 height="15em",
             ),
-            rx.tabs(
-                rx.tab_list(
-                    rx.tab("Code", style=tab_style),
-                    rx.tab("State", style=tab_style),
+            rx.chakra.tabs(
+                rx.chakra.tab_list(
+                    rx.chakra.tab("Code", style=tab_style),
+                    rx.chakra.tab("State", style=tab_style),
                     padding_x=0,
                 ),
-                rx.tab_panels(
-                    rx.tab_panel(
+                rx.chakra.tab_panels(
+                    rx.chakra.tab_panel(
                         rx.code_block(
                             graph_2_code,
                             language="python",
@@ -226,7 +226,7 @@ def graphing_page() -> rx.Component:
                         padding_x=0,
                         padding_y=".25em",
                     ),
-                    rx.tab_panel(
+                    rx.chakra.tab_panel(
                         rx.code_block(
                             graph_2_state,
                             language="python",

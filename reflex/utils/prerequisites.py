@@ -24,6 +24,7 @@ import pkg_resources
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
+from redis import Redis as RedisSync
 from redis.asyncio import Redis
 
 import reflex
@@ -189,27 +190,53 @@ def get_compiled_app(reload: bool = False) -> ModuleType:
 
 
 def get_redis() -> Redis | None:
-    """Get the redis client.
+    """Get the asynchronous redis client.
 
     Returns:
-        The redis client.
+        The asynchronous redis client.
+    """
+    if isinstance((redis_url_or_options := parse_redis_url()), str):
+        return Redis.from_url(redis_url_or_options)
+    elif isinstance(redis_url_or_options, dict):
+        return Redis(**redis_url_or_options)
+    return None
+
+
+def get_redis_sync() -> RedisSync | None:
+    """Get the synchronous redis client.
+
+    Returns:
+        The synchronous redis client.
+    """
+    if isinstance((redis_url_or_options := parse_redis_url()), str):
+        return RedisSync.from_url(redis_url_or_options)
+    elif isinstance(redis_url_or_options, dict):
+        return RedisSync(**redis_url_or_options)
+    return None
+
+
+def parse_redis_url() -> str | dict | None:
+    """Parse the REDIS_URL in config if applicable.
+
+    Returns:
+        If redis-py syntax, return the URL as it is. Otherwise, return the host/port/db as a dict.
     """
     config = get_config()
     if not config.redis_url:
         return None
     if config.redis_url.startswith(("redis://", "rediss://", "unix://")):
-        return Redis.from_url(config.redis_url)
+        return config.redis_url
     console.deprecate(
         feature_name="host[:port] style redis urls",
         reason="redis-py url syntax is now being used",
         deprecation_version="0.3.6",
-        removal_version="0.4.0",
+        removal_version="0.5.0",
     )
     redis_url, has_port, redis_port = config.redis_url.partition(":")
     if not has_port:
         redis_port = 6379
     console.info(f"Using redis at {config.redis_url}")
-    return Redis(host=redis_url, port=int(redis_port), db=0)
+    return dict(host=redis_url, port=int(redis_port), db=0)
 
 
 def get_production_backend_url() -> str:
@@ -949,8 +976,15 @@ def should_show_rx_chakra_migration_instructions() -> bool:
     if os.getenv("REFLEX_PROMPT_MIGRATE_TO_RX_CHAKRA") == "yes":
         return True
 
-    with open(constants.Dirs.REFLEX_JSON, "r") as f:
-        data = json.load(f)
+    if not Path(constants.Config.FILE).exists():
+        # They are running reflex init for the first time.
+        return False
+
+    existing_init_reflex_version = None
+    reflex_json = Path(constants.Dirs.REFLEX_JSON)
+    if reflex_json.exists():
+        with reflex_json.open("r") as f:
+            data = json.load(f)
         existing_init_reflex_version = data.get("version", None)
 
     if existing_init_reflex_version is None:
@@ -975,7 +1009,9 @@ def show_rx_chakra_migration_instructions():
         "[bold]Run `reflex script keep-chakra` to automatically update your app."
     )
     console.log("")
-    console.log("For more details, please see https://TODO")  # TODO add link to docs
+    console.log(
+        "For more details, please see https://reflex.dev/blog/2024-02-16-reflex-v0.4.0"
+    )
 
 
 def migrate_to_rx_chakra():
@@ -998,23 +1034,22 @@ def migrate_to_rx_chakra():
 
 
 def _get_rx_chakra_component_to_migrate() -> set[str]:
-    from reflex.components import ChakraComponent
+    from reflex.components.chakra import ChakraComponent
 
     rx_chakra_names = set(dir(reflex.chakra))
 
     names_to_migrate = set()
+
+    # whitelist names will always be rewritten as rx.chakra.<x>
     whitelist = {
-        "CodeBlock",
         "ColorModeIcon",
         "MultiSelect",
         "MultiSelectOption",
-        "base",
-        "code_block",
-        "color_mode_cond",
         "color_mode_icon",
         "multi_select",
         "multi_select_option",
     }
+
     for rx_chakra_name in sorted(rx_chakra_names):
         if rx_chakra_name.startswith("_"):
             continue
@@ -1032,12 +1067,8 @@ def _get_rx_chakra_component_to_migrate() -> set[str]:
                 rx_chakra_object, ChakraComponent
             ):
                 names_to_migrate.add(rx_chakra_name)
-                pass
-            else:
-                # For the given rx.chakra.<x>, does rx.<x> exist?
-                # And of these, should we include in migration?
-                if hasattr(reflex, rx_chakra_name) and rx_chakra_name in whitelist:
-                    names_to_migrate.add(rx_chakra_name)
+            elif rx_chakra_name in whitelist:
+                names_to_migrate.add(rx_chakra_name)
 
         except Exception:
             raise

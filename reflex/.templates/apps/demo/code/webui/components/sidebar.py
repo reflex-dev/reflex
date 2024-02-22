@@ -13,16 +13,16 @@ def sidebar_chat(chat: str) -> rx.Component:
     Returns:
         The sidebar chat item.
     """
-    return rx.hstack(
-        rx.box(
+    return rx.chakra.hstack(
+        rx.chakra.box(
             chat,
             on_click=lambda: State.set_chat(chat),
             style=styles.sidebar_style,
             color=styles.icon_color,
             flex="1",
         ),
-        rx.box(
-            rx.icon(
+        rx.chakra.box(
+            rx.chakra.icon(
                 tag="delete",
                 style=styles.icon_style,
                 on_click=State.delete_chat,
@@ -40,21 +40,21 @@ def sidebar() -> rx.Component:
     Returns:
         The sidebar component.
     """
-    return rx.drawer(
-        rx.drawer_overlay(
-            rx.drawer_content(
-                rx.drawer_header(
-                    rx.hstack(
-                        rx.text("Chats"),
-                        rx.icon(
+    return rx.chakra.drawer(
+        rx.chakra.drawer_overlay(
+            rx.chakra.drawer_content(
+                rx.chakra.drawer_header(
+                    rx.chakra.hstack(
+                        rx.chakra.text("Chats"),
+                        rx.chakra.icon(
                             tag="close",
                             on_click=State.toggle_drawer,
                             style=styles.icon_style,
                         ),
                     )
                 ),
-                rx.drawer_body(
-                    rx.vstack(
+                rx.chakra.drawer_body(
+                    rx.chakra.vstack(
                         rx.foreach(State.chat_titles, lambda chat: sidebar_chat(chat)),
                         align_items="stretch",
                     )

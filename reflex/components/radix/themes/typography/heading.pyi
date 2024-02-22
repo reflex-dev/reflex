@@ -18,7 +18,32 @@ class Heading(el.H1, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_: Optional[Union[Var[str], str]] = None,
+        size: Optional[
+            Union[
+                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            ]
+        ] = None,
+        weight: Optional[
+            Union[
+                Var[Literal["light", "regular", "medium", "bold"]],
+                Literal["light", "regular", "medium", "bold"],
+            ]
+        ] = None,
+        align: Optional[
+            Union[
+                Var[Literal["left", "center", "right"]],
+                Literal["left", "center", "right"],
+            ]
+        ] = None,
+        trim: Optional[
+            Union[
+                Var[Literal["normal", "start", "end", "both"]],
+                Literal["normal", "start", "end", "both"],
+            ]
+        ] = None,
         color_scheme: Optional[
             Union[
                 Var[
@@ -81,32 +106,6 @@ class Heading(el.H1, RadixThemesComponent):
                 ],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        as_: Optional[Union[Var[str], str]] = None,
-        size: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        weight: Optional[
-            Union[
-                Var[Literal["light", "regular", "medium", "bold"]],
-                Literal["light", "regular", "medium", "bold"],
-            ]
-        ] = None,
-        align: Optional[
-            Union[
-                Var[Literal["left", "center", "right"]],
-                Literal["left", "center", "right"],
-            ]
-        ] = None,
-        trim: Optional[
-            Union[
-                Var[Literal["normal", "start", "end", "both"]],
-                Literal["normal", "start", "end", "both"],
-            ]
-        ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
@@ -148,15 +147,11 @@ class Heading(el.H1, RadixThemesComponent):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -212,14 +207,13 @@ class Heading(el.H1, RadixThemesComponent):
 
         Args:
             *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             as_: Change the default rendered element into a semantically appropriate alternative (cannot be used with asChild)
             size: Text size: "1" - "9"
             weight: Thickness of text: "light" | "regular" | "medium" | "bold"
             align: Alignment of text in element: "left" | "center" | "right"
             trim: Removes the leading trim space: "normal" | "start" | "end" | "both"
+            color_scheme: Overrides the accent color inherited from the Theme.
             high_contrast: Whether to render the text with higher contrast color
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
@@ -237,13 +231,11 @@ class Heading(el.H1, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: Component properties.
 

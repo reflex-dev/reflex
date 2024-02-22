@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Union
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -914,11 +915,6 @@ class DropdownMenuSubContent(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
-        variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
-        ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         loop: Optional[Union[Var[bool], bool]] = None,
         force_mount: Optional[Union[Var[bool], bool]] = None,
@@ -1013,9 +1009,6 @@ class DropdownMenuSubContent(RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            size: Dropdown Menu Sub Content size "1" - "2"
-            variant: Variant of Dropdown Menu Sub Content: "solid" | "soft"
-            high_contrast: Whether to render the component with higher contrast color against background
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
             loop: When True, keyboard navigation will loop from last item to first, and vice versa. Defaults to False.
             force_mount: Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
@@ -1343,3 +1336,15 @@ class DropdownMenuSeparator(RadixThemesComponent):
             A new component instance.
         """
         ...
+
+class DropdownMenu(SimpleNamespace):
+    root = staticmethod(DropdownMenuRoot.create)
+    trigger = staticmethod(DropdownMenuTrigger.create)
+    content = staticmethod(DropdownMenuContent.create)
+    sub_trigger = staticmethod(DropdownMenuSubTrigger.create)
+    sub = staticmethod(DropdownMenuSub.create)
+    sub_content = staticmethod(DropdownMenuSubContent.create)
+    item = staticmethod(DropdownMenuItem.create)
+    separator = staticmethod(DropdownMenuSeparator.create)
+
+dropdown_menu = DropdownMenu()

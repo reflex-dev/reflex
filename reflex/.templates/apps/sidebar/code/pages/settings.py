@@ -12,11 +12,11 @@ def settings() -> rx.Component:
     Returns:
         The UI for the settings page.
     """
-    return rx.vstack(
-        rx.heading("Settings", font_size="3em"),
-        rx.text("Welcome to Reflex!"),
-        rx.text(
+    return rx.chakra.vstack(
+        rx.chakra.heading("Settings", font_size="3em"),
+        rx.chakra.text("Welcome to Reflex!"),
+        rx.chakra.text(
             "You can edit this page in ",
-            rx.code("{your_app}/pages/settings.py"),
+            rx.chakra.code("{your_app}/pages/settings.py"),
         ),
     )

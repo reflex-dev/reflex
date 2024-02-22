@@ -6,7 +6,7 @@ import env from "/env.json";
 import Cookies from "universal-cookie";
 import { useEffect, useReducer, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
-import { initialEvents, initialState, onLoadInternalEvent } from "utils/context.js"
+import { initialEvents, initialState, onLoadInternalEvent, state_name } from "utils/context.js"
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT
@@ -40,7 +40,7 @@ const upload_controllers = {};
  * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
  * @returns A UUID.
  */
-const generateUUID = () => {
+export const generateUUID = () => {
   let d = new Date().getTime(),
     d2 = (performance && performance.now && performance.now() * 1000) || 0;
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -64,7 +64,7 @@ export const getToken = () => {
   if (token) {
     return token;
   }
-  if (window) {
+  if (typeof window !== 'undefined') {
     if (!window.sessionStorage.getItem(TOKEN_KEY)) {
       window.sessionStorage.setItem(TOKEN_KEY, generateUUID());
     }
@@ -81,7 +81,7 @@ export const getToken = () => {
 export const getBackendURL = (url_str) => {
   // Get backend URL object from the endpoint.
   const endpoint = new URL(url_str);
-  if (SAME_DOMAIN_HOSTNAMES.includes(endpoint.hostname)) {
+  if ((typeof window !== 'undefined') && SAME_DOMAIN_HOSTNAMES.includes(endpoint.hostname)) {
     // Use the frontend domain to access the backend
     const frontend_hostname = window.location.hostname;
     endpoint.hostname = frontend_hostname;
@@ -152,12 +152,12 @@ export const applyEvent = async (event, socket) => {
     navigator.clipboard.writeText(content);
     return false;
   }
+
   if (event.name == "_download") {
     const a = document.createElement('a');
     a.hidden = true;
-    a.href = event.payload.url;
-    if (event.payload.filename)
-      a.download = event.payload.filename;
+    a.href = event.payload.url
+    a.download = event.payload.filename;
     a.click();
     a.remove();
     return false;
@@ -346,7 +346,7 @@ export const connect = async (
  */
 export const uploadFiles = async (handler, files, upload_id, on_upload_progress, socket) => {
   // return if there's no file to upload
-  if (files.length == 0) {
+  if (files === undefined || files.length === 0) {
     return false;
   }
 
@@ -441,17 +441,14 @@ export const Event = (name, payload = {}, handler = null) => {
  * @returns payload dict of client storage values
  */
 export const hydrateClientStorage = (client_storage) => {
-  const client_storage_values = {
-    "cookies": {},
-    "local_storage": {}
-  }
+  const client_storage_values = {}
   if (client_storage.cookies) {
     for (const state_key in client_storage.cookies) {
       const cookie_options = client_storage.cookies[state_key]
       const cookie_name = cookie_options.name || state_key
       const cookie_value = cookies.get(cookie_name)
       if (cookie_value !== undefined) {
-        client_storage_values.cookies[state_key] = cookies.get(cookie_name)
+        client_storage_values[state_key] = cookies.get(cookie_name)
       }
     }
   }
@@ -460,7 +457,7 @@ export const hydrateClientStorage = (client_storage) => {
       const options = client_storage.local_storage[state_key]
       const local_storage_value = localStorage.getItem(options.name || state_key)
       if (local_storage_value !== null) {
-        client_storage_values.local_storage[state_key] = local_storage_value
+        client_storage_values[state_key] = local_storage_value
       }
     }
   }
@@ -568,6 +565,36 @@ export const useEventLoop = (
     }
   })
 
+
+  // localStorage event handling
+  useEffect(() => {
+    const storage_to_state_map = {};
+
+    if (client_storage.local_storage && typeof window !== "undefined") {
+      for (const state_key in client_storage.local_storage) {
+        const options = client_storage.local_storage[state_key];
+        if (options.sync) {
+          const local_storage_value_key = options.name || state_key;
+          storage_to_state_map[local_storage_value_key] = state_key;
+        }
+      }
+    }
+
+    // e is StorageEvent
+    const handleStorage = (e) => {
+      if (storage_to_state_map[e.key]) {
+        const vars = {}
+        vars[storage_to_state_map[e.key]] = e.newValue
+        const event = Event(`${state_name}.update_vars_internal`, {vars: vars})
+        addEvents([event], e);
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  });
+
+
   // Route after the initial page hydration.
   useEffect(() => {
     const change_complete = () => addEvents(onLoadInternalEvent())
@@ -599,7 +626,12 @@ export const getRefValue = (ref) => {
     return;
   }
   if (ref.current.type == "checkbox") {
-    return ref.current.checked;
+    return ref.current.checked;  // chakra
+  } else if (ref.current.className.includes("rt-CheckboxButton") || ref.current.className.includes("rt-SwitchButton")) {
+    return ref.current.ariaChecked == "true";  // radix
+  } else if (ref.current.className.includes("rt-SliderRoot")) {
+    // find the actual slider
+    return ref.current.querySelector(".rt-SliderThumb").ariaValueNow;
   } else {
     //querySelector(":checked") is needed to get value from radio_group
     return ref.current.value || (ref.current.querySelector(':checked') && ref.current.querySelector(':checked').value);

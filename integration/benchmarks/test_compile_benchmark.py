@@ -43,7 +43,7 @@ def sample_small_page() -> rx.Component:
     """
     return rx.vstack(
         *[rx.button(State.count, font_size="2em") for i in range(100)],
-        spacing="1em",
+        gap="1em",
     )
 
 
@@ -62,7 +62,7 @@ def sample_large_page() -> rx.Component:
             )
             for i in range(100)
         ],
-        spacing="1em",
+        gap="1em",
     )
 
 

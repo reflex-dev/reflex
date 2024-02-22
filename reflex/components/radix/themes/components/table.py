@@ -1,7 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import List, Literal, Union
+from typing import List, Literal
 
 from reflex import el
+from reflex.components.component import ComponentNamespace
 from reflex.vars import Var
 
 from ..base import (
@@ -50,9 +51,6 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
     # The justification of the column
     justify: Var[Literal["start", "center", "end"]]
 
-    # width of the column
-    width: Var[Union[str, int]]
-
     _invalid_children: List[str] = [
         "TableBody",
         "TableHeader",
@@ -86,9 +84,6 @@ class TableCell(el.Td, RadixThemesComponent):
     # The justification of the column
     justify: Var[Literal["start", "center", "end"]]
 
-    # width of the column
-    width: Var[Union[str, int]]
-
     _invalid_children: List[str] = [
         "TableBody",
         "TableHeader",
@@ -106,9 +101,6 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
     # The justification of the column
     justify: Var[Literal["start", "center", "end"]]
 
-    # width of the column
-    width: Var[Union[str, int]]
-
     _invalid_children: List[str] = [
         "TableBody",
         "TableHeader",
@@ -117,3 +109,18 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
         "TableColumnHeaderCell",
         "TableRowHeaderCell",
     ]
+
+
+class Table(ComponentNamespace):
+    """Table components namespace."""
+
+    root = staticmethod(TableRoot.create)
+    header = staticmethod(TableHeader.create)
+    body = staticmethod(TableBody.create)
+    row = staticmethod(TableRow.create)
+    cell = staticmethod(TableCell.create)
+    column_header_cell = staticmethod(TableColumnHeaderCell.create)
+    row_header_cell = staticmethod(TableRowHeaderCell.create)
+
+
+table = Table()

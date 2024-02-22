@@ -8,7 +8,8 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
-from reflex.components.component import Component
+from reflex.components.component import Component, MemoizationLeaf
+from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.next.link import NextLink
 from reflex.utils import imports
@@ -19,7 +20,7 @@ from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 LiteralLinkUnderline = Literal["auto", "hover", "always"]
 next_link = NextLink.create()
 
-class Link(RadixThemesComponent, A):
+class Link(RadixThemesComponent, A, MemoizationLeaf):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -113,6 +114,7 @@ class Link(RadixThemesComponent, A):
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
+        is_external: Optional[Union[Var[bool], bool]] = None,
         download: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -174,15 +176,11 @@ class Link(RadixThemesComponent, A):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -242,6 +240,7 @@ class Link(RadixThemesComponent, A):
             underline: Sets the visibility of the underline affordance: "auto" | "hover" | "always"
             color_scheme: Overrides the accent color inherited from the Theme.
             high_contrast: Whether to render the text with higher contrast color
+            is_external: If True, the link will open in a new tab
             download: Specifies that the target (the file specified in the href attribute) will be downloaded when a user clicks on the hyperlink.
             href: Specifies the URL of the page the link goes to
             href_lang: Specifies the language of the linked document
@@ -267,13 +266,11 @@ class Link(RadixThemesComponent, A):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The props of the component.
 

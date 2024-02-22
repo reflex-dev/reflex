@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from types import SimpleNamespace
 from typing import Any, Dict, Literal
 from reflex import el
 from reflex.constants import EventTriggers
@@ -427,9 +428,6 @@ class AlertDialogContent(el.Div, RadixThemesComponent):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -520,7 +518,6 @@ class AlertDialogContent(el.Div, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1118,3 +1115,14 @@ class AlertDialogCancel(RadixThemesComponent):
             A new component instance.
         """
         ...
+
+class AlertDialog(SimpleNamespace):
+    root = staticmethod(AlertDialogRoot.create)
+    trigger = staticmethod(AlertDialogTrigger.create)
+    content = staticmethod(AlertDialogContent.create)
+    title = staticmethod(AlertDialogTitle.create)
+    description = staticmethod(AlertDialogDescription.create)
+    action = staticmethod(AlertDialogAction.create)
+    cancel = staticmethod(AlertDialogCancel.create)
+
+alert_dialog = AlertDialog()

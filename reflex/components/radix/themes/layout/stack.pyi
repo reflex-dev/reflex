@@ -7,12 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Literal, Optional
 from reflex.components.component import Component
+from ..base import LiteralAlign, LiteralSpacing
 from .flex import Flex
-
-LiteralJustify = Literal["start", "center", "end"]
-LiteralAlign = Literal["start", "center", "end", "stretch"]
 
 class Stack(Flex):
     @overload
@@ -20,32 +17,25 @@ class Stack(Flex):
     def create(  # type: ignore
         cls,
         *children,
-        justify: Optional[LiteralJustify] = "start",
-        align: Optional[LiteralAlign] = "center",
-        spacing: Optional[str] = "0.5rem",
+        spacing: Optional[LiteralSpacing] = "2",
+        align: Optional[LiteralAlign] = "start",
         as_child: Optional[Union[Var[bool], bool]] = None,
-        display: Optional[
-            Union[
-                Var[Literal["none", "inline-flex", "flex"]],
-                Literal["none", "inline-flex", "flex"],
-            ]
-        ] = None,
         direction: Optional[
             Union[
                 Var[Literal["row", "column", "row-reverse", "column-reverse"]],
                 Literal["row", "column", "row-reverse", "column-reverse"],
             ]
         ] = None,
+        justify: Optional[
+            Union[
+                Var[Literal["start", "center", "end", "between"]],
+                Literal["start", "center", "end", "between"],
+            ]
+        ] = None,
         wrap: Optional[
             Union[
                 Var[Literal["nowrap", "wrap", "wrap-reverse"]],
                 Literal["nowrap", "wrap", "wrap-reverse"],
-            ]
-        ] = None,
-        gap: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         access_key: Optional[
@@ -88,15 +78,11 @@ class Stack(Flex):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -149,14 +135,12 @@ class Stack(Flex):
 
         Args:
             *children: The children of the stack.
-            justify: The justify of the stack elements.
-            align: The alignment of the stack elements.
             spacing: The spacing between each stack item.
+            align: The alignment of the stack items.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            display: How to display the element: "none" | "inline-flex" | "flex"
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
+            justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
             wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
-            gap: Gap between children: "0" - "9"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -173,13 +157,11 @@ class Stack(Flex):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the stack.
 
@@ -194,32 +176,25 @@ class VStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        justify: Optional[LiteralJustify] = "start",
-        align: Optional[LiteralAlign] = "center",
-        spacing: Optional[str] = "0.5rem",
+        spacing: Optional[LiteralSpacing] = "2",
+        align: Optional[LiteralAlign] = "start",
         as_child: Optional[Union[Var[bool], bool]] = None,
-        display: Optional[
-            Union[
-                Var[Literal["none", "inline-flex", "flex"]],
-                Literal["none", "inline-flex", "flex"],
-            ]
-        ] = None,
         direction: Optional[
             Union[
                 Var[Literal["row", "column", "row-reverse", "column-reverse"]],
                 Literal["row", "column", "row-reverse", "column-reverse"],
             ]
         ] = None,
+        justify: Optional[
+            Union[
+                Var[Literal["start", "center", "end", "between"]],
+                Literal["start", "center", "end", "between"],
+            ]
+        ] = None,
         wrap: Optional[
             Union[
                 Var[Literal["nowrap", "wrap", "wrap-reverse"]],
                 Literal["nowrap", "wrap", "wrap-reverse"],
-            ]
-        ] = None,
-        gap: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         access_key: Optional[
@@ -262,15 +237,11 @@ class VStack(Stack):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -323,14 +294,12 @@ class VStack(Stack):
 
         Args:
             *children: The children of the stack.
-            justify: The justify of the stack elements.
-            align: The alignment of the stack elements.
             spacing: The spacing between each stack item.
+            align: The alignment of the stack items.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            display: How to display the element: "none" | "inline-flex" | "flex"
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
+            justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
             wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
-            gap: Gap between children: "0" - "9"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -347,13 +316,11 @@ class VStack(Stack):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the stack.
 
@@ -368,32 +335,25 @@ class HStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        justify: Optional[LiteralJustify] = "start",
-        align: Optional[LiteralAlign] = "center",
-        spacing: Optional[str] = "0.5rem",
+        spacing: Optional[LiteralSpacing] = "2",
+        align: Optional[LiteralAlign] = "start",
         as_child: Optional[Union[Var[bool], bool]] = None,
-        display: Optional[
-            Union[
-                Var[Literal["none", "inline-flex", "flex"]],
-                Literal["none", "inline-flex", "flex"],
-            ]
-        ] = None,
         direction: Optional[
             Union[
                 Var[Literal["row", "column", "row-reverse", "column-reverse"]],
                 Literal["row", "column", "row-reverse", "column-reverse"],
             ]
         ] = None,
+        justify: Optional[
+            Union[
+                Var[Literal["start", "center", "end", "between"]],
+                Literal["start", "center", "end", "between"],
+            ]
+        ] = None,
         wrap: Optional[
             Union[
                 Var[Literal["nowrap", "wrap", "wrap-reverse"]],
                 Literal["nowrap", "wrap", "wrap-reverse"],
-            ]
-        ] = None,
-        gap: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         access_key: Optional[
@@ -436,15 +396,11 @@ class HStack(Stack):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        _rename_props: Optional[Dict[str, str]] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
@@ -497,14 +453,12 @@ class HStack(Stack):
 
         Args:
             *children: The children of the stack.
-            justify: The justify of the stack elements.
-            align: The alignment of the stack elements.
             spacing: The spacing between each stack item.
+            align: The alignment of the stack items.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            display: How to display the element: "none" | "inline-flex" | "flex"
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
+            justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
             wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
-            gap: Gap between children: "0" - "9"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -521,13 +475,11 @@ class HStack(Stack):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
-            _rename_props: props to change the name of
             custom_attrs: custom attribute
             **props: The properties of the stack.
 

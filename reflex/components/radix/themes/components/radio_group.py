@@ -1,8 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from typing import Any, Dict, List, Literal, Optional, Union
 
 import reflex as rx
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.constants import EventTriggers
@@ -10,7 +11,7 @@ from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
-    LiteralSize,
+    LiteralSpacing,
     RadixThemesComponent,
 )
 
@@ -86,10 +87,10 @@ class HighLevelRadioGroup(RadixThemesComponent):
     items: Var[List[str]]
 
     # The direction of the radio group.
-    direction: Var[LiteralFlexDirection] = Var.create_safe("column")
+    direction: Var[LiteralFlexDirection]
 
     # The gap between the items of the radio group.
-    gap: Var[LiteralSize] = Var.create_safe("2")
+    spacing: Var[LiteralSpacing] = Var.create_safe("2")
 
     # The size of the radio group.
     size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
@@ -137,7 +138,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
             The created radio group component.
         """
         direction = props.pop("direction", "column")
-        gap = props.pop("gap", "2")
+        spacing = props.pop("spacing", "2")
         size = props.pop("size", "2")
         default_value = props.pop("default_value", "")
 
@@ -166,7 +167,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
                 Flex.create(
                     RadioGroupItem.create(value=item_value),
                     item_value,
-                    gap="2",
+                    spacing="2",
                 ),
                 size=size,
                 as_="label",
@@ -179,9 +180,20 @@ class HighLevelRadioGroup(RadixThemesComponent):
             Flex.create(
                 *children,
                 direction=direction,
-                gap=gap,
+                spacing=spacing,
             ),
             size=size,
             default_value=default_value,
             **props,
         )
+
+
+class RadioGroup(ComponentNamespace):
+    """RadioGroup components namespace."""
+
+    root = staticmethod(RadioGroupRoot.create)
+    item = staticmethod(RadioGroupItem.create)
+    __call__ = staticmethod(HighLevelRadioGroup.create)
+
+
+radio = radio_group = RadioGroup()
