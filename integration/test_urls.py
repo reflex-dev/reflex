@@ -7,7 +7,14 @@ import requests
 
 
 def check_urls(repo_dir):
-    """Check that all URLs in the repo are valid and secure."""
+    """Check that all URLs in the repo are valid and secure.
+    
+    Args:
+        repo_dir: The directory of the repo.
+    
+    Returns:
+        A list of errors.
+    """
     url_pattern = re.compile(r'http[s]?://reflex\.dev[^\s"]*')
     errors = []
 
@@ -54,6 +61,10 @@ def check_urls(repo_dir):
     ],
 )
 def test_find_and_check_urls(repo_dir):
-    """Test that all URLs in the repo are valid and secure."""
+    """Test that all URLs in the repo are valid and secure.
+    
+    Args:
+        repo_dir: The directory of the repo.
+    """
     errors = check_urls(repo_dir)
     assert not errors, "\n".join(errors)
