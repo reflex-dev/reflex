@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Iterable, Optional, Type
+from typing import Dict, Iterable, Optional, Type, Union
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -17,6 +17,7 @@ from reflex.components.component import (
 from reflex.config import get_config
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
+from reflex.vars import Var
 
 
 def _compile_document_root(root: Component) -> str:
@@ -289,7 +290,13 @@ def _compile_tailwind(
     )
 
 
-def compile_document_root(head_components: list[Component]) -> tuple[str, str]:
+def compile_document_root(
+    head_components: list[Component],
+    html_lang: Optional[
+        Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+    ] = None,
+    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+) -> tuple[str, str]:
     """Compile the document root.
 
     Args:
@@ -302,7 +309,9 @@ def compile_document_root(head_components: list[Component]) -> tuple[str, str]:
     output_path = utils.get_page_path(constants.PageNames.DOCUMENT_ROOT)
 
     # Create the document root.
-    document_root = utils.create_document_root(head_components)
+    document_root = utils.create_document_root(
+        head_components, html_lang=html_lang, html_custom_attrs=html_custom_attrs
+    )
 
     # Compile the document root.
     code = _compile_document_root(document_root)
