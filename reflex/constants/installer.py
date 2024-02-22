@@ -103,7 +103,7 @@ class PackageJson(SimpleNamespace):
 
     DEPENDENCIES = {
         "@emotion/react": "11.11.1",
-        "axios": "1.4.0",
+        "axios": "1.6.0",
         "json5": "2.2.3",
         "next": "14.0.1",
         "next-sitemap": "4.1.8",
