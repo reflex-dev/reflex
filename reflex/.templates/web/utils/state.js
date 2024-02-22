@@ -303,15 +303,15 @@ export const processEvent = async (socket) => {
  * @param socket The socket object to connect.
  * @param dispatch The function to queue state update
  * @param transports The transports to use.
- * @param setConnectError The function to update connection error value.
+ * @param setConnectErrors The function to update connection error value.
  * @param client_storage The client storage object from context.js
  */
 export const connect = async (
   socket,
   dispatch,
   transports,
-  connectError,
-  setConnectError,
+  connectErrors,
+  setConnectErrors,
   client_storage = {}
 ) => {
   // Get backend URL object from the endpoint.
@@ -326,12 +326,11 @@ export const connect = async (
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
-    setConnectError([]);
+    setConnectErrors([]);
   });
 
   socket.current.on("connect_error", (error) => {
-    setConnectError([...connectError, error]);
-    console.log(connectError);
+    setConnectErrors([...connectErrors, error]);
   });
   // On each received message, queue the updates and events.
   socket.current.on("event", (message) => {
@@ -530,9 +529,9 @@ const applyClientStorageDelta = (client_storage, delta) => {
  * @param initial_events The initial app events.
  * @param client_storage The client storage object from context.js
  *
- * @returns [addEvents, connectError] -
+ * @returns [addEvents, connectErrors] -
  *   addEvents is used to queue an event, and
- *   connectError is a reactive js error from the websocket connection (or null if connected).
+ *   connectErrors is an array of reactive js error from the websocket connection (or null if connected).
  */
 export const useEventLoop = (
   dispatch,
@@ -541,7 +540,7 @@ export const useEventLoop = (
 ) => {
   const socket = useRef(null);
   const router = useRouter();
-  const [connectError, setConnectError] = useState([]);
+  const [connectErrors, setConnectErrors] = useState([]);
 
   // Function to add new events to the event queue.
   const addEvents = (events, _e, event_actions) => {
@@ -586,8 +585,8 @@ export const useEventLoop = (
           socket,
           dispatch,
           ["websocket", "polling"],
-          connectError,
-          setConnectError,
+          connectErrors,
+          setConnectErrors,
           client_storage
         );
       }
@@ -639,7 +638,7 @@ export const useEventLoop = (
     };
   }, [router]);
 
-  return [addEvents, connectError];
+  return [addEvents, connectErrors];
 };
 
 /***

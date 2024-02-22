@@ -59,13 +59,13 @@ export function UploadFilesProvider({ children }) {
 
 export function EventLoopProvider({ children }) {
   const dispatch = useContext(DispatchContext)
-  const [addEvents, connectError] = useEventLoop(
+  const [addEvents, connectErrors] = useEventLoop(
     dispatch,
     initialEvents,
     clientStorage,
   )
   return (
-    <EventLoopContext.Provider value={[addEvents, connectError]}>
+    <EventLoopContext.Provider value={[addEvents, connectErrors]}>
       {children}
     </EventLoopContext.Provider>
   )
