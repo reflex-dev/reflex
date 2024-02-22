@@ -95,7 +95,7 @@ class DebounceInput(Component):
         if child.class_name is not None:
             props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
         child_ref = child.get_ref()
-        if not props.get("input_ref") and child_ref:
+        if props.get("input_ref") is None and child_ref:
             props["input_ref"] = Var.create_safe(child_ref, _var_is_local=False)
             props["id"] = child.id
 
