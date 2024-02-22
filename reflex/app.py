@@ -73,6 +73,7 @@ from reflex.state import (
     code_uses_state_contexts,
 )
 from reflex.utils import console, exceptions, format, prerequisites, types
+from reflex.utils.exec import is_testing_env
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
@@ -160,10 +161,9 @@ class App(Base):
             )
         super().__init__(*args, **kwargs)
         state_subclasses = BaseState.__subclasses__()
-        is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
-        if not is_testing_env:
+        if not is_testing_env():
             # Only one Base State class is allowed.
             if len(state_subclasses) > 1:
                 raise ValueError(

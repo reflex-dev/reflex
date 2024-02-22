@@ -7,7 +7,6 @@ import copy
 import functools
 import inspect
 import json
-import os
 import traceback
 import urllib.parse
 import uuid
@@ -44,6 +43,7 @@ from reflex.event import (
 )
 from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
+from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.vars import BaseVar, ComputedVar, Var
 
@@ -188,15 +188,6 @@ def _split_substate_key(substate_key: str) -> tuple[str, str]:
     return token, state_name
 
 
-def _is_testing_env() -> bool:
-    """Check if the app is running in a testing environment.
-
-    Returns:
-        True if the app is running in a testing environment, False otherwise.
-    """
-    return constants.PYTEST_CURRENT_TEST in os.environ
-
-
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -279,7 +270,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             RuntimeError: If the state is instantiated directly by end user.
         """
-        if not _reflex_internal_init and not _is_testing_env():
+        if not _reflex_internal_init and not is_testing_env():
             raise RuntimeError(
                 "State classes should not be instantiated directly. The rx.App and its StateManager "
                 "are responsible for creating and tracking instances of State. "
@@ -363,7 +354,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
             # Check if another substate class with the same name has already been defined.
             if cls.__name__ in set(c.__name__ for c in parent_state.class_subclasses):
-                if _is_testing_env():
+                if is_testing_env():
                     # Clear existing subclass with same name when app is reloaded via
                     # utils.prerequisites.get_app(reload=True)
                     parent_state.class_subclasses = set(
