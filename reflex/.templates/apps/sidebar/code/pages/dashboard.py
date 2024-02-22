@@ -1,4 +1,5 @@
 """The dashboard page."""
+
 from code.templates import template
 
 import reflex as rx
@@ -11,11 +12,11 @@ def dashboard() -> rx.Component:
     Returns:
         The UI for the dashboard page.
     """
-    return rx.chakra.vstack(
-        rx.chakra.heading("Dashboard", font_size="3em"),
-        rx.chakra.text("Welcome to Reflex!"),
-        rx.chakra.text(
+    return rx.vstack(
+        rx.heading("Dashboard", font_size="3em"),
+        rx.text("Welcome to Reflex!"),
+        rx.text(
             "You can edit this page in ",
-            rx.chakra.code("{your_app}/pages/dashboard.py"),
+            rx.code("{your_app}/pages/dashboard.py"),
         ),
     )
