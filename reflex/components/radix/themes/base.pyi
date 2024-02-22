@@ -49,6 +49,7 @@ LiteralAccentColor = Literal[
     "gold",
     "bronze",
     "gray",
+    "accent"
 ]
 
 class CommonMarginProps(Component):
