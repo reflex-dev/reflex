@@ -297,8 +297,8 @@ class VStack(Stack):
             *children: The children of the stack.
             spacing: The spacing between each stack item.
             align: The alignment of the stack items.
-            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
+            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
             wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
@@ -456,8 +456,8 @@ class HStack(Stack):
             *children: The children of the stack.
             spacing: The spacing between each stack item.
             align: The alignment of the stack items.
-            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
+            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
             wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
