@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from reflex.components.component import Component
+from reflex.vars import Var
 
 from ..base import LiteralAlign, LiteralSpacing
-from .flex import Flex
+from .flex import Flex, LiteralFlexDirection
 
 
 class Stack(Flex):
@@ -41,32 +42,10 @@ class Stack(Flex):
 class VStack(Stack):
     """A vertical stack component."""
 
-    @classmethod
-    def create(cls, *children, **props) -> Component:
-        """Create a new instance of the component.
-
-        Args:
-            *children: The children of the stack.
-            **props: The properties of the stack.
-
-        Returns:
-            The stack component.
-        """
-        return super().create(*children, direction="column", **props)
+    direction: Var[LiteralFlexDirection] = Var.create_safe("column")
 
 
 class HStack(Stack):
     """A horizontal stack component."""
 
-    @classmethod
-    def create(cls, *children, **props) -> Component:
-        """Create a new instance of the component.
-
-        Args:
-            *children: The children of the stack.
-            **props: The properties of the stack.
-
-        Returns:
-            The stack component.
-        """
-        return super().create(*children, direction="row", **props)
+    direction: Var[LiteralFlexDirection] = Var.create_safe("row")
