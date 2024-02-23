@@ -198,7 +198,7 @@ def test_create_document_root():
     assert isinstance(root, utils.Html)
     assert isinstance(root.children[0], utils.DocumentHead)
     # Default language.
-    assert root.lang == "en"
+    assert str(root.lang) == "en"
     # No children in head.
     assert len(root.children[0].children) == 0
 
@@ -210,6 +210,6 @@ def test_create_document_root():
     root = utils.create_document_root(head_components=comps, html_lang="rx", html_custom_attrs={"project": "reflex"})  # type: ignore
     # Two children in head.
     assert len(root.children[0].children) == 2
-    assert root.lang == "rx"
+    assert str(root.lang) == "rx"
     assert isinstance(root.custom_attrs, dict)
     assert root.custom_attrs == {"project": "reflex"}
