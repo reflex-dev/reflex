@@ -28,7 +28,6 @@ from typing import (
     Type,
 )
 
-import cloudpickle
 import pydantic
 import wrapt
 from redis.asyncio import Redis
@@ -68,16 +67,21 @@ class HeaderData(Base):
     accept_encoding: str = ""
     accept_language: str = ""
 
-    def __init__(self, router_data: Optional[dict] = None):
+    @classmethod
+    def from_router(cls, router_data: Optional[dict] = None):
         """Initalize the HeaderData object based on router_data.
 
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
         if router_data:
-            for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items():
-                setattr(self, format.to_snake_case(k), v)
+            kwargs = {
+                format.to_snake_case(k): v
+                for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items()
+            }
+        else:
+            kwargs = {}
+        return cls(**kwargs)
 
 
 class PageData(Base):
@@ -90,20 +94,30 @@ class PageData(Base):
     full_raw_path: str = ""
     params: dict = {}
 
-    def __init__(self, router_data: Optional[dict] = None):
+    @classmethod
+    def from_router(cls, router_data: Optional[dict] = None):
         """Initalize the PageData object based on router_data.
 
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
-        if router_data:
-            self.host = router_data.get(constants.RouteVar.HEADERS, {}).get("origin")
-            self.path = router_data.get(constants.RouteVar.PATH, "")
-            self.raw_path = router_data.get(constants.RouteVar.ORIGIN, "")
-            self.full_path = f"{self.host}{self.path}"
-            self.full_raw_path = f"{self.host}{self.raw_path}"
-            self.params = router_data.get(constants.RouteVar.QUERY, {})
+        if not router_data:
+            return cls()
+        host = router_data.get(constants.RouteVar.HEADERS, {}).get("origin", "")
+        path = router_data.get(constants.RouteVar.PATH, "")
+        raw_path = router_data.get(constants.RouteVar.ORIGIN, "")
+        full_path = f"{host}{path}"
+        full_raw_path = f"{host}{raw_path}"
+        params = router_data.get(constants.RouteVar.QUERY, {})
+
+        return cls(
+            host=host,
+            path=path,
+            raw_path=raw_path,
+            full_path=full_path,
+            full_raw_path=full_raw_path,
+            params=params,
+        )
 
 
 class SessionData(Base):
@@ -113,17 +127,20 @@ class SessionData(Base):
     client_ip: str = ""
     session_id: str = ""
 
-    def __init__(self, router_data: Optional[dict] = None):
+    @classmethod
+    def from_router(cls, router_data: dict = {}):
         """Initalize the SessionData object based on router_data.
 
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
-        if router_data:
-            self.client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
-            self.client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
-            self.session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
+        client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
+        client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
+        session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
+
+        return cls(
+            client_token=client_token, client_ip=client_ip, session_id=session_id
+        )
 
 
 class RouterData(Base):
@@ -133,16 +150,20 @@ class RouterData(Base):
     headers: HeaderData = HeaderData()
     page: PageData = PageData()
 
-    def __init__(self, router_data: Optional[dict] = None):
+    @classmethod
+    def from_router(cls, router_data: Optional[dict] = None):
         """Initialize the RouterData object.
 
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
-        self.session = SessionData(router_data)
-        self.headers = HeaderData(router_data)
-        self.page = PageData(router_data)
+        if router_data:
+            session = SessionData.from_router(router_data)
+            headers = HeaderData.from_router(router_data)
+            page = PageData.from_router(router_data)
+
+            return cls(session=session, headers=headers, page=page)
+        return cls()
 
 
 RESERVED_BACKEND_VAR_NAMES = {
@@ -154,7 +175,12 @@ RESERVED_BACKEND_VAR_NAMES = {
 }
 
 
-class BaseState(Base, ABC, extra=pydantic.Extra.allow):
+class BaseState(
+    Base,
+    ABC,
+    extra=pydantic.Extra.allow,
+    #  underscore_attrs_are_private=False,
+):
     """The state of the app."""
 
     # A map from the var name to the var.
@@ -209,7 +235,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     router_data: Dict[str, Any] = {}
 
     # Per-instance copy of backend variable values
-    _backend_vars: Dict[str, Any] = {}
+    #  _backend_vars: Dict[str, Any] = {}
 
     # The router data for the current page
     router: RouterData = RouterData()
@@ -241,7 +267,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         self._init_event_handlers()
 
         # Create a fresh copy of the backend variables for this instance
-        self._backend_vars = copy.deepcopy(self.backend_vars)
+        #  self._backend_vars = copy.deepcopy(self.backend_vars)
 
     def _init_event_handlers(self, state: BaseState | None = None):
         """Initialize event handlers.
@@ -276,6 +302,29 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The string representation of the state.
         """
         return f"{self.__class__.__name__}({self.dict()})"
+
+    @classmethod
+    def _get_backend_vars(cls):
+        return {
+            name: value
+            for name, value in cls.__dict__.items()
+            if types.is_backend_variable(name, cls)
+            and name not in cls.inherited_backend_vars
+            and not isinstance(value, FunctionType)
+        }
+
+    def _backend_vars_dict(self) -> dict:
+        """Serialize backend vars.
+
+        Returns:
+            The serialized backend vars.
+        """
+        d = {
+            name: self.get_value(getattr(self, name))
+            for name in self.backend_vars
+        }
+        print(f"{self.get_full_name()} backend vars: {d}")
+        return d
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -321,15 +370,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             # Track this new subclass in the parent state's subclasses set.
             parent_state.class_subclasses.add(cls)
 
-        cls.new_backend_vars = {
-            name: value
-            for name, value in cls.__dict__.items()
-            if types.is_backend_variable(name, cls)
-            and name not in cls.inherited_backend_vars
-            and not isinstance(value, FunctionType)
-        }
-
-        cls.backend_vars = {**cls.inherited_backend_vars, **cls.new_backend_vars}
+        cls.backend_vars = {**cls.inherited_backend_vars, **cls._get_backend_vars()}
 
         # Set the base and computed vars.
         cls.base_vars = {
@@ -741,9 +782,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The functions of rx.State class as a dict.
         """
         return {
-            func[0]: func[1]
-            for func in inspect.getmembers(BaseState, predicate=inspect.isfunction)
-            if not func[0].startswith("__")
+            name: func
+            for name, func in inspect.getmembers(
+                BaseState, predicate=inspect.isfunction
+            )
+            if not name.startswith("__")
         }
 
     def get_token(self) -> str:
@@ -923,11 +966,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if name in inherited_vars:
             return getattr(super().__getattribute__("parent_state"), name)
 
-        backend_vars = super().__getattribute__("_backend_vars")
-        if name in backend_vars:
-            value = backend_vars[name]
-        else:
-            value = super().__getattribute__(name)
+        backend_vars = super().__getattribute__("backend_vars")
+        #  if name in backend_vars:
+        #      value = backend_vars[name]
+        #  else:
+        value = super().__getattribute__(name)
 
         if isinstance(value, MutableProxy.__mutable_types__) and (
             name in super().__getattribute__("base_vars") or name in backend_vars
@@ -960,10 +1003,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             types.is_backend_variable(name, self.__class__)
             and name not in RESERVED_BACKEND_VAR_NAMES
         ):
-            self._backend_vars.__setitem__(name, value)
+            #  self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
-            return
+            #  return
 
         # Set the attribute.
         super().__setattr__(name, value)
@@ -1328,6 +1371,17 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return super().get_value(key.__wrapped__)
         return super().get_value(key)
 
+    def _dict_computed_vars(self) -> dict[str, Any]:
+        # Apply dirty variables down into substates to allow never-cached ComputedVar to
+        # trigger recalculation of dependent vars
+        self.dirty_vars.update(self._always_dirty_computed_vars)
+        self._mark_dirty()
+        return {
+            prop_name: self.get_value(getattr(self, prop_name))
+            for prop_name in self.computed_vars
+        }
+
+
     def dict(self, include_computed: bool = True, **kwargs) -> dict[str, Any]:
         """Convert the object to a dictionary.
 
@@ -1339,24 +1393,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The object as a dictionary.
         """
         if include_computed:
-            # Apply dirty variables down into substates to allow never-cached ComputedVar to
-            # trigger recalculation of dependent vars
-            self.dirty_vars.update(self._always_dirty_computed_vars)
-            self._mark_dirty()
+            computed_vars = self._dict_computed_vars()
+        else:
+            computed_vars = {}
 
         base_vars = {
             prop_name: self.get_value(getattr(self, prop_name))
             for prop_name in self.base_vars
         }
-        computed_vars = (
-            {
-                # Include the computed vars.
-                prop_name: self.get_value(getattr(self, prop_name))
-                for prop_name in self.computed_vars
-            }
-            if include_computed
-            else {}
-        )
         variables = {**base_vars, **computed_vars}
         d = {
             self.get_full_name(): {k: variables[k] for k in sorted(variables)},
@@ -1391,24 +1435,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             exc_info: The exception info tuple.
         """
         pass
-
-    def __getstate__(self):
-        """Get the state for redis serialization.
-
-        This method is called by cloudpickle to serialize the object.
-
-        It explicitly removes parent_state and substates because those are serialized separately
-        by the StateManagerRedis to allow for better horizontal scaling as state size increases.
-
-        Returns:
-            The state dict for serialization.
-        """
-        state = super().__getstate__()
-        # Never serialize parent_state or substates
-        state["__dict__"] = state["__dict__"].copy()
-        state["__dict__"]["parent_state"] = None
-        state["__dict__"]["substates"] = {}
-        return state
 
 
 class State(BaseState):
@@ -1807,9 +1833,10 @@ class StateManagerRedis(StateManager):
         # Fetch the serialized substate from redis.
         redis_state = await self.redis.get(token)
 
+        print(f"got from redis: {redis_state}")
+
         if redis_state is not None:
-            # Deserialize the substate.
-            state = cloudpickle.loads(redis_state)
+            state = self.from_redis(state_cls, redis_state)
 
             # Populate parent and substates if requested.
             if parent_state is None:
@@ -1915,7 +1942,36 @@ class StateManagerRedis(StateManager):
                     substate_key, substate, lock_id=lock_id, set_parent_state=False
                 )
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
-        await self.redis.set(token, cloudpickle.dumps(state), ex=self.token_expiration)
+        await self.redis.set(token, self.to_redis(state), ex=self.token_expiration)
+
+    @classmethod
+    def from_redis(cls, state_cls: type[BaseState], redis_state: bytes) -> BaseState:
+        rs = json.loads(redis_state)
+        for sets in ["dirty_vars", "dirty_substates"]:
+            if s := rs.get(sets):
+                rs[sets] = set(s)
+        
+        state = state_cls.parse_obj(rs)
+        #  state = state_cls.construct(**rs)
+        return state
+
+    @classmethod
+    def to_redis(cls, state: BaseState):
+        exclude = set(state.event_handlers.keys()) | set(state.computed_vars.keys()) | {
+            "parent_state",
+            "substates",
+            #  "dirty_vars",
+            #  "dirty_substates",
+        }
+        backend_vars_d = state._backend_vars_dict()
+
+        d = super(Base, state).dict(exclude_none=True, exclude=exclude) | backend_vars_d
+        #  if state.parent_state is not None:
+        #      d["parent_state"] = cls.to_redis(state.parent_state)
+        debug_d = {k: v for k, v in d.items() if k not in ["router", "router_data"]}
+        p = state.__config__.json_dumps(d, default=serialize)
+        print(f"redis_payload {state.get_full_name()} {debug_d}")
+        return p
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
@@ -2362,21 +2418,6 @@ class MutableProxy(wrapt.ObjectProxy):
             A deepcopy of the wrapped object, unconnected to the proxy.
         """
         return copy.deepcopy(self.__wrapped__, memo=memo)
-
-    def __reduce_ex__(self, protocol_version):
-        """Get the state for redis serialization.
-
-        This method is called by cloudpickle to serialize the object.
-
-        It explicitly serializes the wrapped object, stripping off the mutable proxy.
-
-        Args:
-            protocol_version: The protocol version.
-
-        Returns:
-            Tuple of (wrapped class, empty args, class __getstate__)
-        """
-        return self.__wrapped__.__reduce_ex__(protocol_version)
 
 
 @serializer

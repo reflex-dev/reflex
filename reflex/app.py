@@ -932,7 +932,7 @@ async def process(
             # assignment will recurse into substates and force recalculation of
             # dependent ComputedVar (dynamic route variables)
             state.router_data = router_data
-            state.router = RouterData(router_data)
+            state.router = RouterData.from_router(router_data)
 
         # Preprocess the event.
         update = await app.preprocess(state, event)
