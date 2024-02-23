@@ -53,20 +53,20 @@ class ReactPlayer(NoSSRComponent):
             The event triggers.
         """
         return {
-            "onReady": lambda: [],
-            "onStart": lambda: [],
-            "onPlay": lambda: [],
-            "onProgress": lambda e0: [e0],
-            "onDuration": lambda e0: [e0],
-            "onPause": lambda: [],
-            "onBuffer": lambda: [],
-            "onBufferEnd": lambda: [],
-            "onSeek": lambda second: [second],
-            "onPlaybackRateChange": lambda e0: [],
-            "onPlaybackQualityChange": lambda e0: [],
+            "on_ready": lambda: [],
+            "on_start": lambda: [],
+            "on_play": lambda: [],
+            "on_progress": lambda e0: [e0],
+            "on_duration": lambda e0: [e0],
+            "on_pause": lambda: [],
+            "on_buffer": lambda: [],
+            "on_buffer_end": lambda: [],
+            "on_seek": lambda second: [second],
+            "on_playback_rate_change": lambda e0: [],
+            "on_playback_quality_change": lambda e0: [],
             "on_ended": lambda: [],  # do not fire if loop=True
             "on_error": lambda: [],
             "on_click_preview": lambda: [],
-            "onEnablePIP": lambda: [],
-            "onDisablePIP": lambda: [],
+            "on_enable_pip": lambda: [],
+            "on_disable_pip": lambda: [],
         }
