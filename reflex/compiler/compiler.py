@@ -301,6 +301,8 @@ def compile_document_root(
 
     Args:
         head_components: The components to include in the head.
+        html_lang: The language of the document, will be added to the html root element.
+        html_custom_attrs: custom attributes added to the html root element.
 
     Returns:
         The path and code of the compiled document root.

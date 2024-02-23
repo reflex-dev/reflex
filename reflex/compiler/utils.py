@@ -267,14 +267,14 @@ def create_document_root(
     html_lang: Optional[
         Union[Var[Union[str, int, bool]], Union[str, int, bool]]
     ] = None,
-    html_custom_attrs: Union[Dict[str, Union[Var, str]]] = None,
+    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
 ) -> Component:
     """Create the document root.
 
     Args:
         head_components: The components to add to the head.
-        lang: The language of the document, will be added to the html root element.
-        custom_attrs: custom attributes added to the html root element.
+        html_lang: The language of the document, will be added to the html root element.
+        html_custom_attrs: custom attributes added to the html root element.
 
     Returns:
         The document root.

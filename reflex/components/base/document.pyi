@@ -7,7 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from typing import Optional, Union
 from reflex.components.component import Component
+from reflex.vars import Var
 
 class NextDocumentLib(Component):
     @overload
@@ -94,6 +96,7 @@ class Html(NextDocumentLib):
     def create(  # type: ignore
         cls,
         *children,
+        lang: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
