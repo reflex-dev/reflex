@@ -31,8 +31,9 @@ def menu_button() -> rx.Component:
                 rx.icon(
                     "menu",
                     size=16,
-                    color=styles.text_color,
+                    color=styles.accent_text_color,
                 ),
+                background_color=styles.accent_color,
             ),
             rx.menu.content(
                 *[
