@@ -449,7 +449,7 @@ async def test_client_side_state(
     assert l1s.text == "l1s value"
 
     # reset the backend state to force refresh from client storage
-    async with client_side.modify_state(token) as state:
+    async with client_side.modify_state(f"{token}_state.client_side_state") as state:
         state.reset()
     driver.refresh()
 

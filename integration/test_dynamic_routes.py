@@ -85,6 +85,7 @@ def dynamic_route(
     """
     with app_harness_env.create(
         root=tmp_path_factory.mktemp(f"dynamic_route"),
+        app_name=f"dynamicroute_{app_harness_env.__name__.lower()}",
         app_source=DynamicRoute,  # type: ignore
     ) as harness:
         yield harness
@@ -146,7 +147,7 @@ def poll_for_order(
 
     async def _poll_for_order(exp_order: list[str]):
         async def _backend_state():
-            return await dynamic_route.get_state(token)
+            return await dynamic_route.get_state(f"{token}_state.dynamic_state")
 
         async def _check():
             return (await _backend_state()).substates[
@@ -194,7 +195,9 @@ async def test_on_load_navigate(
         assert link
         assert page_id_input
 
-        assert dynamic_route.poll_for_value(page_id_input) == str(ix)
+        assert dynamic_route.poll_for_value(
+            page_id_input, exp_not_equal=str(ix - 1)
+        ) == str(ix)
         assert dynamic_route.poll_for_value(raw_path_input) == f"/page/{ix}/"
     await poll_for_order(exp_order)
 
@@ -220,7 +223,9 @@ async def test_on_load_navigate(
     with poll_for_navigation(driver):
         driver.get(f"{driver.current_url}?foo=bar")
     await poll_for_order(exp_order)
-    assert (await dynamic_route.get_state(token)).router.page.params["foo"] == "bar"
+    assert (
+        await dynamic_route.get_state(f"{token}_state.dynamic_state")
+    ).router.page.params["foo"] == "bar"
 
     # hit a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]

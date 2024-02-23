@@ -41,6 +41,16 @@ class Event(Base):
     # The event payload.
     payload: Dict[str, Any] = {}
 
+    @property
+    def substate_token(self) -> str:
+        """Get the substate token for the event.
+
+        Returns:
+            The substate token.
+        """
+        substate = self.name.rpartition(".")[0]
+        return f"{self.token}_{substate}"
+
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 
