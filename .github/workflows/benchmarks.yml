@@ -24,6 +24,8 @@ env:
 
 jobs:
   reflex-web:
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     strategy:
       fail-fast: false
       matrix:
@@ -66,9 +68,10 @@ jobs:
         env:
           LHCI_GITHUB_APP_TOKEN: $
       - name: Run Benchmarks
+        # Only run if the database creds are available in this context.
+        if: ${{ env.DATABASE_URL }}
         working-directory: ./integration/benchmarks
         run: poetry run python benchmarks.py "$GITHUB_SHA" .lighthouseci
         env:
           GITHUB_SHA: ${{ github.sha }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PR_TITLE: ${{ github.event.pull_request.title }}
