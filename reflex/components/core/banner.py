@@ -27,24 +27,24 @@ connect_error_var_data: VarData = VarData(  # type: ignore
 )
 
 connection_error: Var = Var.create_safe(
-    value="(connectError.length > 0) ? connectError[connectError.length - 1].message : ''",
+    value="(connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : ''",
     _var_is_local=False,
     _var_is_string=False,
 )._replace(merge_var_data=connect_error_var_data)
 
 connection_errors_count: Var = Var.create_safe(
-    value="connectError.length",
+    value="connectErrors.length",
     _var_is_string=False,
     _var_is_local=False,
 )._replace(merge_var_data=connect_error_var_data)
 
 has_connection_errors: Var = Var.create_safe(
-    value="connectError.length > 0",
+    value="connectErrors.length > 0",
     _var_is_string=False,
 )._replace(_var_type=bool, merge_var_data=connect_error_var_data)
 
 has_too_many_connection_errors: Var = Var.create_safe(
-    value="connectError.length >= 2",
+    value="connectErrors.length >= 2",
     _var_is_string=False,
 )._replace(_var_type=bool, merge_var_data=connect_error_var_data)
 
@@ -135,6 +135,7 @@ class ConnectionModal(Component):
                     comp,
                 ),
                 open=has_too_many_connection_errors,
+                z_index=9999,
             ),
         )
 

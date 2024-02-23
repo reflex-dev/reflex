@@ -310,7 +310,6 @@ export const connect = async (
   socket,
   dispatch,
   transports,
-  connectErrors,
   setConnectErrors,
   client_storage = {}
 ) => {
@@ -330,7 +329,7 @@ export const connect = async (
   });
 
   socket.current.on("connect_error", (error) => {
-    setConnectErrors([...connectErrors, error]);
+    setConnectErrors((connectErrors) => [...connectErrors, error]);
   });
   // On each received message, queue the updates and events.
   socket.current.on("event", (message) => {
@@ -585,7 +584,6 @@ export const useEventLoop = (
           socket,
           dispatch,
           ["websocket", "polling"],
-          connectErrors,
           setConnectErrors,
           client_storage
         );
