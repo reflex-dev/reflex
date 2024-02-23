@@ -47,10 +47,20 @@ def menu_button() -> rx.Component:
                 ],
                 rx.menu.separator(),
                 rx.menu.item(
-                    rx.link("About", href="https://github.com/reflex-dev", width="100%")
+                    rx.link(
+                        "About",
+                        href="https://github.com/reflex-dev",
+                        width="100%",
+                        style=styles.link_style,
+                    ),
                 ),
                 rx.menu.item(
-                    rx.link("Contact", href="mailto:founders@=reflex.dev", width="100%")
+                    rx.link(
+                        "Contact",
+                        href="mailto:founders@=reflex.dev",
+                        width="100%",
+                        style=styles.link_style,
+                    )
                 ),
             ),
         ),

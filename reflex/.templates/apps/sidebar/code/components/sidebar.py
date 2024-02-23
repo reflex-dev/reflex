@@ -35,6 +35,7 @@ def sidebar_header() -> rx.Component:
             ),
             href="https://github.com/reflex-dev/reflex",
         ),
+        align="center",
         width="100%",
         border_bottom=styles.border,
         padding="1em",
