@@ -321,7 +321,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             # Track this new subclass in the parent state's subclasses set.
             parent_state.class_subclasses.add(cls)
 
-        cls.new_backend_vars = {
+        new_backend_vars = {
             name: value
             for name, value in cls.__dict__.items()
             if types.is_backend_variable(name, cls)
@@ -329,7 +329,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             and not isinstance(value, FunctionType)
         }
 
-        cls.backend_vars = {**cls.inherited_backend_vars, **cls.new_backend_vars}
+        cls.backend_vars = {**cls.inherited_backend_vars, **new_backend_vars}
 
         # Set the base and computed vars.
         cls.base_vars = {
