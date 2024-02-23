@@ -13,7 +13,7 @@ def dashboard() -> rx.Component:
         The UI for the dashboard page.
     """
     return rx.vstack(
-        rx.heading("Dashboard", font_size="3em"),
+        rx.heading("Dashboard", size="8"),
         rx.text("Welcome to Reflex!"),
         rx.text(
             "You can edit this page in ",

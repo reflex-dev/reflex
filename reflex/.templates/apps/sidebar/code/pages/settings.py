@@ -13,7 +13,7 @@ def settings() -> rx.Component:
         The UI for the settings page.
     """
     return rx.vstack(
-        rx.heading("Settings", font_size="3em"),
+        rx.heading("Settings", size="8"),
         rx.text("Welcome to Reflex!"),
         rx.text(
             "You can edit this page in ",

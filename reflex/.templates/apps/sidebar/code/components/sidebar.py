@@ -13,9 +13,9 @@ def sidebar_header() -> rx.Component:
     """
     return rx.hstack(
         # The logo.
-        rx.image(
-            src="/icon.svg",
-            height="2em",
+        rx.color_mode_cond(
+            rx.image(src="/reflex_black.svg", height="2em"),
+            rx.image(src="/reflex_white.svg", height="2em"),
         ),
         rx.spacer(),
         # Link to Reflex GitHub repo.
@@ -102,6 +102,7 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
                 styles.accent_text_color,
                 styles.text_color,
             ),
+            align="center",
             border_radius=styles.border_radius,
             box_shadow=styles.box_shadow,
             width="100%",

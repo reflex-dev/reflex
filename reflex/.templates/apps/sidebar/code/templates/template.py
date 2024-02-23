@@ -42,6 +42,7 @@ def menu_button() -> rx.Component:
                             page["title"],
                             href=page["route"],
                             width="100%",
+                            style=styles.link_style,
                         )
                     )
                     for page in get_decorated_pages()
@@ -128,7 +129,7 @@ def template(
                     **styles.template_page_style,
                 ),
                 menu_button(),
-                align_items="flex-start",
+                align="start",
                 transition="left 0.5s, width 0.5s",
                 position="relative",
             )
