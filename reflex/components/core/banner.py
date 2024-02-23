@@ -150,7 +150,7 @@ class ConnectionPulser(Div):
             {"@emotion/react": [imports.ImportVar(tag="keyframes")]},
         )
 
-    def _get_hooks(self) -> str | None:
+    def _get_custom_code(self) -> str | None:
         return """
 const pulse = keyframes`
     0% {
