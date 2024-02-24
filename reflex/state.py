@@ -507,10 +507,10 @@ class BaseState(
                     # track that this substate depends on its parent for this var
                     state_name = cls.get_name()
                     parent_state = cls.get_parent_state()
-                    while (
-                        parent_state is not None
-                        and var in parent_state.vars | parent_state.backend_vars
-                    ):
+                    while parent_state is not None and var in {
+                        **parent_state.vars,
+                        **parent_state.backend_vars,
+                    }:
                         parent_state._substate_var_dependencies[var].add(state_name)
                         state_name, parent_state = (
                             parent_state.get_name(),
