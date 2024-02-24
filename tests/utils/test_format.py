@@ -658,7 +658,6 @@ formatted_router = {
                         2: {"prop1": 42, "prop2": "hello"},
                     },
                     "dt": "1989-11-09 18:53:00+01:00",
-                    "fig": [],
                     "key": "",
                     "map_key": "a",
                     "mapping": {"a": [1, 2, 3], "b": [4, 5, 6]},

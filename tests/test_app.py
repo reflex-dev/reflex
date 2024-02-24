@@ -966,7 +966,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             "token": token,
             **on_load_internal.router_data,
         }
-        exp_router = RouterData(exp_router_data)
+        exp_router = RouterData.from_router(exp_router_data)
         process_coro = process(
             app,
             event=on_load_internal,

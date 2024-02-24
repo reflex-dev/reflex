@@ -11,7 +11,6 @@ from typing import Any, Dict, Generator, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from plotly.graph_objects import Figure
 
 import reflex as rx
 from reflex.app import App
@@ -90,7 +89,6 @@ class TestState(BaseState):
     mapping: Dict[str, List[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
     obj: Object = Object()
     complex: Dict[int, Object] = {1: Object(), 2: Object()}
-    fig: Figure = Figure()
     dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
 
     @ComputedVar
@@ -265,7 +263,6 @@ def test_class_vars(test_state):
         "complex",
         "sum",
         "upper",
-        "fig",
         "dt",
     }
 
@@ -280,7 +277,6 @@ def test_event_handlers(test_state):
         "do_something",
         "set_array",
         "set_complex",
-        "set_fig",
         "set_key",
         "set_mapping",
         "set_num1",
@@ -641,7 +637,6 @@ def test_reset(test_state, child_state):
         "obj",
         "upper",
         "complex",
-        "fig",
         "key",
         "sum",
         "array",
@@ -821,7 +816,7 @@ def test_get_current_page(test_state):
     assert test_state.get_current_page() == ""
 
     route = "mypage/subpage"
-    test_state.router = RouterData({RouteVar.PATH: route})
+    test_state.router = RouterData.from_router({RouteVar.PATH: route})
 
     assert test_state.get_current_page() == route
 
