@@ -140,13 +140,34 @@ class ConnectionModal(Component):
         )
 
 
-class ConnectionPulser(Div):
-    """A connection pulser component."""
+class WifiOffPulse(Icon):
+    """A wifi_off icon with an animated opacity pulse."""
+
+    @classmethod
+    def create(cls, **props) -> Component:
+        """Create a wifi_off icon with an animated opacity pulse.
+
+        Args:
+            **props: The properties of the component.
+
+        Returns:
+            The icon component with default props applied.
+        """
+        return super().create(
+            "wifi_off",
+            color=props.pop("color", "crimson"),
+            size=props.pop("size", 32),
+            z_index=props.pop("z_index", 9999),
+            position=props.pop("position", "fixed"),
+            bottom=props.pop("botton", "30px"),
+            right=props.pop("right", "30px"),
+            animation=Var.create(f"${{pulse}} 1s infinite", _var_is_string=True),
+            **props,
+        )
 
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
             super()._get_imports(),
-            # self._var_data.imports if self._var_data else {},
             {"@emotion/react": [imports.ImportVar(tag="keyframes")]},
         )
 
@@ -162,6 +183,10 @@ const pulse = keyframes`
 `
 """
 
+
+class ConnectionPulser(Div):
+    """A connection pulser component."""
+
     @classmethod
     def create(cls, **props) -> Component:
         """Create a connection pulser component.
@@ -175,19 +200,7 @@ const pulse = keyframes`
         return super().create(
             cond(
                 ~State.is_hydrated | has_connection_errors,  # type: ignore
-                Icon.create(
-                    "wifi_off",
-                    color="crimson",
-                    size=32,
-                    animation=Var.create(
-                        f"${{pulse}} 1s infinite", _var_is_string=True
-                    ),
-                    z_index=9999,
-                    position="fixed",
-                    bottom="30px",
-                    right="30px",
-                    **props,
-                ),
+                WifiOffPulse.create(**props),
             ),
             position="fixed",
             width="100vw",
