@@ -329,7 +329,7 @@ export const connect = async (
   });
 
   socket.current.on("connect_error", (error) => {
-    setConnectErrors((connectErrors) => [...connectErrors, error]);
+    setConnectErrors((connectErrors) => [connectErrors.slice(-9), error]);
   });
   // On each received message, queue the updates and events.
   socket.current.on("event", (message) => {
