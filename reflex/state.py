@@ -996,14 +996,9 @@ class BaseState(
             # unwrap proxy objects when assigning back to the state
             value = value.__wrapped__
 
-        # Set backend var on the parent state.
-        if name in self.inherited_backend_vars:
-            setattr(self.parent_state, name, value)
-            self.dirty_vars.add(name)
-            return
-
-        # Set var on the parent state.
-        if name in self.inherited_vars:
+        # Set the var on the parent state.
+        inherited_vars = {**self.inherited_vars, **self.inherited_backend_vars}
+        if name in inherited_vars:
             setattr(self.parent_state, name, value)
             return
 
