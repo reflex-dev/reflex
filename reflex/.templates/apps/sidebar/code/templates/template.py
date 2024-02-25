@@ -30,7 +30,7 @@ def menu_button() -> rx.Component:
             rx.menu.trigger(
                 rx.icon(
                     "menu",
-                    size=16,
+                    size=36,
                     color=styles.accent_text_color,
                 ),
                 background_color=styles.accent_color,

@@ -5,10 +5,10 @@ import reflex as rx
 border_radius = "0.375rem"
 box_shadow = "0px 0px 0px 1px rgba(84, 82, 95, 0.14)"
 border = "1px solid #F4F3F6"
-text_color = "black"
-accent_text_color = "#1A1060"
-accent_color = "#F5EFFE"
-hover_accent_color = {"_hover": {"color": accent_color}}
+text_color = "var(--text-1)"
+accent_text_color = "var(--accent-10)"
+accent_color = "var(--accent-1)"
+hover_accent_color = {"_hover": {"color": accent_text_color}}
 hover_accent_bg = {"_hover": {"bg": accent_color}}
 content_width_vw = "90vw"
 sidebar_width = "20em"
@@ -37,8 +37,6 @@ overlapping_button_style = {
 
 base_style = {
     rx.menu.trigger: {
-        "width": "3em",
-        "height": "3em",
         **overlapping_button_style,
     },
     rx.menu.item: hover_accent_bg,
