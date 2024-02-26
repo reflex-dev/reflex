@@ -284,7 +284,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             A list of computed vars.
         """
-
         return [
             v
             for mixin in cls.__mro__
