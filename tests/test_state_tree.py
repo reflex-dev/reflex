@@ -38,6 +38,25 @@ class SubA_A_A_A(SubA_A_A):
     sub_a_a_a_a: int
 
 
+class SubA_A_A_B(SubA_A_A):
+    """SubA_A_A_B is a child of SubA_A_A."""
+
+    @rx.cached_var
+    def sub_a_a_a_cached(self) -> int:
+        """A cached var.
+
+        Returns:
+            The value of sub_a_a_a + 1
+        """
+        return self.sub_a_a_a + 1
+
+
+class SubA_A_A_C(SubA_A_A):
+    """SubA_A_A_C is a child of SubA_A_A."""
+
+    sub_a_a_a_c: int
+
+
 class SubA_A_B(SubA_A):
     """SubA_A_B is a child of SubA_A."""
 
@@ -158,6 +177,21 @@ class SubE_A_A_A_C(SubE_A_A_A):
     sub_e_a_a_a_c: int
 
 
+class SubE_A_A_A_D(SubE_A_A_A):
+    """SubE_A_A_A_D is a child of SubE_A_A_A."""
+
+    sub_e_a_a_a_d: int
+
+    @rx.cached_var
+    def sub_e_a_a_a_d_var(self) -> int:
+        """A computed var.
+
+        Returns:
+            The value of sub_e_a_a_a_a + 1
+        """
+        return self.sub_e_a_a_a + 1
+
+
 ALWAYS_COMPUTED_VARS = {
     TreeD.get_full_name(): {"d_var": 1},
     SubE_A_A_A_A.get_full_name(): {"sub_e_a_a_a_a_var": 1},
@@ -171,6 +205,7 @@ ALWAYS_COMPUTED_DICT_KEYS = [
     SubE_A_A.get_full_name(),
     SubE_A_A_A.get_full_name(),
     SubE_A_A_A_A.get_full_name(),
+    SubE_A_A_A_D.get_full_name(),
 ]
 
 
@@ -207,6 +242,8 @@ def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
                 SubA_A.get_full_name(),
                 SubA_A_A.get_full_name(),
                 SubA_A_A_A.get_full_name(),
+                SubA_A_A_B.get_full_name(),
+                SubA_A_A_C.get_full_name(),
                 SubA_A_B.get_full_name(),
                 SubA_B.get_full_name(),
                 TreeB.get_full_name(),
@@ -229,6 +266,8 @@ def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
                 SubA_A.get_full_name(),
                 SubA_A_A.get_full_name(),
                 SubA_A_A_A.get_full_name(),
+                SubA_A_A_B.get_full_name(),
+                SubA_A_A_C.get_full_name(),
                 SubA_A_B.get_full_name(),
                 SubA_B.get_full_name(),
                 *ALWAYS_COMPUTED_DICT_KEYS,
@@ -242,6 +281,7 @@ def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
                 SubA_A.get_full_name(),
                 SubA_A_A.get_full_name(),
                 SubA_A_A_A.get_full_name(),
+                SubA_A_A_B.get_full_name(),  # Cached var dep
                 *ALWAYS_COMPUTED_DICT_KEYS,
             ],
         ),
