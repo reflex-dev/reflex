@@ -138,7 +138,7 @@ def compile_state(state: Type[BaseState]) -> dict:
         A dictionary of the compiled state.
     """
     try:
-        initial_state = state(_reflex_internal_init=True).dict()
+        initial_state = state(_reflex_internal_init=True).dict(initial=True)
     except Exception as e:
         console.warn(
             f"Failed to compile initial state with computed vars, excluding them: {e}"

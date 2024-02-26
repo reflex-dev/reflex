@@ -9,8 +9,8 @@ from reflex.base import Base
 from reflex.state import BaseState
 from reflex.vars import (
     BaseVar,
-    ComputedVar,
     Var,
+    computed_var,
 )
 
 test_vars = [
@@ -46,7 +46,7 @@ def ParentState(TestObj):
         foo: int
         bar: int
 
-        @ComputedVar
+        @computed_var
         def var_without_annotation(self):
             return TestObj
 
@@ -56,7 +56,7 @@ def ParentState(TestObj):
 @pytest.fixture
 def ChildState(ParentState, TestObj):
     class ChildState(ParentState):
-        @ComputedVar
+        @computed_var
         def var_without_annotation(self):
             return TestObj
 
@@ -66,7 +66,7 @@ def ChildState(ParentState, TestObj):
 @pytest.fixture
 def GrandChildState(ChildState, TestObj):
     class GrandChildState(ChildState):
-        @ComputedVar
+        @computed_var
         def var_without_annotation(self):
             return TestObj
 
@@ -76,7 +76,7 @@ def GrandChildState(ChildState, TestObj):
 @pytest.fixture
 def StateWithAnyVar(TestObj):
     class StateWithAnyVar(BaseState):
-        @ComputedVar
+        @computed_var
         def var_without_annotation(self) -> typing.Any:
             return TestObj
 
@@ -86,7 +86,7 @@ def StateWithAnyVar(TestObj):
 @pytest.fixture
 def StateWithCorrectVarAnnotation():
     class StateWithCorrectVarAnnotation(BaseState):
-        @ComputedVar
+        @computed_var
         def var_with_annotation(self) -> str:
             return "Correct annotation"
 
@@ -96,11 +96,51 @@ def StateWithCorrectVarAnnotation():
 @pytest.fixture
 def StateWithWrongVarAnnotation(TestObj):
     class StateWithWrongVarAnnotation(BaseState):
-        @ComputedVar
+        @computed_var
         def var_with_annotation(self) -> str:
             return TestObj
 
     return StateWithWrongVarAnnotation
+
+
+@pytest.fixture
+def StateWithInitialComputedVar():
+    class StateWithInitialComputedVar(BaseState):
+        @computed_var(initial_value="Initial value")
+        def var_with_initial_value(self) -> str:
+            return "Runtime value"
+
+    return StateWithInitialComputedVar
+
+
+@pytest.fixture
+def ChildWithInitialComputedVar(StateWithInitialComputedVar):
+    class ChildWithInitialComputedVar(StateWithInitialComputedVar):
+        @computed_var(initial_value="Initial value")
+        def var_with_initial_value_child(self) -> str:
+            return "Runtime value"
+
+    return ChildWithInitialComputedVar
+
+
+@pytest.fixture
+def StateWithRuntimeOnlyVar():
+    class StateWithRuntimeOnlyVar(BaseState):
+        @computed_var(initial_value=None)
+        def var_raises_at_runtime(self) -> str:
+            raise ValueError("So nicht, mein Freund")
+
+    return StateWithRuntimeOnlyVar
+
+
+@pytest.fixture
+def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
+    class ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
+        @computed_var(initial_value="Initial value")
+        def var_raises_at_runtime_child(self) -> str:
+            raise ValueError("So nicht, mein Freund")
+
+    return ChildWithRuntimeOnlyVar
 
 
 @pytest.mark.parametrize(
@@ -729,6 +769,65 @@ def test_computed_var_with_annotation_error(request, fixture, full_name):
         err.value.args[0]
         == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly."
     )
+
+
+@pytest.mark.parametrize(
+    "fixture,var_name,expected_initial,expected_runtime,raises_at_runtime",
+    [
+        (
+            "StateWithInitialComputedVar",
+            "var_with_initial_value",
+            "Initial value",
+            "Runtime value",
+            False,
+        ),
+        (
+            "ChildWithInitialComputedVar",
+            "var_with_initial_value_child",
+            "Initial value",
+            "Runtime value",
+            False,
+        ),
+        (
+            "StateWithRuntimeOnlyVar",
+            "var_raises_at_runtime",
+            None,
+            None,
+            True,
+        ),
+        (
+            "ChildWithRuntimeOnlyVar",
+            "var_raises_at_runtime_child",
+            "Initial value",
+            None,
+            True,
+        ),
+    ],
+)
+def test_state_with_initial_computed_var(
+    request, fixture, var_name, expected_initial, expected_runtime, raises_at_runtime
+):
+    """Test that the initial and runtime values of a computed var are correct.
+
+    Args:
+        request: Fixture Request.
+        fixture: The state fixture.
+        var_name: The name of the computed var.
+        expected_initial: The expected initial value of the computed var.
+        expected_runtime: The expected runtime value of the computed var.
+        raises_at_runtime: Whether the computed var is runtime only.
+    """
+    state = request.getfixturevalue(fixture)()
+    state_name = state.get_full_name()
+    initial_dict = state.dict(initial=True)[state_name]
+    assert initial_dict[var_name] == expected_initial
+
+    if raises_at_runtime:
+        with pytest.raises(ValueError):
+            state.dict()[state_name][var_name]
+    else:
+        runtime_dict = state.dict()[state_name]
+        assert runtime_dict[var_name] == expected_runtime
 
 
 @pytest.mark.parametrize(

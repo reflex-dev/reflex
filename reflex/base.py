@@ -115,6 +115,10 @@ class Base(pydantic.BaseModel):
         Returns:
             The value of the field.
         """
+        if isinstance(key, str) and key in self.__fields__:
+            # Seems like this function signature was wrong all along?
+            # If the user wants a field that we know of, get it and pass it off to _get_value
+            key = getattr(self, key)
         return self._get_value(
             key,
             to_dict=True,

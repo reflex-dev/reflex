@@ -71,7 +71,7 @@ class ColorModeSwitch(Switch):
         """
         return Switch.create(
             *children,
-            is_checked=color_mode != LIGHT_COLOR_MODE,
+            checked=color_mode != LIGHT_COLOR_MODE,
             on_change=toggle_color_mode,
             **props,
         )

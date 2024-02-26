@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Union
 
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.colors import color
 from reflex.components.radix.primitives.accordion import DEFAULT_ANIMATION_DURATION
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
+from reflex.components.radix.themes.base import LiteralAccentColor
 from reflex.style import Style
 from reflex.vars import Var
 
@@ -57,10 +59,26 @@ class ProgressIndicator(ProgressComponent):
     # The maximum progress value.
     max: Var[Optional[int]]
 
+    # The color scheme of the progress indicator.
+    color_scheme: Var[LiteralAccentColor]
+
     def _apply_theme(self, theme: Component):
+        global_color_scheme = getattr(theme, "accent_color", None)
+
+        if global_color_scheme is None and self.color_scheme is None:
+            raise ValueError(
+                "`color_scheme` cannot be None. Either set the `color_scheme` prop on the progress indicator "
+                "component or set the `accent_color` prop in your global theme."
+            )
+
+        color_scheme = color(
+            self.color_scheme if self.color_scheme is not None else global_color_scheme,  # type: ignore
+            9,
+        )
+
         self.style = Style(
             {
-                "background-color": "var(--accent-9)",
+                "background-color": color_scheme,
                 "width": "100%",
                 "height": "100%",
                 f"transition": f"transform {DEFAULT_ANIMATION_DURATION}ms linear",
@@ -72,20 +90,28 @@ class ProgressIndicator(ProgressComponent):
             }
         )
 
+    def _exclude_props(self) -> list[str]:
+        return ["color_scheme"]
+
 
 class Progress(ComponentNamespace):
-    """High level API for progress bar."""
+    """High-level API for progress bar."""
 
     root = staticmethod(ProgressRoot.create)
     indicator = staticmethod(ProgressIndicator.create)
 
     @staticmethod
-    def __call__(width: Optional[str] = "100%", **props) -> Component:
-        """High level API for progress bar.
+    def __call__(
+        width: Optional[str] = "100%",
+        color_scheme: Optional[Union[Var, LiteralAccentColor]] = None,
+        **props,
+    ) -> Component:
+        """High-level API for progress bar.
 
         Args:
-            width: The width of the progerss bar
-            **props: The props of the progress bar
+            width: The width of the progress bar.
+            **props: The props of the progress bar.
+            color_scheme: The color scheme of the progress indicator.
 
         Returns:
             The progress bar.
@@ -93,9 +119,15 @@ class Progress(ComponentNamespace):
         style = props.setdefault("style", {})
         style.update({"width": width})
 
+        progress_indicator_props = (
+            {"color_scheme": color_scheme} if color_scheme is not None else {}
+        )
+
         return ProgressRoot.create(
             ProgressIndicator.create(
-                value=props.get("value"), max=props.get("max", 100)
+                value=props.get("value"),
+                max=props.get("max", 100),
+                **progress_indicator_props,  # type: ignore
             ),
             **props,
         )

@@ -1,4 +1,5 @@
 """Define the reflex state specification."""
+
 from __future__ import annotations
 
 import asyncio
@@ -45,10 +46,10 @@ from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
-from reflex.vars import BaseVar, ComputedVar, Var
+from reflex.vars import BaseVar, ComputedVar, Var, computed_var
 
 Delta = Dict[str, Any]
-var = ComputedVar
+var = computed_var
 
 
 class HeaderData(Base):
@@ -372,7 +373,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             # Track this new subclass in the parent state's subclasses set.
             parent_state.class_subclasses.add(cls)
 
-        cls.new_backend_vars = {
+        new_backend_vars = {
             name: value
             for name, value in cls.__dict__.items()
             if types.is_backend_variable(name, cls)
@@ -381,7 +382,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             and not isinstance(value, FunctionType)
         }
 
-        cls.backend_vars = {**cls.inherited_backend_vars, **cls.new_backend_vars}
+        cls.backend_vars = {**cls.inherited_backend_vars, **new_backend_vars}
 
         # Set the base and computed vars.
         cls.base_vars = {
@@ -518,7 +519,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     # track that this substate depends on its parent for this var
                     state_name = cls.get_name()
                     parent_state = cls.get_parent_state()
-                    while parent_state is not None and var in parent_state.vars:
+                    while parent_state is not None and var in {
+                        **parent_state.vars,
+                        **parent_state.backend_vars,
+                    }:
                         parent_state._substate_var_dependencies[var].add(state_name)
                         state_name, parent_state = (
                             parent_state.get_name(),
@@ -1539,11 +1543,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return super().get_value(key.__wrapped__)
         return super().get_value(key)
 
-    def dict(self, include_computed: bool = True, **kwargs) -> dict[str, Any]:
+    def dict(
+        self, include_computed: bool = True, initial: bool = False, **kwargs
+    ) -> dict[str, Any]:
         """Convert the object to a dictionary.
 
         Args:
             include_computed: Whether to include computed vars.
+            initial: Whether to get the initial value of computed vars.
             **kwargs: Kwargs to pass to the pydantic dict method.
 
         Returns:
@@ -1559,21 +1566,29 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             prop_name: self.get_value(getattr(self, prop_name))
             for prop_name in self.base_vars
         }
-        computed_vars = (
-            {
+        if initial:
+            computed_vars = {
+                # Include initial computed vars.
+                prop_name: cv._initial_value
+                if isinstance(cv, ComputedVar)
+                and not isinstance(cv._initial_value, types.Unset)
+                else self.get_value(getattr(self, prop_name))
+                for prop_name, cv in self.computed_vars.items()
+            }
+        elif include_computed:
+            computed_vars = {
                 # Include the computed vars.
                 prop_name: self.get_value(getattr(self, prop_name))
                 for prop_name in self.computed_vars
             }
-            if include_computed
-            else {}
-        )
+        else:
+            computed_vars = {}
         variables = {**base_vars, **computed_vars}
         d = {
             self.get_full_name(): {k: variables[k] for k in sorted(variables)},
         }
         for substate_d in [
-            v.dict(include_computed=include_computed, **kwargs)
+            v.dict(include_computed=include_computed, initial=initial, **kwargs)
             for v in self.substates.values()
         ]:
             d.update(substate_d)
@@ -2672,6 +2687,21 @@ class MutableProxy(wrapt.ObjectProxy):
             A deepcopy of the wrapped object, unconnected to the proxy.
         """
         return copy.deepcopy(self.__wrapped__, memo=memo)
+
+    def __reduce_ex__(self, protocol_version):
+        """Get the state for redis serialization.
+
+        This method is called by cloudpickle to serialize the object.
+
+        It explicitly serializes the wrapped object, stripping off the mutable proxy.
+
+        Args:
+            protocol_version: The protocol version.
+
+        Returns:
+            Tuple of (wrapped class, empty args, class __getstate__)
+        """
+        return self.__wrapped__.__reduce_ex__(protocol_version)
 
 
 @serializer

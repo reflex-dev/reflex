@@ -13,7 +13,7 @@ from typing import Any, ClassVar, Dict, List, Optional, Union
 from reflex import constants
 from reflex.components.chakra.forms.input import Input
 from reflex.components.chakra.layout.box import Box
-from reflex.components.component import Component
+from reflex.components.component import Component, MemoizationLeaf
 from reflex.constants import Dirs
 from reflex.event import CallableEventSpec, EventChain, EventSpec, call_script
 from reflex.utils import imports
@@ -114,7 +114,7 @@ class UploadFilesProvider(Component):
         """
         ...
 
-class Upload(Component):
+class Upload(MemoizationLeaf):
     is_used: ClassVar[bool] = False
 
     @overload

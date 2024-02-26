@@ -24,6 +24,7 @@ import pkg_resources
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
+from redis import Redis as RedisSync
 from redis.asyncio import Redis
 
 import reflex
@@ -189,16 +190,42 @@ def get_compiled_app(reload: bool = False) -> ModuleType:
 
 
 def get_redis() -> Redis | None:
-    """Get the redis client.
+    """Get the asynchronous redis client.
 
     Returns:
-        The redis client.
+        The asynchronous redis client.
+    """
+    if isinstance((redis_url_or_options := parse_redis_url()), str):
+        return Redis.from_url(redis_url_or_options)
+    elif isinstance(redis_url_or_options, dict):
+        return Redis(**redis_url_or_options)
+    return None
+
+
+def get_redis_sync() -> RedisSync | None:
+    """Get the synchronous redis client.
+
+    Returns:
+        The synchronous redis client.
+    """
+    if isinstance((redis_url_or_options := parse_redis_url()), str):
+        return RedisSync.from_url(redis_url_or_options)
+    elif isinstance(redis_url_or_options, dict):
+        return RedisSync(**redis_url_or_options)
+    return None
+
+
+def parse_redis_url() -> str | dict | None:
+    """Parse the REDIS_URL in config if applicable.
+
+    Returns:
+        If redis-py syntax, return the URL as it is. Otherwise, return the host/port/db as a dict.
     """
     config = get_config()
     if not config.redis_url:
         return None
     if config.redis_url.startswith(("redis://", "rediss://", "unix://")):
-        return Redis.from_url(config.redis_url)
+        return config.redis_url
     console.deprecate(
         feature_name="host[:port] style redis urls",
         reason="redis-py url syntax is now being used",
@@ -209,7 +236,7 @@ def get_redis() -> Redis | None:
     if not has_port:
         redis_port = 6379
     console.info(f"Using redis at {config.redis_url}")
-    return Redis(host=redis_url, port=int(redis_port), db=0)
+    return dict(host=redis_url, port=int(redis_port), db=0)
 
 
 def get_production_backend_url() -> str:
