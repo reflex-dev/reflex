@@ -25,23 +25,27 @@ def template(main_content: Callable[[], rx.Component]) -> rx.Component:
     Returns:
         rx.Component: The template for each page of the app.
     """
-    menu_button = rx.box(
-        rx.menu(
-            rx.menu_button(
-                rx.icon(
+    menu_button = rx.chakra.box(
+        rx.chakra.menu(
+            rx.chakra.menu_button(
+                rx.chakra.icon(
                     tag="hamburger",
                     size="4em",
                     color=text_color,
                 ),
             ),
-            rx.menu_list(
-                rx.menu_item(rx.link("Home", href="/", width="100%")),
-                rx.menu_divider(),
-                rx.menu_item(
-                    rx.link("About", href="https://github.com/reflex-dev", width="100%")
+            rx.chakra.menu_list(
+                rx.chakra.menu_item(rx.chakra.link("Home", href="/", width="100%")),
+                rx.chakra.menu_divider(),
+                rx.chakra.menu_item(
+                    rx.chakra.link(
+                        "About", href="https://github.com/reflex-dev", width="100%"
+                    )
                 ),
-                rx.menu_item(
-                    rx.link("Contact", href="mailto:founders@=reflex.dev", width="100%")
+                rx.chakra.menu_item(
+                    rx.chakra.link(
+                        "Contact", href="mailto:founders@=reflex.dev", width="100%"
+                    )
                 ),
             ),
         ),
@@ -51,10 +55,10 @@ def template(main_content: Callable[[], rx.Component]) -> rx.Component:
         z_index="500",
     )
 
-    return rx.hstack(
+    return rx.chakra.hstack(
         sidebar(),
         main_content(),
-        rx.spacer(),
+        rx.chakra.spacer(),
         menu_button,
         align_items="flex-start",
         transition="left 0.5s, width 0.5s",
@@ -118,6 +122,5 @@ def chatapp() -> rx.Component:
     return chatapp_page()
 
 
-# Add state and page to the app.
+# Create the app.
 app = rx.App(style=base_style)
-app.compile()

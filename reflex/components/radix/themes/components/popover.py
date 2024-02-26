@@ -2,16 +2,17 @@
 from typing import Any, Dict, Literal
 
 from reflex import el
+from reflex.components.component import ComponentNamespace
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class PopoverRoot(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+class PopoverRoot(RadixThemesComponent):
+    """Floating element for displaying rich content, triggered by a button."""
 
     tag = "Popover.Root"
 
@@ -29,23 +30,23 @@ class PopoverRoot(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: [e0],
+            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
         }
 
 
-class PopoverTrigger(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+class PopoverTrigger(RadixThemesComponent):
+    """Wraps the control that will open the popover."""
 
     tag = "Popover.Trigger"
 
 
-class PopoverContent(el.Div, CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+class PopoverContent(el.Div, RadixThemesComponent):
+    """Contains content to be rendered in the open popover."""
 
     tag = "Popover.Content"
 
     # Size of the button: "1" | "2" | "3" | "4"
-    size: Var[Literal[1, 2, 3, 4]]
+    size: Var[Literal["1", "2", "3", "4"]]
 
     # The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
     side: Var[Literal["top", "right", "bottom", "left"]]
@@ -70,16 +71,28 @@ class PopoverContent(el.Div, CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_auto_focus": lambda e0: [e0],
-            "on_close_auto_focus": lambda e0: [e0],
-            "on_escape_key_down": lambda e0: [e0],
-            "on_pointer_down_outside": lambda e0: [e0],
-            "on_focus_outside": lambda e0: [e0],
-            "on_interact_outside": lambda e0: [e0],
+            EventTriggers.ON_OPEN_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
+            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
+            EventTriggers.ON_FOCUS_OUTSIDE: lambda e0: [e0],
+            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
         }
 
 
-class PopoverClose(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+class PopoverClose(RadixThemesComponent):
+    """Wraps the control that will close the popover."""
 
     tag = "Popover.Close"
+
+
+class Popover(ComponentNamespace):
+    """Floating element for displaying rich content, triggered by a button."""
+
+    root = staticmethod(PopoverRoot.create)
+    trigger = staticmethod(PopoverTrigger.create)
+    content = staticmethod(PopoverContent.create)
+    close = staticmethod(PopoverClose.create)
+
+
+popover = Popover()

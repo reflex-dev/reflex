@@ -4,17 +4,17 @@ from typing import Any
 import pytest
 
 import reflex as rx
-from reflex.components.layout.box import Box
-from reflex.components.layout.cond import Cond, cond
-from reflex.components.layout.fragment import Fragment
-from reflex.components.layout.responsive import (
+from reflex.components.base.fragment import Fragment
+from reflex.components.chakra.layout.box import Box
+from reflex.components.chakra.typography.text import Text
+from reflex.components.core.cond import Cond, cond
+from reflex.components.core.responsive import (
     desktop_only,
     mobile_and_tablet,
     mobile_only,
     tablet_and_desktop,
     tablet_only,
 )
-from reflex.components.typography.text import Text
 from reflex.state import BaseState
 from reflex.vars import Var
 
@@ -25,6 +25,12 @@ def cond_state(request):
         value: request.param["value_type"] = request.param["value"]  # noqa
 
     return CondState
+
+
+def test_f_string_cond_interpolation():
+    # make sure backticks inside interpolation don't get escaped
+    var = Var.create(f"x {cond(True, 'a', 'b')}")
+    assert str(var) == "x ${isTrue(true) ? `a` : `b`}"
 
 
 @pytest.mark.parametrize(

@@ -1,26 +1,25 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from typing import Any, Dict, Literal
 
 from reflex import el
+from reflex.components.component import ComponentNamespace
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class DialogRoot(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+class DialogRoot(RadixThemesComponent):
+    """Root component for Dialog."""
 
     tag = "Dialog.Root"
 
     # The controlled open state of the dialog.
     open: Var[bool]
 
-    # The modality of the dialog. When set to true, interaction with outside elements will be disabled and only dialog content will be visible to screen readers.
-    modal: Var[bool]
-
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -29,29 +28,29 @@ class DialogRoot(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: [e0],
+            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
         }
 
 
-class DialogTrigger(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+class DialogTrigger(RadixThemesComponent):
+    """Trigger an action or event, to open a Dialog modal."""
 
     tag = "Dialog.Trigger"
 
 
-class DialogTitle(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+class DialogTitle(RadixThemesComponent):
+    """Title component to display inside a Dialog modal."""
 
     tag = "Dialog.Title"
 
 
-class DialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+class DialogContent(el.Div, RadixThemesComponent):
+    """Content component to display inside a Dialog modal."""
 
     tag = "Dialog.Content"
 
-    # Button size "1" - "4"
-    size: Var[Literal[1, 2, 3, 4]]
+    # DialogContent size "1" - "4"
+    size: Var[Literal["1", "2", "3", "4"]]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -61,15 +60,35 @@ class DialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_auto_focus": lambda e0: [e0],
-            "on_close_auto_focus": lambda e0: [e0],
-            "on_escape_key_down": lambda e0: [e0],
-            "on_pointer_down_outside": lambda e0: [e0],
-            "on_interact_outside": lambda e0: [e0],
+            EventTriggers.ON_OPEN_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0],
+            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
+            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
+            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
         }
 
 
-class DialogDescription(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+class DialogDescription(RadixThemesComponent):
+    """Description component to display inside a Dialog modal."""
 
     tag = "Dialog.Description"
+
+
+class DialogClose(RadixThemesComponent):
+    """Close button component to close an open Dialog modal."""
+
+    tag = "Dialog.Close"
+
+
+class Dialog(ComponentNamespace):
+    """Dialog components namespace."""
+
+    root = __call__ = staticmethod(DialogRoot.create)
+    trigger = staticmethod(DialogTrigger.create)
+    title = staticmethod(DialogTitle.create)
+    content = staticmethod(DialogContent.create)
+    description = staticmethod(DialogDescription.create)
+    close = staticmethod(DialogClose.create)
+
+
+dialog = Dialog()

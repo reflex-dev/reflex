@@ -1,8 +1,11 @@
 """Unit tests for the included testing tools."""
+import pytest
+
 from reflex.constants import IS_WINDOWS
 from reflex.testing import AppHarness
 
 
+@pytest.mark.skip("Slow test that makes network requests.")
 def test_app_harness(tmp_path):
     """Ensure that AppHarness can compile and start an app.
 
@@ -21,7 +24,7 @@ def test_app_harness(tmp_path):
 
         app = rx.App(state=State)
         app.add_page(lambda: rx.text("Basic App"), route="/", title="index")
-        app.compile()
+        app.compile_()
 
     with AppHarness.create(
         root=tmp_path,

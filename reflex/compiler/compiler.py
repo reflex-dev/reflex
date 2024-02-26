@@ -16,6 +16,7 @@ from reflex.components.component import (
 )
 from reflex.config import get_config
 from reflex.state import BaseState
+from reflex.style import LIGHT_COLOR_MODE
 from reflex.utils.imports import ImportVar
 
 
@@ -63,25 +64,33 @@ def _compile_theme(theme: dict) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _compile_contexts(state: Optional[Type[BaseState]]) -> str:
+def _is_dev_mode() -> bool:
+    return os.environ.get("REFLEX_ENV_MODE", "dev") == "dev"
+
+
+def _compile_contexts(state: Optional[Type[BaseState]], theme: Component) -> str:
     """Compile the initial state and contexts.
 
     Args:
         state: The app state.
+        theme: The top-level app theme.
 
     Returns:
         The compiled context file.
     """
-    is_dev_mode = os.environ.get("REFLEX_ENV_MODE", "dev") == "dev"
     return (
         templates.CONTEXT.render(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
-            is_dev_mode=is_dev_mode,
+            is_dev_mode=_is_dev_mode(),
+            default_color_mode=getattr(theme, "appearance", LIGHT_COLOR_MODE),
         )
         if state
-        else templates.CONTEXT.render(is_dev_mode=is_dev_mode)
+        else templates.CONTEXT.render(
+            is_dev_mode=_is_dev_mode(),
+            default_color_mode=getattr(theme, "appearance", LIGHT_COLOR_MODE),
+        )
     )
 
 
@@ -238,7 +247,12 @@ def _compile_stateful_components(
 
         # When the component is referenced by more than one page, render it
         # to be included in the STATEFUL_COMPONENTS module.
-        if isinstance(component, StatefulComponent) and component.references > 1:
+        # Skip this step in dev mode, thereby avoiding potential hot reload errors for larger apps
+        if (
+            isinstance(component, StatefulComponent)
+            and component.references > 1
+            and not _is_dev_mode()
+        ):
             # Reset this flag to render the actual component.
             component.rendered_as_shared = False
 
@@ -337,11 +351,15 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     return output_path, code
 
 
-def compile_contexts(state: Optional[Type[BaseState]]) -> tuple[str, str]:
+def compile_contexts(
+    state: Optional[Type[BaseState]],
+    theme: Component,
+) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:
         state: The app state.
+        theme: The top-level app theme.
 
     Returns:
         The path and code of the compiled context.
@@ -349,7 +367,7 @@ def compile_contexts(state: Optional[Type[BaseState]]) -> tuple[str, str]:
     # Get the path for the output file.
     output_path = utils.get_context_path()
 
-    return output_path, _compile_contexts(state)
+    return output_path, _compile_contexts(state, theme)
 
 
 def compile_page(
@@ -432,6 +450,30 @@ def compile_tailwind(
     return output_path, code
 
 
+def remove_tailwind_from_postcss() -> tuple[str, str]:
+    """If tailwind is not to be used, remove it from postcss.config.js.
+
+    Returns:
+        The path and code of the compiled postcss.config.js.
+    """
+    # Get the path for the output file.
+    output_path = constants.Dirs.POSTCSS_JS
+
+    code = [
+        line
+        for line in Path(output_path).read_text().splitlines(keepends=True)
+        if "tailwindcss: " not in line
+    ]
+
+    # Compile the config.
+    return output_path, "".join(code)
+
+
 def purge_web_pages_dir():
-    """Empty out .web directory."""
+    """Empty out .web/pages directory."""
+    if _is_dev_mode() and os.environ.get("REFLEX_PERSIST_WEB_DIR"):
+        # Skip purging the web directory in dev mode if REFLEX_PERSIST_WEB_DIR is set.
+        return
+
+    # Empty out the web pages directory.
     utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])

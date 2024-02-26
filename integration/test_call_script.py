@@ -142,17 +142,17 @@ def CallScript():
     @app.add_page
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=CallScriptState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.input(
+            rx.chakra.input(
                 value=CallScriptState.inline_counter.to(str),  # type: ignore
                 id="inline_counter",
                 is_read_only=True,
             ),
-            rx.input(
+            rx.chakra.input(
                 value=CallScriptState.external_counter.to(str),  # type: ignore
                 id="external_counter",
                 is_read_only=True,
@@ -226,8 +226,6 @@ def CallScript():
             ),
             rx.button("Reset", id="reset", on_click=CallScriptState.reset_),
         )
-
-    app.compile()
 
 
 @pytest.fixture(scope="session")
@@ -314,7 +312,7 @@ def test_call_script(
     update_counter_button.click()
     assert call_script.poll_for_value(counter, exp_not_equal="0") == "4"
     reset_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="3") == "0"
+    assert call_script.poll_for_value(counter, exp_not_equal="4") == "0"
     return_button.click()
     update_counter_button.click()
     assert call_script.poll_for_value(counter, exp_not_equal="0") == "1"
@@ -332,7 +330,7 @@ def test_call_script(
         script,
     )
     reset_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="3") == "0"
+    assert call_script.poll_for_value(counter, exp_not_equal="4") == "0"
 
     return_callback_button.click()
     update_counter_button.click()

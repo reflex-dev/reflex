@@ -7,7 +7,7 @@ import json
 import os
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, List, Union
 
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
@@ -52,6 +52,10 @@ def get_close_char(open: str, close: str | None = None) -> str:
 def is_wrapped(text: str, open: str, close: str | None = None) -> bool:
     """Check if the given text is wrapped in the given open and close characters.
 
+    "(a) + (b)" --> False
+    "((abc))"   --> True
+    "(abc)"     --> True
+
     Args:
         text: The text to check.
         open: The open character.
@@ -61,7 +65,18 @@ def is_wrapped(text: str, open: str, close: str | None = None) -> bool:
         Whether the text is wrapped.
     """
     close = get_close_char(open, close)
-    return text.startswith(open) and text.endswith(close)
+    if not (text.startswith(open) and text.endswith(close)):
+        return False
+
+    depth = 0
+    for ch in text[:-1]:
+        if ch == open:
+            depth += 1
+        if ch == close:
+            depth -= 1
+        if depth == 0:  # it shouldn't close before the end
+            return False
+    return True
 
 
 def wrap(
@@ -125,7 +140,7 @@ def to_snake_case(text: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower().replace("-", "_")
 
 
-def to_camel_case(text: str) -> str:
+def to_camel_case(text: str, allow_hyphens: bool = False) -> str:
     """Convert a string to camel case.
 
     The first word in the text is converted to lowercase and
@@ -133,12 +148,14 @@ def to_camel_case(text: str) -> str:
 
     Args:
         text: The string to convert.
+        allow_hyphens: Whether to allow hyphens in the string.
 
     Returns:
         The camel case string.
     """
-    words = re.split("[_-]", text.lstrip("-_"))
-    leading_underscores_or_hyphens = "".join(re.findall(r"^[_-]+", text))
+    char = "_" if allow_hyphens else "-_"
+    words = re.split(f"[{char}]", text.lstrip(char))
+    leading_underscores_or_hyphens = "".join(re.findall(rf"^[{char}]+", text))
     # Capitalize the first letter of each word except the first one
     converted_word = words[0] + "".join(x.capitalize() for x in words[1:])
     return leading_underscores_or_hyphens + converted_word
@@ -171,6 +188,35 @@ def to_kebab_case(text: str) -> str:
     return to_snake_case(text).replace("_", "-")
 
 
+def _escape_js_string(string: str) -> str:
+    """Escape the string for use as a JS string literal.
+
+    Args:
+        string: The string to escape.
+
+    Returns:
+        The escaped string.
+    """
+    # Escape backticks.
+    string = string.replace(r"\`", "`")
+    string = string.replace("`", r"\`")
+    return string
+
+
+def _wrap_js_string(string: str) -> str:
+    """Wrap string so it looks like {`string`}.
+
+    Args:
+        string: The string to wrap.
+
+    Returns:
+        The wrapped string.
+    """
+    string = wrap(string, "`")
+    string = wrap(string, "{")
+    return string
+
+
 def format_string(string: str) -> str:
     """Format the given string as a JS string literal..
 
@@ -180,15 +226,33 @@ def format_string(string: str) -> str:
     Returns:
         The formatted string.
     """
-    # Escape backticks.
-    string = string.replace(r"\`", "`")
-    string = string.replace("`", r"\`")
+    return _wrap_js_string(_escape_js_string(string))
 
-    # Wrap the string so it looks like {`string`}.
-    string = wrap(string, "`")
-    string = wrap(string, "{")
 
-    return string
+def format_f_string_prop(prop: BaseVar) -> str:
+    """Format the string in a given prop as an f-string.
+
+    Args:
+        prop: The prop to format.
+
+    Returns:
+        The formatted string.
+    """
+    s = prop._var_full_name
+    var_data = prop._var_data
+    interps = var_data.interpolations if var_data else []
+    parts: List[str] = []
+
+    if interps:
+        for i, (start, end) in enumerate(interps):
+            prev_end = interps[i - 1][1] if i > 0 else 0
+            parts.append(_escape_js_string(s[prev_end:start]))
+            parts.append(s[start:end])
+        parts.append(_escape_js_string(s[interps[-1][1] :]))
+    else:
+        parts.append(_escape_js_string(s))
+
+    return _wrap_js_string("".join(parts))
 
 
 def format_var(var: Var) -> str:
@@ -251,23 +315,58 @@ def format_cond(
     # Use Python truthiness.
     cond = f"isTrue({cond})"
 
+    def create_var(cond_part):
+        return Var.create_safe(cond_part, _var_is_string=type(cond_part) is str)
+
     # Format prop conds.
     if is_prop:
-        prop1 = Var.create_safe(
-            true_value,
-            _var_is_string=type(true_value) is str,
+        true_value = create_var(true_value)
+        prop1 = true_value._replace(
+            _var_is_local=True,
         )
-        prop1._var_is_local = True
-        prop2 = Var.create_safe(
-            false_value,
-            _var_is_string=type(false_value) is str,
-        )
-        prop2._var_is_local = True
-        prop1, prop2 = str(prop1), str(prop2)  # avoid f-string semantics for Var
-        return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
+
+        false_value = create_var(false_value)
+        prop2 = false_value._replace(_var_is_local=True)
+        # unwrap '{}' to avoid f-string semantics for Var
+        return f"{cond} ? {prop1._var_name_unwrapped} : {prop2._var_name_unwrapped}"
 
     # Format component conds.
     return wrap(f"{cond} ? {true_value} : {false_value}", "{")
+
+
+def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> str:
+    """Format a match expression whose return type is a Var.
+
+    Args:
+        cond: The condition.
+        match_cases: The list of cases to match.
+        default: The default case.
+
+    Returns:
+        The formatted match expression
+
+    """
+    switch_code = f"(() => {{ switch (JSON.stringify({cond})) {{"
+
+    for case in match_cases:
+        conditions = case[:-1]
+        return_value = case[-1]
+
+        case_conditions = " ".join(
+            [
+                f"case JSON.stringify({condition._var_name_unwrapped}):"
+                for condition in conditions
+            ]
+        )
+        case_code = (
+            f"{case_conditions}  return ({return_value._var_name_unwrapped});  break;"
+        )
+        switch_code += case_code
+
+    switch_code += f"default:  return ({default._var_name_unwrapped});  break;"
+    switch_code += "};})()"
+
+    return switch_code
 
 
 def format_prop(
@@ -293,7 +392,9 @@ def format_prop(
         if isinstance(prop, Var):
             if not prop._var_is_local or prop._var_is_string:
                 return str(prop)
-            if types._issubclass(prop._var_type, str):
+            if isinstance(prop, BaseVar) and types._issubclass(prop._var_type, str):
+                if prop._var_data and prop._var_data.interpolations:
+                    return format_f_string_prop(prop)
                 return format_string(prop._var_full_name)
             prop = prop._var_full_name
 

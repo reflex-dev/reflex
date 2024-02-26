@@ -1,6 +1,6 @@
 import pytest
 
-from reflex.components.media.icon import ICON_LIST, Icon
+from reflex.components.chakra.media.icon import ICON_LIST, Icon
 from reflex.utils import format
 
 

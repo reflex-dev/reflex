@@ -75,11 +75,19 @@ def _init(
     # Show system info
     exec.output_system_info()
 
-    # Get the app name.
-    app_name = prerequisites.get_default_app_name() if name is None else name
+    # Validate the app name.
+    app_name = prerequisites.validate_app_name(name)
     console.rule(f"[bold]Initializing {app_name}")
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
+
+    prerequisites.initialize_reflex_user_directory()
+
+    prerequisites.ensure_reflex_installation_id()
+
+    # When upgrading to 0.4, show migration instructions.
+    if prerequisites.should_show_rx_chakra_migration_instructions():
+        prerequisites.show_rx_chakra_migration_instructions()
 
     # Set up the app directory, only if the config doesn't exist.
     if not os.path.exists(constants.Config.FILE):
@@ -179,7 +187,7 @@ def _run(
     if frontend:
         prerequisites.update_next_config()
         # Get the app module.
-        prerequisites.get_app()
+        prerequisites.get_compiled_app()
 
     # Warn if schema is not up to date.
     prerequisites.check_schema_up_to_date()
@@ -333,6 +341,7 @@ def logout(
 
 
 db_cli = typer.Typer()
+script_cli = typer.Typer()
 
 
 def _skip_compile():
@@ -363,7 +372,7 @@ def db_init():
 
     # Initialize the database.
     _skip_compile()
-    prerequisites.get_app()
+    prerequisites.get_compiled_app()
     model.Model.alembic_init()
     model.Model.migrate(autogenerate=True)
 
@@ -374,8 +383,9 @@ def migrate():
     from reflex import model
     from reflex.utils import prerequisites
 
+    # TODO see if we can use `get_app()` instead (no compile).  Would _skip_compile still be needed then?
     _skip_compile()
-    prerequisites.get_app()
+    prerequisites.get_compiled_app()
     if not prerequisites.check_db_initialized():
         return
     model.Model.migrate()
@@ -394,8 +404,9 @@ def makemigrations(
     from reflex import model
     from reflex.utils import prerequisites
 
+    # TODO see if we can use `get_app()` instead (no compile).  Would _skip_compile still be needed then?
     _skip_compile()
-    prerequisites.get_app()
+    prerequisites.get_compiled_app()
     if not prerequisites.check_db_initialized():
         return
     with model.Model.get_db_engine().connect() as connection:
@@ -407,6 +418,17 @@ def makemigrations(
             console.error(
                 f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
             )
+
+
+@script_cli.command(
+    name="keep-chakra",
+    help="Change all rx.<component> references to rx.chakra.<component>, to preserve Chakra UI usage.",
+)
+def keep_chakra():
+    """Change all rx.<component> references to rx.chakra.<component>, to preserve Chakra UI usage."""
+    from reflex.utils import prerequisites
+
+    prerequisites.migrate_to_rx_chakra()
 
 
 @cli.command()
@@ -550,6 +572,7 @@ def demo(
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
+cli.add_typer(script_cli, name="script", help="Subcommands running helper scripts.")
 cli.add_typer(
     deployments_cli,
     name="deployments",

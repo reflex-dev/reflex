@@ -1,7 +1,7 @@
 import pytest
 
 import reflex as rx
-from reflex.components.typography.markdown import Markdown
+from reflex.components.markdown import Markdown
 
 
 @pytest.mark.parametrize(
@@ -37,7 +37,7 @@ def test_set_component_map():
     """Test setting the component map."""
     component_map = {
         "h1": lambda value: rx.box(
-            rx.heading(value, as_="h1", size="2xl"), padding="1em"
+            rx.chakra.heading(value, as_="h1", size="2xl"), padding="1em"
         ),
         "p": lambda value: rx.box(rx.text(value), padding="1em"),
     }
@@ -56,4 +56,8 @@ def test_pass_custom_styles():
     md = Markdown.create("# Hello", custom_styles={"h1": {"color": "red"}})
 
     comp = md.get_component("h1")  # type: ignore
-    assert comp.style == {"color": "red", "marginY": "0.5em"}
+    assert comp.style == {
+        "color": "red",
+        "marginBottom": "0.5em",
+        "marginTop": "0.5em",
+    }

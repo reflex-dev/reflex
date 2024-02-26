@@ -42,7 +42,7 @@ def TestEventAction():
 
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=EventActionState.router.session.client_token,
                 is_read_only=True,
                 id="token",
@@ -121,10 +121,10 @@ def TestEventAction():
                     "custom-prevent-default"
                 ).prevent_default,
             ),
-            rx.list(
+            rx.chakra.list(
                 rx.foreach(
                     EventActionState.order,  # type: ignore
-                    rx.list_item,
+                    rx.chakra.list_item,
                 ),
             ),
             on_click=EventActionState.on_click("outer"),  # type: ignore
@@ -132,7 +132,6 @@ def TestEventAction():
 
     app = rx.App(state=rx.State)
     app.add_page(index)
-    app.compile()
 
 
 @pytest.fixture(scope="session")
@@ -208,7 +207,7 @@ def poll_for_order(
 
     async def _poll_for_order(exp_order: list[str]):
         async def _backend_state():
-            return await event_action.get_state(token)
+            return await event_action.get_state(f"{token}_state.event_action_state")
 
         async def _check():
             return (await _backend_state()).substates[

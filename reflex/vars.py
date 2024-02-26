@@ -4,6 +4,7 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import dis
+import functools
 import inspect
 import json
 import random
@@ -30,8 +31,6 @@ from typing import (
     get_origin,
     get_type_hints,
 )
-
-import pydantic
 
 from reflex import constants
 from reflex.base import Base
@@ -87,6 +86,15 @@ REPLACED_NAMES = {
     "deps": "_deps",
 }
 
+PYTHON_JS_TYPE_MAP = {
+    (int, float): "number",
+    (str,): "string",
+    (bool,): "boolean",
+    (list, tuple): "Array",
+    (dict,): "Object",
+    (None,): "null",
+}
+
 
 def get_unique_variable_name() -> str:
     """Get a unique variable name.
@@ -113,6 +121,11 @@ class VarData(Base):
     # Hooks that need to be present in the component to render this var
     hooks: Set[str] = set()
 
+    # Positions of interpolated strings. This is used by the decoder to figure
+    # out where the interpolations are and only escape the non-interpolated
+    # segments.
+    interpolations: List[Tuple[int, int]] = []
+
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None:
         """Merge multiple var data objects.
@@ -126,17 +139,21 @@ class VarData(Base):
         state = ""
         _imports = {}
         hooks = set()
+        interpolations = []
         for var_data in others:
             if var_data is None:
                 continue
             state = state or var_data.state
             _imports = imports.merge_imports(_imports, var_data.imports)
             hooks.update(var_data.hooks)
+            interpolations += var_data.interpolations
+
         return (
             cls(
                 state=state,
                 imports=_imports,
                 hooks=hooks,
+                interpolations=interpolations,
             )
             or None
         )
@@ -147,7 +164,7 @@ class VarData(Base):
         Returns:
             True if any field is set to a non-default value.
         """
-        return bool(self.state or self.imports or self.hooks)
+        return bool(self.state or self.imports or self.hooks or self.interpolations)
 
     def __eq__(self, other: Any) -> bool:
         """Check if two var data objects are equal.
@@ -160,6 +177,9 @@ class VarData(Base):
         """
         if not isinstance(other, VarData):
             return False
+
+        # Don't compare interpolations - that's added in by the decoder, and
+        # not part of the vardata itself.
         return (
             self.state == other.state
             and self.hooks == other.hooks
@@ -175,6 +195,7 @@ class VarData(Base):
         """
         return {
             "state": self.state,
+            "interpolations": list(self.interpolations),
             "imports": {
                 lib: [import_var.dict() for import_var in import_vars]
                 for lib, import_vars in self.imports.items()
@@ -193,7 +214,18 @@ def _encode_var(value: Var) -> str:
         The encoded var.
     """
     if value._var_data:
-        return f"<reflex.Var>{value._var_data.json()}</reflex.Var>" + str(value)
+        from reflex.utils.serializers import serialize
+
+        final_value = str(value)
+        data = value._var_data.dict()
+        data["string_length"] = len(final_value)
+        data_json = value._var_data.__config__.json_dumps(data, default=serialize)
+
+        return (
+            f"{constants.REFLEX_VAR_OPENING_TAG}{data_json}{constants.REFLEX_VAR_CLOSING_TAG}"
+            + final_value
+        )
+
     return str(value)
 
 
@@ -208,17 +240,40 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
     """
     var_datas = []
     if isinstance(value, str):
-        # Extract the state name from a formatted var
-        while m := re.match(r"(.*)<reflex.Var>(.*)</reflex.Var>(.*)", value):
-            value = m.group(1) + m.group(3)
+        offset = 0
+
+        # Initialize some methods for reading json.
+        var_data_config = VarData().__config__
+
+        def json_loads(s):
             try:
-                var_datas.append(VarData.parse_raw(m.group(2)))
-            except pydantic.ValidationError:
-                # If the VarData is invalid, it was probably json-encoded twice...
-                var_datas.append(VarData.parse_raw(json.loads(f'"{m.group(2)}"')))
-    if var_datas:
-        return VarData.merge(*var_datas), value
-    return None, value
+                return var_data_config.json_loads(s)
+            except json.decoder.JSONDecodeError:
+                return var_data_config.json_loads(var_data_config.json_loads(f'"{s}"'))
+
+        # Compile regex for finding reflex var tags.
+        pattern_re = rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
+        pattern = re.compile(pattern_re, flags=re.DOTALL)
+
+        # Find all tags.
+        while m := pattern.search(value):
+            start, end = m.span()
+            value = value[:start] + value[end:]
+
+            # Read the JSON, pull out the string length, parse the rest as VarData.
+            data = json_loads(m.group(1))
+            string_length = data.pop("string_length", None)
+            var_data = VarData.parse_obj(data)
+
+            # Use string length to compute positions of interpolations.
+            if string_length is not None:
+                realstart = start + offset
+                var_data.interpolations = [(realstart, realstart + string_length)]
+
+            var_datas.append(var_data)
+            offset += end - start
+
+    return VarData.merge(*var_datas) if var_datas else None, value
 
 
 def _extract_var_data(value: Iterable) -> list[VarData | None]:
@@ -230,6 +285,8 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
     Returns:
         The extracted VarDatas.
     """
+    from reflex.style import Style
+
     var_datas = []
     with contextlib.suppress(TypeError):
         for sub in value:
@@ -241,10 +298,15 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
                     var_datas.extend(_extract_var_data(sub.values()))
                 # Recurse into iterable values (or dict keys).
                 var_datas.extend(_extract_var_data(sub))
-    # Recurse when value is a dict itself.
-    values = getattr(value, "values", None)
-    if callable(values):
-        var_datas.extend(_extract_var_data(values()))
+
+    # Style objects should already have _var_data.
+    if isinstance(value, Style):
+        var_datas.append(value._var_data)
+    else:
+        # Recurse when value is a dict itself.
+        values = getattr(value, "values", None)
+        if callable(values):
+            var_datas.extend(_extract_var_data(values()))
     return var_datas
 
 
@@ -417,6 +479,23 @@ class Var:
             and self._var_data == other._var_data
         )
 
+    def _merge(self, other) -> Var:
+        """Merge two or more dicts.
+
+        Args:
+            other: The other var to merge.
+
+        Returns:
+            The merged var.
+        """
+        if other is None:
+            return self._replace()
+        if not isinstance(other, Var):
+            other = Var.create(other)
+        return self._replace(
+            _var_name=f"{{...{self._var_name}, ...{other._var_name}}}"  # type: ignore
+        )
+
     def to_string(self, json: bool = True) -> Var:
         """Convert a var to a string.
 
@@ -544,11 +623,12 @@ class Var:
                 )
 
             # Get the type of the indexed var.
-            type_ = (
-                types.get_args(self._var_type)[0]
-                if types.is_generic_alias(self._var_type)
-                else Any
-            )
+            if types.is_generic_alias(self._var_type):
+                index = i if not isinstance(i, Var) else 0
+                type_ = types.get_args(self._var_type)
+                type_ = type_[index % len(type_)]
+            elif types._issubclass(self._var_type, str):
+                type_ = str
 
             # Use `at` to support negative indices.
             return self._replace(
@@ -673,6 +753,16 @@ class Var:
 
         left_operand, right_operand = (other, self) if flip else (self, other)
 
+        def get_operand_full_name(operand):
+            # operand vars that are string literals need to be wrapped in back ticks.
+            return (
+                operand._var_name_unwrapped
+                if operand._var_is_string
+                and not operand._var_state
+                and operand._var_is_local
+                else operand._var_full_name
+            )
+
         if other is not None:
             # check if the operation between operands is valid.
             if op and not self.is_valid_operation(
@@ -684,28 +774,34 @@ class Var:
                     f"Unsupported Operand type(s) for {op}: `{left_operand._var_full_name}` of type {left_operand._var_type.__name__} and `{right_operand._var_full_name}` of type {right_operand._var_type.__name__}"  # type: ignore
                 )
 
+            left_operand_full_name = get_operand_full_name(left_operand)
+            right_operand_full_name = get_operand_full_name(right_operand)
+
+            left_operand_full_name = format.wrap(left_operand_full_name, "(")
+            right_operand_full_name = format.wrap(right_operand_full_name, "(")
+
             # apply function to operands
             if fn is not None:
                 if invoke_fn:
                     # invoke the function on left operand.
-                    operation_name = f"{left_operand._var_full_name}.{fn}({right_operand._var_full_name})"  # type: ignore
+                    operation_name = f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
                 else:
                     # pass the operands as arguments to the function.
-                    operation_name = f"{left_operand._var_full_name} {op} {right_operand._var_full_name}"  # type: ignore
+                    operation_name = f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
                     operation_name = f"{fn}({operation_name})"
             else:
                 # apply operator to operands (left operand <operator> right_operand)
-                operation_name = f"{left_operand._var_full_name} {op} {right_operand._var_full_name}"  # type: ignore
+                operation_name = f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
-            operation_name = f"{op}{self._var_full_name}"
+            operation_name = f"{op}{get_operand_full_name(self)}"
             # apply function to operands
             if fn is not None:
                 operation_name = (
                     f"{fn}({operation_name})"
                     if not invoke_fn
-                    else f"{self._var_full_name}.{fn}()"
+                    else f"{get_operand_full_name(self)}.{fn}()"
                 )
 
         return self._replace(
@@ -799,7 +895,20 @@ class Var:
             _var_is_string=False,
         )
 
-    def __eq__(self, other: Var) -> Var:
+    def _type(self) -> Var:
+        """Get the type of the Var in Javascript.
+
+        Returns:
+            A var representing the type check.
+        """
+        return self._replace(
+            _var_name=f"typeof {self._var_full_name}",
+            _var_type=str,
+            _var_is_string=False,
+            _var_full_name_needs_state_prefix=False,
+        )
+
+    def __eq__(self, other: Union[Var, Type]) -> Var:
         """Perform an equality comparison.
 
         Args:
@@ -808,9 +917,12 @@ class Var:
         Returns:
             A var representing the equality comparison.
         """
+        for python_types, js_type in PYTHON_JS_TYPE_MAP.items():
+            if not isinstance(other, Var) and other in python_types:
+                return self.compare("===", Var.create(js_type, _var_is_string=True))  # type: ignore
         return self.compare("===", other)
 
-    def __ne__(self, other: Var) -> Var:
+    def __ne__(self, other: Union[Var, Type]) -> Var:
         """Perform an inequality comparison.
 
         Args:
@@ -819,6 +931,9 @@ class Var:
         Returns:
             A var representing the inequality comparison.
         """
+        for python_types, js_type in PYTHON_JS_TYPE_MAP.items():
+            if not isinstance(other, Var) and other in python_types:
+                return self.compare("!==", Var.create(js_type, _var_is_string=True))  # type: ignore
         return self.compare("!==", other)
 
     def __gt__(self, other: Var) -> Var:
@@ -1530,6 +1645,30 @@ class Var:
         """
         return self._var_data.state if self._var_data else ""
 
+    @property
+    def _var_name_unwrapped(self) -> str:
+        """Get the var str without wrapping in curly braces.
+
+        Returns:
+            The str var without the wrapped curly braces
+        """
+        from reflex.style import Style
+
+        type_ = (
+            get_origin(self._var_type)
+            if types.is_generic_alias(self._var_type)
+            else self._var_type
+        )
+        wrapped_var = str(self)
+
+        return (
+            wrapped_var
+            if not self._var_state
+            and types._issubclass(type_, dict)
+            or types._issubclass(type_, Style)
+            else wrapped_var.strip("{}")
+        )
+
 
 # Allow automatic serialization of Var within JSON structures
 serializers.serializer(_encode_var)
@@ -1664,24 +1803,26 @@ class ComputedVar(Var, property):
     # Whether to track dependencies and cache computed values
     _cache: bool = dataclasses.field(default=False)
 
+    _initial_value: Any | types.Unset = dataclasses.field(default_factory=types.Unset)
+
     def __init__(
         self,
         fget: Callable[[BaseState], Any],
-        fset: Callable[[BaseState, Any], None] | None = None,
-        fdel: Callable[[BaseState], Any] | None = None,
-        doc: str | None = None,
+        initial_value: Any | types.Unset = types.Unset(),
+        cache: bool = False,
         **kwargs,
     ):
         """Initialize a ComputedVar.
 
         Args:
             fget: The getter function.
-            fset: The setter function.
-            fdel: The deleter function.
-            doc: The docstring.
+            initial_value: The initial value of the computed var.
+            cache: Whether to cache the computed value.
             **kwargs: additional attributes to set on the instance
         """
-        property.__init__(self, fget, fset, fdel, doc)
+        self._initial_value = initial_value
+        self._cache = cache
+        property.__init__(self, fget)
         kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", self._determine_var_type())
         BaseVar.__init__(self, **kwargs)  # type: ignore
@@ -1822,21 +1963,39 @@ class ComputedVar(Var, property):
         return Any
 
 
-def cached_var(fget: Callable[[Any], Any]) -> ComputedVar:
-    """A field with computed getter that tracks other state dependencies.
-
-    The cached_var will only be recalculated when other state vars that it
-    depends on are modified.
+def computed_var(
+    fget: Callable[[BaseState], Any] | None = None,
+    initial_value: Any | None = None,
+    cache: bool = False,
+    **kwargs,
+) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
+    """A ComputedVar decorator with or without kwargs.
 
     Args:
-        fget: the function that calculates the variable value.
+        fget: The getter function.
+        initial_value: The initial value of the computed var.
+        cache: Whether to cache the computed value.
+        **kwargs: additional attributes to set on the instance
 
     Returns:
-        ComputedVar that is recomputed when dependencies change.
+        A ComputedVar instance.
     """
-    cvar = ComputedVar(fget=fget)
-    cvar._cache = True
-    return cvar
+    if fget is not None:
+        return ComputedVar(fget=fget, cache=cache)
+
+    def wrapper(fget):
+        return ComputedVar(
+            fget=fget,
+            initial_value=initial_value,
+            cache=cache,
+            **kwargs,
+        )
+
+    return wrapper
+
+
+# Partial function of computed_var with cache=True
+cached_var = functools.partial(computed_var, cache=True)
 
 
 class CallableVar(BaseVar):
@@ -1867,3 +2026,20 @@ class CallableVar(BaseVar):
             The Var returned from calling the function.
         """
         return self.fn(*args, **kwargs)
+
+
+def get_uuid_string_var() -> Var:
+    """Return a var that generates UUIDs via .web/utils/state.js.
+
+    Returns:
+        the var to generate UUIDs at runtime.
+    """
+    from reflex.utils.imports import ImportVar
+
+    unique_uuid_var_data = VarData(
+        imports={f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")}}  # type: ignore
+    )
+
+    return BaseVar(
+        _var_name="generateUUID()", _var_type=str, _var_data=unique_uuid_var_data
+    )

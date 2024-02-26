@@ -11,30 +11,31 @@ from typing import Literal
 from reflex import el
 from reflex.vars import Var
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
     LiteralVariant,
     RadixThemesComponent,
 )
 
-LiteralButtonSize = Literal[1, 2, 3, 4]
+LiteralButtonSize = Literal["1", "2", "3", "4"]
 
-class Button(el.Button, CommonMarginProps, RadixThemesComponent):
+class Button(el.Button, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
         as_child: Optional[Union[Var[bool], bool]] = None,
-        size: Optional[Union[Var[Literal[1, 2, 3, 4]], Literal[1, 2, 3, 4]]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
+        ] = None,
         variant: Optional[
             Union[
                 Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
                 Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
             ]
         ] = None,
-        color: Optional[
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -106,9 +107,7 @@ class Button(el.Button, CommonMarginProps, RadixThemesComponent):
         auto_focus: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        disabled: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
         form: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         form_action: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
@@ -169,51 +168,6 @@ class Button(el.Button, CommonMarginProps, RadixThemesComponent):
         ] = None,
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -278,7 +232,7 @@ class Button(el.Button, CommonMarginProps, RadixThemesComponent):
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             size: Button size "1" - "4"
             variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
-            color: Override theme color for button
+            color_scheme: Override theme color for button
             high_contrast: Whether to render the button with higher contrast color against background
             radius: Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
             auto_focus: Automatically focuses the button when the page loads
@@ -308,14 +262,6 @@ class Button(el.Button, CommonMarginProps, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -328,3 +274,5 @@ class Button(el.Button, CommonMarginProps, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+button = Button.create

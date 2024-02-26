@@ -8,7 +8,8 @@
 
 <hr>
 
-### **✨ Saf Python'da performanslı, özelleştirilebilir web uygulamaları. Saniyeler içinde oluşturun. ✨**
+### **✨ Saf Python'da performanslı, özelleştirilebilir web uygulamaları. Saniyeler içinde dağıtın. ✨**
+
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
@@ -17,9 +18,12 @@
 </div>
 
 ---
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md)
+
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md)
+
 ---
-## ⚙️ İndirme
+
+## ⚙️ Kurulum
 
 Bir terminal açın ve çalıştırın (Python 3.8+ gerekir):
 
@@ -27,11 +31,11 @@ Bir terminal açın ve çalıştırın (Python 3.8+ gerekir):
 pip install reflex
 ```
 
-## 🥳 İlk uygulamanı oluştur
+## 🥳 İlk Uygulamanı Oluştur
 
-`reflex`'i indirmek ayrıca `reflex` komut satırı aracınıda indirir.
+`reflex`'i kurduğunuzda `reflex` komut satırı aracınıda kurmuş olursunuz.
 
-Yeni bir proje oluşturarak kurulumun başarılı olup olmadığını test edin. (`my_app_name`'i proje adın ile değiştir.):
+Kurulumun başarılı olduğunu test etmek için yeni bir proje oluşturun. (`my_app_name`'i proje ismiyle değiştirin.):
 
 ```bash
 mkdir my_app_name
@@ -39,9 +43,9 @@ cd my_app_name
 reflex init
 ```
 
-Bu komut, yeni dizininizde şablon uygulamasını başlatır.
+Bu komut ile birlikte yeni oluşturduğunuz dizinde bir şablon uygulaması oluşturur.
 
-Bu uygulamayı geliştirme modunda başlatabilirsiniz:
+Uygulamanızı geliştirme modunda başlatabilirsiniz:
 
 ```bash
 reflex run
@@ -51,10 +55,9 @@ Uygulamanızın http://localhost:3000 adresinde çalıştığını görmelisiniz
 
 Şimdi `my_app_name/my_app_name.py` yolundaki kaynak kodu düzenleyebilirsiniz. Reflex'in hızlı yenileme özelliği vardır, böylece kodunuzu kaydettiğinizde değişikliklerinizi anında görebilirsiniz.
 
-
 ## 🫧 Örnek Uygulama
 
-Bir örnek üzerinden gidelim: DALL·E kullanarak bir görüntü oluşturma uygulaması yazalım. Basit olması açısından, yalnızca OpenAI API'sini çağırıyoruz, ancak bunu yerel olarak çalıştırılan bir makine öğrenimi modeliyle değiştirebilirsiniz.
+Bir örnek üzerinden gidelim: [DALL·E](https://platform.openai.com/docs/guides/images/image-generation?context=node) kullanarak bir görüntü oluşturma uygulaması yazalım. Basit olması açısından, yalnızca [OpenAI API](https://platform.openai.com/docs/api-reference/authentication)'ını kullanıyoruz, ancak bunu yerel olarak çalıştırılan bir makine öğrenimi modeliyle değiştirebilirsiniz.
 
 &nbsp;
 
@@ -64,7 +67,7 @@ Bir örnek üzerinden gidelim: DALL·E kullanarak bir görüntü oluşturma uygu
 
 &nbsp;
 
-İşte bunu oluşturmak için kodun tamamaı. Bu sadece bir Python dosyasıyla gerçekleşti!
+İşte bunu oluşturmak için kodun tamamaı. Her şey sadece bir Python dosyasıyla hazırlandı!
 
 ```python
 import reflex as rx
@@ -73,14 +76,14 @@ import openai
 openai.api_key = "YOUR_API_KEY"
 
 class State(rx.State):
-    """The app state."""
+    """Uygulama durumu."""
     prompt = ""
     image_url = ""
     processing = False
     complete = False
 
     def get_image(self):
-        """Get the image from the prompt."""
+        """Prompt'tan görüntüyü alın."""
         if self.prompt == "":
             return rx.window_alert("Prompt Empty")
 
@@ -118,17 +121,16 @@ def index():
         height="100vh",
     )
 
-# Add state and page to the app.
+# Sayfa ve durumu uygulamaya ekleyin.
 app = rx.App()
 app.add_page(index, title="reflex:DALL·E")
-app.compile()
 ```
 
-## Hadi bunu parçalara ayırarak inceleyelim.
+## Daha Detaylı İceleyelim
 
 ### **Reflex UI**
 
-Hadi UI (Kullanıcı Arayüzü) ile başlayalım.
+UI (Kullanıcı Arayüzü) ile başlayalım.
 
 ```python
 def index():
@@ -139,33 +141,32 @@ def index():
 
 Bu `index` fonkisyonu uygulamanın frontend'ini tanımlar.
 
-Farklı bileşenler kullanıyoruz misal `center`, `vstack`, `input`, ve `button` frontend'i oluşturmak için kullanıyoruz. Bileşenler birbirinin içine yerleştirilebilir
-karmaşık düzenler oluşturmak için. Ayrıca bunları CSS'nin tüm gücüyle şekillendirmek için args'ı kullanabilirsiniz.
+Frontend'i oluşturmak için `center`, `vstack`, `input`, ve `button` gibi farklı bileşenler kullanıyoruz. Karmaşık düzenler oluşturmak için bileşenleri birbirinin içine yerleştirilebiliriz. Ayrıca bunları CSS'nin tüm gücüyle şekillendirmek için anahtar kelime argümanları kullanabilirsiniz.
 
-Reflex size yardım için [60'tan fazla yerleşik bileşen](https://reflex.dev/docs/library) içerir. Aktif olarak çok daha fazla yeni bileşen ekliyoruz, ve bunları oluşturmak çok kolay [Kendi bileşenlerinizi oluşturun](https://reflex.dev/docs/wrapping-react/overview/).
+Reflex, işinizi kolaylaştırmak için [60'tan fazla dahili bileşen](https://reflex.dev/docs/library) içerir. Aktif olarak yeni bileşen ekliyoruz ve [kendi bileşenlerinizi oluşturmak](https://reflex.dev/docs/wrapping-react/overview/) oldukça kolay.
 
-### **Durum**
+### **Durum (State)**
 
-Reflex, UI durumunuzun fonksiyonu olarak temsil eder.
+Reflex arayüzünüzü durumunuzun bir fonksiyonu olarak temsil eder.
 
 ```python
 class State(rx.State):
-    """The app state."""
+    """Uygulama durumu."""
     prompt = ""
     image_url = ""
     processing = False
     complete = False
 ```
 
-Durum (State), bir uygulamadaki değişebilen tüm değişkenleri (vars olarak adlandırılır) ve bunları değiştiren işlevleri tanımlar.
+Durum (State), bir uygulamadaki değişebilen tüm değişkenleri (vars olarak adlandırılır) ve bunları değiştiren fonksiyonları tanımlar.
 
-Burada durum `prompt` ve `image_url`sinden oluşur. Ayrıca döngüsel ilerlemenin ve görüntünün ne zaman gösterileceğini belirtmek için `processing` ve `complete` booleanları da vardır.
+Burada durum `prompt` ve `image_url`inden oluşur. Ayrıca döngüsel ilerlemenin ve görüntünün ne zaman gösterileceğini belirtmek için `processing` ve `complete` booleanları da vardır.
 
-### **Olay İşleyicileri**
+### **Olay İşleyicileri (Event Handlers)**
 
 ```python
 def get_image(self):
-    """Get the image from the prompt."""
+    """Prompt'tan görüntüyü alın."""
     if self.prompt == "":
         return rx.window_alert("Prompt Empty")
 
@@ -176,23 +177,22 @@ def get_image(self):
     self.processing, self.complete = False, True
 ```
 
-Durum içinde, durum değişkenlerini değiştiren olay işleyicileri (Event handler) adı verilen işlevleri tanımlarız. Olay işleyicileri, Reflex'te durumu değiştirebilmemizin yoludur. Bir düğmeye tıklamak veya bir metin kutusuna yazmak gibi kullanıcı eylemlerine yanıt olarak çağrılabilirler. Bu eylemlere olay denir.
+Durum içinde, durum değişkenlerini değiştiren olay işleyicileri adı verilen fonksiyonları tanımlarız. Olay işleyicileri, Reflex'te durumu değiştirebilmemizi sağlar. Bir düğmeye tıklamak veya bir metin kutusuna yazı yazmak gibi kullanıcı eylemlerine yanıt olarak çağrılabilirler. Bu eylemlere olay denir.
 
-Oluşturduğumuz DALL·E uygulamasının olay işleyicisine sahip, `get_image` OpenAI API'dan oluşturulan resmi alır. Bir olay işleyicisinin ortasında `yield`in kullanılması UI'ın güncellenmesine neden olur. Aksi takdirde UI olay işleyicisinin sonunda güncellenecektir.
+DALL·E uygulamamız bir olay işleyicisine sahip, `get_image` ki bu da OpenAI API'ından oluşturulan resmi alır. Bir olay işleyicisinin ortasında `yield`ın kullanılması UI'ın güncellenmesini sağlar. Aksi takdirde UI olay işleyicisinin sonunda güncellenecektir.
 
-### **Routing (Yönlendirme)**
+### **Yönlendirme (Routing)**
 
-En sonunda uygulamamızı tanımlarız.
+En sonunda uygulamamızı tanımlıyoruz.
 
 ```python
 app = rx.App()
 ```
 
-Root'tan index bileşenlerine bir sayfa ekliyoruz. Ayrıca sayfa önizlemesi/tarayıcı sekmesinde görünecek bir başlık da ekliyoruz.
+Uygulamamızın kök dizinine index bileşeninden bir sayfa ekliyoruz. Ayrıca sayfa önizlemesinde/tarayıcı sekmesinde görünecek bir başlık ekliyoruz.
 
 ```python
 app.add_page(index, title="DALL-E")
-app.compile()
 ```
 
 Daha fazla sayfa ekleyerek çok sayfalı bir uygulama oluşturabilirsiniz.
@@ -215,23 +215,29 @@ Reflex, Aralık 2022'de Pynecone adıyla piyasaya sürüldü.
 
 Temmuz 2023 itibarıyla **Herkese Açık Beta** aşamasındayız.
 
--   :white_check_mark: **Public Alpha**: Herkes Reflex'i yükleyebilir ve kullanabilir. Sorunlar olabilir, ancak bunları aktif olarak çözmek için çalışıyoruz.
--   :large_orange_diamond: **Public Beta**: Kurumsal olmayan kullanım durumları için yeterince kararlı.
--   **Public Hosting Beta**: _Optionally_, uygulamalarınızı Reflex ile dağıtın ve barındırın!
--   **Public**: Reflex ürünü hazır.
+- :white_check_mark: **Public Alpha**: Herkes Reflex'i yükleyebilir ve kullanabilir. Sorunlar olabilir, ancak bunları aktif olarak çözmek için çalışıyoruz.
+- :large_orange_diamond: **Public Beta**: Kurumsal olmayan kullanım durumları için yeterince kararlı.
+- **Public Hosting Beta**: _Optionally_, uygulamalarınızı Reflex ile dağıtın ve barındırın!
+- **Public**: Reflex kullanıma hazır.
 
-Reflex'in her hafta yeni sürümleri ve özellikleri geliyor! Güncel kalmak için :star: yıldızlamayı ve bu depoyu :eyes: izlediğinizden emin olun.
+Reflex'in her hafta yeni sürümleri ve özellikleri geliyor! Güncel kalmak için :star: yıldızlamayı ve bu repoyu :eyes: izlediğinizden emin olun.
 
 ## Katkı
 
-Her boyuttaki katkıları memnuniyetle karşılıyoruz! Aşağıda Reflex topluluğuna başlamanın bazı iyi yolları verilmiştir.
+Her boyuttaki katkıları memnuniyetle karşılıyoruz! Aşağıda Reflex topluluğuna adım atmanın bazı yolları mevcut.
 
--   **Discord Kanalımıza Katılın**: [Discord'umuz](https://discord.gg/T5WSbC2YtQ), Reflex projeniz hakkında yardım almak ve nasıl katkıda bulunabileceğinizi tartışmak için en iyi yerdir.
--   **GitHub Discussions**: Eklemek istediğiniz özellikler veya kafa karıştırıcı veya açıklığa kavuşturulması gereken şeyler hakkında konuşmanın harika bir yolu.
--   **GitHub Issues**: Bunlar hataları bildirmenin mükemmel bir yoludur. Ayrıca mevcut bir sorunu deneyip çözebilir ve bir PR (Pull Requests) gönderebilirsiniz.
+- **Discord Kanalımıza Katılın**: [Discord'umuz](https://discord.gg/T5WSbC2YtQ), Reflex projeniz hakkında yardım almak ve nasıl katkıda bulunabileceğinizi tartışmak için en iyi yerdir.
+- **GitHub Discussions**: Eklemek istediğiniz özellikler veya kafa karıştırıcı, açıklığa kavuşturulması gereken şeyler hakkında konuşmanın harika bir yolu.
+- **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues) hataları bildirmenin mükemmel bir yoludur. Ayrıca mevcut bir sorunu deneyip çözebilir ve bir PR (Pull Requests) gönderebilirsiniz.
 
-Beceri düzeyiniz veya deneyiminiz ne olursa olsun aktif olarak katkıda bulunacak kişiler arıyoruz.
+Beceri düzeyiniz veya deneyiminiz ne olursa olsun aktif olarak katkıda bulunacak kişiler arıyoruz. Katkı sağlamak için katkı sağlama rehberimize bakabilirsiniz: [CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
+
+## Hepsi Katkıda Bulunanlar Sayesinde:
+
+<a href="https://github.com/reflex-dev/reflex/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=reflex-dev/reflex" />
+</a>
 
 ## Lisans
 
-Reflex açık kaynaklıdır ve [Apache License 2.0](LICENSE) altında lisanslıdır. 
+Reflex açık kaynaklıdır ve [Apache License 2.0](LICENSE) altında lisanslıdır.

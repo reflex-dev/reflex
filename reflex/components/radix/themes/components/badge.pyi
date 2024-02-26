@@ -10,30 +10,22 @@ from reflex.style import Style
 from typing import Literal
 from reflex import el
 from reflex.vars import Var
-from ..base import (
-    CommonMarginProps,
-    LiteralAccentColor,
-    LiteralRadius,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
-
-class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
+class Badge(el.Span, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        ration: Optional[Union[Var[float], float]] = None,
         variant: Optional[
             Union[
                 Var[Literal["solid", "soft", "surface", "outline"]],
                 Literal["solid", "soft", "surface", "outline"],
             ]
         ] = None,
-        size: Optional[Union[Var[Literal[1, 2]], Literal[1, 2]]] = None,
-        color: Optional[
+        size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -142,51 +134,6 @@ class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -247,12 +194,11 @@ class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
-            ration: The ratio of the width to the height of the element
-            variant: The variant of the avatar
-            size: The size of the avatar
-            color: Color theme of the avatar
-            high_contrast: Whether to render the avatar with higher contrast color against background
-            radius: Override theme radius for avatar: "none" | "small" | "medium" | "large" | "full"
+            variant: The variant of the badge
+            size: The size of the badge
+            color_scheme: Color theme of the badge
+            high_contrast: Whether to render the badge with higher contrast color against background
+            radius: Override theme radius for badge: "none" | "small" | "medium" | "large" | "full"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -269,14 +215,6 @@ class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -289,3 +227,5 @@ class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+badge = Badge.create

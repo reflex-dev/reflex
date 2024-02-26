@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import glob
 import importlib
+import inspect
 import json
 import os
 import platform
@@ -16,17 +17,20 @@ import zipfile
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
+from typing import Callable, Optional
 
 import httpx
 import pkg_resources
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
+from redis import Redis as RedisSync
 from redis.asyncio import Redis
 
+import reflex
 from reflex import constants, model
 from reflex.compiler import templates
-from reflex.config import get_config
+from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 
 
@@ -159,32 +163,80 @@ def get_app(reload: bool = False) -> ModuleType:
     sys.path.insert(0, os.getcwd())
     app = __import__(module, fromlist=(constants.CompileVars.APP,))
     if reload:
+        from reflex.state import State
+
+        # Reset rx.State subclasses to avoid conflict when reloading.
+        for subclass in tuple(State.class_subclasses):
+            if subclass.__module__ == module:
+                State.class_subclasses.remove(subclass)
+        # Reload the app module.
         importlib.reload(app)
+
     return app
 
 
-def get_redis() -> Redis | None:
-    """Get the redis client.
+def get_compiled_app(reload: bool = False) -> ModuleType:
+    """Get the app module based on the default config after first compiling it.
+
+    Args:
+        reload: Re-import the app module from disk
 
     Returns:
-        The redis client.
+        The compiled app based on the default config.
+    """
+    app_module = get_app(reload=reload)
+    getattr(app_module, constants.CompileVars.APP).compile_()
+    return app_module
+
+
+def get_redis() -> Redis | None:
+    """Get the asynchronous redis client.
+
+    Returns:
+        The asynchronous redis client.
+    """
+    if isinstance((redis_url_or_options := parse_redis_url()), str):
+        return Redis.from_url(redis_url_or_options)
+    elif isinstance(redis_url_or_options, dict):
+        return Redis(**redis_url_or_options)
+    return None
+
+
+def get_redis_sync() -> RedisSync | None:
+    """Get the synchronous redis client.
+
+    Returns:
+        The synchronous redis client.
+    """
+    if isinstance((redis_url_or_options := parse_redis_url()), str):
+        return RedisSync.from_url(redis_url_or_options)
+    elif isinstance(redis_url_or_options, dict):
+        return RedisSync(**redis_url_or_options)
+    return None
+
+
+def parse_redis_url() -> str | dict | None:
+    """Parse the REDIS_URL in config if applicable.
+
+    Returns:
+        If redis-py syntax, return the URL as it is. Otherwise, return the host/port/db as a dict.
     """
     config = get_config()
     if not config.redis_url:
         return None
     if config.redis_url.startswith(("redis://", "rediss://", "unix://")):
-        return Redis.from_url(config.redis_url)
+        return config.redis_url
     console.deprecate(
         feature_name="host[:port] style redis urls",
         reason="redis-py url syntax is now being used",
         deprecation_version="0.3.6",
-        removal_version="0.4.0",
+        removal_version="0.5.0",
     )
     redis_url, has_port, redis_port = config.redis_url.partition(":")
     if not has_port:
         redis_port = 6379
     console.info(f"Using redis at {config.redis_url}")
-    return Redis(host=redis_url, port=int(redis_port), db=0)
+    return dict(host=redis_url, port=int(redis_port), db=0)
 
 
 def get_production_backend_url() -> str:
@@ -200,23 +252,34 @@ def get_production_backend_url() -> str:
     )
 
 
-def get_default_app_name() -> str:
-    """Get the default app name.
+def validate_app_name(app_name: str | None = None) -> str:
+    """Validate the app name.
 
     The default app name is the name of the current directory.
 
+    Args:
+        app_name: the name passed by user during reflex init
+
     Returns:
-        The default app name.
+        The app name after validation.
 
     Raises:
-        Exit: if the app directory name is reflex.
+        Exit: if the app directory name is reflex or if the name is not standard for a python package name.
     """
-    app_name = os.getcwd().split(os.path.sep)[-1].replace("-", "_")
-
+    app_name = (
+        app_name if app_name else os.getcwd().split(os.path.sep)[-1].replace("-", "_")
+    )
     # Make sure the app is not named "reflex".
     if app_name == constants.Reflex.MODULE_NAME:
         console.error(
             f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
+        )
+        raise typer.Exit(1)
+
+    # Make sure the app name is standard for a python package name.
+    if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", app_name):
+        console.error(
+            "The app directory name must start with a letter and can contain letters, numbers, and underscores."
         )
         raise typer.Exit(1)
 
@@ -588,14 +651,64 @@ def install_bun():
     )
 
 
-def install_frontend_packages(packages: set[str]):
+def _write_cached_procedure_file(payload: str, cache_file: str):
+    with open(cache_file, "w") as f:
+        f.write(payload)
+
+
+def _read_cached_procedure_file(cache_file: str) -> str | None:
+    if os.path.exists(cache_file):
+        with open(cache_file, "r") as f:
+            return f.read()
+    return None
+
+
+def _clear_cached_procedure_file(cache_file: str):
+    if os.path.exists(cache_file):
+        os.remove(cache_file)
+
+
+def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
+    """Decorator to cache the runs of a procedure on disk. Procedures should not have
+       a return value.
+
+    Args:
+        cache_file: The file to store the cache payload in.
+        payload_fn: Function that computes cache payload from function args
+
+    Returns:
+        The decorated function.
+    """
+
+    def _inner_decorator(func):
+        def _inner(*args, **kwargs):
+            payload = _read_cached_procedure_file(cache_file)
+            new_payload = payload_fn(*args, **kwargs)
+            if payload != new_payload:
+                _clear_cached_procedure_file(cache_file)
+                func(*args, **kwargs)
+                _write_cached_procedure_file(new_payload, cache_file)
+
+        return _inner
+
+    return _inner_decorator
+
+
+@cached_procedure(
+    cache_file=os.path.join(
+        constants.Dirs.WEB, "reflex.install_frontend_packages.cached"
+    ),
+    payload_fn=lambda p, c: f"{repr(sorted(list(p)))},{c.json()}",
+)
+def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
 
     Args:
         packages: A list of package names to be installed.
+        config: The config object.
 
     Example:
-        >>> install_frontend_packages(["react", "react-dom"])
+        >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
     # Install the base packages.
     process = processes.new_process(
@@ -606,7 +719,6 @@ def install_frontend_packages(packages: set[str]):
 
     processes.show_status("Installing base frontend packages", process)
 
-    config = get_config()
     if config.tailwind is not None:
         # install tailwind and tailwind plugins as dev dependencies.
         process = processes.new_process(
@@ -741,10 +853,48 @@ def validate_frontend_dependencies(init=True):
         validate_bun()
 
 
-def initialize_frontend_dependencies():
-    """Initialize all the frontend dependencies."""
+def ensure_reflex_installation_id() -> Optional[int]:
+    """Ensures that a reflex distinct id has been generated and stored in the reflex directory.
+
+    Returns:
+        Distinct id.
+    """
+    try:
+        initialize_reflex_user_directory()
+        installation_id_file = os.path.join(constants.Reflex.DIR, "installation_id")
+
+        installation_id = None
+        if os.path.exists(installation_id_file):
+            try:
+                with open(installation_id_file, "r") as f:
+                    installation_id = int(f.read())
+            except Exception:
+                # If anything goes wrong at all... just regenerate.
+                # Like what? Examples:
+                #     - file not exists
+                #     - file not readable
+                #     - content not parseable as an int
+                pass
+
+        if installation_id is None:
+            installation_id = random.getrandbits(128)
+            with open(installation_id_file, "w") as f:
+                f.write(str(installation_id))
+        # If we get here, installation_id is definitely set
+        return installation_id
+    except Exception as e:
+        console.debug(f"Failed to ensure reflex installation id: {e}")
+        return None
+
+
+def initialize_reflex_user_directory():
+    """Initialize the reflex user directory."""
     # Create the reflex directory.
     path_ops.mkdir(constants.Reflex.DIR)
+
+
+def initialize_frontend_dependencies():
+    """Initialize all the frontend dependencies."""
     # validate dependencies before install
     validate_frontend_dependencies()
     # Install the frontend dependencies.
@@ -815,6 +965,114 @@ def prompt_for_template() -> constants.Templates.Kind:
 
     # Return the template.
     return constants.Templates.Kind(template)
+
+
+def should_show_rx_chakra_migration_instructions() -> bool:
+    """Should we show the migration instructions for rx.chakra.* => rx.*?.
+
+    Returns:
+        bool: True if we should show the migration instructions.
+    """
+    if os.getenv("REFLEX_PROMPT_MIGRATE_TO_RX_CHAKRA") == "yes":
+        return True
+
+    if not Path(constants.Config.FILE).exists():
+        # They are running reflex init for the first time.
+        return False
+
+    existing_init_reflex_version = None
+    reflex_json = Path(constants.Dirs.REFLEX_JSON)
+    if reflex_json.exists():
+        with reflex_json.open("r") as f:
+            data = json.load(f)
+        existing_init_reflex_version = data.get("version", None)
+
+    if existing_init_reflex_version is None:
+        # They clone a reflex app from git for the first time.
+        # That app may or may not be 0.4 compatible.
+        # So let's just show these instructions THIS TIME.
+        return True
+
+    if constants.Reflex.VERSION < "0.4":
+        return False
+    else:
+        return existing_init_reflex_version < "0.4"
+
+
+def show_rx_chakra_migration_instructions():
+    """Show the migration instructions for rx.chakra.* => rx.*."""
+    console.log(
+        "Prior to reflex 0.4.0, rx.* components are based on Chakra UI. They are now based on Radix UI. To stick to Chakra UI, use rx.chakra.*."
+    )
+    console.log("")
+    console.log(
+        "[bold]Run `reflex script keep-chakra` to automatically update your app."
+    )
+    console.log("")
+    console.log(
+        "For more details, please see https://reflex.dev/blog/2024-02-16-reflex-v0.4.0"
+    )
+
+
+def migrate_to_rx_chakra():
+    """Migrate rx.button => r.chakra.button, etc."""
+    file_pattern = os.path.join(get_config().app_name, "**/*.py")
+    file_list = glob.glob(file_pattern, recursive=True)
+
+    # Populate with all rx.<x> components that have been moved to rx.chakra.<x>
+    patterns = {
+        rf"\brx\.{name}\b": f"rx.chakra.{name}"
+        for name in _get_rx_chakra_component_to_migrate()
+    }
+
+    for file_path in file_list:
+        with FileInput(file_path, inplace=True) as file:
+            for _line_num, line in enumerate(file):
+                for old, new in patterns.items():
+                    line = re.sub(old, new, line)
+                print(line, end="")
+
+
+def _get_rx_chakra_component_to_migrate() -> set[str]:
+    from reflex.components.chakra import ChakraComponent
+
+    rx_chakra_names = set(dir(reflex.chakra))
+
+    names_to_migrate = set()
+
+    # whitelist names will always be rewritten as rx.chakra.<x>
+    whitelist = {
+        "ColorModeIcon",
+        "MultiSelect",
+        "MultiSelectOption",
+        "color_mode_icon",
+        "multi_select",
+        "multi_select_option",
+    }
+
+    for rx_chakra_name in sorted(rx_chakra_names):
+        if rx_chakra_name.startswith("_"):
+            continue
+
+        rx_chakra_object = getattr(reflex.chakra, rx_chakra_name)
+        try:
+            if (
+                inspect.ismethod(rx_chakra_object)
+                and inspect.isclass(rx_chakra_object.__self__)
+                and issubclass(rx_chakra_object.__self__, ChakraComponent)
+            ):
+                names_to_migrate.add(rx_chakra_name)
+
+            elif inspect.isclass(rx_chakra_object) and issubclass(
+                rx_chakra_object, ChakraComponent
+            ):
+                names_to_migrate.add(rx_chakra_name)
+            elif rx_chakra_name in whitelist:
+                names_to_migrate.add(rx_chakra_name)
+
+        except Exception:
+            raise
+    return names_to_migrate
 
 
 def migrate_to_reflex():

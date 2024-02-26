@@ -4,21 +4,21 @@ import reflex as rx
 from ..states.form_state import FormState, UploadState
 from ..styles import *
 
-forms_1_code = """rx.vstack(
-    rx.form(
-        rx.vstack(
-            rx.input(
+forms_1_code = """rx.chakra.vstack(
+    rx.chakra.form(
+        rx.chakra.vstack(
+            rx.chakra.input(
                 placeholder="First Name",
                 id="first_name",
             ),
-            rx.input(
+            rx.chakra.input(
                 placeholder="Last Name", id="last_name"
             ),
-            rx.hstack(
-                rx.checkbox("Checked", id="check"),
-                rx.switch("Switched", id="switch"),
+            rx.chakra.hstack(
+                rx.chakra.checkbox("Checked", id="check"),
+                rx.chakra.switch("Switched", id="switch"),
             ),
-            rx.button("Submit", 
+            rx.chakra.button("Submit", 
                        type_="submit", 
                        bg="#ecfdf5",
                        color="#047857",
@@ -27,9 +27,9 @@ forms_1_code = """rx.vstack(
         ),
         on_submit=FormState.handle_submit,
     ),
-    rx.divider(),
-    rx.heading("Results"),
-    rx.text(FormState.form_data.to_string()),
+    rx.chakra.divider(),
+    rx.chakra.heading("Results"),
+    rx.chakra.text(FormState.form_data.to_string()),
     width="100%",
 )"""
 
@@ -44,35 +44,35 @@ forms_1_state = """class FormState(rx.State):
         self.form_data = form_data"""
 
 
-forms_2_code = """rx.vstack(
+forms_2_code = """rx.chakra.vstack(
     rx.upload(
-        rx.vstack(
-            rx.button(
+        rx.chakra.vstack(
+            rx.chakra.button(
                 "Select File",
                 color=color,
                 bg="white",
                 border=f"1px solid {color}",
             ),
-            rx.text(
+            rx.chakra.text(
                 "Drag and drop files here or click to select files"
             ),
         ),
         border=f"1px dotted {color}",
         padding="5em",
     ),
-    rx.hstack(rx.foreach(rx.selected_files, rx.text)),
-    rx.button(
+    rx.chakra.hstack(rx.foreach(rx.selected_files, rx.chakra.text)),
+    rx.chakra.button(
         "Upload",
         on_click=lambda: UploadState.handle_upload(
             rx.upload_files()
         ),
     ),
-    rx.button(
+    rx.chakra.button(
         "Clear",
         on_click=rx.clear_selected_files,
     ),
     rx.foreach(
-        UploadState.img, lambda img: rx.image(src=img, width="20%", height="auto",)
+        UploadState.img, lambda img: rx.chakra.image(src=img, width="20%", height="auto",)
     ),
     padding="5em",
     width="100%",
@@ -109,25 +109,25 @@ def forms_page() -> rx.Component:
     Returns:
         rx.Component: The UI for the settings page.
     """
-    return rx.box(
-        rx.vstack(
-            rx.heading(
+    return rx.chakra.box(
+        rx.chakra.vstack(
+            rx.chakra.heading(
                 "Forms Demo",
                 font_size="3em",
             ),
-            rx.vstack(
-                rx.form(
-                    rx.vstack(
-                        rx.input(
+            rx.chakra.vstack(
+                rx.chakra.form(
+                    rx.chakra.vstack(
+                        rx.chakra.input(
                             placeholder="First Name",
                             id="first_name",
                         ),
-                        rx.input(placeholder="Last Name", id="last_name"),
-                        rx.hstack(
-                            rx.checkbox("Checked", id="check"),
-                            rx.switch("Switched", id="switch"),
+                        rx.chakra.input(placeholder="Last Name", id="last_name"),
+                        rx.chakra.hstack(
+                            rx.chakra.checkbox("Checked", id="check"),
+                            rx.chakra.switch("Switched", id="switch"),
                         ),
-                        rx.button(
+                        rx.chakra.button(
                             "Submit",
                             type_="submit",
                             bg="#ecfdf5",
@@ -137,19 +137,19 @@ def forms_page() -> rx.Component:
                     ),
                     on_submit=FormState.handle_submit,
                 ),
-                rx.divider(),
-                rx.heading("Results"),
-                rx.text(FormState.form_data.to_string()),
+                rx.chakra.divider(),
+                rx.chakra.heading("Results"),
+                rx.chakra.text(FormState.form_data.to_string()),
                 width="100%",
             ),
-            rx.tabs(
-                rx.tab_list(
-                    rx.tab("Code", style=tab_style),
-                    rx.tab("State", style=tab_style),
+            rx.chakra.tabs(
+                rx.chakra.tab_list(
+                    rx.chakra.tab("Code", style=tab_style),
+                    rx.chakra.tab("State", style=tab_style),
                     padding_x=0,
                 ),
-                rx.tab_panels(
-                    rx.tab_panel(
+                rx.chakra.tab_panels(
+                    rx.chakra.tab_panel(
                         rx.code_block(
                             forms_1_code,
                             language="python",
@@ -159,7 +159,7 @@ def forms_page() -> rx.Component:
                         padding_x=0,
                         padding_y=".25em",
                     ),
-                    rx.tab_panel(
+                    rx.chakra.tab_panel(
                         rx.code_block(
                             forms_1_state,
                             language="python",
@@ -177,34 +177,36 @@ def forms_page() -> rx.Component:
                 width="100%",
                 padding_top=".5em",
             ),
-            rx.heading("Upload Example", font_size="3em"),
-            rx.text("Try uploading some images and see how they look."),
-            rx.vstack(
+            rx.chakra.heading("Upload Example", font_size="3em"),
+            rx.chakra.text("Try uploading some images and see how they look."),
+            rx.chakra.vstack(
                 rx.upload(
-                    rx.vstack(
-                        rx.button(
+                    rx.chakra.vstack(
+                        rx.chakra.button(
                             "Select File",
                             color=color,
                             bg="white",
                             border=f"1px solid {color}",
                         ),
-                        rx.text("Drag and drop files here or click to select files"),
+                        rx.chakra.text(
+                            "Drag and drop files here or click to select files"
+                        ),
                     ),
                     border=f"1px dotted {color}",
                     padding="5em",
                 ),
-                rx.hstack(rx.foreach(rx.selected_files, rx.text)),
-                rx.button(
+                rx.chakra.hstack(rx.foreach(rx.selected_files, rx.chakra.text)),
+                rx.chakra.button(
                     "Upload",
                     on_click=lambda: UploadState.handle_upload(rx.upload_files()),
                 ),
-                rx.button(
+                rx.chakra.button(
                     "Clear",
                     on_click=rx.clear_selected_files,
                 ),
                 rx.foreach(
                     UploadState.img,
-                    lambda img: rx.image(
+                    lambda img: rx.chakra.image(
                         src=img,
                         width="20%",
                         height="auto",
@@ -213,14 +215,14 @@ def forms_page() -> rx.Component:
                 padding="5em",
                 width="100%",
             ),
-            rx.tabs(
-                rx.tab_list(
-                    rx.tab("Code", style=tab_style),
-                    rx.tab("State", style=tab_style),
+            rx.chakra.tabs(
+                rx.chakra.tab_list(
+                    rx.chakra.tab("Code", style=tab_style),
+                    rx.chakra.tab("State", style=tab_style),
                     padding_x=0,
                 ),
-                rx.tab_panels(
-                    rx.tab_panel(
+                rx.chakra.tab_panels(
+                    rx.chakra.tab_panel(
                         rx.code_block(
                             forms_2_code,
                             language="python",
@@ -230,7 +232,7 @@ def forms_page() -> rx.Component:
                         padding_x=0,
                         padding_y=".25em",
                     ),
-                    rx.tab_panel(
+                    rx.chakra.tab_panel(
                         rx.code_block(
                             forms_2_state,
                             language="python",

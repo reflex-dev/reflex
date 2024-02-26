@@ -7,31 +7,25 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Literal, Union
+from typing import List, Literal
 from reflex import el
+from reflex.components.component import ComponentNamespace
 from reflex.vars import Var
-from ..base import CommonMarginProps, RadixThemesComponent
+from ..base import RadixThemesComponent
 
-class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
+class TableRoot(el.Table, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
         variant: Optional[
             Union[Var[Literal["surface", "ghost"]], Literal["surface", "ghost"]]
         ] = None,
         align: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        background: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        bgcolor: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        border: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         summary: Optional[
@@ -76,51 +70,6 @@ class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
         ] = None,
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -185,9 +134,6 @@ class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
             size: The size of the table: "1" | "2" | "3"
             variant: The variant of the table
             align: Alignment of the table
-            background: Background image for the table
-            bgcolor: Background color of the table
-            border: Specifies the width of the border around the table
             summary: Provides a summary of the table's purpose and structure
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
@@ -205,14 +151,6 @@ class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -226,7 +164,7 @@ class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
         """
         ...
 
-class TableHeader(el.Thead, CommonMarginProps, RadixThemesComponent):
+class TableHeader(el.Thead, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -274,51 +212,6 @@ class TableHeader(el.Thead, CommonMarginProps, RadixThemesComponent):
         ] = None,
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -397,14 +290,6 @@ class TableHeader(el.Thead, CommonMarginProps, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -418,7 +303,7 @@ class TableHeader(el.Thead, CommonMarginProps, RadixThemesComponent):
         """
         ...
 
-class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
+class TableRow(el.Tr, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -429,9 +314,6 @@ class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
                 Var[Literal["start", "center", "end", "baseline"]],
                 Literal["start", "center", "end", "baseline"],
             ]
-        ] = None,
-        bgcolor: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
@@ -472,51 +354,6 @@ class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
         ] = None,
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -579,7 +416,6 @@ class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
         Args:
             *children: Child components.
             align: Alignment of the content within the table row
-            bgcolor: Background color of the table row
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -596,14 +432,6 @@ class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -617,7 +445,7 @@ class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
         """
         ...
 
-class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
+class TableColumnHeaderCell(el.Th, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -629,14 +457,7 @@ class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
                 Literal["start", "center", "end"],
             ]
         ] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         align: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        background: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        bgcolor: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         col_span: Optional[
@@ -690,51 +511,6 @@ class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
         ] = None,
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -797,10 +573,7 @@ class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
         Args:
             *children: Child components.
             justify: The justification of the column
-            width: width of the column
             align: Alignment of the content within the table header cell
-            background: Background image for the table header cell
-            bgcolor: Background color of the table header cell
             col_span: Number of columns a header cell should span
             headers: IDs of the headers associated with this header cell
             row_span: Number of rows a header cell should span
@@ -821,14 +594,6 @@ class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -842,16 +607,13 @@ class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
         """
         ...
 
-class TableBody(el.Tbody, CommonMarginProps, RadixThemesComponent):
+class TableBody(el.Tbody, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
         align: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        bgcolor: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         access_key: Optional[
@@ -893,51 +655,6 @@ class TableBody(el.Tbody, CommonMarginProps, RadixThemesComponent):
         ] = None,
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1000,7 +717,6 @@ class TableBody(el.Tbody, CommonMarginProps, RadixThemesComponent):
         Args:
             *children: Child components.
             align: Alignment of the content within the table body
-            bgcolor: Background color of the table body
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -1017,14 +733,6 @@ class TableBody(el.Tbody, CommonMarginProps, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1038,7 +746,7 @@ class TableBody(el.Tbody, CommonMarginProps, RadixThemesComponent):
         """
         ...
 
-class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
+class TableCell(el.Td, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -1050,14 +758,7 @@ class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
                 Literal["start", "center", "end"],
             ]
         ] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         align: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        background: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        bgcolor: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         col_span: Optional[
@@ -1108,51 +809,6 @@ class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
         ] = None,
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1215,10 +871,7 @@ class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
         Args:
             *children: Child components.
             justify: The justification of the column
-            width: width of the column
             align: Alignment of the content within the table cell
-            background: Background image for the table cell
-            bgcolor: Background color of the table cell
             col_span: Number of columns a cell should span
             headers: IDs of the headers associated with this cell
             row_span: Number of rows a cell should span
@@ -1238,14 +891,6 @@ class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1259,7 +904,7 @@ class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
         """
         ...
 
-class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
+class TableRowHeaderCell(el.Th, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -1271,14 +916,7 @@ class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
                 Literal["start", "center", "end"],
             ]
         ] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         align: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        background: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        bgcolor: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         col_span: Optional[
@@ -1332,51 +970,6 @@ class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
         ] = None,
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1439,10 +1032,7 @@ class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
         Args:
             *children: Child components.
             justify: The justification of the column
-            width: width of the column
             align: Alignment of the content within the table header cell
-            background: Background image for the table header cell
-            bgcolor: Background color of the table header cell
             col_span: Number of columns a header cell should span
             headers: IDs of the headers associated with this header cell
             row_span: Number of rows a header cell should span
@@ -1463,14 +1053,6 @@ class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1483,3 +1065,14 @@ class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+class Table(ComponentNamespace):
+    root = staticmethod(TableRoot.create)
+    header = staticmethod(TableHeader.create)
+    body = staticmethod(TableBody.create)
+    row = staticmethod(TableRow.create)
+    cell = staticmethod(TableCell.create)
+    column_header_cell = staticmethod(TableColumnHeaderCell.create)
+    row_header_cell = staticmethod(TableRowHeaderCell.create)
+
+table = Table()

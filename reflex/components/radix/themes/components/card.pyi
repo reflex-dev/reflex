@@ -10,9 +10,9 @@ from reflex.style import Style
 from typing import Literal
 from reflex import el
 from reflex.vars import Var
-from ..base import CommonMarginProps, RadixThemesComponent
+from ..base import RadixThemesComponent
 
-class Card(el.Div, CommonMarginProps, RadixThemesComponent):
+class Card(el.Div, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -20,7 +20,9 @@ class Card(el.Div, CommonMarginProps, RadixThemesComponent):
         *children,
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
-            Union[Var[Literal[1, 2, 3, 4, 5]], Literal[1, 2, 3, 4, 5]]
+            Union[
+                Var[Literal["1", "2", "3", "4", "5"]], Literal["1", "2", "3", "4", "5"]
+            ]
         ] = None,
         variant: Optional[
             Union[
@@ -67,51 +69,6 @@ class Card(el.Div, CommonMarginProps, RadixThemesComponent):
         ] = None,
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -174,8 +131,8 @@ class Card(el.Div, CommonMarginProps, RadixThemesComponent):
         Args:
             *children: Child components.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            size: Button size "1" - "5"
-            variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
+            size: Card size: "1" - "5"
+            variant: Variant of Card: "solid" | "soft" | "outline" | "ghost"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -192,14 +149,6 @@ class Card(el.Div, CommonMarginProps, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -212,3 +161,5 @@ class Card(el.Div, CommonMarginProps, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+card = Card.create

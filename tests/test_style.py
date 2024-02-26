@@ -6,6 +6,8 @@ import pytest
 
 import reflex as rx
 from reflex import style
+from reflex.components.component import evaluate_style_namespaces
+from reflex.style import Style
 from reflex.vars import Var
 
 test_style = [
@@ -17,7 +19,20 @@ test_style = [
     ({"::test_case": {"a": 1}}, {"::testCase": {"a": 1}}),
     (
         {"::-webkit-scrollbar": {"display": "none"}},
-        {"::WebkitScrollbar": {"display": "none"}},
+        {"::-webkit-scrollbar": {"display": "none"}},
+    ),
+    ({"margin_y": "2rem"}, {"marginBottom": "2rem", "marginTop": "2rem"}),
+    ({"marginY": "2rem"}, {"marginBottom": "2rem", "marginTop": "2rem"}),
+    (
+        {"::-webkit-scrollbar": {"bgColor": "red"}},
+        {"::-webkit-scrollbar": {"backgroundColor": "red"}},
+    ),
+    (
+        {"paddingX": ["2rem", "3rem"]},
+        {
+            "paddingInlineStart": ["2rem", "3rem"],
+            "paddingInlineEnd": ["2rem", "3rem"],
+        },
     ),
 ]
 
@@ -73,50 +88,56 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
     ("kwargs", "style_dict", "expected_get_style"),
     [
         ({}, {}, {"css": None}),
-        ({"color": "hotpink"}, {}, {"css": Var.create({"color": "hotpink"})}),
-        ({}, {"color": "red"}, {"css": Var.create({"color": "red"})}),
+        ({"color": "hotpink"}, {}, {"css": Var.create(Style({"color": "hotpink"}))}),
+        ({}, {"color": "red"}, {"css": Var.create(Style({"color": "red"}))}),
         (
             {"color": "hotpink"},
             {"color": "red"},
-            {"css": Var.create({"color": "hotpink"})},
+            {"css": Var.create(Style({"color": "hotpink"}))},
         ),
         (
             {"_hover": {"color": "hotpink"}},
             {},
-            {"css": Var.create({"&:hover": {"color": "hotpink"}})},
+            {"css": Var.create(Style({"&:hover": {"color": "hotpink"}}))},
         ),
         (
             {},
             {"_hover": {"color": "red"}},
-            {"css": Var.create({"&:hover": {"color": "red"}})},
+            {"css": Var.create(Style({"&:hover": {"color": "red"}}))},
         ),
         (
             {},
             {":hover": {"color": "red"}},
-            {"css": Var.create({"&:hover": {"color": "red"}})},
+            {"css": Var.create(Style({"&:hover": {"color": "red"}}))},
         ),
         (
             {},
             {"::-webkit-scrollbar": {"display": "none"}},
-            {"css": Var.create({"&::-webkit-scrollbar": {"display": "none"}})},
+            {"css": Var.create(Style({"&::-webkit-scrollbar": {"display": "none"}}))},
         ),
         (
             {},
             {"::-moz-progress-bar": {"background_color": "red"}},
-            {"css": Var.create({"&::-moz-progress-bar": {"backgroundColor": "red"}})},
+            {
+                "css": Var.create(
+                    Style({"&::-moz-progress-bar": {"backgroundColor": "red"}})
+                )
+            },
         ),
         (
             {"color": ["#111", "#222", "#333", "#444", "#555"]},
             {},
             {
                 "css": Var.create(
-                    {
-                        "@media screen and (min-width: 0)": {"color": "#111"},
-                        "@media screen and (min-width: 30em)": {"color": "#222"},
-                        "@media screen and (min-width: 48em)": {"color": "#333"},
-                        "@media screen and (min-width: 62em)": {"color": "#444"},
-                        "@media screen and (min-width: 80em)": {"color": "#555"},
-                    }
+                    Style(
+                        {
+                            "@media screen and (min-width: 0)": {"color": "#111"},
+                            "@media screen and (min-width: 30em)": {"color": "#222"},
+                            "@media screen and (min-width: 48em)": {"color": "#333"},
+                            "@media screen and (min-width: 62em)": {"color": "#444"},
+                            "@media screen and (min-width: 80em)": {"color": "#555"},
+                        }
+                    )
                 )
             },
         ),
@@ -128,14 +149,16 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
             {},
             {
                 "css": Var.create(
-                    {
-                        "@media screen and (min-width: 0)": {"color": "#111"},
-                        "@media screen and (min-width: 30em)": {"color": "#222"},
-                        "@media screen and (min-width: 48em)": {"color": "#333"},
-                        "@media screen and (min-width: 62em)": {"color": "#444"},
-                        "@media screen and (min-width: 80em)": {"color": "#555"},
-                        "backgroundColor": "#FFF",
-                    }
+                    Style(
+                        {
+                            "@media screen and (min-width: 0)": {"color": "#111"},
+                            "@media screen and (min-width: 30em)": {"color": "#222"},
+                            "@media screen and (min-width: 48em)": {"color": "#333"},
+                            "@media screen and (min-width: 62em)": {"color": "#444"},
+                            "@media screen and (min-width: 80em)": {"color": "#555"},
+                            "backgroundColor": "#FFF",
+                        }
+                    )
                 )
             },
         ),
@@ -147,85 +170,8 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
             {},
             {
                 "css": Var.create(
-                    {
-                        "@media screen and (min-width: 0)": {
-                            "color": "#111",
-                            "backgroundColor": "#FFF",
-                        },
-                        "@media screen and (min-width: 30em)": {
-                            "color": "#222",
-                            "backgroundColor": "#EEE",
-                        },
-                        "@media screen and (min-width: 48em)": {
-                            "color": "#333",
-                            "backgroundColor": "#DDD",
-                        },
-                        "@media screen and (min-width: 62em)": {
-                            "color": "#444",
-                            "backgroundColor": "#CCC",
-                        },
-                        "@media screen and (min-width: 80em)": {
-                            "color": "#555",
-                            "backgroundColor": "#BBB",
-                        },
-                    }
-                )
-            },
-        ),
-        (
-            {
-                "_hover": [
-                    {"color": "#111"},
-                    {"color": "#222"},
-                    {"color": "#333"},
-                    {"color": "#444"},
-                    {"color": "#555"},
-                ]
-            },
-            {},
-            {
-                "css": Var.create(
-                    {
-                        "&:hover": {
-                            "@media screen and (min-width: 0)": {"color": "#111"},
-                            "@media screen and (min-width: 30em)": {"color": "#222"},
-                            "@media screen and (min-width: 48em)": {"color": "#333"},
-                            "@media screen and (min-width: 62em)": {"color": "#444"},
-                            "@media screen and (min-width: 80em)": {"color": "#555"},
-                        }
-                    }
-                )
-            },
-        ),
-        (
-            {"_hover": {"color": ["#111", "#222", "#333", "#444", "#555"]}},
-            {},
-            {
-                "css": Var.create(
-                    {
-                        "&:hover": {
-                            "@media screen and (min-width: 0)": {"color": "#111"},
-                            "@media screen and (min-width: 30em)": {"color": "#222"},
-                            "@media screen and (min-width: 48em)": {"color": "#333"},
-                            "@media screen and (min-width: 62em)": {"color": "#444"},
-                            "@media screen and (min-width: 80em)": {"color": "#555"},
-                        }
-                    }
-                )
-            },
-        ),
-        (
-            {
-                "_hover": {
-                    "color": ["#111", "#222", "#333", "#444", "#555"],
-                    "background_color": ["#FFF", "#EEE", "#DDD", "#CCC", "#BBB"],
-                }
-            },
-            {},
-            {
-                "css": Var.create(
-                    {
-                        "&:hover": {
+                    Style(
+                        {
                             "@media screen and (min-width: 0)": {
                                 "color": "#111",
                                 "backgroundColor": "#FFF",
@@ -247,7 +193,108 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
                                 "backgroundColor": "#BBB",
                             },
                         }
-                    }
+                    )
+                )
+            },
+        ),
+        (
+            {
+                "_hover": [
+                    {"color": "#111"},
+                    {"color": "#222"},
+                    {"color": "#333"},
+                    {"color": "#444"},
+                    {"color": "#555"},
+                ]
+            },
+            {},
+            {
+                "css": Var.create(
+                    Style(
+                        {
+                            "&:hover": {
+                                "@media screen and (min-width: 0)": {"color": "#111"},
+                                "@media screen and (min-width: 30em)": {
+                                    "color": "#222"
+                                },
+                                "@media screen and (min-width: 48em)": {
+                                    "color": "#333"
+                                },
+                                "@media screen and (min-width: 62em)": {
+                                    "color": "#444"
+                                },
+                                "@media screen and (min-width: 80em)": {
+                                    "color": "#555"
+                                },
+                            }
+                        }
+                    )
+                )
+            },
+        ),
+        (
+            {"_hover": {"color": ["#111", "#222", "#333", "#444", "#555"]}},
+            {},
+            {
+                "css": Var.create(
+                    Style(
+                        {
+                            "&:hover": {
+                                "@media screen and (min-width: 0)": {"color": "#111"},
+                                "@media screen and (min-width: 30em)": {
+                                    "color": "#222"
+                                },
+                                "@media screen and (min-width: 48em)": {
+                                    "color": "#333"
+                                },
+                                "@media screen and (min-width: 62em)": {
+                                    "color": "#444"
+                                },
+                                "@media screen and (min-width: 80em)": {
+                                    "color": "#555"
+                                },
+                            }
+                        }
+                    )
+                )
+            },
+        ),
+        (
+            {
+                "_hover": {
+                    "color": ["#111", "#222", "#333", "#444", "#555"],
+                    "background_color": ["#FFF", "#EEE", "#DDD", "#CCC", "#BBB"],
+                }
+            },
+            {},
+            {
+                "css": Var.create(
+                    Style(
+                        {
+                            "&:hover": {
+                                "@media screen and (min-width: 0)": {
+                                    "color": "#111",
+                                    "backgroundColor": "#FFF",
+                                },
+                                "@media screen and (min-width: 30em)": {
+                                    "color": "#222",
+                                    "backgroundColor": "#EEE",
+                                },
+                                "@media screen and (min-width: 48em)": {
+                                    "color": "#333",
+                                    "backgroundColor": "#DDD",
+                                },
+                                "@media screen and (min-width: 62em)": {
+                                    "color": "#444",
+                                    "backgroundColor": "#CCC",
+                                },
+                                "@media screen and (min-width: 80em)": {
+                                    "color": "#555",
+                                    "backgroundColor": "#BBB",
+                                },
+                            }
+                        }
+                    )
                 )
             },
         ),
@@ -261,16 +308,26 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
             {},
             {
                 "css": Var.create(
-                    {
-                        "&:hover": {
-                            "@media screen and (min-width: 0)": {"color": "#111"},
-                            "@media screen and (min-width: 30em)": {"color": "#222"},
-                            "@media screen and (min-width: 48em)": {"color": "#333"},
-                            "@media screen and (min-width: 62em)": {"color": "#444"},
-                            "@media screen and (min-width: 80em)": {"color": "#555"},
-                            "backgroundColor": "#FFF",
+                    Style(
+                        {
+                            "&:hover": {
+                                "@media screen and (min-width: 0)": {"color": "#111"},
+                                "@media screen and (min-width: 30em)": {
+                                    "color": "#222"
+                                },
+                                "@media screen and (min-width: 48em)": {
+                                    "color": "#333"
+                                },
+                                "@media screen and (min-width: 62em)": {
+                                    "color": "#444"
+                                },
+                                "@media screen and (min-width: 80em)": {
+                                    "color": "#555"
+                                },
+                                "backgroundColor": "#FFF",
+                            }
                         }
-                    }
+                    )
                 )
             },
         ),
@@ -304,20 +361,26 @@ class StyleState(rx.State):
     [
         (
             {"color": StyleState.color},
-            {"css": Var.create({"color": StyleState.color})},
+            {"css": Var.create(Style({"color": StyleState.color}))},
         ),
         (
             {"color": f"dark{StyleState.color}"},
-            {"css": Var.create_safe(f'{{"color": `dark{StyleState.color}`}}').to(dict)},
+            {
+                "css": Var.create_safe(f'{{"color": `dark{StyleState.color}`}}').to(
+                    Style
+                )
+            },
         ),
         (
             {"color": StyleState.color, "_hover": {"color": StyleState.color2}},
             {
                 "css": Var.create(
-                    {
-                        "color": StyleState.color,
-                        "&:hover": {"color": StyleState.color2},
-                    }
+                    Style(
+                        {
+                            "color": StyleState.color,
+                            "&:hover": {"color": StyleState.color2},
+                        }
+                    )
                 )
             },
         ),
@@ -325,15 +388,19 @@ class StyleState(rx.State):
             {"color": [StyleState.color, "gray", StyleState.color2, "yellow", "blue"]},
             {
                 "css": Var.create(
-                    {
-                        "@media screen and (min-width: 0)": {"color": StyleState.color},
-                        "@media screen and (min-width: 30em)": {"color": "gray"},
-                        "@media screen and (min-width: 48em)": {
-                            "color": StyleState.color2
-                        },
-                        "@media screen and (min-width: 62em)": {"color": "yellow"},
-                        "@media screen and (min-width: 80em)": {"color": "blue"},
-                    }
+                    Style(
+                        {
+                            "@media screen and (min-width: 0)": {
+                                "color": StyleState.color
+                            },
+                            "@media screen and (min-width: 30em)": {"color": "gray"},
+                            "@media screen and (min-width: 48em)": {
+                                "color": StyleState.color2
+                            },
+                            "@media screen and (min-width: 62em)": {"color": "yellow"},
+                            "@media screen and (min-width: 80em)": {"color": "blue"},
+                        }
+                    )
                 )
             },
         ),
@@ -349,19 +416,27 @@ class StyleState(rx.State):
             },
             {
                 "css": Var.create(
-                    {
-                        "&:hover": {
-                            "@media screen and (min-width: 0)": {
-                                "color": StyleState.color
-                            },
-                            "@media screen and (min-width: 30em)": {
-                                "color": StyleState.color2
-                            },
-                            "@media screen and (min-width: 48em)": {"color": "#333"},
-                            "@media screen and (min-width: 62em)": {"color": "#444"},
-                            "@media screen and (min-width: 80em)": {"color": "#555"},
+                    Style(
+                        {
+                            "&:hover": {
+                                "@media screen and (min-width: 0)": {
+                                    "color": StyleState.color
+                                },
+                                "@media screen and (min-width: 30em)": {
+                                    "color": StyleState.color2
+                                },
+                                "@media screen and (min-width: 48em)": {
+                                    "color": "#333"
+                                },
+                                "@media screen and (min-width: 62em)": {
+                                    "color": "#444"
+                                },
+                                "@media screen and (min-width: 80em)": {
+                                    "color": "#555"
+                                },
+                            }
                         }
-                    }
+                    )
                 )
             },
         ),
@@ -379,19 +454,27 @@ class StyleState(rx.State):
             },
             {
                 "css": Var.create(
-                    {
-                        "&:hover": {
-                            "@media screen and (min-width: 0)": {
-                                "color": StyleState.color
-                            },
-                            "@media screen and (min-width: 30em)": {
-                                "color": StyleState.color2
-                            },
-                            "@media screen and (min-width: 48em)": {"color": "#333"},
-                            "@media screen and (min-width: 62em)": {"color": "#444"},
-                            "@media screen and (min-width: 80em)": {"color": "#555"},
+                    Style(
+                        {
+                            "&:hover": {
+                                "@media screen and (min-width: 0)": {
+                                    "color": StyleState.color
+                                },
+                                "@media screen and (min-width: 30em)": {
+                                    "color": StyleState.color2
+                                },
+                                "@media screen and (min-width: 48em)": {
+                                    "color": "#333"
+                                },
+                                "@media screen and (min-width: 62em)": {
+                                    "color": "#444"
+                                },
+                                "@media screen and (min-width: 80em)": {
+                                    "color": "#555"
+                                },
+                            }
                         }
-                    }
+                    )
                 )
             },
         ),
@@ -410,9 +493,13 @@ def test_style_via_component_with_state(
     comp = rx.el.div(**kwargs)
 
     assert comp.style._var_data == expected_get_style["css"]._var_data
-    # Remove the _var_data from the expected style, since the emotion-formatted
-    # style dict won't actually have it.
-    expected_get_style["css"]._var_data = None
-
     # Assert that style values are equal.
     compare_dict_of_var(comp._get_style(), expected_get_style)
+
+
+def test_evaluate_style_namespaces():
+    """Test that namespaces get converted to component create functions."""
+    style_dict = {rx.text: {"color": "blue"}}
+    assert rx.text.__call__ not in style_dict
+    style_dict = evaluate_style_namespaces(style_dict)  # type: ignore
+    assert rx.text.__call__ in style_dict

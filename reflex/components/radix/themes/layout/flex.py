@@ -1,7 +1,8 @@
 """Declarative layout and common spacing props."""
+
 from __future__ import annotations
 
-from typing import Literal
+from typing import Dict, Literal
 
 from reflex import el
 from reflex.vars import Var
@@ -9,25 +10,21 @@ from reflex.vars import Var
 from ..base import (
     LiteralAlign,
     LiteralJustify,
-    LiteralSize,
+    LiteralSpacing,
+    RadixThemesComponent,
 )
-from .base import LayoutComponent
 
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
-LiteralFlexDisplay = Literal["none", "inline-flex", "flex"]
 LiteralFlexWrap = Literal["nowrap", "wrap", "wrap-reverse"]
 
 
-class Flex(el.Div, LayoutComponent):
+class Flex(el.Div, RadixThemesComponent):
     """Component for creating flex layouts."""
 
     tag = "Flex"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
-
-    # How to display the element: "none" | "inline-flex" | "flex"
-    display: Var[LiteralFlexDisplay]
 
     # How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
     direction: Var[LiteralFlexDirection]
@@ -42,4 +39,7 @@ class Flex(el.Div, LayoutComponent):
     wrap: Var[LiteralFlexWrap]
 
     # Gap between children: "0" - "9"
-    gap: Var[LiteralSize]
+    spacing: Var[LiteralSpacing]
+
+    # Reflex maps the "spacing" prop to "gap" prop.
+    _rename_props: Dict[str, str] = {"spacing": "gap"}

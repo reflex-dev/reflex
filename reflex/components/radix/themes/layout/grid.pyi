@@ -7,12 +7,11 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Literal
+from typing import Dict, Literal
 from reflex import el
 from reflex.vars import Var
-from ..base import LiteralAlign, LiteralJustify, LiteralSize, RadixThemesComponent
+from ..base import LiteralAlign, LiteralJustify, LiteralSpacing, RadixThemesComponent
 
-LiteralGridDisplay = Literal["none", "inline-grid", "grid"]
 LiteralGridFlow = Literal["row", "column", "dense", "row-dense", "column-dense"]
 
 class Grid(el.Div, RadixThemesComponent):
@@ -22,12 +21,6 @@ class Grid(el.Div, RadixThemesComponent):
         cls,
         *children,
         as_child: Optional[Union[Var[bool], bool]] = None,
-        display: Optional[
-            Union[
-                Var[Literal["none", "inline-grid", "grid"]],
-                Literal["none", "inline-grid", "grid"],
-            ]
-        ] = None,
         columns: Optional[Union[Var[str], str]] = None,
         rows: Optional[Union[Var[str], str]] = None,
         flow: Optional[
@@ -48,16 +41,22 @@ class Grid(el.Div, RadixThemesComponent):
                 Literal["start", "center", "end", "between"],
             ]
         ] = None,
-        gap: Optional[
+        spacing: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
-        gap_x: Optional[
+        spacing_x: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            ]
+        ] = None,
+        spacing_y: Optional[
+            Union[
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         access_key: Optional[
@@ -98,9 +97,6 @@ class Grid(el.Div, RadixThemesComponent):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -164,14 +160,14 @@ class Grid(el.Div, RadixThemesComponent):
         Args:
             *children: Child components.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            display: How to display the element: "none" | "inline-grid" | "grid"
             columns: Number of columns
             rows: Number of rows
             flow: How the grid items are layed out: "row" | "column" | "dense" | "row-dense" | "column-dense"
             align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
-            gap: Gap between children: "0" - "9"
-            gap_x: Gap between children vertical: "0" - "9"
+            spacing: Gap between children: "0" - "9"
+            spacing_x: Gap between children horizontal: "0" - "9"
+            spacing_y: Gap between children vertical: "0" - "9"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -188,7 +184,6 @@ class Grid(el.Div, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

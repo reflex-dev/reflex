@@ -5,21 +5,21 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 
-class Inset(el.Div, CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+class Inset(el.Div, RadixThemesComponent):
+    """Applies a negative margin to allow content to bleed into the surrounding container."""
 
     tag = "Inset"
 
     # The side
     side: Var[Literal["x", "y", "top", "bottom", "right", "left"]]
 
+    # How to clip the element's content: "border-box" | "padding-box"
     clip: Var[Literal["border-box", "padding-box"]]
 
     # Padding
@@ -42,3 +42,6 @@ class Inset(el.Div, CommonMarginProps, RadixThemesComponent):
 
     # Padding on the left
     pl: Var[Union[int, str]]
+
+
+inset = Inset.create

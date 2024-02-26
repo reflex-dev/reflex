@@ -38,12 +38,12 @@ def ServerSideEvent():
     @app.add_page
     def index():
         return rx.fragment(
-            rx.input(
+            rx.chakra.input(
                 id="token", value=SSState.router.session.client_token, is_read_only=True
             ),
-            rx.input(default_value="a", id="a"),
-            rx.input(default_value="b", id="b"),
-            rx.input(default_value="c", id="c"),
+            rx.chakra.input(default_value="a", id="a"),
+            rx.chakra.input(default_value="b", id="b"),
+            rx.chakra.input(default_value="c", id="c"),
             rx.button(
                 "Clear Immediate",
                 id="clear_immediate",
@@ -74,8 +74,6 @@ def ServerSideEvent():
                 on_click=SSState.set_value_return_c,
             ),
         )
-
-    app.compile()
 
 
 @pytest.fixture(scope="session")

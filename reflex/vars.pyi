@@ -1,4 +1,5 @@
 """ Generated with stubgen from mypy, then manually edited, do not regen."""
+from __future__ import annotations
 
 from dataclasses import dataclass
 from _typeshed import Incomplete
@@ -17,8 +18,10 @@ from typing import (
     List,
     Optional,
     Set,
+    Tuple,
     Type,
     Union,
+    overload,
     _GenericAlias,  # type: ignore
 )
 
@@ -33,6 +36,7 @@ class VarData(Base):
     state: str
     imports: dict[str, set[ImportVar]]
     hooks: set[str]
+    interpolations: List[Tuple[int, int]]
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None: ...
 
@@ -136,10 +140,27 @@ class ComputedVar(Var):
     def _deps(self, objclass: Type, obj: Optional[FunctionType] = ...) -> Set[str]: ...
     def mark_dirty(self, instance) -> None: ...
     def _determine_var_type(self) -> Type: ...
+    @overload
+    def __init__(
+        self,
+        fget: Callable[[BaseState], Any],
+        **kwargs,
+    ) -> None: ...
+    @overload
     def __init__(self, func) -> None: ...
 
+@overload
+def computed_var(
+    fget: Callable[[BaseState], Any] | None = None,
+    initial_value: Any | None = None,
+    **kwargs,
+) -> Callable[[Callable[[Any], Any]], ComputedVar]: ...
+@overload
+def computed_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
 def cached_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
 
 class CallableVar(BaseVar):
     def __init__(self, fn: Callable[..., BaseVar]): ...
     def __call__(self, *args, **kwargs) -> BaseVar: ...
+
+def get_uuid_string_var() -> Var: ...

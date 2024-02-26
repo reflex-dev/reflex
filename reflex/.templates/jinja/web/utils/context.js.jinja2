@@ -7,6 +7,7 @@ export const initialState = {{ initial_state|json_dumps }}
 export const initialState = {}
 {% endif %}
 
+export const defaultColorMode = "{{ default_color_mode }}"
 export const ColorModeContext = createContext(null);
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
@@ -23,13 +24,19 @@ export const clientStorage = {}
 {% endif %}
 
 {% if state_name %}
-export const onLoadInternalEvent = () => [Event('{{state_name}}.{{const.on_load_internal}}')]
+export const state_name = "{{state_name}}"
+export const onLoadInternalEvent = () => [
+    Event('{{state_name}}.{{const.update_vars_internal}}', {vars: hydrateClientStorage(clientStorage)}),
+    Event('{{state_name}}.{{const.on_load_internal}}')
+]
 
 export const initialEvents = () => [
-    Event('{{state_name}}.{{const.hydrate}}', hydrateClientStorage(clientStorage)),
+    Event('{{state_name}}.{{const.hydrate}}'),
     ...onLoadInternalEvent()
 ]
 {% else %}
+export const state_name = undefined
+
 export const onLoadInternalEvent = () => []
 
 export const initialEvents = () => []

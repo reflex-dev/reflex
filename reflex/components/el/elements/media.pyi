@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Union
+from typing import Any, Union
 from reflex.vars import Var as Var
 from .base import BaseHTML
 
@@ -80,9 +80,6 @@ class Area(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -169,7 +166,6 @@ class Area(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -250,9 +246,6 @@ class Audio(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -336,7 +329,6 @@ class Audio(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -363,16 +355,10 @@ class Img(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         alt: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        border: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         cross_origin: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         decoding: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        height: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         intrinsicsize: Optional[
@@ -390,14 +376,11 @@ class Img(BaseHTML):
         sizes: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        src: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        src: Optional[Union[Var[Any], Any]] = None,
         src_set: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         use_map: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        width: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         access_key: Optional[
@@ -438,9 +421,6 @@ class Img(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -502,10 +482,8 @@ class Img(BaseHTML):
             *children: The children of the component.
             align: Image alignment with respect to its surrounding elements
             alt: Alternative text for the image
-            border: Border width around the image
             cross_origin: Configures the CORS requests for the image
             decoding: How the image should be decoded
-            height: The intrinsic height of the image
             intrinsicsize: Specifies an intrinsic size for the image
             ismap: Whether the image is a server-side image map
             loading: Specifies the loading behavior of the image
@@ -514,7 +492,6 @@ class Img(BaseHTML):
             src: URL of the image to display
             src_set: A set of source sizes and URLs for responsive images
             use_map: The name of the map to use with the image
-            width: The intrinsic width of the image
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -531,7 +508,6 @@ class Img(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -593,9 +569,6 @@ class Map(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -672,7 +645,6 @@ class Map(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -744,9 +716,6 @@ class Track(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -827,7 +796,6 @@ class Track(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -862,9 +830,6 @@ class Video(BaseHTML):
         cross_origin: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        height: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         loop: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         muted: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
@@ -879,9 +844,6 @@ class Video(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         src: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        width: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -920,9 +882,6 @@ class Video(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -986,14 +945,12 @@ class Video(BaseHTML):
             buffered: Represents the time range of the buffered media
             controls: Displays the standard video controls
             cross_origin: Configures the CORS requests for the video
-            height: The intrinsic height of the video
             loop: Specifies that the video will loop
             muted: Indicates whether the video is muted by default
             plays_inline: Indicates that the video should play 'inline', inside its element's playback area
             poster: URL of an image to show while the video is downloading, or until the user hits the play button
             preload: Specifies how the video file should be preloaded
             src: URL of the video to play
-            width: The intrinsic width of the video
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -1010,7 +967,6 @@ class Video(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1033,14 +989,8 @@ class Embed(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        height: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         src: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         type: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        width: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -1079,9 +1029,6 @@ class Embed(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -1141,10 +1088,8 @@ class Embed(BaseHTML):
 
         Args:
             *children: The children of the component.
-            height: The intrinsic height of the embedded content
             src: URL of the embedded content
             type: Media type of the embedded content
-            width: The intrinsic width of the embedded content
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -1161,7 +1106,6 @@ class Embed(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1191,9 +1135,6 @@ class Iframe(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         csp: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        height: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         loading: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -1206,9 +1147,6 @@ class Iframe(BaseHTML):
         ] = None,
         src: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         src_doc: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        width: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         access_key: Optional[
@@ -1249,9 +1187,6 @@ class Iframe(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -1314,14 +1249,12 @@ class Iframe(BaseHTML):
             align: Alignment of the iframe within the page or surrounding elements
             allow: Permissions policy for the iframe
             csp: Content Security Policy to apply to the iframe's content
-            height: The height of the iframe
             loading: Specifies the loading behavior of the iframe
             name: Name of the iframe, used as a target for hyperlinks and forms
             referrer_policy: Referrer policy for the iframe
             sandbox: Security restrictions for the content in the iframe
             src: URL of the document to display in the iframe
             src_doc: HTML content to embed directly within the iframe
-            width: The width of the iframe
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -1338,7 +1271,6 @@ class Iframe(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1361,20 +1293,11 @@ class Object(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        border: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         data: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         form: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        height: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         name: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         type: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         use_map: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        width: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         access_key: Optional[
@@ -1415,9 +1338,6 @@ class Object(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -1477,14 +1397,11 @@ class Object(BaseHTML):
 
         Args:
             *children: The children of the component.
-            border: Border width around the object
             data: URL of the data to be used by the object
             form: Associates the object with a form element
-            height: The intrinsic height of the object
             name: Name of the object, used for scripting or as a target for forms and links
             type: Media type of the data specified in the data attribute
             use_map: Name of an image map to use with the object
-            width: The intrinsic width of the object
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -1501,7 +1418,6 @@ class Object(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1562,9 +1478,6 @@ class Picture(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -1640,7 +1553,6 @@ class Picture(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1701,9 +1613,6 @@ class Portal(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -1779,7 +1688,6 @@ class Portal(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1851,9 +1759,6 @@ class Source(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -1934,7 +1839,6 @@ class Source(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1957,12 +1861,6 @@ class Svg(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        width: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        height: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -2001,9 +1899,6 @@ class Svg(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -2063,8 +1958,6 @@ class Svg(BaseHTML):
 
         Args:
             *children: The children of the component.
-            width: Specifies the width of the element
-            height: Specifies the height of the element
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -2081,7 +1974,6 @@ class Svg(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2143,9 +2035,6 @@ class Path(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -2222,7 +2111,6 @@ class Path(BaseHTML):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

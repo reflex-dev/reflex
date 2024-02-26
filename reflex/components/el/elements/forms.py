@@ -17,7 +17,7 @@ class Button(BaseHTML):
     auto_focus: Var[Union[str, int, bool]]
 
     # Disables the button
-    disabled: Var[Union[str, int, bool]]
+    disabled: Var[bool]
 
     # Associates the button with a form (by id)
     form: Var[Union[str, int, bool]]
@@ -149,9 +149,6 @@ class Input(BaseHTML):
     # Specifies where to display the response after submitting the form (for type="submit" buttons)
     form_target: Var[Union[str, int, bool]]
 
-    # The height of the input (only for type="image")
-    height: Var[Union[str, int, bool]]
-
     # References a datalist for suggested options
     list: Var[Union[str, int, bool]]
 
@@ -202,9 +199,6 @@ class Input(BaseHTML):
 
     # Value of the input
     value: Var[Union[str, int, bool]]
-
-    # The width of the input (only for type="image")
-    width: Var[Union[str, int, bool]]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
@@ -412,6 +406,9 @@ class Textarea(BaseHTML):
 
     # Visible number of lines in the text control
     rows: Var[Union[str, int, bool]]
+
+    # The controlled value of the textarea, read only unless used with on_change
+    value: Var[Union[str, int, bool]]
 
     # How the text in the textarea is to be wrapped when submitting the form
     wrap: Var[Union[str, int, bool]]

@@ -25,6 +25,7 @@ from typing import (
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware import cors
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette_admin.contrib.sqla.admin import Admin
@@ -37,12 +38,18 @@ from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.components import connection_modal
 from reflex.components.base.app_wrap import AppWrap
-from reflex.components.component import Component, ComponentStyle
-from reflex.components.layout.fragment import Fragment
-from reflex.components.navigation.client_side_routing import (
+from reflex.components.base.fragment import Fragment
+from reflex.components.component import (
+    Component,
+    ComponentStyle,
+    evaluate_style_namespaces,
+)
+from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
+from reflex.components.core.upload import Upload, get_upload_dir
+from reflex.components.radix import themes
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
 from reflex.middleware import HydrateMiddleware, Middleware
@@ -62,8 +69,9 @@ from reflex.state import (
     State,
     StateManager,
     StateUpdate,
+    code_uses_state_contexts,
 )
-from reflex.utils import console, format, prerequisites, types
+from reflex.utils import console, exceptions, format, prerequisites, types
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
@@ -131,7 +139,7 @@ class App(Base):
     background_tasks: Set[asyncio.Task] = set()
 
     # The radix theme for the entire app
-    theme: Optional[Component] = None
+    theme: Optional[Component] = themes.theme(accent_color="blue")
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -166,9 +174,10 @@ class App(Base):
                     feature_name="`state` argument for App()",
                     reason="due to all `rx.State` subclasses being inferred.",
                     deprecation_version="0.3.5",
-                    removal_version="0.4.0",
+                    removal_version="0.5.0",
                 )
-            self.state = State
+            if len(State.class_subclasses) > 0:
+                self.state = State
         # Get the config
         config = get_config()
 
@@ -235,12 +244,22 @@ class App(Base):
         return self.api
 
     def add_default_endpoints(self):
-        """Add the default endpoints."""
+        """Add default api endpoints (ping)."""
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
 
+    def add_optional_endpoints(self):
+        """Add optional api endpoints (_upload)."""
         # To upload files.
-        self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+        if Upload.is_used:
+            self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+
+            # To access uploaded files.
+            self.api.mount(
+                str(constants.Endpoint.UPLOAD),
+                StaticFiles(directory=get_upload_dir()),
+                name="uploaded_files",
+            )
 
     def add_cors(self):
         """Add CORS middleware to the app."""
@@ -343,9 +362,12 @@ class App(Base):
 
         Raises:
             TypeError: When an invalid component function is passed.
+            exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
         try:
             return component if isinstance(component, Component) else component()
+        except exceptions.MatchTypeError:
+            raise
         except TypeError as e:
             message = str(e)
             if "BaseVar" in message or "ComputedVar" in message:
@@ -429,7 +451,7 @@ class App(Base):
                 feature_name="Passing script tags to add_page",
                 reason="Add script components as children to the page component instead",
                 deprecation_version="0.2.9",
-                removal_version="0.4.0",
+                removal_version="0.5.0",
             )
             component.children.extend(script_tags)
 
@@ -586,7 +608,7 @@ class App(Base):
                 continue
             _frontend_packages.append(package)
         page_imports.update(_frontend_packages)
-        prerequisites.install_frontend_packages(page_imports)
+        prerequisites.install_frontend_packages(page_imports, get_config())
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):
@@ -619,7 +641,24 @@ class App(Base):
         return True
 
     def compile(self):
-        """Compile the app and output it to the pages folder."""
+        """compile_() is the new function for performing compilation.
+        Reflex framework will call it automatically as needed.
+        """
+        console.deprecate(
+            feature_name="app.compile()",
+            reason="Explicit calls to app.compile() are not needed."
+            " Method will be removed in 0.4.0",
+            deprecation_version="0.3.8",
+            removal_version="0.5.0",
+        )
+        return
+
+    def compile_(self):
+        """Compile the app and output it to the pages folder.
+
+        Raises:
+            RuntimeError: When any page uses state, but no rx.State subclass is defined.
+        """
         # add the pages before the compile check so App know onload methods
         for render, kwargs in DECORATED_PAGES:
             self.add_page(render, **kwargs)
@@ -627,6 +666,9 @@ class App(Base):
         # Render a default 404 page if the user didn't supply one
         if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
+
+        # Add the optional endpoints (_upload)
+        self.add_optional_endpoints()
 
         if not self._should_compile():
             return
@@ -644,10 +686,7 @@ class App(Base):
         # Store the compile results.
         compile_results = []
 
-        # Compile the pages in parallel.
-        custom_components = set()
-        # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
-        all_imports = {}
+        # Add the app wrappers.
         app_wrappers: Dict[tuple[int, str], Component] = {
             # Default app wrap component renders {children}
             (0, "AppWrap"): AppWrap.create()
@@ -656,6 +695,14 @@ class App(Base):
             # If a theme component was provided, wrap the app with it
             app_wrappers[(20, "Theme")] = self.theme
 
+        # Fix up the style.
+        self.style = evaluate_style_namespaces(self.style)
+
+        # Track imports and custom components found.
+        all_imports = {}
+        custom_components = set()
+
+        # Compile the pages in parallel.
         with progress, concurrent.futures.ThreadPoolExecutor() as thread_pool:
             fixed_pages = 7
             task = progress.add_task("Compiling:", total=len(self.pages) + fixed_pages)
@@ -667,8 +714,7 @@ class App(Base):
                 # Merge the component style with the app style.
                 component.add_style(self.style)
 
-                if self.theme is not None:
-                    component.apply_theme(self.theme)
+                component.apply_theme(self.theme)
 
                 # Add component.get_imports() to all_imports.
                 all_imports.update(component.get_imports())
@@ -685,6 +731,16 @@ class App(Base):
                 stateful_components_code,
                 page_components,
             ) = compiler.compile_stateful_components(self.pages.values())
+
+            # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
+            if (
+                code_uses_state_contexts(stateful_components_code)
+                and self.state is None
+            ):
+                raise RuntimeError(
+                    "To access rx.State in frontend components, at least one "
+                    "subclass of rx.State must be defined in the app."
+                )
             compile_results.append((stateful_components_path, stateful_components_code))
 
             result_futures = []
@@ -729,14 +785,16 @@ class App(Base):
             submit_work(compiler.compile_theme, style=self.style)
 
             # Compile the contexts.
-            submit_work(compiler.compile_contexts, self.state)
+            submit_work(compiler.compile_contexts, self.state, self.theme)
 
             # Compile the Tailwind config.
             if config.tailwind is not None:
                 config.tailwind["content"] = config.tailwind.get(
                     "content", constants.Tailwind.CONTENT
                 )
-            submit_work(compiler.compile_tailwind, config.tailwind)
+                submit_work(compiler.compile_tailwind, config.tailwind)
+            else:
+                submit_work(compiler.remove_tailwind_from_postcss)
 
             # Get imports from AppWrap components.
             all_imports.update(app_root.get_imports())
@@ -868,7 +926,7 @@ async def process(
         }
     )
     # Get the state for the session exclusively.
-    async with app.state_manager.modify_state(event.token) as state:
+    async with app.state_manager.modify_state(event.substate_token) as state:
         # re-assign only when the value is different
         if state.router_data != router_data:
             # assignment will recurse into substates and force recalculation of
@@ -944,7 +1002,8 @@ def upload(app: App):
             )
 
         # Get the state for the session.
-        state = await app.state_manager.get_state(token)
+        substate_token = token + "_" + handler.rpartition(".")[0]
+        state = await app.state_manager.get_state(substate_token)
 
         # get the current session ID
         # get the current state(parent state/substate)
@@ -991,7 +1050,7 @@ def upload(app: App):
                 Each state update as JSON followed by a new line.
             """
             # Process the event.
-            async with app.state_manager.modify_state(token) as state:
+            async with app.state_manager.modify_state(event.substate_token) as state:
                 async for update in state._process(event):
                     # Postprocess the event.
                     update = await app.postprocess(state, event, update)

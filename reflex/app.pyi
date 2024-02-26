@@ -12,7 +12,7 @@ from reflex.components.component import (
     Component as Component,
     ComponentStyle as ComponentStyle,
 )
-from reflex.components.layout.fragment import Fragment as Fragment
+from reflex.components.base.fragment import Fragment as Fragment
 from reflex.config import get_config as get_config
 from reflex.event import (
     Event as Event,
@@ -120,6 +120,7 @@ class App(Base):
     def setup_admin_dash(self) -> None: ...
     def get_frontend_packages(self, imports: Dict[str, str]): ...
     def compile(self) -> None: ...
+    def compile_(self) -> None: ...
     def modify_state(self, token: str) -> AsyncContextManager[State]: ...
     def _process_background(
         self, state: State, event: Event

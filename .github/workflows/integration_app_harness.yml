@@ -48,7 +48,7 @@ jobs:
         REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
       run: |
         poetry run pytest integration
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       name: Upload failed test screenshots
       if: always()
       with:

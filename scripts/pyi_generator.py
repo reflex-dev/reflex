@@ -5,13 +5,15 @@ import contextlib
 import importlib
 import inspect
 import logging
-import os
 import re
+import subprocess
 import sys
 import textwrap
+import typing
 from inspect import getfullargspec
+from multiprocessing import Pool, cpu_count
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 from typing import Any, Callable, Iterable, Type, get_args
 
 import black
@@ -23,12 +25,19 @@ from reflex.vars import Var
 
 logger = logging.getLogger("pyi_generator")
 
+LAST_RUN_COMMIT_SHA_FILE = Path(".pyi_generator_last_run").resolve()
+INIT_FILE = Path("reflex/__init__.pyi").resolve()
+PWD = Path(".").resolve()
+GENERATOR_FILE = Path(__file__).resolve()
+GENERATOR_DIFF_FILE = Path(".pyi_generator_diff").resolve()
+
 EXCLUDED_FILES = [
     "__init__.py",
     "component.py",
     "bare.py",
     "foreach.py",
     "cond.py",
+    "match.py",
     "multiselect.py",
     "literals.py",
 ]
@@ -45,7 +54,9 @@ EXCLUDED_PROPS = [
     "special_props",
     "_invalid_children",
     "_memoization_mode",
+    "_rename_props",
     "_valid_children",
+    "_valid_parents",
 ]
 
 DEFAULT_TYPING_IMPORTS = {
@@ -57,6 +68,110 @@ DEFAULT_TYPING_IMPORTS = {
     "Optional",
     "Union",
 }
+
+
+def _walk_files(path):
+    """Walk all files in a path.
+    This can be replaced with Path.walk() in python3.12.
+
+    Args:
+        path: The path to walk.
+
+    Yields:
+        The next file in the path.
+    """
+    for p in Path(path).iterdir():
+        if p.is_dir():
+            yield from _walk_files(p)
+            continue
+        yield p.resolve()
+
+
+def _relative_to_pwd(path: Path) -> Path:
+    """Get the relative path of a path to the current working directory.
+
+    Args:
+        path: The path to get the relative path for.
+
+    Returns:
+        The relative path.
+    """
+    if path.is_absolute():
+        return path.relative_to(PWD)
+    return path
+
+
+def _git_diff(args: list[str]) -> str:
+    """Run a git diff command.
+
+    Args:
+        args: The args to pass to git diff.
+
+    Returns:
+        The output of the git diff command.
+    """
+    cmd = ["git", "diff", "--no-color", *args]
+    return subprocess.run(cmd, capture_output=True, encoding="utf-8").stdout
+
+
+def _git_changed_files(args: list[str] | None = None) -> list[Path]:
+    """Get the list of changed files for a git diff command.
+
+    Args:
+        args: The args to pass to git diff.
+
+    Returns:
+        The list of changed files.
+    """
+    if not args:
+        args = []
+
+    if "--name-only" not in args:
+        args.insert(0, "--name-only")
+
+    diff = _git_diff(args).splitlines()
+    return [Path(file.strip()) for file in diff]
+
+
+def _get_changed_files() -> list[Path] | None:
+    """Get the list of changed files since the last run of the generator.
+
+    Returns:
+        The list of changed files, or None if all files should be regenerated.
+    """
+    try:
+        last_run_commit_sha = LAST_RUN_COMMIT_SHA_FILE.read_text().strip()
+    except FileNotFoundError:
+        logger.info(
+            "pyi_generator.py last run could not be determined, regenerating all .pyi files"
+        )
+        return None
+    changed_files = _git_changed_files([f"{last_run_commit_sha}..HEAD"])
+    # get all unstaged changes
+    changed_files.extend(_git_changed_files())
+    if _relative_to_pwd(GENERATOR_FILE) not in changed_files:
+        return changed_files
+    logger.info("pyi_generator.py has changed, checking diff now")
+    diff = "".join(_git_diff([GENERATOR_FILE.as_posix()]).splitlines()[2:])
+
+    try:
+        last_diff = GENERATOR_DIFF_FILE.read_text()
+        if diff != last_diff:
+            logger.info("pyi_generator.py has changed, regenerating all .pyi files")
+            changed_files = None
+        else:
+            logger.info(
+                "pyi_generator.py has not changed, only regenerating changed files"
+            )
+    except FileNotFoundError:
+        logger.info(
+            "pyi_generator.py diff could not be determined, regenerating all .pyi files"
+        )
+        changed_files = None
+
+    GENERATOR_DIFF_FILE.write_text(diff)
+
+    return changed_files
 
 
 def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
@@ -130,6 +245,10 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
                 from reflex.style import Style"""
             )
         ).body,
+        # *[
+        #     ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
+        #     for name, values in EXTRA_IMPORTS.items()
+        # ],
     ]
 
 
@@ -239,7 +358,12 @@ def _extract_class_props_as_ast_nodes(
         # Import from the target class to ensure type hints are resolvable.
         exec(f"from {target_class.__module__} import *", type_hint_globals)
         for name, value in target_class.__annotations__.items():
-            if name in spec.kwonlyargs or name in EXCLUDED_PROPS or name in all_props:
+            if (
+                name in spec.kwonlyargs
+                or name in EXCLUDED_PROPS
+                or name in all_props
+                or (isinstance(value, str) and "ClassVar" in value)
+            ):
                 continue
             all_props.append(name)
 
@@ -267,9 +391,23 @@ def _extract_class_props_as_ast_nodes(
     return kwargs
 
 
+def _get_parent_imports(func):
+    _imports = {"reflex.vars": ["Var"]}
+    for type_hint in inspect.get_annotations(func).values():
+        try:
+            match = re.match(r"\w+\[([\w\d]+)\]", type_hint)
+        except TypeError:
+            continue
+        if match:
+            type_hint = match.group(1)
+            if type_hint in importlib.import_module(func.__module__).__dir__():
+                _imports.setdefault(func.__module__, []).append(type_hint)
+    return _imports
+
+
 def _generate_component_create_functiondef(
     node: ast.FunctionDef | None,
-    clz: type[Component],
+    clz: type[Component] | type[SimpleNamespace],
     type_hint_globals: dict[str, Any],
 ) -> ast.FunctionDef:
     """Generate the create function definition for a Component.
@@ -281,8 +419,23 @@ def _generate_component_create_functiondef(
 
     Returns:
         The create functiondef node for the ast.
+
+    Raises:
+        TypeError: If clz is not a subclass of Component.
     """
-    # kwargs defined on the actual create function
+    if not issubclass(clz, Component):
+        raise TypeError(f"clz must be a subclass of Component, not {clz!r}")
+
+    # add the imports needed by get_type_hint later
+    type_hint_globals.update(
+        {name: getattr(typing, name) for name in DEFAULT_TYPING_IMPORTS}
+    )
+
+    if clz.__module__ != clz.create.__module__:
+        _imports = _get_parent_imports(clz.create)
+        for name, values in _imports.items():
+            exec(f"from {name} import {','.join(values)}", type_hint_globals)
+
     kwargs = _extract_func_kwargs_as_ast_nodes(clz.create, type_hint_globals)
 
     # kwargs associated with props defined in the class and its parents
@@ -341,10 +494,55 @@ def _generate_component_create_functiondef(
     return definition
 
 
+def _generate_namespace_call_functiondef(
+    clz_name: str,
+    classes: dict[str, type[Component] | type[SimpleNamespace]],
+    type_hint_globals: dict[str, Any],
+) -> ast.FunctionDef | None:
+    """Generate the __call__ function definition for a SimpleNamespace.
+
+    Args:
+        clz_name: The name of the SimpleNamespace class to generate the __call__ functiondef for.
+        classes: Map name to actual class definition.
+        type_hint_globals: The globals to use to resolving a type hint str.
+
+    Returns:
+        The create functiondef node for the ast.
+    """
+    # add the imports needed by get_type_hint later
+    type_hint_globals.update(
+        {name: getattr(typing, name) for name in DEFAULT_TYPING_IMPORTS}
+    )
+
+    clz = classes[clz_name]
+
+    # Determine which class is wrapped by the namespace __call__ method
+    component_clz = clz.__call__.__self__
+
+    # Only generate for create functions
+    if clz.__call__.__func__.__name__ != "create":
+        return None
+
+    definition = _generate_component_create_functiondef(
+        node=None,
+        clz=component_clz,  # type: ignore
+        type_hint_globals=type_hint_globals,
+    )
+    definition.name = "__call__"
+
+    # Turn the definition into a staticmethod
+    del definition.args.args[0]  # remove `cls` arg
+    definition.decorator_list = [ast.Name(id="staticmethod")]
+
+    return definition
+
+
 class StubGenerator(ast.NodeTransformer):
     """A node transformer that will generate the stubs for a given module."""
 
-    def __init__(self, module: ModuleType, classes: dict[str, Type[Component]]):
+    def __init__(
+        self, module: ModuleType, classes: dict[str, Type[Component | SimpleNamespace]]
+    ):
         """Initialize the stub generator.
 
         Args:
@@ -384,6 +582,18 @@ class StubGenerator(ast.NodeTransformer):
         ):
             node.body.pop(0)
         return node
+
+    def _current_class_is_component(self) -> bool:
+        """Check if the current class is a Component.
+
+        Returns:
+            Whether the current class is a Component.
+        """
+        return (
+            self.current_class is not None
+            and self.current_class in self.classes
+            and issubclass(self.classes[self.current_class], Component)
+        )
 
     def visit_Module(self, node: ast.Module) -> ast.Module:
         """Visit a Module node and remove docstring from body.
@@ -448,6 +658,27 @@ class StubGenerator(ast.NodeTransformer):
         exec("\n".join(self.import_statements), self.type_hint_globals)
         self.current_class = node.name
         self._remove_docstring(node)
+
+        # Define `__call__` as a real function so the docstring appears in the stub.
+        call_definition = None
+        for child in node.body[:]:
+            found_call = False
+            if isinstance(child, ast.Assign):
+                for target in child.targets[:]:
+                    if isinstance(target, ast.Name) and target.id == "__call__":
+                        child.targets.remove(target)
+                        found_call = True
+                if not found_call:
+                    continue
+                if not child.targets[:]:
+                    node.body.remove(child)
+                call_definition = _generate_namespace_call_functiondef(
+                    self.current_class,
+                    self.classes,
+                    type_hint_globals=self.type_hint_globals,
+                )
+                break
+
         self.generic_visit(node)  # Visit child nodes.
 
         if (
@@ -455,7 +686,7 @@ class StubGenerator(ast.NodeTransformer):
                 isinstance(child, ast.FunctionDef) and child.name == "create"
                 for child in node.body
             )
-            and self.current_class in self.classes
+            and self._current_class_is_component()
         ):
             # Add a new .create FunctionDef since one does not exist.
             node.body.append(
@@ -465,6 +696,8 @@ class StubGenerator(ast.NodeTransformer):
                     type_hint_globals=self.type_hint_globals,
                 )
             )
+        if call_definition is not None:
+            node.body.append(call_definition)
         if not node.body:
             # We should never return an empty body.
             node.body.append(ast.Expr(value=ast.Ellipsis()))
@@ -491,11 +724,12 @@ class StubGenerator(ast.NodeTransformer):
                 node, self.classes[self.current_class], self.type_hint_globals
             )
         else:
-            if node.name.startswith("_"):
+            if node.name.startswith("_") and node.name != "__call__":
                 return None  # remove private methods
 
-            # Blank out the function body for public functions.
-            node.body = [ast.Expr(value=ast.Ellipsis())]
+            if node.body[-1] != ast.Expr(value=ast.Ellipsis()):
+                # Blank out the function body for public functions.
+                node.body = [ast.Expr(value=ast.Ellipsis())]
         return node
 
     def visit_Assign(self, node: ast.Assign) -> ast.Assign | None:
@@ -514,9 +748,11 @@ class StubGenerator(ast.NodeTransformer):
             and node.value.id == "Any"
         ):
             return node
-        if self.current_class in self.classes:
+
+        if self._current_class_is_component():
             # Remove annotated assignments in Component classes (props)
             return None
+
         return node
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AnnAssign | None:
@@ -530,6 +766,13 @@ class StubGenerator(ast.NodeTransformer):
         Returns:
             The modified AnnAssign node (or None).
         """
+        # skip ClassVars
+        if (
+            isinstance(node.annotation, ast.Subscript)
+            and isinstance(node.annotation.value, ast.Name)
+            and node.annotation.value.id == "ClassVar"
+        ):
+            return node
         if isinstance(node.target, ast.Name) and node.target.id.startswith("_"):
             return None
         if self.current_class in self.classes:
@@ -548,11 +791,11 @@ class PyiGenerator:
     modules: list = []
     root: str = ""
     current_module: Any = {}
-    default_typing_imports: set = DEFAULT_TYPING_IMPORTS
 
     def _write_pyi_file(self, module_path: Path, source: str):
+        relpath = str(_relative_to_pwd(module_path)).replace("\\", "/")
         pyi_content = [
-            f'"""Stub file for {module_path}"""',
+            f'"""Stub file for {relpath}"""',
             "# ------------------- DO NOT EDIT ----------------------",
             "# This file was generated by `scripts/pyi_generator.py`!",
             "# ------------------------------------------------------",
@@ -575,17 +818,23 @@ class PyiGenerator:
 
         pyi_path = module_path.with_suffix(".pyi")
         pyi_path.write_text("\n".join(pyi_content))
-        logger.info(f"Wrote {pyi_path}")
+        logger.info(f"Wrote {relpath}")
 
     def _scan_file(self, module_path: Path):
-        module_import = str(module_path.with_suffix("")).replace("/", ".")
+        module_import = (
+            _relative_to_pwd(module_path)
+            .with_suffix("")
+            .as_posix()
+            .replace("/", ".")
+            .replace("\\", ".")
+        )
         module = importlib.import_module(module_import)
-
+        logger.debug(f"Read {module_path}")
         class_names = {
             name: obj
             for name, obj in vars(module).items()
             if inspect.isclass(obj)
-            and issubclass(obj, Component)
+            and (issubclass(obj, Component) or issubclass(obj, SimpleNamespace))
             and obj != Component
             and inspect.getmodule(obj) == module
         }
@@ -597,25 +846,56 @@ class PyiGenerator:
         )
         self._write_pyi_file(module_path, ast.unparse(new_tree))
 
-    def _scan_folder(self, folder):
-        for root, _, files in os.walk(folder):
-            for file in files:
-                if file in EXCLUDED_FILES:
-                    continue
-                if file.endswith(".py"):
-                    self._scan_file(Path(root) / file)
+    def _scan_files_multiprocess(self, files: list[Path]):
+        with Pool(processes=cpu_count()) as pool:
+            pool.map(self._scan_file, files)
 
-    def scan_all(self, targets):
+    def _scan_files(self, files: list[Path]):
+        for file in files:
+            self._scan_file(file)
+
+    def scan_all(self, targets, changed_files: list[Path] | None = None):
         """Scan all targets for class inheriting Component and generate the .pyi files.
 
         Args:
             targets: the list of file/folders to scan.
+            changed_files (optional): the list of changed files since the last run.
         """
+        file_targets = []
         for target in targets:
-            if target.endswith(".py"):
-                self._scan_file(Path(target))
-            else:
-                self._scan_folder(target)
+            target_path = Path(target)
+            if target_path.is_file() and target_path.suffix == ".py":
+                file_targets.append(target_path)
+                continue
+            if not target_path.is_dir():
+                continue
+            for file_path in _walk_files(target_path):
+                relative = _relative_to_pwd(file_path)
+                if relative.name in EXCLUDED_FILES or file_path.suffix != ".py":
+                    continue
+                if (
+                    changed_files is not None
+                    and _relative_to_pwd(file_path) not in changed_files
+                ):
+                    continue
+                file_targets.append(file_path)
+
+        # check if pyi changed but not the source
+        if changed_files is not None:
+            for changed_file in changed_files:
+                if changed_file.suffix != ".pyi":
+                    continue
+                py_file_path = changed_file.with_suffix(".py")
+                if not py_file_path.exists() and changed_file.exists():
+                    changed_file.unlink()
+                if py_file_path in file_targets:
+                    continue
+                subprocess.run(["git", "checkout", changed_file])
+
+        if cpu_count() == 1 or len(file_targets) < 5:
+            self._scan_files(file_targets)
+        else:
+            self._scan_files_multiprocess(file_targets)
 
 
 def generate_init():
@@ -628,16 +908,31 @@ def generate_init():
     ]
     imports.append("")
 
-    with open("reflex/__init__.pyi", "w") as pyi_file:
-        pyi_file.writelines("\n".join(imports))
+    INIT_FILE.write_text("\n".join(imports))
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger("blib2to3.pgen2.driver").setLevel(logging.INFO)
 
-    targets = sys.argv[1:] if len(sys.argv) > 1 else ["reflex/components"]
+    targets = (
+        [arg for arg in sys.argv[1:] if not arg.startswith("tests")]
+        if len(sys.argv) > 1
+        else ["reflex/components"]
+    )
     logger.info(f"Running .pyi generator for {targets}")
+
+    changed_files = _get_changed_files()
+    if changed_files is None:
+        logger.info("Changed files could not be detected, regenerating all .pyi files")
+    else:
+        logger.info(f"Detected changed files: {changed_files}")
+
     gen = PyiGenerator()
-    gen.scan_all(targets)
+    gen.scan_all(targets, changed_files)
     generate_init()
+
+    current_commit_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"], capture_output=True, encoding="utf-8"
+    ).stdout.strip()
+    LAST_RUN_COMMIT_SHA_FILE.write_text(current_commit_sha)

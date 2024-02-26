@@ -532,7 +532,7 @@ def VarOperations():
                 VarOperationState.html_str,
                 id="html_str",
             ),
-            rx.highlight(
+            rx.chakra.highlight(
                 "second",
                 query=[VarOperationState.str_var2],
             ),
@@ -542,14 +542,15 @@ def VarOperations():
             rx.text(rx.Var.range(0, 3).join(","), id="list_join_range4"),
             rx.box(
                 rx.foreach(
-                    rx.Var.range(0, 2), lambda x: rx.text(VarOperationState.list1[x])
+                    rx.Var.range(0, 2),
+                    lambda x: rx.text(VarOperationState.list1[x], as_="p"),
                 ),
                 id="foreach_list_arg",
             ),
             rx.box(
                 rx.foreach(
                     rx.Var.range(0, 2),
-                    lambda x, ix: rx.text(VarOperationState.list1[ix]),
+                    lambda x, ix: rx.text(VarOperationState.list1[ix], as_="p"),
                 ),
                 id="foreach_list_ix",
             ),
@@ -558,14 +559,12 @@ def VarOperations():
                     rx.Var.create_safe(list(range(0, 3))).to(list[int]),
                     lambda x: rx.foreach(
                         rx.Var.range(x),
-                        lambda y: rx.text(VarOperationState.list1[y]),
+                        lambda y: rx.text(VarOperationState.list1[y], as_="p"),
                     ),
                 ),
                 id="foreach_list_nested",
             ),
         )
-
-    app.compile()
 
 
 @pytest.fixture(scope="session")

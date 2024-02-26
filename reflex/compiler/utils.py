@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Type
+from typing import Any, Callable, Type
 from urllib.parse import urlparse
 
 from pydantic.fields import ModelField
@@ -138,7 +138,7 @@ def compile_state(state: Type[BaseState]) -> dict:
         A dictionary of the compiled state.
     """
     try:
-        initial_state = state().dict()
+        initial_state = state().dict(initial=True)
     except Exception as e:
         console.warn(
             f"Failed to compile initial state with computed vars, excluding them: {e}"
@@ -290,20 +290,21 @@ def create_theme(style: ComponentStyle) -> dict:
         The base style for the app.
     """
     # Get the global style from the style dict.
-    global_style = Style({k: v for k, v in style.items() if not isinstance(k, type)})
+    style_rules = Style({k: v for k, v in style.items() if not isinstance(k, Callable)})
 
-    # Root styles.
-    root_style = Style({k: v for k, v in global_style.items() if k.startswith("::")})
-
-    # Body styles.
-    root_style["body"] = Style(
-        {k: v for k, v in global_style.items() if k not in root_style}
-    )
+    root_style = {
+        # Root styles.
+        ":root": Style(
+            {f"*{k}": v for k, v in style_rules.items() if k.startswith(":")}
+        ),
+        # Body styles.
+        "body": Style(
+            {k: v for k, v in style_rules.items() if not k.startswith(":")},
+        ),
+    }
 
     # Return the theme.
-    return {
-        "styles": {"global": root_style},
-    }
+    return {"styles": {"global": root_style}}
 
 
 def get_page_path(path: str) -> str:
@@ -381,6 +382,12 @@ def get_asset_path(filename: str | None = None) -> str:
     Returns:
         The path of the asset.
     """
+    console.deprecate(
+        feature_name="rx.get_asset_path",
+        reason="use rx.get_upload_dir() instead.",
+        deprecation_version="0.4.0",
+        removal_version="0.5.0",
+    )
     if filename is None:
         return constants.Dirs.WEB_ASSETS
     else:

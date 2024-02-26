@@ -2,13 +2,11 @@
 import re
 from typing import Dict, Literal, Optional, Union
 
+from reflex.components.chakra.forms import Button
+from reflex.components.chakra.layout import Box
+from reflex.components.chakra.media import Icon
 from reflex.components.component import Component
-from reflex.components.forms import Button, color_mode_cond
-from reflex.components.layout import Box
-from reflex.components.libs.chakra import (
-    ChakraComponent,
-)
-from reflex.components.media import Icon
+from reflex.components.core.cond import color_mode_cond
 from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils import format, imports
@@ -513,9 +511,3 @@ class CodeBlock(Component):
         if self.code is not None:
             out.special_props.add(Var.create_safe(f"children={str(self.code)}"))
         return out
-
-
-class Code(ChakraComponent):
-    """Used to display inline code."""
-
-    tag = "Code"

@@ -5,34 +5,31 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
     RadixThemesComponent,
 )
 
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
 
-
-class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
-    """A toggle switch alternative to the checkbox."""
+class Badge(el.Span, RadixThemesComponent):
+    """A stylized badge element."""
 
     tag = "Badge"
 
-    # The ratio of the width to the height of the element
-    ration: Var[float]
-
-    # The variant of the avatar
+    # The variant of the badge
     variant: Var[Literal["solid", "soft", "surface", "outline"]]
 
-    # The size of the avatar
-    size: Var[Literal[1, 2]]
+    # The size of the badge
+    size: Var[Literal["1", "2"]]
 
-    # Color theme of the avatar
-    color: Var[LiteralAccentColor]
+    # Color theme of the badge
+    color_scheme: Var[LiteralAccentColor]
 
-    # Whether to render the avatar with higher contrast color against background
+    # Whether to render the badge with higher contrast color against background
     high_contrast: Var[bool]
 
-    # Override theme radius for avatar: "none" | "small" | "medium" | "large" | "full"
+    # Override theme radius for badge: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
+
+
+badge = Badge.create

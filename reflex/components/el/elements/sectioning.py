@@ -1,5 +1,4 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
-from typing import Union
 
 from reflex.vars import Var as Var
 
@@ -10,9 +9,6 @@ class Body(BaseHTML):  # noqa: E742
     """Display the body element."""
 
     tag = "body"
-
-    bgcolor: Var[Union[str, int, bool]]
-    background: Var[Union[str, int, bool]]
 
 
 class Address(BaseHTML):  # noqa: E742

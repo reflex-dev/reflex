@@ -5,17 +5,16 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
     LiteralVariant,
     RadixThemesComponent,
 )
 
-LiteralButtonSize = Literal[1, 2, 3, 4]
+LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 
-class Button(el.Button, CommonMarginProps, RadixThemesComponent):
+class Button(el.Button, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Button"
@@ -30,10 +29,13 @@ class Button(el.Button, CommonMarginProps, RadixThemesComponent):
     variant: Var[LiteralVariant]
 
     # Override theme color for button
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the button with higher contrast color against background
     high_contrast: Var[bool]
 
     # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
+
+
+button = Button.create

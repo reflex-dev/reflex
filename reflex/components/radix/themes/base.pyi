@@ -7,20 +7,49 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Literal
+from typing import Any, Dict, Literal
 from reflex.components import Component
+from reflex.components.tags import Tag
 from reflex.utils import imports
 from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
-LiteralSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+LiteralSpacing = Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 LiteralVariant = Literal["classic", "solid", "soft", "surface", "outline", "ghost"]
 LiteralAppearance = Literal["inherit", "light", "dark"]
 LiteralGrayColor = Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]
-LiteralPanelBackground = Literal["solid", "transparent"]
+LiteralPanelBackground = Literal["solid", "translucent"]
 LiteralRadius = Literal["none", "small", "medium", "large", "full"]
 LiteralScaling = Literal["90%", "95%", "100%", "105%", "110%"]
+LiteralAccentColor = Literal[
+    "tomato",
+    "red",
+    "ruby",
+    "crimson",
+    "pink",
+    "plum",
+    "purple",
+    "violet",
+    "iris",
+    "indigo",
+    "blue",
+    "cyan",
+    "teal",
+    "jade",
+    "green",
+    "grass",
+    "brown",
+    "orange",
+    "sky",
+    "mint",
+    "lime",
+    "yellow",
+    "amber",
+    "gold",
+    "bronze",
+    "gray",
+]
 
 class CommonMarginProps(Component):
     @overload
@@ -30,44 +59,44 @@ class CommonMarginProps(Component):
         *children,
         m: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mx: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         my: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mt: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mr: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mb: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         ml: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -229,41 +258,14 @@ class RadixThemesComponent(Component):
         """
         ...
 
-LiteralAccentColor = Literal[
-    "tomato",
-    "red",
-    "ruby",
-    "crimson",
-    "pink",
-    "plum",
-    "purple",
-    "violet",
-    "iris",
-    "indigo",
-    "blue",
-    "cyan",
-    "teal",
-    "jade",
-    "green",
-    "grass",
-    "brown",
-    "orange",
-    "sky",
-    "mint",
-    "lime",
-    "yellow",
-    "amber",
-    "gold",
-    "bronze",
-    "gray",
-]
-
 class Theme(RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
+        color_mode: Optional[LiteralAppearance | None] = None,
+        theme_panel: Optional[bool] = False,
         has_background: Optional[Union[Var[bool], bool]] = None,
         appearance: Optional[
             Union[
@@ -340,7 +342,7 @@ class Theme(RadixThemesComponent):
             ]
         ] = None,
         panel_background: Optional[
-            Union[Var[Literal["solid", "transparent"]], Literal["solid", "transparent"]]
+            Union[Var[Literal["solid", "translucent"]], Literal["solid", "translucent"]]
         ] = None,
         radius: Optional[
             Union[
@@ -407,20 +409,19 @@ class Theme(RadixThemesComponent):
         ] = None,
         **props
     ) -> "Theme":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a new Radix Theme specification.
 
         Args:
             *children: Child components.
-            has_background: Whether to apply the themes background color to the theme node.
-            appearance: Override light or dark mode theme: "inherit" | "light" | "dark"
+            color_mode: Map to appearance prop.
+            theme_panel: Whether to include a panel for editing the theme.
+            has_background: Whether to apply the themes background color to the theme node. Defaults to True.
+            appearance: Override light or dark mode theme: "inherit" | "light" | "dark". Defaults to "inherit".
             accent_color: The color used for default buttons, typography, backgrounds, etc
-            gray_color: The shade of gray
-            panel_background: Whether panel backgrounds are transparent: "solid" | "transparent" (default)
-            radius: Element border radius: "none" | "small" | "medium" | "large" | "full"
-            scaling: Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%"
+            gray_color: The shade of gray, defaults to "auto".
+            panel_background: Whether panel backgrounds are translucent: "solid" | "translucent" (default)
+            radius: Element border radius: "none" | "small" | "medium" | "large" | "full". Defaults to "medium".
+            scaling: Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%". Defaults to "100%"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -501,6 +502,7 @@ class ThemePanel(RadixThemesComponent):
 
         Args:
             *children: Child components.
+            default_open: Whether the panel is open. Defaults to False.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -592,3 +594,6 @@ class RadixThemesColorModeProvider(Component):
             TypeError: If an invalid child is passed.
         """
         ...
+
+theme = Theme.create
+theme_panel = ThemePanel.create

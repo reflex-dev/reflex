@@ -5,13 +5,13 @@ import pytest
 import reflex as rx
 from reflex.base import Base
 from reflex.components.base.bare import Bare
+from reflex.components.chakra.layout.box import Box
 from reflex.components.component import (
     Component,
     CustomComponent,
     StatefulComponent,
     custom_component,
 )
-from reflex.components.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler
 from reflex.state import BaseState
@@ -137,6 +137,8 @@ def component5() -> Type[Component]:
 
         _valid_children: List[str] = ["Text"]
 
+        _valid_parents: List[str] = ["Text"]
+
     return TestComponent5
 
 
@@ -259,6 +261,23 @@ def test_add_style(component1, component2):
     style = {
         component1: Style({"color": "white"}),
         component2: Style({"color": "black"}),
+    }
+    c1 = component1().add_style(style)  # type: ignore
+    c2 = component2().add_style(style)  # type: ignore
+    assert c1.style["color"] == "white"
+    assert c2.style["color"] == "black"
+
+
+def test_add_style_create(component1, component2):
+    """Test that adding style works with the create method.
+
+    Args:
+        component1: A test component.
+        component2: A test component.
+    """
+    style = {
+        component1.create: Style({"color": "white"}),
+        component2.create: Style({"color": "black"}),
     }
     c1 = component1().add_style(style)  # type: ignore
     c2 = component2().add_style(style)  # type: ignore
@@ -431,7 +450,7 @@ def test_component_event_trigger_arbitrary_args():
 
     assert comp.render()["props"][0] == (
         "onFoo={(__e,_alpha,_bravo,_charlie) => addEvents("
-        '[Event("c1_state.mock_handler", {_e:__e.target.value,_bravo:_bravo["nested"],_charlie:(_charlie.custom + 42)})], '
+        '[Event("c1_state.mock_handler", {_e:__e.target.value,_bravo:_bravo["nested"],_charlie:((_charlie.custom) + (42))})], '
         "(__e,_alpha,_bravo,_charlie), {})}"
     )
 
@@ -469,12 +488,14 @@ def test_custom_component_wrapper():
             color=color,
         )
 
+    from reflex.components.radix.themes.typography.text import Text
+
     ccomponent = my_component(
         rx.text("child"), width=Var.create(1), color=Var.create("red")
     )
     assert isinstance(ccomponent, CustomComponent)
     assert len(ccomponent.children) == 1
-    assert isinstance(ccomponent.children[0], rx.Text)
+    assert isinstance(ccomponent.children[0], Text)
 
     component = ccomponent.get_component(ccomponent)
     assert isinstance(component, Box)
@@ -569,6 +590,20 @@ def test_unsupported_child_components(fixture, request):
     )
 
 
+def test_unsupported_parent_components(component5):
+    """Test that a value error is raised when an component is not in _valid_parents of one of its children.
+
+    Args:
+        component5: component with valid parent of "Text" only
+    """
+    with pytest.raises(ValueError) as err:
+        rx.box(component5.create())
+    assert (
+        err.value.args[0]
+        == f"The component `{component5.__name__}` can only be a child of the components: `{component5._valid_parents[0]}`. Got `Box` instead."
+    )
+
+
 @pytest.mark.parametrize("fixture", ["component5", "component7"])
 def test_component_with_only_valid_children(fixture, request):
     """Test that a value error is raised when an unsupported component (a child component not found in the
@@ -592,10 +627,10 @@ def test_component_with_only_valid_children(fixture, request):
 @pytest.mark.parametrize(
     "component,rendered",
     [
-        (rx.text("hi"), "<Text>\n  {`hi`}\n</Text>"),
+        (rx.text("hi"), "<RadixThemesText as={`p`}>\n  {`hi`}\n</RadixThemesText>"),
         (
-            rx.box(rx.heading("test", size="md")),
-            "<Box>\n  <Heading size={`md`}>\n  {`test`}\n</Heading>\n</Box>",
+            rx.box(rx.chakra.heading("test", size="md")),
+            "<RadixThemesBox>\n  <Heading size={`md`}>\n  {`test`}\n</Heading>\n</RadixThemesBox>",
         ),
     ],
 )
@@ -652,7 +687,10 @@ def test_stateful_banner():
 
 TEST_VAR = Var.create_safe("test")._replace(
     merge_var_data=VarData(
-        hooks={"useTest"}, imports={"test": {ImportVar(tag="test")}}, state="Test"
+        hooks={"useTest"},
+        imports={"test": {ImportVar(tag="test")}},
+        state="Test",
+        interpolations=[],
     )
 )
 FORMATTED_TEST_VAR = Var.create(f"foo{TEST_VAR}bar")
@@ -733,7 +771,7 @@ class EventState(rx.State):
             id="direct-prop",
         ),
         pytest.param(
-            rx.text(as_=f"foo{TEST_VAR}bar"),
+            rx.heading(as_=f"foo{TEST_VAR}bar"),
             [FORMATTED_TEST_VAR],
             id="fstring-prop",
         ),
@@ -883,3 +921,351 @@ def test_get_vars(component, exp_vars):
         sorted(exp_vars, key=lambda v: v._var_name),
     ):
         assert comp_var.equals(exp_var)
+
+
+def test_instantiate_all_components():
+    """Test that all components can be instantiated."""
+    # These components all have required arguments and cannot be trivially instantiated.
+    untested_components = {
+        "Card",
+        "Cond",
+        "DebounceInput",
+        "Foreach",
+        "FormControl",
+        "Html",
+        "Icon",
+        "Match",
+        "Markdown",
+        "MultiSelect",
+        "Option",
+        "Popover",
+        "Radio",
+        "Script",
+        "Tag",
+        "Tfoot",
+        "Thead",
+    }
+    for component_name in rx._ALL_COMPONENTS:  # type: ignore
+        if component_name in untested_components:
+            continue
+        component = getattr(rx, component_name)
+        if isinstance(component, type) and issubclass(component, Component):
+            component.create()
+
+
+class InvalidParentComponent(Component):
+    """Invalid Parent Component."""
+
+    ...
+
+
+class ValidComponent1(Component):
+    """Test valid component."""
+
+    _valid_children = ["ValidComponent2"]
+
+
+class ValidComponent2(Component):
+    """Test valid component."""
+
+    ...
+
+
+class ValidComponent3(Component):
+    """Test valid component."""
+
+    _valid_parents = ["ValidComponent2"]
+
+
+class ValidComponent4(Component):
+    """Test valid component."""
+
+    _invalid_children = ["InvalidComponent"]
+
+
+class InvalidComponent(Component):
+    """Test invalid component."""
+
+    ...
+
+
+valid_component1 = ValidComponent1.create
+valid_component2 = ValidComponent2.create
+invalid_component = InvalidComponent.create
+valid_component3 = ValidComponent3.create
+invalid_parent = InvalidParentComponent.create
+valid_component4 = ValidComponent4.create
+
+
+def test_validate_valid_children():
+    valid_component1(valid_component2())
+    valid_component1(
+        rx.fragment(valid_component2()),
+    )
+    valid_component1(
+        rx.fragment(
+            rx.fragment(
+                rx.fragment(valid_component2()),
+            ),
+        ),
+    )
+
+    valid_component1(
+        rx.cond(  # type: ignore
+            True,
+            rx.fragment(valid_component2()),
+            rx.fragment(
+                rx.foreach(Var.create([1, 2, 3]), lambda x: valid_component2(x))  # type: ignore
+            ),
+        )
+    )
+
+    valid_component1(
+        rx.cond(
+            True,
+            valid_component2(),
+            rx.fragment(
+                rx.match(
+                    "condition",
+                    ("first", valid_component2()),
+                    rx.fragment(valid_component2(rx.text("default"))),
+                )
+            ),
+        )
+    )
+
+    valid_component1(
+        rx.match(
+            "condition",
+            ("first", valid_component2()),
+            ("second", "third", rx.fragment(valid_component2())),
+            (
+                "fourth",
+                rx.cond(True, valid_component2(), rx.fragment(valid_component2())),
+            ),
+            (
+                "fifth",
+                rx.match(
+                    "nested_condition",
+                    ("nested_first", valid_component2()),
+                    rx.fragment(valid_component2()),
+                ),
+                valid_component2(),
+            ),
+        )
+    )
+
+
+def test_validate_valid_parents():
+    valid_component2(valid_component3())
+    valid_component2(
+        rx.fragment(valid_component3()),
+    )
+    valid_component1(
+        rx.fragment(
+            valid_component2(
+                rx.fragment(valid_component3()),
+            ),
+        ),
+    )
+
+    valid_component2(
+        rx.cond(  # type: ignore
+            True,
+            rx.fragment(valid_component3()),
+            rx.fragment(
+                rx.foreach(
+                    Var.create([1, 2, 3]),  # type: ignore
+                    lambda x: valid_component2(valid_component3(x)),
+                )
+            ),
+        )
+    )
+
+    valid_component2(
+        rx.cond(
+            True,
+            valid_component3(),
+            rx.fragment(
+                rx.match(
+                    "condition",
+                    ("first", valid_component3()),
+                    rx.fragment(valid_component3(rx.text("default"))),
+                )
+            ),
+        )
+    )
+
+    valid_component2(
+        rx.match(
+            "condition",
+            ("first", valid_component3()),
+            ("second", "third", rx.fragment(valid_component3())),
+            (
+                "fourth",
+                rx.cond(True, valid_component3(), rx.fragment(valid_component3())),
+            ),
+            (
+                "fifth",
+                rx.match(
+                    "nested_condition",
+                    ("nested_first", valid_component3()),
+                    rx.fragment(valid_component3()),
+                ),
+                valid_component3(),
+            ),
+        )
+    )
+
+
+def test_validate_invalid_children():
+    with pytest.raises(ValueError):
+        valid_component4(invalid_component())
+
+    with pytest.raises(ValueError):
+        valid_component4(
+            rx.fragment(invalid_component()),
+        )
+
+    with pytest.raises(ValueError):
+        valid_component2(
+            rx.fragment(
+                valid_component4(
+                    rx.fragment(invalid_component()),
+                ),
+            ),
+        )
+
+    with pytest.raises(ValueError):
+        valid_component4(
+            rx.cond(  # type: ignore
+                True,
+                rx.fragment(invalid_component()),
+                rx.fragment(
+                    rx.foreach(Var.create([1, 2, 3]), lambda x: invalid_component(x))  # type: ignore
+                ),
+            )
+        )
+
+    with pytest.raises(ValueError):
+        valid_component4(
+            rx.cond(
+                True,
+                invalid_component(),
+                rx.fragment(
+                    rx.match(
+                        "condition",
+                        ("first", invalid_component()),
+                        rx.fragment(invalid_component(rx.text("default"))),
+                    )
+                ),
+            )
+        )
+
+    with pytest.raises(ValueError):
+        valid_component4(
+            rx.match(
+                "condition",
+                ("first", invalid_component()),
+                ("second", "third", rx.fragment(invalid_component())),
+                (
+                    "fourth",
+                    rx.cond(True, invalid_component(), rx.fragment(valid_component2())),
+                ),
+                (
+                    "fifth",
+                    rx.match(
+                        "nested_condition",
+                        ("nested_first", invalid_component()),
+                        rx.fragment(invalid_component()),
+                    ),
+                    invalid_component(),
+                ),
+            )
+        )
+
+
+def test_rename_props():
+    """Test that _rename_props works and is inherited."""
+
+    class C1(Component):
+        tag = "C1"
+
+        prop1: Var[str]
+        prop2: Var[str]
+
+        _rename_props = {"prop1": "renamed_prop1", "prop2": "renamed_prop2"}
+
+    class C2(C1):
+        tag = "C2"
+
+        prop3: Var[str]
+
+        _rename_props = {"prop2": "subclass_prop2", "prop3": "renamed_prop3"}
+
+    c1 = C1.create(prop1="prop1_1", prop2="prop2_1")
+    rendered_c1 = c1.render()
+    assert "renamed_prop1={`prop1_1`}" in rendered_c1["props"]
+    assert "renamed_prop2={`prop2_1`}" in rendered_c1["props"]
+
+    c2 = C2.create(prop1="prop1_2", prop2="prop2_2", prop3="prop3_2")
+    rendered_c2 = c2.render()
+    assert "renamed_prop1={`prop1_2`}" in rendered_c2["props"]
+    assert "subclass_prop2={`prop2_2`}" in rendered_c2["props"]
+    assert "renamed_prop3={`prop3_2`}" in rendered_c2["props"]
+
+
+def test_deprecated_props(capsys):
+    """Assert that deprecated underscore suffix props are translated.
+
+    Args:
+        capsys: Pytest fixture for capturing stdout and stderr.
+    """
+
+    class C1(Component):
+        tag = "C1"
+
+        type: Var[str]
+        min: Var[str]
+        max: Var[str]
+
+    # No warnings are emitted when using the new prop names.
+    c1_1 = C1.create(type="type1", min="min1", max="max1")
+    out_err = capsys.readouterr()
+    assert not out_err.err
+    assert not out_err.out
+
+    c1_1_render = c1_1.render()
+    assert "type={`type1`}" in c1_1_render["props"]
+    assert "min={`min1`}" in c1_1_render["props"]
+    assert "max={`max1`}" in c1_1_render["props"]
+
+    # Deprecation warning is emitted with underscore suffix,
+    # but the component still works.
+    c1_2 = C1.create(type_="type2", min_="min2", max_="max2")
+    out_err = capsys.readouterr()
+    assert out_err.out.count("DeprecationWarning:") == 3
+    assert not out_err.err
+
+    c1_2_render = c1_2.render()
+    assert "type={`type2`}" in c1_2_render["props"]
+    assert "min={`min2`}" in c1_2_render["props"]
+    assert "max={`max2`}" in c1_2_render["props"]
+
+    class C2(Component):
+        tag = "C2"
+
+        type_: Var[str]
+        min_: Var[str]
+        max_: Var[str]
+
+    # No warnings are emitted if the actual prop has an underscore suffix
+    c2_1 = C2.create(type_="type1", min_="min1", max_="max1")
+    out_err = capsys.readouterr()
+    assert not out_err.err
+    assert not out_err.out
+
+    c2_1_render = c2_1.render()
+    assert "type={`type1`}" in c2_1_render["props"]
+    assert "min={`min1`}" in c2_1_render["props"]
+    assert "max={`max1`}" in c2_1_render["props"]

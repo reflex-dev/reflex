@@ -8,7 +8,6 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralVariant,
     RadixThemesComponent,
@@ -19,7 +18,7 @@ from .base import (
 )
 
 
-class Code(el.Code, CommonMarginProps, RadixThemesComponent):
+class Code(el.Code, RadixThemesComponent):
     """A block level extended quotation."""
 
     tag = "Code"
@@ -34,7 +33,7 @@ class Code(el.Code, CommonMarginProps, RadixThemesComponent):
     weight: Var[LiteralTextWeight]
 
     # Overrides the accent color inherited from the Theme.
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the text with higher contrast color
     high_contrast: Var[bool]
