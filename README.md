@@ -3,8 +3,8 @@
 ```
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/readme/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/readme/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
 
 <hr>
 
@@ -18,7 +18,7 @@
 
 ---
 
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md)
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/readme/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/readme/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/readme/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/readme/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/readme/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/readme/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/readme/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/readme/kr/README.md)
 
 ---
 ## ⚙️ Installation
@@ -61,7 +61,7 @@ Let's go over an example: creating an image generation UI around [DALL·E](https
 &nbsp;
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/readme/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
 </div>
 
 &nbsp;
