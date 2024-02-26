@@ -2310,7 +2310,7 @@ def test_mutable_copy_vars(mutable_state, copy_func):
 
 
 def test_duplicate_substate_class(mocker):
-    mocker.patch("reflex.state.os.environ", {})
+    mocker.patch("reflex.state.is_testing_env", lambda: False)
     with pytest.raises(ValueError):
 
         class TestState(BaseState):

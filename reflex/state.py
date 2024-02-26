@@ -1084,9 +1084,147 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             raise ValueError(f"Invalid path: {path}")
         return self.substates[path[0]].get_substate(path[1:])
 
-    def _get_state_manager(self) -> StateManager:
-        app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        return app.state_manager
+    @classmethod
+    def _get_common_ancestor(cls, other: Type[BaseState]) -> str:
+        """Find the name of the nearest common ancestor shared by this and the other state.
+
+        Args:
+            other: The other state.
+
+        Returns:
+            Full name of the nearest common ancestor.
+        """
+        common_ancestor_parts = []
+        for part1, part2 in zip(
+            cls.get_full_name().split("."),
+            other.get_full_name().split("."),
+        ):
+            if part1 != part2:
+                break
+            common_ancestor_parts.append(part1)
+        return ".".join(common_ancestor_parts)
+
+    @classmethod
+    def _determine_missing_parent_states(
+        cls, target_state_cls: Type[BaseState]
+    ) -> tuple[str, list[str]]:
+        """Determine the missing parent states between the target_state_cls and common ancestor of this state.
+
+        Args:
+            target_state_cls: The class of the state to find missing parent states for.
+
+        Returns:
+            The name of the common ancestor and the list of missing parent states.
+        """
+        common_ancestor_name = cls._get_common_ancestor(target_state_cls)
+        common_ancestor_parts = common_ancestor_name.split(".")
+        target_state_parts = tuple(target_state_cls.get_full_name().split("."))
+        relative_target_state_parts = target_state_parts[len(common_ancestor_parts) :]
+
+        # Determine which parent states to fetch from the common ancestor down to the target_state_cls.
+        fetch_parent_states = [common_ancestor_name]
+        for ix, relative_parent_state_name in enumerate(relative_target_state_parts):
+            fetch_parent_states.append(
+                ".".join([*fetch_parent_states[: ix + 1], relative_parent_state_name])
+            )
+
+        return common_ancestor_name, fetch_parent_states[1:-1]
+
+    def _get_parent_states(self) -> list[tuple[str, BaseState]]:
+        """Get all parent state instances up to the root of the state tree.
+
+        Returns:
+            A list of tuples containing the name and the instance of each parent state.
+        """
+        parent_states_with_name = []
+        parent_state = self
+        while parent_state.parent_state is not None:
+            parent_state = parent_state.parent_state
+            parent_states_with_name.append((parent_state.get_full_name(), parent_state))
+        return parent_states_with_name
+
+    async def _populate_parent_states(self, target_state_cls: Type[BaseState]):
+        """Populate substates in the tree between the target_state_cls and common ancestor of this state.
+
+        Args:
+            target_state_cls: The class of the state to populate parent states for.
+
+        Returns:
+            The parent state instance of target_state_cls.
+
+        Raises:
+            RuntimeError: If the state is not cached and redis is not used.
+        """
+        state_manager = get_state_manager()
+        if not isinstance(state_manager, StateManagerRedis):
+            raise RuntimeError(
+                f"Requested state {target_state_cls.get_full_name()} is not cached and cannot be accessed without redis.",
+            )
+
+        # Find the missing parent states up to the common ancestor.
+        (
+            common_ancestor_name,
+            missing_parent_states,
+        ) = self._determine_missing_parent_states(target_state_cls)
+
+        # Fetch all missing parent states and link them up to the common ancestor.
+        parent_states_by_name = dict(self._get_parent_states())
+        parent_state = parent_states_by_name[common_ancestor_name]
+        for parent_state_name in missing_parent_states:
+            parent_state = await state_manager.get_state(
+                token=_substate_key(
+                    self.router.session.client_token, parent_state_name
+                ),
+                top_level=False,
+                get_substates=False,
+                parent_state=parent_state,
+            )
+
+        # Return the direct parent of target_state_cls for subsequent linking.
+        return parent_state
+
+    def _get_state_from_cache(self, state_cls: Type[BaseState]) -> BaseState:
+        """Get a state instance from the cache.
+
+        Args:
+            state_cls: The class of the state.
+
+        Returns:
+            The instance of state_cls associated with this state's client_token.
+        """
+        if self.parent_state is None:
+            root_state = self
+        else:
+            root_state = self._get_parent_states()[-1][1]
+        return root_state.get_substate(state_cls.get_full_name().split("."))
+
+    async def _get_state_from_redis(self, state_cls: Type[BaseState]) -> BaseState:
+        """Get a state instance from redis.
+
+        Args:
+            state_cls: The class of the state.
+
+        Returns:
+            The instance of state_cls associated with this state's client_token.
+
+        Raises:
+            RuntimeError: If redis is not used in this backend process.
+        """
+        # Fetch all missing parent states from redis.
+        parent_state_of_state_cls = await self._populate_parent_states(state_cls)
+
+        # Then get the target state and all its substates.
+        state_manager = get_state_manager()
+        if not isinstance(state_manager, StateManagerRedis):
+            raise RuntimeError(
+                f"Requested state {state_cls.get_full_name()} is not cached and cannot be accessed without redis.",
+            )
+        return await state_manager.get_state(
+            token=_substate_key(self.router.session.client_token, state_cls),
+            top_level=False,
+            get_substates=True,
+            parent_state=parent_state_of_state_cls,
+        )
 
     async def get_state(self, state_cls: Type[BaseState]) -> BaseState:
         """Get an instance of the state associated with this token.
@@ -1097,65 +1235,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             state_cls: The class of the state.
 
         Returns:
-            The state.
-
-        Raises:
-            RuntimeError: If the state is not cached and redis is not used.
+            The instance of state_cls associated with this state's client_token.
         """
-        target_state_parts = tuple(state_cls.get_full_name().split("."))
-
-        # fast case - maybe we already have this state instance cached
-        parent_states_by_name = {}
-        parent_state = self
-        while parent_state.parent_state is not None:
-            parent_state = parent_state.parent_state
-            parent_states_by_name[parent_state.get_full_name()] = parent_state
-
+        # Fast case - if this state instance is already cached, get_substate from root state.
         try:
-            return parent_state.get_substate(target_state_parts)
+            return self._get_state_from_cache(state_cls)
         except ValueError:
             pass
 
-        # Find the common ancestor state of the current state and the target state.
-        common_ancestor_parts = []
-        for part1, part2 in zip(self.get_full_name().split("."), target_state_parts):
-            if part1 != part2:
-                break
-            common_ancestor_parts.append(part1)
-        common_ancestor_name = ".".join(common_ancestor_parts)
-
-        # Determine all parent states from the common ancestor down.
-        fetch_parent_states = [common_ancestor_name]
-        relative_target_state = target_state_parts[len(common_ancestor_parts) :]
-        for ix, relative_parent_state_name in enumerate(relative_target_state):
-            fetch_parent_states.append(
-                ".".join([*fetch_parent_states[: ix + 1], relative_parent_state_name])
-            )
-
-        state_manager = self._get_state_manager()
-        if not isinstance(state_manager, StateManagerRedis):
-            raise RuntimeError(
-                f"Requested state {target_state_parts} is not cached and cannot be accessed without redis.",
-            )
-        # Fetch all missing parent states and link them up to the common ancestor.
-        parent_state = parent_states_by_name[common_ancestor_name]
-        for parent_state_name in fetch_parent_states[1:-1]:
-            parent_state = await state_manager.get_state(
-                token=_substate_key(
-                    self.router.session.client_token, parent_state_name
-                ),
-                top_level=False,
-                get_substates=False,
-                parent_state=parent_state,
-            )
-
-        # Then get the target state and all its substates.
-        return await state_manager.get_state(
-            token=_substate_key(self.router.session.client_token, state_cls),
-            top_level=False,
-            get_substates=True,
-            parent_state=parent_state,
-        )
+        # Slow case - fetch missing parent states from redis.
+        return await self._get_state_from_redis(state_cls)
 
     def _get_event_handler(
         self, event: Event
@@ -2247,6 +2336,16 @@ class StateManagerRedis(StateManager):
         Note: Connections will be automatically reopened when needed.
         """
         await self.redis.close(close_connection_pool=True)
+
+
+def get_state_manager() -> StateManager:
+    """Get the state manager for the app that is currently running.
+
+    Returns:
+        The state manager.
+    """
+    app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+    return app.state_manager
 
 
 class ClientStorageBase:
