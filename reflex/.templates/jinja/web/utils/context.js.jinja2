@@ -25,10 +25,20 @@ export const clientStorage = {}
 
 {% if state_name %}
 export const state_name = "{{state_name}}"
-export const onLoadInternalEvent = () => [
-    Event('{{state_name}}.{{const.update_vars_internal}}', {vars: hydrateClientStorage(clientStorage)}),
-    Event('{{state_name}}.{{const.on_load_internal}}')
-]
+export const onLoadInternalEvent = () => {
+    const internal_events = [];
+    const client_storage_vars = hydrateClientStorage(clientStorage);
+    if (client_storage_vars) {
+        internal_events.push(
+            Event(
+                '{{state_name}}.{{const.update_vars_internal}}',
+                {vars: client_storage_vars},
+            ),
+        );
+    }
+    internal_events.push(Event('{{state_name}}.{{const.on_load_internal}}'));
+    return internal_events;
+}
 
 export const initialEvents = () => [
     Event('{{state_name}}.{{const.hydrate}}'),

@@ -23,6 +23,7 @@ from reflex.state import (
     ImmutableStateError,
     LockExpiredError,
     MutableProxy,
+    OnLoadInternalState,
     RouterData,
     State,
     StateManager,
@@ -2503,7 +2504,9 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
         expected: Expected delta.
         mocker: pytest mock object.
     """
-    mocker.patch("reflex.state.State.class_subclasses", {test_state})
+    mocker.patch(
+        "reflex.state.State.class_subclasses", {test_state, OnLoadInternalState}
+    )
     app = app_module_mock.app = App(
         state=State, load_events={"index": [test_state.test_handler]}
     )
@@ -2544,7 +2547,9 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         token: A token.
         mocker: pytest mock object.
     """
-    mocker.patch("reflex.state.State.class_subclasses", {OnLoadState})
+    mocker.patch(
+        "reflex.state.State.class_subclasses", {OnLoadState, OnLoadInternalState}
+    )
     app = app_module_mock.app = App(
         state=State,
         load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},

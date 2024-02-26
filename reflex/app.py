@@ -177,7 +177,8 @@ class App(Base):
                     deprecation_version="0.3.5",
                     removal_version="0.5.0",
                 )
-            if len(State.class_subclasses) > 0:
+            # 2 substates are built-in and not considered when determining if app is stateless.
+            if len(State.class_subclasses) > 2:
                 self.state = State
         # Get the config
         config = get_config()
