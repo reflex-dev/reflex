@@ -31,6 +31,7 @@ from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
 from reflex.state import (
     BaseState,
+    OnLoadInternalState,
     RouterData,
     State,
     StateManagerRedis,
@@ -897,7 +898,7 @@ class DynamicState(BaseState):
         # self.side_effect_counter = self.side_effect_counter + 1
         return self.dynamic
 
-    on_load_internal = State.on_load_internal.fn
+    on_load_internal = OnLoadInternalState.on_load_internal.fn
 
 
 @pytest.mark.asyncio
@@ -962,7 +963,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     prev_exp_val = ""
     for exp_index, exp_val in enumerate(exp_vals):
         on_load_internal = _event(
-            name=f"{state.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL}",
+            name=f"{state.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL.rpartition('.')[2]}",
             val=exp_val,
         )
         exp_router_data = {
@@ -997,8 +998,8 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     name="on_load",
                     val=exp_val,
                 ),
-                _dynamic_state_event(
-                    name="set_is_hydrated",
+                _event(
+                    name="state.set_is_hydrated",
                     payload={"value": True},
                     val=exp_val,
                     router_data={},

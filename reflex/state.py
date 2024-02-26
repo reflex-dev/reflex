@@ -1452,6 +1452,28 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for cvar in self._computed_var_dependencies[dirty_var]
         )
 
+    @classmethod
+    def _potentially_dirty_substates(cls) -> set[Type[BaseState]]:
+        """Determine substates which could be affected by dirty vars in this state.
+
+        Returns:
+            Set of State classes that may need to be fetched to recalc computed vars.
+        """
+        # _always_dirty_substates need to be fetched to recalc computed vars.
+        fetch_substates = set(
+            cls.get_class_substate(tuple(substate_name.split(".")))
+            for substate_name in cls._always_dirty_substates
+        )
+        # Substates with cached vars also need to be fetched.
+        for dependent_substates in cls._substate_var_dependencies.values():
+            fetch_substates.update(
+                set(
+                    cls.get_class_substate(tuple(substate_name.split(".")))
+                    for substate_name in dependent_substates
+                )
+            )
+        return fetch_substates
+
     def get_delta(self) -> Delta:
         """Get the delta for the state.
 
@@ -1643,28 +1665,11 @@ class State(BaseState):
     # The hydrated bool.
     is_hydrated: bool = False
 
-    def on_load_internal(self) -> list[Event | EventSpec] | None:
-        """Queue on_load handlers for the current page.
 
-        Returns:
-            The list of events to queue for on load handling.
-        """
-        # Do not app.compile_()!  It should be already compiled by now.
-        app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        load_events = app.get_load_events(self.router.page.path)
-        if not load_events and self.is_hydrated:
-            return  # Fast path for page-to-page navigation
-        self.is_hydrated = False
-        return [
-            *fix_events(
-                load_events,
-                self.router.session.client_token,
-                router_data=self.router_data,
-            ),
-            type(self).set_is_hydrated(True),  # type: ignore
-        ]
+class UpdateVarsInternalState(State):
+    """Substate for handling internal state var updates."""
 
-    def update_vars_internal(self, vars: dict[str, Any]) -> None:
+    async def update_vars_internal(self, vars: dict[str, Any]) -> None:
         """Apply updates to fully qualified state vars.
 
         The keys in `vars` should be in the form of `{state.get_full_name()}.{var_name}`,
@@ -1678,8 +1683,40 @@ class State(BaseState):
         """
         for var, value in vars.items():
             state_name, _, var_name = var.rpartition(".")
-            var_state = self.get_substate(state_name.split("."))
+            var_state_cls = State.get_class_substate(tuple(state_name.split(".")))
+            var_state = await self.get_state(var_state_cls)
             setattr(var_state, var_name, value)
+
+
+class OnLoadInternalState(State):
+    """Substate for handling on_load event enumeration.
+
+    This is a separate substate to avoid deserializing the entire state tree for every page navigation.
+    """
+
+    def on_load_internal(self) -> list[Event | EventSpec] | None:
+        """Queue on_load handlers for the current page.
+
+        Returns:
+            The list of events to queue for on load handling.
+        """
+        # Do not app.compile_()!  It should be already compiled by now.
+        app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        load_events = app.get_load_events(self.router.page.path)
+        if not load_events and self.is_hydrated:
+            return  # Fast path for page-to-page navigation
+        if not load_events:
+            self.is_hydrated = True
+            return  # Fast path for initial hydrate with no on_load events defined.
+        self.is_hydrated = False
+        return [
+            *fix_events(
+                load_events,
+                self.router.session.client_token,
+                router_data=self.router_data,
+            ),
+            State.set_is_hydrated(True),  # type: ignore
+        ]
 
 
 class StateProxy(wrapt.ObjectProxy):
@@ -2119,11 +2156,8 @@ class StateManagerRedis(StateManager):
                 # All substates are requested.
                 fetch_substates = state_cls.get_substates()
             else:
-                # Only _always_dirty_substates need to be fetched to recalc computed vars.
-                fetch_substates = [
-                    state.get_class_substate(tuple(substate_name.split(".")))
-                    for substate_name in state_cls._always_dirty_substates
-                ]
+                # Only _potentially_dirty_substates need to be fetched to recalc computed vars.
+                fetch_substates = state_cls._potentially_dirty_substates()
 
             tasks = {}
             # Retrieve necessary substates from redis.
