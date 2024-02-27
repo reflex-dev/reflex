@@ -1,6 +1,6 @@
 """The settings page."""
 
-from code.templates import template
+from code.templates import ThemeState, template
 
 import reflex as rx
 
@@ -14,9 +14,48 @@ def settings() -> rx.Component:
     """
     return rx.vstack(
         rx.heading("Settings", size="8"),
-        rx.text("Welcome to Reflex!"),
+        rx.hstack(
+            rx.text("Light mode: "),
+            rx.color_mode.switch(),
+        ),
+        rx.hstack(
+            rx.text("Theme color: "),
+            rx.select(
+                [
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+                value=ThemeState.accent_color,
+                on_change=ThemeState.set_accent_color,
+            ),
+        ),
         rx.text(
             "You can edit this page in ",
             rx.code("{your_app}/pages/settings.py"),
+            size="1",
         ),
     )

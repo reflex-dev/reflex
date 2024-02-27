@@ -17,6 +17,21 @@ default_meta = [
 ]
 
 
+def menu_item_link(text, href):
+    return rx.menu.item(
+        rx.link(
+            text,
+            href=href,
+            width="100%",
+            color="inherit",
+        ),
+        _hover={
+            "color": styles.accent_color,
+            "background_color": styles.accent_text_color,
+        },
+    )
+
+
 def menu_button() -> rx.Component:
     """The menu button on the top right of the page.
 
@@ -37,33 +52,12 @@ def menu_button() -> rx.Component:
             ),
             rx.menu.content(
                 *[
-                    rx.menu.item(
-                        rx.link(
-                            page["title"],
-                            href=page["route"],
-                            width="100%",
-                            style=styles.link_style,
-                        )
-                    )
+                    menu_item_link(page["title"], page["route"])
                     for page in get_decorated_pages()
                 ],
                 rx.menu.separator(),
-                rx.menu.item(
-                    rx.link(
-                        "About",
-                        href="https://github.com/reflex-dev",
-                        width="100%",
-                        style=styles.link_style,
-                    ),
-                ),
-                rx.menu.item(
-                    rx.link(
-                        "Contact",
-                        href="mailto:founders@=reflex.dev",
-                        width="100%",
-                        style=styles.link_style,
-                    )
-                ),
+                menu_item_link("About", "https://github.com/reflex-dev"),
+                menu_item_link("Contact", "mailto:founders@=reflex.dev"),
             ),
         ),
         position="fixed",
@@ -71,6 +65,12 @@ def menu_button() -> rx.Component:
         top="1.5em",
         z_index="500",
     )
+
+
+class ThemeState(rx.State):
+    """The state for the theme of the app."""
+
+    accent_color: str = "crimson"
 
 
 def template(
@@ -109,15 +109,6 @@ def template(
         # Get the meta tags for the page.
         all_meta = [*default_meta, *(meta or [])]
 
-        @rx.page(
-            route=route,
-            title=title,
-            image=image,
-            description=description,
-            meta=all_meta,
-            script_tags=script_tags,
-            on_load=on_load,
-        )
         def templated_page():
             return rx.hstack(
                 sidebar(),
@@ -134,6 +125,21 @@ def template(
                 position="relative",
             )
 
-        return templated_page
+        @rx.page(
+            route=route,
+            title=title,
+            image=image,
+            description=description,
+            meta=all_meta,
+            script_tags=script_tags,
+            on_load=on_load,
+        )
+        def theme_wrap():
+            return rx.theme(
+                templated_page(),
+                accent_color=ThemeState.accent_color,
+            )
+
+        return theme_wrap
 
     return decorator
