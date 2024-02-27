@@ -28,7 +28,7 @@ export const state_name = "{{state_name}}"
 export const onLoadInternalEvent = () => {
     const internal_events = [];
     const client_storage_vars = hydrateClientStorage(clientStorage);
-    if (client_storage_vars) {
+    if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {
         internal_events.push(
             Event(
                 '{{state_name}}.{{const.update_vars_internal}}',
