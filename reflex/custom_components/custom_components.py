@@ -296,7 +296,7 @@ def build(
     console.set_log_level(loglevel)
     console.print("Building custom component...")
     try:
-        import build  # noqa: F401
+        import build  # noqa
     except (ImportError, ModuleNotFoundError) as ex:
         if not _pip_install_on_demand("build"):
             raise typer.Exit(code=1) from ex
@@ -390,7 +390,7 @@ def publish(
 
     # We install twine with pip on the fly so it is not a stable dependency of reflex
     try:
-        import twine  # noqa: F401
+        import twine  # noqa
     except (ImportError, ModuleNotFoundError) as ex:
         if not _pip_install_on_demand("twine"):
             raise typer.Exit(code=1) from ex
