@@ -1543,6 +1543,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 substate.dirty_vars.add(var)
                 substate._mark_dirty()
 
+    def _update_was_touched(self):
+        """Update the _was_touched flag based on dirty_vars."""
+        if self.dirty_vars and not self._was_touched:
+            for var in self.dirty_vars:
+                if var in self.base_vars or var in self._backend_vars:
+                    self._was_touched = True
+                    break
+
     def _get_was_touched(self) -> bool:
         """Check current dirty_vars and flag to determine if state instance was modified.
 
@@ -1553,17 +1561,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             Whether this state instance was ever modified.
         """
-        if self.dirty_vars and not self._was_touched:
-            for var in self.dirty_vars:
-                if var in self.base_vars or var in self._backend_vars:
-                    self._was_touched = True
-                    break
+        # Ensure the flag is up to date based on the current dirty_vars
+        self._update_was_touched()
         return self._was_touched
 
     def _clean(self):
         """Reset the dirty vars."""
         # Update touched status before cleaning dirty_vars.
-        self._get_was_touched()
+        self._update_was_touched()
 
         # Recursively clean the substates.
         for substate in self.dirty_substates:
