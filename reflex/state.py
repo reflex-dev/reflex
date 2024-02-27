@@ -1161,12 +1161,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The parent state instance of target_state_cls.
 
         Raises:
-            RuntimeError: If the state is not cached and redis is not used.
+            RuntimeError: If redis is not used in this backend process.
         """
         state_manager = get_state_manager()
         if not isinstance(state_manager, StateManagerRedis):
             raise RuntimeError(
-                f"Requested state {target_state_cls.get_full_name()} is not cached and cannot be accessed without redis.",
+                f"Cannot populate parent states of {target_state_cls.get_full_name()} without redis. "
+                "(All states should already be available -- this is likely a bug).",
             )
 
         # Find the missing parent states up to the common ancestor.
@@ -1225,7 +1226,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         state_manager = get_state_manager()
         if not isinstance(state_manager, StateManagerRedis):
             raise RuntimeError(
-                f"Requested state {state_cls.get_full_name()} is not cached and cannot be accessed without redis.",
+                f"Requested state {state_cls.get_full_name()} is not cached and cannot be accessed without redis. "
+                "(All states should already be available -- this is likely a bug).",
             )
         return await state_manager.get_state(
             token=_substate_key(self.router.session.client_token, state_cls),
