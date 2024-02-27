@@ -178,7 +178,9 @@ export const applyEvent = async (event, socket) => {
   if (event.name == "_set_value") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
-    ref.current.value = event.payload.value;
+    if (ref.current) {
+      ref.current.value = event.payload.value;
+    }
     return false;
   }
 
@@ -627,14 +629,18 @@ export const getRefValue = (ref) => {
   }
   if (ref.current.type == "checkbox") {
     return ref.current.checked;  // chakra
-  } else if (ref.current.className.includes("rt-CheckboxButton") || ref.current.className.includes("rt-SwitchButton")) {
+  } else if (ref.current.className?.includes("rt-CheckboxButton") || ref.current.className?.includes("rt-SwitchButton")) {
     return ref.current.ariaChecked == "true";  // radix
-  } else if (ref.current.className.includes("rt-SliderRoot")) {
+  } else if (ref.current.className?.includes("rt-SliderRoot")) {
     // find the actual slider
-    return ref.current.querySelector(".rt-SliderThumb").ariaValueNow;
+    return ref.current.querySelector(".rt-SliderThumb")?.ariaValueNow;
   } else {
     //querySelector(":checked") is needed to get value from radio_group
-    return ref.current.value || (ref.current.querySelector(':checked') && ref.current.querySelector(':checked').value);
+    return ref.current.value || (
+      ref.current.querySelector
+      && ref.current.querySelector(':checked')
+      && ref.current.querySelector(':checked')?.value
+    );
   }
 }
 
