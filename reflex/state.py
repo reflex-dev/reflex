@@ -975,8 +975,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             **super().__getattribute__("inherited_vars"),
             **super().__getattribute__("inherited_backend_vars"),
         }
-        if name in inherited_vars:
-            return getattr(super().__getattribute__("parent_state"), name)
+
+        # For now, handle router_data updates as a special case.
+        if name in inherited_vars or name == constants.ROUTER_DATA:
+            parent_state = super().__getattribute__("parent_state")
+            if parent_state is not None:
+                return getattr(parent_state, name)
 
         backend_vars = super().__getattribute__("_backend_vars")
         if name in backend_vars:
@@ -1032,9 +1036,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if name == constants.ROUTER_DATA:
             self.dirty_vars.add(name)
             self._mark_dirty()
-            # propagate router_data updates down the state tree
-            for substate in self.substates.values():
-                setattr(substate, name, value)
 
     def reset(self):
         """Reset all the base vars to their default values."""
