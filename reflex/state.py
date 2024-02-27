@@ -241,7 +241,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         self._init_event_handlers()
 
         # Create a fresh copy of the backend variables for this instance
-        self._backend_vars = copy.deepcopy({name: item for name, item in self.backend_vars.items() if name not in self.computed_vars})
+        self._backend_vars = copy.deepcopy(
+            {
+                name: item
+                for name, item in self.backend_vars.items()
+                if name not in self.computed_vars
+            }
+        )
 
     def _init_event_handlers(self, state: BaseState | None = None):
         """Initialize event handlers.
@@ -370,10 +376,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
-        cls.computed_vars = {
-            v._var_name: v._var_set_state(cls)
-            for v in computed_vars
-        }
+        cls.computed_vars = {v._var_name: v._var_set_state(cls) for v in computed_vars}
         cls.vars = {
             **cls.inherited_vars,
             **cls.base_vars,
