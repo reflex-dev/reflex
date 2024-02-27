@@ -29,7 +29,15 @@ from reflex.components.radix.themes.typography.text import Text
 from reflex.event import Event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
-from reflex.state import BaseState, RouterData, State, StateManagerRedis, StateUpdate
+from reflex.state import (
+    BaseState,
+    OnLoadInternalState,
+    RouterData,
+    State,
+    StateManagerRedis,
+    StateUpdate,
+    _substate_key,
+)
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import ComputedVar
@@ -362,7 +370,7 @@ async def test_initialize_with_state(test_state: Type[ATestState], token: str):
     assert app.state == test_state
 
     # Get a state for a given token.
-    state = await app.state_manager.get_state(f"{token}_{test_state.get_full_name()}")
+    state = await app.state_manager.get_state(_substate_key(token, test_state))
     assert isinstance(state, test_state)
     assert state.var == 0  # type: ignore
 
@@ -766,8 +774,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     # The App state must be the "root" of the state tree
     app = App(state=State)
     app.event_namespace.emit = AsyncMock()  # type: ignore
-    substate_token = f"{token}_{state.get_full_name()}"
-    current_state = await app.state_manager.get_state(substate_token)
+    current_state = await app.state_manager.get_state(_substate_key(token, state))
     data = b"This is binary data"
 
     # Create a binary IO object and write data to it
@@ -796,7 +803,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
             == StateUpdate(delta=delta, events=[], final=True).json() + "\n"
         )
 
-    current_state = await app.state_manager.get_state(substate_token)
+    current_state = await app.state_manager.get_state(_substate_key(token, state))
     state_dict = current_state.dict()[state.get_full_name()]
     assert state_dict["img_list"] == [
         "image1.jpg",
@@ -913,7 +920,7 @@ class DynamicState(BaseState):
         # self.side_effect_counter = self.side_effect_counter + 1
         return self.dynamic
 
-    on_load_internal = State.on_load_internal.fn
+    on_load_internal = OnLoadInternalState.on_load_internal.fn
 
 
 @pytest.mark.asyncio
@@ -950,7 +957,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     }
     assert constants.ROUTER in app.state()._computed_var_dependencies
 
-    substate_token = f"{token}_{DynamicState.get_full_name()}"
+    substate_token = _substate_key(token, DynamicState)
     sid = "mock_sid"
     client_ip = "127.0.0.1"
     state = await app.state_manager.get_state(substate_token)
@@ -978,7 +985,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     prev_exp_val = ""
     for exp_index, exp_val in enumerate(exp_vals):
         on_load_internal = _event(
-            name=f"{state.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL}",
+            name=f"{state.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL.rpartition('.')[2]}",
             val=exp_val,
         )
         exp_router_data = {
@@ -1013,8 +1020,8 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     name="on_load",
                     val=exp_val,
                 ),
-                _dynamic_state_event(
-                    name="set_is_hydrated",
+                _event(
+                    name="state.set_is_hydrated",
                     payload={"value": True},
                     val=exp_val,
                     router_data={},

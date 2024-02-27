@@ -1,12 +1,27 @@
 """Test state inheritance."""
 
-import time
+from contextlib import suppress
 from typing import Generator
 
 import pytest
+from selenium.common.exceptions import NoAlertPresentException
+from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.by import By
 
 from reflex.testing import DEFAULT_TIMEOUT, AppHarness, WebDriver
+
+
+def get_alert_or_none(driver: WebDriver) -> Alert | None:
+    """Switch to an alert if present.
+
+    Args:
+        driver: WebDriver instance.
+
+    Returns:
+        The alert if present, otherwise None.
+    """
+    with suppress(NoAlertPresentException):
+        return driver.switch_to.alert
 
 
 def raises_alert(driver: WebDriver, element: str) -> None:
@@ -18,8 +33,8 @@ def raises_alert(driver: WebDriver, element: str) -> None:
     """
     btn = driver.find_element(By.ID, element)
     btn.click()
-    time.sleep(0.2)  # wait for the alert to appear
-    alert = driver.switch_to.alert
+    alert = AppHarness._poll_for(lambda: get_alert_or_none(driver))
+    assert isinstance(alert, Alert)
     assert alert.text == "clicked"
     alert.accept()
 
@@ -355,7 +370,7 @@ def test_state_inheritance(
     child3_other_mixin_btn = driver.find_element(By.ID, "child3-other-mixin-btn")
     child3_other_mixin_btn.click()
     child2_other_mixin_value = state_inheritance.poll_for_content(
-        child2_other_mixin, exp_not_equal="other_mixin"
+        child2_other_mixin, exp_not_equal="Child2.clicked.1"
     )
     child2_computed_mixin_value = state_inheritance.poll_for_content(
         child2_computed_other_mixin, exp_not_equal="other_mixin"
