@@ -1548,7 +1548,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         If any dirty vars belong to this state, mark _was_touched.
 
-        This flag determine whether this state instance should be persisted to redis.
+        This flag determines whether this state instance should be persisted to redis.
 
         Returns:
             Whether this state instance was ever modified.
