@@ -277,8 +277,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         if not _reflex_internal_init and not is_testing_env():
             raise RuntimeError(
-                "State classes should not be instantiated directly. The rx.App and its StateManager "
-                "are responsible for creating and tracking instances of State. "
+                "State classes should not be instantiated directly in a Reflex app. "
                 "See https://reflex.dev/docs/state for further information."
             )
         kwargs["parent_state"] = parent_state
