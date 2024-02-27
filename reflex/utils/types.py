@@ -43,6 +43,29 @@ StateIterVar = Union[list, set, tuple]
 ArgsSpec = Callable
 
 
+class Unset:
+    """A class to represent an unset value.
+
+    This is used to differentiate between a value that is not set and a value that is set to None.
+    """
+
+    def __repr__(self) -> str:
+        """Return the string representation of the class.
+
+        Returns:
+            The string representation of the class.
+        """
+        return "Unset"
+
+    def __bool__(self) -> bool:
+        """Return False when the class is used in a boolean context.
+
+        Returns:
+            False
+        """
+        return False
+
+
 def is_generic_alias(cls: GenericType) -> bool:
     """Check whether the class is a generic alias.
 

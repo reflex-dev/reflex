@@ -1668,7 +1668,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
 
     with pytest.raises(ImmutableStateError):
         # cannot directly modify state proxy outside of async context
-        sp.value2 = 16
+        sp.value2 = "16"
 
     async with sp:
         assert sp._self_actx is not None
@@ -1679,10 +1679,10 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
         else:
             # When redis is used, a new+updated instance is assigned to the proxy
             assert sp.__wrapped__ is not grandchild_state
-        sp.value2 = 42
+        sp.value2 = "42"
     assert not sp._self_mutable  # proxy is not mutable after exiting context
     assert sp._self_actx is None
-    assert sp.value2 == 42
+    assert sp.value2 == "42"
 
     # Get the state from the state manager directly and check that the value is updated
     gc_token = f"{grandchild_state.get_token()}_{grandchild_state.get_full_name()}"
@@ -1694,7 +1694,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
         assert gotten_state is not parent_state
     gotten_grandchild_state = gotten_state.get_substate(sp._self_substate_path)
     assert gotten_grandchild_state is not None
-    assert gotten_grandchild_state.value2 == 42
+    assert gotten_grandchild_state.value2 == "42"
 
     # ensure state update was emitted
     assert mock_app.event_namespace is not None
@@ -1708,7 +1708,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
                 "sum": 3.14,
             },
             grandchild_state.get_full_name(): {
-                "value2": 42,
+                "value2": "42",
             },
         }
     )
