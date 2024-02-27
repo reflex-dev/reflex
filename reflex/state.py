@@ -2126,6 +2126,81 @@ class StateManagerRedis(StateManager):
         b"evicted",
     }
 
+    def _get_root_state(self, state: BaseState) -> BaseState:
+        """Chase parent_state pointers to find an instance of the top-level state.
+
+        Args:
+            state: The state to start from.
+
+        Returns:
+            An instance of the top-level state (self.state).
+        """
+        while type(state) != self.state and state.parent_state is not None:
+            state = state.parent_state
+        return state
+
+    async def _get_parent_state(self, token: str) -> BaseState | None:
+        """Get the parent state for the state requested in the token.
+
+        Args:
+            token: The token to get the state for (_substate_key).
+
+        Returns:
+            The parent state for the state requested by the token or None if there is no such parent.
+        """
+        parent_state = None
+        client_token, state_path = _split_substate_key(token)
+        parent_state_name = state_path.rpartition(".")[0]
+        if parent_state_name:
+            # Retrieve the parent state to populate event handlers onto this substate.
+            parent_state = await self.get_state(
+                token=_substate_key(client_token, parent_state_name),
+                top_level=False,
+                get_substates=False,
+            )
+        return parent_state
+
+    async def _populate_substates(
+        self,
+        token: str,
+        state: BaseState,
+        all_substates: bool = False,
+    ):
+        """Fetch and link substates for the given state instance.
+
+        There is no return value; the side-effect is that `state` will have `substates` populated,
+        and each substate will have its `parent_state` set to `state`.
+
+        Args:
+            token: The token to get the state for.
+            state: The state instance to populate substates for.
+            all_substates: Whether to fetch all substates or just required substates.
+        """
+        client_token, _ = _split_substate_key(token)
+
+        if all_substates:
+            # All substates are requested.
+            fetch_substates = state.get_substates()
+        else:
+            # Only _potentially_dirty_substates need to be fetched to recalc computed vars.
+            fetch_substates = state._potentially_dirty_substates()
+
+        tasks = {}
+        # Retrieve the necessary substates from redis.
+        for substate_cls in fetch_substates:
+            substate_name = substate_cls.get_name()
+            tasks[substate_name] = asyncio.create_task(
+                self.get_state(
+                    token=_substate_key(client_token, substate_cls),
+                    top_level=False,
+                    get_substates=all_substates,
+                    parent_state=state,
+                )
+            )
+
+        for substate_name, substate_task in tasks.items():
+            state.substates[substate_name] = await substate_task
+
     async def get_state(
         self,
         token: str,
@@ -2137,8 +2212,8 @@ class StateManagerRedis(StateManager):
 
         Args:
             token: The token to get the state for.
-            top_level: If true, return an instance of the top-level state.
-            get_substates: If true, also retrieve substates
+            top_level: If true, return an instance of the top-level state (self.state).
+            get_substates: If true, also retrieve substates.
             parent_state: If provided, use this parent_state instead of getting it from redis.
 
         Returns:
@@ -2148,7 +2223,7 @@ class StateManagerRedis(StateManager):
             RuntimeError: when the state_cls is not specified in the token
         """
         # Split the actual token from the fully qualified substate name.
-        client_token, state_path = _split_substate_key(token)
+        _, state_path = _split_substate_key(token)
         if state_path:
             # Get the State class associated with the given path.
             state_cls = self.state.get_class_substate(tuple(state_path.split(".")))
@@ -2164,77 +2239,43 @@ class StateManagerRedis(StateManager):
             # Deserialize the substate.
             state = cloudpickle.loads(redis_state)
 
-            # Populate parent and substates if requested.
+            # Populate parent state if missing and requested.
             if parent_state is None:
-                # Retrieve the parent state from redis.
-                parent_state_name = state_path.rpartition(".")[0]
-                if parent_state_name:
-                    parent_state_key = token.rpartition(".")[0]
-                    parent_state = await self.get_state(
-                        parent_state_key, top_level=False, get_substates=False
-                    )
+                parent_state = await self._get_parent_state(token)
             # Set up Bidirectional linkage between this state and its parent.
             if parent_state is not None:
                 parent_state.substates[state.get_name()] = state
                 state.parent_state = parent_state
-
-            # Populate substates.
-            if get_substates:
-                # All substates are requested.
-                fetch_substates = state_cls.get_substates()
-            else:
-                # Only _potentially_dirty_substates need to be fetched to recalc computed vars.
-                fetch_substates = state_cls._potentially_dirty_substates()
-
-            tasks = {}
-            # Retrieve necessary substates from redis.
-            for substate_cls in fetch_substates:
-                substate_name = substate_cls.get_name()
-                tasks[substate_name] = asyncio.create_task(
-                    self.get_state(
-                        token=_substate_key(client_token, substate_cls),
-                        top_level=False,
-                        get_substates=get_substates,
-                        parent_state=state,
-                    )
-                )
-
-            for substate_name, substate_task in tasks.items():
-                state.substates[substate_name] = await substate_task
+            # Populate substates if requested.
+            await self._populate_substates(token, state, all_substates=get_substates)
 
             # To retain compatibility with previous implementation, by default, we return
             # the top-level state by chasing `parent_state` pointers up the tree.
             if top_level:
-                while type(state) != self.state and state.parent_state is not None:
-                    state = state.parent_state
+                return self._get_root_state(state)
             return state
 
-        # Key didn't exist so we have to create a new entry for this token.
+        # TODO: dedupe the following logic with the above block
+        # Key didn't exist so we have to create a new instance for this token.
         if parent_state is None:
-            parent_state_name = state_path.rpartition(".")[0]
-            if parent_state_name:
-                # Retrieve the parent state to populate event handlers onto this substate.
-                parent_state = await self.get_state(
-                    token=_substate_key(client_token, parent_state_name),
-                    top_level=False,
-                    get_substates=False,
-                )
-        # Persist the new state class to redis.
-        await self.set_state(
-            token,
-            state_cls(
-                parent_state=parent_state,
-                init_substates=False,
-                _reflex_internal_init=True,
-            ),
-        )
-        # After creating the state key, recursively call `get_state` to populate substates.
-        return await self.get_state(
-            token,
-            top_level=top_level,
-            get_substates=get_substates,
+            parent_state = await self._get_parent_state(token)
+        # Instantiate the new state class (but don't persist it yet).
+        state = state_cls(
             parent_state=parent_state,
+            init_substates=False,
+            _reflex_internal_init=True,
         )
+        # Set up Bidirectional linkage between this state and its parent.
+        if parent_state is not None:
+            parent_state.substates[state.get_name()] = state
+            state.parent_state = parent_state
+        # Populate substates for the newly created state.
+        await self._populate_substates(token, state, all_substates=get_substates)
+        # To retain compatibility with previous implementation, by default, we return
+        # the top-level state by chasing `parent_state` pointers up the tree.
+        if top_level:
+            return self._get_root_state(state)
+        return state
 
     async def set_state(
         self,
