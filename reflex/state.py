@@ -1556,7 +1556,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if self.dirty_vars and not self._was_touched:
             for var in self.dirty_vars:
                 if var in self.base_vars or var in self._backend_vars:
-                    print(f"Touched: {self.get_full_name()}: {self.dirty_vars}")
                     self._was_touched = True
                     break
         return self._was_touched
