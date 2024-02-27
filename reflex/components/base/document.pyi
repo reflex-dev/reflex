@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from reflex.components.component import Component
 from reflex.vars import Var
 
@@ -96,7 +96,7 @@ class Html(NextDocumentLib):
     def create(  # type: ignore
         cls,
         *children,
-        lang: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        lang: Optional[Union[str, Union[Var[str], str]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -150,23 +150,21 @@ class Html(NextDocumentLib):
         ] = None,
         **props
     ) -> "Html":
-        """Create the component.
+        """Create an Html root element.
 
         Args:
-            *children: The children of the component.
+            *args: The args of the component.
+            lang: The language of the document.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props:The props of the component.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            Html component.
         """
         ...
 

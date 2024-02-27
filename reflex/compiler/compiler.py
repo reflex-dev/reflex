@@ -292,9 +292,7 @@ def _compile_tailwind(
 
 def compile_document_root(
     head_components: list[Component],
-    html_lang: Optional[
-        Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-    ] = None,
+    html_lang: Optional[Union[Var[str], str]] = None,
     html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
 ) -> tuple[str, str]:
     """Compile the document root.
