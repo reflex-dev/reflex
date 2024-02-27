@@ -151,6 +151,7 @@ RESERVED_BACKEND_VAR_NAMES = {
     "_substate_var_dependencies",
     "_always_dirty_computed_vars",
     "_always_dirty_substates",
+    "_was_touched",
 }
 
 
@@ -248,6 +249,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
     # The router data for the current page
     router: RouterData = RouterData()
+
+    # Whether the state has ever been touched since instantiation.
+    _was_touched: bool = False
 
     def __init__(
         self,
@@ -1539,8 +1543,29 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 substate.dirty_vars.add(var)
                 substate._mark_dirty()
 
+    def _get_was_touched(self) -> bool:
+        """Check current dirty_vars and flag to determine if state instance was modified.
+
+        If any dirty vars belong to this state, mark _was_touched.
+
+        This flag determine whether this state instance should be persisted to redis.
+
+        Returns:
+            Whether this state instance was ever modified.
+        """
+        if self.dirty_vars and not self._was_touched:
+            for var in self.dirty_vars:
+                if var in self.base_vars or var in self._backend_vars:
+                    print(f"Touched: {self.get_full_name()}: {self.dirty_vars}")
+                    self._was_touched = True
+                    break
+        return self._was_touched
+
     def _clean(self):
         """Reset the dirty vars."""
+        # Update touched status before cleaning dirty_vars.
+        self._get_was_touched()
+
         # Recursively clean the substates.
         for substate in self.dirty_substates:
             if substate not in self.substates:
@@ -1657,6 +1682,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         state["__dict__"] = state["__dict__"].copy()
         state["__dict__"]["parent_state"] = None
         state["__dict__"]["substates"] = {}
+        state["__dict__"].pop("_was_touched", None)
         return state
 
 
@@ -2257,11 +2283,12 @@ class StateManagerRedis(StateManager):
                 )
             )
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
-        await self.redis.set(
-            _substate_key(client_token, state),
-            cloudpickle.dumps(state),
-            ex=self.token_expiration,
-        )
+        if state._get_was_touched():
+            await self.redis.set(
+                _substate_key(client_token, state),
+                cloudpickle.dumps(state),
+                ex=self.token_expiration,
+            )
 
         # Wait for substates to be persisted.
         for t in tasks:
