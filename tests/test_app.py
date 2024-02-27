@@ -275,6 +275,28 @@ def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool)
     assert set(app.pages.keys()) == {route.strip(os.path.sep)}
 
 
+def test_add_page_invalid_api_route(app: App, index_page):
+    """Test adding a page with an invalid route to an app.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+    """
+    with pytest.raises(ValueError):
+        app.add_page(index_page, route="api")
+    with pytest.raises(ValueError):
+        app.add_page(index_page, route="/api")
+    with pytest.raises(ValueError):
+        app.add_page(index_page, route="/api/")
+    with pytest.raises(ValueError):
+        app.add_page(index_page, route="api/foo")
+    with pytest.raises(ValueError):
+        app.add_page(index_page, route="/api/foo")
+    # These should be fine
+    app.add_page(index_page, route="api2")
+    app.add_page(index_page, route="/foo/api")
+
+
 def test_initialize_with_admin_dashboard(test_model):
     """Test setting the admin dashboard of an app.
 
