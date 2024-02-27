@@ -1,4 +1,5 @@
 """CLI for creating custom components."""
+
 from __future__ import annotations
 
 import os
@@ -295,7 +296,7 @@ def build(
     console.set_log_level(loglevel)
     console.print("Building custom component...")
     try:
-        pass  # type: ignore
+        import build  # noqa: F401
     except (ImportError, ModuleNotFoundError) as ex:
         if not _pip_install_on_demand("build"):
             raise typer.Exit(code=1) from ex
@@ -308,27 +309,9 @@ def build(
         console.debug(result.stdout)
         console.info("Custom component built successfully!")
     except subprocess.CalledProcessError as cpe:
+        console.error(cpe.stdout)
         console.error(cpe.stderr)
         raise typer.Exit(code=cpe.returncode) from cpe
-
-
-@custom_components_cli.command(name="test")
-def test(
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
-    ),
-):
-    """Test a custom component.
-
-    Args:
-        loglevel: The log level to use.
-    """
-    console.set_log_level(loglevel)
-    console.print("Testing custom component... Not yet implemented")
-    # TODO: figure out a way to get the demo app folder properly
-    # maybe we need more fields in the config?
-    # with set_directory(the_right_folder):
-    #     reflex.run()
 
 
 @custom_components_cli.command(name="publish")
@@ -407,7 +390,7 @@ def publish(
 
     # We install twine with pip on the fly so it is not a stable dependency of reflex
     try:
-        pass  # type: ignore
+        import twine  # noqa: F401
     except (ImportError, ModuleNotFoundError) as ex:
         if not _pip_install_on_demand("twine"):
             raise typer.Exit(code=1) from ex
@@ -427,12 +410,12 @@ def publish(
     ]
     console.debug(f"Running command: {' '.join(publish_cmds)}")
     try:
-        # TODO: below subprocess is not printing errors/debug
         result = subprocess.run(
             publish_cmds, capture_output=True, text=True, check=True
         )
         console.debug(result.stdout)
         console.info("Custom component published successfully!")
     except subprocess.CalledProcessError as cpe:
+        console.debug(cpe.stdout)
         console.error(cpe.stderr)
         raise typer.Exit(code=cpe.returncode) from cpe

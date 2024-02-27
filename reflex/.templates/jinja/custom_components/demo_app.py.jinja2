@@ -6,7 +6,6 @@ import reflex as rx
 
 from {{ custom_component_src_dir }}.{{ module_name }} import {{ module_name }}
 
-docs_url = "https://reflex.dev/docs/getting-started/introduction"
 filename = f"{config.app_name}/{config.app_name}.py"
 
 
@@ -21,12 +20,8 @@ def index() -> rx.Component:
         rx.theme_panel(),
         rx.vstack(
             rx.heading("Welcome to Reflex!", size="9"),
-            rx.text("Get started by editing ", rx.code(filename)),
-            rx.button(
-                "Check out our docs!",
-                on_click=lambda: rx.redirect(docs_url),
-                size="4",
-            ),
+            rx.text("Test your custom component by editing ", rx.code(filename)),
+            {{ module_name }}(),
             align="center",
             spacing="7",
             font_size="2em",
