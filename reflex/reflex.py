@@ -95,12 +95,15 @@ def _init(
             template = prerequisites.prompt_for_template()
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
-        telemetry.send("init")
+        telemetry_event = "init"
     else:
-        telemetry.send("reinit")
+        telemetry_event = "reinit"
 
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
+
+    # Send the telemetry event after the .web folder is initialized.
+    telemetry.send(telemetry_event)
 
     # Migrate Pynecone projects to Reflex.
     prerequisites.migrate_to_reflex()
