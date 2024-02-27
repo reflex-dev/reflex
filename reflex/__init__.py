@@ -108,7 +108,6 @@ _ALL_COMPONENTS = [
     "unordered_list",
     "ordered_list",
     "moment",
-    "custom_components",
 ]
 
 _MAPPING = {
