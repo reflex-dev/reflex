@@ -34,7 +34,8 @@ class Html(NextDocumentLib):
             Html component.
         """
         if lang is not None and not isinstance(lang, Var):
-            props["lang"] = Var.create(value=lang, _var_is_string=True)
+            lang = Var.create(value=lang, _var_is_string=True)
+        props["lang"] = lang
 
         return super().create(*args, **props)
 
