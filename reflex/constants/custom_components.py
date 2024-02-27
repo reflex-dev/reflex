@@ -1,4 +1,5 @@
 """Constants for the custom components."""
+
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -17,8 +18,10 @@ class CustomComponents(SimpleNamespace):
     PACKAGE_GITIGNORE = ".gitignore"
     # The name of the distribution directory as result of a build.
     DIST_DIR = "dist"
+    # Suffixes for the distribution files.
+    DISTRIBUTION_FILE_SUFFIXES = [".tar.gz", ".whl"]
     # The name to the URL of python package repositories.
-    REPO_URLS: dict[str, str] = {
+    REPO_URLS = {
         # Note: the trailing slash is required for below URLs.
         "pypi": "https://pypi.org/legacy/",
         "testpypi": "https://test.pypi.org/legacy/",
