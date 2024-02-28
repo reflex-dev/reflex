@@ -760,7 +760,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             NameError: if a variable of this name already exists
         """
-        if name in cls.__fields__:
+        if name in cls.model_fields:
             raise NameError(
                 f"The variable '{name}' already exist. Use a different name"
             )

@@ -188,7 +188,7 @@ def _compile_client_storage_recursive(
     cookies = {}
     local_storage = {}
     state_name = state.get_full_name()
-    for name, field in state.__fields__.items():
+    for name, field in state.model_fields.items():
         if name in state.inherited_vars:
             # only include vars defined in this state
             continue

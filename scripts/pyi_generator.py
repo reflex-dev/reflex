@@ -373,7 +373,7 @@ def _extract_class_props_as_ast_nodes(
                 #       with the annotation in some cases.
                 with contextlib.suppress(AttributeError, KeyError):
                     # Try to get default from pydantic field definition.
-                    default = target_class.__fields__[name].default
+                    default = target_class.model_fields[name].default
                     if isinstance(default, Var):
                         default = default._decode()  # type: ignore
 

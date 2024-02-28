@@ -70,7 +70,7 @@ class ChakraProvider(ChakraComponent):
 
     def _get_imports(self) -> imports.ImportDict:
         _imports = super()._get_imports()
-        _imports.setdefault(self.__fields__["library"].default, []).append(
+        _imports.setdefault(self.model_fields["library"].default, []).append(
             imports.ImportVar(tag="extendTheme", is_default=False),
         )
         _imports.setdefault("/utils/theme.js", []).append(
