@@ -1,4 +1,5 @@
 """Compiler for the reflex apps."""
+
 from __future__ import annotations
 
 import os
@@ -78,18 +79,21 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component) -> str
     Returns:
         The compiled context file.
     """
+    appearance = getattr(theme, "appearance", None)
+    if appearance is None:
+        appearance = LIGHT_COLOR_MODE
     return (
         templates.CONTEXT.render(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=_is_dev_mode(),
-            default_color_mode=getattr(theme, "appearance", LIGHT_COLOR_MODE),
+            default_color_mode=appearance,
         )
         if state
         else templates.CONTEXT.render(
             is_dev_mode=_is_dev_mode(),
-            default_color_mode=getattr(theme, "appearance", LIGHT_COLOR_MODE),
+            default_color_mode=appearance,
         )
     )
 
