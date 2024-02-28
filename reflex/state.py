@@ -1616,7 +1616,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self._mark_dirty()
 
         base_vars = {
-            prop_name: self.get_value(getattr(self, prop_name))
+            prop_name: self.__fields__[prop_name].field_info.extra.get("initial_value")
+            if initial
+            and not isinstance(
+                self.__fields__[prop_name].field_info.extra.get(
+                    "initial_value", types.Unset()
+                ),
+                types.Unset,
+            )
+            else self.get_value(getattr(self, prop_name))
             for prop_name in self.base_vars
         }
         if initial:

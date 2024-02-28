@@ -4,6 +4,7 @@ from typing import Dict, List, Set, Tuple
 
 import pytest
 from pandas import DataFrame
+from pydantic import Field
 
 from reflex.base import Base
 from reflex.state import BaseState
@@ -124,23 +125,43 @@ def ChildWithInitialComputedVar(StateWithInitialComputedVar):
 
 
 @pytest.fixture
-def StateWithRuntimeOnlyVar():
-    class StateWithRuntimeOnlyVar(BaseState):
+def StateWithRuntimeOnlyComputedVar():
+    class StateWithRuntimeOnlyComputedVar(BaseState):
         @computed_var(initial_value=None)
         def var_raises_at_runtime(self) -> str:
             raise ValueError("So nicht, mein Freund")
 
-    return StateWithRuntimeOnlyVar
+    return StateWithRuntimeOnlyComputedVar
 
 
 @pytest.fixture
-def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
-    class ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
+def ChildWithRuntimeOnlyComputedVar(StateWithRuntimeOnlyComputedVar):
+    class ChildWithRuntimeOnlyComputedVar(StateWithRuntimeOnlyComputedVar):
         @computed_var(initial_value="Initial value")
         def var_raises_at_runtime_child(self) -> str:
             raise ValueError("So nicht, mein Freund")
 
-    return ChildWithRuntimeOnlyVar
+    return ChildWithRuntimeOnlyComputedVar
+
+
+@pytest.fixture
+def StateWithInitialBaseVar():
+    class StateWithInitialBaseVar(BaseState):
+        var_with_initial_value: str = Field(
+            "Runtime value", initial_value="Initial value"
+        )
+
+    return StateWithInitialBaseVar
+
+
+@pytest.fixture
+def ChildWithInitialBaseVar(StateWithInitialBaseVar):
+    class ChildWithInitialBaseVar(StateWithInitialBaseVar):
+        var_with_initial_value_child: str = Field(
+            "Runtime value child", initial_value="Initial value child"
+        )
+
+    return ChildWithInitialBaseVar
 
 
 @pytest.mark.parametrize(
@@ -789,18 +810,32 @@ def test_computed_var_with_annotation_error(request, fixture, full_name):
             False,
         ),
         (
-            "StateWithRuntimeOnlyVar",
+            "StateWithRuntimeOnlyComputedVar",
             "var_raises_at_runtime",
             None,
             None,
             True,
         ),
         (
-            "ChildWithRuntimeOnlyVar",
+            "ChildWithRuntimeOnlyComputedVar",
             "var_raises_at_runtime_child",
             "Initial value",
             None,
             True,
+        ),
+        (
+            "StateWithInitialBaseVar",
+            "var_with_initial_value",
+            "Initial value",
+            "Runtime value",
+            False,
+        ),
+        (
+            "ChildWithInitialBaseVar",
+            "var_with_initial_value_child",
+            "Initial value child",
+            "Runtime value child",
+            False,
         ),
     ],
 )
