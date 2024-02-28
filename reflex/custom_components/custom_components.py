@@ -57,16 +57,22 @@ def _create_package_config(module_name: str, package_name: str):
         )
 
 
-def _create_readme(module_name: str):
+def _create_readme(module_name: str, package_name: str):
     """Create a package README file.
 
     Args:
         module_name: The name of the module.
+        package_name: The name of the python package to be published.
     """
     from reflex.compiler import templates
 
     with open(CustomComponents.PACKAGE_README, "w") as f:
-        f.write(templates.CUSTOM_COMPONENTS_README.render(module_name=module_name))
+        f.write(
+            templates.CUSTOM_COMPONENTS_README.render(
+                module_name=module_name,
+                package_name=package_name,
+            )
+        )
 
 
 def _write_source_and_init_py(
@@ -243,7 +249,9 @@ def _populate_custom_component_project(name_variants: NameVariants):
     _create_package_config(
         module_name=name_variants.library_name, package_name=name_variants.package_name
     )
-    _create_readme(module_name=name_variants.library_name)
+    _create_readme(
+        module_name=name_variants.library_name, package_name=name_variants.package_name
+    )
 
     console.info(
         f"Initializing the component directory: {CustomComponents.SRC_DIR}/{name_variants.custom_component_module_dir}"
