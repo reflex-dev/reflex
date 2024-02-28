@@ -312,6 +312,20 @@ export const connect = async (
     autoUnref: false,
   });
 
+  function checkVisibility(){
+    if (document.visibilityState === 'visible') {
+      if (!socket.current.connected){
+        console.log("Socket is disconnected, attempting to reconnect ")
+        socket.current.connect()
+      }
+      else{
+
+        console.log("Socket is reconnected ")
+      }
+
+    }
+  }
+
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
     setConnectError(null)
@@ -333,6 +347,8 @@ export const connect = async (
       queueEvents(update.events, socket)
     }
   });
+
+  document.addEventListener("visibilitychange", checkVisibility);
 };
 
 /**
