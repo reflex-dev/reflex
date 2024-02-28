@@ -22,7 +22,6 @@ from typing import (
 )
 
 import sqlalchemy
-from pydantic.fields import ModelField
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 
@@ -165,13 +164,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     attr = getattr(cls, name, None)
     if hint := get_property_hint(attr):
         return hint
-    if hasattr(cls, "__fields__") and name in cls.__fields__:
+    if hasattr(cls, "model_fields") and name in cls.model_fields:
         # pydantic models
-        field = cls.__fields__[name]
-        type_ = field.outer_type_
-        if isinstance(type_, ModelField):
-            type_ = type_.type_
-        if not field.required and field.default is None:
+        field = cls.model_fields[name]
+        type_ = field.annotation
+        if not field.is_required() and field.default is None and field.default_factory is None:
             # Ensure frontend uses null coalescing when accessing.
             type_ = Optional[type_]
         return type_
@@ -201,8 +198,9 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             type_origin = get_origin(type_)
             if isinstance(type_origin, type) and issubclass(type_origin, Mapped):
                 return get_args(type_)[0]  # SQLAlchemy v2
-            if isinstance(type_, ModelField):
-                return type_.type_  # SQLAlchemy v1.4
+            # TODO: pydantic v2
+            #  if isinstance(type_, ModelField):
+            #      return type_.type_  # SQLAlchemy v1.4
             return type_
     elif is_union(cls):
         # Check in each arg of the annotation.
