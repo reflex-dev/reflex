@@ -13,9 +13,13 @@ def sidebar_header() -> rx.Component:
     """
     return rx.hstack(
         # The logo.
-        rx.color_mode_cond(
+        rx.cond(
+            rx.color_mode != "None",
+            rx.color_mode_cond(
+                rx.image(src="/reflex_black.svg", height="2em"),
+                rx.image(src="/reflex_white.svg", height="2em"),
+            ),
             rx.image(src="/reflex_black.svg", height="2em"),
-            rx.image(src="/reflex_white.svg", height="2em"),
         ),
         rx.spacer(),
         # Link to Reflex GitHub repo.
