@@ -286,7 +286,7 @@ class Component(BaseComponent, ABC):
                     if kwargs[key] is None:
                         raise TypeError
 
-                    expected_type = fields[key].outer_type_.__args__[0]
+                    expected_type = fields[key].annotation.__args__[0]
                     # validate literal fields.
                     types.validate_literal(
                         key, value, expected_type, type(self).__name__
@@ -301,7 +301,7 @@ class Component(BaseComponent, ABC):
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
-                    expected_type = fields[key].outer_type_
+                    expected_type = fields[key].annotation
                 if not types._issubclass(passed_type, expected_type):
                     value_name = value._var_name if isinstance(value, Var) else value
                     raise TypeError(
@@ -581,7 +581,7 @@ class Component(BaseComponent, ABC):
             name
             for name, field in cls.get_fields().items()
             if name in cls.get_props()
-            and types._issubclass(field.outer_type_, Component)
+            and types._issubclass(field.annotation, Component)
         }
 
     @classmethod
