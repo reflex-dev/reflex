@@ -220,7 +220,7 @@ def _encode_var(value: Var) -> str:
         final_value = str(value)
         data = value._var_data.dict()
         data["string_length"] = len(final_value)
-        data_json = value._var_data.__pydantic_serializer__.to_json(value=data, fallback=serialize)
+        data_json = value._var_data.__pydantic_serializer__.to_json(value=data, fallback=serialize).decode()
 
         return (
             f"{constants.REFLEX_VAR_OPENING_TAG}{data_json}{constants.REFLEX_VAR_CLOSING_TAG}"

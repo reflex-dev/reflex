@@ -63,10 +63,9 @@ class Base(pydantic.BaseModel):
         Returns:
             The object as a json string.
         """
-        #  from reflex.utils.serializers import serialize
+        from reflex.utils.serializers import serialize
 
-        return self.model_dump_json()
-        #  return self.__config__.json_dumps(self.dict(), default=serialize)
+        return self.__pydantic_serializer__.to_json(value=self, fallback=serialize).decode()
 
     def set(self, **kwargs):
         """Set multiple fields and return the object.
