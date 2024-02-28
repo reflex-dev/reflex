@@ -388,13 +388,6 @@ def build(
     console.set_log_level(loglevel)
     console.print("Building custom component...")
 
-    # Install build on the fly if required so it is not a stable dependency of reflex.
-    try:
-        import build  # noqa: F401  # type: ignore
-    except (ImportError, ModuleNotFoundError) as ex:
-        if not _pip_install_on_demand("build"):
-            raise typer.Exit(code=1) from ex
-
     cmds = [sys.executable, "-m", "build", "."]
     if _run_commands_in_subprocess(cmds):
         console.info("Custom component built successfully!")
