@@ -211,9 +211,9 @@ class Component(BaseComponent, ABC):
         props = cls.get_props()
 
         # Convert fields to props, setting default values.
-        for field in cls.get_fields().values():
+        for field_name, field in cls.get_fields().items():
             # If the field is not a component prop, skip it.
-            if field.name not in props:
+            if field_name not in props:
                 continue
 
             # Set default values for any props.
