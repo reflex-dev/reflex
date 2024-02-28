@@ -65,7 +65,9 @@ class Base(pydantic.BaseModel):
         """
         from reflex.utils.serializers import serialize
 
-        return self.__pydantic_serializer__.to_json(value=self, fallback=serialize).decode()
+        return self.__pydantic_serializer__.to_json(
+            value=self, fallback=serialize
+        ).decode()
 
     def set(self, **kwargs):
         """Set multiple fields and return the object.
@@ -89,7 +91,6 @@ class Base(pydantic.BaseModel):
         """
         return cls.model_fields
 
-
     @classmethod
     def add_field(cls, var: Any, default_value: Any):
         """Add a pydantic field after class definition.
@@ -103,7 +104,6 @@ class Base(pydantic.BaseModel):
         field_info = FieldInfo(default=default_value, annotation=var._var_type)
         cls.model_fields.update({var._var_name: field_info})
         cls.model_rebuild(force=True)
-
 
     def get_value(self, key: str) -> Any:
         """Get the value of a field.

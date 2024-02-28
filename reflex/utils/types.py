@@ -168,7 +168,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
         # pydantic models
         field = cls.model_fields[name]
         type_ = field.annotation
-        if not field.is_required() and field.default is None and field.default_factory is None:
+        if (
+            not field.is_required()
+            and field.default is None
+            and field.default_factory is None
+        ):
             # Ensure frontend uses null coalescing when accessing.
             type_ = Optional[type_]
         return type_

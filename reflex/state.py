@@ -151,13 +151,14 @@ RESERVED_BACKEND_VAR_NAMES = {
     "_substate_var_dependencies",
     "_always_dirty_computed_vars",
     "_always_dirty_substates",
-    "_abc_impl", # pydantic v2
+    "_abc_impl",  # pydantic v2
     "_was_touched",
 }
 
 SPECIAL_METHODS = {
     "model_post_init",  # never treat this as an event handler
 }
+
 
 def _substate_key(
     token: str,
@@ -435,9 +436,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            field_name: BaseVar(_var_name=field_name, _var_type=field.annotation)._var_set_state(
-                cls
-            )
+            field_name: BaseVar(
+                _var_name=field_name, _var_type=field.annotation
+            )._var_set_state(cls)
             for field_name, field in cls.get_fields().items()
             if field_name not in cls.get_skip_vars()
         }
