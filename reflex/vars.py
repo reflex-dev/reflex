@@ -263,7 +263,7 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
             # Read the JSON, pull out the string length, parse the rest as VarData.
             data = json_loads(m.group(1))
             string_length = data.pop("string_length", None)
-            var_data = VarData.parse_obj(data)
+            var_data = VarData.model_validate(data)
 
             # Use string length to compute positions of interpolations.
             if string_length is not None:
