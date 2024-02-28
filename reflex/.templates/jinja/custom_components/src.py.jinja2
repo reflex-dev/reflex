@@ -1,4 +1,7 @@
 """Reflex custom component {{ component_class_name }}."""
+
+# For wrapping react guide, visit https://reflex.dev/docs/wrapping-react/overview/
+
 import reflex as rx
 
 from reflex.vars import Var
@@ -23,7 +26,7 @@ class {{ component_class_name }}(rx.Component):
     # The React component tag.
     tag = "Fill-Me"
 
-    # If the tag is the default export from the module, you can set is_default = True.
+    # If the tag is the default export from the module, you must set is_default = True.
     # This is normally used when components don't have curly braces around them when importing.
     # is_default = True
 

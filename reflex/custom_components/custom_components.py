@@ -368,7 +368,7 @@ def build(
         config.loglevel, help="The log level to use."
     ),
 ):
-    """Build a custom component.
+    """Build a custom component. Must be run from the project root directory where the pyproject.toml is.
 
     Args:
         loglevel: The log level to use.
@@ -505,7 +505,7 @@ def publish(
         config.loglevel, help="The log level to use."
     ),
 ):
-    """Publish a custom component.
+    """Publish a custom component. Must be run from the project root directory where the pyproject.toml is.
 
     Args:
         repository: The name of the Python package repository, such pypi, testpypi.
