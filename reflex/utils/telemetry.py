@@ -7,6 +7,7 @@ import multiprocessing
 import platform
 from datetime import datetime
 
+import httpx
 import psutil
 
 from reflex import constants
@@ -60,6 +61,56 @@ def get_memory() -> int:
     return psutil.virtual_memory().total >> 20
 
 
+def _prepare_event(event: str) -> dict:
+    """Prepare the event to be sent to the PostHog server.
+
+    Args:
+        event: The event name.
+
+    Returns:
+        The event data.
+    """
+    installation_id = ensure_reflex_installation_id()
+    project_hash = _get_project_hash()
+
+    if installation_id is None or project_hash is None:
+        "Error getting installation_id or project_hash."
+        return {}
+
+    return {
+        "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
+        "event": event,
+        "properties": {
+            "distinct_id": installation_id,
+            "distinct_app_id": project_hash,
+            "user_os": get_os(),
+            "reflex_version": get_reflex_version(),
+            "python_version": get_python_version(),
+            "cpu_count": get_cpu_count(),
+            "memory": get_memory(),
+        },
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+def _send_event(event_data: dict) -> bool:
+    try:
+        httpx.post(POSTHOG_API_URL, json=event_data)
+        return True
+    except Exception:
+        return False
+
+
+def _get_project_hash() -> str:
+    try:
+        with open(constants.Dirs.REFLEX_JSON) as f:
+            reflex_json = json.load(f)
+            return reflex_json["project_hash"]
+    except Exception:
+        print("Error reading reflex.json")
+        return None
+
+
 def send(event: str, telemetry_enabled: bool | None = None) -> bool:
     """Send anonymous telemetry for Reflex.
 
@@ -70,8 +121,6 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
     Returns:
         Whether the telemetry was sent successfully.
     """
-    import httpx
-
     from reflex.config import get_config
 
     # Get the telemetry_enabled from the config if it is not specified.
@@ -80,31 +129,11 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
 
     # Return if telemetry is disabled.
     if not telemetry_enabled:
+        print("Telemetry is disabled.")
         return False
 
-    installation_id = ensure_reflex_installation_id()
-    if installation_id is None:
+    event_data = _prepare_event(event)
+    if not event_data:
         return False
 
-    try:
-        with open(constants.Dirs.REFLEX_JSON) as f:
-            reflex_json = json.load(f)
-            project_hash = reflex_json["project_hash"]
-        post_hog = {
-            "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
-            "event": event,
-            "properties": {
-                "distinct_id": installation_id,
-                "distinct_app_id": project_hash,
-                "user_os": get_os(),
-                "reflex_version": get_reflex_version(),
-                "python_version": get_python_version(),
-                "cpu_count": get_cpu_count(),
-                "memory": get_memory(),
-            },
-            "timestamp": datetime.utcnow().isoformat(),
-        }
-        httpx.post(POSTHOG_API_URL, json=post_hog)
-        return True
-    except Exception:
-        return False
+    return _send_event(event_data)
