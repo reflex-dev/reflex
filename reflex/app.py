@@ -70,9 +70,11 @@ from reflex.state import (
     State,
     StateManager,
     StateUpdate,
+    _substate_key,
     code_uses_state_contexts,
 )
 from reflex.utils import console, exceptions, format, prerequisites, types
+from reflex.utils.exec import is_testing_env
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
@@ -160,10 +162,9 @@ class App(Base):
             )
         super().__init__(*args, **kwargs)
         state_subclasses = BaseState.__subclasses__()
-        is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
-        if not is_testing_env:
+        if not is_testing_env():
             # Only one Base State class is allowed.
             if len(state_subclasses) > 1:
                 raise ValueError(
@@ -177,7 +178,8 @@ class App(Base):
                     deprecation_version="0.3.5",
                     removal_version="0.5.0",
                 )
-            if len(State.class_subclasses) > 0:
+            # 2 substates are built-in and not considered when determining if app is stateless.
+            if len(State.class_subclasses) > 2:
                 self.state = State
         # Get the config
         config = get_config()
@@ -1003,7 +1005,7 @@ def upload(app: App):
             )
 
         # Get the state for the session.
-        substate_token = token + "_" + handler.rpartition(".")[0]
+        substate_token = _substate_key(token, handler.rpartition(".")[0])
         state = await app.state_manager.get_state(substate_token)
 
         # get the current session ID

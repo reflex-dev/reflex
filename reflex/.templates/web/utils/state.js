@@ -618,9 +618,10 @@ export const useEventLoop = (
       if (storage_to_state_map[e.key]) {
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
-        const event = Event(`${state_name}.update_vars_internal`, {
-          vars: vars,
-        });
+        const event = Event(
+          `${state_name}.update_vars_internal_state.update_vars_internal`,
+          { vars: vars }
+        );
         addEvents([event], e);
       }
     };
