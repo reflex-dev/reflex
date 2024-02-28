@@ -23,6 +23,6 @@ class CustomComponents(SimpleNamespace):
     # The name to the URL of python package repositories.
     REPO_URLS = {
         # Note: the trailing slash is required for below URLs.
-        "pypi": "https://pypi.org/legacy/",
+        "pypi": "https://upload.pypi.org/legacy/",
         "testpypi": "https://test.pypi.org/legacy/",
     }

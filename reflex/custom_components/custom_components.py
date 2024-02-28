@@ -203,7 +203,7 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
     # Module name is the snake case.
     module_name = "_".join(name_parts)
 
-    custom_component_module_dir = f"rx_{module_name}"
+    custom_component_module_dir = f"reflex_{module_name}"
     console.info(f"Custom component source directory: {custom_component_module_dir}")
 
     # Use the same name for the directory and the app.
