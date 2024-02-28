@@ -40,6 +40,6 @@ def test_plotly_config_option(plotly_fig: go.Figure):
     Args:
         plotly_fig: The figure to display.
     """
-    
+
     # This tests just confirm that the component can be created with a config option.
     _ = rx.plotly(data=plotly_fig, config={"showLink": True})
