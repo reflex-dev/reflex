@@ -15,7 +15,7 @@ def settings() -> rx.Component:
     return rx.vstack(
         rx.heading("Settings", size="8"),
         rx.hstack(
-            rx.text("Light mode: "),
+            rx.text("Dark mode: "),
             rx.color_mode.switch(),
         ),
         rx.hstack(
