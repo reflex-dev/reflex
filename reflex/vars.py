@@ -31,6 +31,7 @@ from typing import (
     get_origin,
     get_type_hints,
 )
+import pydantic_core
 
 from reflex import constants
 from reflex.base import Base
@@ -219,7 +220,7 @@ def _encode_var(value: Var) -> str:
         final_value = str(value)
         data = value._var_data.dict()
         data["string_length"] = len(final_value)
-        data_json = value._var_data.__config__.json_dumps(data, default=serialize)
+        data_json = value._var_data.__pydantic_serializer__.to_json(value=data, fallback=serialize)
 
         return (
             f"{constants.REFLEX_VAR_OPENING_TAG}{data_json}{constants.REFLEX_VAR_CLOSING_TAG}"
@@ -242,14 +243,13 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
     if isinstance(value, str):
         offset = 0
 
-        # Initialize some methods for reading json.
-        var_data_config = VarData().__config__
 
         def json_loads(s):
             try:
-                return var_data_config.json_loads(s)
-            except json.decoder.JSONDecodeError:
-                return var_data_config.json_loads(var_data_config.json_loads(f'"{s}"'))
+                return VarData.model_validate(s)
+            except pydantic_core.ValidationError:
+                raise ValueError(f"Invalid VarData: {s}")
+                #  return VarData.model_validate(var_data_config.json_loads(f'"{s}"'))
 
         # Compile regex for finding reflex var tags.
         pattern_re = rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"

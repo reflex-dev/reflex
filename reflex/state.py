@@ -435,11 +435,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: BaseVar(_var_name=f.name, _var_type=f.annotation)._var_set_state(
+            field_name: BaseVar(_var_name=field_name, _var_type=field.annotation)._var_set_state(
                 cls
             )
-            for f in cls.get_fields().values()
-            if f.name not in cls.get_skip_vars()
+            for field_name, field in cls.get_fields().items()
+            if field_name not in cls.get_skip_vars()
         }
         cls.computed_vars = {v._var_name: v._var_set_state(cls) for v in computed_vars}
         cls.vars = {
