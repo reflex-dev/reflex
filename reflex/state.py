@@ -1596,6 +1596,25 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return super().get_value(key.__wrapped__)
         return super().get_value(key)
 
+    def _get_base_var_value(self, prop_name: str, initial: bool) -> Any:
+        """Get the value of a base var.
+
+        Try to get initial_value from pydantic's FieldInfo extra instead if initial is True and initial_value is set.
+
+        Args:
+            prop_name: The name of the base var.
+            initial: Whether to get the initial value of the base var.
+
+        Returns:
+            The value of the base var or its initial value.
+        """
+        initial_value = self.__fields__[prop_name].field_info.extra.get(
+            "initial_value", types.Unset()
+        )
+        if initial and not isinstance(initial_value, types.Unset):
+            return initial_value
+        return self.get_value(getattr(self, prop_name))
+
     def dict(
         self, include_computed: bool = True, initial: bool = False, **kwargs
     ) -> dict[str, Any]:
@@ -1616,15 +1635,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self._mark_dirty()
 
         base_vars = {
-            prop_name: self.__fields__[prop_name].field_info.extra.get("initial_value")
-            if initial
-            and not isinstance(
-                self.__fields__[prop_name].field_info.extra.get(
-                    "initial_value", types.Unset()
-                ),
-                types.Unset,
-            )
-            else self.get_value(getattr(self, prop_name))
+            prop_name: self._get_base_var_value(prop_name, initial)
             for prop_name in self.base_vars
         }
         if initial:
