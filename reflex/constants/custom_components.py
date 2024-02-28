@@ -18,6 +18,8 @@ class CustomComponents(SimpleNamespace):
     PACKAGE_GITIGNORE = ".gitignore"
     # The name of the distribution directory as result of a build.
     DIST_DIR = "dist"
+    # The name of the init file.
+    INIT_FILE = "__init__.py"
     # Suffixes for the distribution files.
     DISTRIBUTION_FILE_SUFFIXES = [".tar.gz", ".whl"]
     # The name to the URL of python package repositories.

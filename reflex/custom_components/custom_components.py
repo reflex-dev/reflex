@@ -69,12 +69,12 @@ def _create_readme(module_name: str):
         f.write(templates.CUSTOM_COMPONENTS_README.render(module_name=module_name))
 
 
-def _write_source_py(
+def _write_source_and_init_py(
     custom_component_src_dir: str,
     component_class_name: str,
     module_name: str,
 ):
-    """Write the source code template for the custom component.
+    """Write the source code and init file from templates for the custom component.
 
     Args:
         custom_component_src_dir: The name of the custom component source directory.
@@ -95,6 +95,15 @@ def _write_source_py(
                 component_class_name=component_class_name, module_name=module_name
             )
         )
+
+    with open(
+        os.path.join(
+            custom_component_src_dir,
+            CustomComponents.INIT_FILE,
+        ),
+        "w",
+    ) as f:
+        f.write(templates.CUSTOM_COMPONENTS_INIT_FILE.render(module_name=module_name))
 
 
 def _populate_demo_app(name_variants: NameVariants):
@@ -242,7 +251,7 @@ def _populate_custom_component_project(name_variants: NameVariants):
     os.makedirs(CustomComponents.SRC_DIR)
     with set_directory(CustomComponents.SRC_DIR):
         os.makedirs(name_variants.custom_component_module_dir)
-        _write_source_py(
+        _write_source_and_init_py(
             custom_component_src_dir=name_variants.custom_component_module_dir,
             component_class_name=name_variants.component_class_name,
             module_name=name_variants.module_name,
