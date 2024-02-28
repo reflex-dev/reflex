@@ -155,6 +155,9 @@ RESERVED_BACKEND_VAR_NAMES = {
     "_was_touched",
 }
 
+SPECIAL_METHODS = {
+    "model_post_init",  # never treat this as an event handler
+}
 
 def _substate_key(
     token: str,
@@ -517,6 +520,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         return (
             not name.startswith("_")
+            and name not in SPECIAL_METHODS
             and isinstance(value, Callable)
             and not isinstance(value, EventHandler)
             and hasattr(value, "__code__")
