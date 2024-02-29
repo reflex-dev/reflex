@@ -138,12 +138,12 @@ def compile_state(state: Type[BaseState]) -> dict:
         A dictionary of the compiled state.
     """
     try:
-        initial_state = state().dict()
+        initial_state = state(_reflex_internal_init=True).dict(initial=True)
     except Exception as e:
         console.warn(
             f"Failed to compile initial state with computed vars, excluding them: {e}"
         )
-        initial_state = state().dict(include_computed=False)
+        initial_state = state(_reflex_internal_init=True).dict(include_computed=False)
     return format.format_state(initial_state)
 
 

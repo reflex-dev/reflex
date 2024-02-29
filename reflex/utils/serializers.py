@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import types as builtin_types
+import warnings
 from datetime import date, datetime, time, timedelta
 from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_hints
 
@@ -303,6 +304,7 @@ try:
     import base64
     import io
 
+    from PIL.Image import MIME
     from PIL.Image import Image as Img
 
     @serializer
@@ -316,10 +318,24 @@ try:
             The serialized image.
         """
         buff = io.BytesIO()
-        image.save(buff, format=getattr(image, "format", None) or "PNG")
+        image_format = getattr(image, "format", None) or "PNG"
+        image.save(buff, format=image_format)
         image_bytes = buff.getvalue()
         base64_image = base64.b64encode(image_bytes).decode("utf-8")
-        mime_type = getattr(image, "get_format_mimetype", lambda: "image/png")()
+        try:
+            # Newer method to get the mime type, but does not always work.
+            mime_type = image.get_format_mimetype()  # type: ignore
+        except AttributeError:
+            try:
+                # Fallback method
+                mime_type = MIME[image_format]
+            except KeyError:
+                # Unknown mime_type: warn and return image/png and hope the browser can sort it out.
+                warnings.warn(
+                    f"Unknown mime type for {image} {image_format}. Defaulting to image/png"
+                )
+                mime_type = "image/png"
+
         return f"data:{mime_type};base64,{base64_image}"
 
 except ImportError:

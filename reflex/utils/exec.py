@@ -285,3 +285,12 @@ def output_system_info():
     console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")  # type: ignore
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")
+
+
+def is_testing_env() -> bool:
+    """Whether the app is running in a testing environment.
+
+    Returns:
+        True if the app is running in under pytest.
+    """
+    return constants.PYTEST_CURRENT_TEST in os.environ

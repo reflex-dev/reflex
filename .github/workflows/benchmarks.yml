@@ -2,11 +2,11 @@ name: benchmarking
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths-ignore:
       - '**/*.md'
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths-ignore:
       - '**/*.md'
 
@@ -18,25 +18,27 @@ defaults:
     shell: bash
 
 env:
-  PYTHONIOENCODING: "utf8"
+  PYTHONIOENCODING: 'utf8'
   TELEMETRY_ENABLED: false
-  NODE_OPTIONS: "--max_old_space_size=4096"
+  NODE_OPTIONS: '--max_old_space_size=4096'
 
 jobs:
   reflex-web:
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     strategy:
       fail-fast: false
       matrix:
         # Show OS combos first in GUI
-        os: [ ubuntu-latest]
-        python-version: [ "3.11.4" ]
-        node-version: [ "16.x" ]
+        os: [ubuntu-latest]
+        python-version: ['3.11.4']
+        node-version: ['16.x']
 
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - uses: ./.github/actions/setup_build_env
@@ -64,12 +66,12 @@ jobs:
           npm -v
           poetry run bash scripts/benchmarks.sh ./reflex-web prod
         env:
-            LHCI_GITHUB_APP_TOKEN: $
+          LHCI_GITHUB_APP_TOKEN: $
       - name: Run Benchmarks
+        # Only run if the database creds are available in this context.
+        if: ${{ env.DATABASE_URL }}
         working-directory: ./integration/benchmarks
-        run: 
-          poetry run python benchmarks.py "$GITHUB_SHA" .lighthouseci
+        run: poetry run python benchmarks.py "$GITHUB_SHA" .lighthouseci
         env:
-            GITHUB_SHA: ${{ github.sha }}
-            DATABASE_URL: ${{ secrets.DATABASE_URL }}
-            PR_TITLE: ${{ github.event.pull_request.title }}
+          GITHUB_SHA: ${{ github.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}

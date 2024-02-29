@@ -2,11 +2,11 @@ name: integration-tests-wsl
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
     paths-ignore:
       - '**/*.md'
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
     paths-ignore:
       - '**/*.md'
 
@@ -15,7 +15,7 @@ permissions:
 
 env:
   TELEMETRY_ENABLED: false
-  NODE_OPTIONS: "--max_old_space_size=4096"
+  NODE_OPTIONS: '--max_old_space_size=4096'
 
 jobs:
   example-counter-wsl:
@@ -32,7 +32,7 @@ jobs:
           repository: reflex-dev/reflex-examples
           path: reflex-examples
 
-      - uses: Vampire/setup-wsl@v2
+      - uses: Vampire/setup-wsl@v3
 
       - name: Install Python
         shell: wsl-bash {0}

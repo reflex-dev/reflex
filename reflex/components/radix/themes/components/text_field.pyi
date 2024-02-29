@@ -256,6 +256,8 @@ class TextFieldInput(el.Input, TextFieldRoot):
         checked: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
+        default_checked: Optional[Union[Var[bool], bool]] = None,
+        default_value: Optional[Union[Var[str], str]] = None,
         dirname: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -499,6 +501,8 @@ class TextFieldInput(el.Input, TextFieldRoot):
             auto_focus: Automatically focuses the input when the page loads
             capture: Captures media from the user (camera or microphone)
             checked: Indicates whether the input is checked (for checkboxes and radio buttons)
+            default_checked: The initial value (for checkboxes and radio buttons)
+            default_value: The initial value for a text field
             dirname: Name part of the input to submit in 'dir' and 'name' pair when form is submitted
             disabled: Disables the input
             form: Associates the input with a form (by id)

@@ -172,6 +172,7 @@ class BaseSubclass(Base):
         ),
         (Color(color="slate", shade=1), "var(--slate-1)"),
         (Color(color="orange", shade=1, alpha=True), "var(--orange-a1)"),
+        (Color(color="accent", shade=1, alpha=True), "var(--accent-a1)"),
     ],
 )
 def test_serialize(value: Any, expected: str):
