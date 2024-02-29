@@ -27,7 +27,7 @@ class Bare(Component):
         if isinstance(contents, Var) and contents._var_data:
             contents = contents.to(str)
         else:
-            contents = str(contents)
+            contents = Var.create(str(contents))
         return cls(contents=contents)  # type: ignore
 
     def _render(self) -> Tag:
