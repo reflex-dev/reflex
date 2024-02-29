@@ -216,7 +216,8 @@ class EventSpec(EventActionsMixin):
     client_handler_name: str = ""
 
     # The arguments to pass to the function.
-    args: Tuple[Tuple[Var, Var], ...] = ()
+    # TODO: pydantic v2 add rx.Var type annotation?
+    args: Tuple[Tuple[Any, Any], ...] = ()
 
     class Config:
         """The Pydantic config."""
