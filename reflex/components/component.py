@@ -277,7 +277,7 @@ class Component(BaseComponent, ABC):
                 field_type = EventChain
             elif key in props:
                 # Set the field type.
-                field_type = fields[key].type_
+                field_type = fields[key].annotation
 
             else:
                 continue
