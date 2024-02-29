@@ -2080,6 +2080,7 @@ class StateManagerMemory(StateManager):
     class Config:
         """The Pydantic config."""
 
+        # TODO: pydantic v2
         fields = {
             "_states_locks": {"exclude": True},
         }

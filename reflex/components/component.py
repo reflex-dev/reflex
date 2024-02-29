@@ -21,6 +21,8 @@ from typing import (
     Union,
 )
 
+from pydantic.fields import ModelPrivateAttr
+
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.tags import Tag
@@ -226,6 +228,8 @@ class Component(BaseComponent, ABC):
             inherited_rename_props = {}
             for parent in reversed(cls.mro()):
                 if issubclass(parent, Component) and parent._rename_props:
+                    if isinstance(parent._rename_props, ModelPrivateAttr):
+                        parent._rename_props = parent._rename_props.default
                     inherited_rename_props.update(parent._rename_props)
             cls._rename_props = inherited_rename_props
 

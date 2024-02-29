@@ -31,6 +31,7 @@ from typing import (
     get_origin,
     get_type_hints,
 )
+
 import pydantic_core
 
 from reflex import constants
@@ -248,8 +249,8 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
         def json_loads(s):
             try:
                 return VarData.model_validate(s)
-            except pydantic_core.ValidationError:
-                raise ValueError(f"Invalid VarData: {s}")
+            except pydantic_core.ValidationError as e:
+                raise ValueError(f"Invalid VarData: {s}") from e
                 #  return VarData.model_validate(var_data_config.json_loads(f'"{s}"'))
 
         # Compile regex for finding reflex var tags.
