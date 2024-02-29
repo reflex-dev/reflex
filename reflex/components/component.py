@@ -282,6 +282,9 @@ class Component(BaseComponent, ABC):
             else:
                 continue
 
+            # unwrap Optional from field_type
+            field_type = typing.get_args(field_type)[0] if types.is_optional(field_type) else field_type
+
             # Check whether the key is a component prop.
             if types._issubclass(field_type, Var):
                 try:
@@ -292,7 +295,7 @@ class Component(BaseComponent, ABC):
                     if kwargs[key] is None:
                         raise TypeError
 
-                    expected_type = fields[key].annotation.__args__[0]
+                    expected_type = field_type.__args__[0]
                     # validate literal fields.
                     types.validate_literal(
                         key, value, expected_type, type(self).__name__
@@ -307,7 +310,7 @@ class Component(BaseComponent, ABC):
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
-                    expected_type = fields[key].annotation
+                    expected_type = field_type
                 if not types._issubclass(passed_type, expected_type):
                     value_name = value._var_name if isinstance(value, Var) else value
                     raise TypeError(
