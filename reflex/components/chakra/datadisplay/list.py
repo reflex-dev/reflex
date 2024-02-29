@@ -6,9 +6,12 @@ from reflex.components.chakra import ChakraComponent
 from reflex.components.component import Component
 from reflex.components.core.foreach import Foreach
 from reflex.vars import Var
+from typing import TypeVar, Generic
 
+T = TypeVar("T")
 
-class List(ChakraComponent):
+# TODO: Generic is just a hacky workaround to stop pydantic from complaining
+class List(ChakraComponent, Generic[T]):
     """Display a list of items."""
 
     tag = "List"
