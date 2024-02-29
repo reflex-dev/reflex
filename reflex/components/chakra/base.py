@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from reflex.components.component import Component
 from reflex.utils import imports
@@ -55,7 +55,7 @@ class ChakraProvider(ChakraComponent):
 
     tag = "ChakraProvider"
 
-    theme: Var[str]
+    theme: Optional[Var[str]] = None
 
     @classmethod
     def create(cls) -> Component:
