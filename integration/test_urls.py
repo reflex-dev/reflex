@@ -55,11 +55,8 @@ def check_urls(repo_dir):
 
 @pytest.mark.parametrize(
     "repo_dir",
-    [
-        Path(__file__).resolve().parent.parent / "reflex"
-    ],
+    [Path(__file__).resolve().parent.parent / "reflex"],
 )
-
 def test_find_and_check_urls(repo_dir):
     """Test that all URLs in the repo are valid and secure.
 
