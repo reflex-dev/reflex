@@ -102,13 +102,9 @@ def _send_event(event_data: dict) -> bool:
 
 
 def _get_project_hash() -> str:
-    try:
-        with open(constants.Dirs.REFLEX_JSON) as f:
-            reflex_json = json.load(f)
-            return reflex_json["project_hash"]
-    except Exception:
-        print("Error reading reflex.json")
-        return None
+    with open(constants.Dirs.REFLEX_JSON) as f:
+        reflex_json = json.load(f)
+        return reflex_json["project_hash"]
 
 
 def send(event: str, telemetry_enabled: bool | None = None) -> bool:
@@ -129,7 +125,6 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
 
     # Return if telemetry is disabled.
     if not telemetry_enabled:
-        print("Telemetry is disabled.")
         return False
 
     event_data = _prepare_event(event)
