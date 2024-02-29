@@ -1,5 +1,5 @@
 """Table components."""
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from reflex.components.chakra import ChakraComponent
 from reflex.components.component import Component
@@ -14,16 +14,16 @@ class Table(ChakraComponent):
     tag = "Table"
 
     # The color scheme of the table
-    color_scheme: Var[str]
+    color_scheme: Optional[Var[str]] = None
 
     # The variant of the table style to use
-    variant: Var[str]
+    variant: Optional[Var[str]] = None
 
     # The size of the table
-    size: Var[str]
+    size: Optional[Var[str]] = None
 
     # The placement of the table caption.
-    placement: Var[str]
+    placement: Optional[Var[str]] = None
 
     @classmethod
     def create(
@@ -274,7 +274,7 @@ class Th(ChakraComponent):
     _invalid_children: List[str] = ["Tbody", "Thead", "Tr", "Td", "Th"]
 
     # Aligns the cell content to the right.
-    is_numeric: Var[bool]
+    is_numeric: Optional[Var[bool]] = None
 
 
 class Td(ChakraComponent):
@@ -286,7 +286,7 @@ class Td(ChakraComponent):
     _invalid_children: List[str] = ["Tbody", "Thead"]
 
     # Aligns the cell content to the right.
-    is_numeric: Var[bool]
+    is_numeric: Optional[Var[bool]] = None
 
 
 class TableCaption(ChakraComponent):
@@ -295,7 +295,7 @@ class TableCaption(ChakraComponent):
     tag = "TableCaption"
 
     # The placement of the table caption. This sets the `caption-side` CSS attribute.
-    placement: Var[str]
+    placement: Optional[Var[str]] = None
 
 
 class TableContainer(ChakraComponent):

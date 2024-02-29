@@ -1,6 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-
-from typing import Literal
+from typing import Literal, Optional
 
 from reflex.vars import Var
 
@@ -19,25 +18,25 @@ class Avatar(RadixThemesComponent):
     tag = "Avatar"
 
     # The variant of the avatar
-    variant: Var[Literal["solid", "soft"]]
+    variant: Optional[Var[Literal["solid", "soft"]]] = None
 
     # The size of the avatar: "1" - "9"
-    size: Var[LiteralSize]
+    size: Optional[Var[LiteralSize]] = None
 
     # Color theme of the avatar
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Whether to render the avatar with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Optional[Var[bool]] = None
 
     # Override theme radius for avatar: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    radius: Optional[Var[LiteralRadius]] = None
 
     # The src of the avatar image
-    src: Var[str]
+    src: Optional[Var[str]] = None
 
     # The rendered fallback text
-    fallback: Var[str]
+    fallback: Optional[Var[str]] = None
 
 
 avatar = Avatar.create

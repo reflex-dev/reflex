@@ -1,7 +1,7 @@
 """Wrapper around react-debounce-input."""
 from __future__ import annotations
 
-from typing import Any, Type
+from typing import Any, Optional, Type
 
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
@@ -22,25 +22,25 @@ class DebounceInput(Component):
     tag = "DebounceInput"
 
     # Minimum input characters before triggering the on_change event
-    min_length: Var[int]
+    min_length: Optional[Var[int]] = None
 
     # Time to wait between end of input and triggering on_change
     debounce_timeout: Var[int] = DEFAULT_DEBOUNCE_TIMEOUT  # type: ignore
 
     # If true, notify when Enter key is pressed
-    force_notify_by_enter: Var[bool]
+    force_notify_by_enter: Optional[Var[bool]] = None
 
     # If true, notify when form control loses focus
-    force_notify_on_blur: Var[bool]
+    force_notify_on_blur: Optional[Var[bool]] = None
 
     # If provided, create a fully-controlled input
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     # The ref to attach to the created input
-    input_ref: Var[str]
+    input_ref: Optional[Var[str]] = None
 
     # The element to wrap
-    element: Var[Type[Component]]
+    element: Optional[Var[Type[Component]]] = None
 
     @classmethod
     def create(cls, *children: Component, **props: Any) -> Component:

@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
@@ -33,16 +33,16 @@ class DropdownMenuRoot(RadixThemesComponent):
     tag = "DropdownMenu.Root"
 
     # The open state of the dropdown menu when it is initially rendered. Use when you do not need to control its open state.
-    default_open: Var[bool]
+    default_open: Optional[Var[bool]] = None
 
     # The controlled open state of the dropdown menu. Must be used in conjunction with onOpenChange.
-    open: Var[bool]
+    open: Optional[Var[bool]] = None
 
     # The modality of the dropdown menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers. Defaults to True.
-    modal: Var[bool]
+    modal: Optional[Var[bool]] = None
 
     # The reading direction of submenus when applicable. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
-    dir: Var[LiteralDirType]
+    dir: Optional[Var[LiteralDirType]] = None
 
     _invalid_children: List[str] = ["DropdownMenuItem"]
 
@@ -64,7 +64,7 @@ class DropdownMenuTrigger(RadixThemesComponent):
     tag = "DropdownMenu.Trigger"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
-    as_child: Var[bool]
+    as_child: Optional[Var[bool]] = None
 
     _valid_parents: List[str] = ["DropdownMenuRoot"]
 
@@ -77,52 +77,52 @@ class DropdownMenuContent(RadixThemesComponent):
     tag = "DropdownMenu.Content"
 
     # Dropdown Menu Content size "1" - "2"
-    size: Var[LiteralSizeType]
+    size: Optional[Var[LiteralSizeType]] = None
 
     # Variant of Dropdown Menu Content: "solid" | "soft"
-    variant: Var[LiteralVariantType]
+    variant: Optional[Var[LiteralVariantType]] = None
 
     # Override theme color for Dropdown Menu Content
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Renders the Dropdown Menu Content in higher contrast
-    high_contrast: Var[bool]
+    high_contrast: Optional[Var[bool]] = None
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
-    as_child: Var[bool]
+    as_child: Optional[Var[bool]] = None
 
     # When True, keyboard navigation will loop from last item to first, and vice versa. Defaults to False.
-    loop: Var[bool]
+    loop: Optional[Var[bool]] = None
 
     # Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
-    force_mount: Var[bool]
+    force_mount: Optional[Var[bool]] = None
 
     # The preferred side of the trigger to render against when open. Will be reversed when collisions occur and `avoid_collisions` is enabled.The position of the tooltip. Defaults to "top".
-    side: Var[LiteralSideType]
+    side: Optional[Var[LiteralSideType]] = None
 
     # The distance in pixels from the trigger. Defaults to 0.
-    side_offset: Var[Union[float, int]]
+    side_offset: Optional[Var[Union[float, int]]] = None
 
     # The preferred alignment against the trigger. May change when collisions occur. Defaults to "center".
-    align: Var[LiteralAlignType]
+    align: Optional[Var[LiteralAlignType]] = None
 
     # An offset in pixels from the "start" or "end" alignment options.
-    align_offset: Var[Union[float, int]]
+    align_offset: Optional[Var[Union[float, int]]] = None
 
     # When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
-    avoid_collisions: Var[bool]
+    avoid_collisions: Optional[Var[bool]] = None
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Var[Union[float, int, Dict[str, Union[float, int]]]]
+    collision_padding: Optional[Var[Union[float, int, Dict[str, Union[float, int]]]]] = None
 
     # The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
-    arrow_padding: Var[Union[float, int]]
+    arrow_padding: Optional[Var[Union[float, int]]] = None
 
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
-    sticky: Var[LiteralStickyType]
+    sticky: Optional[Var[LiteralStickyType]] = None
 
     # Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
-    hide_when_detached: Var[bool]
+    hide_when_detached: Optional[Var[bool]] = None
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -146,13 +146,13 @@ class DropdownMenuSubTrigger(RadixThemesComponent):
     tag = "DropdownMenu.SubTrigger"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
-    as_child: Var[bool]
+    as_child: Optional[Var[bool]] = None
 
     # When true, prevents the user from interacting with the item.
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
-    text_value: Var[str]
+    text_value: Optional[Var[str]] = None
 
     _valid_parents: List[str] = ["DropdownMenuContent", "DropdownMenuSub"]
 
@@ -163,10 +163,10 @@ class DropdownMenuSub(RadixThemesComponent):
     tag = "DropdownMenu.Sub"
 
     # The controlled open state of the submenu. Must be used in conjunction with `on_open_change`.
-    open: Var[bool]
+    open: Optional[Var[bool]] = None
 
     # The open state of the submenu when it is initially rendered. Use when you do not need to control its open state.
-    default_open: Var[bool]
+    default_open: Optional[Var[bool]] = None
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -186,34 +186,34 @@ class DropdownMenuSubContent(RadixThemesComponent):
     tag = "DropdownMenu.SubContent"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
-    as_child: Var[bool]
+    as_child: Optional[Var[bool]] = None
 
     # When True, keyboard navigation will loop from last item to first, and vice versa. Defaults to False.
-    loop: Var[bool]
+    loop: Optional[Var[bool]] = None
 
     # Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
-    force_mount: Var[bool]
+    force_mount: Optional[Var[bool]] = None
 
     # The distance in pixels from the trigger. Defaults to 0.
-    side_offset: Var[Union[float, int]]
+    side_offset: Optional[Var[Union[float, int]]] = None
 
     # An offset in pixels from the "start" or "end" alignment options.
-    align_offset: Var[Union[float, int]]
+    align_offset: Optional[Var[Union[float, int]]] = None
 
     # When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
-    avoid_collisions: Var[bool]
+    avoid_collisions: Optional[Var[bool]] = None
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Var[Union[float, int, Dict[str, Union[float, int]]]]
+    collision_padding: Optional[Var[Union[float, int, Dict[str, Union[float, int]]]]] = None
 
     # The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
-    arrow_padding: Var[Union[float, int]]
+    arrow_padding: Optional[Var[Union[float, int]]] = None
 
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
-    sticky: Var[LiteralStickyType]
+    sticky: Optional[Var[LiteralStickyType]] = None
 
     # Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
-    hide_when_detached: Var[bool]
+    hide_when_detached: Optional[Var[bool]] = None
 
     _valid_parents: List[str] = ["DropdownMenuSub"]
 
@@ -238,19 +238,19 @@ class DropdownMenuItem(RadixThemesComponent):
     tag = "DropdownMenu.Item"
 
     # Override theme color for Dropdown Menu Item
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Shortcut to render a menu item as a link
-    shortcut: Var[str]
+    shortcut: Optional[Var[str]] = None
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
-    as_child: Var[bool]
+    as_child: Optional[Var[bool]] = None
 
     # When true, prevents the user from interacting with the item.
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
-    text_value: Var[str]
+    text_value: Optional[Var[str]] = None
 
     _valid_parents: List[str] = ["DropdownMenuContent", "DropdownMenuSubContent"]
 

@@ -1,5 +1,4 @@
 """Interactive components provided by @radix-ui/themes."""
-
 from typing import Any, Dict, List, Literal, Optional, Union
 
 import reflex as rx
@@ -24,31 +23,31 @@ class RadioGroupRoot(RadixThemesComponent):
     tag = "RadioGroup.Root"
 
     # The size of the radio group: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Optional[Var[Literal["1", "2", "3"]]] = None
 
     # The variant of the radio group
-    variant: Var[Literal["classic", "surface", "soft"]]
+    variant: Optional[Var[Literal["classic", "surface", "soft"]]] = None
 
     # The color of the radio group
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Whether to render the radio group with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Optional[Var[bool]] = None
 
     # The controlled value of the radio item to check. Should be used in conjunction with on_change.
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     # The initial value of checked radio item. Should be used in conjunction with on_change.
-    default_value: Var[str]
+    default_value: Optional[Var[str]] = None
 
     # Whether the radio group is disabled
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     # The name of the group. Submitted with its owning form as part of a name/value pair.
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     # Whether the radio group is required
-    required: Var[bool]
+    required: Optional[Var[bool]] = None
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
@@ -71,23 +70,23 @@ class RadioGroupItem(RadixThemesComponent):
     tag = "RadioGroup.Item"
 
     # The value of the radio item to check. Should be used in conjunction with on_change.
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     # When true, prevents the user from interacting with the radio item.
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     # When true, indicates that the user must check the radio item before the owning form can be submitted.
-    required: Var[bool]
+    required: Optional[Var[bool]] = None
 
 
 class HighLevelRadioGroup(RadixThemesComponent):
     """High level wrapper for the RadioGroup component."""
 
     # The items of the radio group.
-    items: Var[List[str]]
+    items: Optional[Var[List[str]]] = None
 
     # The direction of the radio group.
-    direction: Var[LiteralFlexDirection]
+    direction: Optional[Var[LiteralFlexDirection]] = None
 
     # The gap between the items of the radio group.
     spacing: Var[LiteralSpacing] = Var.create_safe("2")
@@ -96,28 +95,28 @@ class HighLevelRadioGroup(RadixThemesComponent):
     size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
 
     # The variant of the radio group
-    variant: Var[Literal["classic", "surface", "soft"]]
+    variant: Optional[Var[Literal["classic", "surface", "soft"]]] = None
 
     # The color of the radio group
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Whether to render the radio group with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Optional[Var[bool]] = None
 
     # The controlled value of the radio item to check. Should be used in conjunction with on_change.
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     # The initial value of checked radio item. Should be used in conjunction with on_change.
-    default_value: Var[str]
+    default_value: Optional[Var[str]] = None
 
     # Whether the radio group is disabled
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     # The name of the group. Submitted with its owning form as part of a name/value pair.
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     # Whether the radio group is required
-    required: Var[bool]
+    required: Optional[Var[bool]] = None
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}

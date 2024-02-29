@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
@@ -19,28 +19,28 @@ class SelectRoot(RadixThemesComponent):
     tag = "Select.Root"
 
     # The size of the select: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Optional[Var[Literal["1", "2", "3"]]] = None
 
     # The value of the select when initially rendered. Use when you do not need to control the state of the select.
-    default_value: Var[str]
+    default_value: Optional[Var[str]] = None
 
     # The controlled value of the select. Should be used in conjunction with on_change.
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     # The open state of the select when it is initially rendered. Use when you do not need to control its open state.
-    default_open: Var[bool]
+    default_open: Optional[Var[bool]] = None
 
     # The controlled open state of the select. Must be used in conjunction with on_open_change.
-    open: Var[bool]
+    open: Optional[Var[bool]] = None
 
     # The name of the select control when submitting the form.
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     # When True, prevents the user from interacting with select.
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     # When True, indicates that the user must select a value before the owning form can be submitted.
-    required: Var[bool]
+    required: Optional[Var[bool]] = None
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
@@ -64,16 +64,16 @@ class SelectTrigger(RadixThemesComponent):
     tag = "Select.Trigger"
 
     # Variant of the select trigger
-    variant: Var[Literal["classic", "surface", "soft", "ghost"]]
+    variant: Optional[Var[Literal["classic", "surface", "soft", "ghost"]]] = None
 
     # The color of the select trigger
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # The radius of the select trigger
-    radius: Var[LiteralRadius]
+    radius: Optional[Var[LiteralRadius]] = None
 
     # The placeholder of the select trigger
-    placeholder: Var[str]
+    placeholder: Optional[Var[str]] = None
 
     _valid_parents: List[str] = ["SelectRoot"]
 
@@ -84,28 +84,28 @@ class SelectContent(RadixThemesComponent):
     tag = "Select.Content"
 
     # The variant of the select content
-    variant: Var[Literal["solid", "soft"]]
+    variant: Optional[Var[Literal["solid", "soft"]]] = None
 
     # The color of the select content
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Whether to render the select content with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Optional[Var[bool]] = None
 
     # The positioning mode to use, item-aligned is the default and behaves similarly to a native MacOS menu by positioning content relative to the active item. popper positions content in the same way as our other primitives, for example Popover or DropdownMenu.
-    position: Var[Literal["item-aligned", "popper"]]
+    position: Optional[Var[Literal["item-aligned", "popper"]]] = None
 
     # The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled. Only available when position is set to popper.
-    side: Var[Literal["top", "right", "bottom", "left"]]
+    side: Optional[Var[Literal["top", "right", "bottom", "left"]]] = None
 
     # The distance in pixels from the anchor. Only available when position is set to popper.
-    side_offset: Var[int]
+    side_offset: Optional[Var[int]] = None
 
     # The preferred alignment against the anchor. May change when collisions occur. Only available when position is set to popper.
-    align: Var[Literal["start", "center", "end"]]
+    align: Optional[Var[Literal["start", "center", "end"]]] = None
 
     # The vertical distance in pixels from the anchor. Only available when position is set to popper.
-    align_offset: Var[int]
+    align_offset: Optional[Var[int]] = None
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -135,10 +135,10 @@ class SelectItem(RadixThemesComponent):
     tag = "Select.Item"
 
     # The value given as data when submitting a form with a name.
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     # Whether the select item is disabled
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     _valid_parents: List[str] = ["SelectGroup", "SelectContent"]
 
@@ -161,28 +161,28 @@ class HighLevelSelect(SelectRoot):
     """High level wrapper for the Select component."""
 
     # The items of the select.
-    items: Var[List[str]]
+    items: Optional[Var[List[str]]] = None
 
     # The placeholder of the select.
-    placeholder: Var[str]
+    placeholder: Optional[Var[str]] = None
 
     # The label of the select.
-    label: Var[str]
+    label: Optional[Var[str]] = None
 
     # The color of the select.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Whether to render the select with higher contrast color against background.
-    high_contrast: Var[bool]
+    high_contrast: Optional[Var[bool]] = None
 
     # The variant of the select.
-    variant: Var[Literal["classic", "surface", "soft", "ghost"]]
+    variant: Optional[Var[Literal["classic", "surface", "soft", "ghost"]]] = None
 
     # The radius of the select.
-    radius: Var[LiteralRadius]
+    radius: Optional[Var[LiteralRadius]] = None
 
     # The width of the select.
-    width: Var[str]
+    width: Optional[Var[str]] = None
 
     @classmethod
     def create(cls, items: Union[List[str], Var[List[str]]], **props) -> Component:

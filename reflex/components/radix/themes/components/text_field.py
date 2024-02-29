@@ -1,6 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Optional
 
 from reflex.components import el
 from reflex.components.component import Component, ComponentNamespace
@@ -24,16 +23,16 @@ class TextFieldRoot(el.Div, RadixThemesComponent):
     tag = "TextField.Root"
 
     # Text field size "1" - "3"
-    size: Var[LiteralTextFieldSize]
+    size: Optional[Var[LiteralTextFieldSize]] = None
 
     # Variant of text field: "classic" | "surface" | "soft"
-    variant: Var[LiteralTextFieldVariant]
+    variant: Optional[Var[LiteralTextFieldVariant]] = None
 
     # Override theme color for text field
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    radius: Optional[Var[LiteralRadius]] = None
 
 
 class TextFieldInput(el.Input, TextFieldRoot):
@@ -79,56 +78,56 @@ class TextFieldSlot(RadixThemesComponent):
     tag = "TextField.Slot"
 
     # Override theme color for text field slot
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
 
 class Input(RadixThemesComponent):
     """High level wrapper for the Input component."""
 
     # Text field size "1" - "3"
-    size: Var[LiteralTextFieldSize]
+    size: Optional[Var[LiteralTextFieldSize]] = None
 
     # Variant of text field: "classic" | "surface" | "soft"
-    variant: Var[LiteralTextFieldVariant]
+    variant: Optional[Var[LiteralTextFieldVariant]] = None
 
     # Override theme color for text field
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    radius: Optional[Var[LiteralRadius]] = None
 
     # Whether the input should have autocomplete enabled
-    auto_complete: Var[bool]
+    auto_complete: Optional[Var[bool]] = None
 
     # The value of the input when initially rendered.
-    default_value: Var[str]
+    default_value: Optional[Var[str]] = None
 
     # Disables the input
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     # Specifies the maximum number of characters allowed in the input
-    max_length: Var[str]
+    max_length: Optional[Var[str]] = None
 
     # Specifies the minimum number of characters required in the input
-    min_length: Var[str]
+    min_length: Optional[Var[str]] = None
 
     # Name of the input, used when sending form data
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     # Placeholder text in the input
-    placeholder: Var[str]
+    placeholder: Optional[Var[str]] = None
 
     # Indicates whether the input is read-only
-    read_only: Var[bool]
+    read_only: Optional[Var[bool]] = None
 
     # Indicates that the input is required
-    required: Var[bool]
+    required: Optional[Var[bool]] = None
 
     # Specifies the type of input
-    type: Var[str]
+    type: Optional[Var[str]] = None
 
     # Value of the input
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     @classmethod
     def create(cls, **props):

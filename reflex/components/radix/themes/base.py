@@ -1,5 +1,4 @@
 """Base classes for radix-themes components."""
-
 from __future__ import annotations
 
 from typing import Any, Dict, Literal, Optional, Union
@@ -52,25 +51,25 @@ class CommonMarginProps(Component):
     """Many radix-themes elements accept shorthand margin props."""
 
     # Margin: "0" - "9"
-    m: Var[LiteralSpacing]
+    m: Optional[Var[LiteralSpacing]] = None
 
     # Margin horizontal: "0" - "9"
-    mx: Var[LiteralSpacing]
+    mx: Optional[Var[LiteralSpacing]] = None
 
     # Margin vertical: "0" - "9"
-    my: Var[LiteralSpacing]
+    my: Optional[Var[LiteralSpacing]] = None
 
     # Margin top: "0" - "9"
-    mt: Var[LiteralSpacing]
+    mt: Optional[Var[LiteralSpacing]] = None
 
     # Margin right: "0" - "9"
-    mr: Var[LiteralSpacing]
+    mr: Optional[Var[LiteralSpacing]] = None
 
     # Margin bottom: "0" - "9"
-    mb: Var[LiteralSpacing]
+    mb: Optional[Var[LiteralSpacing]] = None
 
     # Margin left: "0" - "9"
-    ml: Var[LiteralSpacing]
+    ml: Optional[Var[LiteralSpacing]] = None
 
 
 class RadixThemesComponent(Component):
@@ -215,7 +214,7 @@ class ThemePanel(RadixThemesComponent):
     tag = "ThemePanel"
 
     # Whether the panel is open. Defaults to False.
-    default_open: Var[bool]
+    default_open: Optional[Var[bool]] = None
 
 
 class RadixThemesColorModeProvider(Component):

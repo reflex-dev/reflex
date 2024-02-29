@@ -1,4 +1,5 @@
 """Statistics components."""
+from typing import Optional
 
 from reflex.components.chakra import ChakraComponent
 from reflex.components.component import Component
@@ -71,7 +72,7 @@ class StatArrow(ChakraComponent):
     tag = "StatArrow"
 
     # The type of arrow, either increase or decrease.
-    type_: Var[str]
+    type_: Optional[Var[str]] = None
 
 
 class StatGroup(ChakraComponent):

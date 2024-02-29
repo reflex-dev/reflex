@@ -1,7 +1,7 @@
 """An editable component."""
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from reflex.components.chakra import ChakraComponent
 from reflex.constants import EventTriggers
@@ -14,28 +14,28 @@ class Editable(ChakraComponent):
     tag = "Editable"
 
     # If true, the Editable will be disabled.
-    is_disabled: Var[bool]
+    is_disabled: Optional[Var[bool]] = None
 
     # If true, the read only view, has a tabIndex set to 0 so it can receive focus via the keyboard or click.
-    is_preview_focusable: Var[bool]
+    is_preview_focusable: Optional[Var[bool]] = None
 
     # The placeholder text when the value is empty.
-    placeholder: Var[str]
+    placeholder: Optional[Var[str]] = None
 
     # If true, the input's text will be highlighted on focus.
-    select_all_on_focus: Var[bool]
+    select_all_on_focus: Optional[Var[bool]] = None
 
     # If true, the Editable will start with edit mode by default.
-    start_with_edit_view: Var[bool]
+    start_with_edit_view: Optional[Var[bool]] = None
 
     # If true, it'll update the value onBlur and turn off the edit mode.
-    submit_on_blur: Var[bool]
+    submit_on_blur: Optional[Var[bool]] = None
 
     # The value of the Editable in both edit & preview mode
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     # The initial value of the Editable in both edit and preview mode.
-    default_value: Var[str]
+    default_value: Optional[Var[str]] = None
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.

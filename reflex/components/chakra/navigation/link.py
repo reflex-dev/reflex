@@ -1,5 +1,5 @@
 """A link component."""
-
+from typing import Optional
 
 from reflex.components.chakra import ChakraComponent
 from reflex.components.component import Component
@@ -16,19 +16,19 @@ class Link(ChakraComponent):
     tag = "Link"
 
     # The rel.
-    rel: Var[str]
+    rel: Optional[Var[str]] = None
 
     # The page to link to.
-    href: Var[str]
+    href: Optional[Var[str]] = None
 
     # The text to display.
-    text: Var[str]
+    text: Optional[Var[str]] = None
 
     # What the link renders to.
     as_: Var[str] = BaseVar.create(value="{NextLink}", _var_is_local=False)  # type: ignore
 
     # If true, the link will open in new tab.
-    is_external: Var[bool]
+    is_external: Optional[Var[bool]] = None
 
     def _get_imports(self) -> imports.ImportDict:
         return {**super()._get_imports(), **next_link._get_imports()}

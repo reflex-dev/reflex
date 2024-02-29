@@ -1,5 +1,5 @@
 """A html component."""
-from typing import Dict
+from typing import Dict, Optional
 
 from reflex.components.el.elements.typography import Div
 from reflex.vars import Var
@@ -13,7 +13,7 @@ class Html(Div):
     """
 
     # The HTML to render.
-    dangerouslySetInnerHTML: Var[Dict[str, str]]
+    dangerouslySetInnerHTML: Optional[Var[Dict[str, str]]] = None
 
     @classmethod
     def create(cls, *children, **props):

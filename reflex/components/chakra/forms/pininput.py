@@ -18,49 +18,49 @@ class PinInput(ChakraComponent):
     tag = "PinInput"
 
     # State var to bind the the input.
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     # If true, the pin input receives focus on mount
-    auto_focus: Var[bool]
+    auto_focus: Optional[Var[bool]] = None
 
     # The default value of the pin input
-    default_value: Var[str]
+    default_value: Optional[Var[str]] = None
 
     # The border color when the input is invalid.
-    error_border_color: Var[str]
+    error_border_color: Optional[Var[str]] = None
 
     # The border color when the input is focused.
-    focus_border_color: Var[str]
+    focus_border_color: Optional[Var[str]] = None
 
     # The top-level id string that will be applied to the input fields. The index of the input will be appended to this top-level id.
-    id_: Var[str]
+    id_: Optional[Var[str]] = None
 
     # The length of the number input.
-    length: Var[int]
+    length: Optional[Var[int]] = None
 
     # If true, the pin input component is put in the disabled state
-    is_disabled: Var[bool]
+    is_disabled: Optional[Var[bool]] = None
 
     # If true, the pin input component is put in the invalid state
-    is_invalid: Var[bool]
+    is_invalid: Optional[Var[bool]] = None
 
     # If true, focus will move automatically to the next input once filled
-    manage_focus: Var[bool]
+    manage_focus: Optional[Var[bool]] = None
 
     # If true, the input's value will be masked just like `type=password`
-    mask: Var[bool]
+    mask: Optional[Var[bool]] = None
 
     # The placeholder for the pin input
-    placeholder: Var[str]
+    placeholder: Optional[Var[str]] = None
 
     # The type of values the pin-input should allow ("number" | "alphanumeric").
-    type_: Var[str]
+    type_: Optional[Var[str]] = None
 
     # "outline" | "flushed" | "filled" | "unstyled"
-    variant: Var[LiteralInputVariant]
+    variant: Optional[Var[LiteralInputVariant]] = None
 
     # The name of the form field
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     def _get_imports(self) -> ImportDict:
         """Include PinInputField explicitly because it may not be a child component at compile time.
@@ -171,7 +171,7 @@ class PinInputField(ChakraComponent):
     index: Optional[Var[int]] = None
 
     # The name of the form field
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     @classmethod
     def for_length(cls, length: Var | int, **props) -> Var:

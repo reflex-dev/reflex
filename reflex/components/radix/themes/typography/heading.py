@@ -4,9 +4,10 @@ https://www.radix-ui.com/themes/docs/theme/typography
 """
 from __future__ import annotations
 
+from typing import Optional
+
 from reflex import el
 from reflex.vars import Var
-from typing import Optional
 
 from ..base import (
     LiteralAccentColor,

@@ -1,4 +1,5 @@
 """Link overlay components."""
+from typing import Optional
 
 from reflex.components.chakra import ChakraComponent
 from reflex.vars import Var
@@ -10,10 +11,10 @@ class LinkOverlay(ChakraComponent):
     tag = "LinkOverlay"
 
     # If true, the link will open in new tab
-    is_external: Var[bool]
+    is_external: Optional[Var[bool]] = None
 
     # Href of the link overlay.
-    href: Var[str]
+    href: Optional[Var[str]] = None
 
 
 class LinkBox(ChakraComponent):

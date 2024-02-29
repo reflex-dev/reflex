@@ -1,4 +1,5 @@
 """Badge component."""
+from typing import Optional
 
 from reflex.components.chakra import ChakraComponent, LiteralVariant
 from reflex.vars import Var
@@ -10,7 +11,7 @@ class Badge(ChakraComponent):
     tag = "Badge"
 
     # Variant of the badge ("solid" | "subtle" | "outline")
-    variant: Var[LiteralVariant]
+    variant: Optional[Var[LiteralVariant]] = None
 
     # The color of the badge
-    color_scheme: Var[str]
+    color_scheme: Optional[Var[str]] = None

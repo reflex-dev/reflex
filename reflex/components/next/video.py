@@ -1,5 +1,4 @@
 """Wrapping of the next-video component."""
-
 from typing import Optional
 
 from reflex.components.component import Component
@@ -15,7 +14,7 @@ class Video(NextComponent):
     library = "next-video"
     is_default = True
     # the URL
-    src: Var[str]
+    src: Optional[Var[str]] = None
 
     as_: Optional[Component]
 

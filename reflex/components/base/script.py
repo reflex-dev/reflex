@@ -1,10 +1,10 @@
 """Next.js script wrappers and inline script functionality.
-
-https://nextjs.org/docs/app/api-reference/components/script
+from typing import Optional
+https://nextjs.org/docs/app/api-reference/components/script.
 """
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from reflex.components.component import Component
 from reflex.vars import Var
@@ -25,7 +25,7 @@ class Script(Component):
     is_default = True
 
     # Required unless inline script is used
-    src: Var[str]
+    src: Optional[Var[str]] = None
 
     # When the script will execute: afterInteractive | beforeInteractive | lazyOnload
     strategy: Var[str] = "afterInteractive"  # type: ignore

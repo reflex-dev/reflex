@@ -173,31 +173,31 @@ class Upload(MemoizationLeaf):
     # The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as
     # values.
     # supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-    accept: Var[Optional[Dict[str, List]]]
+    accept: Optional[Var[Optional[Dict[str, List]]]] = None
 
     # Whether the dropzone is disabled.
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     # The maximum number of files that can be uploaded.
-    max_files: Var[int]
+    max_files: Optional[Var[int]] = None
 
     # The maximum file size (bytes) that can be uploaded.
-    max_size: Var[int]
+    max_size: Optional[Var[int]] = None
 
     # The minimum file size (bytes) that can be uploaded.
-    min_size: Var[int]
+    min_size: Optional[Var[int]] = None
 
     # Whether to allow multiple files to be uploaded.
     multiple: Var[bool] = True  # type: ignore
 
     # Whether to disable click to upload.
-    no_click: Var[bool]
+    no_click: Optional[Var[bool]] = None
 
     # Whether to disable drag and drop.
-    no_drag: Var[bool]
+    no_drag: Optional[Var[bool]] = None
 
     # Whether to disable using the space/enter keys to upload.
-    no_keyboard: Var[bool]
+    no_keyboard: Optional[Var[bool]] = None
 
     # Marked True when any Upload component is created.
     is_used: ClassVar[bool] = False

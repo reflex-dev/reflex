@@ -1,5 +1,5 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from reflex.vars import Var as Var
 
@@ -12,37 +12,37 @@ class Area(BaseHTML):
     tag = "area"
 
     # Alternate text for the area, used for accessibility
-    alt: Var[Union[str, int, bool]]
+    alt: Optional[Var[Union[str, int, bool]]] = None
 
     # Coordinates to define the shape of the area
-    coords: Var[Union[str, int, bool]]
+    coords: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies that the target will be downloaded when clicked
-    download: Var[Union[str, int, bool]]
+    download: Optional[Var[Union[str, int, bool]]] = None
 
     # Hyperlink reference for the area
-    href: Var[Union[str, int, bool]]
+    href: Optional[Var[Union[str, int, bool]]] = None
 
     # Language of the linked resource
-    href_lang: Var[Union[str, int, bool]]
+    href_lang: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies what media/device the linked resource is optimized for
-    media: Var[Union[str, int, bool]]
+    media: Optional[Var[Union[str, int, bool]]] = None
 
     # A list of URLs to be notified if the user follows the hyperlink
-    ping: Var[Union[str, int, bool]]
+    ping: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies which referrer information to send with the link
-    referrer_policy: Var[Union[str, int, bool]]
+    referrer_policy: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies the relationship of the target object to the link object
-    rel: Var[Union[str, int, bool]]
+    rel: Optional[Var[Union[str, int, bool]]] = None
 
     # Defines the shape of the area (rectangle, circle, polygon)
-    shape: Var[Union[str, int, bool]]
+    shape: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies where to open the linked document
-    target: Var[Union[str, int, bool]]
+    target: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Audio(BaseHTML):
@@ -51,28 +51,28 @@ class Audio(BaseHTML):
     tag = "audio"
 
     # Specifies that the audio will start playing as soon as it is ready
-    auto_play: Var[Union[str, int, bool]]
+    auto_play: Optional[Var[Union[str, int, bool]]] = None
 
     # Represents the time range of the buffered media
-    buffered: Var[Union[str, int, bool]]
+    buffered: Optional[Var[Union[str, int, bool]]] = None
 
     # Displays the standard audio controls
-    controls: Var[Union[str, int, bool]]
+    controls: Optional[Var[Union[str, int, bool]]] = None
 
     # Configures the CORS requests for the element
-    cross_origin: Var[Union[str, int, bool]]
+    cross_origin: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies that the audio will loop
-    loop: Var[Union[str, int, bool]]
+    loop: Optional[Var[Union[str, int, bool]]] = None
 
     # Indicates whether the audio is muted by default
-    muted: Var[Union[str, int, bool]]
+    muted: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies how the audio file should be preloaded
-    preload: Var[Union[str, int, bool]]
+    preload: Optional[Var[Union[str, int, bool]]] = None
 
     # URL of the audio to play
-    src: Var[Union[str, int, bool]]
+    src: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Img(BaseHTML):
@@ -81,40 +81,40 @@ class Img(BaseHTML):
     tag = "img"
 
     # Image alignment with respect to its surrounding elements
-    align: Var[Union[str, int, bool]]
+    align: Optional[Var[Union[str, int, bool]]] = None
 
     # Alternative text for the image
-    alt: Var[Union[str, int, bool]]
+    alt: Optional[Var[Union[str, int, bool]]] = None
 
     # Configures the CORS requests for the image
-    cross_origin: Var[Union[str, int, bool]]
+    cross_origin: Optional[Var[Union[str, int, bool]]] = None
 
     # How the image should be decoded
-    decoding: Var[Union[str, int, bool]]
+    decoding: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies an intrinsic size for the image
-    intrinsicsize: Var[Union[str, int, bool]]
+    intrinsicsize: Optional[Var[Union[str, int, bool]]] = None
 
     # Whether the image is a server-side image map
-    ismap: Var[Union[str, int, bool]]
+    ismap: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies the loading behavior of the image
-    loading: Var[Union[str, int, bool]]
+    loading: Optional[Var[Union[str, int, bool]]] = None
 
     # Referrer policy for the image
-    referrer_policy: Var[Union[str, int, bool]]
+    referrer_policy: Optional[Var[Union[str, int, bool]]] = None
 
     # Sizes of the image for different layouts
-    sizes: Var[Union[str, int, bool]]
+    sizes: Optional[Var[Union[str, int, bool]]] = None
 
     # URL of the image to display
-    src: Var[Any]
+    src: Optional[Var[Any]] = None
 
     # A set of source sizes and URLs for responsive images
-    src_set: Var[Union[str, int, bool]]
+    src_set: Optional[Var[Union[str, int, bool]]] = None
 
     # The name of the map to use with the image
-    use_map: Var[Union[str, int, bool]]
+    use_map: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Map(BaseHTML):
@@ -123,7 +123,7 @@ class Map(BaseHTML):
     tag = "map"
 
     # Name of the map, referenced by the 'usemap' attribute in 'img' and 'object' elements
-    name: Var[Union[str, int, bool]]
+    name: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Track(BaseHTML):
@@ -132,19 +132,19 @@ class Track(BaseHTML):
     tag = "track"
 
     # Indicates that the track should be enabled unless the user's preferences indicate otherwise
-    default: Var[Union[str, int, bool]]
+    default: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies the kind of text track
-    kind: Var[Union[str, int, bool]]
+    kind: Optional[Var[Union[str, int, bool]]] = None
 
     # Title of the text track, used by the browser when listing available text tracks
-    label: Var[Union[str, int, bool]]
+    label: Optional[Var[Union[str, int, bool]]] = None
 
     # URL of the track file
-    src: Var[Union[str, int, bool]]
+    src: Optional[Var[Union[str, int, bool]]] = None
 
     # Language of the track text data
-    src_lang: Var[Union[str, int, bool]]
+    src_lang: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Video(BaseHTML):
@@ -153,34 +153,34 @@ class Video(BaseHTML):
     tag = "video"
 
     # Specifies that the video will start playing as soon as it is ready
-    auto_play: Var[Union[str, int, bool]]
+    auto_play: Optional[Var[Union[str, int, bool]]] = None
 
     # Represents the time range of the buffered media
-    buffered: Var[Union[str, int, bool]]
+    buffered: Optional[Var[Union[str, int, bool]]] = None
 
     # Displays the standard video controls
-    controls: Var[Union[str, int, bool]]
+    controls: Optional[Var[Union[str, int, bool]]] = None
 
     # Configures the CORS requests for the video
-    cross_origin: Var[Union[str, int, bool]]
+    cross_origin: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies that the video will loop
-    loop: Var[Union[str, int, bool]]
+    loop: Optional[Var[Union[str, int, bool]]] = None
 
     # Indicates whether the video is muted by default
-    muted: Var[Union[str, int, bool]]
+    muted: Optional[Var[Union[str, int, bool]]] = None
 
     # Indicates that the video should play 'inline', inside its element's playback area
-    plays_inline: Var[Union[str, int, bool]]
+    plays_inline: Optional[Var[Union[str, int, bool]]] = None
 
     # URL of an image to show while the video is downloading, or until the user hits the play button
-    poster: Var[Union[str, int, bool]]
+    poster: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies how the video file should be preloaded
-    preload: Var[Union[str, int, bool]]
+    preload: Optional[Var[Union[str, int, bool]]] = None
 
     # URL of the video to play
-    src: Var[Union[str, int, bool]]
+    src: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Embed(BaseHTML):
@@ -189,10 +189,10 @@ class Embed(BaseHTML):
     tag = "embed"
 
     # URL of the embedded content
-    src: Var[Union[str, int, bool]]
+    src: Optional[Var[Union[str, int, bool]]] = None
 
     # Media type of the embedded content
-    type: Var[Union[str, int, bool]]
+    type: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Iframe(BaseHTML):
@@ -201,31 +201,31 @@ class Iframe(BaseHTML):
     tag = "iframe"
 
     # Alignment of the iframe within the page or surrounding elements
-    align: Var[Union[str, int, bool]]
+    align: Optional[Var[Union[str, int, bool]]] = None
 
     # Permissions policy for the iframe
-    allow: Var[Union[str, int, bool]]
+    allow: Optional[Var[Union[str, int, bool]]] = None
 
     # Content Security Policy to apply to the iframe's content
-    csp: Var[Union[str, int, bool]]
+    csp: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies the loading behavior of the iframe
-    loading: Var[Union[str, int, bool]]
+    loading: Optional[Var[Union[str, int, bool]]] = None
 
     # Name of the iframe, used as a target for hyperlinks and forms
-    name: Var[Union[str, int, bool]]
+    name: Optional[Var[Union[str, int, bool]]] = None
 
     # Referrer policy for the iframe
-    referrer_policy: Var[Union[str, int, bool]]
+    referrer_policy: Optional[Var[Union[str, int, bool]]] = None
 
     # Security restrictions for the content in the iframe
-    sandbox: Var[Union[str, int, bool]]
+    sandbox: Optional[Var[Union[str, int, bool]]] = None
 
     # URL of the document to display in the iframe
-    src: Var[Union[str, int, bool]]
+    src: Optional[Var[Union[str, int, bool]]] = None
 
     # HTML content to embed directly within the iframe
-    src_doc: Var[Union[str, int, bool]]
+    src_doc: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Object(BaseHTML):
@@ -234,19 +234,19 @@ class Object(BaseHTML):
     tag = "object"
 
     # URL of the data to be used by the object
-    data: Var[Union[str, int, bool]]
+    data: Optional[Var[Union[str, int, bool]]] = None
 
     # Associates the object with a form element
-    form: Var[Union[str, int, bool]]
+    form: Optional[Var[Union[str, int, bool]]] = None
 
     # Name of the object, used for scripting or as a target for forms and links
-    name: Var[Union[str, int, bool]]
+    name: Optional[Var[Union[str, int, bool]]] = None
 
     # Media type of the data specified in the data attribute
-    type: Var[Union[str, int, bool]]
+    type: Optional[Var[Union[str, int, bool]]] = None
 
     # Name of an image map to use with the object
-    use_map: Var[Union[str, int, bool]]
+    use_map: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Picture(BaseHTML):
@@ -269,19 +269,19 @@ class Source(BaseHTML):
     tag = "source"
 
     # Media query indicating what device the linked resource is optimized for
-    media: Var[Union[str, int, bool]]
+    media: Optional[Var[Union[str, int, bool]]] = None
 
     # Sizes of the source for different layouts
-    sizes: Var[Union[str, int, bool]]
+    sizes: Optional[Var[Union[str, int, bool]]] = None
 
     # URL of the media file or an image for the element to use
-    src: Var[Union[str, int, bool]]
+    src: Optional[Var[Union[str, int, bool]]] = None
 
     # A set of source sizes and URLs for responsive images
-    src_set: Var[Union[str, int, bool]]
+    src_set: Optional[Var[Union[str, int, bool]]] = None
 
     # Media type of the source
-    type: Var[Union[str, int, bool]]
+    type: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Svg(BaseHTML):
@@ -296,4 +296,4 @@ class Path(BaseHTML):
     tag = "path"
 
     # Defines the shape of the path
-    d: Var[Union[str, int, bool]]
+    d: Optional[Var[Union[str, int, bool]]] = None

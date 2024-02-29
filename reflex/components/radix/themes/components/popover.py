@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Optional
 
 from reflex import el
 from reflex.components.component import ComponentNamespace
@@ -17,10 +17,10 @@ class PopoverRoot(RadixThemesComponent):
     tag = "Popover.Root"
 
     # The controlled open state of the popover.
-    open: Var[bool]
+    open: Optional[Var[bool]] = None
 
     # The modality of the popover. When set to true, interaction with outside elements will be disabled and only popover content will be visible to screen readers.
-    modal: Var[bool]
+    modal: Optional[Var[bool]] = None
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -46,22 +46,22 @@ class PopoverContent(el.Div, RadixThemesComponent):
     tag = "Popover.Content"
 
     # Size of the button: "1" | "2" | "3" | "4"
-    size: Var[Literal["1", "2", "3", "4"]]
+    size: Optional[Var[Literal["1", "2", "3", "4"]]] = None
 
     # The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
-    side: Var[Literal["top", "right", "bottom", "left"]]
+    side: Optional[Var[Literal["top", "right", "bottom", "left"]]] = None
 
     # The distance in pixels from the anchor.
-    side_offset: Var[int]
+    side_offset: Optional[Var[int]] = None
 
     # The preferred alignment against the anchor. May change when collisions occur.
-    align: Var[Literal["start", "center", "end"]]
+    align: Optional[Var[Literal["start", "center", "end"]]] = None
 
     # The vertical distance in pixels from the anchor.
-    align_offset: Var[int]
+    align_offset: Optional[Var[int]] = None
 
     # When true, overrides the side andalign preferences to prevent collisions with boundary edges.
-    avoid_collisions: Var[bool]
+    avoid_collisions: Optional[Var[bool]] = None
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.

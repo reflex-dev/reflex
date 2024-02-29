@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from reflex import el
 from reflex.components.component import ComponentNamespace
@@ -16,10 +16,10 @@ class TableRoot(el.Table, RadixThemesComponent):
     tag = "Table.Root"
 
     # The size of the table: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Optional[Var[Literal["1", "2", "3"]]] = None
 
     # The variant of the table
-    variant: Var[Literal["surface", "ghost"]]
+    variant: Optional[Var[Literal["surface", "ghost"]]] = None
 
 
 class TableHeader(el.Thead, RadixThemesComponent):
@@ -38,7 +38,7 @@ class TableRow(el.Tr, RadixThemesComponent):
     tag = "Table.Row"
 
     # The alignment of the row
-    align: Var[Literal["start", "center", "end", "baseline"]]
+    align: Optional[Var[Literal["start", "center", "end", "baseline"]]] = None
 
     _invalid_children: List[str] = ["TableBody", "TableHeader", "TableRow"]
 
@@ -49,7 +49,7 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
     tag = "Table.ColumnHeaderCell"
 
     # The justification of the column
-    justify: Var[Literal["start", "center", "end"]]
+    justify: Optional[Var[Literal["start", "center", "end"]]] = None
 
     _invalid_children: List[str] = [
         "TableBody",
@@ -82,7 +82,7 @@ class TableCell(el.Td, RadixThemesComponent):
     tag = "Table.Cell"
 
     # The justification of the column
-    justify: Var[Literal["start", "center", "end"]]
+    justify: Optional[Var[Literal["start", "center", "end"]]] = None
 
     _invalid_children: List[str] = [
         "TableBody",
@@ -99,7 +99,7 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
     tag = "Table.RowHeaderCell"
 
     # The justification of the column
-    justify: Var[Literal["start", "center", "end"]]
+    justify: Optional[Var[Literal["start", "center", "end"]]] = None
 
     _invalid_children: List[str] = [
         "TableBody",

@@ -1,5 +1,4 @@
 """rx.match."""
-
 import textwrap
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -17,7 +16,7 @@ class Match(MemoizationLeaf):
     """Match cases based on a condition."""
 
     # The condition to determine which case to match.
-    cond: Var[Any]
+    cond: Optional[Var[Any]] = None
 
     # The list of match cases to be matched.
     match_cases: List[Any] = []

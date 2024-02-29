@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Optional, Union
 
 from reflex.components.el.element import Element
 from reflex.vars import Var as Var

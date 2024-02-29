@@ -1,6 +1,7 @@
 """React-Player component."""
-
 from __future__ import annotations
+
+from typing import Optional
 
 from reflex.components.component import NoSSRComponent
 from reflex.vars import Var
@@ -18,28 +19,28 @@ class ReactPlayer(NoSSRComponent):
     is_default = True
 
     # The url of a video or song to play
-    url: Var[str]
+    url: Optional[Var[str]] = None
 
     # Set to true or false to pause or play the media
-    playing: Var[bool]
+    playing: Optional[Var[bool]] = None
 
     # Set to true or false to loop the media
-    loop: Var[bool]
+    loop: Optional[Var[bool]] = None
 
     # Set to true or false to display native player controls.
     controls: Var[bool] = True  # type: ignore
 
     # Set to true to show just the video thumbnail, which loads the full player on click
-    light: Var[bool]
+    light: Optional[Var[bool]] = None
 
     # Set the volume of the player, between 0 and 1
-    volume: Var[float]
+    volume: Optional[Var[float]] = None
 
     # Mutes the player
-    muted: Var[bool]
+    muted: Optional[Var[bool]] = None
 
     # Set the width of the player: ex:640px
-    width: Var[str]
+    width: Optional[Var[str]] = None
 
     # Set the height of the player: ex:640px
-    height: Var[str]
+    height: Optional[Var[str]] = None

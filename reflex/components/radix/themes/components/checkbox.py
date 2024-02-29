@@ -1,6 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Optional
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.layout.flex import Flex
@@ -24,37 +23,37 @@ class Checkbox(RadixThemesComponent):
     tag = "Checkbox"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Optional[Var[bool]] = None
 
     # Checkbox size "1" - "3"
-    size: Var[LiteralCheckboxSize]
+    size: Optional[Var[LiteralCheckboxSize]] = None
 
     # Variant of checkbox: "classic" | "surface" | "soft"
-    variant: Var[LiteralCheckboxVariant]
+    variant: Optional[Var[LiteralCheckboxVariant]] = None
 
     # Override theme color for checkbox
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Whether to render the checkbox with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Optional[Var[bool]] = None
 
     # Whether the checkbox is checked by default
-    default_checked: Var[bool]
+    default_checked: Optional[Var[bool]] = None
 
     # Whether the checkbox is checked
-    checked: Var[bool]
+    checked: Optional[Var[bool]] = None
 
     # Whether the checkbox is disabled
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     # Whether the checkbox is required
-    required: Var[bool]
+    required: Optional[Var[bool]] = None
 
     # The name of the checkbox control when submitting the form.
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     # The value of the checkbox control when submitting the form.
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}
@@ -77,43 +76,43 @@ class HighLevelCheckbox(RadixThemesComponent):
     tag = "Checkbox"
 
     # The text label for the checkbox.
-    text: Var[str]
+    text: Optional[Var[str]] = None
 
     # The gap between the checkbox and the label.
-    spacing: Var[LiteralSpacing]
+    spacing: Optional[Var[LiteralSpacing]] = None
 
     # The size of the checkbox "1" - "3".
-    size: Var[LiteralCheckboxSize]
+    size: Optional[Var[LiteralCheckboxSize]] = None
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Optional[Var[bool]] = None
 
     # Variant of checkbox: "classic" | "surface" | "soft"
-    variant: Var[LiteralCheckboxVariant]
+    variant: Optional[Var[LiteralCheckboxVariant]] = None
 
     # Override theme color for checkbox
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Whether to render the checkbox with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Optional[Var[bool]] = None
 
     # Whether the checkbox is checked by default
-    default_checked: Var[bool]
+    default_checked: Optional[Var[bool]] = None
 
     # Whether the checkbox is checked
-    checked: Var[bool]
+    checked: Optional[Var[bool]] = None
 
     # Whether the checkbox is disabled
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     # Whether the checkbox is required
-    required: Var[bool]
+    required: Optional[Var[bool]] = None
 
     # The name of the checkbox control when submitting the form.
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     # The value of the checkbox control when submitting the form.
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}

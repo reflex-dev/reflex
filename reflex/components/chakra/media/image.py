@@ -14,40 +14,40 @@ class Image(ChakraComponent):
     tag = "Image"
     alias = "ChakraImage"
     # How to align the image within its bounds. It maps to css `object-position` property.
-    align: Var[str]
+    align: Optional[Var[str]] = None
 
     # Fallback Reflex component to show if image is loading or image fails.
     fallback: Optional[Component] = None
 
     # Fallback image src to show if image is loading or image fails.
-    fallback_src: Var[str]
+    fallback_src: Optional[Var[str]] = None
 
     # How the image to fit within its bounds. It maps to css `object-fit` property.
-    fit: Var[str]
+    fit: Optional[Var[str]] = None
 
     # The native HTML height attribute to the passed to the img.
-    html_height: Var[str]
+    html_height: Optional[Var[str]] = None
 
     # The native HTML width attribute to the passed to the img.
-    html_width: Var[str]
+    html_width: Optional[Var[str]] = None
 
     # If true, opt out of the fallbackSrc logic and use as img.
-    ignore_fallback: Var[bool]
+    ignore_fallback: Optional[Var[bool]] = None
 
     # "eager" | "lazy"
-    loading: Var[LiteralImageLoading]
+    loading: Optional[Var[LiteralImageLoading]] = None
 
     # The path/url to the image or PIL image object.
-    src: Var[Any]
+    src: Optional[Var[Any]] = None
 
     # The alt text of the image.
-    alt: Var[str]
+    alt: Optional[Var[str]] = None
 
     # Provide multiple sources for an image, allowing the browser
     # to select the most appropriate source based on factors like
     # screen resolution and device capabilities.
     # Learn more _[here](https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images)_
-    src_set: Var[str]
+    src_set: Optional[Var[str]] = None
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.

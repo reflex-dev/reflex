@@ -44,17 +44,17 @@ class Tag(ChakraComponent):
     # options: "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" |
     #  "cyan" | "purple" | "pink"
     # default: "gray"
-    color_scheme: Var[LiteralTagColorScheme]
+    color_scheme: Optional[Var[LiteralTagColorScheme]] = None
 
     # The size of the tag
     # options: "sm" | "md" | "lg"
     # default: "md"
-    size: Var[LiteralTagSize]
+    size: Optional[Var[LiteralTagSize]] = None
 
     # The variant of the tag
     # options: "solid" | "subtle" | "outline"
     # default: "solid"
-    variant: Var[LiteralVariant]
+    variant: Optional[Var[LiteralVariant]] = None
 
     @classmethod
     def create(

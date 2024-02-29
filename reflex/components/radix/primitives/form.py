@@ -1,9 +1,8 @@
 """Radix form component."""
-
 from __future__ import annotations
 
 from hashlib import md5
-from typing import Any, Dict, Iterator, Literal
+from typing import Any, Dict, Iterator, Literal, Optional
 
 from jinja2 import Environment
 
@@ -54,7 +53,7 @@ class FormRoot(FormComponent):
     reset_on_submit: Var[bool] = False  # type: ignore
 
     # The name used to make this form's submit handler function unique.
-    handle_submit_unique_name: Var[str]
+    handle_submit_unique_name: Optional[Var[str]] = None
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Event triggers for radix form root.
@@ -173,10 +172,10 @@ class FormField(FormComponent):
     alias = "RadixFormField"
 
     # The name of the form field, that is passed down to the control and used to match with validation messages.
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     # Flag to mark the form field as invalid, for server side validation.
-    server_invalid: Var[bool]
+    server_invalid: Optional[Var[bool]] = None
 
     def _apply_theme(self, theme: Component):
         return {
@@ -258,13 +257,13 @@ class FormMessage(FormComponent):
     alias = "RadixFormMessage"
 
     # Used to target a specific field by name when rendering outside of a Field part.
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     # Used to indicate on which condition the message should be visible.
-    match: Var[LiteralMatcher]
+    match: Optional[Var[LiteralMatcher]] = None
 
     # Forces the message to be shown. This is useful when using server-side validation.
-    force_match: Var[bool]
+    force_match: Optional[Var[bool]] = None
 
     def _apply_theme(self, theme: Component):
         return {

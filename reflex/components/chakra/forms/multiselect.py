@@ -51,19 +51,19 @@ class Select(Component):
     alias = "MultiSelect"
 
     # Focus the control when it is mounted
-    auto_focus: Var[bool]
+    auto_focus: Optional[Var[bool]] = None
 
     # Remove the currently focused option when the user presses backspace
     #  when Select isClearable or isMulti
-    backspace_removes_value: Var[bool]
+    backspace_removes_value: Optional[Var[bool]] = None
 
     # Remove focus from the input when the user selects an option
     # (handy for dismissing the keyboard on touch devices)
-    blur_input_on_select: Var[bool]
+    blur_input_on_select: Optional[Var[bool]] = None
 
     # When the user reaches the top/bottom of the menu,
     # prevent scroll on the scroll-parent
-    capture_menu_scroll: Var[bool]
+    capture_menu_scroll: Optional[Var[bool]] = None
 
     # [chakra]
     # To use the chakraStyles prop, first,
@@ -101,13 +101,13 @@ class Select(Component):
     # - placeholder - Box
     # - singleValue - Box
     # - valueContainer - Box
-    chakra_styles: Var[str]
+    chakra_styles: Optional[Var[str]] = None
 
     # Close the select menu when the user selects an option
-    close_menu_on_select: Var[bool]
+    close_menu_on_select: Optional[Var[bool]] = None
 
     # If true, close the select menu when the user scrolls the document/body.
-    close_menu_on_scroll: Var[bool]
+    close_menu_on_scroll: Optional[Var[bool]] = None
 
     # [chakra]
     # The visual color appearance of the component
@@ -116,117 +116,117 @@ class Select(Component):
     #  "purple" | "pink" | "linkedin" | "facebook" | "messenger" |
     #  "whatsapp" | "twitter" | "telegram"
     # default: "gray"
-    color_scheme: Var[str]
+    color_scheme: Optional[Var[str]] = None
 
     # This complex object includes all the compositional components
     # that are used in react-select. If you wish to overwrite a component,
     # pass in an object with the appropriate namespace.
     # If you only wish to restyle a component,
     # we recommend using the styles prop instead.
-    components: Var[Dict[str, Component]]
+    components: Optional[Var[Dict[str, Component]]] = None
 
     # Whether the value of the select, e.g. SingleValue,
     # should be displayed in the control.
-    control_should_render_value: Var[bool]
+    control_should_render_value: Optional[Var[bool]] = None
 
     # Delimiter used to join multiple values into a single HTML Input value
-    delimiter: Var[str]
+    delimiter: Optional[Var[str]] = None
 
     # [chakra]
     # Colors the component border with the given chakra color string on error state
     # default: "red.500"
-    error_border_color: Var[str]
+    error_border_color: Optional[Var[str]] = None
 
     # Clear all values when the user presses escape AND the menu is closed
-    escape_clears_value: Var[bool]
+    escape_clears_value: Optional[Var[bool]] = None
 
     # [chakra]
     # Colors the component border with the given chakra color string on focus
     # default: "blue.500"
-    focus_border_color: Var[str]
+    focus_border_color: Optional[Var[str]] = None
 
     # Sets the form attribute on the input
-    form: Var[str]
+    form: Optional[Var[str]] = None
 
     # Hide the selected option from the menu
-    hide_selected_options: Var[bool]
+    hide_selected_options: Optional[Var[bool]] = None
 
     # The id to set on the SelectContainer component.
-    # id: Var[str]
+    # id: Optional[Var[str]] = None
 
     # The value of the search input
-    input_value: Var[str]
+    input_value: Optional[Var[str]] = None
 
     # The id of the search input
-    input_id: Var[str]
+    input_id: Optional[Var[str]] = None
 
     # Is the select value clearable
-    is_clearable: Var[bool]
+    is_clearable: Optional[Var[bool]] = None
 
     # Is the select disabled
-    is_disabled: Var[bool]
+    is_disabled: Optional[Var[bool]] = None
 
     # [chakra]
     # Style component in the chakra invalid style
     # default: False
-    is_invalid: Var[bool]
+    is_invalid: Optional[Var[bool]] = None
 
     # Support multiple selected options
-    is_multi: Var[bool]
+    is_multi: Optional[Var[bool]] = None
 
     # [chakra]
     # Style component as disabled (chakra style)
     # default: False
-    is_read_only: Var[bool]
+    is_read_only: Optional[Var[bool]] = None
 
     # Is the select direction right-to-left
-    is_rtl: Var[bool]
+    is_rtl: Optional[Var[bool]] = None
 
     # Whether to enable search functionality
-    is_searchable: Var[bool]
+    is_searchable: Optional[Var[bool]] = None
 
     # Minimum height of the menu before flipping
-    min_menu_height: Var[int]
+    min_menu_height: Optional[Var[int]] = None
 
     # Maximum height of the menu before scrolling
-    max_menu_height: Var[int]
+    max_menu_height: Optional[Var[int]] = None
 
     # Default placement of the menu in relation to the control.
     # 'auto' will flip when there isn't enough space below the control.
     # options: "bottom" | "auto" | "top"
-    menu_placement: Var[str]
+    menu_placement: Optional[Var[str]] = None
 
     # The CSS position value of the menu,
     #  when "fixed" extra layout management is required
     # options: "absolute" | "fixed"
-    menu_position: Var[str]
+    menu_position: Optional[Var[str]] = None
 
     # Whether to block scroll events when the menu is open
-    menu_should_block_scroll: Var[bool]
+    menu_should_block_scroll: Optional[Var[bool]] = None
 
     # Whether the menu should be scrolled into view when it opens
-    menu_should_scroll_into_view: Var[bool]
+    menu_should_scroll_into_view: Optional[Var[bool]] = None
 
     # Name of the HTML Input (optional - without this, no input will be rendered)
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     # Allows control of whether the menu is opened when the Select is focused
-    open_menu_on_focus: Var[bool]
+    open_menu_on_focus: Optional[Var[bool]] = None
 
     # Allows control of whether the menu is opened when the Select is clicked
-    open_menu_on_click: Var[bool]
+    open_menu_on_click: Optional[Var[bool]] = None
 
     # Array of options that populate the select menu
-    options: Var[List[Dict]]
+    options: Optional[Var[List[Dict]]] = None
 
     # Number of options to jump in menu when page{up|down} keys are used
-    page_size: Var[int]
+    page_size: Optional[Var[int]] = None
 
     # Placeholder for the select value
-    placeholder: Var[Optional[str]]
+    placeholder: Optional[Var[Optional[str]]] = None
 
     # Marks the value-holding input as required for form validation
-    required: Var[bool]
+    required: Optional[Var[bool]] = None
 
     # [chakra]
     # If you choose to stick with the default selectedOptionStyle="color",
@@ -239,7 +239,7 @@ class Select(Component):
     # If you would like to use a specific color for the background that's not a part of your theme,
     # use the chakraStyles prop to customize it.
     # default: "blue"
-    selected_option_color_scheme: Var[str]
+    selected_option_color_scheme: Optional[Var[str]] = None
 
     # [chakra]
     # The default option "color" will style a selected option
@@ -253,28 +253,28 @@ class Select(Component):
     # if hide_selected_options=False is also passed.
     # options: "color" | "check"
     # default: "color"
-    selected_option_style: Var[str]
+    selected_option_style: Optional[Var[str]] = None
 
     # [chakra]
     # The size of the component.
     # options: "sm" | "md" | "lg"
     # default: "md"
-    size: Var[str]
+    size: Optional[Var[str]] = None
 
     # Sets the tabIndex attribute on the input
-    tab_index: Var[int]
+    tab_index: Optional[Var[int]] = None
 
     # Select the currently focused option when the user presses tab
-    tab_selects_value: Var[bool]
+    tab_selects_value: Optional[Var[bool]] = None
 
     # [chakra]
     # Variant of multi-select tags
     # options: "subtle" | "solid" | "outline"
     # default: "subtle"
-    tag_variant: Var[str]
+    tag_variant: Optional[Var[str]] = None
 
     # Remove all non-essential styles
-    unstyled: Var[bool]
+    unstyled: Optional[Var[bool]] = None
 
     # [chakra]
     # If this prop is passed,
@@ -287,7 +287,7 @@ class Select(Component):
     # However, as this button only appears when isMulti is passed,
     # using this style could make more sense for a single select.
     # default: False
-    use_basic_style: Var[bool]
+    use_basic_style: Optional[Var[bool]] = None
 
     # [chakra]
     # The variant of the Select. If no variant is passed,
@@ -295,7 +295,7 @@ class Select(Component):
     # If your component theme for Input is not modified, it will be outline.
     # options: "outline" | "filled" | "flushed" | "unstyled"
     # default: "outline"
-    variant: Var[str]
+    variant: Optional[Var[str]] = None
 
     # How the options should be displayed in the menu.
     menu_position: Var[str] = "fixed"  # type: ignore

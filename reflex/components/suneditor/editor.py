@@ -116,34 +116,34 @@ class Editor(NoSSRComponent):
     # This is used to set the HTML form name of the editor.
     # This means on HTML form submission,
     # it will be submitted together with contents of the editor by the name provided.
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     # Sets the default value of the editor.
     # This is useful if you don't want the on_change method to be called on render.
     # If you want the on_change method to be called on render please use the set_contents prop
-    default_value: Var[str]
+    default_value: Optional[Var[str]] = None
 
     # Sets the width of the editor.
     # px and percentage values are accepted, eg width="100%" or width="500px"
     # default: 100%
-    width: Var[str]
+    width: Optional[Var[str]] = None
 
     # Sets the height of the editor.
     # px and percentage values are accepted, eg height="100%" or height="100px"
-    height: Var[str]
+    height: Optional[Var[str]] = None
 
     # Sets the placeholder of the editor.
-    placeholder: Var[str]
+    placeholder: Optional[Var[str]] = None
 
     # Should the editor receive focus when initialized?
-    auto_focus: Var[bool]
+    auto_focus: Optional[Var[bool]] = None
 
     # Pass an EditorOptions instance to modify the behaviour of Editor even more.
-    set_options: Var[Dict]
+    set_options: Optional[Var[Dict]] = None
 
     # Whether all SunEditor plugins should be loaded.
     # default: True
-    set_all_plugins: Var[bool]
+    set_all_plugins: Optional[Var[bool]] = None
 
     # Set the content of the editor.
     # Note: To set the initial contents of the editor
@@ -152,29 +152,29 @@ class Editor(NoSSRComponent):
     # set_contents is used to set the contents of the editor programmatically.
     # You must be aware that, when the set_contents's prop changes,
     # the on_change event is triggered.
-    set_contents: Var[str]
+    set_contents: Optional[Var[str]] = None
 
     # Append editor content
-    append_contents: Var[str]
+    append_contents: Optional[Var[str]] = None
 
     # Sets the default style of the editor's edit area
-    set_default_style: Var[str]
+    set_default_style: Optional[Var[str]] = None
 
     # Disable the editor
     # default: False
-    disable: Var[bool]
+    disable: Optional[Var[bool]] = None
 
     # Hide the editor
     # default: False
-    hide: Var[bool]
+    hide: Optional[Var[bool]] = None
 
     # Hide the editor toolbar
     # default: False
-    hide_toolbar: Var[bool]
+    hide_toolbar: Optional[Var[bool]] = None
 
     # Disable the editor toolbar
     # default: False
-    disable_toolbar: Var[bool]
+    disable_toolbar: Optional[Var[bool]] = None
 
     def _get_imports(self):
         imports = super()._get_imports()

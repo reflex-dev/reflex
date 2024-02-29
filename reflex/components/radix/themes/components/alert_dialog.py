@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Optional
 
 from reflex import el
 from reflex.components.component import ComponentNamespace
@@ -17,7 +17,7 @@ class AlertDialogRoot(RadixThemesComponent):
     tag = "AlertDialog.Root"
 
     # The controlled open state of the dialog.
-    open: Var[bool]
+    open: Optional[Var[bool]] = None
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -43,10 +43,10 @@ class AlertDialogContent(el.Div, RadixThemesComponent):
     tag = "AlertDialog.Content"
 
     # The size of the content.
-    size: Var[LiteralContentSize]
+    size: Optional[Var[LiteralContentSize]] = None
 
     # Whether to force mount the content on open.
-    force_mount: Var[bool]
+    force_mount: Optional[Var[bool]] = None
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.

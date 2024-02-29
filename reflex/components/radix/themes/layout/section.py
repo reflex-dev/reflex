@@ -1,7 +1,7 @@
 """Declarative layout and common spacing props."""
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Optional
 
 from reflex import el
 from reflex.vars import Var
@@ -17,4 +17,4 @@ class Section(el.Section, RadixThemesComponent):
     tag = "Section"
 
     # The size of the section: "1" - "3" (default "3")
-    size: Var[LiteralSectionSize]
+    size: Optional[Var[LiteralSectionSize]] = None

@@ -1,7 +1,7 @@
 """Popover components."""
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from reflex.components.chakra import (
     ChakraComponent,
@@ -19,67 +19,67 @@ class Popover(ChakraComponent):
     tag = "Popover"
 
     # The padding required to prevent the arrow from reaching the very edge of the popper.
-    arrow_padding: Var[int]
+    arrow_padding: Optional[Var[int]] = None
 
     # The `box-shadow` of the popover arrow
-    arrow_shadow_color: Var[str]
+    arrow_shadow_color: Optional[Var[str]] = None
 
     # The size of the popover arrow
-    arrow_size: Var[int]
+    arrow_size: Optional[Var[int]] = None
 
     # If true, focus will be transferred to the first interactive element when the popover opens
-    auto_focus: Var[bool]
+    auto_focus: Optional[Var[bool]] = None
 
     # The boundary area for the popper. Used within the preventOverflow modifier
-    boundary: Var[str]
+    boundary: Optional[Var[str]] = None
 
     # If true, the popover will close when you blur out it by clicking outside or tabbing out
-    close_on_blur: Var[bool]
+    close_on_blur: Optional[Var[bool]] = None
 
     # If true, the popover will close when you hit the Esc key
-    close_on_esc: Var[bool]
+    close_on_esc: Optional[Var[bool]] = None
 
     # If true, the popover will be initially opened.
-    default_is_open: Var[bool]
+    default_is_open: Optional[Var[bool]] = None
 
     # Theme direction ltr or rtl. Popper's placement will be set accordingly
-    direction: Var[LiteralChakraDirection]
+    direction: Optional[Var[LiteralChakraDirection]] = None
 
     # If true, the popper will change its placement and flip when it's about to overflow its boundary area.
-    flip: Var[bool]
+    flip: Optional[Var[bool]] = None
 
     # The distance or margin between the reference and popper. It is used internally to create an offset modifier. NB: If you define offset prop, it'll override the gutter.
-    gutter: Var[int]
+    gutter: Optional[Var[int]] = None
 
     # The html id attribute of the popover. If not provided, we generate a unique id. This id is also used to auto-generate the `aria-labelledby` and `aria-describedby` attributes that points to the PopoverHeader and PopoverBody
-    id_: Var[str]
+    id_: Optional[Var[str]] = None
 
     # Performance 🚀: If true, the PopoverContent rendering will be deferred until the popover is open.
-    is_lazy: Var[bool]
+    is_lazy: Optional[Var[bool]] = None
 
     # Performance 🚀: The lazy behavior of popover's content when not visible. Only works when `isLazy={true}` - "unmount": The popover's content is always unmounted when not open. - "keepMounted": The popover's content initially unmounted, but stays mounted when popover is open.
-    lazy_behavior: Var[str]
+    lazy_behavior: Optional[Var[str]] = None
 
     # If true, the popover will be opened in controlled mode.
-    is_open: Var[bool]
+    is_open: Optional[Var[bool]] = None
 
     # If true, the popper will match the width of the reference at all times. It's useful for autocomplete, `date-picker` and select patterns.
-    match_width: Var[bool]
+    match_width: Optional[Var[bool]] = None
 
     # The placement of the popover. It's used internally by Popper.js.
-    placement: Var[str]
+    placement: Optional[Var[str]] = None
 
     # If true, will prevent the popper from being cut off and ensure it's visible within the boundary area.
-    prevent_overflow: Var[bool]
+    prevent_overflow: Optional[Var[bool]] = None
 
     # If true, focus will be returned to the element that triggers the popover when it closes
-    return_focus_on_close: Var[bool]
+    return_focus_on_close: Optional[Var[bool]] = None
 
     # The CSS positioning strategy to use. ("fixed" | "absolute")
-    strategy: Var[LiteralMenuStrategy]
+    strategy: Optional[Var[LiteralMenuStrategy]] = None
 
     # The interaction that triggers the popover. hover - means the popover will open when you hover with mouse or focus with keyboard on the popover trigger click - means the popover will open on click or press Enter to Space on keyboard ("click" | "hover")
-    trigger: Var[LiteralPopOverTrigger]
+    trigger: Optional[Var[LiteralPopOverTrigger]] = None
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.

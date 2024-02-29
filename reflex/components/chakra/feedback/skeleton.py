@@ -1,4 +1,5 @@
 """Container to stack elements with spacing."""
+from typing import Optional
 
 from reflex.components.chakra import ChakraComponent
 from reflex.vars import Var
@@ -10,19 +11,19 @@ class Skeleton(ChakraComponent):
     tag = "Skeleton"
 
     # The color at the animation end
-    end_color: Var[str]
+    end_color: Optional[Var[str]] = None
 
     # The fadeIn duration in seconds
-    fade_duration: Var[float]
+    fade_duration: Optional[Var[float]] = None
 
     # If true, it'll render its children with a nice fade transition
-    is_loaded: Var[bool]
+    is_loaded: Optional[Var[bool]] = None
 
     # The animation speed in seconds
-    speed: Var[float]
+    speed: Optional[Var[float]] = None
 
     # The color at the animation start
-    start_color: Var[str]
+    start_color: Optional[Var[str]] = None
 
 
 class SkeletonCircle(ChakraComponent):
@@ -31,19 +32,19 @@ class SkeletonCircle(ChakraComponent):
     tag = "SkeletonCircle"
 
     # The color at the animation end
-    end_color: Var[str]
+    end_color: Optional[Var[str]] = None
 
     # The fadeIn duration in seconds
-    fade_duration: Var[float]
+    fade_duration: Optional[Var[float]] = None
 
     # If true, it'll render its children with a nice fade transition
-    is_loaded: Var[bool]
+    is_loaded: Optional[Var[bool]] = None
 
     # The animation speed in seconds
-    speed: Var[float]
+    speed: Optional[Var[float]] = None
 
     # The color at the animation start
-    start_color: Var[str]
+    start_color: Optional[Var[str]] = None
 
 
 class SkeletonText(ChakraComponent):
@@ -52,19 +53,19 @@ class SkeletonText(ChakraComponent):
     tag = "SkeletonText"
 
     # The color at the animation end
-    end_color: Var[str]
+    end_color: Optional[Var[str]] = None
 
     # The fadeIn duration in seconds
-    fade_duration: Var[float]
+    fade_duration: Optional[Var[float]] = None
 
     # If true, it'll render its children with a nice fade transition
-    is_loaded: Var[bool]
+    is_loaded: Optional[Var[bool]] = None
 
     # The animation speed in seconds
-    speed: Var[float]
+    speed: Optional[Var[float]] = None
 
     # The color at the animation start
-    start_color: Var[str]
+    start_color: Optional[Var[str]] = None
 
     # Number is lines of text.
-    no_of_lines: Var[int]
+    no_of_lines: Optional[Var[int]] = None

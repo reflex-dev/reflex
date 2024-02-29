@@ -32,31 +32,31 @@ class DrawerRoot(DrawerComponent):
     alias = "Vaul" + tag
 
     # Whether the drawer is open or not.
-    open: Var[bool]
+    open: Optional[Var[bool]] = None
 
     # Enable background scaling, it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
-    should_scale_background: Var[bool]
+    should_scale_background: Optional[Var[bool]] = None
 
     # Number between 0 and 1 that determines when the drawer should be closed.
-    close_threshold: Var[float]
+    close_threshold: Optional[Var[float]] = None
 
     # Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
     snap_points: Optional[List[Union[str, float]]]
 
     # Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point.
-    fade_from_index: Var[int]
+    fade_from_index: Optional[Var[int]] = None
 
     # Duration for which the drawer is not draggable after scrolling content inside of the drawer. Defaults to 500ms
-    scroll_lock_timeout: Var[int]
+    scroll_lock_timeout: Optional[Var[int]] = None
 
     # When `False`, it allows to interact with elements outside of the drawer without closing it. Defaults to `True`.
-    modal: Var[bool]
+    modal: Optional[Var[bool]] = None
 
     # Direction of the drawer. Defaults to `"bottom"`
-    direction: Var[LiteralDirectionType]
+    direction: Optional[Var[LiteralDirectionType]] = None
 
     # When `True`, it prevents scroll restoration. Defaults to `True`.
-    preventScrollRestoration: Var[bool]
+    preventScrollRestoration: Optional[Var[bool]] = None
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.

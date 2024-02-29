@@ -18,7 +18,7 @@ class Foreach(Component):
     _memoization_mode = MemoizationMode(recursive=False)
 
     # The iterable to create components from.
-    iterable: Var[Iterable]
+    iterable: Optional[Var[Iterable]] = None
 
     # A function from the render args to the component.
     render_fn: Callable = Fragment.create

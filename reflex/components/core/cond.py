@@ -21,7 +21,7 @@ class Cond(MemoizationLeaf):
     """Render one of two components based on a condition."""
 
     # The cond to determine which component to render.
-    cond: Var[Any]
+    cond: Optional[Var[Any]] = None
 
     # The component to render if the cond is true.
     comp1: BaseComponent = None  # type: ignore

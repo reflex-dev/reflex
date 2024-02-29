@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from hashlib import md5
-from typing import Any, Dict, Iterator
+from typing import Any, Dict, Iterator, Optional
 
 from jinja2 import Environment
 
@@ -45,7 +45,7 @@ class Form(ChakraComponent):
     reset_on_submit: Var[bool] = False  # type: ignore
 
     # The name used to make this form's submit handler function unique
-    handle_submit_unique_name: Var[str]
+    handle_submit_unique_name: Optional[Var[str]] = None
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -154,19 +154,19 @@ class FormControl(ChakraComponent):
     tag = "FormControl"
 
     # If true, the form control will be disabled.
-    is_disabled: Var[bool]
+    is_disabled: Optional[Var[bool]] = None
 
     # If true, the form control will be invalid.
-    is_invalid: Var[bool]
+    is_invalid: Optional[Var[bool]] = None
 
     # If true, the form control will be readonly
-    is_read_only: Var[bool]
+    is_read_only: Optional[Var[bool]] = None
 
     # If true, the form control will be required.
-    is_required: Var[bool]
+    is_required: Optional[Var[bool]] = None
 
     # The label text used to inform users as to what information is requested for a text field.
-    label: Var[str]
+    label: Optional[Var[str]] = None
 
     @classmethod
     def create(
@@ -225,7 +225,7 @@ class FormLabel(ChakraComponent):
     tag = "FormLabel"
 
     # Link
-    html_for: Var[str]
+    html_for: Optional[Var[str]] = None
 
 
 class FormErrorMessage(ChakraComponent):

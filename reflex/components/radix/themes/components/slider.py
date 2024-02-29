@@ -17,46 +17,46 @@ class Slider(RadixThemesComponent):
     tag = "Slider"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Optional[Var[bool]] = None
 
     # Button size "1" - "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Optional[Var[Literal["1", "2", "3"]]] = None
 
     # Variant of button
-    variant: Var[Literal["classic", "surface", "soft"]]
+    variant: Optional[Var[Literal["classic", "surface", "soft"]]] = None
 
     # Override theme color for button
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Whether to render the button with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Optional[Var[bool]] = None
 
     # Override theme radius for button: "none" | "small" | "full"
-    radius: Var[Literal["none", "small", "full"]]
+    radius: Optional[Var[Literal["none", "small", "full"]]] = None
 
     # The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
-    default_value: Var[Union[List[Union[float, int]], float, int]]
+    default_value: Optional[Var[Union[List[Union[float, int]], float, int]]] = None
 
     # The controlled value of the slider. Must be used in conjunction with onValueChange.
-    value: Var[List[Union[float, int]]]
+    value: Optional[Var[List[Union[float, int]]]] = None
 
     # The name of the slider. Submitted with its owning form as part of a name/value pair.
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     # The minimum value of the slider.
-    min: Var[Union[float, int]]
+    min: Optional[Var[Union[float, int]]] = None
 
     # The maximum value of the slider.
-    max: Var[Union[float, int]]
+    max: Optional[Var[Union[float, int]]] = None
 
     # The step value of the slider.
-    step: Var[Union[float, int]]
+    step: Optional[Var[Union[float, int]]] = None
 
     # Whether the slider is disabled
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     # The orientation of the slider.
-    orientation: Var[Literal["horizontal", "vertical"]]
+    orientation: Optional[Var[Literal["horizontal", "vertical"]]] = None
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}

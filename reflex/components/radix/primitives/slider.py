@@ -1,8 +1,7 @@
 """Radix slider components."""
-
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
@@ -25,27 +24,27 @@ class SliderRoot(SliderComponent):
     tag = "Root"
     alias = "RadixSliderRoot"
 
-    default_value: Var[List[int]]
+    default_value: Optional[Var[List[int]]] = None
 
-    value: Var[List[int]]
+    value: Optional[Var[List[int]]] = None
 
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
-    orientation: Var[LiteralSliderOrientation]
+    orientation: Optional[Var[LiteralSliderOrientation]] = None
 
-    dir: Var[LiteralSliderDir]
+    dir: Optional[Var[LiteralSliderDir]] = None
 
-    inverted: Var[bool]
+    inverted: Optional[Var[bool]] = None
 
-    min: Var[int]
+    min: Optional[Var[int]] = None
 
-    max: Var[int]
+    max: Optional[Var[int]] = None
 
-    step: Var[int]
+    step: Optional[Var[int]] = None
 
-    min_steps_between_thumbs: Var[int]
+    min_steps_between_thumbs: Optional[Var[int]] = None
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Event triggers for radix slider primitive.

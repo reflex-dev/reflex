@@ -1,5 +1,4 @@
 """Radix accordion components."""
-
 from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Optional, Union
@@ -311,25 +310,25 @@ class AccordionRoot(AccordionComponent):
     alias = "RadixAccordionRoot"
 
     # The type of accordion (single or multiple).
-    type: Var[LiteralAccordionType]
+    type: Optional[Var[LiteralAccordionType]] = None
 
     # The value of the item to expand.
-    value: Var[Optional[Union[str, List[str]]]]
+    value: Optional[Var[Optional[Union[str, List[str]]]]] = None
 
     # The default value of the item to expand.
-    default_value: Var[Optional[Union[str, List[str]]]]
+    default_value: Optional[Var[Optional[Union[str, List[str]]]]] = None
 
     # Whether or not the accordion is collapsible.
-    collapsible: Var[bool]
+    collapsible: Optional[Var[bool]] = None
 
     # Whether or not the accordion is disabled.
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     # The reading direction of the accordion when applicable.
-    dir: Var[LiteralAccordionDir]
+    dir: Optional[Var[LiteralAccordionDir]] = None
 
     # The orientation of the accordion.
-    orientation: Var[LiteralAccordionOrientation]
+    orientation: Optional[Var[LiteralAccordionOrientation]] = None
 
     # The variant of the accordion.
     variant: Var[LiteralAccordionRootVariant] = "classic"  # type: ignore
@@ -475,10 +474,10 @@ class AccordionItem(AccordionComponent):
     alias = "RadixAccordionItem"
 
     # A unique identifier for the item.
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     # When true, prevents the user from interacting with the item.
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     _valid_children: List[str] = [
         "AccordionHeader",

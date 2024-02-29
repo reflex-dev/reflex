@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, List, Type
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type
 
 from reflex.components.tags.tag import Tag
 from reflex.vars import BaseVar, Var
@@ -15,7 +15,7 @@ class IterTag(Tag):
     """An iterator tag."""
 
     # The var to iterate over.
-    iterable: Var[List]
+    iterable: Optional[Var[List]] = None
 
     # The component render function for each item in the iterable.
     render_fn: Callable

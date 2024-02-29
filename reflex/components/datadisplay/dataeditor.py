@@ -116,94 +116,94 @@ class DataEditor(NoSSRComponent):
     ]
 
     # Number of rows.
-    rows: Var[int]
+    rows: Optional[Var[int]] = None
 
     # Headers of the columns for the data grid.
-    columns: Var[List[Dict[str, Any]]]
+    columns: Optional[Var[List[Dict[str, Any]]]] = None
 
     # The data.
-    data: Var[List[List[Any]]]
+    data: Optional[Var[List[List[Any]]]] = None
 
     # The name of the callback used to find the data to display.
-    get_cell_content: Var[str]
+    get_cell_content: Optional[Var[str]] = None
 
     # Allow selection for copying.
-    get_cell_for_selection: Var[bool]
+    get_cell_for_selection: Optional[Var[bool]] = None
 
     # Allow paste.
-    on_paste: Var[bool]
+    on_paste: Optional[Var[bool]] = None
 
     # Controls the drawing of the focus ring.
-    draw_focus_ring: Var[bool]
+    draw_focus_ring: Optional[Var[bool]] = None
 
     # Enables or disables the overlay shadow when scrolling horizontally.
-    fixed_shadow_x: Var[bool]
+    fixed_shadow_x: Optional[Var[bool]] = None
 
     # Enables or disables the overlay shadow when scrolling vertically.
-    fixed_shadow_y: Var[bool]
+    fixed_shadow_y: Optional[Var[bool]] = None
 
     # The number of columns which should remain in place when scrolling horizontally. Doesn't include rowMarkers.
-    freeze_columns: Var[int]
+    freeze_columns: Optional[Var[int]] = None
 
     # Controls the header of the group header row.
-    group_header_height: Var[int]
+    group_header_height: Optional[Var[int]] = None
 
     # Controls the height of the header row.
-    header_height: Var[int]
+    header_height: Optional[Var[int]] = None
 
     # Additional header icons:
     # header_icons: Var[Any] # (TODO: must be a map of name: svg)
 
     # The maximum width a column can be automatically sized to.
-    max_column_auto_width: Var[int]
+    max_column_auto_width: Optional[Var[int]] = None
 
     # The maximum width a column can be resized to.
-    max_column_width: Var[int]
+    max_column_width: Optional[Var[int]] = None
 
     # The minimum width a column can be resized to.
-    min_column_width: Var[int]
+    min_column_width: Optional[Var[int]] = None
 
     # Determins the height of each row.
-    row_height: Var[int]
+    row_height: Optional[Var[int]] = None
 
     # Kind of row markers.
-    row_markers: Var[LiteralRowMarker]
+    row_markers: Optional[Var[LiteralRowMarker]] = None
 
     # Changes the starting index for row markers.
-    row_marker_start_index: Var[int]
+    row_marker_start_index: Optional[Var[int]] = None
 
     # Sets the width of row markers in pixels, if unset row markers will automatically size.
-    row_marker_width: Var[int]
+    row_marker_width: Optional[Var[int]] = None
 
     # Enable horizontal smooth scrolling.
-    smooth_scroll_x: Var[bool]
+    smooth_scroll_x: Optional[Var[bool]] = None
 
     # Enable vertical smooth scrolling.
-    smooth_scroll_y: Var[bool]
+    smooth_scroll_y: Optional[Var[bool]] = None
 
     # Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
     vertical_border: Var[bool]  # TODO: support a mapping (dict[int, bool])
 
     # Allow columns selections. ("none", "single", "multi")
-    column_select: Var[Literal["none", "single", "multi"]]
+    column_select: Optional[Var[Literal["none", "single", "multi"]]] = None
 
     # Prevent diagonal scrolling.
-    prevent_diagonal_scrolling: Var[bool]
+    prevent_diagonal_scrolling: Optional[Var[bool]] = None
 
     # Allow to scroll past the limit of the actual content on the horizontal axis.
-    overscroll_x: Var[int]
+    overscroll_x: Optional[Var[int]] = None
 
     # Allow to scroll past the limit of the actual content on the vertical axis.
-    overscroll_y: Var[int]
+    overscroll_y: Optional[Var[int]] = None
 
     # Initial scroll offset on the horizontal axis.
-    scroll_offset_x: Var[int]
+    scroll_offset_x: Optional[Var[int]] = None
 
     # Initial scroll offset on the vertical axis.
-    scroll_offset_y: Var[int]
+    scroll_offset_y: Optional[Var[int]] = None
 
     # global theme
-    theme: Var[Union[DataEditorTheme, Dict]]
+    theme: Optional[Var[Union[DataEditorTheme, Dict]]] = None
 
     def _get_imports(self):
         return imports.merge_imports(

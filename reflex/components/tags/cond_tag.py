@@ -1,5 +1,4 @@
 """Tag to conditionally render components."""
-
 from typing import Any, Dict, Optional
 
 from reflex.components.tags.tag import Tag
@@ -10,7 +9,7 @@ class CondTag(Tag):
     """A conditional tag."""
 
     # The condition to determine which component to render.
-    cond: Var[Any]
+    cond: Optional[Var[Any]] = None
 
     # The code to render if the condition is true.
     true_value: Dict

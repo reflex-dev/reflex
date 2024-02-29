@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Optional, Type
 
 import pytest
 
@@ -45,10 +45,10 @@ def component1() -> Type[Component]:
 
     class TestComponent1(Component):
         # A test string prop.
-        text: Var[str]
+        text: Optional[Var[str]] = None
 
         # A test number prop.
-        number: Var[int]
+        number: Optional[Var[int]] = None
 
         def _get_imports(self) -> imports.ImportDict:
             return {"react": [ImportVar(tag="Component")]}
@@ -69,7 +69,7 @@ def component2() -> Type[Component]:
 
     class TestComponent2(Component):
         # A test list prop.
-        arr: Var[List[str]]
+        arr: Optional[Var[List[str]]] = None
 
         def get_event_triggers(self) -> Dict[str, Any]:
             """Test controlled triggers.
@@ -730,10 +730,10 @@ FORMATTED_TEST_VAR_LIST_OF_DICT = Var.create_safe([{"a": "footestbar"}])._replac
 class ComponentNestedVar(Component):
     """A component with nested Var types."""
 
-    dict_of_dict: Var[Dict[str, Dict[str, str]]]
-    list_of_list: Var[List[List[str]]]
-    list_of_list_of_list: Var[List[List[List[str]]]]
-    list_of_dict: Var[List[Dict[str, str]]]
+    dict_of_dict: Optional[Var[Dict[str, Dict[str, str]]]] = None
+    list_of_list: Optional[Var[List[List[str]]]] = None
+    list_of_list_of_list: Optional[Var[List[List[List[str]]]]] = None
+    list_of_dict: Optional[Var[List[Dict[str, str]]]] = None
 
 
 class EventState(rx.State):
@@ -1191,15 +1191,15 @@ def test_rename_props():
     class C1(Component):
         tag = "C1"
 
-        prop1: Var[str]
-        prop2: Var[str]
+        prop1: Optional[Var[str]] = None
+        prop2: Optional[Var[str]] = None
 
         _rename_props = {"prop1": "renamed_prop1", "prop2": "renamed_prop2"}
 
     class C2(C1):
         tag = "C2"
 
-        prop3: Var[str]
+        prop3: Optional[Var[str]] = None
 
         _rename_props = {"prop2": "subclass_prop2", "prop3": "renamed_prop3"}
 
@@ -1225,9 +1225,9 @@ def test_deprecated_props(capsys):
     class C1(Component):
         tag = "C1"
 
-        type: Var[str]
-        min: Var[str]
-        max: Var[str]
+        type: Optional[Var[str]] = None
+        min: Optional[Var[str]] = None
+        max: Optional[Var[str]] = None
 
     # No warnings are emitted when using the new prop names.
     c1_1 = C1.create(type="type1", min="min1", max="max1")
@@ -1255,9 +1255,9 @@ def test_deprecated_props(capsys):
     class C2(Component):
         tag = "C2"
 
-        type_: Var[str]
-        min_: Var[str]
-        max_: Var[str]
+        type_: Optional[Var[str]] = None
+        min_: Optional[Var[str]] = None
+        max_: Optional[Var[str]] = None
 
     # No warnings are emitted if the actual prop has an underscore suffix
     c2_1 = C2.create(type_="type1", min_="min1", max_="max1")

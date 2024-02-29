@@ -1,4 +1,5 @@
 """Container to stack elements with spacing."""
+from typing import Optional
 
 from reflex.components.chakra import ChakraComponent
 from reflex.components.component import Component
@@ -11,25 +12,25 @@ class Wrap(ChakraComponent):
     tag = "Wrap"
 
     # How to align the items.
-    align: Var[str]
+    align: Optional[Var[str]] = None
 
     # The flex direction of the wrap.
-    direction: Var[str]
+    direction: Optional[Var[str]] = None
 
     # How to justify the items.
-    justify: Var[str]
+    justify: Optional[Var[str]] = None
 
     # Whether to wrap children in `rx.wrap_item`.
-    should_wrap_children: Var[bool]
+    should_wrap_children: Optional[Var[bool]] = None
 
     # The spacing between the items.
-    spacing: Var[str]
+    spacing: Optional[Var[str]] = None
 
     # The horizontal spacing between the items.
-    spacing_x: Var[str]
+    spacing_x: Optional[Var[str]] = None
 
     # The vertical spacing between the items.
-    spacing_y: Var[str]
+    spacing_y: Optional[Var[str]] = None
 
     @classmethod
     def create(cls, *children, items=None, **props) -> Component:

@@ -1,4 +1,5 @@
 """A AspectRatio component."""
+from typing import Optional
 
 from reflex.components.chakra import ChakraComponent
 from reflex.vars import Var
@@ -10,4 +11,4 @@ class AspectRatio(ChakraComponent):
     tag = "AspectRatio"
 
     # The aspect ratio of the Box
-    ratio: Var[float]
+    ratio: Optional[Var[float]] = None

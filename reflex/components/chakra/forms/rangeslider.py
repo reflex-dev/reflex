@@ -16,37 +16,37 @@ class RangeSlider(ChakraComponent):
     tag = "RangeSlider"
 
     # State var to bind the the input.
-    value: Var[List[int]]
+    value: Optional[Var[List[int]]] = None
 
     # The default values.
-    default_value: Var[List[int]]
+    default_value: Optional[Var[List[int]]] = None
 
     # The writing mode ("ltr" | "rtl")
-    direction: Var[LiteralChakraDirection]
+    direction: Optional[Var[LiteralChakraDirection]] = None
 
     # If false, the slider handle will not capture focus when value changes.
-    focus_thumb_on_change: Var[bool]
+    focus_thumb_on_change: Optional[Var[bool]] = None
 
     # If true, the slider will be disabled
-    is_disabled: Var[bool]
+    is_disabled: Optional[Var[bool]] = None
 
     # If true, the slider will be in `read-only` state.
-    is_read_only: Var[bool]
+    is_read_only: Optional[Var[bool]] = None
 
     # If true, the value will be incremented or decremented in reverse.
-    is_reversed: Var[bool]
+    is_reversed: Optional[Var[bool]] = None
 
     # The minimum value of the slider.
-    min_: Var[int]
+    min_: Optional[Var[int]] = None
 
     # The maximum value of the slider.
-    max_: Var[int]
+    max_: Optional[Var[int]] = None
 
     # The minimum distance between slider thumbs. Useful for preventing the thumbs from being too close together.
-    min_steps_between_thumbs: Var[int]
+    min_steps_between_thumbs: Optional[Var[int]] = None
 
     # The name of the form field
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -136,7 +136,7 @@ class RangeSliderThumb(ChakraComponent):
     tag = "RangeSliderThumb"
 
     # The position of the thumb.
-    index: Var[int]
+    index: Optional[Var[int]] = None
 
     def _get_ref_hook(self) -> Optional[str]:
         # hook is None because RangeSlider is handling it.

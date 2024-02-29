@@ -1,5 +1,5 @@
 """Display the title of the current page."""
-
+from typing import Optional
 
 from reflex.components.component import Component
 from reflex.vars import Var
@@ -11,10 +11,10 @@ class RawLink(Component):
     tag = "link"
 
     # The href.
-    href: Var[str]
+    href: Optional[Var[str]] = None
 
     # The type of link.
-    rel: Var[str]
+    rel: Optional[Var[str]] = None
 
 
 class ScriptTag(Component):
@@ -23,22 +23,22 @@ class ScriptTag(Component):
     tag = "script"
 
     # The type of script represented.
-    type_: Var[str]
+    type_: Optional[Var[str]] = None
 
     # The URI of an external script.
-    source: Var[str]
+    source: Optional[Var[str]] = None
 
     # Metadata to verify the content of the script.
-    integrity: Var[str]
+    integrity: Optional[Var[str]] = None
 
     # Whether to allow cross-origin requests.
-    crossorigin: Var[str]
+    crossorigin: Optional[Var[str]] = None
 
     # Indicates which referrer to send when fetching the script.
-    referrer_policy: Var[str]
+    referrer_policy: Optional[Var[str]] = None
 
     # Whether to asynchronously load the script.
-    is_async: Var[bool]
+    is_async: Optional[Var[bool]] = None
 
     # Whether to defer loading the script.
-    defer: Var[bool]
+    defer: Optional[Var[bool]] = None

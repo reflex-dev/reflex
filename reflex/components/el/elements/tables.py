@@ -1,5 +1,5 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
-from typing import Union
+from typing import Optional, Union
 
 from reflex.vars import Var as Var
 
@@ -12,7 +12,7 @@ class Caption(BaseHTML):
     tag = "caption"
 
     # Alignment of the caption
-    align: Var[Union[str, int, bool]]
+    align: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Col(BaseHTML):
@@ -21,10 +21,10 @@ class Col(BaseHTML):
     tag = "col"
 
     # Alignment of the content within the column
-    align: Var[Union[str, int, bool]]
+    align: Optional[Var[Union[str, int, bool]]] = None
 
     # Number of columns the col element spans
-    span: Var[Union[str, int, bool]]
+    span: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Colgroup(BaseHTML):
@@ -33,10 +33,10 @@ class Colgroup(BaseHTML):
     tag = "colgroup"
 
     # Alignment of the content within the column group
-    align: Var[Union[str, int, bool]]
+    align: Optional[Var[Union[str, int, bool]]] = None
 
     # Number of columns the colgroup element spans
-    span: Var[Union[str, int, bool]]
+    span: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Table(BaseHTML):
@@ -45,10 +45,10 @@ class Table(BaseHTML):
     tag = "table"
 
     # Alignment of the table
-    align: Var[Union[str, int, bool]]
+    align: Optional[Var[Union[str, int, bool]]] = None
 
     # Provides a summary of the table's purpose and structure
-    summary: Var[Union[str, int, bool]]
+    summary: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Tbody(BaseHTML):
@@ -57,7 +57,7 @@ class Tbody(BaseHTML):
     tag = "tbody"
 
     # Alignment of the content within the table body
-    align: Var[Union[str, int, bool]]
+    align: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Td(BaseHTML):
@@ -66,16 +66,16 @@ class Td(BaseHTML):
     tag = "td"
 
     # Alignment of the content within the table cell
-    align: Var[Union[str, int, bool]]
+    align: Optional[Var[Union[str, int, bool]]] = None
 
     # Number of columns a cell should span
-    col_span: Var[Union[str, int, bool]]
+    col_span: Optional[Var[Union[str, int, bool]]] = None
 
     # IDs of the headers associated with this cell
-    headers: Var[Union[str, int, bool]]
+    headers: Optional[Var[Union[str, int, bool]]] = None
 
     # Number of rows a cell should span
-    row_span: Var[Union[str, int, bool]]
+    row_span: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Tfoot(BaseHTML):
@@ -84,7 +84,7 @@ class Tfoot(BaseHTML):
     tag = "tfoot"
 
     # Alignment of the content within the table footer
-    align: Var[Union[str, int, bool]]
+    align: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Th(BaseHTML):
@@ -93,19 +93,19 @@ class Th(BaseHTML):
     tag = "th"
 
     # Alignment of the content within the table header cell
-    align: Var[Union[str, int, bool]]
+    align: Optional[Var[Union[str, int, bool]]] = None
 
     # Number of columns a header cell should span
-    col_span: Var[Union[str, int, bool]]
+    col_span: Optional[Var[Union[str, int, bool]]] = None
 
     # IDs of the headers associated with this header cell
-    headers: Var[Union[str, int, bool]]
+    headers: Optional[Var[Union[str, int, bool]]] = None
 
     # Number of rows a header cell should span
-    row_span: Var[Union[str, int, bool]]
+    row_span: Optional[Var[Union[str, int, bool]]] = None
 
     # Scope of the header cell (row, col, rowgroup, colgroup)
-    scope: Var[Union[str, int, bool]]
+    scope: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Thead(BaseHTML):
@@ -114,7 +114,7 @@ class Thead(BaseHTML):
     tag = "thead"
 
     # Alignment of the content within the table header
-    align: Var[Union[str, int, bool]]
+    align: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Tr(BaseHTML):
@@ -123,4 +123,4 @@ class Tr(BaseHTML):
     tag = "tr"
 
     # Alignment of the content within the table row
-    align: Var[Union[str, int, bool]]
+    align: Optional[Var[Union[str, int, bool]]] = None

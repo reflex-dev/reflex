@@ -1,6 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-
-from typing import Literal, Union
+from typing import Literal, Optional, Union
 
 import reflex as rx
 from reflex import el
@@ -22,19 +21,19 @@ class CalloutRoot(el.Div, RadixThemesComponent):
     tag = "Callout.Root"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Optional[Var[bool]] = None
 
     # Size "1" - "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Optional[Var[Literal["1", "2", "3"]]] = None
 
     # Variant of button: "soft" | "surface" | "outline"
-    variant: Var[CalloutVariant]
+    variant: Optional[Var[CalloutVariant]] = None
 
     # Override theme color for button
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Whether to render the button with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Optional[Var[bool]] = None
 
 
 class CalloutIcon(el.Div, RadixThemesComponent):
@@ -53,10 +52,10 @@ class Callout(CalloutRoot):
     """A short message to attract user's attention."""
 
     # The text of the callout.
-    text: Var[str]
+    text: Optional[Var[str]] = None
 
     # The icon of the callout.
-    icon: Var[str]
+    icon: Optional[Var[str]] = None
 
     @classmethod
     def create(cls, text: Union[str, Var[str]], **props) -> Component:

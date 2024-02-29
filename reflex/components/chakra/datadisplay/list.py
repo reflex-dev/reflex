@@ -1,12 +1,12 @@
 """List components."""
-
 from __future__ import annotations
+
+from typing import Generic, Optional, TypeVar
 
 from reflex.components.chakra import ChakraComponent
 from reflex.components.component import Component
 from reflex.components.core.foreach import Foreach
 from reflex.vars import Var
-from typing import TypeVar, Generic
 
 T = TypeVar("T")
 
@@ -17,13 +17,13 @@ class List(ChakraComponent, Generic[T]):
     tag = "List"
 
     # The space between each list item
-    spacing: Var[str]
+    spacing: Optional[Var[str]] = None
 
     # Shorthand prop for listStylePosition
-    style_position: Var[str]
+    style_position: Optional[Var[str]] = None
 
     # Shorthand prop for listStyleType
-    style_type: Var[str]
+    style_type: Optional[Var[str]] = None
 
     @classmethod
     def create(

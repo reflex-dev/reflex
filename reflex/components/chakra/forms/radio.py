@@ -1,7 +1,5 @@
 """A radio component."""
-
-
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from reflex.components.chakra import ChakraComponent
 from reflex.components.chakra.typography.text import Text
@@ -18,13 +16,13 @@ class RadioGroup(ChakraComponent):
     tag = "RadioGroup"
 
     # State var to bind the the input.
-    value: Var[Any]
+    value: Optional[Var[Any]] = None
 
     # The default value.
-    default_value: Var[Any]
+    default_value: Optional[Var[Any]] = None
 
     # The name of the form field
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     def get_event_triggers(self) -> Dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -65,31 +63,31 @@ class Radio(Text):
     tag = "Radio"
 
     # Value of radio.
-    value: Var[Any]
+    value: Optional[Var[Any]] = None
 
     # The default value.
-    default_value: Var[Any]
+    default_value: Optional[Var[Any]] = None
 
     # The color scheme.
-    color_scheme: Var[str]
+    color_scheme: Optional[Var[str]] = None
 
     # If true, the radio will be initially checked.
-    default_checked: Var[bool]
+    default_checked: Optional[Var[bool]] = None
 
     # If true, the radio will be checked. You'll need to pass onChange to update its value (since it is now controlled)
-    is_checked: Var[bool]
+    is_checked: Optional[Var[bool]] = None
 
     # If true, the radio will be disabled.
-    is_disabled: Var[bool]
+    is_disabled: Optional[Var[bool]] = None
 
     # If true, the radio button will be invalid. This also sets `aria-invalid` to true.
-    is_invalid: Var[bool]
+    is_invalid: Optional[Var[bool]] = None
 
     # If true, the radio will be read-only
-    is_read_only: Var[bool]
+    is_read_only: Optional[Var[bool]] = None
 
     # If true, the radio button will be required. This also sets `aria-required` to true.
-    is_required: Var[bool]
+    is_required: Optional[Var[bool]] = None
 
     @classmethod
     def create(cls, *children, **props) -> Component:

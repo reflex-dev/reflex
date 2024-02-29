@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Literal
+from typing import Literal, Optional
 
 from reflex import el
 from reflex.vars import Var
@@ -17,19 +17,19 @@ class Badge(el.Span, RadixThemesComponent):
     tag = "Badge"
 
     # The variant of the badge
-    variant: Var[Literal["solid", "soft", "surface", "outline"]]
+    variant: Optional[Var[Literal["solid", "soft", "surface", "outline"]]] = None
 
     # The size of the badge
-    size: Var[Literal["1", "2"]]
+    size: Optional[Var[Literal["1", "2"]]] = None
 
     # Color theme of the badge
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Whether to render the badge with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Optional[Var[bool]] = None
 
     # Override theme radius for badge: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    radius: Optional[Var[LiteralRadius]] = None
 
 
 badge = Badge.create

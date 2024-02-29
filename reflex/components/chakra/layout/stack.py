@@ -1,6 +1,5 @@
 """Container to stack elements with spacing."""
-
-from typing import List, Union
+from typing import List, Optional, Union
 
 from reflex.components.chakra import ChakraComponent, LiteralStackDirection
 from reflex.vars import Var
@@ -12,28 +11,28 @@ class Stack(ChakraComponent):
     tag = "Stack"
 
     # Shorthand for alignItems style prop
-    align_items: Var[str]
+    align_items: Optional[Var[str]] = None
 
     # The direction to stack the items.
-    direction: Var[Union[LiteralStackDirection, List[str]]]
+    direction: Optional[Var[Union[LiteralStackDirection, List[str]]]] = None
 
     # If true the items will be stacked horizontally.
-    is_inline: Var[bool]
+    is_inline: Optional[Var[bool]] = None
 
     # Shorthand for justifyContent style prop
-    justify_content: Var[str]
+    justify_content: Optional[Var[str]] = None
 
     # If true, the children will be wrapped in a Box, and the Box will take the spacing props
-    should_wrap_children: Var[bool]
+    should_wrap_children: Optional[Var[bool]] = None
 
     # The space between each stack item
-    spacing: Var[str]
+    spacing: Optional[Var[str]] = None
 
     # Shorthand for flexWrap style prop
-    wrap: Var[str]
+    wrap: Optional[Var[str]] = None
 
     # Alignment of contents.
-    justify: Var[str]
+    justify: Optional[Var[str]] = None
 
 
 class Hstack(Stack):

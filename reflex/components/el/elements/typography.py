@@ -1,5 +1,5 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
-from typing import Union
+from typing import Optional, Union
 
 from reflex.vars import Var as Var
 
@@ -12,7 +12,7 @@ class Blockquote(BaseHTML):
     tag = "blockquote"
 
     # Define the title of a work.
-    cite: Var[Union[str, int, bool]]
+    cite: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Dd(BaseHTML):
@@ -51,7 +51,7 @@ class Hr(BaseHTML):
     tag = "hr"
 
     # Used to specify the alignment of text content of The Element. this attribute is used in all elements.
-    align: Var[Union[str, int, bool]]
+    align: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Li(BaseHTML):
@@ -66,7 +66,7 @@ class Menu(BaseHTML):
     tag = "menu"
 
     # Specifies that the menu element is a context menu.
-    type: Var[Union[str, int, bool]]
+    type: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Ol(BaseHTML):
@@ -75,13 +75,13 @@ class Ol(BaseHTML):
     tag = "ol"
 
     # Reverses the order of the list.
-    reversed: Var[Union[str, int, bool]]
+    reversed: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies the start value of the first list item in an ordered list.
-    start: Var[Union[str, int, bool]]
+    start: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies the kind of marker to use in the list (letters or numbers).
-    type: Var[Union[str, int, bool]]
+    type: Optional[Var[Union[str, int, bool]]] = None
 
 
 class P(BaseHTML):
@@ -108,10 +108,10 @@ class Ins(BaseHTML):
     tag = "ins"
 
     # Specifies the URL of the document that explains the reason why the text was inserted/changed.
-    cite: Var[Union[str, int, bool]]
+    cite: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies the date and time of when the text was inserted/changed.
-    date_time: Var[Union[str, int, bool]]
+    date_time: Optional[Var[Union[str, int, bool]]] = None
 
 
 class Del(BaseHTML):
@@ -120,7 +120,7 @@ class Del(BaseHTML):
     tag = "del"
 
     # Specifies the URL of the document that explains the reason why the text was deleted.
-    cite: Var[Union[str, int, bool]]
+    cite: Optional[Var[Union[str, int, bool]]] = None
 
     # Specifies the date and time of when the text was deleted.
-    date_time: Var[Union[str, int, bool]]
+    date_time: Optional[Var[Union[str, int, bool]]] = None

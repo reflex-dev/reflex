@@ -1,7 +1,6 @@
 """A number input component."""
-
 from numbers import Number
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from reflex.components.chakra import (
     ChakraComponent,
@@ -19,61 +18,61 @@ class NumberInput(ChakraComponent):
     tag = "NumberInput"
 
     # State var to bind the input.
-    value: Var[Number]
+    value: Optional[Var[Number]] = None
 
     # If true, the input's value will change based on mouse wheel.
-    allow_mouse_wheel: Var[bool]
+    allow_mouse_wheel: Optional[Var[bool]] = None
 
     # This controls the value update when you blur out of the input. - If true and the value is greater than max, the value will be reset to max - Else, the value remains the same.
-    clamped_value_on_blur: Var[bool]
+    clamped_value_on_blur: Optional[Var[bool]] = None
 
     # The initial value of the counter. Should be less than max and greater than min
-    default_value: Var[Number]
+    default_value: Optional[Var[Number]] = None
 
     # The border color when the input is invalid.
-    error_border_color: Var[str]
+    error_border_color: Optional[Var[str]] = None
 
     # The border color when the input is focused.
-    focus_border_color: Var[str]
+    focus_border_color: Optional[Var[str]] = None
 
     # If true, the input will be focused as you increment or decrement the value with the stepper
-    focus_input_on_change: Var[bool]
+    focus_input_on_change: Optional[Var[bool]] = None
 
     # Hints at the type of data that might be entered by the user. It also determines the type of keyboard shown to the user on mobile devices ("text" | "search" | "none" | "tel" | "url" | "email" | "numeric" | "decimal")
-    # input_mode: Var[LiteralInputNumberMode]
+    # input_mode: Optional[Var[LiteralInputNumberMode]] = None
 
     # Whether the input should be disabled.
-    is_disabled: Var[bool]
+    is_disabled: Optional[Var[bool]] = None
 
     # If true, the input will have `aria-invalid` set to true
-    is_invalid: Var[bool]
+    is_invalid: Optional[Var[bool]] = None
 
     # If true, the input will be in readonly mode
-    is_read_only: Var[bool]
+    is_read_only: Optional[Var[bool]] = None
 
     # Whether the input is required
-    is_required: Var[bool]
+    is_required: Optional[Var[bool]] = None
 
     # Whether the pressed key should be allowed in the input. The default behavior is to allow DOM floating point characters defined by /^[Ee0-9+\-.]$/
-    is_valid_character: Var[str]
+    is_valid_character: Optional[Var[str]] = None
 
     # This controls the value update behavior in general. - If true and you use the stepper or up/down arrow keys, the value will not exceed the max or go lower than min - If false, the value will be allowed to go out of range.
-    keep_within_range: Var[bool]
+    keep_within_range: Optional[Var[bool]] = None
 
     # The maximum value of the counter
-    max_: Var[Number]
+    max_: Optional[Var[Number]] = None
 
     # The minimum value of the counter
-    min_: Var[Number]
+    min_: Optional[Var[Number]] = None
 
     # "outline" | "filled" | "flushed" | "unstyled"
-    variant: Var[LiteralInputVariant]
+    variant: Optional[Var[LiteralInputVariant]] = None
 
     # "lg" | "md" | "sm" | "xs"
-    size: Var[LiteralButtonSize]
+    size: Optional[Var[LiteralButtonSize]] = None
 
     # The name of the form field
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.

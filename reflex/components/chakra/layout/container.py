@@ -1,4 +1,5 @@
 """A flexbox container."""
+from typing import Optional
 
 from reflex.components.chakra import ChakraComponent
 from reflex.vars import Var
@@ -10,4 +11,4 @@ class Container(ChakraComponent):
     tag = "Container"
 
     # If true, container will center its children regardless of their width.
-    center_content: Var[bool]
+    center_content: Optional[Var[bool]] = None

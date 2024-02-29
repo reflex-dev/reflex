@@ -1,6 +1,5 @@
 """A select component."""
-
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from reflex.components.chakra import ChakraComponent, LiteralInputVariant
 from reflex.components.chakra.typography.text import Text
@@ -17,37 +16,37 @@ class Select(ChakraComponent):
     tag = "Select"
 
     # State var to bind the select.
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     # The default value of the select.
-    default_value: Var[str]
+    default_value: Optional[Var[str]] = None
 
     # The placeholder text.
-    placeholder: Var[str]
+    placeholder: Optional[Var[str]] = None
 
     # The border color when the select is invalid.
-    error_border_color: Var[str]
+    error_border_color: Optional[Var[str]] = None
 
     # The border color when the select is focused.
-    focus_border_color: Var[str]
+    focus_border_color: Optional[Var[str]] = None
 
     # If true, the select will be disabled.
-    is_disabled: Var[bool]
+    is_disabled: Optional[Var[bool]] = None
 
     # If true, the form control will be invalid. This has 2 side effects: - The FormLabel and FormErrorIcon will have `data-invalid` set to true - The form element (e.g, Input) will have `aria-invalid` set to true
-    is_invalid: Var[bool]
+    is_invalid: Optional[Var[bool]] = None
 
     # If true, the form control will be required. This has 2 side effects: - The FormLabel will show a required indicator - The form element (e.g, Input) will have `aria-required` set to true
-    is_required: Var[bool]
+    is_required: Optional[Var[bool]] = None
 
     # "outline" | "filled" | "flushed" | "unstyled"
-    variant: Var[LiteralInputVariant]
+    variant: Optional[Var[LiteralInputVariant]] = None
 
     # The size of the select.
-    size: Var[str]
+    size: Optional[Var[str]] = None
 
     # The name of the form field
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     def get_event_triggers(self) -> Dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -90,7 +89,7 @@ class Option(Text):
 
     tag = "option"
 
-    value: Var[Any]
+    value: Optional[Var[Any]] = None
 
     @classmethod
     def create(cls, *children, **props) -> Component:

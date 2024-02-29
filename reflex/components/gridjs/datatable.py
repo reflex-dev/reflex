@@ -1,8 +1,7 @@
 """Table components."""
-
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
@@ -31,19 +30,19 @@ class DataTable(Gridjs):
 
     # The list of columns to display. Required if data is a list and should not be provided
     # if the data field is a dataframe
-    columns: Var[List]
+    columns: Optional[Var[List]] = None
 
     # Enable a search bar.
-    search: Var[bool]
+    search: Optional[Var[bool]] = None
 
     # Enable sorting on columns.
-    sort: Var[bool]
+    sort: Optional[Var[bool]] = None
 
     # Enable resizable columns.
-    resizable: Var[bool]
+    resizable: Optional[Var[bool]] = None
 
     # Enable pagination.
-    pagination: Var[Union[bool, Dict]]
+    pagination: Optional[Var[Union[bool, Dict]]] = None
 
     @classmethod
     def create(cls, *children, **props):

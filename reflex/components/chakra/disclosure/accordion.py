@@ -1,5 +1,4 @@
 """Container to stack elements with spacing."""
-
 from typing import List, Optional, Union
 
 from reflex.components.chakra import ChakraComponent
@@ -13,19 +12,19 @@ class Accordion(ChakraComponent):
     tag = "Accordion"
 
     # If true, multiple accordion items can be expanded at once.
-    allow_multiple: Var[bool]
+    allow_multiple: Optional[Var[bool]] = None
 
     # If true, any expanded accordion item can be collapsed again.
-    allow_toggle: Var[bool]
+    allow_toggle: Optional[Var[bool]] = None
 
     # The initial index(es) of the expanded accordion item(s).
-    default_index: Var[Optional[List[int]]]
+    default_index: Optional[Var[Optional[List[int]]]] = None
 
     # The index(es) of the expanded accordion item
-    index: Var[Union[int, List[int]]]
+    index: Optional[Var[Union[int, List[int]]]] = None
 
     # If true, height animation and transitions will be disabled.
-    reduce_motion: Var[bool]
+    reduce_motion: Optional[Var[bool]] = None
 
     @classmethod
     def create(
@@ -83,13 +82,13 @@ class AccordionItem(ChakraComponent):
     tag = "AccordionItem"
 
     # A unique id for the accordion item.
-    id_: Var[str]
+    id_: Optional[Var[str]] = None
 
     # If true, the accordion item will be disabled.
-    is_disabled: Var[bool]
+    is_disabled: Optional[Var[bool]] = None
 
     # If true, the accordion item will be focusable.
-    is_focusable: Var[bool]
+    is_focusable: Optional[Var[bool]] = None
 
 
 class AccordionButton(ChakraComponent):

@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal, Union
+from typing import Any, Dict, Literal, Optional, Union
 
 from reflex import el
 from reflex.components.component import Component
@@ -21,55 +21,55 @@ class TextArea(RadixThemesComponent, el.Textarea):
     tag = "TextArea"
 
     # The size of the text area: "1" | "2" | "3"
-    size: Var[LiteralTextAreaSize]
+    size: Optional[Var[LiteralTextAreaSize]] = None
 
     # The variant of the text area
-    variant: Var[Literal["classic", "surface", "soft"]]
+    variant: Optional[Var[Literal["classic", "surface", "soft"]]] = None
 
     # The color of the text area
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Optional[Var[LiteralAccentColor]] = None
 
     # Whether the form control should have autocomplete enabled
-    auto_complete: Var[bool]
+    auto_complete: Optional[Var[bool]] = None
 
     # Automatically focuses the textarea when the page loads
-    auto_focus: Var[bool]
+    auto_focus: Optional[Var[bool]] = None
 
     # Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
-    dirname: Var[str]
+    dirname: Optional[Var[str]] = None
 
     # Disables the textarea
-    disabled: Var[bool]
+    disabled: Optional[Var[bool]] = None
 
     # Associates the textarea with a form (by id)
-    form: Var[Union[str, int, bool]]
+    form: Optional[Var[Union[str, int, bool]]] = None
 
     # Maximum number of characters allowed in the textarea
-    max_length: Var[int]
+    max_length: Optional[Var[int]] = None
 
     # Minimum number of characters required in the textarea
-    min_length: Var[int]
+    min_length: Optional[Var[int]] = None
 
     # Name of the textarea, used when submitting the form
-    name: Var[str]
+    name: Optional[Var[str]] = None
 
     # Placeholder text in the textarea
-    placeholder: Var[str]
+    placeholder: Optional[Var[str]] = None
 
     # Indicates whether the textarea is read-only
-    read_only: Var[bool]
+    read_only: Optional[Var[bool]] = None
 
     # Indicates that the textarea is required
-    required: Var[bool]
+    required: Optional[Var[bool]] = None
 
     # Visible number of lines in the text control
-    rows: Var[str]
+    rows: Optional[Var[str]] = None
 
     # The controlled value of the textarea, read only unless used with on_change
-    value: Var[str]
+    value: Optional[Var[str]] = None
 
     # How the text in the textarea is to be wrapped when submitting the form
-    wrap: Var[str]
+    wrap: Optional[Var[str]] = None
 
     @classmethod
     def create(cls, *children, **props) -> Component:
