@@ -1,6 +1,7 @@
 """Integration tests for all urls in Reflex."""
 import os
 import re
+from pathlib import Path
 
 import pytest
 import requests
@@ -55,11 +56,10 @@ def check_urls(repo_dir):
 @pytest.mark.parametrize(
     "repo_dir",
     [
-        os.path.join(
-            os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "reflex"
-        )
+        Path(__file__).resolve().parent.parent / "reflex"
     ],
 )
+
 def test_find_and_check_urls(repo_dir):
     """Test that all URLs in the repo are valid and secure.
 
