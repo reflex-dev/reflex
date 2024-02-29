@@ -15,7 +15,7 @@ def check_urls(repo_dir):
     Returns:
         A list of errors.
     """
-    url_pattern = re.compile(r'http[s]?://reflex\.dev[^\s"]*')
+    url_pattern = re.compile(r'http[s]?://reflex\.dev[^\s")]*')
     errors = []
 
     for root, _dirs, files in os.walk(repo_dir):
@@ -23,7 +23,7 @@ def check_urls(repo_dir):
             continue
 
         for file_name in files:
-            if not file_name.endswith(".py"):
+            if not file_name.endswith(".py") and not file_name.endswith(".md"):
                 continue
 
             file_path = os.path.join(root, file_name)
