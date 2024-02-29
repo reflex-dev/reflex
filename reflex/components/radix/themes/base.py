@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Optional, Union
 
 from reflex.components import Component
 from reflex.components.tags import Tag
@@ -101,7 +101,13 @@ class RadixThemesComponent(Component):
         """
         component = super().create(*children, **props)
         if component.library is None:
+<<<<<<< HEAD
             component.library = RadixThemesComponent.model_fields["library"].default
+=======
+            component.library = RadixThemesComponent.model_fields[
+                "library"
+            ].default
+>>>>>>> f7035d9b (optionalize some Component props)
         component.alias = "RadixThemes" + (
             component.tag or component.__class__.__name__
         )
@@ -127,25 +133,25 @@ class Theme(RadixThemesComponent):
     tag = "Theme"
 
     # Whether to apply the themes background color to the theme node. Defaults to True.
-    has_background: Var[bool]
+    has_background: Optional[Var[bool]] = None
 
     # Override light or dark mode theme: "inherit" | "light" | "dark". Defaults to "inherit".
-    appearance: Var[LiteralAppearance]
+    appearance: Optional[Var[LiteralAppearance]] = None
 
     # The color used for default buttons, typography, backgrounds, etc
-    accent_color: Var[LiteralAccentColor]
+    accent_color: Optional[Var[LiteralAccentColor]] = None
 
     # The shade of gray, defaults to "auto".
-    gray_color: Var[LiteralGrayColor]
+    gray_color: Optional[Var[LiteralGrayColor]] = None
 
     # Whether panel backgrounds are translucent: "solid" | "translucent" (default)
-    panel_background: Var[LiteralPanelBackground]
+    panel_background: Optional[Var[LiteralPanelBackground]] = None
 
     # Element border radius: "none" | "small" | "medium" | "large" | "full". Defaults to "medium".
-    radius: Var[LiteralRadius]
+    radius: Optional[Var[LiteralRadius]] = None
 
     # Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%". Defaults to "100%"
-    scaling: Var[LiteralScaling]
+    scaling: Optional[Var[LiteralScaling]] = None
 
     @classmethod
     def create(
@@ -153,6 +159,7 @@ class Theme(RadixThemesComponent):
         *children,
         color_mode: LiteralAppearance | None = None,
         theme_panel: bool = False,
+        accent_color: Union[LiteralAccentColor, Var[LiteralAccentColor]] | None = None,
         **props,
     ) -> Component:
         """Create a new Radix Theme specification.
@@ -170,6 +177,9 @@ class Theme(RadixThemesComponent):
             props["appearance"] = color_mode
         if theme_panel:
             children = [ThemePanel.create(), *children]
+        if not isinstance(accent_color, Var):
+            accent_color = Var.create(accent_color)
+        props["accent_color"] = accent_color
         return super().create(*children, **props)
 
     def _get_imports(self) -> imports.ImportDict:

@@ -1,7 +1,7 @@
 """A bare component."""
 from __future__ import annotations
 
-from typing import Any, Iterator
+from typing import Any, Iterator, Optional
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
@@ -12,7 +12,7 @@ from reflex.vars import Var
 class Bare(Component):
     """A component with no tag."""
 
-    contents: Var[str]
+    contents: Optional[Var[str]] = None
 
     @classmethod
     def create(cls, contents: Any) -> Component:
