@@ -5,8 +5,6 @@ import os
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
 
-from pydantic.fields import ModelField
-
 from reflex import constants
 from reflex.components.base import (
     Body,
@@ -149,7 +147,7 @@ def compile_state(state: Type[BaseState]) -> dict:
 
 
 def _compile_client_storage_field(
-    field: ModelField,
+    field,
 ) -> tuple[Type[Cookie] | Type[LocalStorage] | None, dict[str, Any] | None]:
     """Compile the given cookie or local_storage field.
 
