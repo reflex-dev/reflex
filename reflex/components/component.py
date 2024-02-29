@@ -22,6 +22,7 @@ from typing import (
 )
 
 from pydantic.fields import ModelPrivateAttr
+from pydantic_core._pydantic_core import PydanticUndefinedType
 
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
@@ -219,9 +220,11 @@ class Component(BaseComponent, ABC):
                 continue
 
             # Set default values for any props.
-            if types._issubclass(field.type_, Var):
-                field.required = False
-                field.default = Var.create(field.default)
+            if types._issubclass(field.annotation, Var):
+                # TODO: pydantic v2 AttributeError: 'FieldInfo' object attribute 'is_required' is read-only
+                #  field.is_required = False
+                if not isinstance(field.default, PydanticUndefinedType):
+                    field.default = Var.create(field.default)
 
         # Ensure renamed props from parent classes are applied to the subclass.
         if cls._rename_props:

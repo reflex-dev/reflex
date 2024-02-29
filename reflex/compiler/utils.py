@@ -162,8 +162,10 @@ def _compile_client_storage_field(
     for field_type in (Cookie, LocalStorage):
         if isinstance(field.default, field_type):
             cs_obj = field.default
-        elif isinstance(field.type_, type) and issubclass(field.type_, field_type):
-            cs_obj = field.type_()
+        elif isinstance(field.annotation, type) and issubclass(
+            field.annotation, field_type
+        ):
+            cs_obj = field.annotation()
         else:
             continue
         return field_type, cs_obj.options()
