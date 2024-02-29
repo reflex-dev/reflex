@@ -100,4 +100,4 @@ class ColorModeScript(ChakraComponent):
     """Chakra color mode script."""
 
     tag = "ColorModeScript"
-    initialColorMode = LIGHT_COLOR_MODE
+    initialColorMode: str = LIGHT_COLOR_MODE
