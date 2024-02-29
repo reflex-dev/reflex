@@ -1,5 +1,7 @@
 """A link component."""
 
+from typing import Optional
+
 from reflex.components.component import Component
 from reflex.vars import Var
 
@@ -14,7 +16,7 @@ class NextLink(Component):
     is_default = True
 
     # The page to link to.
-    href: Var[str]
+    href: Optional[Var[str]] = None
 
     # Whether to pass the href prop to the child.
     pass_href: Var[bool] = True  # type: ignore

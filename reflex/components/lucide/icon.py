@@ -1,5 +1,7 @@
 """Lucide Icon component."""
 
+from typing import Optional
+
 from reflex.components.component import Component
 from reflex.style import Style
 from reflex.utils import format
@@ -18,7 +20,7 @@ class Icon(LucideIconComponent):
     tag = "None"
 
     # The size of the icon in pixels.
-    size: Var[int]
+    size: Optional[Var[int]] = None
 
     @classmethod
     def create(cls, *children, **props) -> Component:
