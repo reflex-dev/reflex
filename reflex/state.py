@@ -1609,7 +1609,22 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         self.dirty_vars = set()
         self.dirty_substates = set()
 
-    def get_value(self, key: str) -> Any:
+    def get_value(self, value: Any) -> Any:
+        """Get the value of a field (without proxying).
+
+        The returned value will NOT track dirty state updates.
+
+        Args:
+            value: The value of the field.
+
+        Returns:
+            The value of the field.
+        """
+        if isinstance(value, MutableProxy):
+            return super().get_value(value.__wrapped__)
+        return super().get_value(value)
+
+    def _get_value(self, value: Any, **kwargs) -> Any:
         """Get the value of a field (without proxying).
 
         The returned value will NOT track dirty state updates.
@@ -1620,9 +1635,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The value of the field.
         """
-        if isinstance(key, MutableProxy):
-            return super().get_value(key.__wrapped__)
-        return super().get_value(key)
+        if isinstance(value, MutableProxy):
+            return super()._get_value(value.__wrapped__, **kwargs)
+        return super()._get_value(value, **kwargs)
 
     def dict(
         self, include_computed: bool = True, initial: bool = False, **kwargs
@@ -2084,6 +2099,10 @@ class StateManagerMemory(StateManager):
         fields = {
             "_states_locks": {"exclude": True},
         }
+
+        #  json_encoders = {
+        #      MutableProxy: lambda v: v.__wrapped__,
+        #  }
 
     async def get_state(self, token: str) -> BaseState:
         """Get the state for a token.
