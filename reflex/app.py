@@ -379,7 +379,7 @@ class App(Base):
                 raise TypeError(
                     "You may be trying to use an invalid Python function on a state var. "
                     "When referencing a var inside your render code, only limited var operations are supported. "
-                    "See the var operation docs here: https://reflex.dev/docs/state/vars/#var-operations"
+                    "See the var operation docs here: https://reflex.dev/docs/vars/var-operations/"
                 ) from e
             raise e
 

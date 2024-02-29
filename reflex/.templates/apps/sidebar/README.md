@@ -62,6 +62,8 @@ In this template, we have a sidebar component in `{your_app}/components/sidebar.
 
 ### Adding State
 
-As your app grows, we recommend using [substates](https://reflex.dev/docs/substates/overview/) to organize your state.
+As your app grows, we recommend using [substates](https://reflex.dev/docs/substates/overview/)
+to organize your state.
+
 You can either define substates in their own files, or if the state is
 specific to a page, you can define it in the page file itself.
