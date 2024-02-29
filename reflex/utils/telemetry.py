@@ -12,6 +12,8 @@ import psutil
 from reflex import constants
 from reflex.utils.prerequisites import ensure_reflex_installation_id
 
+POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
+
 
 def get_os() -> str:
     """Get the operating system.
@@ -102,7 +104,7 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
             },
             "timestamp": datetime.utcnow().isoformat(),
         }
-        httpx.post("https://app.posthog.com/capture/", json=post_hog)
+        httpx.post(POSTHOG_API_URL, json=post_hog)
         return True
     except Exception:
         return False

@@ -1,4 +1,5 @@
 """Compiler variables."""
+
 import enum
 from enum import Enum
 from types import SimpleNamespace
@@ -55,13 +56,13 @@ class CompileVars(SimpleNamespace):
     # The name of the function to add events to the queue.
     ADD_EVENTS = "addEvents"
     # The name of the var storing any connection error.
-    CONNECT_ERROR = "connectError"
+    CONNECT_ERROR = "connectErrors"
     # The name of the function for converting a dict to an event.
     TO_EVENT = "Event"
     # The name of the internal on_load event.
-    ON_LOAD_INTERNAL = "on_load_internal"
+    ON_LOAD_INTERNAL = "on_load_internal_state.on_load_internal"
     # The name of the internal event to update generic state vars.
-    UPDATE_VARS_INTERNAL = "update_vars_internal"
+    UPDATE_VARS_INTERNAL = "update_vars_internal_state.update_vars_internal"
 
 
 class PageNames(SimpleNamespace):

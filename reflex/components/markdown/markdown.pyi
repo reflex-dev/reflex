@@ -12,15 +12,15 @@ from functools import lru_cache
 from hashlib import md5
 from typing import Any, Callable, Dict, Union
 from reflex.compiler import utils
-from reflex.components.chakra.datadisplay.list import (
+from reflex.components.component import Component, CustomComponent
+from reflex.components.radix.themes.layout.list import (
     ListItem,
     OrderedList,
     UnorderedList,
 )
-from reflex.components.chakra.navigation import Link
-from reflex.components.chakra.typography.heading import Heading
-from reflex.components.chakra.typography.text import Text
-from reflex.components.component import Component, CustomComponent
+from reflex.components.radix.themes.typography.heading import Heading
+from reflex.components.radix.themes.typography.link import Link
+from reflex.components.radix.themes.typography.text import Text
 from reflex.components.tags.tag import Tag
 from reflex.style import Style
 from reflex.utils import console, imports, types

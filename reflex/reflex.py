@@ -15,6 +15,7 @@ from reflex_cli.utils import dependency
 
 from reflex import constants
 from reflex.config import get_config
+from reflex.custom_components.custom_components import custom_components_cli
 from reflex.utils import console, telemetry
 
 # Disable typer+rich integration for help panels
@@ -94,12 +95,15 @@ def _init(
             template = prerequisites.prompt_for_template()
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
-        telemetry.send("init")
+        telemetry_event = "init"
     else:
-        telemetry.send("reinit")
+        telemetry_event = "reinit"
 
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
+
+    # Send the telemetry event after the .web folder is initialized.
+    telemetry.send(telemetry_event)
 
     # Migrate Pynecone projects to Reflex.
     prerequisites.migrate_to_reflex()
@@ -576,6 +580,11 @@ cli.add_typer(
     deployments_cli,
     name="deployments",
     help="Subcommands for managing the Deployments.",
+)
+cli.add_typer(
+    custom_components_cli,
+    name="component",
+    help="Subcommands for creating and publishing Custom Components.",
 )
 
 if __name__ == "__main__":

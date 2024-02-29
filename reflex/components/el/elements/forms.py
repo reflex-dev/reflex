@@ -125,6 +125,12 @@ class Input(BaseHTML):
     # Indicates whether the input is checked (for checkboxes and radio buttons)
     checked: Var[Union[str, int, bool]]
 
+    # The initial value (for checkboxes and radio buttons)
+    default_checked: Var[bool]
+
+    # The initial value for a text field
+    default_value: Var[str]
+
     # Name part of the input to submit in 'dir' and 'name' pair when form is submitted
     dirname: Var[Union[str, int, bool]]
 

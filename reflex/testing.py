@@ -70,6 +70,10 @@ else:
     FRONTEND_POPEN_ARGS["start_new_session"] = True
 
 
+# Save a copy of internal substates to reset after each test.
+INTERNAL_STATES = State.class_subclasses.copy()
+
+
 # borrowed from py3.11
 class chdir(contextlib.AbstractContextManager):
     """Non thread-safe context manager to change the current working directory."""
@@ -220,6 +224,8 @@ class AppHarness:
             reflex.config.get_config(reload=True)
             # reset rx.State subclasses
             State.class_subclasses.clear()
+            State.class_subclasses.update(INTERNAL_STATES)
+            State._always_dirty_substates = set()
             State.get_class_substate.cache_clear()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)

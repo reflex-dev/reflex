@@ -146,6 +146,7 @@ address = Address.create
 article = Article.create
 aside = Aside.create
 body = Body.create
+header = Header.create
 footer = Footer.create
 
 # Typography

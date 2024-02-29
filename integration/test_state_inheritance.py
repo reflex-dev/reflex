@@ -1,12 +1,27 @@
 """Test state inheritance."""
 
-import time
+from contextlib import suppress
 from typing import Generator
 
 import pytest
+from selenium.common.exceptions import NoAlertPresentException
+from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.by import By
 
 from reflex.testing import DEFAULT_TIMEOUT, AppHarness, WebDriver
+
+
+def get_alert_or_none(driver: WebDriver) -> Alert | None:
+    """Switch to an alert if present.
+
+    Args:
+        driver: WebDriver instance.
+
+    Returns:
+        The alert if present, otherwise None.
+    """
+    with suppress(NoAlertPresentException):
+        return driver.switch_to.alert
 
 
 def raises_alert(driver: WebDriver, element: str) -> None:
@@ -18,8 +33,8 @@ def raises_alert(driver: WebDriver, element: str) -> None:
     """
     btn = driver.find_element(By.ID, element)
     btn.click()
-    time.sleep(0.2)  # wait for the alert to appear
-    alert = driver.switch_to.alert
+    alert = AppHarness._poll_for(lambda: get_alert_or_none(driver))
+    assert isinstance(alert, Alert)
     assert alert.text == "clicked"
     alert.accept()
 
@@ -62,18 +77,28 @@ def StateInheritance():
             )
 
     class Base1(rx.State, Mixin):
+        _base1: str = "_base1"
         base1: str = "base1"
 
         @rx.var
         def computed_basevar(self) -> str:
             return "computed_basevar1"
 
+        @rx.var
+        def computed_backend_vars_base1(self) -> str:
+            return self._base1
+
     class Base2(rx.State):
+        _base2: str = "_base2"
         base2: str = "base2"
 
         @rx.var
         def computed_basevar(self) -> str:
             return "computed_basevar2"
+
+        @rx.var
+        def computed_backend_vars_base2(self) -> str:
+            return self._base2
 
     class Child1(Base1, OtherMixin):
         pass
@@ -82,11 +107,16 @@ def StateInheritance():
         pass
 
     class Child3(Child2):
+        _child3: str = "_child3"
         child3: str = "child3"
 
         @rx.var
         def computed_childvar(self) -> str:
             return "computed_childvar"
+
+        @rx.var
+        def computed_backend_vars_child3(self) -> str:
+            return f"{self._base2}.{self._child3}"
 
     def index() -> rx.Component:
         return rx.vstack(
@@ -103,9 +133,15 @@ def StateInheritance():
                 on_click=Base1.on_click_mixin,  # type: ignore
                 id="base1-mixin-btn",
             ),
+            rx.heading(
+                Base1.computed_backend_vars_base1, id="base1-computed_backend_vars"
+            ),
             # Base 2
             rx.heading(Base2.computed_basevar, id="base2-computed_basevar"),
             rx.heading(Base2.base2, id="base2-base2"),
+            rx.heading(
+                Base2.computed_backend_vars_base2, id="base2-computed_backend_vars"
+            ),
             # Child 1
             rx.heading(Child1.computed_basevar, id="child1-computed_basevar"),
             rx.heading(Child1.computed_mixin, id="child1-computed_mixin"),
@@ -153,6 +189,9 @@ def StateInheritance():
                 "Child3.on_click_other_mixin",
                 on_click=Child3.on_click_other_mixin,  # type: ignore
                 id="child3-other-mixin-btn",
+            ),
+            rx.heading(
+                Child3.computed_backend_vars_child3, id="child3-computed_backend_vars"
             ),
         )
 
@@ -247,12 +286,22 @@ def test_state_inheritance(
     base1_base1 = driver.find_element(By.ID, "base1-base1")
     assert base1_base1.text == "base1"
 
+    base1_computed_backend_vars = driver.find_element(
+        By.ID, "base1-computed_backend_vars"
+    )
+    assert base1_computed_backend_vars.text == "_base1"
+
     # Base 2
     base2_computed_basevar = driver.find_element(By.ID, "base2-computed_basevar")
     assert base2_computed_basevar.text == "computed_basevar2"
 
     base2_base2 = driver.find_element(By.ID, "base2-base2")
     assert base2_base2.text == "base2"
+
+    base2_computed_backend_vars = driver.find_element(
+        By.ID, "base2-computed_backend_vars"
+    )
+    assert base2_computed_backend_vars.text == "_base2"
 
     # Child 1
     child1_computed_basevar = driver.find_element(By.ID, "child1-computed_basevar")
@@ -317,6 +366,11 @@ def test_state_inheritance(
     child3_other_mixin = driver.find_element(By.ID, "child3-other_mixin")
     assert child3_other_mixin.text == "other_mixin"
 
+    child3_computed_backend_vars = driver.find_element(
+        By.ID, "child3-computed_backend_vars"
+    )
+    assert child3_computed_backend_vars.text == "_base2._child3"
+
     # Event Handler Tests
     raises_alert(driver, "base1-mixin-btn")
     raises_alert(driver, "child2-mixin-btn")
@@ -355,7 +409,7 @@ def test_state_inheritance(
     child3_other_mixin_btn = driver.find_element(By.ID, "child3-other-mixin-btn")
     child3_other_mixin_btn.click()
     child2_other_mixin_value = state_inheritance.poll_for_content(
-        child2_other_mixin, exp_not_equal="other_mixin"
+        child2_other_mixin, exp_not_equal="Child2.clicked.1"
     )
     child2_computed_mixin_value = state_inheritance.poll_for_content(
         child2_computed_other_mixin, exp_not_equal="other_mixin"

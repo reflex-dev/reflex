@@ -19,6 +19,10 @@ def verify_route_validity(route: str) -> None:
     pattern = catchall_in_route(route)
     if pattern and not route.endswith(pattern):
         raise ValueError(f"Catch-all must be the last part of the URL: {route}")
+    if route == "api" or route.startswith("api/"):
+        raise ValueError(
+            f"Cannot have a route prefixed with 'api/': {route} (conflicts with NextJS)"
+        )
 
 
 def get_route_args(route: str) -> dict[str, str]:
