@@ -19,7 +19,7 @@ class IconButton(Text):
     aria_label: Optional[Var[str]] = None
 
     # The icon to be used in the button.
-    icon: Optional[Component]
+    icon: Optional[Component] = None
 
     # If true, the button will be styled in its active state.
     is_active: Optional[Var[bool]] = None
