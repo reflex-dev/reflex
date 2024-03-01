@@ -183,6 +183,9 @@ LOCAL_STORAGE = "local_storage"
 # If this env var is set to "yes", App.compile will be a no-op
 SKIP_COMPILE_ENV_VAR = "__REFLEX_SKIP_COMPILE"
 
+# This env var stores the execution mode of the app
+ENV_MODE_ENV_VAR = "REFLEX_ENV_MODE"
+
 # Testing variables.
 # Testing os env set by pytest when running a test case.
 PYTEST_CURRENT_TEST = "PYTEST_CURRENT_TEST"

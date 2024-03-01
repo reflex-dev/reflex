@@ -18,6 +18,7 @@ from reflex.components.component import (
 from reflex.config import get_config
 from reflex.state import BaseState
 from reflex.style import LIGHT_COLOR_MODE
+from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
 
 
@@ -66,7 +67,7 @@ def _compile_theme(theme: dict) -> str:
 
 
 def _is_dev_mode() -> bool:
-    return os.environ.get("REFLEX_ENV_MODE", "dev") == "dev"
+    return not is_prod_mode()
 
 
 def _compile_contexts(state: Optional[Type[BaseState]], theme: Component) -> str:
