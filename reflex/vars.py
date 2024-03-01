@@ -248,6 +248,7 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
 
         def json_loads(s):
             try:
+                # TODO: go one pydantic api level lower to load json directly into dict
                 return VarData.model_validate_json(s).model_dump()
             except pydantic_core.ValidationError as e:
                 raise ValueError(f"Invalid VarData: {s}") from e
