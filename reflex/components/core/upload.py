@@ -157,7 +157,7 @@ def _on_drop_spec(files: Var):
 class UploadFilesProvider(Component):
     """AppWrap component that provides a dict of selected files by ID via useContext."""
 
-    library = f"/{Dirs.CONTEXTS_PATH}"
+    library: str = f"/{Dirs.CONTEXTS_PATH}"
     tag: str = "UploadFilesProvider"
 
 
