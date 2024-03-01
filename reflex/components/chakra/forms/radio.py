@@ -13,7 +13,7 @@ from reflex.vars import Var
 class RadioGroup(ChakraComponent):
     """A grouping of individual radio options."""
 
-    tag = "RadioGroup"
+    tag: str = "RadioGroup"
 
     # State var to bind the the input.
     value: Optional[Var[Any]] = None
@@ -60,7 +60,7 @@ class RadioGroup(ChakraComponent):
 class Radio(Text):
     """Radios are used when only one choice may be selected in a series of options."""
 
-    tag = "Radio"
+    tag: str = "Radio"
 
     # Value of radio.
     value: Optional[Var[Any]] = None

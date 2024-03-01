@@ -16,7 +16,7 @@ from reflex.vars import Var
 class Drawer(ChakraComponent):
     """A drawer component."""
 
-    tag = "Drawer"
+    tag: str = "Drawer"
 
     # If true, the modal will be open.
     is_open: Optional[Var[bool]] = None
@@ -137,34 +137,34 @@ class Drawer(ChakraComponent):
 class DrawerBody(ChakraComponent):
     """Drawer body."""
 
-    tag = "DrawerBody"
+    tag: str = "DrawerBody"
 
 
 class DrawerHeader(ChakraComponent):
     """Drawer header."""
 
-    tag = "DrawerHeader"
+    tag: str = "DrawerHeader"
 
 
 class DrawerFooter(ChakraComponent):
     """Drawer footer."""
 
-    tag = "DrawerFooter"
+    tag: str = "DrawerFooter"
 
 
 class DrawerOverlay(ChakraComponent):
     """Drawer overlay."""
 
-    tag = "DrawerOverlay"
+    tag: str = "DrawerOverlay"
 
 
 class DrawerContent(ChakraComponent):
     """Drawer content."""
 
-    tag = "DrawerContent"
+    tag: str = "DrawerContent"
 
 
 class DrawerCloseButton(ChakraComponent):
     """Drawer close button."""
 
-    tag = "DrawerCloseButton"
+    tag: str = "DrawerCloseButton"

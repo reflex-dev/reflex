@@ -31,7 +31,7 @@ next_link = NextLink.create()
 class Link(RadixThemesComponent, A, MemoizationLeaf):
     """A semantic element for navigation between pages."""
 
-    tag = "Link"
+    tag: str = "Link"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Optional[Var[bool]] = None

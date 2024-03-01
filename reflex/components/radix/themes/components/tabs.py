@@ -13,7 +13,7 @@ from ..base import (
 class TabsRoot(RadixThemesComponent):
     """Set of content sections to be displayed one at a time."""
 
-    tag = "Tabs.Root"
+    tag: str = "Tabs.Root"
 
     # The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
     default_value: Optional[Var[str]] = None
@@ -42,7 +42,7 @@ class TabsRoot(RadixThemesComponent):
 class TabsList(RadixThemesComponent):
     """Contains the triggers that sit alongside the active content."""
 
-    tag = "Tabs.List"
+    tag: str = "Tabs.List"
 
     # Tabs size "1" - "2"
     size: Optional[Var[Literal["1", "2"]]] = None
@@ -51,7 +51,7 @@ class TabsList(RadixThemesComponent):
 class TabsTrigger(RadixThemesComponent):
     """The button that activates its associated content."""
 
-    tag = "Tabs.Trigger"
+    tag: str = "Tabs.Trigger"
 
     # The value of the tab. Must be unique for each tab.
     value: Optional[Var[str]] = None
@@ -65,7 +65,7 @@ class TabsTrigger(RadixThemesComponent):
 class TabsContent(RadixThemesComponent):
     """Contains the content associated with each trigger."""
 
-    tag = "Tabs.Content"
+    tag: str = "Tabs.Content"
 
     # The value of the tab. Must be unique for each tab.
     value: Optional[Var[str]] = None

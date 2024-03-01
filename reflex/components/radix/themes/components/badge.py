@@ -14,7 +14,7 @@ from ..base import (
 class Badge(el.Span, RadixThemesComponent):
     """A stylized badge element."""
 
-    tag = "Badge"
+    tag: str = "Badge"
 
     # The variant of the badge
     variant: Optional[Var[Literal["solid", "soft", "surface", "outline"]]] = None

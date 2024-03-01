@@ -131,7 +131,7 @@ def component5() -> Type[Component]:
     """
 
     class TestComponent5(Component):
-        tag = "RandomComponent"
+        tag: str = "RandomComponent"
 
         _invalid_children: List[str] = ["Text"]
 
@@ -151,7 +151,7 @@ def component6() -> Type[Component]:
     """
 
     class TestComponent6(Component):
-        tag = "RandomComponent"
+        tag: str = "RandomComponent"
 
         _invalid_children: List[str] = ["Text"]
 
@@ -167,7 +167,7 @@ def component7() -> Type[Component]:
     """
 
     class TestComponent7(Component):
-        tag = "RandomComponent"
+        tag: str = "RandomComponent"
 
         _valid_children: List[str] = ["Text"]
 
@@ -438,7 +438,7 @@ def test_component_event_trigger_arbitrary_args():
 
     class C1(Component):
         library = "/local"
-        tag = "C1"
+        tag: str = "C1"
 
         def get_event_triggers(self) -> Dict[str, Any]:
             return {
@@ -1189,7 +1189,7 @@ def test_rename_props():
     """Test that _rename_props works and is inherited."""
 
     class C1(Component):
-        tag = "C1"
+        tag: str = "C1"
 
         prop1: Optional[Var[str]] = None
         prop2: Optional[Var[str]] = None
@@ -1197,7 +1197,7 @@ def test_rename_props():
         _rename_props = {"prop1": "renamed_prop1", "prop2": "renamed_prop2"}
 
     class C2(C1):
-        tag = "C2"
+        tag: str = "C2"
 
         prop3: Optional[Var[str]] = None
 
@@ -1223,7 +1223,7 @@ def test_deprecated_props(capsys):
     """
 
     class C1(Component):
-        tag = "C1"
+        tag: str = "C1"
 
         type: Optional[Var[str]] = None
         min: Optional[Var[str]] = None
@@ -1253,7 +1253,7 @@ def test_deprecated_props(capsys):
     assert "max={`max2`}" in c1_2_render["props"]
 
     class C2(Component):
-        tag = "C2"
+        tag: str = "C2"
 
         type_: Optional[Var[str]] = None
         min_: Optional[Var[str]] = None

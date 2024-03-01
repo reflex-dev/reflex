@@ -11,7 +11,7 @@ from reflex.vars import Var
 class Breadcrumb(ChakraComponent):
     """The parent container for breadcrumbs."""
 
-    tag = "Breadcrumb"
+    tag: str = "Breadcrumb"
 
     # The visual separator between each breadcrumb item
     separator: Optional[Var[str]] = None
@@ -52,7 +52,7 @@ class Breadcrumb(ChakraComponent):
 class BreadcrumbItem(ChakraComponent):
     """Individual breadcrumb element containing a link and a divider."""
 
-    tag = "BreadcrumbItem"
+    tag: str = "BreadcrumbItem"
 
     # Is the current page of the breadcrumb.
     is_current_page: Optional[Var[bool]] = None
@@ -87,13 +87,13 @@ class BreadcrumbItem(ChakraComponent):
 class BreadcrumbSeparator(ChakraComponent):
     """The visual separator between each breadcrumb."""
 
-    tag = "BreadcrumbSeparator"
+    tag: str = "BreadcrumbSeparator"
 
 
 class BreadcrumbLink(Link):
     """The breadcrumb link."""
 
-    tag = "BreadcrumbLink"
+    tag: str = "BreadcrumbLink"
 
     # Is the current page of the breadcrumb.
     is_current_page: Optional[Var[bool]] = None

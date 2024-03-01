@@ -21,7 +21,7 @@ class Gridjs(Component):
 class DataTable(Gridjs):
     """A data table component."""
 
-    tag = "Grid"
+    tag: str = "Grid"
 
     alias = "DataTableGrid"
 

@@ -14,7 +14,7 @@ from ..base import (
 class PopoverRoot(RadixThemesComponent):
     """Floating element for displaying rich content, triggered by a button."""
 
-    tag = "Popover.Root"
+    tag: str = "Popover.Root"
 
     # The controlled open state of the popover.
     open: Optional[Var[bool]] = None
@@ -37,13 +37,13 @@ class PopoverRoot(RadixThemesComponent):
 class PopoverTrigger(RadixThemesComponent):
     """Wraps the control that will open the popover."""
 
-    tag = "Popover.Trigger"
+    tag: str = "Popover.Trigger"
 
 
 class PopoverContent(el.Div, RadixThemesComponent):
     """Contains content to be rendered in the open popover."""
 
-    tag = "Popover.Content"
+    tag: str = "Popover.Content"
 
     # Size of the button: "1" | "2" | "3" | "4"
     size: Optional[Var[Literal["1", "2", "3", "4"]]] = None
@@ -83,7 +83,7 @@ class PopoverContent(el.Div, RadixThemesComponent):
 class PopoverClose(RadixThemesComponent):
     """Wraps the control that will close the popover."""
 
-    tag = "Popover.Close"
+    tag: str = "Popover.Close"
 
 
 class Popover(ComponentNamespace):

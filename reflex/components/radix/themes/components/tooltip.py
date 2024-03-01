@@ -33,7 +33,7 @@ LiteralStickyType = Literal[
 class Tooltip(RadixThemesComponent):
     """Floating element that provides a control with contextual information via pointer or focus."""
 
-    tag = "Tooltip"
+    tag: str = "Tooltip"
 
     # The content of the tooltip.
     content: Optional[Var[str]] = None

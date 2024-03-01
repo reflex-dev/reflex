@@ -21,7 +21,7 @@ LiteralButtonSize = Literal["1", "2", "3", "4"]
 class IconButton(el.Button, RadixThemesComponent):
     """A button designed specifically for usage with a single icon."""
 
-    tag = "IconButton"
+    tag: str = "IconButton"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Optional[Var[bool]] = None

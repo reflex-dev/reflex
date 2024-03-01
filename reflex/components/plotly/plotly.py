@@ -21,7 +21,7 @@ class PlotlyLib(NoSSRComponent):
 class Plotly(PlotlyLib):
     """Display a plotly graph."""
 
-    tag = "Plot"
+    tag: str = "Plot"
 
     is_default = True
 

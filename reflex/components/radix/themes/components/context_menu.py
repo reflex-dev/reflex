@@ -14,7 +14,7 @@ from ..base import (
 class ContextMenuRoot(RadixThemesComponent):
     """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
 
-    tag = "ContextMenu.Root"
+    tag: str = "ContextMenu.Root"
 
     # The modality of the context menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
     modal: Optional[Var[bool]] = None
@@ -36,7 +36,7 @@ class ContextMenuRoot(RadixThemesComponent):
 class ContextMenuTrigger(RadixThemesComponent):
     """Wraps the element that will open the context menu."""
 
-    tag = "ContextMenu.Trigger"
+    tag: str = "ContextMenu.Trigger"
 
     # Whether the trigger is disabled
     disabled: Optional[Var[bool]] = None
@@ -49,7 +49,7 @@ class ContextMenuTrigger(RadixThemesComponent):
 class ContextMenuContent(RadixThemesComponent):
     """The component that pops out when the context menu is open."""
 
-    tag = "ContextMenu.Content"
+    tag: str = "ContextMenu.Content"
 
     # Button size "1" - "4"
     size: Optional[Var[Literal["1", "2"]]] = None
@@ -88,13 +88,13 @@ class ContextMenuContent(RadixThemesComponent):
 class ContextMenuSub(RadixThemesComponent):
     """Contains all the parts of a submenu."""
 
-    tag = "ContextMenu.Sub"
+    tag: str = "ContextMenu.Sub"
 
 
 class ContextMenuSubTrigger(RadixThemesComponent):
     """An item that opens a submenu."""
 
-    tag = "ContextMenu.SubTrigger"
+    tag: str = "ContextMenu.SubTrigger"
 
     # Whether the trigger is disabled
     disabled: Optional[Var[bool]] = None
@@ -105,7 +105,7 @@ class ContextMenuSubTrigger(RadixThemesComponent):
 class ContextMenuSubContent(RadixThemesComponent):
     """The component that pops out when a submenu is open."""
 
-    tag = "ContextMenu.SubContent"
+    tag: str = "ContextMenu.SubContent"
 
     # When true, keyboard navigation will loop from last item to first, and vice versa.
     loop: Optional[Var[bool]] = None
@@ -130,7 +130,7 @@ class ContextMenuSubContent(RadixThemesComponent):
 class ContextMenuItem(RadixThemesComponent):
     """The component that contains the context menu items."""
 
-    tag = "ContextMenu.Item"
+    tag: str = "ContextMenu.Item"
 
     # Override theme color for button
     color_scheme: Optional[Var[LiteralAccentColor]] = None
@@ -144,7 +144,7 @@ class ContextMenuItem(RadixThemesComponent):
 class ContextMenuSeparator(RadixThemesComponent):
     """Separates items in a context menu."""
 
-    tag = "ContextMenu.Separator"
+    tag: str = "ContextMenu.Separator"
 
 
 class ContextMenu(ComponentNamespace):

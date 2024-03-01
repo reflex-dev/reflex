@@ -106,7 +106,7 @@ class DataEditorTheme(Base):
 class DataEditor(NoSSRComponent):
     """The DataEditor Component."""
 
-    tag = "DataEditor"
+    tag: str = "DataEditor"
     is_default = True
     library: str = "@glideapps/glide-data-grid@^5.3.0"
     lib_dependencies: List[str] = [

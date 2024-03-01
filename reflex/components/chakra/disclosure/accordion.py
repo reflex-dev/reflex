@@ -9,7 +9,7 @@ from reflex.vars import Var
 class Accordion(ChakraComponent):
     """The wrapper that uses cloneElement to pass props to AccordionItem children."""
 
-    tag = "Accordion"
+    tag: str = "Accordion"
 
     # If true, multiple accordion items can be expanded at once.
     allow_multiple: Optional[Var[bool]] = None
@@ -79,7 +79,7 @@ class Accordion(ChakraComponent):
 class AccordionItem(ChakraComponent):
     """A single accordion item."""
 
-    tag = "AccordionItem"
+    tag: str = "AccordionItem"
 
     # A unique id for the accordion item.
     id_: Optional[Var[str]] = None
@@ -94,16 +94,16 @@ class AccordionItem(ChakraComponent):
 class AccordionButton(ChakraComponent):
     """The button that toggles the expand/collapse state of the accordion item. This button must be wrapped in an element with role heading."""
 
-    tag = "AccordionButton"
+    tag: str = "AccordionButton"
 
 
 class AccordionPanel(ChakraComponent):
     """The container for the details to be revealed."""
 
-    tag = "AccordionPanel"
+    tag: str = "AccordionPanel"
 
 
 class AccordionIcon(ChakraComponent):
     """A chevron-down icon that rotates based on the expanded/collapsed state."""
 
-    tag = "AccordionIcon"
+    tag: str = "AccordionIcon"

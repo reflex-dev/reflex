@@ -14,31 +14,31 @@ from reflex.vars import Var
 class TagLabel(ChakraComponent):
     """The label of the tag."""
 
-    tag = "TagLabel"
+    tag: str = "TagLabel"
 
 
 class TagLeftIcon(ChakraComponent):
     """The left icon of the tag."""
 
-    tag = "TagLeftIcon"
+    tag: str = "TagLeftIcon"
 
 
 class TagRightIcon(ChakraComponent):
     """The right icon of the tag."""
 
-    tag = "TagRightIcon"
+    tag: str = "TagRightIcon"
 
 
 class TagCloseButton(ChakraComponent):
     """The close button of the tag."""
 
-    tag = "TagCloseButton"
+    tag: str = "TagCloseButton"
 
 
 class Tag(ChakraComponent):
     """The parent wrapper that provides context for its children."""
 
-    tag = "Tag"
+    tag: str = "Tag"
 
     # The visual color appearance of the tag.
     # options: "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" |

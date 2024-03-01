@@ -9,7 +9,7 @@ from ..base import RadixThemesComponent
 class AspectRatio(RadixThemesComponent):
     """Displays content with a desired ratio."""
 
-    tag = "AspectRatio"
+    tag: str = "AspectRatio"
 
     # The ratio of the width to the height of the element
     ratio: Optional[Var[Union[float, int]]] = None

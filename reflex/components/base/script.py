@@ -20,7 +20,7 @@ class Script(Component):
     """
 
     library = "next/script"
-    tag = "Script"
+    tag: str = "Script"
     is_default = True
 
     # Required unless inline script is used

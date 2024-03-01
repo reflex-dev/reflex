@@ -17,7 +17,7 @@ LiteralButtonSize = Literal["1", "2", "3", "4"]
 class Button(el.Button, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Button"
+    tag: str = "Button"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Optional[Var[bool]] = None

@@ -18,7 +18,7 @@ from .recharts import (
 class Pie(Recharts):
     """A Pie chart component in Recharts."""
 
-    tag = "Pie"
+    tag: str = "Pie"
 
     alias = "RechartsPie"
 
@@ -92,7 +92,7 @@ class Pie(Recharts):
 class Radar(Recharts):
     """A Radar chart component in Recharts."""
 
-    tag = "Radar"
+    tag: str = "Radar"
 
     alias = "RechartsRadar"
 
@@ -136,7 +136,7 @@ class Radar(Recharts):
 class RadialBar(Recharts):
     """A RadialBar chart component in Recharts."""
 
-    tag = "RadialBar"
+    tag: str = "RadialBar"
 
     alias = "RechartsRadialBar"
 
@@ -177,7 +177,7 @@ class RadialBar(Recharts):
 class PolarAngleAxis(Recharts):
     """A PolarAngleAxis component in Recharts."""
 
-    tag = "PolarAngleAxis"
+    tag: str = "PolarAngleAxis"
 
     alias = "RechartsPolarAngleAxis"
 
@@ -236,7 +236,7 @@ class PolarAngleAxis(Recharts):
 class PolarGrid(Recharts):
     """A PolarGrid component in Recharts."""
 
-    tag = "PolarGrid"
+    tag: str = "PolarGrid"
 
     alias = "RechartsPolarGrid"
 
@@ -268,7 +268,7 @@ class PolarGrid(Recharts):
 class PolarRadiusAxis(Recharts):
     """A PolarRadiusAxis component in Recharts."""
 
-    tag = "PolarRadiusAxis"
+    tag: str = "PolarRadiusAxis"
 
     alias = "RechartsPolarRadiusAxis"
 

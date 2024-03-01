@@ -11,7 +11,7 @@ from reflex.components.component import Component
 class Title(Component):
     """A component that displays the title of the current page."""
 
-    tag = "title"
+    tag: str = "title"
 
     def render(self) -> dict:
         """Render the title component.
@@ -29,7 +29,7 @@ class Title(Component):
 class Meta(Component):
     """A component that displays metadata for the current page."""
 
-    tag = "meta"
+    tag: str = "meta"
 
     # The description of character encoding.
     char_set: Optional[str] = None

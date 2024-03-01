@@ -11,7 +11,7 @@ class NextLink(Component):
 
     library = "next/link"
 
-    tag = "NextLink"
+    tag: str = "NextLink"
 
     is_default = True
 

@@ -20,7 +20,7 @@ LiteralFlexWrap = Literal["nowrap", "wrap", "wrap-reverse"]
 class Flex(el.Div, RadixThemesComponent):
     """Component for creating flex layouts."""
 
-    tag = "Flex"
+    tag: str = "Flex"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Optional[Var[bool]] = None

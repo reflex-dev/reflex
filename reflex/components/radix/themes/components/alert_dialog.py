@@ -14,7 +14,7 @@ LiteralContentSize = Literal["1", "2", "3", "4"]
 class AlertDialogRoot(RadixThemesComponent):
     """Contains all the parts of the dialog."""
 
-    tag = "AlertDialog.Root"
+    tag: str = "AlertDialog.Root"
 
     # The controlled open state of the dialog.
     open: Optional[Var[bool]] = None
@@ -34,13 +34,13 @@ class AlertDialogRoot(RadixThemesComponent):
 class AlertDialogTrigger(RadixThemesComponent):
     """Wraps the control that will open the dialog."""
 
-    tag = "AlertDialog.Trigger"
+    tag: str = "AlertDialog.Trigger"
 
 
 class AlertDialogContent(el.Div, RadixThemesComponent):
     """Contains the content of the dialog. This component is based on the div element."""
 
-    tag = "AlertDialog.Content"
+    tag: str = "AlertDialog.Content"
 
     # The size of the content.
     size: Optional[Var[LiteralContentSize]] = None
@@ -68,7 +68,7 @@ class AlertDialogTitle(RadixThemesComponent):
     leading trim on top.
     """
 
-    tag = "AlertDialog.Title"
+    tag: str = "AlertDialog.Title"
 
 
 class AlertDialogDescription(RadixThemesComponent):
@@ -76,7 +76,7 @@ class AlertDialogDescription(RadixThemesComponent):
     This part is based on the Text component with a pre-defined font size.
     """
 
-    tag = "AlertDialog.Description"
+    tag: str = "AlertDialog.Description"
 
 
 class AlertDialogAction(RadixThemesComponent):
@@ -84,7 +84,7 @@ class AlertDialogAction(RadixThemesComponent):
     visually from the Cancel control.
     """
 
-    tag = "AlertDialog.Action"
+    tag: str = "AlertDialog.Action"
 
 
 class AlertDialogCancel(RadixThemesComponent):
@@ -92,7 +92,7 @@ class AlertDialogCancel(RadixThemesComponent):
     visually from the Action control.
     """
 
-    tag = "AlertDialog.Cancel"
+    tag: str = "AlertDialog.Cancel"
 
 
 class AlertDialog(ComponentNamespace):

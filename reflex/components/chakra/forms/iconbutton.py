@@ -9,7 +9,7 @@ from reflex.vars import Var
 class IconButton(Text):
     """A button with an icon."""
 
-    tag = "IconButton"
+    tag: str = "IconButton"
     library = "@chakra-ui/button@2.1.0"
 
     # The type of button.

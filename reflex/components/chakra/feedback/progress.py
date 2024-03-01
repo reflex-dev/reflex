@@ -8,7 +8,7 @@ from reflex.vars import Var
 class Progress(ChakraComponent):
     """A bar to display progress."""
 
-    tag = "Progress"
+    tag: str = "Progress"
 
     # If true, the progress bar will show stripe
     has_stripe: Optional[Var[bool]] = None

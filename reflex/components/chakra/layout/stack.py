@@ -8,7 +8,7 @@ from reflex.vars import Var
 class Stack(ChakraComponent):
     """Container to stack elements with spacing."""
 
-    tag = "Stack"
+    tag: str = "Stack"
 
     # Shorthand for alignItems style prop
     align_items: Optional[Var[str]] = None
@@ -38,10 +38,10 @@ class Stack(ChakraComponent):
 class Hstack(Stack):
     """Stack items horizontally."""
 
-    tag = "HStack"
+    tag: str = "HStack"
 
 
 class Vstack(Stack):
     """Stack items vertically."""
 
-    tag = "VStack"
+    tag: str = "VStack"

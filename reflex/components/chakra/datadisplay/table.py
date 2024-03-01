@@ -11,7 +11,7 @@ from reflex.vars import Var
 class Table(ChakraComponent):
     """A table component."""
 
-    tag = "Table"
+    tag: str = "Table"
 
     # The color scheme of the table
     color_scheme: Optional[Var[str]] = None
@@ -62,7 +62,7 @@ class Table(ChakraComponent):
 class Thead(ChakraComponent):
     """A table header component."""
 
-    tag = "Thead"
+    tag: str = "Thead"
 
     # invalid children components
     _invalid_children: List[str] = ["Tbody", "Thead", "Tfoot"]
@@ -114,7 +114,7 @@ class Thead(ChakraComponent):
 class Tbody(ChakraComponent):
     """A table body component."""
 
-    tag = "Tbody"
+    tag: str = "Tbody"
 
     # invalid children components
     _invalid_children: List[str] = ["Tbody", "Thead", "Tfoot", "Td", "Th"]
@@ -188,7 +188,7 @@ class Tbody(ChakraComponent):
 class Tfoot(ChakraComponent):
     """A table footer component."""
 
-    tag = "Tfoot"
+    tag: str = "Tfoot"
 
     # invalid children components
     _invalid_children: List[str] = ["Tbody", "Thead", "Td", "Th", "Tfoot"]
@@ -237,7 +237,7 @@ class Tfoot(ChakraComponent):
 class Tr(ChakraComponent):
     """A table row component."""
 
-    tag = "Tr"
+    tag: str = "Tr"
 
     # invalid children components
     _invalid_children: List[str] = ["Tbody", "Thead", "Tfoot", "Tr"]
@@ -268,7 +268,7 @@ class Tr(ChakraComponent):
 class Th(ChakraComponent):
     """A table header cell component."""
 
-    tag = "Th"
+    tag: str = "Th"
 
     # invalid children components
     _invalid_children: List[str] = ["Tbody", "Thead", "Tr", "Td", "Th"]
@@ -280,7 +280,7 @@ class Th(ChakraComponent):
 class Td(ChakraComponent):
     """A table data cell component."""
 
-    tag = "Td"
+    tag: str = "Td"
 
     # invalid children components
     _invalid_children: List[str] = ["Tbody", "Thead"]
@@ -292,7 +292,7 @@ class Td(ChakraComponent):
 class TableCaption(ChakraComponent):
     """A table caption component."""
 
-    tag = "TableCaption"
+    tag: str = "TableCaption"
 
     # The placement of the table caption. This sets the `caption-side` CSS attribute.
     placement: Optional[Var[str]] = None
@@ -301,4 +301,4 @@ class TableCaption(ChakraComponent):
 class TableContainer(ChakraComponent):
     """The table container component renders a div that wraps the table component."""
 
-    tag = "TableContainer"
+    tag: str = "TableContainer"

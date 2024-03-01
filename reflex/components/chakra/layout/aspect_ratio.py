@@ -8,7 +8,7 @@ from reflex.vars import Var
 class AspectRatio(ChakraComponent):
     """AspectRatio component is used to embed responsive videos and maps, etc."""
 
-    tag = "AspectRatio"
+    tag: str = "AspectRatio"
 
     # The aspect ratio of the Box
     ratio: Optional[Var[float]] = None

@@ -13,7 +13,7 @@ from ..base import (
 class TableRoot(el.Table, RadixThemesComponent):
     """A semantic table for presenting tabular data."""
 
-    tag = "Table.Root"
+    tag: str = "Table.Root"
 
     # The size of the table: "1" | "2" | "3"
     size: Optional[Var[Literal["1", "2", "3"]]] = None
@@ -25,7 +25,7 @@ class TableRoot(el.Table, RadixThemesComponent):
 class TableHeader(el.Thead, RadixThemesComponent):
     """The header of the table defines column names and other non-data elements."""
 
-    tag = "Table.Header"
+    tag: str = "Table.Header"
 
     _invalid_children: List[str] = ["TableBody"]
 
@@ -35,7 +35,7 @@ class TableHeader(el.Thead, RadixThemesComponent):
 class TableRow(el.Tr, RadixThemesComponent):
     """A row containing table cells."""
 
-    tag = "Table.Row"
+    tag: str = "Table.Row"
 
     # The alignment of the row
     align: Optional[Var[Literal["start", "center", "end", "baseline"]]] = None
@@ -46,7 +46,7 @@ class TableRow(el.Tr, RadixThemesComponent):
 class TableColumnHeaderCell(el.Th, RadixThemesComponent):
     """A table cell that is semantically treated as a column header."""
 
-    tag = "Table.ColumnHeaderCell"
+    tag: str = "Table.ColumnHeaderCell"
 
     # The justification of the column
     justify: Optional[Var[Literal["start", "center", "end"]]] = None
@@ -64,7 +64,7 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
 class TableBody(el.Tbody, RadixThemesComponent):
     """The body of the table contains the data rows."""
 
-    tag = "Table.Body"
+    tag: str = "Table.Body"
 
     _invalid_children: List[str] = [
         "TableHeader",
@@ -79,7 +79,7 @@ class TableBody(el.Tbody, RadixThemesComponent):
 class TableCell(el.Td, RadixThemesComponent):
     """A cell containing data."""
 
-    tag = "Table.Cell"
+    tag: str = "Table.Cell"
 
     # The justification of the column
     justify: Optional[Var[Literal["start", "center", "end"]]] = None
@@ -96,7 +96,7 @@ class TableCell(el.Td, RadixThemesComponent):
 class TableRowHeaderCell(el.Th, RadixThemesComponent):
     """A table cell that is semantically treated as a row header."""
 
-    tag = "Table.RowHeaderCell"
+    tag: str = "Table.RowHeaderCell"
 
     # The justification of the column
     justify: Optional[Var[Literal["start", "center", "end"]]] = None

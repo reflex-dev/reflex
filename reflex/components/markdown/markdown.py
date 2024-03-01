@@ -77,7 +77,7 @@ class Markdown(Component):
 
     library = "react-markdown@8.0.7"
 
-    tag = "ReactMarkdown"
+    tag: str = "ReactMarkdown"
 
     is_default = True
 

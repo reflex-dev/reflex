@@ -8,7 +8,7 @@ from reflex.vars import Var
 class Heading(ChakraComponent):
     """A page heading."""
 
-    tag = "Heading"
+    tag: str = "Heading"
 
     # Override the tag. The default tag is `<h2>`.
     as_: Optional[Var[str]] = None

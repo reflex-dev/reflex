@@ -12,7 +12,7 @@ from ..base import (
 class Card(el.Div, RadixThemesComponent):
     """Container that groups related content and actions."""
 
-    tag = "Card"
+    tag: str = "Card"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Optional[Var[bool]] = None

@@ -36,7 +36,7 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
 class Form(ChakraComponent):
     """A form component."""
 
-    tag = "Box"
+    tag: str = "Box"
 
     # What the form renders to.
     as_: Var[str] = "form"  # type: ignore
@@ -151,7 +151,7 @@ class Form(ChakraComponent):
 class FormControl(ChakraComponent):
     """Provide context to form components."""
 
-    tag = "FormControl"
+    tag: str = "FormControl"
 
     # If true, the form control will be disabled.
     is_disabled: Optional[Var[bool]] = None
@@ -216,13 +216,13 @@ class FormControl(ChakraComponent):
 class FormHelperText(ChakraComponent):
     """A form helper text component."""
 
-    tag = "FormHelperText"
+    tag: str = "FormHelperText"
 
 
 class FormLabel(ChakraComponent):
     """A form label component."""
 
-    tag = "FormLabel"
+    tag: str = "FormLabel"
 
     # Link
     html_for: Optional[Var[str]] = None
@@ -231,4 +231,4 @@ class FormLabel(ChakraComponent):
 class FormErrorMessage(ChakraComponent):
     """A form error message component."""
 
-    tag = "FormErrorMessage"
+    tag: str = "FormErrorMessage"

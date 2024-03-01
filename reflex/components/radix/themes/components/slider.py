@@ -14,7 +14,7 @@ from ..base import (
 class Slider(RadixThemesComponent):
     """Provides user selection from a range of values."""
 
-    tag = "Slider"
+    tag: str = "Slider"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Optional[Var[bool]] = None

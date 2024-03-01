@@ -16,7 +16,7 @@ from reflex.vars import Var
 class Popover(ChakraComponent):
     """The wrapper that provides props, state, and context to its children."""
 
-    tag = "Popover"
+    tag: str = "Popover"
 
     # The padding required to prevent the arrow from reaching the very edge of the popper.
     arrow_padding: Optional[Var[int]] = None
@@ -144,46 +144,46 @@ class Popover(ChakraComponent):
 class PopoverContent(ChakraComponent):
     """The popover itself."""
 
-    tag = "PopoverContent"
+    tag: str = "PopoverContent"
 
 
 class PopoverHeader(ChakraComponent):
     """The header of the popover."""
 
-    tag = "PopoverHeader"
+    tag: str = "PopoverHeader"
 
 
 class PopoverFooter(ChakraComponent):
     """Display a popover footer."""
 
-    tag = "PopoverFooter"
+    tag: str = "PopoverFooter"
 
 
 class PopoverBody(ChakraComponent):
     """The body of the popover."""
 
-    tag = "PopoverBody"
+    tag: str = "PopoverBody"
 
 
 class PopoverArrow(ChakraComponent):
     """A visual arrow that points to the reference (or trigger)."""
 
-    tag = "PopoverArrow"
+    tag: str = "PopoverArrow"
 
 
 class PopoverCloseButton(ChakraComponent):
     """A button to close the popover."""
 
-    tag = "PopoverCloseButton"
+    tag: str = "PopoverCloseButton"
 
 
 class PopoverAnchor(ChakraComponent):
     """Used to wrap the position-reference element."""
 
-    tag = "PopoverAnchor"
+    tag: str = "PopoverAnchor"
 
 
 class PopoverTrigger(ChakraComponent):
     """Used to wrap the reference (or trigger) element."""
 
-    tag = "PopoverTrigger"
+    tag: str = "PopoverTrigger"

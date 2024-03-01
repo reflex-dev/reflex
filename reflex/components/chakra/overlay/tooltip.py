@@ -10,7 +10,7 @@ from reflex.vars import Var
 class Tooltip(ChakraComponent):
     """A tooltip message to appear."""
 
-    tag = "Tooltip"
+    tag: str = "Tooltip"
 
     # The padding required to prevent the arrow from reaching the very edge of the popper.
     arrow_padding: Optional[Var[int]] = None

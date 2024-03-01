@@ -14,7 +14,7 @@ class NextDocumentLib(Component):
 class Html(NextDocumentLib):
     """The document html."""
 
-    tag = "Html"
+    tag: str = "Html"
 
     lang: Optional[str]
 
@@ -22,16 +22,16 @@ class Html(NextDocumentLib):
 class DocumentHead(NextDocumentLib):
     """The document head."""
 
-    tag = "Head"
+    tag: str = "Head"
 
 
 class Main(NextDocumentLib):
     """The document main section."""
 
-    tag = "Main"
+    tag: str = "Main"
 
 
 class NextScript(NextDocumentLib):
     """The document main scripts."""
 
-    tag = "NextScript"
+    tag: str = "NextScript"

@@ -13,7 +13,7 @@ next_link = NextLink.create()
 class Link(ChakraComponent):
     """Link to another page."""
 
-    tag = "Link"
+    tag: str = "Link"
 
     # The rel.
     rel: Optional[Var[str]] = None

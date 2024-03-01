@@ -9,7 +9,7 @@ from reflex.vars import Var
 class Stat(ChakraComponent):
     """The Stat component is used to display some statistics. It can take in a label, a number and a help text."""
 
-    tag = "Stat"
+    tag: str = "Stat"
 
     @classmethod
     def create(
@@ -51,25 +51,25 @@ class Stat(ChakraComponent):
 class StatLabel(ChakraComponent):
     """A stat label component."""
 
-    tag = "StatLabel"
+    tag: str = "StatLabel"
 
 
 class StatNumber(ChakraComponent):
     """The stat to display."""
 
-    tag = "StatNumber"
+    tag: str = "StatNumber"
 
 
 class StatHelpText(ChakraComponent):
     """A helper text to display under the stat."""
 
-    tag = "StatHelpText"
+    tag: str = "StatHelpText"
 
 
 class StatArrow(ChakraComponent):
     """A stat arrow component indicating the direction of change."""
 
-    tag = "StatArrow"
+    tag: str = "StatArrow"
 
     # The type of arrow, either increase or decrease.
     type_: Optional[Var[str]] = None
@@ -78,4 +78,4 @@ class StatArrow(ChakraComponent):
 class StatGroup(ChakraComponent):
     """A stat group component to evenly space out the stats."""
 
-    tag = "StatGroup"
+    tag: str = "StatGroup"

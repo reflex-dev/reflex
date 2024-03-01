@@ -350,7 +350,7 @@ class CodeBlock(Component):
 
     library = "react-syntax-highlighter@15.5.0"
 
-    tag = "PrismAsyncLight"
+    tag: str = "PrismAsyncLight"
 
     alias = "SyntaxHighlighter"
 

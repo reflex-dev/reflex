@@ -15,7 +15,7 @@ LiteralSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 class Avatar(RadixThemesComponent):
     """An image element with a fallback for representing the user."""
 
-    tag = "Avatar"
+    tag: str = "Avatar"
 
     # The variant of the avatar
     variant: Optional[Var[Literal["solid", "soft"]]] = None

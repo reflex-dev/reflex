@@ -10,7 +10,7 @@ from .base import NextComponent
 class Image(NextComponent):
     """Display an image."""
 
-    tag = "Image"
+    tag: str = "Image"
     library = "next/image"
     is_default = True
 

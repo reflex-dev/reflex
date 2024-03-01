@@ -158,7 +158,7 @@ class UploadFilesProvider(Component):
     """AppWrap component that provides a dict of selected files by ID via useContext."""
 
     library = f"/{Dirs.CONTEXTS_PATH}"
-    tag = "UploadFilesProvider"
+    tag: str = "UploadFilesProvider"
 
 
 class Upload(MemoizationLeaf):
@@ -166,7 +166,7 @@ class Upload(MemoizationLeaf):
 
     library = "react-dropzone@14.2.3"
 
-    tag = "ReactDropzone"
+    tag: str = "ReactDropzone"
 
     is_default = True
 

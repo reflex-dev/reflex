@@ -125,7 +125,7 @@ class Theme(RadixThemesComponent):
     child elements as an override of the main theme.
     """
 
-    tag = "Theme"
+    tag: str = "Theme"
 
     # Whether to apply the themes background color to the theme node. Defaults to True.
     has_background: Optional[Var[bool]] = None
@@ -207,7 +207,7 @@ class ThemePanel(RadixThemesComponent):
     Include as a child component of Theme to use in your app.
     """
 
-    tag = "ThemePanel"
+    tag: str = "ThemePanel"
 
     # Whether the panel is open. Defaults to False.
     default_open: Optional[Var[bool]] = None
@@ -217,7 +217,7 @@ class RadixThemesColorModeProvider(Component):
     """Next-themes integration for radix themes components."""
 
     library = "/components/reflex/radix_themes_color_mode_provider.js"
-    tag = "RadixThemesColorModeProvider"
+    tag: str = "RadixThemesColorModeProvider"
     is_default = True
 
 

@@ -119,7 +119,7 @@ class ChartBase(RechartsCharts):
 class AreaChart(ChartBase):
     """An Area chart component in Recharts."""
 
-    tag = "AreaChart"
+    tag: str = "AreaChart"
 
     alias = "RechartsAreaChart"
 
@@ -147,7 +147,7 @@ class AreaChart(ChartBase):
 class BarChart(ChartBase):
     """A Bar chart component in Recharts."""
 
-    tag = "BarChart"
+    tag: str = "BarChart"
 
     alias = "RechartsBarChart"
 
@@ -187,7 +187,7 @@ class BarChart(ChartBase):
 class LineChart(ChartBase):
     """A Line chart component in Recharts."""
 
-    tag = "LineChart"
+    tag: str = "LineChart"
 
     alias = "RechartsLineChart"
 
@@ -209,7 +209,7 @@ class LineChart(ChartBase):
 class ComposedChart(ChartBase):
     """A Composed chart component in Recharts."""
 
-    tag = "ComposedChart"
+    tag: str = "ComposedChart"
 
     alias = "RechartsComposedChart"
 
@@ -248,7 +248,7 @@ class ComposedChart(ChartBase):
 class PieChart(ChartBase):
     """A Pie chart component in Recharts."""
 
-    tag = "PieChart"
+    tag: str = "PieChart"
 
     alias = "RechartsPieChart"
 
@@ -278,7 +278,7 @@ class PieChart(ChartBase):
 class RadarChart(ChartBase):
     """A Radar chart component in Recharts."""
 
-    tag = "RadarChart"
+    tag: str = "RadarChart"
 
     alias = "RechartsRadarChart"
 
@@ -327,7 +327,7 @@ class RadarChart(ChartBase):
 class RadialBarChart(ChartBase):
     """A RadialBar chart component in Recharts."""
 
-    tag = "RadialBarChart"
+    tag: str = "RadialBarChart"
 
     alias = "RechartsRadialBarChart"
 
@@ -385,7 +385,7 @@ class RadialBarChart(ChartBase):
 class ScatterChart(ChartBase):
     """A Scatter chart component in Recharts."""
 
-    tag = "ScatterChart"
+    tag: str = "ScatterChart"
 
     alias = "RechartsScatterChart"
 
@@ -423,7 +423,7 @@ class ScatterChart(ChartBase):
 class FunnelChart(RechartsCharts):
     """A Funnel chart component in Recharts."""
 
-    tag = "FunnelChart"
+    tag: str = "FunnelChart"
 
     alias = "RechartsFunnelChart"
 
@@ -474,7 +474,7 @@ class FunnelChart(RechartsCharts):
 class Treemap(RechartsCharts):
     """A Treemap chart component in Recharts."""
 
-    tag = "Treemap"
+    tag: str = "Treemap"
 
     alias = "RechartsTreemap"
 

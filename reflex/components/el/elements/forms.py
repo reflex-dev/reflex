@@ -11,7 +11,7 @@ from .base import BaseHTML
 class Button(BaseHTML):
     """Display the button element."""
 
-    tag = "button"
+    tag: str = "button"
 
     # Automatically focuses the button when the page loads
     auto_focus: Optional[Var[Union[str, int, bool]]] = None
@@ -50,14 +50,14 @@ class Button(BaseHTML):
 class Datalist(BaseHTML):
     """Display the datalist element."""
 
-    tag = "datalist"
+    tag: str = "datalist"
     # No unique attributes, only common ones are inherited
 
 
 class Fieldset(Element):
     """Display the fieldset element."""
 
-    tag = "fieldset"
+    tag: str = "fieldset"
 
     # Disables all the form control descendants of the fieldset
     disabled: Optional[Var[Union[str, int, bool]]] = None
@@ -72,7 +72,7 @@ class Fieldset(Element):
 class Form(BaseHTML):
     """Display the form element."""
 
-    tag = "form"
+    tag: str = "form"
 
     # MIME types the server accepts for file upload
     accept: Optional[Var[Union[str, int, bool]]] = None
@@ -105,7 +105,7 @@ class Form(BaseHTML):
 class Input(BaseHTML):
     """Display the input element."""
 
-    tag = "input"
+    tag: str = "input"
 
     # Accepted types of files when the input is file type
     accept: Optional[Var[Union[str, int, bool]]] = None
@@ -225,7 +225,7 @@ class Input(BaseHTML):
 class Label(BaseHTML):
     """Display the label element."""
 
-    tag = "label"
+    tag: str = "label"
 
     # ID of a form control with which the label is associated
     html_for: Optional[Var[Union[str, int, bool]]] = None
@@ -237,14 +237,14 @@ class Label(BaseHTML):
 class Legend(BaseHTML):
     """Display the legend element."""
 
-    tag = "legend"
+    tag: str = "legend"
     # No unique attributes, only common ones are inherited
 
 
 class Meter(BaseHTML):
     """Display the meter element."""
 
-    tag = "meter"
+    tag: str = "meter"
 
     # Associates the meter with a form (by id)
     form: Optional[Var[Union[str, int, bool]]] = None
@@ -271,7 +271,7 @@ class Meter(BaseHTML):
 class Optgroup(BaseHTML):
     """Display the optgroup element."""
 
-    tag = "optgroup"
+    tag: str = "optgroup"
 
     # Disables the optgroup
     disabled: Optional[Var[Union[str, int, bool]]] = None
@@ -283,7 +283,7 @@ class Optgroup(BaseHTML):
 class Option(BaseHTML):
     """Display the option element."""
 
-    tag = "option"
+    tag: str = "option"
 
     # Disables the option
     disabled: Optional[Var[Union[str, int, bool]]] = None
@@ -301,7 +301,7 @@ class Option(BaseHTML):
 class Output(BaseHTML):
     """Display the output element."""
 
-    tag = "output"
+    tag: str = "output"
 
     # Associates the output with one or more elements (by their IDs)
     html_for: Optional[Var[Union[str, int, bool]]] = None
@@ -316,7 +316,7 @@ class Output(BaseHTML):
 class Progress(BaseHTML):
     """Display the progress element."""
 
-    tag = "progress"
+    tag: str = "progress"
 
     # Associates the progress element with a form (by id)
     form: Optional[Var[Union[str, int, bool]]] = None
@@ -331,7 +331,7 @@ class Progress(BaseHTML):
 class Select(BaseHTML):
     """Display the select element."""
 
-    tag = "select"
+    tag: str = "select"
 
     # Whether the form control should have autocomplete enabled
     auto_complete: Optional[Var[Union[str, int, bool]]] = None
@@ -372,7 +372,7 @@ class Select(BaseHTML):
 class Textarea(BaseHTML):
     """Display the textarea element."""
 
-    tag = "textarea"
+    tag: str = "textarea"
 
     # Whether the form control should have autocomplete enabled
     auto_complete: Optional[Var[Union[str, int, bool]]] = None

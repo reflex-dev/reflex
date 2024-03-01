@@ -27,7 +27,7 @@ LiteralDirectionType = Literal["top", "bottom", "left", "right"]
 class DrawerRoot(DrawerComponent):
     """The Root component of a Drawer, contains all parts of a drawer."""
 
-    tag = "Drawer.Root"
+    tag: str = "Drawer.Root"
 
     alias = "Vaul" + tag
 
@@ -73,7 +73,7 @@ class DrawerRoot(DrawerComponent):
 class DrawerTrigger(DrawerComponent):
     """The button that opens the dialog."""
 
-    tag = "Drawer.Trigger"
+    tag: str = "Drawer.Trigger"
 
     alias = "Vaul" + tag
 
@@ -84,7 +84,7 @@ class DrawerTrigger(DrawerComponent):
 class DrawerPortal(DrawerComponent):
     """Portals your drawer into the body."""
 
-    tag = "Drawer.Portal"
+    tag: str = "Drawer.Portal"
 
     alias = "Vaul" + tag
 
@@ -93,7 +93,7 @@ class DrawerPortal(DrawerComponent):
 class DrawerContent(DrawerComponent):
     """Content that should be rendered in the drawer."""
 
-    tag = "Drawer.Content"
+    tag: str = "Drawer.Content"
 
     alias = "Vaul" + tag
 
@@ -157,7 +157,7 @@ class DrawerContent(DrawerComponent):
 class DrawerOverlay(DrawerComponent):
     """A layer that covers the inert portion of the view when the dialog is open."""
 
-    tag = "Drawer.Overlay"
+    tag: str = "Drawer.Overlay"
 
     alias = "Vaul" + tag
 
@@ -185,7 +185,7 @@ class DrawerOverlay(DrawerComponent):
 class DrawerClose(DrawerComponent):
     """A button that closes the drawer."""
 
-    tag = "Drawer.Close"
+    tag: str = "Drawer.Close"
 
     alias = "Vaul" + tag
 
@@ -193,7 +193,7 @@ class DrawerClose(DrawerComponent):
 class DrawerTitle(DrawerComponent):
     """A title for the drawer."""
 
-    tag = "Drawer.Title"
+    tag: str = "Drawer.Title"
 
     alias = "Vaul" + tag
 
@@ -218,7 +218,7 @@ class DrawerTitle(DrawerComponent):
 class DrawerDescription(DrawerComponent):
     """A description for the drawer."""
 
-    tag = "Drawer.Description"
+    tag: str = "Drawer.Description"
 
     alias = "Vaul" + tag
 

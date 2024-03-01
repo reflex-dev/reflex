@@ -11,7 +11,7 @@ from reflex.vars import Var
 class Image(ChakraComponent):
     """Display an image."""
 
-    tag = "Image"
+    tag: str = "Image"
     alias = "ChakraImage"
     # How to align the image within its bounds. It maps to css `object-position` property.
     align: Optional[Var[str]] = None

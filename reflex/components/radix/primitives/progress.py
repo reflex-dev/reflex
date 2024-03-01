@@ -21,7 +21,7 @@ class ProgressComponent(RadixPrimitiveComponentWithClassName):
 class ProgressRoot(ProgressComponent):
     """The Progress Root component."""
 
-    tag = "Root"
+    tag: str = "Root"
     alias = "RadixProgressRoot"
 
     # Override theme radius for progress bar: "none" | "small" | "medium" | "large" | "full"
@@ -51,7 +51,7 @@ class ProgressRoot(ProgressComponent):
 class ProgressIndicator(ProgressComponent):
     """The Progress bar indicator."""
 
-    tag = "Indicator"
+    tag: str = "Indicator"
 
     alias = "RadixProgressIndicator"
 

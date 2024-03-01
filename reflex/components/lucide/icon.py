@@ -17,7 +17,7 @@ class LucideIconComponent(Component):
 class Icon(LucideIconComponent):
     """An Icon component."""
 
-    tag = "None"
+    tag: str = "None"
 
     # The size of the icon in pixels.
     size: Optional[Var[int]] = None

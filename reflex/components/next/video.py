@@ -10,7 +10,7 @@ from .base import NextComponent
 class Video(NextComponent):
     """A video component from NextJS."""
 
-    tag = "Video"
+    tag: str = "Video"
     library = "next-video"
     is_default = True
     # the URL

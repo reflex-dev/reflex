@@ -11,7 +11,7 @@ from ..base import (
 class ScrollArea(RadixThemesComponent):
     """Custom styled, cross-browser scrollable area using native functionality."""
 
-    tag = "ScrollArea"
+    tag: str = "ScrollArea"
 
     # The alignment of the scroll area
     scrollbars: Optional[Var[Literal["vertical", "horizontal", "both"]]] = None

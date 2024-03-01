@@ -75,7 +75,7 @@ class Editor(NoSSRComponent):
 
     library = "suneditor-react"
 
-    tag = "SunEditor"
+    tag: str = "SunEditor"
 
     is_default = True
 

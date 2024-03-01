@@ -9,4 +9,4 @@ from ..base import RadixThemesComponent
 class Box(el.Div, RadixThemesComponent):
     """A fundamental layout building block, based on `div` element."""
 
-    tag = "Box"
+    tag: str = "Box"

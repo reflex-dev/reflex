@@ -15,7 +15,7 @@ from reflex.vars import Var
 class NumberInput(ChakraComponent):
     """The wrapper that provides context and logic to the components."""
 
-    tag = "NumberInput"
+    tag: str = "NumberInput"
 
     # State var to bind the input.
     value: Optional[Var[Number]] = None
@@ -115,22 +115,22 @@ class NumberInput(ChakraComponent):
 class NumberInputField(ChakraComponent):
     """The input field itself."""
 
-    tag = "NumberInputField"
+    tag: str = "NumberInputField"
 
 
 class NumberInputStepper(ChakraComponent):
     """The wrapper for the input's stepper buttons."""
 
-    tag = "NumberInputStepper"
+    tag: str = "NumberInputStepper"
 
 
 class NumberIncrementStepper(ChakraComponent):
     """The button to increment the value of the input."""
 
-    tag = "NumberIncrementStepper"
+    tag: str = "NumberIncrementStepper"
 
 
 class NumberDecrementStepper(ChakraComponent):
     """The button to decrement the value of the input."""
 
-    tag = "NumberDecrementStepper"
+    tag: str = "NumberDecrementStepper"

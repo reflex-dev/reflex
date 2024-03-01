@@ -17,7 +17,7 @@ from reflex.vars import Var
 class Input(ChakraComponent):
     """The Input component is a component that is used to get user input in a text field."""
 
-    tag = "Input"
+    tag: str = "Input"
 
     # State var to bind the input.
     value: Optional[Var[str]] = None
@@ -99,7 +99,7 @@ class Input(ChakraComponent):
 class InputGroup(ChakraComponent):
     """The InputGroup component is a component that is used to group a set of inputs."""
 
-    tag = "InputGroup"
+    tag: str = "InputGroup"
 
     _memoization_mode = MemoizationMode(recursive=False)
 
@@ -107,22 +107,22 @@ class InputGroup(ChakraComponent):
 class InputLeftAddon(ChakraComponent):
     """The InputLeftAddon component is a component that is used to add an addon to the left of an input."""
 
-    tag = "InputLeftAddon"
+    tag: str = "InputLeftAddon"
 
 
 class InputRightAddon(ChakraComponent):
     """The InputRightAddon component is a component that is used to add an addon to the right of an input."""
 
-    tag = "InputRightAddon"
+    tag: str = "InputRightAddon"
 
 
 class InputLeftElement(ChakraComponent):
     """The InputLeftElement component is a component that is used to add an element to the left of an input."""
 
-    tag = "InputLeftElement"
+    tag: str = "InputLeftElement"
 
 
 class InputRightElement(ChakraComponent):
     """The InputRightElement component is a component that is used to add an element to the right of an input."""
 
-    tag = "InputRightElement"
+    tag: str = "InputRightElement"

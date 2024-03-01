@@ -45,7 +45,7 @@ class FormComponent(RadixPrimitiveComponentWithClassName):
 class FormRoot(FormComponent):
     """The root component of a radix form."""
 
-    tag = "Root"
+    tag: str = "Root"
 
     alias = "RadixFormRoot"
 
@@ -167,7 +167,7 @@ class FormRoot(FormComponent):
 class FormField(FormComponent):
     """A form field component."""
 
-    tag = "Field"
+    tag: str = "Field"
 
     alias = "RadixFormField"
 
@@ -188,7 +188,7 @@ class FormField(FormComponent):
 class FormLabel(FormComponent):
     """A form label component."""
 
-    tag = "Label"
+    tag: str = "Label"
 
     alias = "RadixFormLabel"
 
@@ -204,7 +204,7 @@ class FormLabel(FormComponent):
 class FormControl(FormComponent):
     """A form control component."""
 
-    tag = "Control"
+    tag: str = "Control"
 
     alias = "RadixFormControl"
 
@@ -252,7 +252,7 @@ LiteralMatcher = Literal[
 class FormMessage(FormComponent):
     """A form message component."""
 
-    tag = "Message"
+    tag: str = "Message"
 
     alias = "RadixFormMessage"
 
@@ -277,14 +277,14 @@ class FormMessage(FormComponent):
 class FormValidityState(FormComponent):
     """A form validity state component."""
 
-    tag = "ValidityState"
+    tag: str = "ValidityState"
     alias = "RadixFormValidityState"
 
 
 class FormSubmit(FormComponent):
     """A form submit component."""
 
-    tag = "Submit"
+    tag: str = "Submit"
     alias = "RadixFormSubmit"
 
 

@@ -8,7 +8,7 @@ from reflex.vars import Var
 class Grid(ChakraComponent):
     """A grid component."""
 
-    tag = "Grid"
+    tag: str = "Grid"
 
     # Shorthand prop for gridAutoColumns to provide automatic column sizing based on content.
     # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-columns)_
@@ -43,7 +43,7 @@ class Grid(ChakraComponent):
 class GridItem(ChakraComponent):
     """Used as a child of Grid to control the span, and start positions within the grid."""
 
-    tag = "GridItem"
+    tag: str = "GridItem"
 
     # Shorthand prop for gridArea
     # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-area)_
@@ -73,7 +73,7 @@ class GridItem(ChakraComponent):
 class ResponsiveGrid(ChakraComponent):
     """A responsive grid component."""
 
-    tag = "SimpleGrid"
+    tag: str = "SimpleGrid"
 
     # Shorthand prop for gridAutoColumns to provide automatic column sizing based on content.
     # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-columns)_

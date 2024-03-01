@@ -16,7 +16,7 @@ from ..base import (
 class SelectRoot(RadixThemesComponent):
     """Displays a list of options for the user to pick from, triggered by a button."""
 
-    tag = "Select.Root"
+    tag: str = "Select.Root"
 
     # The size of the select: "1" | "2" | "3"
     size: Optional[Var[Literal["1", "2", "3"]]] = None
@@ -61,7 +61,7 @@ class SelectRoot(RadixThemesComponent):
 class SelectTrigger(RadixThemesComponent):
     """The button that toggles the select."""
 
-    tag = "Select.Trigger"
+    tag: str = "Select.Trigger"
 
     # Variant of the select trigger
     variant: Optional[Var[Literal["classic", "surface", "soft", "ghost"]]] = None
@@ -81,7 +81,7 @@ class SelectTrigger(RadixThemesComponent):
 class SelectContent(RadixThemesComponent):
     """The component that pops out when the select is open."""
 
-    tag = "Select.Content"
+    tag: str = "Select.Content"
 
     # The variant of the select content
     variant: Optional[Var[Literal["solid", "soft"]]] = None
@@ -124,7 +124,7 @@ class SelectContent(RadixThemesComponent):
 class SelectGroup(RadixThemesComponent):
     """Used to group multiple items."""
 
-    tag = "Select.Group"
+    tag: str = "Select.Group"
 
     _valid_parents: List[str] = ["SelectContent"]
 
@@ -132,7 +132,7 @@ class SelectGroup(RadixThemesComponent):
 class SelectItem(RadixThemesComponent):
     """The component that contains the select items."""
 
-    tag = "Select.Item"
+    tag: str = "Select.Item"
 
     # The value given as data when submitting a form with a name.
     value: Optional[Var[str]] = None
@@ -146,7 +146,7 @@ class SelectItem(RadixThemesComponent):
 class SelectLabel(RadixThemesComponent):
     """Used to render the label of a group, it isn't focusable using arrow keys."""
 
-    tag = "Select.Label"
+    tag: str = "Select.Label"
 
     _valid_parents: List[str] = ["SelectGroup"]
 
@@ -154,7 +154,7 @@ class SelectLabel(RadixThemesComponent):
 class SelectSeparator(RadixThemesComponent):
     """Used to visually separate items in the Select."""
 
-    tag = "Select.Separator"
+    tag: str = "Select.Separator"
 
 
 class HighLevelSelect(SelectRoot):

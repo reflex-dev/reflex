@@ -6,4 +6,4 @@ from reflex.components.component import Component
 class Body(Component):
     """A body component."""
 
-    tag = "body"
+    tag: str = "body"

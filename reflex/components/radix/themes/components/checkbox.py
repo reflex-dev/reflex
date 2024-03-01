@@ -20,7 +20,7 @@ LiteralCheckboxVariant = Literal["classic", "surface", "soft"]
 class Checkbox(RadixThemesComponent):
     """Selects a single value, typically for submission in a form."""
 
-    tag = "Checkbox"
+    tag: str = "Checkbox"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Optional[Var[bool]] = None
@@ -73,7 +73,7 @@ class Checkbox(RadixThemesComponent):
 class HighLevelCheckbox(RadixThemesComponent):
     """A checkbox component with a label."""
 
-    tag = "Checkbox"
+    tag: str = "Checkbox"
 
     # The text label for the checkbox.
     text: Optional[Var[str]] = None

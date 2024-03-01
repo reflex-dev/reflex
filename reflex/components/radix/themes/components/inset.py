@@ -14,7 +14,7 @@ LiteralButtonSize = Literal["1", "2", "3", "4"]
 class Inset(el.Div, RadixThemesComponent):
     """Applies a negative margin to allow content to bleed into the surrounding container."""
 
-    tag = "Inset"
+    tag: str = "Inset"
 
     # The side
     side: Optional[Var[Literal["x", "y", "top", "bottom", "right", "left"]]] = None

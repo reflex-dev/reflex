@@ -14,7 +14,7 @@ LiteralSeperatorSize = Literal["1", "2", "3", "4"]
 class Separator(RadixThemesComponent):
     """Visually or semantically separates content."""
 
-    tag = "Separator"
+    tag: str = "Separator"
 
     # The size of the select: "1" | "2" | "3" | "4"
     size: Var[LiteralSeperatorSize] = Var.create_safe("4")

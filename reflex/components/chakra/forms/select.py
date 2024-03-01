@@ -13,7 +13,7 @@ from reflex.vars import Var
 class Select(ChakraComponent):
     """Select component is a component that allows users pick a value from predefined options. Ideally, it should be used when there are more than 5 options, otherwise you might consider using a radio group instead."""
 
-    tag = "Select"
+    tag: str = "Select"
 
     # State var to bind the select.
     value: Optional[Var[str]] = None
@@ -87,7 +87,7 @@ class Select(ChakraComponent):
 class Option(Text):
     """A select option."""
 
-    tag = "option"
+    tag: str = "option"
 
     value: Optional[Var[Any]] = None
 

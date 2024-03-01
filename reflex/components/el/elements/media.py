@@ -9,7 +9,7 @@ from .base import BaseHTML
 class Area(BaseHTML):
     """Display the area element."""
 
-    tag = "area"
+    tag: str = "area"
 
     # Alternate text for the area, used for accessibility
     alt: Optional[Var[Union[str, int, bool]]] = None
@@ -48,7 +48,7 @@ class Area(BaseHTML):
 class Audio(BaseHTML):
     """Display the audio element."""
 
-    tag = "audio"
+    tag: str = "audio"
 
     # Specifies that the audio will start playing as soon as it is ready
     auto_play: Optional[Var[Union[str, int, bool]]] = None
@@ -78,7 +78,7 @@ class Audio(BaseHTML):
 class Img(BaseHTML):
     """Display the img element."""
 
-    tag = "img"
+    tag: str = "img"
 
     # Image alignment with respect to its surrounding elements
     align: Optional[Var[Union[str, int, bool]]] = None
@@ -120,7 +120,7 @@ class Img(BaseHTML):
 class Map(BaseHTML):
     """Display the map element."""
 
-    tag = "map"
+    tag: str = "map"
 
     # Name of the map, referenced by the 'usemap' attribute in 'img' and 'object' elements
     name: Optional[Var[Union[str, int, bool]]] = None
@@ -129,7 +129,7 @@ class Map(BaseHTML):
 class Track(BaseHTML):
     """Display the track element."""
 
-    tag = "track"
+    tag: str = "track"
 
     # Indicates that the track should be enabled unless the user's preferences indicate otherwise
     default: Optional[Var[Union[str, int, bool]]] = None
@@ -150,7 +150,7 @@ class Track(BaseHTML):
 class Video(BaseHTML):
     """Display the video element."""
 
-    tag = "video"
+    tag: str = "video"
 
     # Specifies that the video will start playing as soon as it is ready
     auto_play: Optional[Var[Union[str, int, bool]]] = None
@@ -186,7 +186,7 @@ class Video(BaseHTML):
 class Embed(BaseHTML):
     """Display the embed element."""
 
-    tag = "embed"
+    tag: str = "embed"
 
     # URL of the embedded content
     src: Optional[Var[Union[str, int, bool]]] = None
@@ -198,7 +198,7 @@ class Embed(BaseHTML):
 class Iframe(BaseHTML):
     """Display the iframe element."""
 
-    tag = "iframe"
+    tag: str = "iframe"
 
     # Alignment of the iframe within the page or surrounding elements
     align: Optional[Var[Union[str, int, bool]]] = None
@@ -231,7 +231,7 @@ class Iframe(BaseHTML):
 class Object(BaseHTML):
     """Display the object element."""
 
-    tag = "object"
+    tag: str = "object"
 
     # URL of the data to be used by the object
     data: Optional[Var[Union[str, int, bool]]] = None
@@ -252,21 +252,21 @@ class Object(BaseHTML):
 class Picture(BaseHTML):
     """Display the picture element."""
 
-    tag = "picture"
+    tag: str = "picture"
     # No unique attributes, only common ones are inherited
 
 
 class Portal(BaseHTML):
     """Display the portal element."""
 
-    tag = "portal"
+    tag: str = "portal"
     # No unique attributes, only common ones are inherited
 
 
 class Source(BaseHTML):
     """Display the source element."""
 
-    tag = "source"
+    tag: str = "source"
 
     # Media query indicating what device the linked resource is optimized for
     media: Optional[Var[Union[str, int, bool]]] = None
@@ -287,13 +287,13 @@ class Source(BaseHTML):
 class Svg(BaseHTML):
     """Display the svg element."""
 
-    tag = "svg"
+    tag: str = "svg"
 
 
 class Path(BaseHTML):
     """Display the path element."""
 
-    tag = "path"
+    tag: str = "path"
 
     # Defines the shape of the path
     d: Optional[Var[Union[str, int, bool]]] = None

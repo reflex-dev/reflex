@@ -87,7 +87,7 @@ class Axis(Recharts):
 class XAxis(Axis):
     """An XAxis component in Recharts."""
 
-    tag = "XAxis"
+    tag: str = "XAxis"
 
     alias = "RechartsXAxis"
 
@@ -95,7 +95,7 @@ class XAxis(Axis):
 class YAxis(Axis):
     """A YAxis component in Recharts."""
 
-    tag = "YAxis"
+    tag: str = "YAxis"
 
     alias = "RechartsYAxis"
 
@@ -106,7 +106,7 @@ class YAxis(Axis):
 class ZAxis(Recharts):
     """A ZAxis component in Recharts."""
 
-    tag = "ZAxis"
+    tag: str = "ZAxis"
 
     alias = "RechartszAxis"
 
@@ -129,7 +129,7 @@ class ZAxis(Recharts):
 class Brush(Recharts):
     """A Brush component in Recharts."""
 
-    tag = "Brush"
+    tag: str = "Brush"
 
     alias = "RechartsBrush"
 
@@ -214,7 +214,7 @@ class Cartesian(Recharts):
 class Area(Cartesian):
     """An Area component in Recharts."""
 
-    tag = "Area"
+    tag: str = "Area"
 
     alias = "RechartsArea"
 
@@ -249,7 +249,7 @@ class Area(Cartesian):
 class Bar(Cartesian):
     """A Bar component in Recharts."""
 
-    tag = "Bar"
+    tag: str = "Bar"
 
     alias = "RechartsBar"
 
@@ -284,7 +284,7 @@ class Bar(Cartesian):
 class Line(Cartesian):
     """A Line component in Recharts."""
 
-    tag = "Line"
+    tag: str = "Line"
 
     alias = "RechartsLine"
 
@@ -319,7 +319,7 @@ class Line(Cartesian):
 class Scatter(Cartesian):
     """A Scatter component in Recharts."""
 
-    tag = "Scatter"
+    tag: str = "Scatter"
 
     alias = "RechartsScatter"
 
@@ -351,7 +351,7 @@ class Scatter(Cartesian):
 class Funnel(Cartesian):
     """A Funnel component in Recharts."""
 
-    tag = "Funnel"
+    tag: str = "Funnel"
 
     alias = "RechartsFunnel"
 
@@ -374,7 +374,7 @@ class Funnel(Cartesian):
 class ErrorBar(Recharts):
     """An ErrorBar component in Recharts."""
 
-    tag = "ErrorBar"
+    tag: str = "ErrorBar"
 
     alias = "RechartsErrorBar"
 
@@ -419,7 +419,7 @@ class Reference(Recharts):
 class ReferenceLine(Reference):
     """A ReferenceLine component in Recharts."""
 
-    tag = "ReferenceLine"
+    tag: str = "ReferenceLine"
 
     alias = "RechartsReferenceLine"
 
@@ -433,7 +433,7 @@ class ReferenceLine(Reference):
 class ReferenceDot(Reference):
     """A ReferenceDot component in Recharts."""
 
-    tag = "ReferenceDot"
+    tag: str = "ReferenceDot"
 
     alias = "RechartsReferenceDot"
 
@@ -459,7 +459,7 @@ class ReferenceDot(Reference):
 class ReferenceArea(Recharts):
     """A ReferenceArea component in Recharts."""
 
-    tag = "ReferenceArea"
+    tag: str = "ReferenceArea"
 
     alias = "RechartsReferenceArea"
 
@@ -519,7 +519,7 @@ class Grid(Recharts):
 class CartesianGrid(Grid):
     """A CartesianGrid component in Recharts."""
 
-    tag = "CartesianGrid"
+    tag: str = "CartesianGrid"
 
     alias = "RechartsCartesianGrid"
 
@@ -542,7 +542,7 @@ class CartesianGrid(Grid):
 class CartesianAxis(Grid):
     """A CartesianAxis component in Recharts."""
 
-    tag = "CartesianAxis"
+    tag: str = "CartesianAxis"
 
     alias = "RechartsCartesianAxis"
 

@@ -14,7 +14,7 @@ T = TypeVar("T")
 class List(ChakraComponent, Generic[T]):
     """Display a list of items."""
 
-    tag = "List"
+    tag: str = "List"
 
     # The space between each list item
     spacing: Optional[Var[str]] = None
@@ -50,16 +50,16 @@ class List(ChakraComponent, Generic[T]):
 class ListItem(ChakraComponent):
     """A single list item."""
 
-    tag = "ListItem"
+    tag: str = "ListItem"
 
 
 class OrderedList(List):
     """An ordered list component with numbers."""
 
-    tag = "OrderedList"
+    tag: str = "OrderedList"
 
 
 class UnorderedList(List):
     """An unordered list component with bullets."""
 
-    tag = "UnorderedList"
+    tag: str = "UnorderedList"

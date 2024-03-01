@@ -14,7 +14,7 @@ class ChakraIconComponent(ChakraComponent):
 class Icon(ChakraIconComponent):
     """An image icon."""
 
-    tag = "None"
+    tag: str = "None"
 
     @classmethod
     def create(cls, *children, **props):

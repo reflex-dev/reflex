@@ -12,6 +12,6 @@ class NextHeadLib(Component):
 class Head(NextHeadLib, MemoizationLeaf):
     """Head Component."""
 
-    tag = "NextHead"
+    tag: str = "NextHead"
 
     is_default = True

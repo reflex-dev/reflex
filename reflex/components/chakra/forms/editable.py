@@ -11,7 +11,7 @@ from reflex.vars import Var
 class Editable(ChakraComponent):
     """The wrapper component that provides context value."""
 
-    tag = "Editable"
+    tag: str = "Editable"
 
     # If true, the Editable will be disabled.
     is_disabled: Optional[Var[bool]] = None
@@ -55,16 +55,16 @@ class Editable(ChakraComponent):
 class EditableInput(ChakraComponent):
     """The edit view of the component. It shows when you click or focus on the text."""
 
-    tag = "EditableInput"
+    tag: str = "EditableInput"
 
 
 class EditableTextarea(ChakraComponent):
     """Use the textarea element to handle multi line text input in an editable context."""
 
-    tag = "EditableTextarea"
+    tag: str = "EditableTextarea"
 
 
 class EditablePreview(ChakraComponent):
     """The read-only view of the component."""
 
-    tag = "EditablePreview"
+    tag: str = "EditablePreview"

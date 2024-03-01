@@ -8,7 +8,7 @@ from reflex.vars import Var
 class Skeleton(ChakraComponent):
     """Skeleton is used to display the loading state of some components. You can use it as a standalone component. Or to wrap another component to take the same height and width."""
 
-    tag = "Skeleton"
+    tag: str = "Skeleton"
 
     # The color at the animation end
     end_color: Optional[Var[str]] = None
@@ -29,7 +29,7 @@ class Skeleton(ChakraComponent):
 class SkeletonCircle(ChakraComponent):
     """SkeletonCircle is used to display the loading state of some components."""
 
-    tag = "SkeletonCircle"
+    tag: str = "SkeletonCircle"
 
     # The color at the animation end
     end_color: Optional[Var[str]] = None
@@ -50,7 +50,7 @@ class SkeletonCircle(ChakraComponent):
 class SkeletonText(ChakraComponent):
     """SkeletonText is used to display the loading state of some components."""
 
-    tag = "SkeletonText"
+    tag: str = "SkeletonText"
 
     # The color at the animation end
     end_color: Optional[Var[str]] = None

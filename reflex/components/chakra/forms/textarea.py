@@ -13,7 +13,7 @@ from reflex.vars import Var
 class TextArea(ChakraComponent):
     """A text area component."""
 
-    tag = "Textarea"
+    tag: str = "Textarea"
 
     # State var to bind the input.
     value: Optional[Var[str]] = None

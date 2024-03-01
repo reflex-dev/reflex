@@ -21,7 +21,7 @@ class ClientSideRouting(Component):
     """The client-side routing component."""
 
     library = "/utils/client_side_routing"
-    tag = "useClientSideRouting"
+    tag: str = "useClientSideRouting"
 
     def _get_hooks(self) -> str:
         """Get the hooks to render.
@@ -62,7 +62,7 @@ class Default404Page(Component):
     """The NextJS default 404 page."""
 
     library = "next/error"
-    tag = "Error"
+    tag: str = "Error"
     is_default = True
 
     status_code: Var[int] = 404  # type: ignore

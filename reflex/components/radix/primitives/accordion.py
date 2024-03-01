@@ -305,7 +305,7 @@ class AccordionComponent(RadixPrimitiveComponent):
 class AccordionRoot(AccordionComponent):
     """An accordion component."""
 
-    tag = "Root"
+    tag: str = "Root"
 
     alias = "RadixAccordionRoot"
 
@@ -469,7 +469,7 @@ to {
 class AccordionItem(AccordionComponent):
     """An accordion component."""
 
-    tag = "Item"
+    tag: str = "Item"
 
     alias = "RadixAccordionItem"
 
@@ -538,7 +538,7 @@ class AccordionItem(AccordionComponent):
 class AccordionHeader(AccordionComponent):
     """An accordion component."""
 
-    tag = "Header"
+    tag: str = "Header"
 
     alias = "RadixAccordionHeader"
 
@@ -567,7 +567,7 @@ class AccordionHeader(AccordionComponent):
 class AccordionTrigger(AccordionComponent):
     """An accordion component."""
 
-    tag = "Trigger"
+    tag: str = "Trigger"
 
     alias = "RadixAccordionTrigger"
 
@@ -618,7 +618,7 @@ class AccordionIcon(Icon):
 class AccordionContent(AccordionComponent):
     """An accordion component."""
 
-    tag = "Content"
+    tag: str = "Content"
 
     alias = "RadixAccordionContent"
 

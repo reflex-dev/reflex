@@ -53,7 +53,7 @@ class ChakraComponent(Component):
 class ChakraProvider(ChakraComponent):
     """Top level Chakra provider must be included in any app using chakra components."""
 
-    tag = "ChakraProvider"
+    tag: str = "ChakraProvider"
 
     theme: Optional[Var[str]] = None
 
@@ -93,7 +93,7 @@ class ChakraColorModeProvider(Component):
     """Next-themes integration for chakra colorModeProvider."""
 
     library = "/components/reflex/chakra_color_mode_provider.js"
-    tag = "ChakraColorModeProvider"
+    tag: str = "ChakraColorModeProvider"
     is_default = True
 
 

@@ -9,7 +9,7 @@ from reflex.vars import Var
 class Highlight(ChakraComponent):
     """Highlights a specific part of a string."""
 
-    tag = "Highlight"
+    tag: str = "Highlight"
 
     # A query for the text to highlight. Can be a string or a list of strings.
     query: Optional[Var[List[str]]] = None

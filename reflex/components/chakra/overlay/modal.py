@@ -14,7 +14,7 @@ ModalSizes = Literal["xs", "sm", "md", "lg", "xl", "full"]
 class Modal(ChakraComponent):
     """The wrapper that provides context for its children."""
 
-    tag = "Modal"
+    tag: str = "Modal"
 
     # If true, the modal will be open.
     is_open: Optional[Var[bool]] = None
@@ -133,34 +133,34 @@ class Modal(ChakraComponent):
 class ModalOverlay(ChakraComponent):
     """The dimmed overlay behind the modal dialog."""
 
-    tag = "ModalOverlay"
+    tag: str = "ModalOverlay"
 
 
 class ModalHeader(ChakraComponent):
     """The header that labels the modal dialog."""
 
-    tag = "ModalHeader"
+    tag: str = "ModalHeader"
 
 
 class ModalFooter(ChakraComponent):
     """The footer that houses the modal events."""
 
-    tag = "ModalFooter"
+    tag: str = "ModalFooter"
 
 
 class ModalContent(ChakraComponent):
     """The container for the modal dialog's content."""
 
-    tag = "ModalContent"
+    tag: str = "ModalContent"
 
 
 class ModalBody(ChakraComponent):
     """The wrapper that houses the modal's main content."""
 
-    tag = "ModalBody"
+    tag: str = "ModalBody"
 
 
 class ModalCloseButton(ChakraComponent):
     """The button that closes the modal."""
 
-    tag = "ModalCloseButton"
+    tag: str = "ModalCloseButton"

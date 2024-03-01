@@ -25,7 +25,7 @@ def TestEventAction():
     class EventFiringComponent(rx.Component):
         """A component that fires onClick event without passing DOM event."""
 
-        tag = "EventFiringComponent"
+        tag: str = "EventFiringComponent"
 
         def _get_custom_code(self) -> str | None:
             return """

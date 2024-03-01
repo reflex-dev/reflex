@@ -9,20 +9,20 @@ from .base import BaseHTML
 class Canvas(BaseHTML):
     """Display the canvas element."""
 
-    tag = "canvas"
+    tag: str = "canvas"
 
 
 class Noscript(BaseHTML):
     """Display the noscript element."""
 
-    tag = "noscript"
+    tag: str = "noscript"
     # No unique attributes, only common ones are inherited
 
 
 class Script(BaseHTML):
     """Display the script element."""
 
-    tag = "script"
+    tag: str = "script"
 
     # Indicates that the script should be executed asynchronously
     async_: Optional[Var[Union[str, int, bool]]] = None

@@ -14,7 +14,7 @@ class ReactPlayer(NoSSRComponent):
 
     library = "react-player@2.12.0"
 
-    tag = "ReactPlayer"
+    tag: str = "ReactPlayer"
 
     is_default = True
 

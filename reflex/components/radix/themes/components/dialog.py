@@ -14,7 +14,7 @@ from ..base import (
 class DialogRoot(RadixThemesComponent):
     """Root component for Dialog."""
 
-    tag = "Dialog.Root"
+    tag: str = "Dialog.Root"
 
     # The controlled open state of the dialog.
     open: Optional[Var[bool]] = None
@@ -34,19 +34,19 @@ class DialogRoot(RadixThemesComponent):
 class DialogTrigger(RadixThemesComponent):
     """Trigger an action or event, to open a Dialog modal."""
 
-    tag = "Dialog.Trigger"
+    tag: str = "Dialog.Trigger"
 
 
 class DialogTitle(RadixThemesComponent):
     """Title component to display inside a Dialog modal."""
 
-    tag = "Dialog.Title"
+    tag: str = "Dialog.Title"
 
 
 class DialogContent(el.Div, RadixThemesComponent):
     """Content component to display inside a Dialog modal."""
 
-    tag = "Dialog.Content"
+    tag: str = "Dialog.Content"
 
     # DialogContent size "1" - "4"
     size: Optional[Var[Literal["1", "2", "3", "4"]]] = None
@@ -70,13 +70,13 @@ class DialogContent(el.Div, RadixThemesComponent):
 class DialogDescription(RadixThemesComponent):
     """Description component to display inside a Dialog modal."""
 
-    tag = "Dialog.Description"
+    tag: str = "Dialog.Description"
 
 
 class DialogClose(RadixThemesComponent):
     """Close button component to close an open Dialog modal."""
 
-    tag = "Dialog.Close"
+    tag: str = "Dialog.Close"
 
 
 class Dialog(ComponentNamespace):

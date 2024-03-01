@@ -30,7 +30,7 @@ LiteralStickyType = Literal[
 class DropdownMenuRoot(RadixThemesComponent):
     """The Dropdown Menu Root Component."""
 
-    tag = "DropdownMenu.Root"
+    tag: str = "DropdownMenu.Root"
 
     # The open state of the dropdown menu when it is initially rendered. Use when you do not need to control its open state.
     default_open: Optional[Var[bool]] = None
@@ -61,7 +61,7 @@ class DropdownMenuRoot(RadixThemesComponent):
 class DropdownMenuTrigger(RadixThemesComponent):
     """The button that toggles the dropdown menu."""
 
-    tag = "DropdownMenu.Trigger"
+    tag: str = "DropdownMenu.Trigger"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
     as_child: Optional[Var[bool]] = None
@@ -74,7 +74,7 @@ class DropdownMenuTrigger(RadixThemesComponent):
 class DropdownMenuContent(RadixThemesComponent):
     """The Dropdown Menu Content component that pops out when the dropdown menu is open."""
 
-    tag = "DropdownMenu.Content"
+    tag: str = "DropdownMenu.Content"
 
     # Dropdown Menu Content size "1" - "2"
     size: Optional[Var[LiteralSizeType]] = None
@@ -145,7 +145,7 @@ class DropdownMenuContent(RadixThemesComponent):
 class DropdownMenuSubTrigger(RadixThemesComponent):
     """An item that opens a submenu."""
 
-    tag = "DropdownMenu.SubTrigger"
+    tag: str = "DropdownMenu.SubTrigger"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
     as_child: Optional[Var[bool]] = None
@@ -162,7 +162,7 @@ class DropdownMenuSubTrigger(RadixThemesComponent):
 class DropdownMenuSub(RadixThemesComponent):
     """Contains all the parts of a submenu."""
 
-    tag = "DropdownMenu.Sub"
+    tag: str = "DropdownMenu.Sub"
 
     # The controlled open state of the submenu. Must be used in conjunction with `on_open_change`.
     open: Optional[Var[bool]] = None
@@ -185,7 +185,7 @@ class DropdownMenuSub(RadixThemesComponent):
 class DropdownMenuSubContent(RadixThemesComponent):
     """The component that pops out when a submenu is open. Must be rendered inside DropdownMenuSub."""
 
-    tag = "DropdownMenu.SubContent"
+    tag: str = "DropdownMenu.SubContent"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
     as_child: Optional[Var[bool]] = None
@@ -239,7 +239,7 @@ class DropdownMenuSubContent(RadixThemesComponent):
 class DropdownMenuItem(RadixThemesComponent):
     """The Dropdown Menu Item Component."""
 
-    tag = "DropdownMenu.Item"
+    tag: str = "DropdownMenu.Item"
 
     # Override theme color for Dropdown Menu Item
     color_scheme: Optional[Var[LiteralAccentColor]] = None
@@ -273,7 +273,7 @@ class DropdownMenuItem(RadixThemesComponent):
 class DropdownMenuSeparator(RadixThemesComponent):
     """Dropdown Menu Separator Component. Used to visually separate items in the dropdown menu."""
 
-    tag = "DropdownMenu.Separator"
+    tag: str = "DropdownMenu.Separator"
 
 
 class DropdownMenu(ComponentNamespace):

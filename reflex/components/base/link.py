@@ -8,7 +8,7 @@ from reflex.vars import Var
 class RawLink(Component):
     """A component that displays the title of the current page."""
 
-    tag = "link"
+    tag: str = "link"
 
     # The href.
     href: Optional[Var[str]] = None
@@ -20,7 +20,7 @@ class RawLink(Component):
 class ScriptTag(Component):
     """A script tag with the specified type and source."""
 
-    tag = "script"
+    tag: str = "script"
 
     # The type of script represented.
     type_: Optional[Var[str]] = None

@@ -46,7 +46,7 @@ LiteralType = Literal[
 class Text(el.Span, RadixThemesComponent):
     """A foundational text primitive based on the <span> element."""
 
-    tag = "Text"
+    tag: str = "Text"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Optional[Var[bool]] = None
@@ -82,13 +82,13 @@ class Span(Text):
 class Em(el.Em, RadixThemesComponent):
     """Marks text to stress emphasis."""
 
-    tag = "Em"
+    tag: str = "Em"
 
 
 class Kbd(el.Kbd, RadixThemesComponent):
     """Represents keyboard input or a hotkey."""
 
-    tag = "Kbd"
+    tag: str = "Kbd"
 
     # Text size: "1" - "9"
     size: Optional[Var[LiteralTextSize]] = None
@@ -97,13 +97,13 @@ class Kbd(el.Kbd, RadixThemesComponent):
 class Quote(el.Q, RadixThemesComponent):
     """A short inline quotation."""
 
-    tag = "Quote"
+    tag: str = "Quote"
 
 
 class Strong(el.Strong, RadixThemesComponent):
     """Marks text to signify strong importance."""
 
-    tag = "Strong"
+    tag: str = "Strong"
 
 
 class TextNamespace(ComponentNamespace):

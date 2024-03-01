@@ -18,7 +18,7 @@ CalloutVariant = Literal["soft", "surface", "outline"]
 class CalloutRoot(el.Div, RadixThemesComponent):
     """Groups Icon and Text parts of a Callout."""
 
-    tag = "Callout.Root"
+    tag: str = "Callout.Root"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Optional[Var[bool]] = None
@@ -39,13 +39,13 @@ class CalloutRoot(el.Div, RadixThemesComponent):
 class CalloutIcon(el.Div, RadixThemesComponent):
     """Provides width and height for the icon associated with the callout."""
 
-    tag = "Callout.Icon"
+    tag: str = "Callout.Icon"
 
 
 class CalloutText(el.P, RadixThemesComponent):
     """Renders the callout text. This component is based on the p element."""
 
-    tag = "Callout.Text"
+    tag: str = "Callout.Text"
 
 
 class Callout(CalloutRoot):

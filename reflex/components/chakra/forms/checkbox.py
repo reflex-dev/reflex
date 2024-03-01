@@ -15,7 +15,7 @@ from reflex.vars import Var
 class Checkbox(ChakraComponent):
     """The Checkbox component is used in forms when a user needs to select multiple values from several options."""
 
-    tag = "Checkbox"
+    tag: str = "Checkbox"
 
     # Color scheme for checkbox.
     # Options:
@@ -71,7 +71,7 @@ class Checkbox(ChakraComponent):
 class CheckboxGroup(ChakraComponent):
     """A group of checkboxes."""
 
-    tag = "CheckboxGroup"
+    tag: str = "CheckboxGroup"
 
     # The value of the checkbox group
     value: Optional[Var[str]] = None

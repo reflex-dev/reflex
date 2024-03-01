@@ -8,7 +8,7 @@ from reflex.vars import Var
 class Span(ChakraComponent):
     """Render an inline span of text."""
 
-    tag = "Text"
+    tag: str = "Text"
 
     # Override the tag. The default tag is `<span>`.
     as_: Var[str] = "span"  # type: ignore

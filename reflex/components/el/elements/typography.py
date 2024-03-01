@@ -9,7 +9,7 @@ from .base import BaseHTML
 class Blockquote(BaseHTML):
     """Display the blockquote element."""
 
-    tag = "blockquote"
+    tag: str = "blockquote"
 
     # Define the title of a work.
     cite: Optional[Var[Union[str, int, bool]]] = None
@@ -18,37 +18,37 @@ class Blockquote(BaseHTML):
 class Dd(BaseHTML):
     """Display the dd element."""
 
-    tag = "dd"
+    tag: str = "dd"
 
 
 class Div(BaseHTML):
     """Display the div element."""
 
-    tag = "div"
+    tag: str = "div"
 
 
 class Dl(BaseHTML):
     """Display the dl element."""
 
-    tag = "dl"
+    tag: str = "dl"
 
 
 class Dt(BaseHTML):
     """Display the dt element."""
 
-    tag = "dt"
+    tag: str = "dt"
 
 
 class Figcaption(BaseHTML):
     """Display the figcaption element."""
 
-    tag = "figcaption"
+    tag: str = "figcaption"
 
 
 class Hr(BaseHTML):
     """Display the hr element."""
 
-    tag = "hr"
+    tag: str = "hr"
 
     # Used to specify the alignment of text content of The Element. this attribute is used in all elements.
     align: Optional[Var[Union[str, int, bool]]] = None
@@ -57,13 +57,13 @@ class Hr(BaseHTML):
 class Li(BaseHTML):
     """Display the li element."""
 
-    tag = "li"
+    tag: str = "li"
 
 
 class Menu(BaseHTML):
     """Display the menu element."""
 
-    tag = "menu"
+    tag: str = "menu"
 
     # Specifies that the menu element is a context menu.
     type: Optional[Var[Union[str, int, bool]]] = None
@@ -72,7 +72,7 @@ class Menu(BaseHTML):
 class Ol(BaseHTML):
     """Display the ol element."""
 
-    tag = "ol"
+    tag: str = "ol"
 
     # Reverses the order of the list.
     reversed: Optional[Var[Union[str, int, bool]]] = None
@@ -87,25 +87,25 @@ class Ol(BaseHTML):
 class P(BaseHTML):
     """Display the p element."""
 
-    tag = "p"
+    tag: str = "p"
 
 
 class Pre(BaseHTML):
     """Display the pre element."""
 
-    tag = "pre"
+    tag: str = "pre"
 
 
 class Ul(BaseHTML):
     """Display the ul element."""
 
-    tag = "ul"
+    tag: str = "ul"
 
 
 class Ins(BaseHTML):
     """Display the ins element."""
 
-    tag = "ins"
+    tag: str = "ins"
 
     # Specifies the URL of the document that explains the reason why the text was inserted/changed.
     cite: Optional[Var[Union[str, int, bool]]] = None
@@ -117,7 +117,7 @@ class Ins(BaseHTML):
 class Del(BaseHTML):
     """Display the del element."""
 
-    tag = "del"
+    tag: str = "del"
 
     # Specifies the URL of the document that explains the reason why the text was deleted.
     cite: Optional[Var[Union[str, int, bool]]] = None

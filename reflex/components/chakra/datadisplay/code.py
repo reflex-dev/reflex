@@ -7,4 +7,4 @@ from reflex.components.chakra import (
 class Code(ChakraComponent):
     """Used to display inline code."""
 
-    tag = "Code"
+    tag: str = "Code"

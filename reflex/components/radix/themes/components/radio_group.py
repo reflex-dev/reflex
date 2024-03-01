@@ -20,7 +20,7 @@ LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 class RadioGroupRoot(RadixThemesComponent):
     """A set of interactive radio buttons where only one can be selected at a time."""
 
-    tag = "RadioGroup.Root"
+    tag: str = "RadioGroup.Root"
 
     # The size of the radio group: "1" | "2" | "3"
     size: Optional[Var[Literal["1", "2", "3"]]] = None
@@ -67,7 +67,7 @@ class RadioGroupRoot(RadixThemesComponent):
 class RadioGroupItem(RadixThemesComponent):
     """An item in the group that can be checked."""
 
-    tag = "RadioGroup.Item"
+    tag: str = "RadioGroup.Item"
 
     # The value of the radio item to check. Should be used in conjunction with on_change.
     value: Optional[Var[str]] = None

@@ -14,7 +14,7 @@ from ..base import (
 class HoverCardRoot(RadixThemesComponent):
     """For sighted users to preview content available behind a link."""
 
-    tag = "HoverCard.Root"
+    tag: str = "HoverCard.Root"
 
     # The open state of the hover card when it is initially rendered. Use when you do not need to control its open state.
     default_open: Optional[Var[bool]] = None
@@ -43,13 +43,13 @@ class HoverCardRoot(RadixThemesComponent):
 class HoverCardTrigger(RadixThemesComponent):
     """Wraps the link that will open the hover card."""
 
-    tag = "HoverCard.Trigger"
+    tag: str = "HoverCard.Trigger"
 
 
 class HoverCardContent(el.Div, RadixThemesComponent):
     """Contains the content of the open hover card."""
 
-    tag = "HoverCard.Content"
+    tag: str = "HoverCard.Content"
 
     # The preferred side of the trigger to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
     side: Optional[Var[Literal["top", "right", "bottom", "left"]]] = None

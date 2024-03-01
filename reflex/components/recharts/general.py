@@ -20,7 +20,7 @@ from .recharts import (
 class ResponsiveContainer(Recharts, MemoizationLeaf):
     """A base class for responsive containers in Recharts."""
 
-    tag = "ResponsiveContainer"
+    tag: str = "ResponsiveContainer"
 
     alias = "RechartsResponsiveContainer"
 
@@ -59,7 +59,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
 class Legend(Recharts):
     """A Legend component in Recharts."""
 
-    tag = "Legend"
+    tag: str = "Legend"
 
     alias = "RechartsLegend"
 
@@ -112,7 +112,7 @@ class Legend(Recharts):
 class GraphingTooltip(Recharts):
     """A Tooltip component in Recharts."""
 
-    tag = "Tooltip"
+    tag: str = "Tooltip"
 
     alias = "RechartsTooltip"
 
@@ -144,7 +144,7 @@ class GraphingTooltip(Recharts):
 class Label(Recharts):
     """A Label component in Recharts."""
 
-    tag = "Label"
+    tag: str = "Label"
 
     alias = "RechartsLabel"
 
@@ -164,7 +164,7 @@ class Label(Recharts):
 class LabelList(Recharts):
     """A LabelList component in Recharts."""
 
-    tag = "LabelList"
+    tag: str = "LabelList"
 
     alias = "RechartsLabelList"
 
