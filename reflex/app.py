@@ -132,7 +132,7 @@ class App(Base):
     head_components: List[Component] = []
 
     # The language to add to the html root tag of every page.
-    html_lang: Optional[Union[Var[str], str]] = None
+    html_lang: Optional[str] = None
 
     # Attributes to add to the html root tag of every page.
     html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None
