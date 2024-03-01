@@ -1,4 +1,5 @@
 """The main Reflex app."""
+
 from __future__ import annotations
 
 import asyncio
@@ -36,7 +37,7 @@ from reflex.admin import AdminDash
 from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
-from reflex.components import connection_modal
+from reflex.components import connection_modal, connection_pulser
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
@@ -87,7 +88,7 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    return connection_modal()
+    return Fragment.create(connection_pulser(), connection_modal())
 
 
 class App(Base):
@@ -198,9 +199,11 @@ class App(Base):
             # Set up the Socket.IO AsyncServer.
             self.sio = AsyncServer(
                 async_mode="asgi",
-                cors_allowed_origins="*"
-                if config.cors_allowed_origins == ["*"]
-                else config.cors_allowed_origins,
+                cors_allowed_origins=(
+                    "*"
+                    if config.cors_allowed_origins == ["*"]
+                    else config.cors_allowed_origins
+                ),
                 cors_credentials=True,
                 max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
                 ping_interval=constants.Ping.INTERVAL,
@@ -376,7 +379,7 @@ class App(Base):
                 raise TypeError(
                     "You may be trying to use an invalid Python function on a state var. "
                     "When referencing a var inside your render code, only limited var operations are supported. "
-                    "See the var operation docs here: https://reflex.dev/docs/state/vars/#var-operations"
+                    "See the var operation docs here: https://reflex.dev/docs/vars/var-operations/"
                 ) from e
             raise e
 
@@ -387,10 +390,9 @@ class App(Base):
         title: str = constants.DefaultPage.TITLE,
         description: str = constants.DefaultPage.DESCRIPTION,
         image: str = constants.DefaultPage.IMAGE,
-        on_load: EventHandler
-        | EventSpec
-        | list[EventHandler | EventSpec]
-        | None = None,
+        on_load: (
+            EventHandler | EventSpec | list[EventHandler | EventSpec] | None
+        ) = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
         script_tags: list[Component] | None = None,
     ):
@@ -520,10 +522,9 @@ class App(Base):
         title: str = constants.Page404.TITLE,
         image: str = constants.Page404.IMAGE,
         description: str = constants.Page404.DESCRIPTION,
-        on_load: EventHandler
-        | EventSpec
-        | list[EventHandler | EventSpec]
-        | None = None,
+        on_load: (
+            EventHandler | EventSpec | list[EventHandler | EventSpec] | None
+        ) = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Define a custom 404 page for any url having no match.

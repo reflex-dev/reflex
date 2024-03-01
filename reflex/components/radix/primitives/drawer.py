@@ -1,4 +1,5 @@
 """Drawer components based on Radix primitives."""
+
 # Based on Vaul: https://github.com/emilkowalski/vaul
 # Style based on https://ui.shadcn.com/docs/components/drawer
 from __future__ import annotations
@@ -20,12 +21,7 @@ class DrawerComponent(RadixPrimitiveComponent):
     lib_dependencies: List[str] = ["@radix-ui/react-dialog@^1.0.5"]
 
 
-LiteralDirectionType = Literal[
-    "top",
-    "bottom",
-    "left",
-    "right",
-]
+LiteralDirectionType = Literal["top", "bottom", "left", "right"]
 
 
 class DrawerRoot(DrawerComponent):
@@ -70,7 +66,7 @@ class DrawerRoot(DrawerComponent):
         """
         return {
             **super().get_event_triggers(),
-            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0.target.value],
+            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
         }
 
 

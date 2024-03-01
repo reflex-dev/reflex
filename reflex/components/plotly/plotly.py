@@ -32,6 +32,9 @@ class Plotly(PlotlyLib):
     # The layout of the graph.
     layout: Var[Dict]
 
+    # The config of the graph.
+    config: Var[Dict]
+
     # The width of the graph.
     width: Var[str]
 
