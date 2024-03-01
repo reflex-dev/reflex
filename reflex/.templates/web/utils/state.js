@@ -325,17 +325,14 @@ export const connect = async (
     autoUnref: false,
   });
 
-  function checkVisibility(){
-    if (document.visibilityState === 'visible') {
-      if (!socket.current.connected){
-        console.log("Socket is disconnected, attempting to reconnect ")
-        socket.current.connect()
+  function checkVisibility() {
+    if (document.visibilityState === "visible") {
+      if (!socket.current.connected) {
+        console.log("Socket is disconnected, attempting to reconnect ");
+        socket.current.connect();
+      } else {
+        console.log("Socket is reconnected ");
       }
-      else{
-
-        console.log("Socket is reconnected ")
-      }
-
     }
   }
 
