@@ -113,7 +113,9 @@ class DropdownMenuContent(RadixThemesComponent):
     avoid_collisions: Optional[Var[bool]] = None
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Optional[Var[Union[float, int, Dict[str, Union[float, int]]]]] = None
+    collision_padding: Optional[
+        Var[Union[float, int, Dict[str, Union[float, int]]]]
+    ] = None
 
     # The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
     arrow_padding: Optional[Var[Union[float, int]]] = None
@@ -204,7 +206,9 @@ class DropdownMenuSubContent(RadixThemesComponent):
     avoid_collisions: Optional[Var[bool]] = None
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Optional[Var[Union[float, int, Dict[str, Union[float, int]]]]] = None
+    collision_padding: Optional[
+        Var[Union[float, int, Dict[str, Union[float, int]]]]
+    ] = None
 
     # The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
     arrow_padding: Optional[Var[Union[float, int]]] = None

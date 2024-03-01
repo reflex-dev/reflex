@@ -37,7 +37,7 @@ class DictMutationTestState(BaseState):
         self.details.pop("age")
 
     # dict in list
-    address: List[Dict[str,str]] = [{"home": "home address"}, {"work": "work address"}]
+    address: List[Dict[str, str]] = [{"home": "home address"}, {"work": "work address"}]
 
     def remove_home_address(self):
         """Remove the home address from dict in the list."""
@@ -48,7 +48,10 @@ class DictMutationTestState(BaseState):
         self.address[0]["street"] = "street address"
 
     # nested dict
-    friend_in_nested_dict: Dict[str, Union[str, Dict[str,str]]] = {"name": "Nikhil", "friend": {"name": "Alek"}}
+    friend_in_nested_dict: Dict[str, Union[str, Dict[str, str]]] = {
+        "name": "Nikhil",
+        "friend": {"name": "Alek"},
+    }
 
     def change_friend_name(self):
         """Change the friend's name in the nested dict."""

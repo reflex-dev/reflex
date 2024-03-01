@@ -195,7 +195,7 @@ def _split_substate_key(substate_key: str) -> tuple[str, str]:
     return token, state_name
 
 
-class BaseState(Base, ABC, extra=pydantic.Extra.allow):
+class BaseState(Base, ABC, extra="allow"):
     """The state of the app."""
 
     # A map from the var name to the var.
@@ -288,7 +288,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         kwargs["parent_state"] = parent_state
 
         for prop_name, prop in self.base_vars.items():
-            if prop_name not in kwargs and self.model_fields[prop_name].is_required():
+            if (
+                prop_name not in kwargs
+                and prop_name in self.model_fields
+                and self.model_fields[prop_name].is_required()
+            ):
                 kwargs[prop_name] = prop.get_default_value()
 
         super().__init__(*args, **kwargs)
@@ -362,7 +366,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ]
 
     @classmethod
-    def __init_subclass__(cls, **kwargs):
+    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
         """Do some magic for the subclass initialization.
 
         Args:
@@ -371,7 +375,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             ValueError: If a substate class shadows another.
         """
-        super().__init_subclass__(**kwargs)
+        #  super().__init_subclass__(**kwargs)
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
 
@@ -485,6 +489,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             handler = EventHandler(fn=fn)
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
+
+        # Inherited vars are handled in __getattribute__, not by pydantic
+        for prop in cls.model_fields.copy():
+            if prop in cls.inherited_vars or prop in cls.inherited_backend_vars:
+                del cls.model_fields[prop]
+        cls.model_rebuild(force=True)
 
         cls._init_var_dependency_dicts()
 
@@ -994,9 +1004,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # If the state hasn't been initialized yet, return the default value.
         if not super().__getattribute__("__dict__"):
             return super().__getattribute__(name)
-        private_attrs = super().__getattribute__("__pydantic_private__")
-        if private_attrs is None:
-            return super().__getattribute__(name)
 
         inherited_vars = {
             **super().__getattribute__("inherited_vars"),
@@ -1009,6 +1016,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if parent_state is not None:
                 return getattr(parent_state, name)
 
+        private_attrs = super().__getattribute__("__pydantic_private__")
+        if private_attrs is None:
+            return super().__getattribute__(name)
         backend_vars = private_attrs["_backend_vars"]
         if name in backend_vars:
             value = backend_vars[name]
@@ -1088,7 +1098,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # on the browser also resets the values on the backend.
         fields = self.get_fields()
         for prop_name in self.base_vars:
-            field = fields[prop_name]
+            if not (field := fields.get(prop_name)):
+                # inherited values are reset in the parent state
+                continue
             if isinstance(field.default, ClientStorageBase) or (
                 isinstance(field.annotation, type)
                 and issubclass(field.annotation, ClientStorageBase)

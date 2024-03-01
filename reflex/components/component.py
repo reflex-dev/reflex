@@ -283,7 +283,11 @@ class Component(BaseComponent, ABC):
                 continue
 
             # unwrap Optional from field_type
-            field_type = typing.get_args(field_type)[0] if types.is_optional(field_type) else field_type
+            field_type = (
+                typing.get_args(field_type)[0]
+                if types.is_optional(field_type)
+                else field_type
+            )
 
             # Check whether the key is a component prop.
             if types._issubclass(field_type, Var):
