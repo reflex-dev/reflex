@@ -437,7 +437,7 @@ def test_component_event_trigger_arbitrary_args():
         return [_e.target.value, bravo["nested"], charlie.custom + 42]
 
     class C1(Component):
-        library = "/local"
+        library: str = "/local"
         tag: str = "C1"
 
         def get_event_triggers(self) -> Dict[str, Any]:

@@ -73,7 +73,7 @@ class Editor(NoSSRComponent):
     refer to the library docs for a complete list.
     """
 
-    library = "suneditor-react"
+    library: str = "suneditor-react"
 
     tag: str = "SunEditor"
 

@@ -11,7 +11,7 @@ class Image(NextComponent):
     """Display an image."""
 
     tag: str = "Image"
-    library = "next/image"
+    library: str = "next/image"
     is_default: bool = True
 
     # This can be either an absolute external URL, or an internal path

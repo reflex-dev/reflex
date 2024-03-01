@@ -20,7 +20,7 @@ route_not_found: Var = Var.create_safe(constants.ROUTE_NOT_FOUND)
 class ClientSideRouting(Component):
     """The client-side routing component."""
 
-    library = "/utils/client_side_routing"
+    library: str = "/utils/client_side_routing"
     tag: str = "useClientSideRouting"
 
     def _get_hooks(self) -> str:
@@ -61,7 +61,7 @@ def wait_for_client_redirect(component) -> Component:
 class Default404Page(Component):
     """The NextJS default 404 page."""
 
-    library = "next/error"
+    library: str = "next/error"
     tag: str = "Error"
     is_default: bool = True
 

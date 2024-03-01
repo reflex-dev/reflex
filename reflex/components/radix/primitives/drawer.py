@@ -16,7 +16,7 @@ from reflex.vars import Var
 class DrawerComponent(RadixPrimitiveComponent):
     """A Drawer component."""
 
-    library = "vaul"
+    library: str = "vaul"
 
     lib_dependencies: List[str] = ["@radix-ui/react-dialog@^1.0.5"]
 

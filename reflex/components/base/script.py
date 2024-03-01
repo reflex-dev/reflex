@@ -19,7 +19,7 @@ class Script(Component):
     HTML <script> tag which does not work when rendering a component.
     """
 
-    library = "next/script"
+    library: str = "next/script"
     tag: str = "Script"
     is_default: bool = True
 

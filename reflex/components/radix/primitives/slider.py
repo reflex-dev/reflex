@@ -15,7 +15,7 @@ LiteralSliderDir = Literal["ltr", "rtl"]
 class SliderComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-slider components."""
 
-    library = "@radix-ui/react-slider@^1.1.2"
+    library: str = "@radix-ui/react-slider@^1.1.2"
 
 
 class SliderRoot(SliderComponent):

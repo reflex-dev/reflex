@@ -6,7 +6,7 @@ from reflex.components.component import Component, MemoizationLeaf
 class NextHeadLib(Component):
     """Header components."""
 
-    library = "next/head"
+    library: str = "next/head"
 
 
 class Head(NextHeadLib, MemoizationLeaf):

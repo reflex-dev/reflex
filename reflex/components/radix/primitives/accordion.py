@@ -299,7 +299,7 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
 class AccordionComponent(RadixPrimitiveComponent):
     """Base class for all @radix-ui/accordion components."""
 
-    library = "@radix-ui/react-accordion@^1.1.2"
+    library: str = "@radix-ui/react-accordion@^1.1.2"
 
 
 class AccordionRoot(AccordionComponent):

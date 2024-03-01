@@ -13,7 +13,7 @@ from reflex.vars import BaseVar, ComputedVar, Var
 class Gridjs(Component):
     """A component that wraps a nivo bar component."""
 
-    library = "gridjs-react@6.0.1"
+    library: str = "gridjs-react@6.0.1"
 
     lib_dependencies: List[str] = ["gridjs@6.0.6"]
 

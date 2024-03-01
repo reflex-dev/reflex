@@ -8,7 +8,7 @@ from reflex.components.component import Component
 class NextDocumentLib(Component):
     """Root document components."""
 
-    library = "next/document"
+    library: str = "next/document"
 
 
 class Html(NextDocumentLib):

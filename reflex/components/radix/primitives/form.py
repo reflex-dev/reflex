@@ -39,7 +39,7 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
 class FormComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-form components."""
 
-    library = "@radix-ui/react-form@^0.0.3"
+    library: str = "@radix-ui/react-form@^0.0.3"
 
 
 class FormRoot(FormComponent):

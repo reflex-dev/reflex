@@ -12,7 +12,7 @@ class ReactPlayer(NoSSRComponent):
     reference: https://github.com/cookpete/react-player.
     """
 
-    library = "react-player@2.12.0"
+    library: str = "react-player@2.12.0"
 
     tag: str = "ReactPlayer"
 

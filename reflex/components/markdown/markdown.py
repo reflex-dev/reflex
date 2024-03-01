@@ -75,7 +75,7 @@ def get_base_component_map() -> dict[str, Callable]:
 class Markdown(Component):
     """A markdown component."""
 
-    library = "react-markdown@8.0.7"
+    library: str = "react-markdown@8.0.7"
 
     tag: str = "ReactMarkdown"
 

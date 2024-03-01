@@ -348,7 +348,7 @@ LiteralCodeLanguage = Literal[
 class CodeBlock(Component):
     """A code block."""
 
-    library = "react-syntax-highlighter@15.5.0"
+    library: str = "react-syntax-highlighter@15.5.0"
 
     tag: str = "PrismAsyncLight"
 

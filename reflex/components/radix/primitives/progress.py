@@ -15,7 +15,7 @@ from reflex.vars import Var
 class ProgressComponent(RadixPrimitiveComponentWithClassName):
     """A Progress component."""
 
-    library = "@radix-ui/react-progress@^1.0.3"
+    library: str = "@radix-ui/react-progress@^1.0.3"
 
 
 class ProgressRoot(ProgressComponent):

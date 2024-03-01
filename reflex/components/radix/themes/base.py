@@ -75,7 +75,7 @@ class CommonMarginProps(Component):
 class RadixThemesComponent(Component):
     """Base class for all @radix-ui/themes components."""
 
-    library = "@radix-ui/themes@^2.0.0"
+    library: str = "@radix-ui/themes@^2.0.0"
 
     # "Fake" prop color_scheme is used to avoid shadowing CSS prop "color".
     _rename_props: Dict[str, str] = {"colorScheme": "color"}
@@ -216,7 +216,7 @@ class ThemePanel(RadixThemesComponent):
 class RadixThemesColorModeProvider(Component):
     """Next-themes integration for radix themes components."""
 
-    library = "/components/reflex/radix_themes_color_mode_provider.js"
+    library: str = "/components/reflex/radix_themes_color_mode_provider.js"
     tag: str = "RadixThemesColorModeProvider"
     is_default: bool = True
 
