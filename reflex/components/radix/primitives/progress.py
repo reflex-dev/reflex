@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Optional
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
 from reflex.components.radix.primitives.accordion import DEFAULT_ANIMATION_DURATION
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
-from reflex.components.radix.themes.base import LiteralAccentColor
+from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
 from reflex.style import Style
 from reflex.vars import Var
 
@@ -25,25 +25,28 @@ class ProgressRoot(ProgressComponent):
     tag = "Root"
     alias = "RadixProgressRoot"
 
-    # The current progress value.
-    value: Var[Optional[int]]
-
-    # The maximum progress value.
-    max: Var[int]
+    # Override theme radius for progress bar: "none" | "small" | "medium" | "large" | "full"
+    radius: Var[LiteralRadius]
 
     def _apply_theme(self, theme: Component):
+        if self.radius is not None:
+            self.custom_attrs["data-radius"] = self.radius
+
         self.style = Style(
             {
                 "position": "relative",
                 "overflow": "hidden",
                 "background": "var(--gray-a3)",
-                "border_radius": "99999px",
+                "border_radius": "max(var(--radius-2), var(--radius-full))",
                 "width": "100%",
                 "height": "20px",
                 "boxShadow": "inset 0 0 0 1px var(--gray-a5)",
                 **self.style,
             }
         )
+
+    def _exclude_props(self) -> list[str]:
+        return ["radius"]
 
 
 class ProgressIndicator(ProgressComponent):
@@ -63,22 +66,12 @@ class ProgressIndicator(ProgressComponent):
     color_scheme: Var[LiteralAccentColor]
 
     def _apply_theme(self, theme: Component):
-        global_color_scheme = getattr(theme, "accent_color", None)
-
-        if global_color_scheme is None and self.color_scheme is None:
-            raise ValueError(
-                "`color_scheme` cannot be None. Either set the `color_scheme` prop on the progress indicator "
-                "component or set the `accent_color` prop in your global theme."
-            )
-
-        color_scheme = color(
-            self.color_scheme if self.color_scheme is not None else global_color_scheme,  # type: ignore
-            9,
-        )
+        if self.color_scheme is not None:
+            self.custom_attrs["data-accent-color"] = self.color_scheme
 
         self.style = Style(
             {
-                "background-color": color_scheme,
+                "background-color": color("accent", 9),
                 "width": "100%",
                 "height": "100%",
                 f"transition": f"transform {DEFAULT_ANIMATION_DURATION}ms linear",
@@ -87,6 +80,7 @@ class ProgressIndicator(ProgressComponent):
                 },
                 "transform": f"translateX(calc(-100% + ({self.value} / {self.max} * 100%)))",  # type: ignore
                 "boxShadow": "inset 0 0 0 1px var(--gray-a5)",
+                **self.style,
             }
         )
 
@@ -94,43 +88,48 @@ class ProgressIndicator(ProgressComponent):
         return ["color_scheme"]
 
 
-class Progress(ComponentNamespace):
-    """High-level API for progress bar."""
+class Progress(ProgressRoot):
+    """The high-level Progress component."""
 
-    root = staticmethod(ProgressRoot.create)
-    indicator = staticmethod(ProgressIndicator.create)
+    # Override theme color for progress bar indicator
+    color_scheme: Var[LiteralAccentColor]
 
-    @staticmethod
-    def __call__(
-        width: Optional[str] = "100%",
-        color_scheme: Optional[Union[Var, LiteralAccentColor]] = None,
-        **props,
-    ) -> Component:
+    # The current progress value.
+    value: Var[Optional[int]]
+
+    # The maximum progress value.
+    max: Var[Optional[int]]
+
+    @classmethod
+    def create(cls, **props) -> Component:
         """High-level API for progress bar.
 
         Args:
-            width: The width of the progress bar.
             **props: The props of the progress bar.
-            color_scheme: The color scheme of the progress indicator.
 
         Returns:
             The progress bar.
         """
-        style = props.setdefault("style", {})
-        style.update({"width": width})
-
-        progress_indicator_props = (
-            {"color_scheme": color_scheme} if color_scheme is not None else {}
-        )
+        progress_indicator_props = {}
+        if "color_scheme" in props:
+            progress_indicator_props["color_scheme"] = props.pop("color_scheme")
 
         return ProgressRoot.create(
             ProgressIndicator.create(
                 value=props.get("value"),
                 max=props.get("max", 100),
-                **progress_indicator_props,  # type: ignore
+                **progress_indicator_props,
             ),
             **props,
         )
 
 
-progress = Progress()
+class ProgressNamespace(ComponentNamespace):
+    """High-level API for progress bar."""
+
+    root = staticmethod(ProgressRoot.create)
+    indicator = staticmethod(ProgressIndicator.create)
+    __call__ = staticmethod(Progress.create)
+
+
+progress = ProgressNamespace()
