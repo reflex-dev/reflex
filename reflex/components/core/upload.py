@@ -168,7 +168,7 @@ class Upload(MemoizationLeaf):
 
     tag: str = "ReactDropzone"
 
-    is_default = True
+    is_default: bool = True
 
     # The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as
     # values.

@@ -94,7 +94,7 @@ class ChakraColorModeProvider(Component):
 
     library = "/components/reflex/chakra_color_mode_provider.js"
     tag: str = "ChakraColorModeProvider"
-    is_default = True
+    is_default: bool = True
 
 
 chakra_color_mode_provider = ChakraColorModeProvider.create()

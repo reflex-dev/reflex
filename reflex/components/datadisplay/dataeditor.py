@@ -107,7 +107,7 @@ class DataEditor(NoSSRComponent):
     """The DataEditor Component."""
 
     tag: str = "DataEditor"
-    is_default = True
+    is_default: bool = True
     library: str = "@glideapps/glide-data-grid@^5.3.0"
     lib_dependencies: List[str] = [
         "lodash@^4.17.21",

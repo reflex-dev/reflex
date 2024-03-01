@@ -12,7 +12,7 @@ class Video(NextComponent):
 
     tag: str = "Video"
     library = "next-video"
-    is_default = True
+    is_default: bool = True
     # the URL
     src: Optional[Var[str]] = None
 

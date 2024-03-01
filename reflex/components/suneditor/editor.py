@@ -77,7 +77,7 @@ class Editor(NoSSRComponent):
 
     tag: str = "SunEditor"
 
-    is_default = True
+    is_default: bool = True
 
     lib_dependencies: List[str] = ["suneditor"]
 

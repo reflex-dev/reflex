@@ -21,7 +21,7 @@ class Script(Component):
 
     library = "next/script"
     tag: str = "Script"
-    is_default = True
+    is_default: bool = True
 
     # Required unless inline script is used
     src: Optional[Var[str]] = None

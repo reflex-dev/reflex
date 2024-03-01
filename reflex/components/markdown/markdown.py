@@ -79,7 +79,7 @@ class Markdown(Component):
 
     tag: str = "ReactMarkdown"
 
-    is_default = True
+    is_default: bool = True
 
     # The component map from a tag to a lambda that creates a component.
     component_map: Dict[str, Any] = {}

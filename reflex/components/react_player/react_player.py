@@ -16,7 +16,7 @@ class ReactPlayer(NoSSRComponent):
 
     tag: str = "ReactPlayer"
 
-    is_default = True
+    is_default: bool = True
 
     # The url of a video or song to play
     url: Optional[Var[str]] = None

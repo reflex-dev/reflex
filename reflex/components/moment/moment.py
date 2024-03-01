@@ -25,7 +25,7 @@ class Moment(NoSSRComponent):
     """The Moment component."""
 
     tag: str = "Moment"
-    is_default = True
+    is_default: bool = True
     library: str = "react-moment"
     lib_dependencies: List[str] = ["moment"]
 

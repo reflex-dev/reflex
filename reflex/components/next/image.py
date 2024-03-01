@@ -12,7 +12,7 @@ class Image(NextComponent):
 
     tag: str = "Image"
     library = "next/image"
-    is_default = True
+    is_default: bool = True
 
     # This can be either an absolute external URL, or an internal path
     src: Optional[Var[Any]] = None

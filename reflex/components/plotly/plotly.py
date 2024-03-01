@@ -23,7 +23,7 @@ class Plotly(PlotlyLib):
 
     tag: str = "Plot"
 
-    is_default = True
+    is_default: bool = True
 
     # The figure to display. This can be a plotly figure or a plotly data json.
     data: Optional[Var[Figure]] = None

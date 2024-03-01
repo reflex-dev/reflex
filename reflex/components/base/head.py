@@ -14,4 +14,4 @@ class Head(NextHeadLib, MemoizationLeaf):
 
     tag: str = "NextHead"
 
-    is_default = True
+    is_default: bool = True

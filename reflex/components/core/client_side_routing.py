@@ -63,6 +63,6 @@ class Default404Page(Component):
 
     library = "next/error"
     tag: str = "Error"
-    is_default = True
+    is_default: bool = True
 
     status_code: Var[int] = 404  # type: ignore
