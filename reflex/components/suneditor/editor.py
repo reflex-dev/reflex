@@ -225,7 +225,7 @@ class Editor(NoSSRComponent):
                 raise ValueError("EditorOptions cannot be a state Var")
             props["set_options"] = {
                 to_camel_case(k): v
-                for k, v in set_options.dict().items()
+                for k, v in set_options.model_dump().items()
                 if v is not None
             }
         return super().create(*[], **props)

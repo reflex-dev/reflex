@@ -63,7 +63,7 @@ class Model(Base, sqlmodel.SQLModel):
             field_name
             for field_name, field in cls.model_fields.items()
             if field_name != "id"
-            and getattr(field.field_info, "primary_key", None) is True
+            and getattr(field, "primary_key", None) is True
         ]
         if non_default_primary_key_fields:
             cls.model_fields.pop("id", None)

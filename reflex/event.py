@@ -262,7 +262,7 @@ class CallableEventSpec(EventSpec):
             default_event_spec = fn()
             super().__init__(
                 fn=fn,  # type: ignore
-                **default_event_spec.dict(),
+                **default_event_spec.model_dump(),
                 **kwargs,
             )
         else:

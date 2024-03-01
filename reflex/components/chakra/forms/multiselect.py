@@ -348,7 +348,7 @@ class Select(Component):
                     converted_options.append(Option(label=str(option), value=option))
                 else:
                     converted_options.append(option)
-            props["options"] = [o.dict() for o in converted_options]
+            props["options"] = [o.model_dump() for o in converted_options]
         else:
             props["options"] = options
         return super().create(*[], **props)
