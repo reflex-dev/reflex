@@ -125,7 +125,7 @@ class EventActionsMixin(Base):
         Returns:
             New EventHandler-like with stopPropagation set to True.
         """
-        return self.copy(
+        return self.model_copy(
             update={"event_actions": {"stopPropagation": True, **self.event_actions}},
         )
 
@@ -136,7 +136,7 @@ class EventActionsMixin(Base):
         Returns:
             New EventHandler-like with preventDefault set to True.
         """
-        return self.copy(
+        return self.model_copy(
             update={"event_actions": {"preventDefault": True, **self.event_actions}},
         )
 
