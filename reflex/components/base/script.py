@@ -1,5 +1,4 @@
 """Next.js script wrappers and inline script functionality.
-from typing import Optional
 https://nextjs.org/docs/app/api-reference/components/script.
 """
 from __future__ import annotations
