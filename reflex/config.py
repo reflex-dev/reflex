@@ -127,10 +127,10 @@ class DBConfig(Base):
 class Config(Base):
     """A Reflex config."""
 
-    class Config:
-        """Pydantic config for the config."""
-
-        validate_assignment = True
+    # Pydantic config
+    model_config = pydantic.ConfigDict(
+        validate_assignment=True,
+    )
 
     # The name of the app.
     app_name: str

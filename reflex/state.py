@@ -2104,17 +2104,19 @@ class StateManagerMemory(StateManager):
     # The dict of mutexes for each client
     _states_locks: Dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
 
-    class Config:
-        """The Pydantic config."""
-
-        # TODO: pydantic v2
-        fields = {
-            "_states_locks": {"exclude": True},
-        }
-
+    # Pydantic config
+    model_config = pydantic.ConfigDict(
+        arbitrary_types_allowed=True,
+        use_enum_values=True,
+        extra="allow",
         #  json_encoders = {
-        #      MutableProxy: lambda v: v.__wrapped__,
+        #      MutableProxy: lambda v: v.__wrapped__, # this is currently done in _get_value
         #  }
+        # TODO: pydantic v2
+        #  fields = {
+        #      "_states_locks": {"exclude": True},
+        #  }
+    )
 
     async def get_state(self, token: str) -> BaseState:
         """Get the state for a token.

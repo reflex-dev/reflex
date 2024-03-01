@@ -50,12 +50,12 @@ class Base(pydantic.BaseModel):
     frontend and backend should subclass this class.
     """
 
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
-        use_enum_values = True
-        extra = "allow"
+    # Pydantic config
+    model_config = pydantic.ConfigDict(
+        arbitrary_types_allowed=True,
+        use_enum_values=True,
+        extra="allow",
+    )
 
     def json(self) -> str:
         """Convert the object to a json string.

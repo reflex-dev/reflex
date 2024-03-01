@@ -16,6 +16,8 @@ from typing import (
     Union,
 )
 
+from pydantic import ConfigDict
+
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format
@@ -147,11 +149,10 @@ class EventHandler(EventActionsMixin):
     # The function to call in response to the event.
     fn: Any
 
-    class Config:
-        """The Pydantic config."""
-
-        # Needed to allow serialization of Callable.
-        frozen = True
+    # Pydantic config
+    model_config = ConfigDict(
+        frozen=True,  # Needed to allow serialization of Callable.
+    )
 
     @property
     def is_background(self) -> bool:
@@ -219,11 +220,10 @@ class EventSpec(EventActionsMixin):
     # TODO: pydantic v2 add rx.Var type annotation?
     args: Tuple[Tuple[Any, Any], ...] = ()
 
-    class Config:
-        """The Pydantic config."""
-
-        # Required to allow tuple fields.
-        frozen = True
+    # Pydantic config
+    model_config = ConfigDict(
+        frozen=True,  # Required to allow tuple fields.
+    )
 
     def with_args(self, args: Tuple[Tuple[Var, Var], ...]) -> EventSpec:
         """Copy the event spec, with updated args.
