@@ -12,7 +12,7 @@ class Image(ChakraComponent):
     """Display an image."""
 
     tag: str = "Image"
-    alias = "ChakraImage"
+    alias: str = "ChakraImage"
     # How to align the image within its bounds. It maps to css `object-position` property.
     align: Optional[Var[str]] = None
 

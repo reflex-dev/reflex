@@ -22,7 +22,7 @@ class SliderRoot(SliderComponent):
     """The Slider component comtaining all slider parts."""
 
     tag: str = "Root"
-    alias = "RadixSliderRoot"
+    alias: str = "RadixSliderRoot"
 
     default_value: Optional[Var[List[int]]] = None
 
@@ -82,7 +82,7 @@ class SliderTrack(SliderComponent):
     """A Slider Track component."""
 
     tag: str = "Track"
-    alias = "RadixSliderTrack"
+    alias: str = "RadixSliderTrack"
 
     def _apply_theme(self, theme: Component):
         self.style = Style(
@@ -104,7 +104,7 @@ class SliderRange(SliderComponent):
     """A SliderRange component."""
 
     tag: str = "Range"
-    alias = "RadixSliderRange"
+    alias: str = "RadixSliderRange"
 
     def _apply_theme(self, theme: Component):
         self.style = Style(
@@ -124,7 +124,7 @@ class SliderThumb(SliderComponent):
     """A SliderThumb component."""
 
     tag: str = "Thumb"
-    alias = "RadixSliderThumb"
+    alias: str = "RadixSliderThumb"
 
     def _apply_theme(self, theme: Component):
         self.style = Style(

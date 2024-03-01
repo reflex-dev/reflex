@@ -352,7 +352,7 @@ class CodeBlock(Component):
 
     tag: str = "PrismAsyncLight"
 
-    alias = "SyntaxHighlighter"
+    alias: str = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
     theme: Var[LiteralCodeBlockTheme] = "one-light"  # type: ignore

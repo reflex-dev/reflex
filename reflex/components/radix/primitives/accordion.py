@@ -307,7 +307,7 @@ class AccordionRoot(AccordionComponent):
 
     tag: str = "Root"
 
-    alias = "RadixAccordionRoot"
+    alias: str = "RadixAccordionRoot"
 
     # The type of accordion (single or multiple).
     type: Optional[Var[LiteralAccordionType]] = None
@@ -471,7 +471,7 @@ class AccordionItem(AccordionComponent):
 
     tag: str = "Item"
 
-    alias = "RadixAccordionItem"
+    alias: str = "RadixAccordionItem"
 
     # A unique identifier for the item.
     value: Optional[Var[str]] = None
@@ -540,7 +540,7 @@ class AccordionHeader(AccordionComponent):
 
     tag: str = "Header"
 
-    alias = "RadixAccordionHeader"
+    alias: str = "RadixAccordionHeader"
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -569,7 +569,7 @@ class AccordionTrigger(AccordionComponent):
 
     tag: str = "Trigger"
 
-    alias = "RadixAccordionTrigger"
+    alias: str = "RadixAccordionTrigger"
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -620,7 +620,7 @@ class AccordionContent(AccordionComponent):
 
     tag: str = "Content"
 
-    alias = "RadixAccordionContent"
+    alias: str = "RadixAccordionContent"
 
     @classmethod
     def create(cls, *children, **props) -> Component:

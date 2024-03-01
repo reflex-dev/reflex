@@ -47,7 +47,7 @@ class FormRoot(FormComponent):
 
     tag: str = "Root"
 
-    alias = "RadixFormRoot"
+    alias: str = "RadixFormRoot"
 
     # If true, the form will be cleared after submit.
     reset_on_submit: Var[bool] = False  # type: ignore
@@ -169,7 +169,7 @@ class FormField(FormComponent):
 
     tag: str = "Field"
 
-    alias = "RadixFormField"
+    alias: str = "RadixFormField"
 
     # The name of the form field, that is passed down to the control and used to match with validation messages.
     name: Optional[Var[str]] = None
@@ -190,7 +190,7 @@ class FormLabel(FormComponent):
 
     tag: str = "Label"
 
-    alias = "RadixFormLabel"
+    alias: str = "RadixFormLabel"
 
     def _apply_theme(self, theme: Component):
         return {
@@ -206,7 +206,7 @@ class FormControl(FormComponent):
 
     tag: str = "Control"
 
-    alias = "RadixFormControl"
+    alias: str = "RadixFormControl"
 
     @classmethod
     def create(cls, *children, **props):
@@ -254,7 +254,7 @@ class FormMessage(FormComponent):
 
     tag: str = "Message"
 
-    alias = "RadixFormMessage"
+    alias: str = "RadixFormMessage"
 
     # Used to target a specific field by name when rendering outside of a Field part.
     name: Optional[Var[str]] = None
@@ -278,14 +278,14 @@ class FormValidityState(FormComponent):
     """A form validity state component."""
 
     tag: str = "ValidityState"
-    alias = "RadixFormValidityState"
+    alias: str = "RadixFormValidityState"
 
 
 class FormSubmit(FormComponent):
     """A form submit component."""
 
     tag: str = "Submit"
-    alias = "RadixFormSubmit"
+    alias: str = "RadixFormSubmit"
 
 
 # This class is created mainly for reflex-web docs.

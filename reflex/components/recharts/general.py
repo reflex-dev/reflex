@@ -22,7 +22,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
 
     tag: str = "ResponsiveContainer"
 
-    alias = "RechartsResponsiveContainer"
+    alias: str = "RechartsResponsiveContainer"
 
     # The aspect ratio of the container. The final aspect ratio of the SVG element will be (width / height) * aspect. Number
     aspect: Optional[Var[int]] = None
@@ -61,7 +61,7 @@ class Legend(Recharts):
 
     tag: str = "Legend"
 
-    alias = "RechartsLegend"
+    alias: str = "RechartsLegend"
 
     # The width of legend container. Number
     width: Optional[Var[int]] = None
@@ -114,7 +114,7 @@ class GraphingTooltip(Recharts):
 
     tag: str = "Tooltip"
 
-    alias = "RechartsTooltip"
+    alias: str = "RechartsTooltip"
 
     # The separator between name and value.
     separator: Optional[Var[str]] = None
@@ -146,7 +146,7 @@ class Label(Recharts):
 
     tag: str = "Label"
 
-    alias = "RechartsLabel"
+    alias: str = "RechartsLabel"
 
     # The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
     view_box: Optional[Var[Dict[str, Any]]] = None
@@ -166,7 +166,7 @@ class LabelList(Recharts):
 
     tag: str = "LabelList"
 
-    alias = "RechartsLabelList"
+    alias: str = "RechartsLabelList"
 
     # The key of a group of label values in data.
     data_key: Optional[Var[Union[str, int]]] = None

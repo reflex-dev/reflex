@@ -121,7 +121,7 @@ class AreaChart(ChartBase):
 
     tag: str = "AreaChart"
 
-    alias = "RechartsAreaChart"
+    alias: str = "RechartsAreaChart"
 
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
     base_value: Optional[Var[Union[int, LiteralComposedChartBaseValue]]] = None
@@ -149,7 +149,7 @@ class BarChart(ChartBase):
 
     tag: str = "BarChart"
 
-    alias = "RechartsBarChart"
+    alias: str = "RechartsBarChart"
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
     bar_category_gap: Var[Union[str, int]]  # type: ignore
@@ -189,7 +189,7 @@ class LineChart(ChartBase):
 
     tag: str = "LineChart"
 
-    alias = "RechartsLineChart"
+    alias: str = "RechartsLineChart"
 
     # Valid children components
     _valid_children: List[str] = [
@@ -211,7 +211,7 @@ class ComposedChart(ChartBase):
 
     tag: str = "ComposedChart"
 
-    alias = "RechartsComposedChart"
+    alias: str = "RechartsComposedChart"
 
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
     base_value: Optional[Var[Union[int, LiteralComposedChartBaseValue]]] = None
@@ -250,7 +250,7 @@ class PieChart(ChartBase):
 
     tag: str = "PieChart"
 
-    alias = "RechartsPieChart"
+    alias: str = "RechartsPieChart"
 
     # Valid children components
     _valid_children: List[str] = [
@@ -280,7 +280,7 @@ class RadarChart(ChartBase):
 
     tag: str = "RadarChart"
 
-    alias = "RechartsRadarChart"
+    alias: str = "RechartsRadarChart"
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
     cx: Optional[Var[Union[int, str]]] = None
@@ -329,7 +329,7 @@ class RadialBarChart(ChartBase):
 
     tag: str = "RadialBarChart"
 
-    alias = "RechartsRadialBarChart"
+    alias: str = "RechartsRadialBarChart"
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
     cx: Optional[Var[Union[int, str]]] = None
@@ -387,7 +387,7 @@ class ScatterChart(ChartBase):
 
     tag: str = "ScatterChart"
 
-    alias = "RechartsScatterChart"
+    alias: str = "RechartsScatterChart"
 
     # Valid children components
     _valid_children: List[str] = [
@@ -425,7 +425,7 @@ class FunnelChart(RechartsCharts):
 
     tag: str = "FunnelChart"
 
-    alias = "RechartsFunnelChart"
+    alias: str = "RechartsFunnelChart"
 
     # The source data, in which each element is an object.
     data: Optional[Var[List[Dict[str, Any]]]] = None
@@ -476,7 +476,7 @@ class Treemap(RechartsCharts):
 
     tag: str = "Treemap"
 
-    alias = "RechartsTreemap"
+    alias: str = "RechartsTreemap"
 
     # The width of chart container. String or Integer
     width: Var[Union[str, int]] = "100%"  # type: ignore

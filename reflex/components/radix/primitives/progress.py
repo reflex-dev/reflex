@@ -22,7 +22,7 @@ class ProgressRoot(ProgressComponent):
     """The Progress Root component."""
 
     tag: str = "Root"
-    alias = "RadixProgressRoot"
+    alias: str = "RadixProgressRoot"
 
     # Override theme radius for progress bar: "none" | "small" | "medium" | "large" | "full"
     radius: Optional[Var[LiteralRadius]] = None
@@ -53,7 +53,7 @@ class ProgressIndicator(ProgressComponent):
 
     tag: str = "Indicator"
 
-    alias = "RadixProgressIndicator"
+    alias: str = "RadixProgressIndicator"
 
     # The current progress value.
     value: Optional[Var[Optional[int]]] = None

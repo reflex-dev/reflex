@@ -29,7 +29,7 @@ class DrawerRoot(DrawerComponent):
 
     tag: str = "Drawer.Root"
 
-    alias = "Vaul" + tag
+    alias: str = "Vaul" + tag
 
     # Whether the drawer is open or not.
     open: Optional[Var[bool]] = None
@@ -75,7 +75,7 @@ class DrawerTrigger(DrawerComponent):
 
     tag: str = "Drawer.Trigger"
 
-    alias = "Vaul" + tag
+    alias: str = "Vaul" + tag
 
     # Defaults to true, if the first child acts as the trigger.
     as_child: Var[bool] = True  # type: ignore
@@ -86,7 +86,7 @@ class DrawerPortal(DrawerComponent):
 
     tag: str = "Drawer.Portal"
 
-    alias = "Vaul" + tag
+    alias: str = "Vaul" + tag
 
 
 # Based on https://www.radix-ui.com/primitives/docs/components/dialog#content
@@ -95,7 +95,7 @@ class DrawerContent(DrawerComponent):
 
     tag: str = "Drawer.Content"
 
-    alias = "Vaul" + tag
+    alias: str = "Vaul" + tag
 
     # Style set partially based on the source code at https://ui.shadcn.com/docs/components/drawer
     def _get_style(self) -> dict:
@@ -159,7 +159,7 @@ class DrawerOverlay(DrawerComponent):
 
     tag: str = "Drawer.Overlay"
 
-    alias = "Vaul" + tag
+    alias: str = "Vaul" + tag
 
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
     def _get_style(self) -> dict:
@@ -187,7 +187,7 @@ class DrawerClose(DrawerComponent):
 
     tag: str = "Drawer.Close"
 
-    alias = "Vaul" + tag
+    alias: str = "Vaul" + tag
 
 
 class DrawerTitle(DrawerComponent):
@@ -195,7 +195,7 @@ class DrawerTitle(DrawerComponent):
 
     tag: str = "Drawer.Title"
 
-    alias = "Vaul" + tag
+    alias: str = "Vaul" + tag
 
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
     def _get_style(self) -> dict:
@@ -220,7 +220,7 @@ class DrawerDescription(DrawerComponent):
 
     tag: str = "Drawer.Description"
 
-    alias = "Vaul" + tag
+    alias: str = "Vaul" + tag
 
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
     def _get_style(self) -> dict:

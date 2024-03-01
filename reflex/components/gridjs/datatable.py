@@ -23,7 +23,7 @@ class DataTable(Gridjs):
 
     tag: str = "Grid"
 
-    alias = "DataTableGrid"
+    alias: str = "DataTableGrid"
 
     # The data to display. Either a list of lists or a pandas dataframe.
     data: Any

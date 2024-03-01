@@ -20,7 +20,7 @@ class Pie(Recharts):
 
     tag: str = "Pie"
 
-    alias = "RechartsPie"
+    alias: str = "RechartsPie"
 
     # data
     data: Optional[Var[List[Dict[str, Any]]]] = None
@@ -94,7 +94,7 @@ class Radar(Recharts):
 
     tag: str = "Radar"
 
-    alias = "RechartsRadar"
+    alias: str = "RechartsRadar"
 
     # The key of a group of data which should be unique in a radar chart.
     data_key: Optional[Var[Union[str, int]]] = None
@@ -138,7 +138,7 @@ class RadialBar(Recharts):
 
     tag: str = "RadialBar"
 
-    alias = "RechartsRadialBar"
+    alias: str = "RechartsRadialBar"
 
     # The source data which each element is an object.
     data: Optional[Var[List[Dict[str, Any]]]] = None
@@ -179,7 +179,7 @@ class PolarAngleAxis(Recharts):
 
     tag: str = "PolarAngleAxis"
 
-    alias = "RechartsPolarAngleAxis"
+    alias: str = "RechartsPolarAngleAxis"
 
     # The key of a group of data which should be unique to show the meaning of angle axis.
     data_key: Optional[Var[Union[str, int]]] = None
@@ -238,7 +238,7 @@ class PolarGrid(Recharts):
 
     tag: str = "PolarGrid"
 
-    alias = "RechartsPolarGrid"
+    alias: str = "RechartsPolarGrid"
 
     # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
     cx: Optional[Var[Union[int, str]]] = None
@@ -270,7 +270,7 @@ class PolarRadiusAxis(Recharts):
 
     tag: str = "PolarRadiusAxis"
 
-    alias = "RechartsPolarRadiusAxis"
+    alias: str = "RechartsPolarRadiusAxis"
 
     # The angle of radial direction line to display axis text.
     angle: Optional[Var[int]] = None
