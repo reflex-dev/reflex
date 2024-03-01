@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
+from pydantic.fields import FieldInfo
 
 from reflex import constants
 from reflex.components.base import (
@@ -147,7 +148,7 @@ def compile_state(state: Type[BaseState]) -> dict:
 
 
 def _compile_client_storage_field(
-    field,
+    field: FieldInfo,
 ) -> tuple[Type[Cookie] | Type[LocalStorage] | None, dict[str, Any] | None]:
     """Compile the given cookie or local_storage field.
 
