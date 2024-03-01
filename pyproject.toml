@@ -56,7 +56,6 @@ wrapt = [
     {version = "^1.11.0", python = "<3.11"},
 ]
 packaging = "^23.1"
-pipdeptree = "^2.13.0"
 reflex-hosting-cli = ">=0.1.2"
 charset-normalizer = "^3.3.2"
 wheel = "^0.42.0"
