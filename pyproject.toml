@@ -25,14 +25,19 @@ packages = [
     {include = "reflex"}
 ]
 
+[[tool.poetry.source]]
+name = "test"
+url = "https://test.pypi.org/simple/"
+priority = "explicit"
+
 [tool.poetry.dependencies]
 python = "^3.8"
 cloudpickle = "^2.2.1"
-fastapi = "^0.96.0"
+fastapi = "^0.110"
 gunicorn = "^20.1.0"
 jinja2 = "^3.1.2"
 psutil = "^5.9.4"
-pydantic = "^1.10.2"
+pydantic = "^2"
 python-multipart = "^0.0.5"
 python-socketio = "^5.7.0"
 redis = "^4.3.5"
@@ -55,7 +60,7 @@ wrapt = [
     {version = "^1.11.0", python = "<3.11"},
 ]
 packaging = "^23.1"
-reflex-hosting-cli = ">=0.1.2"
+reflex-hosting-cli = {version = "0.1.9dev0", source = "test"}
 charset-normalizer = "^3.3.2"
 wheel = "^0.42.0"
 build = "^1.0.3"
