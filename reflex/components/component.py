@@ -18,6 +18,7 @@ from typing import (
     Set,
     Type,
     Union,
+    get_args,
 )
 
 from pydantic.fields import ModelPrivateAttr
@@ -299,7 +300,7 @@ class Component(BaseComponent, ABC):
                     if kwargs[key] is None:
                         raise TypeError
 
-                    expected_type = field_type.__args__[0]
+                    expected_type = get_args(field_type)[0]
                     # validate literal fields.
                     types.validate_literal(
                         key, value, expected_type, type(self).__name__
@@ -1392,7 +1393,7 @@ class CustomComponent(Component):
 
 
 def custom_component(
-    component_fn: Callable[..., Component]
+    component_fn: Callable[..., Component],
 ) -> Callable[..., CustomComponent]:
     """Create a custom component from a function.
 
