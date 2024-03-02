@@ -73,7 +73,6 @@ from reflex.state import (
 )
 from reflex.utils import console, exceptions, format, prerequisites, types
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -135,7 +134,7 @@ class App(Base):
     html_lang: Optional[str] = None
 
     # Attributes to add to the html root tag of every page.
-    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None
+    html_custom_attrs: Optional[Dict[str, str]] = None
 
     # A component that is present on every page.
     overlay_component: Optional[
