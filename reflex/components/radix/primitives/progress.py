@@ -116,8 +116,8 @@ class Progress(ProgressRoot):
 
         return ProgressRoot.create(
             ProgressIndicator.create(
-                value=props.get("value"),
-                max=props.get("max", 100),
+                value=props.pop("value", 0),
+                max=props.pop("max", 100),
                 **progress_indicator_props,
             ),
             **props,
