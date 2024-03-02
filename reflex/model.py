@@ -66,6 +66,7 @@ class Model(Base, sqlmodel.SQLModel):
         ]
         if non_default_primary_key_fields:
             cls.model_fields.pop("id", None)
+            cls.model_rebuild(force=True)
 
         super().__init_subclass__()
 
