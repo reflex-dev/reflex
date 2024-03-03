@@ -64,7 +64,9 @@ class Form(ChakraComponent):
         # Render the form hooks and use the hash of the resulting code to create a unique name.
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
-        code_hash = md5(str(form.get_hooks()).encode("utf-8")).hexdigest()
+        code_hash = md5(
+            str(form.get_hooks_internal().union(form.get_hooks())).encode("utf-8")
+        ).hexdigest()
         form.handle_submit_unique_name = code_hash
         return form
 
