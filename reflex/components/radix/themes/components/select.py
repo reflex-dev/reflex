@@ -205,11 +205,11 @@ class HighLevelSelect(SelectRoot):
             if prop in props
         }
 
-        color = props.pop("color", None)
+        color_scheme = props.pop("color_scheme", None)
 
-        if color is not None:
-            content_props["color_scheme"] = color
-            trigger_props["color_scheme"] = color
+        if color_scheme is not None:
+            content_props["color_scheme"] = color_scheme
+            trigger_props["color_scheme"] = color_scheme
 
         label = props.pop("label", None)
 

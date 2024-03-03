@@ -8,15 +8,15 @@ from hashlib import md5
 from typing import Any, Callable, Dict, Union
 
 from reflex.compiler import utils
-from reflex.components.chakra.datadisplay.list import (
+from reflex.components.component import Component, CustomComponent
+from reflex.components.radix.themes.layout.list import (
     ListItem,
     OrderedList,
     UnorderedList,
 )
-from reflex.components.chakra.navigation import Link
-from reflex.components.chakra.typography.heading import Heading
-from reflex.components.chakra.typography.text import Text
-from reflex.components.component import Component, CustomComponent
+from reflex.components.radix.themes.typography.heading import Heading
+from reflex.components.radix.themes.typography.link import Link
+from reflex.components.radix.themes.typography.text import Text
 from reflex.components.tags.tag import Tag
 from reflex.style import Style
 from reflex.utils import console, imports, types
@@ -50,28 +50,16 @@ def get_base_component_map() -> dict[str, Callable]:
     Returns:
         The base component map.
     """
-    from reflex.components.chakra.datadisplay.code import Code
     from reflex.components.datadisplay.code import CodeBlock
+    from reflex.components.radix.themes.typography.code import Code
 
     return {
-        "h1": lambda value: Heading.create(
-            value, as_="h1", size="2xl", margin_y="0.5em"
-        ),
-        "h2": lambda value: Heading.create(
-            value, as_="h2", size="xl", margin_y="0.5em"
-        ),
-        "h3": lambda value: Heading.create(
-            value, as_="h3", size="lg", margin_y="0.5em"
-        ),
-        "h4": lambda value: Heading.create(
-            value, as_="h4", size="md", margin_y="0.5em"
-        ),
-        "h5": lambda value: Heading.create(
-            value, as_="h5", size="sm", margin_y="0.5em"
-        ),
-        "h6": lambda value: Heading.create(
-            value, as_="h6", size="xs", margin_y="0.5em"
-        ),
+        "h1": lambda value: Heading.create(value, as_="h1", size="6", margin_y="0.5em"),
+        "h2": lambda value: Heading.create(value, as_="h2", size="5", margin_y="0.5em"),
+        "h3": lambda value: Heading.create(value, as_="h3", size="4", margin_y="0.5em"),
+        "h4": lambda value: Heading.create(value, as_="h4", size="3", margin_y="0.5em"),
+        "h5": lambda value: Heading.create(value, as_="h5", size="2", margin_y="0.5em"),
+        "h6": lambda value: Heading.create(value, as_="h6", size="1", margin_y="0.5em"),
         "p": lambda value: Text.create(value, margin_y="1em"),
         "ul": lambda value: UnorderedList.create(value, margin_y="1em"),  # type: ignore
         "ol": lambda value: OrderedList.create(value, margin_y="1em"),  # type: ignore
@@ -165,8 +153,8 @@ class Markdown(Component):
 
     def _get_imports(self) -> imports.ImportDict:
         # Import here to avoid circular imports.
-        from reflex.components.chakra.datadisplay.code import Code
         from reflex.components.datadisplay.code import CodeBlock
+        from reflex.components.radix.themes.typography.code import Code
 
         imports = super()._get_imports()
 

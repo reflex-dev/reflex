@@ -1,4 +1,5 @@
 """The main Reflex app."""
+
 from __future__ import annotations
 
 import asyncio
@@ -36,7 +37,7 @@ from reflex.admin import AdminDash
 from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
-from reflex.components import connection_modal
+from reflex.components import connection_modal, connection_pulser
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
@@ -69,9 +70,11 @@ from reflex.state import (
     State,
     StateManager,
     StateUpdate,
+    _substate_key,
     code_uses_state_contexts,
 )
 from reflex.utils import console, exceptions, format, prerequisites, types
+from reflex.utils.exec import is_testing_env
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
@@ -85,7 +88,7 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    return connection_modal()
+    return Fragment.create(connection_pulser(), connection_modal())
 
 
 class App(Base):
@@ -130,6 +133,12 @@ class App(Base):
     # Components to add to the head of every page.
     head_components: List[Component] = []
 
+    # The language to add to the html root tag of every page.
+    html_lang: Optional[str] = None
+
+    # Attributes to add to the html root tag of every page.
+    html_custom_attrs: Optional[Dict[str, str]] = None
+
     # A component that is present on every page.
     overlay_component: Optional[
         Union[Component, ComponentCallable]
@@ -159,10 +168,9 @@ class App(Base):
             )
         super().__init__(*args, **kwargs)
         state_subclasses = BaseState.__subclasses__()
-        is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
-        if not is_testing_env:
+        if not is_testing_env():
             # Only one Base State class is allowed.
             if len(state_subclasses) > 1:
                 raise ValueError(
@@ -176,7 +184,8 @@ class App(Base):
                     deprecation_version="0.3.5",
                     removal_version="0.5.0",
                 )
-            if len(State.class_subclasses) > 0:
+            # 2 substates are built-in and not considered when determining if app is stateless.
+            if len(State.class_subclasses) > 2:
                 self.state = State
         # Get the config
         config = get_config()
@@ -196,9 +205,11 @@ class App(Base):
             # Set up the Socket.IO AsyncServer.
             self.sio = AsyncServer(
                 async_mode="asgi",
-                cors_allowed_origins="*"
-                if config.cors_allowed_origins == ["*"]
-                else config.cors_allowed_origins,
+                cors_allowed_origins=(
+                    "*"
+                    if config.cors_allowed_origins == ["*"]
+                    else config.cors_allowed_origins
+                ),
                 cors_credentials=True,
                 max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
                 ping_interval=constants.Ping.INTERVAL,
@@ -374,7 +385,7 @@ class App(Base):
                 raise TypeError(
                     "You may be trying to use an invalid Python function on a state var. "
                     "When referencing a var inside your render code, only limited var operations are supported. "
-                    "See the var operation docs here: https://reflex.dev/docs/state/vars/#var-operations"
+                    "See the var operation docs here: https://reflex.dev/docs/vars/var-operations/"
                 ) from e
             raise e
 
@@ -385,10 +396,9 @@ class App(Base):
         title: str = constants.DefaultPage.TITLE,
         description: str = constants.DefaultPage.DESCRIPTION,
         image: str = constants.DefaultPage.IMAGE,
-        on_load: EventHandler
-        | EventSpec
-        | list[EventHandler | EventSpec]
-        | None = None,
+        on_load: (
+            EventHandler | EventSpec | list[EventHandler | EventSpec] | None
+        ) = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
         script_tags: list[Component] | None = None,
     ):
@@ -518,10 +528,9 @@ class App(Base):
         title: str = constants.Page404.TITLE,
         image: str = constants.Page404.IMAGE,
         description: str = constants.Page404.DESCRIPTION,
-        on_load: EventHandler
-        | EventSpec
-        | list[EventHandler | EventSpec]
-        | None = None,
+        on_load: (
+            EventHandler | EventSpec | list[EventHandler | EventSpec] | None
+        ) = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
@@ -779,7 +788,12 @@ class App(Base):
             submit_work(compiler.compile_root_stylesheet, self.stylesheets)
 
             # Compile the root document.
-            submit_work(compiler.compile_document_root, self.head_components)
+            submit_work(
+                compiler.compile_document_root,
+                self.head_components,
+                html_lang=self.html_lang,
+                html_custom_attrs=self.html_custom_attrs,
+            )
 
             # Compile the theme.
             submit_work(compiler.compile_theme, style=self.style)
@@ -1002,7 +1016,7 @@ def upload(app: App):
             )
 
         # Get the state for the session.
-        substate_token = token + "_" + handler.rpartition(".")[0]
+        substate_token = _substate_key(token, handler.rpartition(".")[0])
         state = await app.state_manager.get_state(substate_token)
 
         # get the current session ID

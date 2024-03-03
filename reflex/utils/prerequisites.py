@@ -14,6 +14,7 @@ import stat
 import sys
 import tempfile
 import zipfile
+from datetime import datetime
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
@@ -46,12 +47,37 @@ def check_latest_package_version(package_name: str):
         url = f"https://pypi.org/pypi/{package_name}/json"
         response = httpx.get(url)
         latest_version = response.json()["info"]["version"]
-        if version.parse(current_version) < version.parse(latest_version):
+        if (
+            version.parse(current_version) < version.parse(latest_version)
+            and not get_or_set_last_reflex_version_check_datetime()
+        ):
+            # only show a warning when the host version is outdated and
+            # the last_version_check_datetime is not set in reflex.json
             console.warn(
                 f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
             )
     except Exception:
         pass
+
+
+def get_or_set_last_reflex_version_check_datetime():
+    """Get the last time a check was made for the latest reflex version.
+    This is typically useful for cases where the host reflex version is
+    less than that on Pypi.
+
+    Returns:
+        The last version check datetime.
+    """
+    if not os.path.exists(constants.Reflex.JSON):
+        return None
+    # Open and read the file
+    with open(constants.Reflex.JSON, "r") as file:
+        data: dict = json.load(file)
+    last_version_check_datetime = data.get("last_version_check_datetime")
+    if not last_version_check_datetime:
+        data.update({"last_version_check_datetime": str(datetime.now())})
+        path_ops.update_json_file(constants.Reflex.JSON, data)
+    return last_version_check_datetime
 
 
 def check_node_version() -> bool:
@@ -1010,7 +1036,7 @@ def show_rx_chakra_migration_instructions():
     )
     console.log("")
     console.log(
-        "For more details, please see https://reflex.dev/blog/2024-02-16-reflex-v0.4.0"
+        "For more details, please see https://reflex.dev/blog/2024-02-16-reflex-v0.4.0/"
     )
 
 

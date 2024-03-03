@@ -41,7 +41,7 @@ See the [Project Structure docs](https://reflex.dev/docs/getting-started/project
 In this template, the pages in your app are defined in `{your_app}/pages/`.
 Each page is a function that returns a Reflex component.
 For example, to edit this page you can modify `{your_app}/pages/index.py`.
-See the [pages docs](https://reflex.dev/docs/components/pages/) for more information on pages.
+See the [pages docs](https://reflex.dev/docs/pages/routes/) for more information on pages.
 
 In this template, instead of using `rx.add_page` or the `@rx.page` decorator,
 we use the `@template` decorator from `{your_app}/templates/template.py`.
@@ -62,7 +62,8 @@ In this template, we have a sidebar component in `{your_app}/components/sidebar.
 
 ### Adding State
 
-As your app grows, we recommend using [substates](https://reflex.dev/docs/state/substates/)
+As your app grows, we recommend using [substates](https://reflex.dev/docs/substates/overview/)
 to organize your state.
+
 You can either define substates in their own files, or if the state is
 specific to a page, you can define it in the page file itself.
