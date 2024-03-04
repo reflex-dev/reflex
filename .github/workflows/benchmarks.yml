@@ -62,6 +62,15 @@ jobs:
           run-poetry-install: true
           create-venv-at-path: .venv
 
+      - name: Run Benchmarks
+        # Only run if the database creds are available in this context.
+        if: ${{ env.DATABASE_URL }}
+        working-directory: ./integration/benchmarks
+        run: poetry run python benchmarks.py "$GITHUB_SHA" .lighthouseci
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+
       - name: Clone Reflex Website Repo
         uses: actions/checkout@v4
         with:
@@ -82,11 +91,4 @@ jobs:
           poetry run bash scripts/benchmarks.sh ./reflex-web prod
         env:
           LHCI_GITHUB_APP_TOKEN: $
-      - name: Run Benchmarks
-        # Only run if the database creds are available in this context.
-        if: ${{ env.DATABASE_URL }}
-        working-directory: ./integration/benchmarks
-        run: poetry run python benchmarks.py "$GITHUB_SHA" .lighthouseci
-        env:
-          GITHUB_SHA: ${{ github.sha }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
+
