@@ -47,6 +47,8 @@ with contextlib.suppress(ImportError):
 
 GenericAliasTypes = tuple(GenericAliasTypes)
 
+# Potential Union types for isinstance checks (UnionType added in py3.10).
+UnionTypes = (Union, types.UnionType) if hasattr(types, "UnionType") else (Union,)
 
 # Union of generic types.
 GenericType = Union[Type, _GenericAlias]
@@ -105,11 +107,7 @@ def is_union(cls: GenericType) -> bool:
     Returns:
         Whether the class is a Union.
     """
-    # UnionType added in py3.10
-    if not hasattr(types, "UnionType"):
-        return get_origin(cls) is Union
-
-    return get_origin(cls) in [Union, types.UnionType]
+    return get_origin(cls) in UnionTypes
 
 
 def is_literal(cls: GenericType) -> bool:
