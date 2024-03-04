@@ -57,7 +57,6 @@ def blank_template(
         running AppHarness instance
     """
     root = tmp_path_factory.mktemp(f"blank_template")
-    print(f" root dir: {root}")
     with AppHarness.create(
         root=root,
         app_source=BlankTemplate,  # type: ignore
