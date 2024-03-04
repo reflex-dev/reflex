@@ -26,6 +26,52 @@ jobs:
   reflex-web:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Show OS combos first in GUI
+        os: [ubuntu-latest]
+        python-version: ['3.11.4']
+        node-version: ['16.x']
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-poetry-install: true
+          create-venv-at-path: .venv
+
+      - name: Clone Reflex Website Repo
+        uses: actions/checkout@v4
+        with:
+          repository: reflex-dev/reflex-web
+          ref: reflex-ci
+          path: reflex-web
+
+      - name: Install Requirements for reflex-web
+        working-directory: ./reflex-web
+        run: poetry run pip install -r requirements.txt
+      - name: Init Website for reflex-web
+        working-directory: ./reflex-web
+        run: poetry run reflex init
+      - name: Install LightHouse Pre-reqs / Run LightHouse
+        run: |
+          # Check that npm is home
+          npm -v
+          poetry run bash scripts/benchmarks.sh ./reflex-web prod
+        env:
+          LHCI_GITHUB_APP_TOKEN: $
+
+
+  reflex-benchmarks:
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
@@ -52,17 +98,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-
-      - run: poetry run pip install psycopg2
+      - run: poetry run pip pyscopg2
       - name: Run Benchmarks
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
@@ -71,25 +112,3 @@ jobs:
         env:
           GITHUB_SHA: ${{ github.sha }}
           PR_TITLE: ${{ github.event.pull_request.title }}
-
-      - name: Clone Reflex Website Repo
-        uses: actions/checkout@v4
-        with:
-          repository: reflex-dev/reflex-web
-          ref: reflex-ci
-          path: reflex-web
-
-      - name: Install Requirements for reflex-web
-        working-directory: ./reflex-web
-        run: poetry run pip install -r requirements.txt
-      - name: Init Website for reflex-web
-        working-directory: ./reflex-web
-        run: poetry run reflex init
-      - name: Install LightHouse Pre-reqs / Run LightHouse
-        run: |
-          # Check that npm is home
-          npm -v
-          poetry run bash scripts/benchmarks.sh ./reflex-web prod
-        env:
-          LHCI_GITHUB_APP_TOKEN: $
-
