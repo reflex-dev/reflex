@@ -100,6 +100,8 @@ def get_upload_dir() -> Path:
     Returns:
         The directory where uploaded files are stored.
     """
+    Upload.is_used = True
+
     uploaded_files_dir = Path(
         os.environ.get("REFLEX_UPLOADED_FILES_DIR", "./uploaded_files")
     )
@@ -128,6 +130,8 @@ def get_upload_url(file_path: str) -> str:
     Returns:
         The URL of the uploaded file to be rendered from the frontend (as a str-encoded Var).
     """
+    Upload.is_used = True
+
     return f"{uploaded_files_url_prefix}/{file_path}"
 
 
