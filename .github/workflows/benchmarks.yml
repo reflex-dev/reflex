@@ -103,7 +103,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-      - run: poetry run pip psycopg2
+      - run: poetry run pip install psycopg2
       - name: Run Benchmarks
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
