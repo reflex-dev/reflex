@@ -2,14 +2,15 @@
 
 import json
 from datetime import datetime
+from typing import List, Dict
 
 import psycopg2
 
 
 def insert_benchmarking_data(
     db_connection_url: str,
-    lighthouse_data: dict,
-    performance_data: list[dict],
+    lighthouse_data: Dict,
+    performance_data: List[Dict],
     commit_sha: str,
     pr_title: str,
 ):
