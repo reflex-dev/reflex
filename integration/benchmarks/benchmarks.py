@@ -3,12 +3,13 @@
 import json
 import os
 import sys
+from typing import List, Dict
 
 import pytest
 from helpers import insert_benchmarking_data
 
 
-def get_lighthouse_scores(directory_path: str) -> dict:
+def get_lighthouse_scores(directory_path: str) -> Dict:
     """Extracts the Lighthouse scores from the JSON files in the specified directory.
 
     Args:
@@ -44,7 +45,7 @@ def get_lighthouse_scores(directory_path: str) -> dict:
     return scores
 
 
-def run_pytest_and_get_results(test_path=None) -> dict:
+def run_pytest_and_get_results(test_path=None) -> List:
     """Runs pytest and returns the results.
 
     Args:
@@ -71,7 +72,7 @@ def run_pytest_and_get_results(test_path=None) -> dict:
     return pytest_results
 
 
-def extract_stats_from_json(json_data) -> list[dict]:
+def extract_stats_from_json(json_data) -> List[Dict]:
     """Extracts the stats from the JSON data and returns them as a list of dictionaries.
 
     Args:
