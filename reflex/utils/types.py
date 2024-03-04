@@ -30,6 +30,24 @@ from reflex import constants
 from reflex.base import Base
 from reflex.utils import serializers
 
+# Potential GenericAlias types for isinstance checks.
+GenericAliasTypes = [_GenericAlias]
+
+with contextlib.suppress(ImportError):
+    # For newer versions of Python.
+    from types import GenericAlias  # type: ignore
+
+    GenericAliasTypes.append(GenericAlias)
+
+with contextlib.suppress(ImportError):
+    # For older versions of Python.
+    from typing import _SpecialGenericAlias  # type: ignore
+
+    GenericAliasTypes.append(_SpecialGenericAlias)
+
+GenericAliasTypes = tuple(GenericAliasTypes)
+
+
 # Union of generic types.
 GenericType = Union[Type, _GenericAlias]
 
@@ -75,22 +93,7 @@ def is_generic_alias(cls: GenericType) -> bool:
     Returns:
         Whether the class is a generic alias.
     """
-    # For older versions of Python.
-    if isinstance(cls, _GenericAlias):
-        return True
-
-    with contextlib.suppress(ImportError):
-        from typing import _SpecialGenericAlias  # type: ignore
-
-        if isinstance(cls, _SpecialGenericAlias):
-            return True
-    # For newer versions of Python.
-    try:
-        from types import GenericAlias  # type: ignore
-
-        return isinstance(cls, GenericAlias)
-    except ImportError:
-        return False
+    return isinstance(cls, GenericAliasTypes)
 
 
 def is_union(cls: GenericType) -> bool:
