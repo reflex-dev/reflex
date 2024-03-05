@@ -101,7 +101,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-      - run: poetry run pip install pytest-codspeed
+      - run: poetry run pip install pytest-codspeed pyvirtualdisplay pillow
       - name: Run Benchmarks
         # Only run if the database creds are available in this context.
         uses: CodSpeedHQ/action@v2
