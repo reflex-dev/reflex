@@ -1242,13 +1242,13 @@ xmp = ["defusedxml"]
 
 [[package]]
 name = "pipdeptree"
-version = "2.14.0"
+version = "2.15.1"
 description = "Command line utility to show dependency tree of packages."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pipdeptree-2.14.0-py3-none-any.whl", hash = "sha256:34666ca78f65414e1936492ebbabf3201460c85af5c31ab3b240ef5105f94f89"},
-    {file = "pipdeptree-2.14.0.tar.gz", hash = "sha256:3296195250e00d37638f2cce70495e3345645b4bbecc1c38ac39339f1511d9b5"},
+    {file = "pipdeptree-2.15.1-py3-none-any.whl", hash = "sha256:0abe6b5b9f86a79ea023a633d7526de14b64b848bbdf980c610d08d679c8329d"},
+    {file = "pipdeptree-2.15.1.tar.gz", hash = "sha256:e4ae44fc9d0c747125316981804d7786e9d97bf59c128249b8ea272a7cbdecc4"},
 ]
 
 [package.extras]
@@ -2558,4 +2558,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "840901e82824445e708eb44ae7f237b286946db2dd3332740c6d1e5e891fb84d"
+content-hash = "8d5cfad5001db8c2adb9a2ed7563c512f18180296af44010fbf2a2db63c14e4f"

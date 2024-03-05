@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Callable, Type
+from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
 
 from pydantic.fields import ModelField
@@ -24,6 +24,7 @@ from reflex.components.component import Component, ComponentStyle, CustomCompone
 from reflex.state import BaseState, Cookie, LocalStorage
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
+from reflex.vars import Var
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -261,11 +262,17 @@ def compile_custom_component(
     )
 
 
-def create_document_root(head_components: list[Component] | None = None) -> Component:
+def create_document_root(
+    head_components: list[Component] | None = None,
+    html_lang: Optional[str] = None,
+    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+) -> Component:
     """Create the document root.
 
     Args:
         head_components: The components to add to the head.
+        html_lang: The language of the document, will be added to the html root element.
+        html_custom_attrs: custom attributes added to the html root element.
 
     Returns:
         The document root.
@@ -277,6 +284,8 @@ def create_document_root(head_components: list[Component] | None = None) -> Comp
             Main.create(),
             NextScript.create(),
         ),
+        lang=html_lang or "en",
+        custom_attrs=html_custom_attrs or {},
     )
 
 

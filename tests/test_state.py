@@ -2719,3 +2719,28 @@ async def test_get_state(mock_app: rx.App, token: str):
             "computed": "",
         },
     }
+
+
+# Save a reference to the rx.State to shadow the name State for testing.
+RxState = State
+
+
+def test_potentially_dirty_substates():
+    """Test that potentially_dirty_substates returns the correct substates.
+
+    Even if the name "State" is shadowed, it should still work correctly.
+    """
+
+    class State(RxState):
+        @ComputedVar
+        def foo(self) -> str:
+            return ""
+
+    class C1(State):
+        @ComputedVar
+        def bar(self) -> str:
+            return ""
+
+    assert RxState._potentially_dirty_substates() == {State}
+    assert State._potentially_dirty_substates() == {C1}
+    assert C1._potentially_dirty_substates() == set()
