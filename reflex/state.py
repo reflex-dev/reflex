@@ -375,7 +375,6 @@ class BaseState(Base, ABC, extra="allow"):
         Raises:
             ValueError: If a substate class shadows another.
         """
-        #  super().__init_subclass__(**kwargs)
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
 

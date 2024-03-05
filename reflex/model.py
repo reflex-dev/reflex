@@ -69,8 +69,6 @@ class Model(Base, sqlmodel.SQLModel):
             cls.model_fields.pop("id", None)
             cls.model_rebuild(force=True)
 
-        super().__init_subclass__()
-
     @classmethod
     def _dict_recursive(cls, value):
         """Recursively serialize the relationship object(s).
