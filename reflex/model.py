@@ -57,7 +57,8 @@ class Model(Base, sqlmodel.SQLModel):
     # The primary key for the table.
     id: Optional[int] = sqlmodel.Field(default=None, primary_key=True)
 
-    def __init_subclass__(cls):
+    @classmethod
+    def __pydantic_init_subclass__(cls):
         """Drop the default primary key field if any primary key field is defined."""
         non_default_primary_key_fields = [
             field_name

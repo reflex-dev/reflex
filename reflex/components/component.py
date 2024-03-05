@@ -202,7 +202,7 @@ class Component(BaseComponent, ABC):
     _memoization_mode: MemoizationMode = MemoizationMode()
 
     @classmethod
-    def __init_subclass__(cls, **kwargs):
+    def __pydantic_init_subclass__(cls, **kwargs):
         """Set default properties.
 
         Args:
