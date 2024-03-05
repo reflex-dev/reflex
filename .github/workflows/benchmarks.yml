@@ -106,9 +106,5 @@ jobs:
       - run: poetry run pip install psycopg2
       - name: Run Benchmarks
         # Only run if the database creds are available in this context.
-        if: ${{ env.DATABASE_URL }}
-        working-directory: ./integration/benchmarks
-        run: poetry run python benchmarks.py "$GITHUB_SHA" .lighthouseci
-        env:
-          GITHUB_SHA: ${{ github.sha }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
+        uses: CodSpeedHQ/action@v2
+        run: pytest integration/benchmark --codspeed
