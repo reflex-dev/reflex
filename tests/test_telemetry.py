@@ -36,7 +36,10 @@ def test_disable():
 def test_send(mocker, event):
     mocker.patch("httpx.post")
     mocker.patch(
-        "builtins.open", mocker.mock_open(read_data='{"project_hash": "project_hash"}')
+        "builtins.open",
+        mocker.mock_open(
+            read_data='{"project_hash": "78285505863498957834586115958872998605"}'
+        ),
     )
 
     telemetry.send(event)
