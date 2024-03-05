@@ -1,0 +1,43 @@
+name: codspeed-benchmarks
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  benchmarks:
+    strategy:
+      # Prioritize getting more information out of the workflow (even if something fails)
+      fail-fast: false
+      matrix:
+        # Show OS combos first in GUI
+        os: [ ubuntu-latest ]
+        python-version: [ '3.8.18', '3.9.18', '3.10.13', '3.11.5', '3.12.0' ]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-poetry-install: true
+          create-venv-at-path: .venv
+
+      - run: poetry run pip install pytest-codspeed pyvirtualdisplay pillow
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v2
+        with:
+          run: poetry run pytest tests/ --codspeed
