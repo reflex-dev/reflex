@@ -71,7 +71,7 @@ class ProgressIndicator(ProgressComponent):
 
         self.style = Style(
             {
-                "background-color": color("accent", 9),
+                "background_color": color("accent", 9),
                 "width": "100%",
                 "height": "100%",
                 f"transition": f"transform {DEFAULT_ANIMATION_DURATION}ms linear",
