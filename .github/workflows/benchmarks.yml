@@ -105,4 +105,5 @@ jobs:
       - name: Run Benchmarks
         # Only run if the database creds are available in this context.
         uses: CodSpeedHQ/action@v2
-        run: poetry run pytest integration/benchmark/ --codspeed
+        with:
+          run: poetry run pytest integration/benchmark/ --codspeed
