@@ -16,7 +16,7 @@ class Html(NextDocumentLib):
 
     tag: str = "Html"
 
-    lang: Optional[str]
+    lang: Optional[str] = None
 
 
 class DocumentHead(NextDocumentLib):
