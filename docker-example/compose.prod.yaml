@@ -1,0 +1,25 @@
+# Use this override file to run the app in prod mode with postgres and redis
+#     docker compose -f compose.yaml -f compose.prod.yaml up -d
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: secret
+    volumes:
+       - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis
+    restart: always
+
+  app:
+    environment:
+      DB_URL: postgresql+psycopg2://postgres:secret@db/postgres
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  postgres-data:
