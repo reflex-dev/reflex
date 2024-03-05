@@ -11,17 +11,17 @@ def sidebar_header() -> rx.Component:
     Returns:
         The sidebar header component.
     """
-    return rx.chakra.hstack(
+    return rx.hstack(
         # The logo.
-        rx.chakra.image(
-            src="/icon.svg",
-            height="2em",
+        rx.color_mode_cond(
+            rx.image(src="/reflex_black.svg", height="2em"),
+            rx.image(src="/reflex_white.svg", height="2em"),
         ),
-        rx.chakra.spacer(),
+        rx.spacer(),
         # Link to Reflex GitHub repo.
-        rx.chakra.link(
-            rx.chakra.center(
-                rx.chakra.image(
+        rx.link(
+            rx.center(
+                rx.image(
                     src="/github.svg",
                     height="3em",
                     padding="0.5em",
@@ -35,6 +35,7 @@ def sidebar_header() -> rx.Component:
             ),
             href="https://github.com/reflex-dev/reflex",
         ),
+        align="center",
         width="100%",
         border_bottom=styles.border,
         padding="1em",
@@ -47,15 +48,17 @@ def sidebar_footer() -> rx.Component:
     Returns:
         The sidebar footer component.
     """
-    return rx.chakra.hstack(
-        rx.chakra.spacer(),
-        rx.chakra.link(
-            rx.chakra.text("Docs"),
+    return rx.hstack(
+        rx.spacer(),
+        rx.link(
+            rx.text("Docs"),
             href="https://reflex.dev/docs/getting-started/introduction/",
+            style=styles.link_style,
         ),
-        rx.chakra.link(
-            rx.chakra.text("Blog"),
+        rx.link(
+            rx.text("Blog"),
             href="https://reflex.dev/blog/",
+            style=styles.link_style,
         ),
         width="100%",
         border_top=styles.border,
@@ -79,14 +82,14 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
         (rx.State.router.page.path == "/") & text == "Home"
     )
 
-    return rx.chakra.link(
-        rx.chakra.hstack(
-            rx.chakra.image(
+    return rx.link(
+        rx.hstack(
+            rx.image(
                 src=icon,
                 height="2.5em",
                 padding="0.5em",
             ),
-            rx.chakra.text(
+            rx.text(
                 text,
             ),
             bg=rx.cond(
@@ -99,6 +102,7 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
                 styles.accent_text_color,
                 styles.text_color,
             ),
+            align="center",
             border_radius=styles.border_radius,
             box_shadow=styles.box_shadow,
             width="100%",
@@ -118,10 +122,10 @@ def sidebar() -> rx.Component:
     # Get all the decorated pages and add them to the sidebar.
     from reflex.page import get_decorated_pages
 
-    return rx.chakra.box(
-        rx.chakra.vstack(
+    return rx.box(
+        rx.vstack(
             sidebar_header(),
-            rx.chakra.vstack(
+            rx.vstack(
                 *[
                     sidebar_item(
                         text=page.get("title", page["route"].strip("/").capitalize()),
@@ -135,7 +139,7 @@ def sidebar() -> rx.Component:
                 align_items="flex-start",
                 padding="1em",
             ),
-            rx.chakra.spacer(),
+            rx.spacer(),
             sidebar_footer(),
             height="100dvh",
         ),

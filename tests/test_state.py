@@ -955,6 +955,24 @@ class InterdependentState(BaseState):
         """
         return self.v1x2 * 2  # type: ignore
 
+    @rx.cached_var
+    def _v3(self) -> int:
+        """Depends on backend var _v2.
+
+        Returns:
+            The value of the backend variable.
+        """
+        return self._v2
+
+    @rx.cached_var
+    def v3x2(self) -> int:
+        """Depends on ComputedVar _v3.
+
+        Returns:
+            ComputedVar _v3 multiplied by 2
+        """
+        return self._v3 * 2
+
 
 @pytest.fixture
 def interdependent_state() -> BaseState:
@@ -1003,8 +1021,9 @@ def test_dirty_computed_var_from_backend_var(interdependent_state):
     """
     interdependent_state._v2 = 2
     assert interdependent_state.get_delta() == {
-        interdependent_state.get_full_name(): {"v2x2": 4},
+        interdependent_state.get_full_name(): {"v2x2": 4, "v3x2": 4},
     }
+    assert "_v3" in InterdependentState.backend_vars
 
 
 def test_per_state_backend_var(interdependent_state):
@@ -2700,3 +2719,28 @@ async def test_get_state(mock_app: rx.App, token: str):
             "computed": "",
         },
     }
+
+
+# Save a reference to the rx.State to shadow the name State for testing.
+RxState = State
+
+
+def test_potentially_dirty_substates():
+    """Test that potentially_dirty_substates returns the correct substates.
+
+    Even if the name "State" is shadowed, it should still work correctly.
+    """
+
+    class State(RxState):
+        @ComputedVar
+        def foo(self) -> str:
+            return ""
+
+    class C1(State):
+        @ComputedVar
+        def bar(self) -> str:
+            return ""
+
+    assert RxState._potentially_dirty_substates() == {State}
+    assert State._potentially_dirty_substates() == {C1}
+    assert C1._potentially_dirty_substates() == set()

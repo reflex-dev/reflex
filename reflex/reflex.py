@@ -15,6 +15,7 @@ from reflex_cli.utils import dependency
 
 from reflex import constants
 from reflex.config import get_config
+from reflex.custom_components.custom_components import custom_components_cli
 from reflex.utils import console, telemetry
 
 # Disable typer+rich integration for help panels
@@ -150,7 +151,7 @@ def _run(
     console.set_log_level(loglevel)
 
     # Set env mode in the environment
-    os.environ["REFLEX_ENV_MODE"] = env.value
+    os.environ[constants.ENV_MODE_ENV_VAR] = env.value
 
     # Show system info
     exec.output_system_info()
@@ -579,6 +580,11 @@ cli.add_typer(
     deployments_cli,
     name="deployments",
     help="Subcommands for managing the Deployments.",
+)
+cli.add_typer(
+    custom_components_cli,
+    name="component",
+    help="Subcommands for creating and publishing Custom Components.",
 )
 
 if __name__ == "__main__":

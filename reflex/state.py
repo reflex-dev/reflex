@@ -278,7 +278,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if not _reflex_internal_init and not is_testing_env():
             raise RuntimeError(
                 "State classes should not be instantiated directly in a Reflex app. "
-                "See https://reflex.dev/docs/state for further information."
+                "See https://reflex.dev/docs/state/ for further information."
             )
         kwargs["parent_state"] = parent_state
         super().__init__(*args, **kwargs)
@@ -294,7 +294,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         self._init_event_handlers()
 
         # Create a fresh copy of the backend variables for this instance
-        self._backend_vars = copy.deepcopy(self.backend_vars)
+        self._backend_vars = copy.deepcopy(
+            {
+                name: item
+                for name, item in self.backend_vars.items()
+                if name not in self.computed_vars
+            }
+        )
 
     def _init_event_handlers(self, state: BaseState | None = None):
         """Initialize event handlers.
@@ -329,6 +335,21 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The string representation of the state.
         """
         return f"{self.__class__.__name__}({self.dict()})"
+
+    @classmethod
+    def _get_computed_vars(cls) -> list[ComputedVar]:
+        """Helper function to get all computed vars of a instance.
+
+        Returns:
+            A list of computed vars.
+        """
+        return [
+            v
+            for mixin in cls.__mro__
+            if mixin is cls or not issubclass(mixin, (BaseState, ABC))
+            for v in mixin.__dict__.values()
+            if isinstance(v, ComputedVar)
+        ]
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -376,6 +397,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             # Track this new subclass in the parent state's subclasses set.
             parent_state.class_subclasses.add(cls)
 
+        # Get computed vars.
+        computed_vars = cls._get_computed_vars()
+
         new_backend_vars = {
             name: value
             for name, value in cls.__dict__.items()
@@ -383,9 +407,22 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             and name not in RESERVED_BACKEND_VAR_NAMES
             and name not in cls.inherited_backend_vars
             and not isinstance(value, FunctionType)
+            and not isinstance(value, ComputedVar)
         }
 
-        cls.backend_vars = {**cls.inherited_backend_vars, **new_backend_vars}
+        # Get backend computed vars
+        backend_computed_vars = {
+            v._var_name: v._var_set_state(cls)
+            for v in computed_vars
+            if types.is_backend_variable(v._var_name, cls)
+            and v._var_name not in cls.inherited_backend_vars
+        }
+
+        cls.backend_vars = {
+            **cls.inherited_backend_vars,
+            **new_backend_vars,
+            **backend_computed_vars,
+        }
 
         # Set the base and computed vars.
         cls.base_vars = {
@@ -395,11 +432,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
-        cls.computed_vars = {
-            v._var_name: v._var_set_state(cls)
-            for v in cls.__dict__.values()
-            if isinstance(v, ComputedVar)
-        }
+        cls.computed_vars = {v._var_name: v._var_set_state(cls) for v in computed_vars}
         cls.vars = {
             **cls.inherited_vars,
             **cls.base_vars,
@@ -1047,7 +1080,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for prop_name in self.base_vars:
             if prop_name == constants.ROUTER:
                 continue  # never reset the router data
-            setattr(self, prop_name, copy.deepcopy(fields[prop_name].default))
+            field = fields[prop_name]
+            if default_factory := field.default_factory:
+                default = default_factory()
+            else:
+                default = copy.deepcopy(field.default)
+            setattr(self, prop_name, default)
 
         # Recursively reset the substates.
         for substate in self.substates.values():
@@ -1467,14 +1505,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         # _always_dirty_substates need to be fetched to recalc computed vars.
         fetch_substates = set(
-            cls.get_class_substate(tuple(substate_name.split(".")))
+            cls.get_class_substate((cls.get_name(), *substate_name.split(".")))
             for substate_name in cls._always_dirty_substates
         )
-        # Substates with cached vars also need to be fetched.
         for dependent_substates in cls._substate_var_dependencies.values():
             fetch_substates.update(
                 set(
-                    cls.get_class_substate(tuple(substate_name.split(".")))
+                    cls.get_class_substate((cls.get_name(), *substate_name.split(".")))
                     for substate_name in dependent_substates
                 )
             )

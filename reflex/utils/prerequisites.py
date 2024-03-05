@@ -622,6 +622,9 @@ def install_node():
         )
     else:  # All other platforms (Linux, MacOS).
         # TODO we can skip installation if check_node_version() checks out
+        if check_node_version():
+            console.debug("Skipping node installation as it is already installed.")
+            return
         # Add execute permissions to fnm executable.
         os.chmod(constants.Fnm.EXE, stat.S_IXUSR)
         # Install node.
@@ -1035,7 +1038,7 @@ def show_rx_chakra_migration_instructions():
     )
     console.log("")
     console.log(
-        "For more details, please see https://reflex.dev/blog/2024-02-16-reflex-v0.4.0"
+        "For more details, please see https://reflex.dev/blog/2024-02-16-reflex-v0.4.0/"
     )
 
 

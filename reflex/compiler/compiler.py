@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Iterable, Optional, Type
+from typing import Dict, Iterable, Optional, Type, Union
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -18,7 +18,9 @@ from reflex.components.component import (
 from reflex.config import get_config
 from reflex.state import BaseState
 from reflex.style import LIGHT_COLOR_MODE
+from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
+from reflex.vars import Var
 
 
 def _compile_document_root(root: Component) -> str:
@@ -65,10 +67,6 @@ def _compile_theme(theme: dict) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _is_dev_mode() -> bool:
-    return os.environ.get("REFLEX_ENV_MODE", "dev") == "dev"
-
-
 def _compile_contexts(state: Optional[Type[BaseState]], theme: Component) -> str:
     """Compile the initial state and contexts.
 
@@ -87,12 +85,12 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component) -> str
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
-            is_dev_mode=_is_dev_mode(),
+            is_dev_mode=not is_prod_mode(),
             default_color_mode=appearance,
         )
         if state
         else templates.CONTEXT.render(
-            is_dev_mode=_is_dev_mode(),
+            is_dev_mode=not is_prod_mode(),
             default_color_mode=appearance,
         )
     )
@@ -255,7 +253,7 @@ def _compile_stateful_components(
         if (
             isinstance(component, StatefulComponent)
             and component.references > 1
-            and not _is_dev_mode()
+            and is_prod_mode()
         ):
             # Reset this flag to render the actual component.
             component.rendered_as_shared = False
@@ -299,11 +297,17 @@ def _compile_tailwind(
     )
 
 
-def compile_document_root(head_components: list[Component]) -> tuple[str, str]:
+def compile_document_root(
+    head_components: list[Component],
+    html_lang: Optional[str] = None,
+    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+) -> tuple[str, str]:
     """Compile the document root.
 
     Args:
         head_components: The components to include in the head.
+        html_lang: The language of the document, will be added to the html root element.
+        html_custom_attrs: custom attributes added to the html root element.
 
     Returns:
         The path and code of the compiled document root.
@@ -312,7 +316,9 @@ def compile_document_root(head_components: list[Component]) -> tuple[str, str]:
     output_path = utils.get_page_path(constants.PageNames.DOCUMENT_ROOT)
 
     # Create the document root.
-    document_root = utils.create_document_root(head_components)
+    document_root = utils.create_document_root(
+        head_components, html_lang=html_lang, html_custom_attrs=html_custom_attrs
+    )
 
     # Compile the document root.
     code = _compile_document_root(document_root)
@@ -475,7 +481,7 @@ def remove_tailwind_from_postcss() -> tuple[str, str]:
 
 def purge_web_pages_dir():
     """Empty out .web/pages directory."""
-    if _is_dev_mode() and os.environ.get("REFLEX_PERSIST_WEB_DIR"):
+    if not is_prod_mode() and os.environ.get("REFLEX_PERSIST_WEB_DIR"):
         # Skip purging the web directory in dev mode if REFLEX_PERSIST_WEB_DIR is set.
         return
 

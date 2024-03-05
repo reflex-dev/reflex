@@ -374,21 +374,12 @@ class Component(BaseComponent, ABC):
 
         arg_spec = triggers.get(event_trigger, lambda: [])
 
-        wrapped = False
         # If the input is a single event handler, wrap it in a list.
         if isinstance(value, (EventHandler, EventSpec)):
-            wrapped = True
             value = [value]
 
         # If the input is a list of event handlers, create an event chain.
         if isinstance(value, List):
-            if not wrapped:
-                console.deprecate(
-                    feature_name="EventChain",
-                    reason="to avoid confusion, only use yield API",
-                    deprecation_version="0.2.8",
-                    removal_version="0.5.0",
-                )
             events: list[EventSpec] = []
             for v in value:
                 if isinstance(v, EventHandler):

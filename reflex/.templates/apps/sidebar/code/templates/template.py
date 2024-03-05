@@ -17,6 +17,21 @@ default_meta = [
 ]
 
 
+def menu_item_link(text, href):
+    return rx.menu.item(
+        rx.link(
+            text,
+            href=href,
+            width="100%",
+            color="inherit",
+        ),
+        _hover={
+            "color": styles.accent_color,
+            "background_color": styles.accent_text_color,
+        },
+    )
+
+
 def menu_button() -> rx.Component:
     """The menu button on the top right of the page.
 
@@ -25,37 +40,24 @@ def menu_button() -> rx.Component:
     """
     from reflex.page import get_decorated_pages
 
-    return rx.chakra.box(
-        rx.chakra.menu(
-            rx.chakra.menu_button(
-                rx.chakra.icon(
-                    tag="hamburger",
-                    size="4em",
-                    color=styles.text_color,
+    return rx.box(
+        rx.menu.root(
+            rx.menu.trigger(
+                rx.icon(
+                    "menu",
+                    size=36,
+                    color=styles.accent_text_color,
                 ),
+                background_color=styles.accent_color,
             ),
-            rx.chakra.menu_list(
+            rx.menu.content(
                 *[
-                    rx.chakra.menu_item(
-                        rx.chakra.link(
-                            page["title"],
-                            href=page["route"],
-                            width="100%",
-                        )
-                    )
+                    menu_item_link(page["title"], page["route"])
                     for page in get_decorated_pages()
                 ],
-                rx.chakra.menu_divider(),
-                rx.chakra.menu_item(
-                    rx.chakra.link(
-                        "About", href="https://github.com/reflex-dev", width="100%"
-                    )
-                ),
-                rx.chakra.menu_item(
-                    rx.chakra.link(
-                        "Contact", href="mailto:founders@=reflex.dev", width="100%"
-                    )
-                ),
+                rx.menu.separator(),
+                menu_item_link("About", "https://github.com/reflex-dev"),
+                menu_item_link("Contact", "mailto:founders@=reflex.dev"),
             ),
         ),
         position="fixed",
@@ -63,6 +65,12 @@ def menu_button() -> rx.Component:
         top="1.5em",
         z_index="500",
     )
+
+
+class ThemeState(rx.State):
+    """The state for the theme of the app."""
+
+    accent_color: str = "crimson"
 
 
 def template(
@@ -101,6 +109,22 @@ def template(
         # Get the meta tags for the page.
         all_meta = [*default_meta, *(meta or [])]
 
+        def templated_page():
+            return rx.hstack(
+                sidebar(),
+                rx.box(
+                    rx.box(
+                        page_content(),
+                        **styles.template_content_style,
+                    ),
+                    **styles.template_page_style,
+                ),
+                menu_button(),
+                align="start",
+                transition="left 0.5s, width 0.5s",
+                position="relative",
+            )
+
         @rx.page(
             route=route,
             title=title,
@@ -110,22 +134,12 @@ def template(
             script_tags=script_tags,
             on_load=on_load,
         )
-        def templated_page():
-            return rx.chakra.hstack(
-                sidebar(),
-                rx.chakra.box(
-                    rx.chakra.box(
-                        page_content(),
-                        **styles.template_content_style,
-                    ),
-                    **styles.template_page_style,
-                ),
-                menu_button(),
-                align_items="flex-start",
-                transition="left 0.5s, width 0.5s",
-                position="relative",
+        def theme_wrap():
+            return rx.theme(
+                templated_page(),
+                accent_color=ThemeState.accent_color,
             )
 
-        return templated_page
+        return theme_wrap
 
     return decorator

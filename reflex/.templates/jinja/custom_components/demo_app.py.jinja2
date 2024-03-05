@@ -1,15 +1,18 @@
-"""Welcome to Reflex! This file outlines the steps to create a basic app."""
+"""Welcome to Reflex! This file showcases the custom component in a basic app."""
 
 from rxconfig import config
 
 import reflex as rx
 
-docs_url = "https://reflex.dev/docs/getting-started/introduction/"
+from {{ custom_component_module_dir }} import {{ module_name }}
+
 filename = f"{config.app_name}/{config.app_name}.py"
 
 
 class State(rx.State):
     """The app state."""
+
+    pass
 
 
 def index() -> rx.Component:
@@ -17,12 +20,8 @@ def index() -> rx.Component:
         rx.theme_panel(),
         rx.vstack(
             rx.heading("Welcome to Reflex!", size="9"),
-            rx.text("Get started by editing ", rx.code(filename)),
-            rx.button(
-                "Check out our docs!",
-                on_click=lambda: rx.redirect(docs_url),
-                size="4",
-            ),
+            rx.text("Test your custom component by editing ", rx.code(filename)),
+            {{ module_name }}(),
             align="center",
             spacing="7",
             font_size="2em",
@@ -31,5 +30,7 @@ def index() -> rx.Component:
     )
 
 
+# Add state and page to the app.
 app = rx.App()
 app.add_page(index)
+
