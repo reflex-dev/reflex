@@ -67,7 +67,7 @@ def _compile_theme(theme: dict) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _compile_contexts(state: Optional[Type[BaseState]], theme: Component) -> str:
+def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None) -> str:
     """Compile the initial state and contexts.
 
     Args:
@@ -363,7 +363,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 
 def compile_contexts(
     state: Optional[Type[BaseState]],
-    theme: Component,
+    theme: Component | None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
@@ -487,3 +487,88 @@ def purge_web_pages_dir():
 
     # Empty out the web pages directory.
     utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+
+
+class ExecutorSafeFunctions:
+    """Helper class to allow parallelisation of parts of the compilation process.
+
+    This class (and its class attributes) are available at global scope.
+
+    In a multiprocessing context (like when using a ProcessPoolExecutor), the content of this
+    global class is logically replicated to any FORKED process.
+
+    How it works:
+    * Before the child process is forked, ensure that we stash any input data required by any future
+      function call in the child process.
+    * After the child process is forked, the child process will have a copy of the global class, which
+      includes the previously stashed input data.
+    * Any task submitted to the child process simply needs a way to communicate which input data the
+      requested function call requires.
+
+    Why do we need this? Passing input data directly to child process often not possible because the input data is not picklable.
+    The mechanic described here removes the need to pickle the input data at all.
+
+    Limitations:
+    * This can never support returning unpicklable OUTPUT data.
+    * Any object mutations done by the child process will not propagate back to the parent process (fork goes one way!).
+
+    """
+
+    COMPILE_PAGE_ARGS_BY_ROUTE = {}
+    COMPILE_APP_APP_ROOT: Component | None = None
+    CUSTOM_COMPONENTS: set[CustomComponent] | None = None
+    STYLE: ComponentStyle | None = None
+
+    @classmethod
+    def compile_page(cls, route: str):
+        """Compile a page.
+
+        Args:
+            route: The route of the page to compile.
+
+        Returns:
+            The path and code of the compiled page.
+        """
+        return compile_page(*cls.COMPILE_PAGE_ARGS_BY_ROUTE[route])
+
+    @classmethod
+    def compile_app(cls):
+        """Compile the app.
+
+        Returns:
+            The path and code of the compiled app.
+
+        Raises:
+            ValueError: If the app root is not set.
+        """
+        if cls.COMPILE_APP_APP_ROOT is None:
+            raise ValueError("COMPILE_APP_APP_ROOT should be set")
+        return compile_app(cls.COMPILE_APP_APP_ROOT)
+
+    @classmethod
+    def compile_custom_components(cls):
+        """Compile the custom components.
+
+        Returns:
+            The path and code of the compiled custom components.
+
+        Raises:
+            ValueError: If the custom components are not set.
+        """
+        if cls.CUSTOM_COMPONENTS is None:
+            raise ValueError("CUSTOM_COMPONENTS should be set")
+        return compile_components(cls.CUSTOM_COMPONENTS)
+
+    @classmethod
+    def compile_theme(cls):
+        """Compile the theme.
+
+        Returns:
+            The path and code of the compiled theme.
+
+        Raises:
+            ValueError: If the style is not set.
+        """
+        if cls.STYLE is None:
+            raise ValueError("STYLE should be set")
+        return compile_theme(cls.STYLE)
