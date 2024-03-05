@@ -1855,7 +1855,7 @@ class MemoizationLeaf(Component):
         """
         comp = super().create(*children, **props)
         if comp.get_hooks():
-            comp._memoization_mode = cls._memoization_mode.model_copy(
+            comp._memoization_mode = comp._memoization_mode.model_copy(
                 update={"disposition": MemoizationDisposition.ALWAYS}
             )
         return comp
