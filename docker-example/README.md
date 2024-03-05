@@ -117,3 +117,17 @@ to deploy these services if they are not in active use.
 ```bash
 DOMAIN=example.com docker compose -f compose.yaml -f compose.prod.yaml -f compose.tools.yaml up -d
 ```
+
+# Container Hosting
+
+Most container hosting services automatically terminate TLS and expect the app
+to be listening on a single port (typically `$PORT`).
+
+To host a Reflex app on one of these platforms, like Google Cloud Run, Render,
+Railway, etc, use `app.Dockerfile` to build a single image containing a reverse
+proxy that will serve that frontend as static files and proxy requests to the
+backend for specific endpoints.
+
+If the chosen platform does not support buildx and thus heredoc, you can copy
+the Caddyfile configuration into a separate Caddyfile in the root of the
+project.

@@ -11,7 +11,7 @@ RUN pip install -r requirements.txt
 # Deploy templates and prepare app
 RUN reflex init
 
-# Download all npm dependencies and compile and frontend
+# Download all npm dependencies and compile frontend
 RUN reflex export --frontend-only --no-zip
 
 # Needed until Reflex properly passes SIGTERM on backend.
