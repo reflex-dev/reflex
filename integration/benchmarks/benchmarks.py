@@ -3,7 +3,7 @@
 import json
 import os
 import sys
-from typing import List, Dict
+from typing import Dict, List
 
 import pytest
 from helpers import insert_benchmarking_data
