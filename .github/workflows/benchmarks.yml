@@ -70,8 +70,6 @@ jobs:
 
 
   reflex-benchmarks:
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
@@ -107,4 +105,4 @@ jobs:
       - name: Run Benchmarks
         # Only run if the database creds are available in this context.
         uses: CodSpeedHQ/action@v2
-        run: pytest integration/benchmark --codspeed
+        run: poetry run pytest integration/benchmark/ --codspeed
