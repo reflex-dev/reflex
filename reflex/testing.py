@@ -505,7 +505,7 @@ class AppHarness:
             options = webdriver.EdgeOptions()
             options.add_argument("headless")
         if options and (args := os.environ.get("APP_HARNESS_DRIVER_ARGS")):
-            for arg in args:
+            for arg in args.split(","):
                 options.add_argument(arg)
         driver = driver_clz(options=options)  # type: ignore
         driver.get(self.frontend_url)
