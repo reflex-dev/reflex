@@ -9,7 +9,7 @@ from reflex.testing import AppHarness, chdir
 from reflex.utils import build, path_ops
 
 
-def BlankTemplate():
+def BaseApp():
     """Test that background tasks work as expected."""
     from rxconfig import config
 
@@ -45,7 +45,7 @@ def BlankTemplate():
     app.add_page(index)
 
 
-def BlankTemplate2():
+def BaseApp2():
     """Test that background tasks work as expected."""
     from rxconfig import config
 
@@ -148,10 +148,10 @@ def BlankTemplate2():
 
 
 @pytest.fixture(scope="session")
-def blank_template(
+def base_app(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
-    """Start Blank Template app at tmp_path via AppHarness.
+    """Start Base app at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
@@ -159,16 +159,16 @@ def blank_template(
     Yields:
         running AppHarness instance
     """
-    root = tmp_path_factory.mktemp(f"blank_template")
+    root = tmp_path_factory.mktemp(f"base_app")
 
-    yield AppHarness.create(root=root, app_source=BlankTemplate)  # type: ignore
+    yield AppHarness.create(root=root, app_source=BaseApp)  # type: ignore
 
 
 @pytest.fixture(scope="session")
-def blank_template_two_pages(
+def base_app_two_pages(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
-    """Start Blank Template app at tmp_path via AppHarness.
+    """Start Base app at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
@@ -176,23 +176,23 @@ def blank_template_two_pages(
     Yields:
         running AppHarness instance
     """
-    root = tmp_path_factory.mktemp(f"blank_template_two_pages")
+    root = tmp_path_factory.mktemp(f"base_app_two_pages")
 
-    yield AppHarness.create(root=root, app_source=BlankTemplate2)  # type: ignore
+    yield AppHarness.create(root=root, app_source=BaseApp2)  # type: ignore
 
 
 @pytest.mark.benchmark(
     group="blank template", timer=time.perf_counter, disable_gc=True, warmup=False
 )
-def test_blank_template_compile_time(benchmark, blank_template):
+def test_base_app_compile_time_cold(benchmark, base_app):
     def setup():
-        with chdir(blank_template.app_path):
-            blank_template._initialize_app()
-            build.setup_frontend(blank_template.app_path)
+        with chdir(base_app.app_path):
+            base_app._initialize_app()
+            build.setup_frontend(base_app.app_path)
 
     def benchmark_fn():
-        with chdir(blank_template.app_path):
-            blank_template.app_instance.compile_()
+        with chdir(base_app.app_path):
+            base_app.app_instance.compile_()
 
     benchmark.pedantic(benchmark_fn, setup=setup, rounds=10)
 
@@ -200,15 +200,15 @@ def test_blank_template_compile_time(benchmark, blank_template):
 @pytest.mark.benchmark(
     group="blank template", timer=time.perf_counter, disable_gc=True, warmup=False
 )
-def test_blank_template_two_pages_compile_time(benchmark, blank_template_two_pages):
+def test_base_app_two_pages_compile_time_cold(benchmark, base_app_two_pages):
     def setup():
-        with chdir(blank_template_two_pages.app_path):
-            blank_template_two_pages._initialize_app()
-            build.setup_frontend(blank_template_two_pages.app_path)
+        with chdir(base_app_two_pages.app_path):
+            base_app_two_pages._initialize_app()
+            build.setup_frontend(base_app_two_pages.app_path)
 
     def benchmark_fn():
-        with chdir(blank_template_two_pages.app_path):
-            blank_template_two_pages.app_instance.compile_()
+        with chdir(base_app_two_pages.app_path):
+            base_app_two_pages.app_instance.compile_()
             path_ops.rm(
                 os.path.join(
                     constants.Dirs.WEB, "reflex.install_frontend_packages.cached"
@@ -217,3 +217,42 @@ def test_blank_template_two_pages_compile_time(benchmark, blank_template_two_pag
             path_ops.rm(os.path.join(constants.Dirs.WEB, "node_modules"))
 
     benchmark.pedantic(benchmark_fn, setup=setup, rounds=10)
+
+
+@pytest.mark.benchmark(
+    group="blank template", min_rounds=10, timer=time.perf_counter, disable_gc=True, warmup=False
+)
+def test_base_app_compile_time_warm(benchmark, base_app):
+
+    def benchmark_fn():
+        with chdir(base_app.app_path):
+            base_app.app_instance.compile_()
+
+    benchmark(benchmark_fn, rounds=10)
+
+
+@pytest.mark.benchmark(
+    group="blank template", min_rounds=10,timer=time.perf_counter, disable_gc=True, warmup=False
+)
+def test_base_app_two_pages_compile_time_warm(benchmark, base_app_two_pages):
+
+    def benchmark_fn():
+        with chdir(base_app_two_pages.app_path):
+            base_app_two_pages.app_instance.compile_()
+            path_ops.rm(
+                os.path.join(
+                    constants.Dirs.WEB, "reflex.install_frontend_packages.cached"
+                )
+            )
+            path_ops.rm(os.path.join(constants.Dirs.WEB, "node_modules"))
+
+    benchmark(benchmark_fn)
+
+
+def test_base_app_hot_reload():
+    pass
+
+
+
+def test_base_app_two_pages_hot_reload():
+    pass
