@@ -1,3 +1,5 @@
+"""Benchmark tests for base apps."""
+
 import os
 import time
 from typing import Generator
@@ -11,7 +13,7 @@ from reflex.utils import build, path_ops
 
 def BaseApp():
     """Test that background tasks work as expected."""
-    from rxconfig import config
+    from rxconfig import config  # type: ignore
 
     import reflex as rx
 
@@ -47,7 +49,7 @@ def BaseApp():
 
 def BaseApp2():
     """Test that background tasks work as expected."""
-    from rxconfig import config
+    from rxconfig import config  # type: ignore
 
     import reflex as rx
 
@@ -95,13 +97,13 @@ def BaseApp2():
                     rx.select(
                         ["C", "PF", "SF", "PG", "SG"],
                         placeholder="Select a position. (All)",
-                        on_change=State.set_position,
+                        on_change=State.set_position,  # type: ignore
                         size="3",
                     ),
                     rx.select(
                         college,
                         placeholder="Select a college. (All)",
-                        on_change=State.set_college,
+                        on_change=State.set_college,  # type: ignore
                         size="3",
                     ),
                 ),
@@ -116,7 +118,7 @@ def BaseApp2():
                             default_value=[18, 50],
                             min=18,
                             max=50,
-                            on_value_commit=State.set_age,
+                            on_value_commit=State.set_age,  # type: ignore
                         ),
                         align_items="left",
                         width="100%",
@@ -131,7 +133,7 @@ def BaseApp2():
                             default_value=[0, 25000000],
                             min=0,
                             max=25000000,
-                            on_value_commit=State.set_salary,
+                            on_value_commit=State.set_salary,  # type: ignore
                         ),
                         align_items="left",
                         width="100%",
@@ -220,22 +222,28 @@ def test_base_app_two_pages_compile_time_cold(benchmark, base_app_two_pages):
 
 
 @pytest.mark.benchmark(
-    group="blank template", min_rounds=10, timer=time.perf_counter, disable_gc=True, warmup=False
+    group="blank template",
+    min_rounds=10,
+    timer=time.perf_counter,
+    disable_gc=True,
+    warmup=False,
 )
 def test_base_app_compile_time_warm(benchmark, base_app):
-
     def benchmark_fn():
         with chdir(base_app.app_path):
             base_app.app_instance.compile_()
 
-    benchmark(benchmark_fn, rounds=10)
+    benchmark.pedantic(benchmark_fn, rounds=10)
 
 
 @pytest.mark.benchmark(
-    group="blank template", min_rounds=10,timer=time.perf_counter, disable_gc=True, warmup=False
+    group="blank template",
+    min_rounds=10,
+    timer=time.perf_counter,
+    disable_gc=True,
+    warmup=False,
 )
 def test_base_app_two_pages_compile_time_warm(benchmark, base_app_two_pages):
-
     def benchmark_fn():
         with chdir(base_app_two_pages.app_path):
             base_app_two_pages.app_instance.compile_()
@@ -246,12 +254,11 @@ def test_base_app_two_pages_compile_time_warm(benchmark, base_app_two_pages):
             )
             path_ops.rm(os.path.join(constants.Dirs.WEB, "node_modules"))
 
-    benchmark(benchmark_fn)
+    benchmark.pedantic(benchmark_fn)
 
 
 def test_base_app_hot_reload():
     pass
-
 
 
 def test_base_app_two_pages_hot_reload():

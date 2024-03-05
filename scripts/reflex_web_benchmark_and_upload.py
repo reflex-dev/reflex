@@ -1,15 +1,61 @@
 """Runs the benchmarks and inserts the results into the database."""
 
+from __future__ import annotations
+
 import json
 import os
 import sys
-from typing import Dict, List
+from datetime import datetime
 
+import psycopg2
 import pytest
-from helpers import insert_benchmarking_data
+from benchmark_helpers import extract_stats_from_json
 
 
-def get_lighthouse_scores(directory_path: str) -> Dict:
+def insert_benchmarking_data(
+    db_connection_url: str,
+    lighthouse_data: dict,
+    performance_data: list[dict],
+    commit_sha: str,
+    pr_title: str,
+):
+    """Insert the benchmarking data into the database.
+
+    Args:
+        db_connection_url: The URL to connect to the database.
+        lighthouse_data: The Lighthouse data to insert.
+        performance_data: The performance data to insert.
+        commit_sha: The commit SHA to insert.
+        pr_title: The PR title to insert.
+    """
+    # Serialize the JSON data
+    lighthouse_json = json.dumps(lighthouse_data)
+    performance_json = json.dumps(performance_data)
+
+    # Get the current timestamp
+    current_timestamp = datetime.now()
+
+    # Connect to the database and insert the data
+    with psycopg2.connect(db_connection_url) as conn, conn.cursor() as cursor:
+        insert_query = """
+            INSERT INTO benchmarks (lighthouse, performance, commit_sha, pr_title, time)
+            VALUES (%s, %s, %s, %s, %s);
+            """
+        cursor.execute(
+            insert_query,
+            (
+                lighthouse_json,
+                performance_json,
+                commit_sha,
+                pr_title,
+                current_timestamp,
+            ),
+        )
+        # Commit the transaction
+        conn.commit()
+
+
+def get_lighthouse_scores(directory_path: str) -> dict:
     """Extracts the Lighthouse scores from the JSON files in the specified directory.
 
     Args:
@@ -45,20 +91,23 @@ def get_lighthouse_scores(directory_path: str) -> Dict:
     return scores
 
 
-def run_pytest_and_get_results(test_path=None) -> List:
+def run_pytest_and_get_results(test_path=None) -> str:
     """Runs pytest and returns the results.
 
     Args:
         test_path: The path to the tests to run.
 
     Returns:
-        dict: The results of the tests.
+        the name of the output file
     """
     # Set the default path to the current directory if no path is provided
     if not test_path:
         test_path = os.getcwd()
+
+    output_file = "benchmark_report.json"
+
     # Ensure you have installed the pytest-json plugin before running this
-    pytest_args = ["-v", "--benchmark-json=benchmark_report.json", test_path]
+    pytest_args = ["-v", f"--benchmark-json={output_file}", test_path]
 
     # Run pytest with the specified arguments
     pytest.main(pytest_args)
@@ -66,47 +115,7 @@ def run_pytest_and_get_results(test_path=None) -> List:
     # Print ls of the current directory
     print(os.listdir())
 
-    with open("benchmark_report.json", "r") as file:
-        pytest_results = json.load(file)
-
-    return pytest_results
-
-
-def extract_stats_from_json(json_data) -> List[Dict]:
-    """Extracts the stats from the JSON data and returns them as a list of dictionaries.
-
-    Args:
-        json_data: The JSON data to extract the stats from.
-
-    Returns:
-        list[dict]: The stats for each test.
-    """
-    # Load the JSON data if it is a string, otherwise assume it's already a dictionary
-    data = json.loads(json_data) if isinstance(json_data, str) else json_data
-
-    # Initialize an empty list to store the stats for each test
-    test_stats = []
-
-    # Iterate over each test in the 'benchmarks' list
-    for test in data.get("benchmarks", []):
-        stats = test.get("stats", {})
-        test_name = test.get("name", "Unknown Test")
-        min_value = stats.get("min", None)
-        max_value = stats.get("max", None)
-        mean_value = stats.get("mean", None)
-        stdev_value = stats.get("stddev", None)
-
-        test_stats.append(
-            {
-                "test_name": test_name,
-                "min": min_value,
-                "max": max_value,
-                "mean": mean_value,
-                "stdev": stdev_value,
-            }
-        )
-
-    return test_stats
+    return output_file
 
 
 def main():
@@ -123,8 +132,8 @@ def main():
         sys.exit("Missing environment variables")
 
     # Run pytest and get the results
-    results = run_pytest_and_get_results()
-    cleaned_results = extract_stats_from_json(results)
+    result_json_file = run_pytest_and_get_results()
+    cleaned_results = extract_stats_from_json(result_json_file)
 
     # Get the Lighthouse scores
     lighthouse_scores = get_lighthouse_scores(json_dir)

@@ -21,11 +21,10 @@ env:
   PYTHONIOENCODING: 'utf8'
   TELEMETRY_ENABLED: false
   NODE_OPTIONS: '--max_old_space_size=4096'
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
 jobs:
   reflex-web:
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     strategy:
       fail-fast: false
       matrix:
@@ -67,17 +66,25 @@ jobs:
           poetry run bash scripts/benchmarks.sh ./reflex-web prod
         env:
           LHCI_GITHUB_APP_TOKEN: $
+      - name: Run Benchmarks
+        # Only run if the database creds are available in this context.
+        if: ${{ env.DATABASE_URL }}
+        run: poetry run python scripts/reflex_web_benchmark_and_upload.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
 
-
-  reflex-benchmarks:
+  simple-apps-benchmarks:
+    env:
+      OUTPUT_FILE: benchmarks.json
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
       fail-fast: false
       matrix:
         # Show OS combos first in GUI
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
-        python-version: [ '3.8.18', '3.9.18', '3.10.13', '3.11.5', '3.12.0' ]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8.18', '3.9.18', '3.10.13', '3.11.5', '3.12.0']
         exclude:
           - os: windows-latest
             python-version: '3.10.13'
@@ -101,9 +108,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-      - run: poetry run pip install pytest-codspeed pyvirtualdisplay pillow
-      - name: Run Benchmarks
+      - name: Run benchmark tests
+        run: |
+          export PYTHONUNBUFFERED=1
+          poetry run pytest -v integration/benchmarks/ --benchmark-json==${{ env.OUTPUT_FILE }}
+      - name: Upload benchmark results
         # Only run if the database creds are available in this context.
-        uses: CodSpeedHQ/action@v2
-        with:
-          run: poetry run pytest integration/benchmarks/ --codspeed
+        if: ${{ env.DATABASE_URL }}
+        run: poetry run python scripts/upload_simple_app_benchmarks.py --os ${{ matrix.os }} --python-version ${{ matrix.python-version }} --commit-sha ${{ github.sha }} --benchmarks-file ${{ env.OUTPUT_FILE }} --pr-title ${{ github.event.pull_request.title }}
