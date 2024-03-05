@@ -759,7 +759,7 @@ class App(Base):
 
         # try to be somewhat accurate - but still not 100%
         adhoc_steps_without_executor = 6
-        fixed_pages_within_executor = 7
+        fixed_pages_within_executor = 5
         progress.start()
         task = progress.add_task(
             "Compiling:",
