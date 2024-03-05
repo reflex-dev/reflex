@@ -294,3 +294,16 @@ def is_testing_env() -> bool:
         True if the app is running in under pytest.
     """
     return constants.PYTEST_CURRENT_TEST in os.environ
+
+
+def is_prod_mode() -> bool:
+    """Check if the app is running in production mode.
+
+    Returns:
+        True if the app is running in production mode or False if running in dev mode.
+    """
+    current_mode = os.environ.get(
+        constants.ENV_MODE_ENV_VAR,
+        constants.Env.DEV.value,
+    )
+    return current_mode == constants.Env.PROD.value
