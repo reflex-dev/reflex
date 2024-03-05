@@ -1,17 +1,14 @@
 """List components."""
 from __future__ import annotations
 
-from typing import Generic, Optional, TypeVar
+from typing import Optional
 
 from reflex.components.chakra import ChakraComponent
 from reflex.components.component import Component
 from reflex.components.core.foreach import Foreach
 from reflex.vars import Var
 
-T = TypeVar("T")
-
-# TODO: Generic is just a hacky workaround to stop pydantic from complaining
-class List(ChakraComponent, Generic[T]):
+class List(ChakraComponent):
     """Display a list of items."""
 
     tag: str = "List"
@@ -24,6 +21,18 @@ class List(ChakraComponent, Generic[T]):
 
     # Shorthand prop for listStyleType
     style_type: Optional[Var[str]] = None
+
+    @classmethod
+    def __class_getitem__(cls, item):
+        """This method is just a hacky workaround to stop pydantic v2 from complaining.
+
+        Args:
+            item: The type of the list items.
+
+        Returns:
+            The list component.
+        """
+        return cls
 
     @classmethod
     def create(

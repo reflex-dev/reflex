@@ -14,7 +14,7 @@ class Tag(Base):
     """A React tag."""
 
     # The name of the tag.
-    name: str = ""
+    name: str | None = ""
 
     # The props of the tag.
     props: Dict[str, Any] = {}
