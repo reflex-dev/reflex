@@ -40,4 +40,4 @@ jobs:
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v2
         with:
-          run: poetry run pytest tests/ --codspeed
+          run: poetry run pytest integration/benchmarks/ --codspeed
