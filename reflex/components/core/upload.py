@@ -3,14 +3,21 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 
 from reflex import constants
 from reflex.components.chakra.forms.input import Input
 from reflex.components.chakra.layout.box import Box
 from reflex.components.component import Component, MemoizationLeaf
 from reflex.constants import Dirs
-from reflex.event import CallableEventSpec, EventChain, EventSpec, call_script
+from reflex.event import (
+    CallableEventSpec,
+    EventChain,
+    EventSpec,
+    call_event_fn,
+    call_script,
+    parse_args_spec,
+)
 from reflex.utils import imports
 from reflex.vars import BaseVar, CallableVar, Var, VarData
 
@@ -135,6 +142,18 @@ def get_upload_url(file_path: str) -> str:
     return f"{uploaded_files_url_prefix}/{file_path}"
 
 
+def _on_drop_spec(files: Var):
+    """Args spec for the on_drop event trigger.
+
+    Args:
+        files: The files to upload.
+
+    Returns:
+        Signature for on_drop handler including the files to upload.
+    """
+    return [files]
+
+
 class UploadFilesProvider(Component):
     """AppWrap component that provides a dict of selected files by ID via useContext."""
 
@@ -198,7 +217,7 @@ class Upload(MemoizationLeaf):
         cls.is_used = True
 
         # get only upload component props
-        supported_props = cls.get_props()
+        supported_props = cls.get_props().union({"on_drop"})
         upload_props = {
             key: value for key, value in props.items() if key in supported_props
         }
@@ -218,8 +237,27 @@ class Upload(MemoizationLeaf):
 
         # Create the component.
         upload_props["id"] = props.get("id", DEFAULT_UPLOAD_ID)
+
+        if upload_props.get("on_drop") is None:
+            # If on_drop is not provided, save files to be uploaded later.
+            upload_props["on_drop"] = upload_file(upload_props["id"])
+        else:
+            on_drop = upload_props["on_drop"]
+            if isinstance(on_drop, Callable):
+                # Call the lambda to get the event chain.
+                on_drop = call_event_fn(on_drop, _on_drop_spec)  # type: ignore
+            if isinstance(on_drop, EventSpec):
+                # Update the provided args for direct use with on_drop.
+                on_drop = on_drop.with_args(
+                    args=tuple(
+                        cls._update_arg_tuple_for_on_drop(arg_value)
+                        for arg_value in on_drop.args
+                    ),
+                )
+            upload_props["on_drop"] = on_drop
         return super().create(
-            zone, on_drop=upload_file(upload_props["id"]), **upload_props
+            zone,
+            **upload_props,
         )
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
@@ -230,8 +268,23 @@ class Upload(MemoizationLeaf):
         """
         return {
             **super().get_event_triggers(),
-            constants.EventTriggers.ON_DROP: lambda e0: [e0],
+            constants.EventTriggers.ON_DROP: _on_drop_spec,
         }
+
+    @classmethod
+    def _update_arg_tuple_for_on_drop(cls, arg_value: tuple[Var, Var]):
+        """Helper to update caller-provided EventSpec args for direct use with on_drop.
+
+        Args:
+            arg_value: The arg tuple to update (if necessary).
+
+        Returns:
+            The updated arg_value tuple when arg is "files", otherwise the original arg_value.
+        """
+        if arg_value[0]._var_name == "files":
+            placeholder = parse_args_spec(_on_drop_spec)[0]
+            return (arg_value[0], placeholder)
+        return arg_value
 
     def _render(self):
         out = super()._render()
