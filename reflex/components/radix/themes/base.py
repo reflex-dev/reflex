@@ -207,6 +207,27 @@ class ThemePanel(RadixThemesComponent):
     # Whether the panel is open. Defaults to False.
     default_open: Var[bool]
 
+    def _get_imports(self) -> dict[str, list[imports.ImportVar]]:
+        return imports.merge_imports(
+            super()._get_imports(),
+            {
+                "react": [imports.ImportVar(tag="useEffect")],
+            },
+        )
+
+    def _get_hooks(self) -> str | None:
+        # The panel freezes the tab if the user color preference differs from the
+        # theme "appearance", so clear it out when theme panel is used.
+        return """
+            useEffect(() => {
+                if (typeof window !== 'undefined') {
+                    window.onbeforeunload = () => {
+                        localStorage.removeItem('chakra-ui-color-mode');
+                    }
+                    window.onbeforeunload();
+                }
+            }, [])"""
+
 
 class RadixThemesColorModeProvider(Component):
     """Next-themes integration for radix themes components."""
