@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import sys
 from datetime import datetime
 
 import psycopg2
@@ -75,22 +73,22 @@ def main():
         help="The JSON file containing the benchmark results.",
     )
     parser.add_argument(
+        "--db-url",
+        help="The URL to connect to the database.",
+        required=True,
+    )
+    parser.add_argument(
         "--pr-title",
         help="The PR title to insert into the database.",
+        required=True,
     )
     args = parser.parse_args()
-
-    # Get the PR title and database URL from the environment variables
-    db_url = os.environ.get("DATABASE_URL")
-
-    if db_url is None or args.pr_title is None:
-        sys.exit("Missing environment variables")
 
     # Get the results of pytest benchmarks
     cleaned_benchmark_results = extract_stats_from_json(args.benchmark_json)
     # Insert the data into the database
     insert_benchmarking_data(
-        db_connection_url=db_url,
+        db_connection_url=args.db_url,
         os_type_version=args.os,
         python_version=args.python_version,
         performance_data=cleaned_benchmark_results,

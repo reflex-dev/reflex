@@ -39,5 +39,4 @@ def extract_stats_from_json(json_file: str) -> list[dict]:
                 "stdev": stdev_value,
             }
         )
-
     return test_stats

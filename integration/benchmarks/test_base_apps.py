@@ -1,7 +1,5 @@
 """Benchmark tests for base apps."""
 
-from __future__ import annotations
-
 import os
 import time
 from typing import Generator
@@ -52,6 +50,7 @@ def BaseApp():
 def BaseApp2():
     """Test that background tasks work as expected."""
     from rxconfig import config  # type: ignore
+    from typing import Tuple
 
     import reflex as rx
 
@@ -71,8 +70,8 @@ def BaseApp2():
 
         position: str
         college: str
-        age: tuple[int, int] = (18, 50)
-        salary: tuple[int, int] = (0, 25000000)
+        age: Tuple[int, int] = (18, 50)
+        salary: Tuple[int, int] = (0, 25000000)
 
     def index() -> rx.Component:
         return rx.center(

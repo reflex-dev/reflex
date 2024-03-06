@@ -110,11 +110,13 @@ jobs:
           create-venv-at-path: .venv
       - name: Install additional dependencies for appharness test and DB
         run: poetry run pip install pyvirtualdisplay pillow psycopg2-binary
-      - name: Run benchmark tests
+      - name: Run benchmark tests and upload results
         run: |
           export PYTHONUNBUFFERED=1
           poetry run pytest -v integration/benchmarks/ --benchmark-json==${{ env.OUTPUT_FILE }}
-      - name: Upload benchmark results
-        # Only run if the database creds are available in this context.
-        if: ${{ env.DATABASE_URL }}
-        run: poetry run python scripts/upload_simple_app_benchmarks.py --os "${{ matrix.os }}" --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}" --benchmark-json "${{ env.OUTPUT_FILE }}" --pr-title "${{ github.event.pull_request.title }}"
+          ls
+          if [ "${{ env.DATABASE_URL }}" != "" ]; then
+            poetry run python scripts/upload_simple_app_benchmarks.py --os "${{ matrix.os }}" --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}" --benchmark-json "${{ env.OUTPUT_FILE }}" --pr-title "${{ github.event.pull_request.title }}" --db-url "${{ env.DATABASE_URL }}"
+          else
+            echo "Skipping upload of benchmark results as DATABASE_URL is not available"
+          fi

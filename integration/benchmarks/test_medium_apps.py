@@ -14,6 +14,7 @@ from reflex.utils import build
 def MediumApp():
     """Test that background tasks work as expected."""
     from rxconfig import config  # type: ignore
+    from typing import Tuple
 
     import reflex as rx
 
@@ -33,8 +34,8 @@ def MediumApp():
 
         position: str
         college: str
-        age: tuple[int, int] = (18, 50)
-        salary: tuple[int, int] = (0, 25000000)
+        age: Tuple[int, int] = (18, 50)
+        salary: Tuple[int, int] = (0, 25000000)
 
     comp1 = rx.center(
         rx.theme_panel(),
