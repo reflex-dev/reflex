@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import multiprocessing
 import platform
 from datetime import datetime
@@ -71,10 +70,14 @@ def _prepare_event(event: str) -> dict:
         The event data.
     """
     installation_id = ensure_reflex_installation_id()
-    project_hash = get_project_hash()
+    project_hash = get_project_hash(raise_on_fail=True)
 
     if installation_id is None or project_hash is None:
-        "Error getting installation_id or project_hash."
+        print(
+            "Error getting installation_id or project_hash.",
+            installation_id,
+            project_hash,
+        )
         return {}
 
     return {
@@ -119,10 +122,12 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
 
     # Return if telemetry is disabled.
     if not telemetry_enabled:
+        print("disabled")
         return False
 
     event_data = _prepare_event(event)
     if not event_data:
+        print("no data")
         return False
 
     return _send_event(event_data)

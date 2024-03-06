@@ -42,6 +42,6 @@ def test_send(mocker, event):
         ),
     )
 
-    telemetry.send(event)
-
+    telemetry.send(event, telemetry_enabled=True)
     httpx.post.assert_called_once()
+    open.assert_called_with(".web/reflex.json", "r")

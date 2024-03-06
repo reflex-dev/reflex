@@ -420,13 +420,13 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
     )
 
 
-def get_project_hash() -> int | None:
+def get_project_hash(raise_on_fail: bool = False) -> int | None:
     """Get the project hash from the reflex.json file if the file exists.
 
     Returns:
         project_hash: The app hash.
     """
-    if not os.path.exists(constants.Reflex.JSON):
+    if not os.path.exists(constants.Reflex.JSON) and not raise_on_fail:
         return None
     # Open and read the file
     with open(constants.Reflex.JSON, "r") as file:
