@@ -1,5 +1,7 @@
 """Helper functions for the benchmarking scripts."""
 
+from __future__ import annotations
+
 import json
 
 
