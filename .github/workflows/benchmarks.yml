@@ -69,7 +69,7 @@ jobs:
       - name: Run Benchmarks
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
-        run: poetry run python scripts/reflex_web_benchmark_and_upload.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
+        run: poetry run python scripts/lighthouse_score_upload.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
         env:
           GITHUB_SHA: ${{ github.sha }}
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -102,4 +102,4 @@ jobs:
       - name: Upload benchmark results
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
-        run: poetry run python scripts/upload_simple_app_benchmarks.py --os "${{ matrix.os }}" --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}" --benchmark-json "${{ env.OUTPUT_FILE }}" --pr-title "${{ github.event.pull_request.title }}" --db-url "${{ env.DATABASE_URL }}"
+        run: poetry run python scripts/simple_app_benchmark_upload --os "${{ matrix.os }}" --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}" --benchmark-json "${{ env.OUTPUT_FILE }}" --pr-title "${{ github.event.pull_request.title }}" --db-url "${{ env.DATABASE_URL }}"
