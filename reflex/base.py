@@ -2,11 +2,23 @@
 from __future__ import annotations
 
 import os
-from typing import Any, List, Type
+from typing import TYPE_CHECKING, Any, List, Type
 
-import pydantic
-from pydantic import BaseModel
-from pydantic.fields import ModelField
+try:
+    # TODO The type checking guard can be removed once
+    # reflex-hosting-cli tools are compatible with pydantic v2
+
+    if not TYPE_CHECKING:
+        import pydantic.v1 as pydantic
+        from pydantic.v1 import BaseModel
+        from pydantic.v1.fields import ModelField
+    else:
+        raise ModuleNotFoundError
+except ModuleNotFoundError:
+    import pydantic
+    from pydantic import BaseModel
+    from pydantic.fields import ModelField
+
 
 from reflex import constants
 

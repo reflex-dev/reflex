@@ -15,6 +15,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from types import FunctionType, MethodType
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Callable,
@@ -28,7 +29,18 @@ from typing import (
 )
 
 import dill
-import pydantic
+
+try:
+    # TODO The type checking guard can be removed once
+    # reflex-hosting-cli tools are compatible with pydantic v2
+
+    if not TYPE_CHECKING:
+        import pydantic.v1 as pydantic
+    else:
+        raise ModuleNotFoundError
+except ModuleNotFoundError:
+    import pydantic
+
 import wrapt
 from redis.asyncio import Redis
 
