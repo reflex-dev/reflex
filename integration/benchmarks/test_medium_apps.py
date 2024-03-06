@@ -1,5 +1,7 @@
 """Benchmark tests for medium sized apps."""
 
+from __future__ import annotations
+
 import time
 from typing import Generator
 
