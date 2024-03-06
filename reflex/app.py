@@ -133,6 +133,12 @@ class App(Base):
     # Components to add to the head of every page.
     head_components: List[Component] = []
 
+    # The language to add to the html root tag of every page.
+    html_lang: Optional[str] = None
+
+    # Attributes to add to the html root tag of every page.
+    html_custom_attrs: Optional[Dict[str, str]] = None
+
     # A component that is present on every page.
     overlay_component: Optional[
         Union[Component, ComponentCallable]
@@ -782,7 +788,12 @@ class App(Base):
             submit_work(compiler.compile_root_stylesheet, self.stylesheets)
 
             # Compile the root document.
-            submit_work(compiler.compile_document_root, self.head_components)
+            submit_work(
+                compiler.compile_document_root,
+                self.head_components,
+                html_lang=self.html_lang,
+                html_custom_attrs=self.html_custom_attrs,
+            )
 
             # Compile the theme.
             submit_work(compiler.compile_theme, style=self.style)
