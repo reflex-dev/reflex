@@ -423,6 +423,9 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
 def get_project_hash(raise_on_fail: bool = False) -> int | None:
     """Get the project hash from the reflex.json file if the file exists.
 
+    Args:
+        raise_on_fail: Whether to raise an error if the file does not exist.
+
     Returns:
         project_hash: The app hash.
     """
