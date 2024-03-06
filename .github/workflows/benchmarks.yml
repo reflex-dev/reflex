@@ -108,6 +108,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
+      - run: poetry run pip install pyvirtualdisplay pillow
       - name: Run benchmark tests
         run: |
           export PYTHONUNBUFFERED=1
