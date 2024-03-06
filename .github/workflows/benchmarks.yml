@@ -108,7 +108,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-      - run: poetry run pip install pyvirtualdisplay pillow
+      - name: Install additional dependencies for appharness test and DB
+        run: poetry run pip install pyvirtualdisplay pillow psycopg2-binary
       - name: Run benchmark tests
         run: |
           export PYTHONUNBUFFERED=1
