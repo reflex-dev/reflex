@@ -165,5 +165,6 @@ def test_medium_app_compile_time_warm(benchmark, medium_app):
     benchmark(benchmark_fn)
 
 
+# TODO:
 def test_medium_app_hot_reload():
     pass

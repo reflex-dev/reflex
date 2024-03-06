@@ -257,9 +257,11 @@ def test_base_app_two_pages_compile_time_warm(benchmark, base_app_two_pages):
     benchmark.pedantic(benchmark_fn)
 
 
+# TODO:
 def test_base_app_hot_reload():
     pass
 
 
+# TODO:
 def test_base_app_two_pages_hot_reload():
     pass
