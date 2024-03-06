@@ -87,7 +87,7 @@ def main():
         sys.exit("Missing environment variables")
 
     # Get the results of pytest benchmarks
-    cleaned_benchmark_results = extract_stats_from_json(args.reflex_web_benchmark_json)
+    cleaned_benchmark_results = extract_stats_from_json(args.benchmark_json)
     # Insert the data into the database
     insert_benchmarking_data(
         db_connection_url=db_url,
