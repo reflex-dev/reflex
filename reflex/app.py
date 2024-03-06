@@ -221,7 +221,6 @@ class App(Base):
             ValueError: If the event namespace is not provided in the config.
                         If the state has not been enabled.
         """
-
         config = get_config()
 
         # Set up the Socket.IO AsyncServer.
