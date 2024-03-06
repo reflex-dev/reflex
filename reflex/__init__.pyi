@@ -139,6 +139,9 @@ from reflex.state import var as var
 from reflex.state import Cookie as Cookie
 from reflex.state import LocalStorage as LocalStorage
 from reflex.state import State as State
+from reflex._state import get_state as get_state
+from reflex._state import modify_state as modify_state
+from reflex._state import broadcast_state as broadcast_state
 from reflex import style as style
 from reflex.style import toggle_color_mode as toggle_color_mode
 from reflex import testing as testing

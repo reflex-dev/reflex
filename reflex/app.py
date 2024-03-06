@@ -33,6 +33,7 @@ from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
 
 from reflex import constants
+from reflex._state.lifespan import _state_lifespan
 from reflex.admin import AdminDash
 from reflex.base import Base
 from reflex.compiler import compiler
@@ -188,7 +189,7 @@ class App(Base):
         self.middleware.append(HydrateMiddleware())
 
         # Set up the API.
-        self.api = FastAPI()
+        self.api = FastAPI(lifespan=_state_lifespan)
         self.add_cors()
         self.add_default_endpoints()
 
@@ -849,13 +850,35 @@ class App(Base):
             # No other event handler can modify the state while in this context.
             yield state
             delta = state.get_delta()
-            if delta:
+            if delta and (
+                state.router.session.client_token in self.event_namespace.client_mapping
+            ):
                 # When the state is modified reset dirty status and emit the delta to the frontend.
                 state._clean()
                 await self.event_namespace.emit_update(
                     update=StateUpdate(delta=delta),
                     sid=state.router.session.session_id,
                 )
+
+    @contextlib.asynccontextmanager
+    async def broadcast_state(self, token: str) -> AsyncIterator[BaseState]:
+        """Modify the state and broadcast the changes to all subscribers.
+
+        Args:
+            token: The token to modify the state for.
+
+        Raises:
+            RuntimeError: If the app has not been initialized yet.
+
+        Yields:
+            The state to modify.
+        """
+        if self.event_namespace is None:
+            raise RuntimeError("App has not been initialized yet.")
+
+        # Get exclusive access to the state.
+        async with self.state_manager.broadcast_state(token) as state:
+            yield state
 
     def _process_background(
         self, state: BaseState, event: Event
@@ -928,6 +951,7 @@ async def process(
             constants.RouteVar.CLIENT_IP: client_ip,
         }
     )
+
     # Get the state for the session exclusively.
     async with app.state_manager.modify_state(event.substate_token) as state:
         # re-assign only when the value is different
@@ -1074,6 +1098,8 @@ class EventNamespace(AsyncNamespace):
     # The application object.
     app: App
 
+    client_mapping: dict[str, str] = {}
+
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
 
@@ -1099,7 +1125,7 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id.
         """
-        pass
+        self.client_mapping.pop(sid, None)
 
     async def emit_update(self, update: StateUpdate, sid: str) -> None:
         """Emit an update to the client.
@@ -1122,6 +1148,8 @@ class EventNamespace(AsyncNamespace):
         """
         # Get the event.
         event = Event.parse_raw(data)
+
+        self.client_mapping[event.token] = sid
 
         # Get the event environment.
         assert self.app.sio is not None

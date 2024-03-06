@@ -183,3 +183,14 @@ def status(*args, **kwargs):
         A new status.
     """
     return _console.status(*args, **kwargs)
+
+
+def worker_output(msg: str):
+    """Print a message prefixed by a worker process_id.
+
+    Args:
+        msg: The message to print.
+    """
+    import os
+
+    print(f"Worker {os.getpid()}: {msg}")

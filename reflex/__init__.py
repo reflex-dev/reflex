@@ -151,6 +151,7 @@ _MAPPING = {
     "reflex.page": ["page"],
     "reflex.route": ["route"],
     "reflex.state": ["state", "var", "Cookie", "LocalStorage", "State"],
+    "reflex._state": ["get_state", "modify_state", "broadcast_state"],
     "reflex.style": ["style", "toggle_color_mode"],
     "reflex.testing": ["testing"],
     "reflex.utils": ["utils"],

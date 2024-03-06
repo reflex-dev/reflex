@@ -1557,6 +1557,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Return the delta.
         return delta
 
+    def apply_delta(self, delta: Delta) -> None:
+        """Apply the delta to the state.
+
+        Args:
+            delta: The delta to apply.
+        """
+        # Apply the delta to the state.
+        for key, value in delta.items():
+            substate = self.get_substate(key.split("."))
+            for prop, val in value.items():
+                setattr(substate, prop, val)
+
     def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""
         state_name = self.get_name()
@@ -1660,10 +1672,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if initial:
             computed_vars = {
                 # Include initial computed vars.
-                prop_name: cv._initial_value
-                if isinstance(cv, ComputedVar)
-                and not isinstance(cv._initial_value, types.Unset)
-                else self.get_value(getattr(self, prop_name))
+                prop_name: (
+                    cv._initial_value
+                    if isinstance(cv, ComputedVar)
+                    and not isinstance(cv._initial_value, types.Unset)
+                    else self.get_value(getattr(self, prop_name))
+                )
                 for prop_name, cv in self.computed_vars.items()
             }
         elif include_computed:
@@ -2074,6 +2088,18 @@ class StateManager(Base, ABC):
         """
         yield self.state()
 
+    @contextlib.asynccontextmanager
+    async def broadcast_state(self, token: str) -> AsyncIterator[BaseState]:
+        """Broadcast state update.
+
+        Args:
+            token: The token to broadcast the state for.
+
+        Yields:
+            The state for the token.
+        """
+        yield self.state()
+
 
 class StateManagerMemory(StateManager):
     """A state manager that stores states in memory."""
@@ -2139,6 +2165,27 @@ class StateManagerMemory(StateManager):
             state = await self.get_state(token)
             yield state
             await self.set_state(token, state)
+
+    @contextlib.asynccontextmanager
+    async def broadcast_state(self, token: str) -> AsyncIterator[BaseState]:
+        """Broadcast state update.
+
+        Args:
+            token: The token to broadcast the state for.
+
+        Yields:
+            The state for the token.
+        """
+        token = _split_substate_key(token)[0]
+        if token not in self._states_locks:
+            async with self._state_manager_lock:
+                if token not in self._states_locks:
+                    self._states_locks[token] = asyncio.Lock()
+
+        async with self._states_locks[token]:
+            state = await self.get_state(token)
+            yield state
+            await self.set_state(token, state)  # todo: broadcast state delta
 
 
 class StateManagerRedis(StateManager):
@@ -2275,44 +2322,29 @@ class StateManagerRedis(StateManager):
                 "StateManagerRedis requires token to be specified in the form of {token}_{state_full_name}"
             )
 
-        # Fetch the serialized substate from redis.
-        redis_state = await self.redis.get(token)
+        # Populate parent state if missing and requested.
+        if parent_state is None:
+            parent_state = await self._get_parent_state(token)
 
+        # Fetch the serialized substate from redis or create new one.
+        redis_state = await self.redis.get(token)
         if redis_state is not None:
             # Deserialize the substate.
             state = cloudpickle.loads(redis_state)
+        else:
+            # Key didn't exist so we have to create a new instance for this token.
+            state = state_cls(
+                parent_state=parent_state,
+                init_substates=False,
+                _reflex_internal_init=True,
+            )
 
-            # Populate parent state if missing and requested.
-            if parent_state is None:
-                parent_state = await self._get_parent_state(token)
-            # Set up Bidirectional linkage between this state and its parent.
-            if parent_state is not None:
-                parent_state.substates[state.get_name()] = state
-                state.parent_state = parent_state
-            # Populate substates if requested.
-            await self._populate_substates(token, state, all_substates=get_substates)
-
-            # To retain compatibility with previous implementation, by default, we return
-            # the top-level state by chasing `parent_state` pointers up the tree.
-            if top_level:
-                return self._get_root_state(state)
-            return state
-
-        # TODO: dedupe the following logic with the above block
-        # Key didn't exist so we have to create a new instance for this token.
-        if parent_state is None:
-            parent_state = await self._get_parent_state(token)
-        # Instantiate the new state class (but don't persist it yet).
-        state = state_cls(
-            parent_state=parent_state,
-            init_substates=False,
-            _reflex_internal_init=True,
-        )
         # Set up Bidirectional linkage between this state and its parent.
         if parent_state is not None:
             parent_state.substates[state.get_name()] = state
             state.parent_state = parent_state
-        # Populate substates for the newly created state.
+
+        # Populate substates.
         await self._populate_substates(token, state, all_substates=get_substates)
         # To retain compatibility with previous implementation, by default, we return
         # the top-level state by chasing `parent_state` pointers up the tree.
@@ -2388,10 +2420,60 @@ class StateManagerRedis(StateManager):
         Yields:
             The state for the token.
         """
+        from reflex._state import state_op
+
         async with self._lock(token) as lock_id:
             state = await self.get_state(token)
             yield state
-            await self.set_state(token, state, lock_id)
+
+            if not self.check_token_ownership(token):
+                # token is owned by another worker, use pubsub to nofify other workers.
+                payload = {
+                    "token": token,
+                    "delta": state.get_delta(),
+                }
+                await self.redis.publish(
+                    state_op.Channels.STATE_UPDATE, json.dumps(payload)
+                )
+            else:
+                # worker own this token, set the state.
+                await self.set_state(token, state, lock_id)
+
+    @contextlib.asynccontextmanager
+    async def broadcast_state(self, token: str) -> AsyncIterator[BaseState]:
+        """Modify the state for a token while holding exclusive lock.
+
+        Args:
+            token: The token to modify the state for.
+
+        Yields:
+            The state for the token.
+        """
+        from reflex._state import state_op
+
+        async with self._lock(token):
+            state = await self.get_state(token)
+            yield state
+
+            payload = {
+                "delta": state.get_delta(),
+            }
+            await self.redis.publish(
+                state_op.Channels.BROADCAST_UPDATE, json.dumps(payload)
+            )
+
+    def check_token_ownership(self, full_token: str) -> bool:
+        """Check if the token is owned by the current worker.
+
+        Args:
+            full_token: The token to check.
+
+        Returns:
+            True if the token is owned by the current worker.
+        """
+        app = prerequisites.get_app().app
+        token, _ = _split_substate_key(full_token)
+        return token in app.event_namespace.client_mapping
 
     @staticmethod
     def _lock_key(token: str) -> bytes:
