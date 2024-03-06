@@ -1505,14 +1505,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         # _always_dirty_substates need to be fetched to recalc computed vars.
         fetch_substates = set(
-            cls.get_class_substate(tuple(substate_name.split(".")))
+            cls.get_class_substate((cls.get_name(), *substate_name.split(".")))
             for substate_name in cls._always_dirty_substates
         )
-        # Substates with cached vars also need to be fetched.
         for dependent_substates in cls._substate_var_dependencies.values():
             fetch_substates.update(
                 set(
-                    cls.get_class_substate(tuple(substate_name.split(".")))
+                    cls.get_class_substate((cls.get_name(), *substate_name.split(".")))
                     for substate_name in dependent_substates
                 )
             )

@@ -151,7 +151,7 @@ def _run(
     console.set_log_level(loglevel)
 
     # Set env mode in the environment
-    os.environ["REFLEX_ENV_MODE"] = env.value
+    os.environ[constants.ENV_MODE_ENV_VAR] = env.value
 
     # Show system info
     exec.output_system_info()

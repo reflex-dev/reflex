@@ -623,6 +623,9 @@ def install_node():
         )
     else:  # All other platforms (Linux, MacOS).
         # TODO we can skip installation if check_node_version() checks out
+        if check_node_version():
+            console.debug("Skipping node installation as it is already installed.")
+            return
         # Add execute permissions to fnm executable.
         os.chmod(constants.Fnm.EXE, stat.S_IXUSR)
         # Install node.

@@ -1,0 +1,18 @@
+# Use this override file with `compose.prod.yaml` to run admin tools
+# for production services.
+#     docker compose -f compose.yaml -f compose.prod.yaml -f compose.tools.yaml up -d
+services:
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
+
+  redis-commander:
+    image: ghcr.io/joeferner/redis-commander:latest
+    environment:
+    - REDIS_HOSTS=local:redis:6379
+    ports:
+    - "8081:8081"
+
+volumes:
+  redis-ui-settings:
