@@ -338,7 +338,7 @@ def initialize_gitignore():
             files |= set([line.strip() for line in f.readlines()])
 
     # Write files to the .gitignore file.
-    with open(constants.GitIgnore.FILE, "w") as f:
+    with open(constants.GitIgnore.FILE, "w", newline="\n") as f:
         console.debug(f"Creating {constants.GitIgnore.FILE}")
         f.write(f"{(path_ops.join(sorted(files))).lstrip()}")
 
@@ -623,6 +623,9 @@ def install_node():
         )
     else:  # All other platforms (Linux, MacOS).
         # TODO we can skip installation if check_node_version() checks out
+        if check_node_version():
+            console.debug("Skipping node installation as it is already installed.")
+            return
         # Add execute permissions to fnm executable.
         os.chmod(constants.Fnm.EXE, stat.S_IXUSR)
         # Install node.
