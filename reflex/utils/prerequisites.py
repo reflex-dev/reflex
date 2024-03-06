@@ -338,7 +338,7 @@ def initialize_gitignore():
             files |= set([line.strip() for line in f.readlines()])
 
     # Write files to the .gitignore file.
-    with open(constants.GitIgnore.FILE, "w") as f:
+    with open(constants.GitIgnore.FILE, "w", newline="\n") as f:
         console.debug(f"Creating {constants.GitIgnore.FILE}")
         f.write(f"{(path_ops.join(sorted(files))).lstrip()}")
 
