@@ -2,12 +2,11 @@
 from typing import Any, Dict, Literal
 
 from reflex import el
-from reflex.components.component import Component, ComponentNamespace
-from reflex.components.radix.themes.layout.flex import Flex
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from ..base import RadixThemesComponent
+from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
 LiteralContentSize = Literal["1", "2", "3", "4"]
 
@@ -32,7 +31,7 @@ class AlertDialogRoot(RadixThemesComponent):
         }
 
 
-class AlertDialogTrigger(RadixThemesComponent):
+class AlertDialogTrigger(RadixThemesTriggerComponent):
     """Wraps the control that will open the dialog."""
 
     tag = "AlertDialog.Trigger"
@@ -80,54 +79,20 @@ class AlertDialogDescription(RadixThemesComponent):
     tag = "AlertDialog.Description"
 
 
-class AlertDialogAction(RadixThemesComponent):
+class AlertDialogAction(RadixThemesTriggerComponent):
     """Wraps the control that will close the dialog. This should be distinguished
     visually from the Cancel control.
     """
 
     tag = "AlertDialog.Action"
 
-    @classmethod
-    def create(cls, *children: Any, **props: Any) -> Component:
-        """Create a new AlertDialogAction instance.
 
-        Args:
-            children: The children of the element.
-            props: The properties of the element.
-
-        Returns:
-            The new AlertDialogAction instance.
-        """
-        for child in children:
-            if "on_click" in getattr(child, "event_triggers", {}):
-                children = (Flex.create(*children),)
-                break
-        return super().create(*children, **props)
-
-
-class AlertDialogCancel(RadixThemesComponent):
+class AlertDialogCancel(RadixThemesTriggerComponent):
     """Wraps the control that will close the dialog. This should be distinguished
     visually from the Action control.
     """
 
     tag = "AlertDialog.Cancel"
-
-    @classmethod
-    def create(cls, *children: Any, **props: Any) -> Component:
-        """Create a new AlertDialogCancel instance.
-
-        Args:
-            children: The children of the element.
-            props: The properties of the element.
-
-        Returns:
-            The new AlertDialogCancel instance.
-        """
-        for child in children:
-            if "on_click" in getattr(child, "event_triggers", {}):
-                children = (Flex.create(*children),)
-                break
-        return super().create(*children, **props)
 
 
 class AlertDialog(ComponentNamespace):

@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Literal, Union
 from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import LiteralAccentColor, RadixThemesComponent
+from ..base import LiteralAccentColor, RadixThemesComponent, RadixThemesTriggerComponent
 
 LiteralDirType = Literal["ltr", "rtl"]
 LiteralSizeType = Literal["1", "2"]
@@ -111,7 +111,7 @@ class DropdownMenuRoot(RadixThemesComponent):
         """
         ...
 
-class DropdownMenuTrigger(RadixThemesComponent):
+class DropdownMenuTrigger(RadixThemesTriggerComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -171,24 +171,14 @@ class DropdownMenuTrigger(RadixThemesComponent):
         ] = None,
         **props
     ) -> "DropdownMenuTrigger":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a new RadixThemesTriggerComponent instance.
 
         Args:
-            *children: Child components.
-            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: Component properties.
+            children: The children of the component.
+            props: The properties of the component.
 
         Returns:
-            A new component instance.
+            The new RadixThemesTriggerComponent instance.
         """
         ...
 
@@ -401,7 +391,7 @@ class DropdownMenuContent(RadixThemesComponent):
         """
         ...
 
-class DropdownMenuSubTrigger(RadixThemesComponent):
+class DropdownMenuSubTrigger(RadixThemesTriggerComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -463,26 +453,14 @@ class DropdownMenuSubTrigger(RadixThemesComponent):
         ] = None,
         **props
     ) -> "DropdownMenuSubTrigger":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a new RadixThemesTriggerComponent instance.
 
         Args:
-            *children: Child components.
-            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
-            disabled: When true, prevents the user from interacting with the item.
-            text_value: Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: Component properties.
+            children: The children of the component.
+            props: The properties of the component.
 
         Returns:
-            A new component instance.
+            The new RadixThemesTriggerComponent instance.
         """
         ...
 

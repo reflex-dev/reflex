@@ -266,24 +266,14 @@ class DrawerTrigger(DrawerComponent):
         ] = None,
         **props
     ) -> "DrawerTrigger":
-        """Create the component.
+        """Create a new DrawerTrigger instance.
 
         Args:
-            *children: The children of the component.
-            as_child: Change the default rendered element for the one passed as a child.
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: The props of the component.
+            children: The children of the element.
+            props: The properties of the element.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            The new DrawerTrigger instance.
         """
         ...
 
@@ -547,7 +537,7 @@ class DrawerOverlay(DrawerComponent):
         """
         ...
 
-class DrawerClose(DrawerComponent):
+class DrawerClose(DrawerTrigger):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -607,14 +597,14 @@ class DrawerClose(DrawerComponent):
         ] = None,
         **props
     ) -> "DrawerClose":
-        """Create a new DrawerClose instance.
+        """Create a new DrawerTrigger instance.
 
         Args:
             children: The children of the element.
             props: The properties of the element.
 
         Returns:
-            The new DrawerClose instance.
+            The new DrawerTrigger instance.
         """
         ...
 

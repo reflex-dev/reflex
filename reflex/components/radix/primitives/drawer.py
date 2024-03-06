@@ -81,6 +81,23 @@ class DrawerTrigger(DrawerComponent):
     # Defaults to true, if the first child acts as the trigger.
     as_child: Var[bool] = True  # type: ignore
 
+    @classmethod
+    def create(cls, *children: Any, **props: Any) -> Component:
+        """Create a new DrawerTrigger instance.
+
+        Args:
+            children: The children of the element.
+            props: The properties of the element.
+
+        Returns:
+            The new DrawerTrigger instance.
+        """
+        for child in children:
+            if "on_click" in getattr(child, "event_triggers", {}):
+                children = (Flex.create(*children),)
+                break
+        return super().create(*children, **props)
+
 
 class DrawerPortal(DrawerComponent):
     """Portals your drawer into the body."""
@@ -183,32 +200,12 @@ class DrawerOverlay(DrawerComponent):
         return {"css": base_style}
 
 
-class DrawerClose(DrawerComponent):
+class DrawerClose(DrawerTrigger):
     """A button that closes the drawer."""
 
     tag = "Drawer.Close"
 
     alias = "Vaul" + tag
-
-    @classmethod
-    def create(cls, *children: Any, **props: Any) -> Component:
-        """Create a new DrawerClose instance.
-
-        Args:
-            children: The children of the element.
-            props: The properties of the element.
-
-        Returns:
-            The new DrawerClose instance.
-        """
-        for child in children:
-            if "on_click" in getattr(child, "event_triggers", {}):
-                children = (Flex.create(*children),)
-                break
-        # Add `asChild` special prop to prevent <button> in <button> warning.
-        special_props = props.setdefault("special_props", set())
-        special_props.add(Var.create("asChild"))
-        return super().create(*children, **props)
 
 
 class DrawerTitle(DrawerComponent):

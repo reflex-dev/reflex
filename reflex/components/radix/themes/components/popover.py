@@ -2,13 +2,13 @@
 from typing import Any, Dict, Literal
 
 from reflex import el
-from reflex.components.component import Component, ComponentNamespace
-from reflex.components.radix.themes.layout.flex import Flex
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     RadixThemesComponent,
+    RadixThemesTriggerComponent,
 )
 
 
@@ -35,7 +35,7 @@ class PopoverRoot(RadixThemesComponent):
         }
 
 
-class PopoverTrigger(RadixThemesComponent):
+class PopoverTrigger(RadixThemesTriggerComponent):
     """Wraps the control that will open the popover."""
 
     tag = "Popover.Trigger"
@@ -81,27 +81,10 @@ class PopoverContent(el.Div, RadixThemesComponent):
         }
 
 
-class PopoverClose(RadixThemesComponent):
+class PopoverClose(RadixThemesTriggerComponent):
     """Wraps the control that will close the popover."""
 
     tag = "Popover.Close"
-
-    @classmethod
-    def create(cls, *children: Any, **props: Any) -> Component:
-        """Create a new PopoverClose instance.
-
-        Args:
-            children: The children of the element.
-            props: The properties of the element.
-
-        Returns:
-            The new PopoverClose instance.
-        """
-        for child in children:
-            if "on_click" in getattr(child, "event_triggers", {}):
-                children = (Flex.create(*children),)
-                break
-        return super().create(*children, **props)
 
 
 class Popover(ComponentNamespace):

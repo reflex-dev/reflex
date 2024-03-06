@@ -3,13 +3,13 @@
 from typing import Any, Dict, Literal
 
 from reflex import el
-from reflex.components.component import Component, ComponentNamespace
-from reflex.components.radix.themes.layout.flex import Flex
+from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     RadixThemesComponent,
+    RadixThemesTriggerComponent,
 )
 
 
@@ -33,7 +33,7 @@ class DialogRoot(RadixThemesComponent):
         }
 
 
-class DialogTrigger(RadixThemesComponent):
+class DialogTrigger(RadixThemesTriggerComponent):
     """Trigger an action or event, to open a Dialog modal."""
 
     tag = "Dialog.Trigger"
@@ -75,27 +75,10 @@ class DialogDescription(RadixThemesComponent):
     tag = "Dialog.Description"
 
 
-class DialogClose(RadixThemesComponent):
+class DialogClose(RadixThemesTriggerComponent):
     """Close button component to close an open Dialog modal."""
 
     tag = "Dialog.Close"
-
-    @classmethod
-    def create(cls, *children: Any, **props: Any) -> Component:
-        """Create a new DialogClose instance.
-
-        Args:
-            children: The children of the element.
-            props: The properties of the element.
-
-        Returns:
-            The new DialogClose instance.
-        """
-        for child in children:
-            if "on_click" in getattr(child, "event_triggers", {}):
-                children = (Flex.create(*children),)
-                break
-        return super().create(*children, **props)
 
 
 class Dialog(ComponentNamespace):
