@@ -865,10 +865,11 @@ class Component(BaseComponent, ABC):
                     vars.append(var)
 
         # Get Vars associated with children.
-        for child in self.children:
-            if not isinstance(child, Component):
-                continue
-            vars.extend(child._get_vars(include_children=True))
+        if include_children:
+            for child in self.children:
+                if not isinstance(child, Component):
+                    continue
+                vars.extend(child._get_vars(include_children=include_children))
 
         return vars
 
