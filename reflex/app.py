@@ -223,6 +223,9 @@ class App(Base):
         """
         config = get_config()
 
+        # Set up the state manager.
+        self._state_manager = StateManager.create(state=self.state)
+
         # Set up the Socket.IO AsyncServer.
         self.sio = AsyncServer(
             async_mode="asgi",
