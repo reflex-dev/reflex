@@ -229,6 +229,13 @@ def _encode_var(value: Var) -> str:
     return str(value)
 
 
+# Compile regex for finding reflex var tags.
+_decode_var_pattern_re = (
+    rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
+)
+_decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
+
+
 def _decode_var(value: str) -> tuple[VarData | None, str]:
     """Decode the state name from a formatted var.
 
@@ -240,6 +247,10 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
     """
     var_datas = []
     if isinstance(value, str):
+        # fast path if there is no encoded VarData
+        if constants.REFLEX_VAR_OPENING_TAG not in value:
+            return None, value
+
         offset = 0
 
         # Initialize some methods for reading json.
@@ -251,12 +262,8 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
             except json.decoder.JSONDecodeError:
                 return var_data_config.json_loads(var_data_config.json_loads(f'"{s}"'))
 
-        # Compile regex for finding reflex var tags.
-        pattern_re = rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
-        pattern = re.compile(pattern_re, flags=re.DOTALL)
-
         # Find all tags.
-        while m := pattern.search(value):
+        while m := _decode_var_pattern.search(value):
             start, end = m.span()
             value = value[:start] + value[end:]
 
