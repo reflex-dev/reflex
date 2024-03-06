@@ -152,7 +152,7 @@ class Form(ChakraComponent):
         Yields:
             Each var referenced by the form (props, styles, event handlers).
         """
-        yield from super()._get_vars()
+        yield from super()._get_vars(include_children=include_children)
         yield from self._get_form_refs().values()
 
 
