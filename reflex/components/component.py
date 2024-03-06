@@ -219,20 +219,26 @@ class Component(BaseComponent, ABC):
 
             # Set default values for any props.
             if types._issubclass(field.annotation, Var):
-                # TODO: pydantic v2 AttributeError: 'FieldInfo' object attribute 'is_required' is read-only
-                #  field.is_required = False
                 if not isinstance(field.default, PydanticUndefinedType):
+                    # Wrap all given default values in Var
                     field.default = Var.create(field.default)
 
+                # Var type fields are implicitly Optional
+                if field.is_required():
+                    field.annotation = Optional[field.annotation]
+                    field.default = None
+
         # Ensure renamed props from parent classes are applied to the subclass.
-        if cls._rename_props:
+        if cls._rename_props.default:
             inherited_rename_props = {}
             for parent in reversed(cls.mro()):
-                if issubclass(parent, Component) and parent._rename_props:
-                    if isinstance(parent._rename_props, ModelPrivateAttr):
-                        parent._rename_props = parent._rename_props.default
-                    inherited_rename_props.update(parent._rename_props)
-            cls._rename_props = inherited_rename_props
+                if issubclass(parent, Component) and isinstance(
+                    parent._rename_props, ModelPrivateAttr
+                ):
+                    inherited_rename_props.update(parent._rename_props.default)
+            cls._rename_props.default = inherited_rename_props
+
+        cls.model_rebuild(force=True)
 
     def __init__(self, *args, **kwargs):
         """Initialize the component.
