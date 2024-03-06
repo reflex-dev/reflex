@@ -250,9 +250,9 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
             try:
                 # TODO: go one pydantic api level lower to load json directly into dict
                 return VarData.model_validate_json(s).model_dump()
-            except pydantic_core.ValidationError as e:
-                raise ValueError(f"Invalid VarData: {s}") from e
-                #  return VarData.model_validate(var_data_config.json_loads(f'"{s}"'))
+            except pydantic_core.ValidationError:
+                # The value may have been JSON-encoded twice, so try again.
+                return json.loads(json.loads(f'"{s}"'))
 
         # Compile regex for finding reflex var tags.
         pattern_re = rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
