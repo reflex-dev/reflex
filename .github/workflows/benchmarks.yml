@@ -102,4 +102,4 @@ jobs:
       - name: Upload benchmark results
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
-        run: poetry run python scripts/simple_app_benchmark_upload --os "${{ matrix.os }}" --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}" --benchmark-json "${{ env.OUTPUT_FILE }}" --pr-title "${{ github.event.pull_request.title }}" --db-url "${{ env.DATABASE_URL }}"
+        run: poetry run python scripts/simple_app_benchmark_upload.py --os "${{ matrix.os }}" --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}" --benchmark-json "${{ env.OUTPUT_FILE }}" --pr-title "${{ github.event.pull_request.title }}" --db-url "${{ env.DATABASE_URL }}"
