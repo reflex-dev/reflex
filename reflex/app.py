@@ -202,8 +202,7 @@ class App(Base):
         self.add_cors()
         self.add_default_endpoints()
 
-        if self.state:
-            self.setup_state()
+        self.setup_state()
 
         # Set up the admin dash.
         self.setup_admin_dash()
@@ -221,6 +220,9 @@ class App(Base):
             ValueError: If the event namespace is not provided in the config.
                         If the state has not been enabled.
         """
+        if not self.state:
+            return
+
         config = get_config()
 
         # Set up the state manager.
