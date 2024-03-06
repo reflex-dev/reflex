@@ -9,7 +9,8 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, Literal
 from reflex import el
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace
+from reflex.components.radix.themes.layout.flex import Flex
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import RadixThemesComponent
@@ -548,23 +549,14 @@ class AlertDialogAction(RadixThemesComponent):
         ] = None,
         **props
     ) -> "AlertDialogAction":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a new AlertDialogAction instance.
 
         Args:
-            *children: Child components.
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: Component properties.
+            children: The children of the element.
+            props: The properties of the element.
 
         Returns:
-            A new component instance.
+            The new AlertDialogAction instance.
         """
         ...
 
@@ -627,23 +619,14 @@ class AlertDialogCancel(RadixThemesComponent):
         ] = None,
         **props
     ) -> "AlertDialogCancel":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a new AlertDialogCancel instance.
 
         Args:
-            *children: Child components.
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: Component properties.
+            children: The children of the element.
+            props: The properties of the element.
 
         Returns:
-            A new component instance.
+            The new AlertDialogCancel instance.
         """
         ...
 

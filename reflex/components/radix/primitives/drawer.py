@@ -6,9 +6,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
+from reflex.components.radix.themes.layout.flex import Flex
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -188,6 +189,26 @@ class DrawerClose(DrawerComponent):
     tag = "Drawer.Close"
 
     alias = "Vaul" + tag
+
+    @classmethod
+    def create(cls, *children: Any, **props: Any) -> Component:
+        """Create a new DrawerClose instance.
+
+        Args:
+            children: The children of the element.
+            props: The properties of the element.
+
+        Returns:
+            The new DrawerClose instance.
+        """
+        for child in children:
+            if "on_click" in getattr(child, "event_triggers", {}):
+                children = (Flex.create(*children),)
+                break
+        # Add `asChild` special prop to prevent <button> in <button> warning.
+        special_props = props.setdefault("special_props", set())
+        special_props.add(Var.create("asChild"))
+        return super().create(*children, **props)
 
 
 class DrawerTitle(DrawerComponent):

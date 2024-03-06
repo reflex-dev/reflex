@@ -2,7 +2,8 @@
 from typing import Any, Dict, Literal
 
 from reflex import el
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace
+from reflex.components.radix.themes.layout.flex import Flex
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -86,6 +87,23 @@ class AlertDialogAction(RadixThemesComponent):
 
     tag = "AlertDialog.Action"
 
+    @classmethod
+    def create(cls, *children: Any, **props: Any) -> Component:
+        """Create a new AlertDialogAction instance.
+
+        Args:
+            children: The children of the element.
+            props: The properties of the element.
+
+        Returns:
+            The new AlertDialogAction instance.
+        """
+        for child in children:
+            if "on_click" in getattr(child, "event_triggers", {}):
+                children = (Flex.create(*children),)
+                break
+        return super().create(*children, **props)
+
 
 class AlertDialogCancel(RadixThemesComponent):
     """Wraps the control that will close the dialog. This should be distinguished
@@ -93,6 +111,23 @@ class AlertDialogCancel(RadixThemesComponent):
     """
 
     tag = "AlertDialog.Cancel"
+
+    @classmethod
+    def create(cls, *children: Any, **props: Any) -> Component:
+        """Create a new AlertDialogCancel instance.
+
+        Args:
+            children: The children of the element.
+            props: The properties of the element.
+
+        Returns:
+            The new AlertDialogCancel instance.
+        """
+        for child in children:
+            if "on_click" in getattr(child, "event_triggers", {}):
+                children = (Flex.create(*children),)
+                break
+        return super().create(*children, **props)
 
 
 class AlertDialog(ComponentNamespace):
