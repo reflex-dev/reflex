@@ -455,13 +455,14 @@ class App(Base):
         # Generate the component if it is a callable.
         component = self._generate_component(component)
 
-        for var in component._get_vars(include_children=True):
-            if not var._var_data:
-                continue
-            if not var._var_data.state:
-                continue
-            self.enable_state()
-            break
+        if self.state is None:
+            for var in component._get_vars(include_children=True):
+                if not var._var_data:
+                    continue
+                if not var._var_data.state:
+                    continue
+                self.enable_state()
+                break
 
         component = OverlayFragment.create(component)
 
