@@ -1146,7 +1146,7 @@ class EventNamespace(AsyncNamespace):
         }
 
         # Get the client IP
-        client_ip = environ["REMOTE_ADDR"]
+        client_ip = environ["asgi.scope"]["client"][0]
 
         # Process the events.
         async for update in process(self.app, event, sid, headers, client_ip):
