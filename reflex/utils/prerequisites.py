@@ -337,7 +337,7 @@ def initialize_gitignore(
         gitignore_file: The .gitignore file to create.
         files_to_ignore: The files to add to the .gitignore file.
     """
-    # Subtract current ignored files.
+    # Combine with the current ignored files.
     if os.path.exists(gitignore_file):
         with open(gitignore_file, "r") as f:
             files_to_ignore |= set([line.strip() for line in f.readlines()])
