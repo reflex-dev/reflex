@@ -496,7 +496,8 @@ def _get_version_to_publish() -> str:
     version_to_publish = None
     with open(CustomComponents.PYPROJECT_TOML, "r") as f:
         pyproject_toml = f.read()
-        match = re.search(r'version = "(.*?)"', pyproject_toml)
+        # Note below does not capture non-matching quotes. Not performing full syntax check here.
+        match = re.search(r'version\s*=\s*["\'](.*?)["\']', pyproject_toml)
         if match:
             version_to_publish = match.group(1)
             console.debug(f"Version to be published: {version_to_publish}")
