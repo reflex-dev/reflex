@@ -1379,6 +1379,19 @@ class CustomComponent(Component):
             for name, prop in self.props.items()
         ]
 
+    def _get_vars(self, include_children: bool = False) -> list[Var]:
+        """Walk all Vars used in this component.
+
+        Args:
+            include_children: Whether to include Vars from children.
+
+        Returns:
+            Each var referenced by the component (props, styles, event handlers).
+        """
+        return super()._get_vars(include_children=include_children) + [
+            prop for prop in self.props.values() if isinstance(prop, Var)
+        ]
+
     @lru_cache(maxsize=None)  # noqa
     def get_component(self) -> Component:
         """Render the component.
