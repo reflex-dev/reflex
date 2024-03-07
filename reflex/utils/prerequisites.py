@@ -327,20 +327,25 @@ def create_config(app_name: str):
         f.write(templates.RXCONFIG.render(app_name=app_name, config_name=config_name))
 
 
-def initialize_gitignore():
-    """Initialize the template .gitignore file."""
-    # The files to add to the .gitignore file.
-    files = constants.GitIgnore.DEFAULTS
+def initialize_gitignore(
+    gitignore_file: str = constants.GitIgnore.FILE,
+    files_to_ignore: set[str] = constants.GitIgnore.DEFAULTS,
+):
+    """Initialize the template .gitignore file.
 
+    Args:
+        gitignore_file: The .gitignore file to create.
+        files_to_ignore: The files to add to the .gitignore file.
+    """
     # Subtract current ignored files.
-    if os.path.exists(constants.GitIgnore.FILE):
-        with open(constants.GitIgnore.FILE, "r") as f:
-            files |= set([line.strip() for line in f.readlines()])
+    if os.path.exists(gitignore_file):
+        with open(gitignore_file, "r") as f:
+            files_to_ignore |= set([line.strip() for line in f.readlines()])
 
     # Write files to the .gitignore file.
-    with open(constants.GitIgnore.FILE, "w", newline="\n") as f:
-        console.debug(f"Creating {constants.GitIgnore.FILE}")
-        f.write(f"{(path_ops.join(sorted(files))).lstrip()}")
+    with open(gitignore_file, "w", newline="\n") as f:
+        console.debug(f"Creating {gitignore_file}")
+        f.write(f"{(path_ops.join(sorted(files_to_ignore))).lstrip()}")
 
 
 def initialize_requirements_txt():
