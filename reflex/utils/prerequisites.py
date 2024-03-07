@@ -185,16 +185,16 @@ def get_app(reload: bool = False) -> ModuleType:
             "Cannot get the app module because `app_name` is not set in rxconfig! "
             "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
         )
-    module = ".".join([config.app_name, config.app_name])
+    module = config.module
     sys.path.insert(0, os.getcwd())
     app = __import__(module, fromlist=(constants.CompileVars.APP,))
+
     if reload:
-        from reflex.state import State
+        from reflex.state import reload_state_module
 
         # Reset rx.State subclasses to avoid conflict when reloading.
-        for subclass in tuple(State.class_subclasses):
-            if subclass.__module__ == module:
-                State.class_subclasses.remove(subclass)
+        reload_state_module(module=module)
+
         # Reload the app module.
         importlib.reload(app)
 

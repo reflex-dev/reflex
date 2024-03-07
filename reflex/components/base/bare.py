@@ -33,8 +33,11 @@ class Bare(Component):
     def _render(self) -> Tag:
         return Tagless(contents=str(self.contents))
 
-    def _get_vars(self) -> Iterator[Var]:
+    def _get_vars(self, include_children: bool = False) -> Iterator[Var]:
         """Walk all Vars used in this component.
+
+        Args:
+            include_children: Whether to include Vars from children.
 
         Yields:
             The contents if it is a Var, otherwise nothing.

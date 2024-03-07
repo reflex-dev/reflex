@@ -20,6 +20,7 @@ from reflex import AdminDash, constants
 from reflex.app import (
     App,
     ComponentCallable,
+    OverlayFragment,
     default_overlay_component,
     process,
     upload,
@@ -1182,12 +1183,13 @@ def test_overlay_component(
         exp_page_child: The type of the expected child in the page fragment.
     """
     app = App(state=state, overlay_component=overlay_component)
+    app._setup_overlay_component()
     if exp_page_child is None:
         assert app.overlay_component is None
-    elif isinstance(exp_page_child, Fragment):
+    elif isinstance(exp_page_child, OverlayFragment):
         assert app.overlay_component is not None
         generated_component = app._generate_component(app.overlay_component)  # type: ignore
-        assert isinstance(generated_component, Fragment)
+        assert isinstance(generated_component, OverlayFragment)
         assert isinstance(
             generated_component.children[0],
             Cond,  # ConnectionModal is a Cond under the hood
@@ -1200,7 +1202,10 @@ def test_overlay_component(
         )
 
     app.add_page(rx.box("Index"), route="/test")
+    # overlay components are wrapped during compile only
+    app._setup_overlay_component()
     page = app.pages["test"]
+
     if exp_page_child is not None:
         assert len(page.children) == 3
         children_types = (type(child) for child in page.children)

@@ -28,6 +28,9 @@ def TailwindApp(
     import reflex as rx
     import reflex.components.radix.themes as rdxt
 
+    class UnusedState(rx.State):
+        pass
+
     def index():
         return rx.el.div(
             rx.chakra.text(paragraph_text, class_name=paragraph_class_name),
