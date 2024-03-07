@@ -49,6 +49,9 @@ try:
     )
 
     if TYPE_CHECKING:
+        from selenium.webdriver.common.options import (
+            ArgOptions,  # pyright: ignore [reportMissingImports]
+        )
         from selenium.webdriver.remote.webelement import (  # pyright: ignore [reportMissingImports]
             WebElement,
         )
@@ -484,12 +487,13 @@ class AppHarness:
         if self.frontend_url is None:
             raise RuntimeError("Frontend is not running.")
         want_headless = False
-        options = None
+        options: ArgOptions | None = None
         if os.environ.get("APP_HARNESS_HEADLESS"):
             want_headless = True
         if driver_clz is None:
             requested_driver = os.environ.get("APP_HARNESS_DRIVER", "Chrome")
             driver_clz = getattr(webdriver, requested_driver)
+            options = webdriver.ChromeOptions()
         if driver_clz is webdriver.Chrome and want_headless:
             options = webdriver.ChromeOptions()
             options.add_argument("--headless=new")
@@ -499,6 +503,9 @@ class AppHarness:
         elif driver_clz is webdriver.Edge and want_headless:
             options = webdriver.EdgeOptions()
             options.add_argument("headless")
+        if options and (args := os.environ.get("APP_HARNESS_DRIVER_ARGS")):
+            for arg in args.split(","):
+                options.add_argument(arg)
         driver = driver_clz(options=options)  # type: ignore
         driver.get(self.frontend_url)
         self._frontends.append(driver)

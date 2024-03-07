@@ -8,6 +8,7 @@ from reflex.vars import Var
 from ..base import (
     LiteralAccentColor,
     RadixThemesComponent,
+    RadixThemesTriggerComponent,
 )
 
 LiteralDirType = Literal["ltr", "rtl"]
@@ -58,7 +59,7 @@ class DropdownMenuRoot(RadixThemesComponent):
         }
 
 
-class DropdownMenuTrigger(RadixThemesComponent):
+class DropdownMenuTrigger(RadixThemesTriggerComponent):
     """The button that toggles the dropdown menu."""
 
     tag = "DropdownMenu.Trigger"
@@ -140,7 +141,7 @@ class DropdownMenuContent(RadixThemesComponent):
         }
 
 
-class DropdownMenuSubTrigger(RadixThemesComponent):
+class DropdownMenuSubTrigger(RadixThemesTriggerComponent):
     """An item that opens a submenu."""
 
     tag = "DropdownMenu.SubTrigger"

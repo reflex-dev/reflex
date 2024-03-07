@@ -6,9 +6,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
+from reflex.components.radix.themes.layout.flex import Flex
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -79,6 +80,23 @@ class DrawerTrigger(DrawerComponent):
 
     # Defaults to true, if the first child acts as the trigger.
     as_child: Var[bool] = True  # type: ignore
+
+    @classmethod
+    def create(cls, *children: Any, **props: Any) -> Component:
+        """Create a new DrawerTrigger instance.
+
+        Args:
+            children: The children of the element.
+            props: The properties of the element.
+
+        Returns:
+            The new DrawerTrigger instance.
+        """
+        for child in children:
+            if "on_click" in getattr(child, "event_triggers", {}):
+                children = (Flex.create(*children),)
+                break
+        return super().create(*children, **props)
 
 
 class DrawerPortal(DrawerComponent):
@@ -182,7 +200,7 @@ class DrawerOverlay(DrawerComponent):
         return {"css": base_style}
 
 
-class DrawerClose(DrawerComponent):
+class DrawerClose(DrawerTrigger):
     """A button that closes the drawer."""
 
     tag = "Drawer.Close"

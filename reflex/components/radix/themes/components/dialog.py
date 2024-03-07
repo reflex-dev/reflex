@@ -9,6 +9,7 @@ from reflex.vars import Var
 
 from ..base import (
     RadixThemesComponent,
+    RadixThemesTriggerComponent,
 )
 
 
@@ -32,7 +33,7 @@ class DialogRoot(RadixThemesComponent):
         }
 
 
-class DialogTrigger(RadixThemesComponent):
+class DialogTrigger(RadixThemesTriggerComponent):
     """Trigger an action or event, to open a Dialog modal."""
 
     tag = "Dialog.Trigger"
@@ -74,7 +75,7 @@ class DialogDescription(RadixThemesComponent):
     tag = "Dialog.Description"
 
 
-class DialogClose(RadixThemesComponent):
+class DialogClose(RadixThemesTriggerComponent):
     """Close button component to close an open Dialog modal."""
 
     tag = "Dialog.Close"
