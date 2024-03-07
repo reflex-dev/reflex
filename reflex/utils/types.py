@@ -196,7 +196,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             else:
                 return class_
         if isinstance(attr, AssociationProxyInstance):
-            return list[
+            return List[
                 get_attribute_access_type(
                     attr.target_class,
                     attr.remote_attr.key,  # type: ignore[attr-defined]
