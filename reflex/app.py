@@ -190,10 +190,6 @@ class App(Base):
                     deprecation_version="0.3.5",
                     removal_version="0.5.0",
                 )
-            # 2 substates are built-in and not considered when determining if app is stateless.
-            if len(State.class_subclasses) > 2:
-                self.state = State
-
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
 
