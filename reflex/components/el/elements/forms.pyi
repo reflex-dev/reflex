@@ -7,11 +7,22 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Union
+from hashlib import md5
+from typing import Any, Dict, Iterator, Union
+from jinja2 import Environment
 from reflex.components.el.element import Element
-from reflex.constants.event import EventTriggers
-from reflex.vars import Var
+from reflex.components.tags.tag import Tag
+from reflex.constants import Dirs, EventTriggers
+from reflex.event import EventChain
+from reflex.utils import imports
+from reflex.utils.format import format_event_chain
+from reflex.vars import BaseVar, Var
 from .base import BaseHTML
+
+FORM_DATA = Var.create("form_data")
+HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
+    "\n    const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {\n        const $form = ev.target\n        ev.preventDefault()\n        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}\n\n        {{ on_submit_event_chain }}\n\n        if ({{ reset_on_submit }}) {\n            $form.reset()\n        }\n    })\n    "
+)
 
 class Button(BaseHTML):
     @overload
@@ -407,6 +418,7 @@ class Fieldset(Element):
         ...
 
 class Form(BaseHTML):
+    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -437,6 +449,8 @@ class Form(BaseHTML):
         target: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
+        reset_on_submit: Optional[Union[Var[bool], bool]] = None,
+        handle_submit_unique_name: Optional[Union[Var[str], str]] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -525,15 +539,18 @@ class Form(BaseHTML):
         on_scroll: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_submit: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
     ) -> "Form":
-        """Create the component.
+        """Create a form component.
 
         Args:
-            *children: The children of the component.
+            *children: The children of the form.
             accept: MIME types the server accepts for file upload
             accept_charset: Character encodings to be used for form submission
             action: URL where the form's data should be submitted
@@ -543,6 +560,8 @@ class Form(BaseHTML):
             name: Name of the form
             no_validate: Indicates that the form should not be validated on submit
             target: Where to display the response after submitting the form
+            reset_on_submit: If true, the form will be cleared after submit.
+            handle_submit_unique_name: The name used to make this form's submit handler function unique.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -565,13 +584,10 @@ class Form(BaseHTML):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the form.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            The form component.
         """
         ...
 
