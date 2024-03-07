@@ -6,7 +6,7 @@ from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from ..base import RadixThemesComponent
+from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
 LiteralContentSize = Literal["1", "2", "3", "4"]
 
@@ -31,7 +31,7 @@ class AlertDialogRoot(RadixThemesComponent):
         }
 
 
-class AlertDialogTrigger(RadixThemesComponent):
+class AlertDialogTrigger(RadixThemesTriggerComponent):
     """Wraps the control that will open the dialog."""
 
     tag = "AlertDialog.Trigger"
@@ -79,7 +79,7 @@ class AlertDialogDescription(RadixThemesComponent):
     tag = "AlertDialog.Description"
 
 
-class AlertDialogAction(RadixThemesComponent):
+class AlertDialogAction(RadixThemesTriggerComponent):
     """Wraps the control that will close the dialog. This should be distinguished
     visually from the Cancel control.
     """
@@ -87,7 +87,7 @@ class AlertDialogAction(RadixThemesComponent):
     tag = "AlertDialog.Action"
 
 
-class AlertDialogCancel(RadixThemesComponent):
+class AlertDialogCancel(RadixThemesTriggerComponent):
     """Wraps the control that will close the dialog. This should be distinguished
     visually from the Action control.
     """
