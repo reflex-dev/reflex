@@ -108,14 +108,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-      - name: Install additional dependencies for appharness test and DB
-        run: poetry run pip install pyvirtualdisplay pillow psycopg2-binary
+      - name: Install additional dependencies for DB access
+        run: poetry run pip install psycopg2-binary
       - name: Run benchmark tests
         env:
           APP_HARNESS_HEADLESS: 1
           PYTHONUNBUFFERED: 1
         run: |
-          poetry run pytest -v integration/benchmarks/ --benchmark-json=${{ env.OUTPUT_FILE }}
+          poetry run pytest -v benchmarks/ --benchmark-json=${{ env.OUTPUT_FILE }}
       - name: Upload benchmark results
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}

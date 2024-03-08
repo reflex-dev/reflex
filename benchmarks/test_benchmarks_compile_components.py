@@ -7,18 +7,14 @@ from typing import Generator
 
 import pytest
 
-from reflex.testing import AppHarness, chdir
-from reflex.utils import build
-from reflex.utils import path_ops
 from reflex import constants
 from reflex.compiler import utils
+from reflex.testing import AppHarness, chdir
+from reflex.utils import build
 
 
 def AppWithTenComponents():
     """Test that background tasks work as expected."""
-
-    from rxconfig import config  # type: ignore
-
     import reflex as rx
 
     class State(rx.State):
@@ -119,10 +115,6 @@ def AppWithTenComponents():
 
 def AppWithHUndredComponentOnePage():
     """Test that background tasks work as expected."""
-
-    from rxconfig import config  # type: ignore
-    from typing import Tuple
-
     import reflex as rx
 
     class State(rx.State):
@@ -224,8 +216,6 @@ def AppWithHUndredComponentOnePage():
 
 
 def AppWithThousandComponentsOnePage():
-    from rxconfig import config  # type: ignore
-    from typing import Tuple
 
     import reflex as rx
 

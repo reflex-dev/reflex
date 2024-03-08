@@ -7,16 +7,14 @@ from typing import Generator
 
 import pytest
 
-from reflex.testing import AppHarness, chdir
-from reflex.utils import build
-from reflex.utils import path_ops
 from reflex import constants
 from reflex.compiler import utils
+from reflex.testing import AppHarness, chdir
+from reflex.utils import build
 
 
 def AppWithOnePage():
     """Test that background tasks work as expected."""
-
     from rxconfig import config  # type: ignore
 
     import reflex as rx
@@ -55,9 +53,9 @@ def AppWithOnePage():
 
 def AppWithTenPages():
     """Test that background tasks work as expected."""
+    from typing import Tuple
 
     from rxconfig import config  # type: ignore
-    from typing import Tuple
 
     import reflex as rx
 
@@ -160,8 +158,9 @@ def AppWithTenPages():
 
 
 def AppWithHundredPages():
-    from rxconfig import config  # type: ignore
     from typing import Tuple
+
+    from rxconfig import config  # type: ignore
 
     import reflex as rx
 
@@ -265,8 +264,9 @@ def AppWithHundredPages():
 
 
 def AppWithThousandPages():
-    from rxconfig import config  # type: ignore
     from typing import Tuple
+
+    from rxconfig import config  # type: ignore
 
     import reflex as rx
 
@@ -370,8 +370,9 @@ def AppWithThousandPages():
 
 
 def AppWithTenThousandPages():
-    from rxconfig import config  # type: ignore
     from typing import Tuple
+
+    from rxconfig import config  # type: ignore
 
     import reflex as rx
 
