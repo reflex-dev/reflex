@@ -128,7 +128,7 @@ uploaded_files_url_prefix: Var = Var.create_safe(
 )
 
 
-def get_upload_url(file_path: str) -> str:
+def get_upload_url(file_path: str) -> Var[str]:
     """Get the URL of an uploaded file.
 
     Args:
@@ -139,7 +139,7 @@ def get_upload_url(file_path: str) -> str:
     """
     Upload.is_used = True
 
-    return f"{uploaded_files_url_prefix}/{file_path}"
+    return Var.create_safe(f"{uploaded_files_url_prefix}/{file_path}")
 
 
 def _on_drop_spec(files: Var):
