@@ -56,435 +56,421 @@ def AppWithOnePage():
 def AppWithTenPages():
     """Test that background tasks work as expected."""
 
-    def register_pages(num):
-        from rxconfig import config  # type: ignore
-        from typing import Tuple
+    from rxconfig import config  # type: ignore
+    from typing import Tuple
 
-        import reflex as rx
+    import reflex as rx
 
-        docs_url = "https://reflex.dev/docs/getting-started/introduction/"
-        filename = f"{config.app_name}/{config.app_name}.py"
-        college = [
-            "Stanford University",
-            "Arizona",
-            "Arizona state",
-            "Baylor",
-            "Boston College",
-            "Boston University",
-        ]
+    docs_url = "https://reflex.dev/docs/getting-started/introduction/"
+    filename = f"{config.app_name}/{config.app_name}.py"
+    college = [
+        "Stanford University",
+        "Arizona",
+        "Arizona state",
+        "Baylor",
+        "Boston College",
+        "Boston University",
+    ]
 
-        class State(rx.State):
-            """The app state."""
+    class State(rx.State):
+        """The app state."""
 
-            position: str
-            college: str
-            age: Tuple[int, int] = (18, 50)
-            salary: Tuple[int, int] = (0, 25000000)
+        position: str
+        college: str
+        age: Tuple[int, int] = (18, 50)
+        salary: Tuple[int, int] = (0, 25000000)
 
-        comp1 = rx.center(
-            rx.theme_panel(),
+    comp1 = rx.center(
+        rx.theme_panel(),
+        rx.vstack(
+            rx.heading("Welcome to Reflex!", size="9"),
+            rx.text("Get started by editing ", rx.code(filename)),
+            rx.button(
+                "Check out our docs!",
+                on_click=lambda: rx.redirect(docs_url),
+                size="4",
+            ),
+            align="center",
+            spacing="7",
+            font_size="2em",
+        ),
+        height="100vh",
+    )
+
+    comp2 = rx.vstack(
+        rx.hstack(
             rx.vstack(
-                rx.heading("Welcome to Reflex!", size="9"),
-                rx.text("Get started by editing ", rx.code(filename)),
-                rx.button(
-                    "Check out our docs!",
-                    on_click=lambda: rx.redirect(docs_url),
-                    size="4",
+                rx.select(
+                    ["C", "PF", "SF", "PG", "SG"],
+                    placeholder="Select a position. (All)",
+                    on_change=State.set_position,  # type: ignore
+                    size="3",
                 ),
-                align="center",
-                spacing="7",
-                font_size="2em",
+                rx.select(
+                    college,
+                    placeholder="Select a college. (All)",
+                    on_change=State.set_college,  # type: ignore
+                    size="3",
+                ),
             ),
-            height="100vh",
-        )
-
-        comp2 = rx.vstack(
-            rx.hstack(
+            rx.vstack(
                 rx.vstack(
-                    rx.select(
-                        ["C", "PF", "SF", "PG", "SG"],
-                        placeholder="Select a position. (All)",
-                        on_change=State.set_position,  # type: ignore
-                        size="3",
+                    rx.hstack(
+                        rx.badge("Min Age: ", State.age[0]),
+                        rx.divider(orientation="vertical"),
+                        rx.badge("Max Age: ", State.age[1]),
                     ),
-                    rx.select(
-                        college,
-                        placeholder="Select a college. (All)",
-                        on_change=State.set_college,  # type: ignore
-                        size="3",
+                    rx.slider(
+                        default_value=[18, 50],
+                        min=18,
+                        max=50,
+                        on_value_commit=State.set_age,  # type: ignore
                     ),
+                    align_items="left",
+                    width="100%",
                 ),
                 rx.vstack(
-                    rx.vstack(
-                        rx.hstack(
-                            rx.badge("Min Age: ", State.age[0]),
-                            rx.divider(orientation="vertical"),
-                            rx.badge("Max Age: ", State.age[1]),
-                        ),
-                        rx.slider(
-                            default_value=[18, 50],
-                            min=18,
-                            max=50,
-                            on_value_commit=State.set_age,  # type: ignore
-                        ),
-                        align_items="left",
-                        width="100%",
+                    rx.hstack(
+                        rx.badge("Min Sal: ", State.salary[0] // 1000000, "M"),
+                        rx.divider(orientation="vertical"),
+                        rx.badge("Max Sal: ", State.salary[1] // 1000000, "M"),
                     ),
-                    rx.vstack(
-                        rx.hstack(
-                            rx.badge("Min Sal: ", State.salary[0] // 1000000, "M"),
-                            rx.divider(orientation="vertical"),
-                            rx.badge("Max Sal: ", State.salary[1] // 1000000, "M"),
-                        ),
-                        rx.slider(
-                            default_value=[0, 25000000],
-                            min=0,
-                            max=25000000,
-                            on_value_commit=State.set_salary,  # type: ignore
-                        ),
-                        align_items="left",
-                        width="100%",
+                    rx.slider(
+                        default_value=[0, 25000000],
+                        min=0,
+                        max=25000000,
+                        on_value_commit=State.set_salary,  # type: ignore
                     ),
+                    align_items="left",
+                    width="100%",
                 ),
-                spacing="4",
             ),
-            width="100%",
-        )
+            spacing="4",
+        ),
+        width="100%",
+    )
 
-        app = rx.App(state=rx.State)
+    app = rx.App(state=rx.State)
 
-        for i in range(1, num + 1):
-            if i % 2 == 1:
-                app.add_page(comp1, route=f"page{i}")
-            else:
-                app.add_page(comp2, route=f"page{i}")
-        return app
-
-    app = register_pages(10)
+    for i in range(1, 11):
+        if i % 2 == 1:
+            app.add_page(comp1, route=f"page{i}")
+        else:
+            app.add_page(comp2, route=f"page{i}")
 
 
 def AppWithHundredPages():
-    def register_pages(num):
-        from rxconfig import config  # type: ignore
-        from typing import Tuple
+    from rxconfig import config  # type: ignore
+    from typing import Tuple
 
-        import reflex as rx
+    import reflex as rx
 
-        docs_url = "https://reflex.dev/docs/getting-started/introduction/"
-        filename = f"{config.app_name}/{config.app_name}.py"
-        college = [
-            "Stanford University",
-            "Arizona",
-            "Arizona state",
-            "Baylor",
-            "Boston College",
-            "Boston University",
-        ]
+    docs_url = "https://reflex.dev/docs/getting-started/introduction/"
+    filename = f"{config.app_name}/{config.app_name}.py"
+    college = [
+        "Stanford University",
+        "Arizona",
+        "Arizona state",
+        "Baylor",
+        "Boston College",
+        "Boston University",
+    ]
 
-        class State(rx.State):
-            """The app state."""
+    class State(rx.State):
+        """The app state."""
 
-            position: str
-            college: str
-            age: Tuple[int, int] = (18, 50)
-            salary: Tuple[int, int] = (0, 25000000)
+        position: str
+        college: str
+        age: Tuple[int, int] = (18, 50)
+        salary: Tuple[int, int] = (0, 25000000)
 
-        comp1 = rx.center(
-            rx.theme_panel(),
+    comp1 = rx.center(
+        rx.theme_panel(),
+        rx.vstack(
+            rx.heading("Welcome to Reflex!", size="9"),
+            rx.text("Get started by editing ", rx.code(filename)),
+            rx.button(
+                "Check out our docs!",
+                on_click=lambda: rx.redirect(docs_url),
+                size="4",
+            ),
+            align="center",
+            spacing="7",
+            font_size="2em",
+        ),
+        height="100vh",
+    )
+
+    comp2 = rx.vstack(
+        rx.hstack(
             rx.vstack(
-                rx.heading("Welcome to Reflex!", size="9"),
-                rx.text("Get started by editing ", rx.code(filename)),
-                rx.button(
-                    "Check out our docs!",
-                    on_click=lambda: rx.redirect(docs_url),
-                    size="4",
+                rx.select(
+                    ["C", "PF", "SF", "PG", "SG"],
+                    placeholder="Select a position. (All)",
+                    on_change=State.set_position,  # type: ignore
+                    size="3",
                 ),
-                align="center",
-                spacing="7",
-                font_size="2em",
+                rx.select(
+                    college,
+                    placeholder="Select a college. (All)",
+                    on_change=State.set_college,  # type: ignore
+                    size="3",
+                ),
             ),
-            height="100vh",
-        )
-
-        comp2 = rx.vstack(
-            rx.hstack(
+            rx.vstack(
                 rx.vstack(
-                    rx.select(
-                        ["C", "PF", "SF", "PG", "SG"],
-                        placeholder="Select a position. (All)",
-                        on_change=State.set_position,  # type: ignore
-                        size="3",
+                    rx.hstack(
+                        rx.badge("Min Age: ", State.age[0]),
+                        rx.divider(orientation="vertical"),
+                        rx.badge("Max Age: ", State.age[1]),
                     ),
-                    rx.select(
-                        college,
-                        placeholder="Select a college. (All)",
-                        on_change=State.set_college,  # type: ignore
-                        size="3",
+                    rx.slider(
+                        default_value=[18, 50],
+                        min=18,
+                        max=50,
+                        on_value_commit=State.set_age,  # type: ignore
                     ),
+                    align_items="left",
+                    width="100%",
                 ),
                 rx.vstack(
-                    rx.vstack(
-                        rx.hstack(
-                            rx.badge("Min Age: ", State.age[0]),
-                            rx.divider(orientation="vertical"),
-                            rx.badge("Max Age: ", State.age[1]),
-                        ),
-                        rx.slider(
-                            default_value=[18, 50],
-                            min=18,
-                            max=50,
-                            on_value_commit=State.set_age,  # type: ignore
-                        ),
-                        align_items="left",
-                        width="100%",
+                    rx.hstack(
+                        rx.badge("Min Sal: ", State.salary[0] // 1000000, "M"),
+                        rx.divider(orientation="vertical"),
+                        rx.badge("Max Sal: ", State.salary[1] // 1000000, "M"),
                     ),
-                    rx.vstack(
-                        rx.hstack(
-                            rx.badge("Min Sal: ", State.salary[0] // 1000000, "M"),
-                            rx.divider(orientation="vertical"),
-                            rx.badge("Max Sal: ", State.salary[1] // 1000000, "M"),
-                        ),
-                        rx.slider(
-                            default_value=[0, 25000000],
-                            min=0,
-                            max=25000000,
-                            on_value_commit=State.set_salary,  # type: ignore
-                        ),
-                        align_items="left",
-                        width="100%",
+                    rx.slider(
+                        default_value=[0, 25000000],
+                        min=0,
+                        max=25000000,
+                        on_value_commit=State.set_salary,  # type: ignore
                     ),
+                    align_items="left",
+                    width="100%",
                 ),
-                spacing="4",
             ),
-            width="100%",
-        )
+            spacing="4",
+        ),
+        width="100%",
+    )
 
-        app = rx.App(state=rx.State)
+    app = rx.App(state=rx.State)
 
-        for i in range(1, num + 1):
-            if i % 2 == 1:
-                app.add_page(comp1, route=f"page{i}")
-            else:
-                app.add_page(comp2, route=f"page{i}")
-        return app
-
-    app = register_pages(100)
+    for i in range(1, 101):
+        if i % 2 == 1:
+            app.add_page(comp1, route=f"page{i}")
+        else:
+            app.add_page(comp2, route=f"page{i}")
+    return app
 
 
 def AppWithThousandPages():
-    def register_pages(num):
-        from rxconfig import config  # type: ignore
-        from typing import Tuple
+    from rxconfig import config  # type: ignore
+    from typing import Tuple
 
-        import reflex as rx
+    import reflex as rx
 
-        docs_url = "https://reflex.dev/docs/getting-started/introduction/"
-        filename = f"{config.app_name}/{config.app_name}.py"
-        college = [
-            "Stanford University",
-            "Arizona",
-            "Arizona state",
-            "Baylor",
-            "Boston College",
-            "Boston University",
-        ]
+    docs_url = "https://reflex.dev/docs/getting-started/introduction/"
+    filename = f"{config.app_name}/{config.app_name}.py"
+    college = [
+        "Stanford University",
+        "Arizona",
+        "Arizona state",
+        "Baylor",
+        "Boston College",
+        "Boston University",
+    ]
 
-        class State(rx.State):
-            """The app state."""
+    class State(rx.State):
+        """The app state."""
 
-            position: str
-            college: str
-            age: Tuple[int, int] = (18, 50)
-            salary: Tuple[int, int] = (0, 25000000)
+        position: str
+        college: str
+        age: Tuple[int, int] = (18, 50)
+        salary: Tuple[int, int] = (0, 25000000)
 
-        comp1 = rx.center(
-            rx.theme_panel(),
+    comp1 = rx.center(
+        rx.theme_panel(),
+        rx.vstack(
+            rx.heading("Welcome to Reflex!", size="9"),
+            rx.text("Get started by editing ", rx.code(filename)),
+            rx.button(
+                "Check out our docs!",
+                on_click=lambda: rx.redirect(docs_url),
+                size="4",
+            ),
+            align="center",
+            spacing="7",
+            font_size="2em",
+        ),
+        height="100vh",
+    )
+
+    comp2 = rx.vstack(
+        rx.hstack(
             rx.vstack(
-                rx.heading("Welcome to Reflex!", size="9"),
-                rx.text("Get started by editing ", rx.code(filename)),
-                rx.button(
-                    "Check out our docs!",
-                    on_click=lambda: rx.redirect(docs_url),
-                    size="4",
+                rx.select(
+                    ["C", "PF", "SF", "PG", "SG"],
+                    placeholder="Select a position. (All)",
+                    on_change=State.set_position,  # type: ignore
+                    size="3",
                 ),
-                align="center",
-                spacing="7",
-                font_size="2em",
+                rx.select(
+                    college,
+                    placeholder="Select a college. (All)",
+                    on_change=State.set_college,  # type: ignore
+                    size="3",
+                ),
             ),
-            height="100vh",
-        )
-
-        comp2 = rx.vstack(
-            rx.hstack(
+            rx.vstack(
                 rx.vstack(
-                    rx.select(
-                        ["C", "PF", "SF", "PG", "SG"],
-                        placeholder="Select a position. (All)",
-                        on_change=State.set_position,  # type: ignore
-                        size="3",
+                    rx.hstack(
+                        rx.badge("Min Age: ", State.age[0]),
+                        rx.divider(orientation="vertical"),
+                        rx.badge("Max Age: ", State.age[1]),
                     ),
-                    rx.select(
-                        college,
-                        placeholder="Select a college. (All)",
-                        on_change=State.set_college,  # type: ignore
-                        size="3",
+                    rx.slider(
+                        default_value=[18, 50],
+                        min=18,
+                        max=50,
+                        on_value_commit=State.set_age,  # type: ignore
                     ),
+                    align_items="left",
+                    width="100%",
                 ),
                 rx.vstack(
-                    rx.vstack(
-                        rx.hstack(
-                            rx.badge("Min Age: ", State.age[0]),
-                            rx.divider(orientation="vertical"),
-                            rx.badge("Max Age: ", State.age[1]),
-                        ),
-                        rx.slider(
-                            default_value=[18, 50],
-                            min=18,
-                            max=50,
-                            on_value_commit=State.set_age,  # type: ignore
-                        ),
-                        align_items="left",
-                        width="100%",
+                    rx.hstack(
+                        rx.badge("Min Sal: ", State.salary[0] // 1000000, "M"),
+                        rx.divider(orientation="vertical"),
+                        rx.badge("Max Sal: ", State.salary[1] // 1000000, "M"),
                     ),
-                    rx.vstack(
-                        rx.hstack(
-                            rx.badge("Min Sal: ", State.salary[0] // 1000000, "M"),
-                            rx.divider(orientation="vertical"),
-                            rx.badge("Max Sal: ", State.salary[1] // 1000000, "M"),
-                        ),
-                        rx.slider(
-                            default_value=[0, 25000000],
-                            min=0,
-                            max=25000000,
-                            on_value_commit=State.set_salary,  # type: ignore
-                        ),
-                        align_items="left",
-                        width="100%",
+                    rx.slider(
+                        default_value=[0, 25000000],
+                        min=0,
+                        max=25000000,
+                        on_value_commit=State.set_salary,  # type: ignore
                     ),
+                    align_items="left",
+                    width="100%",
                 ),
-                spacing="4",
             ),
-            width="100%",
-        )
+            spacing="4",
+        ),
+        width="100%",
+    )
 
-        app = rx.App(state=rx.State)
+    app = rx.App(state=rx.State)
 
-        for i in range(1, num + 1):
-            if i % 2 == 1:
-                app.add_page(comp1, route=f"page{i}")
-            else:
-                app.add_page(comp2, route=f"page{i}")
-        return app
-
-    app = register_pages(1000)
+    for i in range(1, 1001):
+        if i % 2 == 1:
+            app.add_page(comp1, route=f"page{i}")
+        else:
+            app.add_page(comp2, route=f"page{i}")
+    return app
 
 
 def AppWithTenThousandPages():
-    def register_pages(num):
-        from rxconfig import config  # type: ignore
-        from typing import Tuple
+    from rxconfig import config  # type: ignore
+    from typing import Tuple
 
-        import reflex as rx
+    import reflex as rx
 
-        docs_url = "https://reflex.dev/docs/getting-started/introduction/"
-        filename = f"{config.app_name}/{config.app_name}.py"
-        college = [
-            "Stanford University",
-            "Arizona",
-            "Arizona state",
-            "Baylor",
-            "Boston College",
-            "Boston University",
-        ]
+    docs_url = "https://reflex.dev/docs/getting-started/introduction/"
+    filename = f"{config.app_name}/{config.app_name}.py"
+    college = [
+        "Stanford University",
+        "Arizona",
+        "Arizona state",
+        "Baylor",
+        "Boston College",
+        "Boston University",
+    ]
 
-        class State(rx.State):
-            """The app state."""
+    class State(rx.State):
+        """The app state."""
 
-            position: str
-            college: str
-            age: Tuple[int, int] = (18, 50)
-            salary: Tuple[int, int] = (0, 25000000)
+        position: str
+        college: str
+        age: Tuple[int, int] = (18, 50)
+        salary: Tuple[int, int] = (0, 25000000)
 
-        comp1 = rx.center(
-            rx.theme_panel(),
+    comp1 = rx.center(
+        rx.theme_panel(),
+        rx.vstack(
+            rx.heading("Welcome to Reflex!", size="9"),
+            rx.text("Get started by editing ", rx.code(filename)),
+            rx.button(
+                "Check out our docs!",
+                on_click=lambda: rx.redirect(docs_url),
+                size="4",
+            ),
+            align="center",
+            spacing="7",
+            font_size="2em",
+        ),
+        height="100vh",
+    )
+
+    comp2 = rx.vstack(
+        rx.hstack(
             rx.vstack(
-                rx.heading("Welcome to Reflex!", size="9"),
-                rx.text("Get started by editing ", rx.code(filename)),
-                rx.button(
-                    "Check out our docs!",
-                    on_click=lambda: rx.redirect(docs_url),
-                    size="4",
+                rx.select(
+                    ["C", "PF", "SF", "PG", "SG"],
+                    placeholder="Select a position. (All)",
+                    on_change=State.set_position,  # type: ignore
+                    size="3",
                 ),
-                align="center",
-                spacing="7",
-                font_size="2em",
+                rx.select(
+                    college,
+                    placeholder="Select a college. (All)",
+                    on_change=State.set_college,  # type: ignore
+                    size="3",
+                ),
             ),
-            height="100vh",
-        )
-
-        comp2 = rx.vstack(
-            rx.hstack(
+            rx.vstack(
                 rx.vstack(
-                    rx.select(
-                        ["C", "PF", "SF", "PG", "SG"],
-                        placeholder="Select a position. (All)",
-                        on_change=State.set_position,  # type: ignore
-                        size="3",
+                    rx.hstack(
+                        rx.badge("Min Age: ", State.age[0]),
+                        rx.divider(orientation="vertical"),
+                        rx.badge("Max Age: ", State.age[1]),
                     ),
-                    rx.select(
-                        college,
-                        placeholder="Select a college. (All)",
-                        on_change=State.set_college,  # type: ignore
-                        size="3",
+                    rx.slider(
+                        default_value=[18, 50],
+                        min=18,
+                        max=50,
+                        on_value_commit=State.set_age,  # type: ignore
                     ),
+                    align_items="left",
+                    width="100%",
                 ),
                 rx.vstack(
-                    rx.vstack(
-                        rx.hstack(
-                            rx.badge("Min Age: ", State.age[0]),
-                            rx.divider(orientation="vertical"),
-                            rx.badge("Max Age: ", State.age[1]),
-                        ),
-                        rx.slider(
-                            default_value=[18, 50],
-                            min=18,
-                            max=50,
-                            on_value_commit=State.set_age,  # type: ignore
-                        ),
-                        align_items="left",
-                        width="100%",
+                    rx.hstack(
+                        rx.badge("Min Sal: ", State.salary[0] // 1000000, "M"),
+                        rx.divider(orientation="vertical"),
+                        rx.badge("Max Sal: ", State.salary[1] // 1000000, "M"),
                     ),
-                    rx.vstack(
-                        rx.hstack(
-                            rx.badge("Min Sal: ", State.salary[0] // 1000000, "M"),
-                            rx.divider(orientation="vertical"),
-                            rx.badge("Max Sal: ", State.salary[1] // 1000000, "M"),
-                        ),
-                        rx.slider(
-                            default_value=[0, 25000000],
-                            min=0,
-                            max=25000000,
-                            on_value_commit=State.set_salary,  # type: ignore
-                        ),
-                        align_items="left",
-                        width="100%",
+                    rx.slider(
+                        default_value=[0, 25000000],
+                        min=0,
+                        max=25000000,
+                        on_value_commit=State.set_salary,  # type: ignore
                     ),
+                    align_items="left",
+                    width="100%",
                 ),
-                spacing="4",
             ),
-            width="100%",
-        )
+            spacing="4",
+        ),
+        width="100%",
+    )
 
-        app = rx.App(state=rx.State)
+    app = rx.App(state=rx.State)
 
-        for i in range(1, num + 1):
-            if i % 2 == 1:
-                app.add_page(comp1, route=f"page{i}")
-            else:
-                app.add_page(comp2, route=f"page{i}")
-        return app
-
-    app = register_pages(10000)
+    for i in range(1, 10001):
+        if i % 2 == 1:
+            app.add_page(comp1, route=f"page{i}")
+        else:
+            app.add_page(comp2, route=f"page{i}")
 
 
 @pytest.fixture(scope="session")
