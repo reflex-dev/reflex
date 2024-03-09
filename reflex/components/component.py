@@ -873,6 +873,20 @@ class Component(BaseComponent, ABC):
 
         return vars
 
+    def _has_event_triggers(self) -> bool:
+        """Check if the component or children have any event triggers.
+
+        Returns:
+            True if the component or children have any event triggers.
+        """
+        if self.event_triggers:
+            return True
+        else:
+            for child in self.children:
+                if isinstance(child, Component) and child._has_event_triggers():
+                    return True
+        return False
+
     def _get_custom_code(self) -> str | None:
         """Get custom code for the component.
 

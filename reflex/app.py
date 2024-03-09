@@ -453,14 +453,18 @@ class App(Base):
         # Generate the component if it is a callable.
         component = self._generate_component(component)
 
+        # Ensure state is enabled if this page uses state.
         if self.state is None:
-            for var in component._get_vars(include_children=True):
-                if not var._var_data:
-                    continue
-                if not var._var_data.state:
-                    continue
+            if on_load or component._has_event_triggers():
                 self.enable_state()
-                break
+            else:
+                for var in component._get_vars(include_children=True):
+                    if not var._var_data:
+                        continue
+                    if not var._var_data.state:
+                        continue
+                    self.enable_state()
+                    break
 
         component = OverlayFragment.create(component)
 

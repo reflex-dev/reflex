@@ -225,6 +225,8 @@ class AppHarness:
         with chdir(self.app_path):
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
+            # Clean out any `rx.page` decorators from other tests.
+            reflex.app.DECORATED_PAGES.clear()
             # reset rx.State subclasses
             State.class_subclasses.clear()
             State.class_subclasses.update(INTERNAL_STATES)
