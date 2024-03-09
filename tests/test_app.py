@@ -1319,3 +1319,38 @@ def test_app_wrap_priority(compilable_app):
         ")"
         "}"
     ) in "".join(app_js_lines)
+
+
+def test_app_state_determination():
+    """Test that the stateless status of an app is determined correctly."""
+    a1 = App()
+    assert a1.state is None
+
+    # No state, no router, no event handlers.
+    a1.add_page(rx.box("Index"), route="/")
+    assert a1.state is None
+
+    # Add a page with `on_load` enables state.
+    a1.add_page(rx.box("About"), route="/about", on_load=rx.console_log(""))
+    assert a1.state is not None
+
+    a2 = App()
+    assert a2.state is None
+
+    # Referencing a state Var enables state.
+    a2.add_page(rx.box(rx.text(GenState.value)), route="/")
+    assert a2.state is not None
+
+    a3 = App()
+    assert a3.state is None
+
+    # Referencing router enables state.
+    a3.add_page(rx.box(rx.text(State.router.page.full_path)), route="/")
+    assert a3.state is not None
+
+    a4 = App()
+    assert a4.state is None
+
+    # Referencing an event handler enables state.
+    a4.add_page(rx.box(rx.button("Click", on_click=rx.console_log(""))), route="/")
+    assert a4.state is not None
