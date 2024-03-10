@@ -185,7 +185,7 @@ class HighLevelSelect(SelectRoot):
     width: Var[str]
 
     # The positioning mode to use. Specified in top layer for convenience but passes as prop to Select.content.
-    position: Var[str]
+    position: Var[Literal["item-aligned", "popper"]]
 
     @classmethod
     def create(cls, items: Union[List[str], Var[List[str]]], **props) -> Component:
