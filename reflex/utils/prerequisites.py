@@ -97,6 +97,23 @@ def check_node_version() -> bool:
     return False
 
 
+def check_bun_version() -> bool:
+    """Check the version of Bun.
+
+    Returns:
+        Whether the version of Bun is valid
+    """
+    current_version = get_bun_version()
+    if current_version:
+        # Compare the version numbers
+        return (
+            current_version >= version.parse(constants.Bun.MIN_VERSION)
+            if constants.IS_WINDOWS
+            else current_version == version.parse(constants.Bun.VERSION)
+        )
+    return False
+
+
 def get_node_version() -> version.Version | None:
     """Get the version of node.
 
@@ -665,17 +682,15 @@ def install_bun():
         console.debug("Skipping bun installation on Windows.")
         return
 
-    # Skip if bun is already installed.
-    if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
-        constants.Bun.VERSION
-    ):
-        console.debug("Skipping bun installation as it is already installed.")
-        return
-
     #  if unzip is installed
     unzip_path = path_ops.which("unzip")
     if unzip_path is None:
         raise FileNotFoundError("Reflex requires unzip to be installed.")
+
+    # Skip if bun is already installed.
+    if check_bun_version():
+        console.debug("Skipping bun installation as it is already installed.")
+        return
 
     # Run the bun install script.
     download_and_run(
