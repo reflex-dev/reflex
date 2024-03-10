@@ -42,6 +42,9 @@ class SelectRoot(RadixThemesComponent):
     # When True, indicates that the user must select a value before the owning form can be submitted.
     required: Var[bool]
 
+    # The positioning mode to use. Specified in top layer for convenience but passes as prop to Select.content.
+    position: Var[str]
+
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
@@ -196,7 +199,7 @@ class HighLevelSelect(SelectRoot):
             The select component.
         """
         content_props = {
-            prop: props.pop(prop) for prop in ["high_contrast"] if prop in props
+            prop: props.pop(prop) for prop in ["high_contrast", "position"] if prop in props
         }
 
         trigger_props = {
