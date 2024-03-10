@@ -298,6 +298,7 @@ class AccordionRoot(AccordionComponent):
             The Accordion root Component.
         """
         ...
+
     def get_event_triggers(self) -> Dict[str, Any]: ...
 
 class AccordionItem(AccordionComponent):

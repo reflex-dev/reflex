@@ -261,6 +261,7 @@ class TextArea(RadixThemesComponent, el.Textarea):
             The component.
         """
         ...
+
     def get_event_triggers(self) -> Dict[str, Any]: ...
 
 text_area = TextArea.create

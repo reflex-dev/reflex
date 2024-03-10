@@ -559,6 +559,7 @@ class TextFieldInput(el.Input, TextFieldRoot):
             The component.
         """
         ...
+
     def get_event_triggers(self) -> Dict[str, Any]: ...
 
 class TextFieldSlot(RadixThemesComponent):
@@ -889,6 +890,7 @@ class Input(RadixThemesComponent):
             The component.
         """
         ...
+
     def get_event_triggers(self) -> Dict[str, Any]: ...
 
 class TextField(ComponentNamespace):
