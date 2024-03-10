@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import functools
 import inspect
 import json
 import os
+import pathlib
 import re
 import sys
 from typing import TYPE_CHECKING, Any, List, Union
@@ -598,7 +600,14 @@ def format_state(value: Any) -> Any:
     """
     # Handle dicts.
     if isinstance(value, dict):
-        return {k: format_state(v) for k, v in value.items()}
+        result = {}
+        for k, v in value.items():
+            if isinstance(v, (pathlib.PosixPath, functools.partial)):
+                raise TypeError(
+                    f"No JSON serializer found for var {k} of value {v} of type {type(v)}."
+                )
+            result[k] = format_state(v)
+        return result
 
     # Handle lists, sets, typles.
     if isinstance(value, types.StateIterBases):
