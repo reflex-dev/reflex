@@ -199,7 +199,9 @@ class HighLevelSelect(SelectRoot):
             The select component.
         """
         content_props = {
-            prop: props.pop(prop) for prop in ["high_contrast", "position"] if prop in props
+            prop: props.pop(prop)
+            for prop in ["high_contrast", "position"]
+            if prop in props
         }
 
         trigger_props = {
