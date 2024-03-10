@@ -8,10 +8,9 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Literal, Optional, Union
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
-from reflex.components.radix.themes.layout.flex import Flex
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -266,14 +265,24 @@ class DrawerTrigger(DrawerComponent):
         ] = None,
         **props
     ) -> "DrawerTrigger":
-        """Create a new DrawerTrigger instance.
+        """Create the component.
 
         Args:
-            children: The children of the element.
-            props: The properties of the element.
+            *children: The children of the component.
+            as_child: Change the default rendered element for the one passed as a child.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
 
         Returns:
-            The new DrawerTrigger instance.
+            The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -537,7 +546,7 @@ class DrawerOverlay(DrawerComponent):
         """
         ...
 
-class DrawerClose(DrawerTrigger):
+class DrawerClose(DrawerComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -597,14 +606,24 @@ class DrawerClose(DrawerTrigger):
         ] = None,
         **props
     ) -> "DrawerClose":
-        """Create a new DrawerTrigger instance.
+        """Create the component.
 
         Args:
-            children: The children of the element.
-            props: The properties of the element.
+            *children: The children of the component.
+            as_child: Change the default rendered element for the one passed as a child.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
 
         Returns:
-            The new DrawerTrigger instance.
+            The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 

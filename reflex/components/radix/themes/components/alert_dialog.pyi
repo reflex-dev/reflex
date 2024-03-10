@@ -12,7 +12,7 @@ from reflex import el
 from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import RadixThemesComponent, RadixThemesTriggerComponent
+from ..base import RadixThemesComponent
 
 LiteralContentSize = Literal["1", "2", "3", "4"]
 
@@ -101,7 +101,7 @@ class AlertDialogRoot(RadixThemesComponent):
         """
         ...
 
-class AlertDialogTrigger(RadixThemesTriggerComponent):
+class AlertDialogTrigger(RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -160,14 +160,23 @@ class AlertDialogTrigger(RadixThemesTriggerComponent):
         ] = None,
         **props
     ) -> "AlertDialogTrigger":
-        """Create a new RadixThemesTriggerComponent instance.
+        """Create a new component instance.
+
+        Will prepend "RadixThemes" to the component tag to avoid conflicts with
+        other UI libraries for common names, like Text and Button.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            *children: Child components.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: Component properties.
 
         Returns:
-            The new RadixThemesTriggerComponent instance.
+            A new component instance.
         """
         ...
 
@@ -480,7 +489,7 @@ class AlertDialogDescription(RadixThemesComponent):
         """
         ...
 
-class AlertDialogAction(RadixThemesTriggerComponent):
+class AlertDialogAction(RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -539,18 +548,27 @@ class AlertDialogAction(RadixThemesTriggerComponent):
         ] = None,
         **props
     ) -> "AlertDialogAction":
-        """Create a new RadixThemesTriggerComponent instance.
+        """Create a new component instance.
+
+        Will prepend "RadixThemes" to the component tag to avoid conflicts with
+        other UI libraries for common names, like Text and Button.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            *children: Child components.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: Component properties.
 
         Returns:
-            The new RadixThemesTriggerComponent instance.
+            A new component instance.
         """
         ...
 
-class AlertDialogCancel(RadixThemesTriggerComponent):
+class AlertDialogCancel(RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -609,14 +627,23 @@ class AlertDialogCancel(RadixThemesTriggerComponent):
         ] = None,
         **props
     ) -> "AlertDialogCancel":
-        """Create a new RadixThemesTriggerComponent instance.
+        """Create a new component instance.
+
+        Will prepend "RadixThemes" to the component tag to avoid conflicts with
+        other UI libraries for common names, like Text and Button.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            *children: Child components.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: Component properties.
 
         Returns:
-            The new RadixThemesTriggerComponent instance.
+            A new component instance.
         """
         ...
 

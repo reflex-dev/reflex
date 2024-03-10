@@ -184,6 +184,9 @@ class HighLevelSelect(SelectRoot):
     # The width of the select.
     width: Var[str]
 
+    # The positioning mode to use. Specified in top layer for convenience but passes as prop to Select.content.
+    position: Var[Literal["item-aligned", "popper"]]
+
     @classmethod
     def create(cls, items: Union[List[str], Var[List[str]]], **props) -> Component:
         """Create a select component.
@@ -196,7 +199,9 @@ class HighLevelSelect(SelectRoot):
             The select component.
         """
         content_props = {
-            prop: props.pop(prop) for prop in ["high_contrast"] if prop in props
+            prop: props.pop(prop)
+            for prop in ["high_contrast", "position"]
+            if prop in props
         }
 
         trigger_props = {

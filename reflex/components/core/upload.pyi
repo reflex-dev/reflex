@@ -9,20 +9,13 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 import os
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
+from typing import Any, ClassVar, Dict, List, Optional, Union
 from reflex import constants
 from reflex.components.chakra.forms.input import Input
 from reflex.components.chakra.layout.box import Box
 from reflex.components.component import Component, MemoizationLeaf
 from reflex.constants import Dirs
-from reflex.event import (
-    CallableEventSpec,
-    EventChain,
-    EventSpec,
-    call_event_fn,
-    call_script,
-    parse_args_spec,
-)
+from reflex.event import CallableEventSpec, EventChain, EventSpec, call_script
 from reflex.utils import imports
 from reflex.vars import BaseVar, CallableVar, Var, VarData
 
@@ -221,4 +214,5 @@ class Upload(MemoizationLeaf):
             The upload component.
         """
         ...
+
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
