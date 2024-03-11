@@ -1289,12 +1289,18 @@ class CustomComponent(Component):
 
             # Handle subclasses of Base.
             if types._issubclass(type_, Base):
-                try:
-                    value = BaseVar(
-                        _var_name=value.json(), _var_type=type_, _var_is_local=True
+                base_value = Var.create(value)
+
+                # Track hooks and imports associated with Component instances.
+                if base_value is not None and types._issubclass(type_, Component):
+                    value = base_value._replace(
+                        merge_var_data=VarData(  # type: ignore
+                            imports=value.get_imports(),
+                            hooks=value.get_hooks(),
+                        )
                     )
-                except Exception:
-                    value = Var.create(value)
+                else:
+                    value = base_value
             else:
                 value = Var.create(value, _var_is_string=type(value) is str)
 
