@@ -504,6 +504,7 @@ def test_app_1000_compile_time_warm(benchmark, app_with_thousand_pages):
 
     benchmark(benchmark_fn)
 
+
 # Temporarily disabling this test since it takes a lot of time to run and fails CI as result.
 
 # @pytest.mark.benchmark(
