@@ -115,7 +115,7 @@ jobs:
           APP_HARNESS_HEADLESS: 1
           PYTHONUNBUFFERED: 1
         run: |
-          poetry run pytest -v benchmarks/ --benchmark-json=${{ env.OUTPUT_FILE }}
+          poetry run pytest -v benchmarks/ --benchmark-json=${{ env.OUTPUT_FILE }} -s
       - name: Upload benchmark results
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
