@@ -6,7 +6,6 @@ import inspect
 import json
 import os
 import re
-import sys
 from typing import TYPE_CHECKING, Any, List, Union
 
 from reflex import constants
@@ -470,18 +469,18 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     if len(parts) == 1:
         return ("", parts[-1])
 
-    # Get the state and the function name.
-    state_name, name = parts[-2:]
+    # Get the state full name
+    state_full_name = handler.state_full_name
 
-    # Construct the full event handler name.
-    try:
-        # Try to get the state from the module.
-        state = vars(sys.modules[handler.fn.__module__])[state_name]
-    except Exception:
-        # If the state isn't in the module, just return the function name.
+    # Get the function name
+    name = parts[-1]
+
+    from reflex.state import State
+
+    if state_full_name == "state" and name not in State.__dict__:
         return ("", to_snake_case(handler.fn.__qualname__))
 
-    return (state.get_full_name(), name)
+    return (state_full_name, name)
 
 
 def format_event_handler(handler: EventHandler) -> str:

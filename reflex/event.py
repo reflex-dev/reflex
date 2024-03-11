@@ -147,6 +147,10 @@ class EventHandler(EventActionsMixin):
     # The function to call in response to the event.
     fn: Any
 
+    # The full name of the state class this event handler is attached to.
+    # Emtpy string means this event handler is a server side event.
+    state_full_name: str = ""
+
     class Config:
         """The Pydantic config."""
 

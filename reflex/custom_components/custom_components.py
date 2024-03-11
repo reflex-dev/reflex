@@ -141,26 +141,40 @@ def _populate_demo_app(name_variants: NameVariants):
                     module_name=name_variants.module_name,
                 )
             )
+        # Append the custom component package to the requirements.txt file.
+        with open(f"{constants.RequirementsTxt.FILE}", "a") as f:
+            f.write(f"{name_variants.package_name}\n")
 
 
 def _get_default_library_name_parts() -> list[str]:
     """Get the default library name. Based on the current directory name, remove any non-alphanumeric characters.
 
     Raises:
-        ValueError: If the current directory name is not suitable for python projects, and we cannot find a valid library name based off it.
+        Exit: If the current directory name is not suitable for python projects, and we cannot find a valid library name based off it.
 
     Returns:
         The parts of default library name.
     """
     current_dir_name = os.getcwd().split(os.path.sep)[-1]
 
-    cleaned_dir_name = re.sub("[^0-9a-zA-Z-_]+", "", current_dir_name)
-    parts = re.split("-|_", cleaned_dir_name)
+    cleaned_dir_name = re.sub("[^0-9a-zA-Z-_]+", "", current_dir_name).lower()
+    parts = [part for part in re.split("-|_", cleaned_dir_name) if part]
+    if parts and parts[0] == constants.Reflex.MODULE_NAME:
+        # If the directory name already starts with "reflex", remove it from the parts.
+        parts = parts[1:]
+        # If no parts left, cannot find a valid library name, exit.
+        if not parts:
+            # The folder likely has a name not suitable for python paths.
+            console.error(
+                f"Based on current directory name {current_dir_name}, the library name is {constants.Reflex.MODULE_NAME}. This package already exists. Please use --library-name to specify a different name."
+            )
+            raise typer.Exit(code=1)
     if not parts:
         # The folder likely has a name not suitable for python paths.
-        raise ValueError(
+        console.error(
             f"Could not find a valid library name based on the current directory: got {current_dir_name}."
         )
+        raise typer.Exit(code=1)
     return parts
 
 
@@ -209,21 +223,21 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
 
     # Component class name is the camel case.
     component_class_name = "".join([part.capitalize() for part in name_parts])
-    console.info(f"Component class name: {component_class_name}")
+    console.debug(f"Component class name: {component_class_name}")
 
     # Package name is commonly kebab case.
     package_name = f"reflex-{library_name}"
-    console.info(f"Package name: {package_name}")
+    console.debug(f"Package name: {package_name}")
 
     # Module name is the snake case.
     module_name = "_".join(name_parts)
 
     custom_component_module_dir = f"reflex_{module_name}"
-    console.info(f"Custom component source directory: {custom_component_module_dir}")
+    console.debug(f"Custom component source directory: {custom_component_module_dir}")
 
     # Use the same name for the directory and the app.
     demo_app_dir = demo_app_name = f"{module_name}_demo"
-    console.info(f"Demo app directory: {demo_app_dir}")
+    console.debug(f"Demo app directory: {demo_app_dir}")
 
     return NameVariants(
         library_name=library_name,
@@ -304,31 +318,38 @@ def init(
     # Check the name follows the convention if picked.
     name_variants = _validate_library_name(library_name)
 
+    console.rule(f"[bold]Initializing {name_variants.package_name} project")
+
     _populate_custom_component_project(name_variants)
 
     _populate_demo_app(name_variants)
 
     # Initialize the .gitignore.
-    prerequisites.initialize_gitignore()
+    prerequisites.initialize_gitignore(
+        gitignore_file=CustomComponents.FILE, files_to_ignore=CustomComponents.DEFAULTS
+    )
 
     if install:
         package_name = name_variants.package_name
-        console.info(f"Installing {package_name} in editable mode.")
+        console.rule(f"[bold]Installing {package_name} in editable mode.")
         if _pip_install_on_demand(package_name=".", install_args=["-e"]):
             console.info(f"Package {package_name} installed!")
         else:
             raise typer.Exit(code=1)
 
-    console.print("Custom component initialized successfully!")
-    console.print("Here's the summary:")
+    console.print("[bold]Custom component initialized successfully!")
+    console.rule("[bold]Project Summary")
     console.print(
-        f"{CustomComponents.PYPROJECT_TOML} and {CustomComponents.PACKAGE_README} created. [bold]Please fill in details such as your name, email, homepage URL.[/bold]"
+        f"[ {CustomComponents.PACKAGE_README} ]: Package description. Please add usage examples."
     )
     console.print(
-        f"Source code template is in {CustomComponents.SRC_DIR}. [bold]Start by editing it with your component implementation.[/bold]"
+        f"[ {CustomComponents.PYPROJECT_TOML} ]: Project configuration file. Please fill in details such as your name, email, homepage URL."
     )
     console.print(
-        f"Demo app created in {name_variants.demo_app_dir}. [bold]Use this app to test your custom component.[/bold]"
+        f"[ {CustomComponents.SRC_DIR}/ ]: Custom component code template. Start by editing it with your component implementation."
+    )
+    console.print(
+        f"[ {name_variants.demo_app_dir}/ ]: Demo App. Add more code to this app and test."
     )
 
 
@@ -379,6 +400,21 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
         return False
 
 
+def _run_build():
+    """Run the build command.
+
+    Raises:
+        Exit: If the build fails.
+    """
+    console.print("Building custom component...")
+
+    cmds = [sys.executable, "-m", "build", "."]
+    if _run_commands_in_subprocess(cmds):
+        console.info("Custom component built successfully!")
+    else:
+        raise typer.Exit(code=1)
+
+
 @custom_components_cli.command(name="build")
 def build(
     loglevel: constants.LogLevel = typer.Option(
@@ -389,18 +425,9 @@ def build(
 
     Args:
         loglevel: The log level to use.
-
-    Raises:
-        Exit: If the build fails.
     """
     console.set_log_level(loglevel)
-    console.print("Building custom component...")
-
-    cmds = [sys.executable, "-m", "build", "."]
-    if _run_commands_in_subprocess(cmds):
-        console.info("Custom component built successfully!")
-    else:
-        raise typer.Exit(code=1)
+    _run_build()
 
 
 def _validate_repository_name(repository: str | None) -> str:
@@ -456,13 +483,72 @@ def _validate_credentials(
     return username, password
 
 
-def _ensure_dist_dir():
-    """Ensure the distribution directory and the expected files exist.
+def _get_version_to_publish() -> str:
+    """Get the version to publish from the pyproject.toml.
 
     Raises:
-        Exit: If the distribution directory does not exist or the expected files are not found.
+        Exit: If the version is not found in the pyproject.toml.
+
+    Returns:
+        The version to publish.
+    """
+    # Get the version from the pyproject.toml.
+    version_to_publish = None
+    with open(CustomComponents.PYPROJECT_TOML, "r") as f:
+        pyproject_toml = f.read()
+        # Note below does not capture non-matching quotes. Not performing full syntax check here.
+        match = re.search(r'version\s*=\s*["\'](.*?)["\']', pyproject_toml)
+        if match:
+            version_to_publish = match.group(1)
+            console.debug(f"Version to be published: {version_to_publish}")
+    if not version_to_publish:
+        console.error(
+            f"Could not find the version to be published in {CustomComponents.PYPROJECT_TOML}"
+        )
+        raise typer.Exit(code=1)
+
+    return version_to_publish
+
+
+def _ensure_dist_dir(version_to_publish: str, build: bool):
+    """Ensure the distribution directory and the expected files exist.
+
+    Args:
+        version_to_publish: The version to be published.
+        build: Whether to build the package first.
+
+    Raises:
+        Exit: If the distribution directory does not exist, or the expected files are not found.
     """
     dist_dir = Path(CustomComponents.DIST_DIR)
+
+    if build:
+        # Need to check if the files here are for the version to be published.
+        if dist_dir.exists():
+
+            # Check if the distribution files are for the version to be published.
+            needs_rebuild = False
+            for suffix in CustomComponents.DISTRIBUTION_FILE_SUFFIXES:
+                if not list(dist_dir.glob(f"*{version_to_publish}*{suffix}")):
+                    console.debug(
+                        f"Expected distribution file with suffix {suffix} for version {version_to_publish} not found in directory {dist_dir.name}"
+                    )
+                    needs_rebuild = True
+                    break
+        else:
+            needs_rebuild = True
+
+        if not needs_rebuild:
+            needs_rebuild = (
+                console.ask(
+                    "Distribution files for the version to be published already exist. Do you want to rebuild?",
+                    choices=["n", "y"],
+                    default="n",
+                )
+                == "y"
+            )
+        if needs_rebuild:
+            _run_build()
 
     # Check if the distribution directory exists.
     if not dist_dir.exists():
@@ -511,6 +597,10 @@ def publish(
         "--password",
         help="The password to use for authentication on python package repository. Username and password must both be provided.",
     ),
+    build: bool = typer.Option(
+        True,
+        help="Whether to build the package before publishing. If the package is already built, set this to False.",
+    ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
@@ -522,6 +612,7 @@ def publish(
         token: The token to use for authentication on python package repository. If token is provided, no username/password should be provided at the same time.
         username: The username to use for authentication on python package repository.
         password: The password to use for authentication on python package repository.
+        build: Whether to build the distribution files. Defaults to True.
         loglevel: The log level to use.
 
     Raises:
@@ -536,8 +627,11 @@ def publish(
     # Validate the credentials.
     username, password = _validate_credentials(username, password, token)
 
+    # Get the version to publish from the pyproject.toml.
+    version_to_publish = _get_version_to_publish()
+
     # Validate the distribution directory.
-    _ensure_dist_dir()
+    _ensure_dist_dir(version_to_publish=version_to_publish, build=build)
 
     # We install twine on the fly if required so it is not a stable dependency of reflex.
     try:
@@ -557,7 +651,7 @@ def publish(
         "--password",
         password,
         "--non-interactive",
-        f"{CustomComponents.DIST_DIR}/*",
+        f"{CustomComponents.DIST_DIR}/*{version_to_publish}*",
     ]
     if _run_commands_in_subprocess(publish_cmds):
         console.info("Custom component published successfully!")

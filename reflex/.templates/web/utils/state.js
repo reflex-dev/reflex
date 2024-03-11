@@ -161,7 +161,8 @@ export const applyEvent = async (event, socket) => {
   if (event.name == "_download") {
     const a = document.createElement("a");
     a.hidden = true;
-    a.href = event.payload.url;
+    // Special case when linking to uploaded files
+    a.href = event.payload.url.replace("${getBackendURL(env.UPLOAD)}", getBackendURL(env.UPLOAD))
     a.download = event.payload.filename;
     a.click();
     a.remove();
