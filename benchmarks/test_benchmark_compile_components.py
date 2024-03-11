@@ -205,7 +205,6 @@ def app_with_1000_components(
 
 @pytest.mark.benchmark(
     group="Compile time of varying component numbers",
-    min_rounds=10,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -233,7 +232,7 @@ def test_app_10_compile_time_cold(benchmark, app_with_10_components):
 
 @pytest.mark.benchmark(
     group="Compile time of varying component numbers",
-    min_rounds=10,
+    min_rounds=5,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -255,7 +254,6 @@ def test_app_10_compile_time_warm(benchmark, app_with_10_components):
 
 @pytest.mark.benchmark(
     group="Compile time of varying component numbers",
-    min_rounds=10,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -278,12 +276,12 @@ def test_app_100_compile_time_cold(benchmark, app_with_100_components):
         with chdir(app_with_100_components.app_path):
             app_with_100_components.app_instance.compile_()
 
-    benchmark.pedantic(benchmark_fn, setup=setup, rounds=10)
+    benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
 
 
 @pytest.mark.benchmark(
     group="Compile time of varying component numbers",
-    min_rounds=10,
+    min_rounds=5,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -305,7 +303,6 @@ def test_app_100_compile_time_warm(benchmark, app_with_100_components):
 
 @pytest.mark.benchmark(
     group="Compile time of varying component numbers",
-    min_rounds=10,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -328,12 +325,12 @@ def test_app_1000_compile_time_cold(benchmark, app_with_1000_components):
         with chdir(app_with_1000_components.app_path):
             app_with_1000_components.app_instance.compile_()
 
-    benchmark.pedantic(benchmark_fn, setup=setup, rounds=10)
+    benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
 
 
 @pytest.mark.benchmark(
     group="Compile time of varying component numbers",
-    min_rounds=10,
+    min_rounds=5,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,

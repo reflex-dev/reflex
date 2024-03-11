@@ -295,7 +295,6 @@ def app_with_ten_thousand_pages(
 
 @pytest.mark.benchmark(
     group="Compile time of varying page numbers",
-    min_rounds=10,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -318,12 +317,12 @@ def test_app_1_compile_time_cold(benchmark, app_with_one_page):
         with chdir(app_with_one_page.app_path):
             app_with_one_page.app_instance.compile_()
 
-    benchmark.pedantic(benchmark_fn, setup=setup, rounds=10)
+    benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
 
 
 @pytest.mark.benchmark(
     group="Compile time of varying page numbers",
-    min_rounds=10,
+    min_rounds=5,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -345,7 +344,6 @@ def test_app_1_compile_time_warm(benchmark, app_with_one_page):
 
 @pytest.mark.benchmark(
     group="Compile time of varying page numbers",
-    min_rounds=10,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -368,12 +366,12 @@ def test_app_10_compile_time_cold(benchmark, app_with_ten_pages):
         with chdir(app_with_ten_pages.app_path):
             app_with_ten_pages.app_instance.compile_()
 
-    benchmark.pedantic(benchmark_fn, setup=setup, rounds=10)
+    benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
 
 
 @pytest.mark.benchmark(
     group="Compile time of varying page numbers",
-    min_rounds=10,
+    min_rounds=5,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -395,7 +393,6 @@ def test_app_10_compile_time_warm(benchmark, app_with_ten_pages):
 
 @pytest.mark.benchmark(
     group="Compile time of varying page numbers",
-    min_rounds=10,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -418,12 +415,12 @@ def test_app_100_compile_time_cold(benchmark, app_with_hundred_pages):
         with chdir(app_with_hundred_pages.app_path):
             app_with_hundred_pages.app_instance.compile_()
 
-    benchmark.pedantic(benchmark_fn, setup=setup, rounds=10)
+    benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
 
 
 @pytest.mark.benchmark(
     group="Compile time of varying page numbers",
-    min_rounds=10,
+    min_rounds=5,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -445,7 +442,6 @@ def test_app_100_compile_time_warm(benchmark, app_with_hundred_pages):
 
 @pytest.mark.benchmark(
     group="Compile time of varying page numbers",
-    min_rounds=10,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -468,12 +464,12 @@ def test_app_1000_compile_time_cold(benchmark, app_with_thousand_pages):
         with chdir(app_with_thousand_pages.app_path):
             app_with_thousand_pages.app_instance.compile_()
 
-    benchmark.pedantic(benchmark_fn, setup=setup, rounds=10)
+    benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
 
 
 @pytest.mark.benchmark(
     group="Compile time of varying page numbers",
-    min_rounds=10,
+    min_rounds=2,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -495,7 +491,6 @@ def test_app_1000_compile_time_warm(benchmark, app_with_thousand_pages):
 
 @pytest.mark.benchmark(
     group="Compile time of varying page numbers",
-    min_rounds=10,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -518,12 +513,12 @@ def test_app_10000_compile_time_cold(benchmark, app_with_ten_thousand_pages):
         with chdir(app_with_ten_thousand_pages.app_path):
             app_with_ten_thousand_pages.app_instance.compile_()
 
-    benchmark.pedantic(benchmark_fn, setup=setup, rounds=10)
+    benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
 
 
 @pytest.mark.benchmark(
     group="Compile time of varying page numbers",
-    min_rounds=10,
+    min_rounds=2,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
