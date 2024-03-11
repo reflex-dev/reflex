@@ -482,7 +482,7 @@ def test_app_100_compile_time_warm(benchmark, app_with_hundred_pages):
 
 @pytest.mark.benchmark(
     group="Compile time of varying page numbers",
-    min_rounds=2,
+    min_rounds=5,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -504,6 +504,7 @@ def test_app_1000_compile_time_warm(benchmark, app_with_thousand_pages):
 
     benchmark(benchmark_fn)
 
+# Temporarily disabling this test since it takes a lot of time to run and fails CI as result.
 
 # @pytest.mark.benchmark(
 #     group="Compile time of varying page numbers",
