@@ -8,6 +8,7 @@ from typing import Generator
 
 import pytest
 
+from benchmarks import WINDOWS_SKIP_REASON
 from reflex import constants
 from reflex.compiler import utils
 from reflex.testing import AppHarness, chdir
@@ -210,86 +211,32 @@ def app_with_1000_components(
     )  # type: ignore
 
 
-if not constants.IS_WINDOWS:
-    # For now skip cold tests on windows since it takes too much time as a result
-    # of npm.
-    @pytest.mark.benchmark(
-        group="Compile time of varying component numbers",
-        timer=time.perf_counter,
-        disable_gc=True,
-        warmup=False,
-    )
-    def test_app_10_compile_time_cold(benchmark, app_with_10_components):
-        """Test the compile time on a cold start for an app with roughly 10 components.
+@pytest.mark.skipif(constants.IS_WINDOWS, reason=WINDOWS_SKIP_REASON)
+@pytest.mark.benchmark(
+    group="Compile time of varying component numbers",
+    timer=time.perf_counter,
+    disable_gc=True,
+    warmup=False,
+)
+def test_app_10_compile_time_cold(benchmark, app_with_10_components):
+    """Test the compile time on a cold start for an app with roughly 10 components.
 
-        Args:
-            benchmark: The benchmark fixture.
-            app_with_10_components: The app harness.
-        """
+    Args:
+        benchmark: The benchmark fixture.
+        app_with_10_components: The app harness.
+    """
 
-        def setup():
-            with chdir(app_with_10_components.app_path):
-                utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
-                app_with_10_components._initialize_app()
-                build.setup_frontend(app_with_10_components.app_path)
+    def setup():
+        with chdir(app_with_10_components.app_path):
+            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            app_with_10_components._initialize_app()
+            build.setup_frontend(app_with_10_components.app_path)
 
-        def benchmark_fn():
-            with chdir(app_with_10_components.app_path):
-                app_with_10_components.app_instance.compile_()
+    def benchmark_fn():
+        with chdir(app_with_10_components.app_path):
+            app_with_10_components.app_instance.compile_()
 
-        benchmark.pedantic(benchmark_fn, setup=setup, rounds=10)
-
-        @pytest.mark.benchmark(
-            group="Compile time of varying component numbers",
-            timer=time.perf_counter,
-            disable_gc=True,
-            warmup=False,
-        )
-        def test_app_100_compile_time_cold(benchmark, app_with_100_components):
-            """Test the compile time on a cold start for an app with roughly 100 components.
-
-            Args:
-                benchmark: The benchmark fixture.
-                app_with_100_components: The app harness.
-            """
-
-            def setup():
-                with chdir(app_with_100_components.app_path):
-                    utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
-                    app_with_100_components._initialize_app()
-                    build.setup_frontend(app_with_100_components.app_path)
-
-            def benchmark_fn():
-                with chdir(app_with_100_components.app_path):
-                    app_with_100_components.app_instance.compile_()
-
-            benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
-
-        @pytest.mark.benchmark(
-            group="Compile time of varying component numbers",
-            timer=time.perf_counter,
-            disable_gc=True,
-            warmup=False,
-        )
-        def test_app_1000_compile_time_cold(benchmark, app_with_1000_components):
-            """Test the compile time on a cold start for an app with roughly 1000 components.
-
-            Args:
-                benchmark: The benchmark fixture.
-                app_with_1000_components: The app harness.
-            """
-
-            def setup():
-                with chdir(app_with_1000_components.app_path):
-                    utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
-                    app_with_1000_components._initialize_app()
-                    build.setup_frontend(app_with_1000_components.app_path)
-
-            def benchmark_fn():
-                with chdir(app_with_1000_components.app_path):
-                    app_with_1000_components.app_instance.compile_()
-
-            benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
+    benchmark.pedantic(benchmark_fn, setup=setup, rounds=10)
 
 
 @pytest.mark.benchmark(
@@ -317,6 +264,34 @@ def test_app_10_compile_time_warm(benchmark, app_with_10_components):
     benchmark(benchmark_fn)
 
 
+@pytest.mark.skipif(constants.IS_WINDOWS, reason=WINDOWS_SKIP_REASON)
+@pytest.mark.benchmark(
+    group="Compile time of varying component numbers",
+    timer=time.perf_counter,
+    disable_gc=True,
+    warmup=False,
+)
+def test_app_100_compile_time_cold(benchmark, app_with_100_components):
+    """Test the compile time on a cold start for an app with roughly 100 components.
+
+    Args:
+        benchmark: The benchmark fixture.
+        app_with_100_components: The app harness.
+    """
+
+    def setup():
+        with chdir(app_with_100_components.app_path):
+            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            app_with_100_components._initialize_app()
+            build.setup_frontend(app_with_100_components.app_path)
+
+    def benchmark_fn():
+        with chdir(app_with_100_components.app_path):
+            app_with_100_components.app_instance.compile_()
+
+    benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
+
+
 @pytest.mark.benchmark(
     group="Compile time of varying component numbers",
     min_rounds=5,
@@ -340,6 +315,34 @@ def test_app_100_compile_time_warm(benchmark, app_with_100_components):
             app_with_100_components.app_instance.compile_()
 
     benchmark(benchmark_fn)
+
+
+@pytest.mark.skipif(constants.IS_WINDOWS, reason=WINDOWS_SKIP_REASON)
+@pytest.mark.benchmark(
+    group="Compile time of varying component numbers",
+    timer=time.perf_counter,
+    disable_gc=True,
+    warmup=False,
+)
+def test_app_1000_compile_time_cold(benchmark, app_with_1000_components):
+    """Test the compile time on a cold start for an app with roughly 1000 components.
+
+    Args:
+        benchmark: The benchmark fixture.
+        app_with_1000_components: The app harness.
+    """
+
+    def setup():
+        with chdir(app_with_1000_components.app_path):
+            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            app_with_1000_components._initialize_app()
+            build.setup_frontend(app_with_1000_components.app_path)
+
+    def benchmark_fn():
+        with chdir(app_with_1000_components.app_path):
+            app_with_1000_components.app_instance.compile_()
+
+    benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
 
 
 @pytest.mark.benchmark(
