@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import time
 from typing import Generator
 
@@ -13,22 +14,17 @@ from reflex.testing import AppHarness, chdir
 from reflex.utils import build
 
 
-def AppWithTenComponents():
+def render_component(num: int):
     """Test that background tasks work as expected."""
     import reflex as rx
 
-    class State(rx.State):
-        """The app state."""
-
-        pass
-
-    def render_component():
-        return rx.fragment(
+    return [
+        rx.fragment(
             rx.box(
                 rx.accordion.root(
                     rx.accordion.item(
-                        header="Full Ingredients",
-                        content="Yes. It's built with accessibility in mind.",
+                        header="Full Ingredients",  # type: ignore
+                        content="Yes. It's built with accessibility in mind.",  # type: ignore
                         font_size="3em",
                     ),
                     rx.accordion.item(
@@ -105,9 +101,15 @@ def AppWithTenComponents():
                 )
             ),
         )
+    ] * num
+
+
+def AppWithTenComponents():
+    """Test that background tasks work as expected."""
+    import reflex as rx
 
     def index() -> rx.Component:
-        return rx.center(rx.vstack(render_component()))
+        return rx.center(rx.vstack(*render_component(1)))
 
     app = rx.App(state=rx.State)
     app.add_page(index)
@@ -117,201 +119,19 @@ def AppWithHUndredComponentOnePage():
     """Test that background tasks work as expected."""
     import reflex as rx
 
-    class State(rx.State):
-        """The app state."""
-
-        pass
-
-    def render_component():
-        return [
-            rx.fragment(
-                rx.box(
-                    rx.accordion.root(
-                        rx.accordion.item(
-                            header="Full Ingredients",
-                            content="Yes. It's built with accessibility in mind.",
-                            font_size="3em",
-                        ),
-                        rx.accordion.item(
-                            header="Applications",
-                            content="Yes. It's unstyled by default, giving you freedom over the look and feel.",
-                        ),
-                        collapsible=True,
-                        variant="ghost",
-                        width="25rem",
-                    ),
-                    padding_top="20px",
-                ),
-                rx.box(
-                    rx.drawer.root(
-                        rx.drawer.trigger(
-                            rx.button("Open Drawer with snap points"), as_child=True
-                        ),
-                        rx.drawer.overlay(),
-                        rx.drawer.portal(
-                            rx.drawer.content(
-                                rx.flex(
-                                    rx.drawer.title("Drawer Content"),
-                                    rx.drawer.description("Drawer description"),
-                                    rx.drawer.close(
-                                        rx.button("Close Button"),
-                                        as_child=True,
-                                    ),
-                                    direction="column",
-                                    margin="5em",
-                                    align_items="center",
-                                ),
-                                top="auto",
-                                height="100%",
-                                flex_direction="column",
-                                background_color="var(--green-3)",
-                            ),
-                        ),
-                        snap_points=["148px", "355px", 1],
-                    ),
-                ),
-                rx.box(
-                    rx.callout(
-                        "You will need admin privileges to install and access this application.",
-                        icon="info",
-                        size="3",
-                    ),
-                ),
-                rx.box(
-                    rx.table.root(
-                        rx.table.header(
-                            rx.table.row(
-                                rx.table.column_header_cell("Full name"),
-                                rx.table.column_header_cell("Email"),
-                                rx.table.column_header_cell("Group"),
-                            ),
-                        ),
-                        rx.table.body(
-                            rx.table.row(
-                                rx.table.row_header_cell("Danilo Sousa"),
-                                rx.table.cell("danilo@example.com"),
-                                rx.table.cell("Developer"),
-                            ),
-                            rx.table.row(
-                                rx.table.row_header_cell("Zahra Ambessa"),
-                                rx.table.cell("zahra@example.com"),
-                                rx.table.cell("Admin"),
-                            ),
-                            rx.table.row(
-                                rx.table.row_header_cell("Jasper Eriksson"),
-                                rx.table.cell("jasper@example.com"),
-                                rx.table.cell("Developer"),
-                            ),
-                        ),
-                    )
-                ),
-            )
-        ] * 10
-
     def index() -> rx.Component:
-        return rx.center(rx.vstack(*render_component()))
+        return rx.center(rx.vstack(*render_component(100)))
 
     app = rx.App(state=rx.State)
     app.add_page(index)
 
 
 def AppWithThousandComponentsOnePage():
-
+    """A reflex app with 1000 components on a page."""
     import reflex as rx
 
-    class State(rx.State):
-        """The app state."""
-
-        pass
-
-    def render_component():
-        return [
-            rx.fragment(
-                rx.box(
-                    rx.accordion.root(
-                        rx.accordion.item(
-                            header="Full Ingredients",
-                            content="Yes. It's built with accessibility in mind.",
-                            font_size="3em",
-                        ),
-                        rx.accordion.item(
-                            header="Applications",
-                            content="Yes. It's unstyled by default, giving you freedom over the look and feel.",
-                        ),
-                        collapsible=True,
-                        variant="ghost",
-                        width="25rem",
-                    ),
-                    padding_top="20px",
-                ),
-                rx.box(
-                    rx.drawer.root(
-                        rx.drawer.trigger(
-                            rx.button("Open Drawer with snap points"), as_child=True
-                        ),
-                        rx.drawer.overlay(),
-                        rx.drawer.portal(
-                            rx.drawer.content(
-                                rx.flex(
-                                    rx.drawer.title("Drawer Content"),
-                                    rx.drawer.description("Drawer description"),
-                                    rx.drawer.close(
-                                        rx.button("Close Button"),
-                                        as_child=True,
-                                    ),
-                                    direction="column",
-                                    margin="5em",
-                                    align_items="center",
-                                ),
-                                top="auto",
-                                height="100%",
-                                flex_direction="column",
-                                background_color="var(--green-3)",
-                            ),
-                        ),
-                        snap_points=["148px", "355px", 1],
-                    ),
-                ),
-                rx.box(
-                    rx.callout(
-                        "You will need admin privileges to install and access this application.",
-                        icon="info",
-                        size="3",
-                    ),
-                ),
-                rx.box(
-                    rx.table.root(
-                        rx.table.header(
-                            rx.table.row(
-                                rx.table.column_header_cell("Full name"),
-                                rx.table.column_header_cell("Email"),
-                                rx.table.column_header_cell("Group"),
-                            ),
-                        ),
-                        rx.table.body(
-                            rx.table.row(
-                                rx.table.row_header_cell("Danilo Sousa"),
-                                rx.table.cell("danilo@example.com"),
-                                rx.table.cell("Developer"),
-                            ),
-                            rx.table.row(
-                                rx.table.row_header_cell("Zahra Ambessa"),
-                                rx.table.cell("zahra@example.com"),
-                                rx.table.cell("Admin"),
-                            ),
-                            rx.table.row(
-                                rx.table.row_header_cell("Jasper Eriksson"),
-                                rx.table.cell("jasper@example.com"),
-                                rx.table.cell("Developer"),
-                            ),
-                        ),
-                    )
-                ),
-            )
-        ] * 100
-
     def index() -> rx.Component:
-        return rx.center(rx.vstack(*render_component()))
+        return rx.center(rx.vstack(*render_component(10)))
 
     app = rx.App(state=rx.State)
     app.add_page(index)
@@ -331,7 +151,12 @@ def app_with_10_components(
     """
     root = tmp_path_factory.mktemp("app10components")
 
-    yield AppHarness.create(root=root, app_source=AppWithTenComponents)  # type: ignore
+    yield AppHarness.create(
+        root=root,
+        app_source=functools.partial(
+            AppWithTenComponents, render_component=render_component  # type: ignore
+        ),
+    )  # type: ignore
 
 
 @pytest.fixture(scope="session")
@@ -348,7 +173,12 @@ def app_with_100_components(
     """
     root = tmp_path_factory.mktemp("app100components")
 
-    yield AppHarness.create(root=root, app_source=AppWithHUndredComponentOnePage)  # type: ignore
+    yield AppHarness.create(
+        root=root,
+        app_source=functools.partial(
+            AppWithHUndredComponentOnePage, render_component=render_component  # type: ignore
+        ),
+    )  # type: ignore
 
 
 @pytest.fixture(scope="session")
@@ -365,7 +195,12 @@ def app_with_1000_components(
     """
     root = tmp_path_factory.mktemp("app1000components")
 
-    yield AppHarness.create(root=root, app_source=AppWithThousandComponentsOnePage)  # type: ignore
+    yield AppHarness.create(
+        root=root,
+        app_source=functools.partial(
+            AppWithThousandComponentsOnePage, render_component=render_component  # type: ignore
+        ),
+    )  # type: ignore
 
 
 @pytest.mark.benchmark(
@@ -376,6 +211,13 @@ def app_with_1000_components(
     warmup=False,
 )
 def test_app_10_compile_time_cold(benchmark, app_with_10_components):
+    """Test the compile time on a cold start for an app with roughly 10 components.
+
+    Args:
+        benchmark: The benchmark fixture.
+        app_with_10_components: The app harness.
+    """
+
     def setup():
         with chdir(app_with_10_components.app_path):
             utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
@@ -397,6 +239,13 @@ def test_app_10_compile_time_cold(benchmark, app_with_10_components):
     warmup=False,
 )
 def test_app_10_compile_time_warm(benchmark, app_with_10_components):
+    """Test the compile time on a warm start for an app with roughly 10 components.
+
+    Args:
+        benchmark: The benchmark fixture.
+        app_with_10_components: The app harness.
+    """
+
     def benchmark_fn():
         with chdir(app_with_10_components.app_path):
             app_with_10_components.app_instance.compile_()
@@ -412,6 +261,13 @@ def test_app_10_compile_time_warm(benchmark, app_with_10_components):
     warmup=False,
 )
 def test_app_100_compile_time_cold(benchmark, app_with_100_components):
+    """Test the compile time on a cold start for an app with roughly 100 components.
+
+    Args:
+        benchmark: The benchmark fixture.
+        app_with_100_components: The app harness.
+    """
+
     def setup():
         with chdir(app_with_100_components.app_path):
             utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
@@ -433,6 +289,13 @@ def test_app_100_compile_time_cold(benchmark, app_with_100_components):
     warmup=False,
 )
 def test_app_100_compile_time_warm(benchmark, app_with_100_components):
+    """Test the compile time on a warm start for an app with roughly 100 components.
+
+    Args:
+        benchmark: The benchmark fixture.
+        app_with_100_components: The app harness.
+    """
+
     def benchmark_fn():
         with chdir(app_with_100_components.app_path):
             app_with_100_components.app_instance.compile_()
@@ -448,6 +311,13 @@ def test_app_100_compile_time_warm(benchmark, app_with_100_components):
     warmup=False,
 )
 def test_app_1000_compile_time_cold(benchmark, app_with_1000_components):
+    """Test the compile time on a cold start for an app with roughly 1000 components.
+
+    Args:
+        benchmark: The benchmark fixture.
+        app_with_1000_components: The app harness.
+    """
+
     def setup():
         with chdir(app_with_1000_components.app_path):
             utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
@@ -469,6 +339,13 @@ def test_app_1000_compile_time_cold(benchmark, app_with_1000_components):
     warmup=False,
 )
 def test_app_1000_compile_time_warm(benchmark, app_with_1000_components):
+    """Test the compile time on a warm start for an app with roughly 1000 components.
+
+    Args:
+        benchmark: The benchmark fixture.
+        app_with_1000_components: The app harness.
+    """
+
     def benchmark_fn():
         with chdir(app_with_1000_components.app_path):
             app_with_1000_components.app_instance.compile_()
