@@ -306,6 +306,9 @@ def test_app_10_compile_time_warm(benchmark, app_with_10_components):
         benchmark: The benchmark fixture.
         app_with_10_components: The app harness.
     """
+    with chdir(app_with_10_components.app_path):
+        app_with_10_components._initialize_app()
+        build.setup_frontend(app_with_10_components.app_path)
 
     def benchmark_fn():
         with chdir(app_with_10_components.app_path):
@@ -328,6 +331,9 @@ def test_app_100_compile_time_warm(benchmark, app_with_100_components):
         benchmark: The benchmark fixture.
         app_with_100_components: The app harness.
     """
+    with chdir(app_with_100_components.app_path):
+        app_with_100_components._initialize_app()
+        build.setup_frontend(app_with_100_components.app_path)
 
     def benchmark_fn():
         with chdir(app_with_100_components.app_path):
@@ -350,6 +356,9 @@ def test_app_1000_compile_time_warm(benchmark, app_with_1000_components):
         benchmark: The benchmark fixture.
         app_with_1000_components: The app harness.
     """
+    with chdir(app_with_1000_components.app_path):
+        app_with_1000_components._initialize_app()
+        build.setup_frontend(app_with_1000_components.app_path)
 
     def benchmark_fn():
         with chdir(app_with_1000_components.app_path):

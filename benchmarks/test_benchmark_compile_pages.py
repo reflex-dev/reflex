@@ -419,6 +419,9 @@ def test_app_1_compile_time_warm(benchmark, app_with_one_page):
         benchmark: The benchmark fixture.
         app_with_one_page: The app harness.
     """
+    with chdir(app_with_one_page.app_path):
+        app_with_one_page._initialize_app()
+        build.setup_frontend(app_with_one_page.app_path)
 
     def benchmark_fn():
         with chdir(app_with_one_page.app_path):
@@ -441,6 +444,9 @@ def test_app_10_compile_time_warm(benchmark, app_with_ten_pages):
         benchmark: The benchmark fixture.
         app_with_ten_pages: The app harness.
     """
+    with chdir(app_with_ten_pages.app_path):
+        app_with_ten_pages._initialize_app()
+        build.setup_frontend(app_with_ten_pages.app_path)
 
     def benchmark_fn():
         with chdir(app_with_ten_pages.app_path):
@@ -463,6 +469,9 @@ def test_app_100_compile_time_warm(benchmark, app_with_hundred_pages):
         benchmark: The benchmark fixture.
         app_with_hundred_pages: The app harness.
     """
+    with chdir(app_with_hundred_pages.app_path):
+        app_with_hundred_pages._initialize_app()
+        build.setup_frontend(app_with_hundred_pages.app_path)
 
     def benchmark_fn():
         with chdir(app_with_hundred_pages.app_path):
@@ -485,6 +494,9 @@ def test_app_1000_compile_time_warm(benchmark, app_with_thousand_pages):
         benchmark: The benchmark fixture.
         app_with_thousand_pages: The app harness.
     """
+    with chdir(app_with_thousand_pages.app_path):
+        app_with_thousand_pages._initialize_app()
+        build.setup_frontend(app_with_thousand_pages.app_path)
 
     def benchmark_fn():
         with chdir(app_with_thousand_pages.app_path):
