@@ -67,6 +67,7 @@ from reflex.route import (
 from reflex.state import (
     BaseState,
     RouterData,
+    SessionStatus,
     State,
     StateManager,
     StateUpdate,
@@ -992,6 +993,9 @@ async def process(
             # assignment will recurse into substates and force recalculation of
             # dependent ComputedVar (dynamic route variables)
             state.router_data = router_data
+        if state.router:
+            state.router.update(router_data)
+        else:
             state.router = RouterData(router_data)
 
         # Preprocess the event.
@@ -1131,6 +1135,9 @@ class EventNamespace(AsyncNamespace):
     # The application object.
     app: App
 
+    # Map Socket.IO session ids to the state token.
+    session_tokens: Dict[str, str] = {}
+
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
 
@@ -1148,15 +1155,23 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
         """
+        print(f"Connected: {sid} {environ}")
+        #  token = self.session_tokens[sid]
+        #  print(f"Connected: {sid} with token {token}")
         pass
 
-    def on_disconnect(self, sid):
+    async def on_disconnect(self, sid):
         """Event for when the websocket disconnects.
 
         Args:
             sid: The Socket.IO session id.
         """
-        pass
+        token = self.session_tokens.pop(sid, "")
+        if not token:
+            return
+
+        async with self.app.state_manager.modify_state(token) as state:
+            state.router.session.status = SessionStatus.DISCONNECTED
 
     async def emit_update(self, update: StateUpdate, sid: str) -> None:
         """Emit an update to the client.
@@ -1179,6 +1194,10 @@ class EventNamespace(AsyncNamespace):
         """
         # Get the event.
         event = Event.parse_raw(data)
+
+        # Update the session token map.
+        print(f"on_event {sid} {event.token} {event}")
+        self.session_tokens[sid] = event.token
 
         # Get the event environment.
         assert self.app.sio is not None
