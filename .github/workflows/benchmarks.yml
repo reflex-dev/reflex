@@ -77,7 +77,7 @@ jobs:
   simple-apps-benchmarks:
     env:
       OUTPUT_FILE: benchmarks.json
-    timeout-minutes: 30
+    timeout-minutes: 50
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
       fail-fast: false
