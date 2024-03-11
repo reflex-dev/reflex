@@ -15,7 +15,14 @@ from reflex.utils import build
 
 
 def render_component(num: int):
-    """Test that background tasks work as expected."""
+    """Test that background tasks work as expected.
+
+    Args:
+        num: number of components to produce.
+
+    Returns:
+        The rendered number of components.
+    """
     import reflex as rx
 
     return [
@@ -28,8 +35,8 @@ def render_component(num: int):
                         font_size="3em",
                     ),
                     rx.accordion.item(
-                        header="Applications",
-                        content="Yes. It's unstyled by default, giving you freedom over the look and feel.",
+                        header="Applications",  # type: ignore
+                        content="Yes. It's unstyled by default, giving you freedom over the look and feel.",  # type: ignore
                     ),
                     collapsible=True,
                     variant="ghost",
