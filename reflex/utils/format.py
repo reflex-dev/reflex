@@ -598,7 +598,7 @@ def format_state(value: Any, key: Optional[str] = None) -> Any:
     """
     # Handle dicts.
     if isinstance(value, dict):
-        return {k: format_state(v,k) for k, v in value.items()}
+        return {k: format_state(v, k) for k, v in value.items()}
 
     # Handle lists, sets, typles.
     if isinstance(value, types.StateIterBases):
@@ -614,9 +614,13 @@ def format_state(value: Any, key: Optional[str] = None) -> Any:
         return serialized
 
     if key is None:
-       raise TypeError(f"No JSON serializer found for var {value} of type {type(value)}.")
-    else: 
-        raise TypeError(f"No JSON serializer found for State Var '{key}' of value {value} of type {type(value)}.")
+        raise TypeError(
+            f"No JSON serializer found for var {value} of type {type(value)}."
+        )
+    else:
+        raise TypeError(
+            f"No JSON serializer found for State Var '{key}' of value {value} of type {type(value)}."
+        )
 
 
 def format_state_name(state_name: str) -> str:
