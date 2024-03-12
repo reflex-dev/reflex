@@ -121,10 +121,9 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
 
     # Return if telemetry is disabled.
     if not telemetry_enabled:
-        console.warn("Telemetry is disabled.")
         return False
-    else:
-        console.warn("Telemetry is enabled.")
+
+    console.warn("Telemetry is enabled.")
 
     event_data = _prepare_event(event)
     if not event_data:
