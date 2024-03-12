@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import functools
 import inspect
 import json
 import os
-import pathlib
 import re
 import sys
-from typing import TYPE_CHECKING, Any, List, Union
+from typing import TYPE_CHECKING, Any, List, Union, Optional
 
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
@@ -586,11 +584,12 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 
-def format_state(value: Any) -> Any:
+def format_state(value: Any, key: Optional[str] = None) -> Any:
     """Recursively format values in the given state.
 
     Args:
         value: The state to format.
+        key: The key associated with the value (optional).
 
     Returns:
         The formatted state.
@@ -600,14 +599,7 @@ def format_state(value: Any) -> Any:
     """
     # Handle dicts.
     if isinstance(value, dict):
-        result = {}
-        for k, v in value.items():
-            if isinstance(v, (pathlib.PosixPath, functools.partial)):
-                raise TypeError(
-                    f"No JSON serializer found for var {k} of value {v} of type {type(v)}."
-                )
-            result[k] = format_state(v)
-        return result
+        return {k: format_state(v,k) for k, v in value.items()}
 
     # Handle lists, sets, typles.
     if isinstance(value, types.StateIterBases):
@@ -622,7 +614,10 @@ def format_state(value: Any) -> Any:
     if serialized is not None:
         return serialized
 
-    raise TypeError(f"No JSON serializer found for var {value} of type {type(value)}.")
+    if key is None:
+       raise TypeError(f"No JSON serializer found for var {value} of type {type(value)}.")
+    else: 
+        raise TypeError(f"No JSON serializer found for State Var '{key}' of value {value} of type {type(value)}.")
 
 
 def format_state_name(state_name: str) -> str:
