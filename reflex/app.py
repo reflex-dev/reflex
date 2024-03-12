@@ -408,7 +408,7 @@ class App(Base):
         self,
         component: Component | ComponentCallable,
         route: str | None = None,
-        title: str = constants.DefaultPage.TITLE,
+        title: str | None = None,
         description: str = constants.DefaultPage.DESCRIPTION,
         image: str = constants.DefaultPage.IMAGE,
         on_load: (
@@ -467,6 +467,10 @@ class App(Base):
                     break
 
         component = OverlayFragment.create(component)
+
+        if title is None:
+            # title = get_config().app_name + " : " + route.title()
+            title = format.make_default_page_title(get_config().app_name, route)
 
         # Add meta information to the component.
         compiler_utils.add_meta(

@@ -187,6 +187,21 @@ def to_kebab_case(text: str) -> str:
     return to_snake_case(text).replace("_", "-")
 
 
+def make_default_page_title(app_name: str, route: str) -> str:
+    """Make a default page title from a route.
+
+    Args:
+        app_name: The name of the app owning the page.
+        route: The route to make the title from.
+
+    Returns:
+        The default page title.
+    """
+    title = constants.DefaultPage.TITLE.format(app_name, route)
+    title = title.replace("_", " ").replace("-", " ")
+    return title.title()
+
+
 def _escape_js_string(string: str) -> str:
     """Escape the string for use as a JS string literal.
 
@@ -512,9 +527,14 @@ def format_event(event_spec: EventSpec) -> str:
             ":".join(
                 (
                     name._var_name,
-                    wrap(json.dumps(val._var_name).strip('"').replace("`", "\\`"), "`")
-                    if val._var_is_string
-                    else val._var_full_name,
+                    (
+                        wrap(
+                            json.dumps(val._var_name).strip('"').replace("`", "\\`"),
+                            "`",
+                        )
+                        if val._var_is_string
+                        else val._var_full_name
+                    ),
                 )
             )
             for name, val in event_spec.args
