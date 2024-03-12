@@ -1,4 +1,5 @@
 """Ensure stopPropagation and preventDefault work as expected."""
+from __future__ import annotations
 
 import asyncio
 from typing import Callable, Coroutine, Generator
@@ -11,10 +12,12 @@ from reflex.testing import AppHarness, WebDriver
 
 def TestEventAction():
     """App for testing event_actions."""
+    from typing import List, Optional
+
     import reflex as rx
 
     class EventActionState(rx.State):
-        order: list[str]
+        order: List[str]
 
         def on_click(self, ev):
             self.order.append(f"on_click:{ev}")
@@ -27,7 +30,7 @@ def TestEventAction():
 
         tag = "EventFiringComponent"
 
-        def _get_custom_code(self) -> str | None:
+        def _get_custom_code(self) -> Optional[str]:
             return """
                 function EventFiringComponent(props) {
                     return (
