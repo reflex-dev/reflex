@@ -1310,7 +1310,7 @@ class CustomComponent(Component):
                 except Exception:
                     value = Var.create(value)
             else:
-                value = Var.create(value, _var_is_string=type(value) is str)
+                value = Var.create(value, _var_is_string=isinstance(value, str))
 
             # Set the prop.
             self.props[format.to_camel_case(key)] = value

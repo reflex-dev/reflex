@@ -193,7 +193,7 @@ class EventHandler(EventActionsMixin):
 
             # Otherwise, convert to JSON.
             try:
-                values.append(Var.create(arg, _var_is_string=type(arg) is str))
+                values.append(Var.create(arg, _var_is_string=isinstance(arg, str)))
             except TypeError as e:
                 raise TypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
@@ -426,7 +426,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     return EventSpec(
         handler=EventHandler(fn=fn),
         args=tuple(
-            (Var.create_safe(k), Var.create_safe(v, _var_is_string=type(v) is str))
+            (Var.create_safe(k), Var.create_safe(v, _var_is_string=isinstance(v, str)))
             for k, v in kwargs.items()
         ),
     )
