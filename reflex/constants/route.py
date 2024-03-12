@@ -50,7 +50,7 @@ class DefaultPage(SimpleNamespace):
     """Default page constants."""
 
     # The default title to show for Reflex apps.
-    TITLE = "{} : {}"
+    TITLE = "{} | {}"
     # The default description to show for Reflex apps.
     DESCRIPTION = ""
     # The default image to show for Reflex apps.
