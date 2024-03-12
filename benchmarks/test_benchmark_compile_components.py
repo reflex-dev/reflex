@@ -123,7 +123,7 @@ def AppWithTenComponentsOnePage():
     app.add_page(index)
 
 
-def AppWithHUndredComponentOnePage():
+def AppWithHundredComponentOnePage():
     """A reflex app with roughly 100 components on one page."""
     import reflex as rx
 
@@ -139,7 +139,7 @@ def AppWithThousandComponentsOnePage():
     import reflex as rx
 
     def index() -> rx.Component:
-        return rx.center(rx.vstack(*render_component(10)))
+        return rx.center(rx.vstack(*render_component(1000)))
 
     app = rx.App(state=rx.State)
     app.add_page(index)
@@ -184,7 +184,7 @@ def app_with_100_components(
     yield AppHarness.create(
         root=root,
         app_source=functools.partial(
-            AppWithHUndredComponentOnePage, render_component=render_component  # type: ignore
+            AppWithHundredComponentOnePage, render_component=render_component  # type: ignore
         ),
     )  # type: ignore
 
