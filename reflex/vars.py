@@ -96,6 +96,16 @@ PYTHON_JS_TYPE_MAP = {
 }
 
 
+def mark_used(*vars) -> None:
+    """Mark vars as used.
+
+    Args:
+        *vars: The vars to mark as used.
+    """
+    for var in vars:
+        var._var_is_used = True
+
+
 def get_unique_variable_name() -> str:
     """Get a unique variable name.
 
@@ -213,6 +223,7 @@ def _encode_var(value: Var) -> str:
     Returns:
         The encoded var.
     """
+    value._var_is_used = True
     if value._var_data:
         from reflex.utils.serializers import serialize
 
@@ -332,6 +343,12 @@ class Var:
     # Whether the var is a string literal.
     _var_is_string: bool
 
+    # Keeps track if this var is used in a template
+    _var_is_used: bool
+
+    # Keeps track of all attributes which are accessed during compile
+    _var_used_attributes: Set[str]
+
     # _var_full_name should be prefixed with _var_state
     _var_full_name_needs_state_prefix: bool
 
@@ -340,7 +357,11 @@ class Var:
 
     @classmethod
     def create(
-        cls, value: Any, _var_is_local: bool = True, _var_is_string: bool = False
+        cls,
+        value: Any,
+        _var_is_local: bool = True,
+        _var_is_string: bool = False,
+        _var_is_used: bool = False,
     ) -> Var | None:
         """Create a var from a value.
 
@@ -382,6 +403,7 @@ class Var:
             _var_type=type_,
             _var_is_local=_var_is_local,
             _var_is_string=_var_is_string,
+            _var_is_used=_var_is_used,
             _var_data=_var_data,
         )
 
@@ -442,6 +464,7 @@ class Var:
             _var_type=kwargs.pop("_var_type", self._var_type),
             _var_is_local=kwargs.pop("_var_is_local", self._var_is_local),
             _var_is_string=kwargs.pop("_var_is_string", self._var_is_string),
+            _var_is_used=kwargs.pop("_var_is_used", self._var_is_used),
             _var_full_name_needs_state_prefix=kwargs.pop(
                 "_var_full_name_needs_state_prefix",
                 self._var_full_name_needs_state_prefix,
@@ -477,6 +500,8 @@ class Var:
         Returns:
             Whether the vars are equal.
         """
+        self._var_is_used = True
+        other._var_is_used = True
         return (
             self._var_name == other._var_name
             and self._var_type == other._var_type
@@ -499,6 +524,8 @@ class Var:
             return self._replace()
         if not isinstance(other, Var):
             other = Var.create(other)
+        self._var_is_used = True
+        other._var_is_used = True  # type: ignore
         return self._replace(
             _var_name=f"{{...{self._var_name}, ...{other._var_name}}}"  # type: ignore
         )
@@ -529,6 +556,7 @@ class Var:
         Returns:
             The wrapped var, i.e. {state.var}.
         """
+        self._var_is_used = True
         out = (
             self._var_full_name
             if self._var_is_local
@@ -599,6 +627,8 @@ class Var:
             raise TypeError(
                 f"Var {self._var_name} of type {self._var_type} does not support indexing."
             )
+
+        self._var_is_used = True
 
         # The type of the indexed var.
         type_ = Any
@@ -692,6 +722,8 @@ class Var:
         """
         # Check if the attribute is one of the class fields.
         if not name.startswith("_"):
+            self._var_used_attributes.add(name)
+            self._var_is_used = True
             if self._var_type == Any:
                 raise TypeError(
                     f"You must provide an annotation for the state var `{self._var_full_name}`. Annotation cannot be `{self._var_type}`"
@@ -750,6 +782,10 @@ class Var:
             other = Var.create(json.dumps(other))
         else:
             other = Var.create(other)
+
+        self._var_is_used = True
+        if other is not None:
+            other._var_is_used = True
 
         type_ = type_ or self._var_type
 
@@ -896,6 +932,7 @@ class Var:
         """
         if not types._issubclass(self._var_type, List):
             raise TypeError(f"Cannot get length of non-list var {self}.")
+        self._var_is_used = True
         return self._replace(
             _var_name=f"{self._var_name}.length",
             _var_type=int,
@@ -1076,7 +1113,12 @@ class Var:
             (int, list),
             (list, int),
         ]:
-            other_name = other._var_full_name if isinstance(other, Var) else other
+            self._var_is_used = True
+            if isinstance(other, Var):
+                other._var_is_used = True
+                other_name = other._var_full_name
+            else:
+                other_name = other
             name = f"Array({other_name}).fill().map(() => {self._var_full_name}).flat()"
             return self._replace(
                 _var_name=name,
@@ -1317,6 +1359,9 @@ class Var:
             raise TypeError(
                 f"Var {self._var_full_name} of type {self._var_type} does not support contains check."
             )
+        self._var_is_used = True
+        if isinstance(other, Var):
+            other._var_is_used = True
         method = (
             "hasOwnProperty"
             if types.get_base_class(self._var_type) == dict
@@ -1360,6 +1405,8 @@ class Var:
         if not types._issubclass(self._var_type, list):
             raise TypeError(f"Cannot reverse non-list var {self._var_full_name}.")
 
+        self._var_is_used = True
+
         return self._replace(
             _var_name=f"[...{self._var_full_name}].reverse()",
             _var_is_string=False,
@@ -1379,6 +1426,8 @@ class Var:
             raise TypeError(
                 f"Cannot convert non-string var {self._var_full_name} to lowercase."
             )
+
+        self._var_is_used = True
 
         return self._replace(
             _var_name=f"{self._var_name}.toLowerCase()",
@@ -1400,6 +1449,8 @@ class Var:
                 f"Cannot convert non-string var {self._var_full_name} to uppercase."
             )
 
+        self._var_is_used = True
+
         return self._replace(
             _var_name=f"{self._var_name}.toUpperCase()",
             _var_is_string=False,
@@ -1420,6 +1471,10 @@ class Var:
         """
         if not types._issubclass(self._var_type, str):
             raise TypeError(f"Cannot strip non-string var {self._var_full_name}.")
+
+        self._var_is_used = True
+        if isinstance(other, Var):
+            other._var_is_used = True
 
         other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
 
@@ -1444,6 +1499,10 @@ class Var:
         if not types._issubclass(self._var_type, str):
             raise TypeError(f"Cannot split non-string var {self._var_full_name}.")
 
+        self._var_is_used = True
+        if isinstance(other, Var):
+            other._var_is_used = True
+
         other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
 
         return self._replace(
@@ -1467,6 +1526,10 @@ class Var:
         """
         if not types._issubclass(self._var_type, list):
             raise TypeError(f"Cannot join non-list var {self._var_full_name}.")
+
+        self._var_is_used = True
+        if isinstance(other, Var):
+            other._var_is_used = True
 
         if other is None:
             other = Var.create_safe('""')
@@ -1499,6 +1562,7 @@ class Var:
             raise TypeError(
                 f"Cannot foreach over non-sequence var {self._var_full_name} of type {self._var_type}."
             )
+        self._var_is_used = True
         arg = BaseVar(
             _var_name=get_unique_variable_name(),
             _var_type=inner_types[0],
@@ -1553,6 +1617,10 @@ class Var:
         elif step._var_type != int:
             raise TypeError(f"Cannot get range on non-int var {step._var_full_name}.")
 
+        v1._var_is_used = True
+        v2._var_is_used = True
+        step._var_is_used = True
+
         return BaseVar(
             _var_name=f"Array.from(range({v1._var_full_name}, {v2._var_full_name}, {step._var_name}))",
             _var_type=List[int],
@@ -1580,6 +1648,7 @@ class Var:
         Returns:
             The converted var.
         """
+        self._var_is_used = True
         return self._replace(_var_type=type_)
 
     def as_ref(self) -> Var:
@@ -1588,6 +1657,7 @@ class Var:
         Returns:
             The var as a ref.
         """
+        self._var_is_used = True
         return self._replace(
             _var_name=f"refs['{self._var_full_name}']",
             _var_is_local=True,
@@ -1607,6 +1677,7 @@ class Var:
         Returns:
             The full name of the var.
         """
+        self._var_is_used = True
         if not self._var_full_name_needs_state_prefix:
             return self._var_name
         return (
@@ -1699,6 +1770,12 @@ class BaseVar(Var):
 
     # Whether the var is a string literal.
     _var_is_string: bool = dataclasses.field(default=False)
+
+    # Keeps track if this var is used in a template
+    _var_is_used: bool = dataclasses.field(default=False)
+
+    # Keeps track of all attributes which are accessed during compile
+    _var_used_attributes: Set[str] = dataclasses.field(default_factory=set)
 
     # _var_full_name should be prefixed with _var_state
     _var_full_name_needs_state_prefix: bool = dataclasses.field(default=False)
@@ -1855,6 +1932,8 @@ class ComputedVar(Var, property):
         Returns:
             The value of the var for the given instance.
         """
+        self._var_is_used = True
+
         if instance is None or not self._cache:
             return super().__get__(instance, owner)
 

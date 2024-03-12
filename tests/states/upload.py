@@ -4,6 +4,7 @@ from typing import ClassVar, List
 
 import reflex as rx
 from reflex.state import BaseState, State
+from reflex.vars import mark_used
 
 
 class UploadState(BaseState):
@@ -80,6 +81,9 @@ class FileUploadState(State):
         pass
 
 
+mark_used(FileUploadState.img_list)
+
+
 class FileStateBase1(State):
     """The base state for a child FileUploadState."""
 
@@ -128,6 +132,9 @@ class ChildFileUploadState(FileStateBase1):
         pass
 
 
+mark_used(ChildFileUploadState.img_list)
+
+
 class FileStateBase2(FileStateBase1):
     """The parent state for a grandchild FileUploadState."""
 
@@ -174,3 +181,6 @@ class GrandChildFileUploadState(FileStateBase2):
             files: The uploaded files.
         """
         pass
+
+
+mark_used(GrandChildFileUploadState.img_list)
