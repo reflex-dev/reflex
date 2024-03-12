@@ -860,8 +860,9 @@ class App(Base):
         # Use a forking process pool, if possible.  Much faster, especially for large sites.
         # Fallback to ThreadPoolExecutor as something that will always work.
         executor = None
-        if platform.system() in ("Linux", "Darwin") and os.environ.get(
-            "REFLEX_COMPILE_PROCESSES"
+        if (
+            platform.system() in ("Linux", "Darwin")
+            and os.environ.get("REFLEX_COMPILE_PROCESSES") is not None
         ):
             executor = concurrent.futures.ProcessPoolExecutor(
                 max_workers=int(os.environ.get("REFLEX_COMPILE_PROCESSES", 0)) or None,
