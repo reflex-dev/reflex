@@ -121,7 +121,7 @@ class ModelRegistry:
             metadata = next(iter(models)).metadata
         else:
             # Merge the metadata from all the models.
-            # This allows mixin bare sqlalchemy models with sqlmodel models in one database.
+            # This allows mixing bare sqlalchemy models with sqlmodel models in one database.
             metadata = sqlalchemy.MetaData()
             for model in cls.get_models():
                 for table in model.metadata.tables.values():
