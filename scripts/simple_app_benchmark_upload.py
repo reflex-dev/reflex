@@ -56,7 +56,8 @@ def insert_benchmarking_data(
     commit_sha: str,
     pr_title: str,
     branch_name: str,
-    event_type: str
+    event_type: str,
+    actor: str,
 ):
     """Insert the benchmarking data into the database.
 
@@ -69,8 +70,8 @@ def insert_benchmarking_data(
         pr_title: The PR title to insert.
         branch_name: The name of the branch.
         event_type: Type of github event(push, pull request, etc)
+        actor: Username of the user that triggered the run.
     """
-    print(f"branch name : {branch_name} | event type: {event_type}")
     # Serialize the JSON data
     simple_app_performance_json = json.dumps(performance_data)
 
@@ -80,8 +81,8 @@ def insert_benchmarking_data(
     # Connect to the database and insert the data
     with psycopg2.connect(db_connection_url) as conn, conn.cursor() as cursor:
         insert_query = """
-            INSERT INTO simple_app_benchmarks (os, python_version, commit_sha, time, pr_title, performance)
-            VALUES (%s, %s, %s, %s, %s, %s);
+            INSERT INTO simple_app_benchmarks (os, python_version, commit_sha, time, pr_title, branch_name, event_type, actor, performance)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
             """
         cursor.execute(
             insert_query,
@@ -91,6 +92,9 @@ def insert_benchmarking_data(
                 commit_sha,
                 current_timestamp,
                 pr_title,
+                branch_name,
+                event_type,
+                actor,
                 simple_app_performance_json,
             ),
         )
@@ -135,6 +139,11 @@ def main():
         help="The github event type",
         required=True,
     )
+    parser.add_argument(
+        "--actor",
+        help="Username of the user that triggered the run.",
+        required=True,
+    )
     args = parser.parse_args()
 
     # Get the results of pytest benchmarks
@@ -148,7 +157,8 @@ def main():
         commit_sha=args.commit_sha,
         pr_title=args.pr_title,
         branch_name=args.branch_name,
-        event_type=args.event_type
+        event_type=args.event_type,
+        actor=args.actor,
     )
 
 
