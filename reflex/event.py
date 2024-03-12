@@ -14,6 +14,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    get_type_hints,
 )
 
 from reflex import constants
@@ -771,11 +772,12 @@ def parse_args_spec(arg_spec: ArgsSpec):
         The parsed args.
     """
     spec = inspect.getfullargspec(arg_spec)
+    annotations = get_type_hints(arg_spec)
     return arg_spec(
         *[
             BaseVar(
                 _var_name=f"_{l_arg}",
-                _var_type=spec.annotations.get(l_arg, FrontendEvent),
+                _var_type=annotations.get(l_arg, FrontendEvent),
                 _var_is_local=True,
             )
             for l_arg in spec.args
