@@ -11,6 +11,8 @@ from reflex.testing import AppHarness
 
 def VarOperations():
     """App with var operations."""
+    from typing import Dict, List
+
     import reflex as rx
 
     class VarOperationState(rx.State):
@@ -19,15 +21,15 @@ def VarOperations():
         int_var3: int = 7
         float_var1: float = 10.5
         float_var2: float = 5.5
-        list1: list = [1, 2]
-        list2: list = [3, 4]
-        list3: list = ["first", "second", "third"]
+        list1: List = [1, 2]
+        list2: List = [3, 4]
+        list3: List = ["first", "second", "third"]
         str_var1: str = "first"
         str_var2: str = "second"
         str_var3: str = "ThIrD"
         str_var4: str = "a long string"
-        dict1: dict = {1: 2}
-        dict2: dict = {3: 4}
+        dict1: Dict = {1: 2}
+        dict2: Dict = {3: 4}
         html_str: str = "<div>hello</div>"
 
     app = rx.App(state=rx.State)
@@ -556,7 +558,7 @@ def VarOperations():
             ),
             rx.box(
                 rx.foreach(
-                    rx.Var.create_safe(list(range(0, 3))).to(list[int]),
+                    rx.Var.create_safe(list(range(0, 3))).to(List[int]),
                     lambda x: rx.foreach(
                         rx.Var.range(x),
                         lambda y: rx.text(VarOperationState.list1[y], as_="p"),
