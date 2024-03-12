@@ -1,4 +1,4 @@
-"""Benchmark tests for medium sized apps."""
+"""Benchmark tests for apps with varying component numbers."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from reflex.utils import build
 
 
 def render_component(num: int):
-    """Test that background tasks work as expected.
+    """Generate a number of components based on num.
 
     Args:
         num: number of components to produce.
@@ -112,8 +112,8 @@ def render_component(num: int):
     ] * num
 
 
-def AppWithTenComponents():
-    """Test that background tasks work as expected."""
+def AppWithTenComponentsOnePage():
+    """A reflex app with roughly 10 components on one page."""
     import reflex as rx
 
     def index() -> rx.Component:
@@ -124,7 +124,7 @@ def AppWithTenComponents():
 
 
 def AppWithHUndredComponentOnePage():
-    """Test that background tasks work as expected."""
+    """A reflex app with roughly 100 components on one page."""
     import reflex as rx
 
     def index() -> rx.Component:
@@ -135,7 +135,7 @@ def AppWithHUndredComponentOnePage():
 
 
 def AppWithThousandComponentsOnePage():
-    """A reflex app with 1000 components on a page."""
+    """A reflex app with roughly 1000 components on one page."""
     import reflex as rx
 
     def index() -> rx.Component:
@@ -162,7 +162,7 @@ def app_with_10_components(
     yield AppHarness.create(
         root=root,
         app_source=functools.partial(
-            AppWithTenComponents, render_component=render_component  # type: ignore
+            AppWithTenComponentsOnePage, render_component=render_component  # type: ignore
         ),
     )  # type: ignore
 
@@ -193,13 +193,13 @@ def app_with_100_components(
 def app_with_1000_components(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
-    """Start Blank Template app at tmp_path via AppHarness.
+    """Create an app with 1000 components at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
-        running AppHarness instance
+        an AppHarness instance
     """
     root = tmp_path_factory.mktemp("app1000components")
 

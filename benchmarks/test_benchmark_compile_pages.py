@@ -1,4 +1,4 @@
-"""Benchmark tests for medium sized apps."""
+"""Benchmark tests for apps with varying page numbers."""
 
 from __future__ import annotations
 
@@ -126,7 +126,7 @@ def render_multiple_pages(app, num: int):
 
 
 def AppWithOnePage():
-    """Test that background tasks work as expected."""
+    """A reflex app with one page."""
     from rxconfig import config  # type: ignore
 
     import reflex as rx
@@ -164,7 +164,7 @@ def AppWithOnePage():
 
 
 def AppWithTenPages():
-    """Test that background tasks work as expected."""
+    """A reflex app with 10 pages."""
     import reflex as rx
 
     app = rx.App(state=rx.State)
@@ -199,13 +199,13 @@ def AppWithTenThousandPages():
 def app_with_one_page(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
-    """Start Blank Template app at tmp_path via AppHarness.
+    """Create an app with 10000 pages at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
-        running AppHarness instance
+        an AppHarness instance
     """
     root = tmp_path_factory.mktemp(f"app1")
 
@@ -216,13 +216,13 @@ def app_with_one_page(
 def app_with_ten_pages(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
-    """Start Blank Template app at tmp_path via AppHarness.
+    """Create an app with 10 pages at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
-        running AppHarness instance
+        an AppHarness instance
     """
     root = tmp_path_factory.mktemp(f"app10")
     yield AppHarness.create(root=root, app_source=functools.partial(AppWithTenPages, render_comp=render_multiple_pages))  # type: ignore
@@ -232,13 +232,13 @@ def app_with_ten_pages(
 def app_with_hundred_pages(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
-    """Start Blank Template app at tmp_path via AppHarness.
+    """Create an app with 100 pages at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
-        running AppHarness instance
+        an AppHarness instance
     """
     root = tmp_path_factory.mktemp(f"app100")
 
@@ -254,13 +254,13 @@ def app_with_hundred_pages(
 def app_with_thousand_pages(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
-    """Start Blank Template app at tmp_path via AppHarness.
+    """Create an app with 1000 pages at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
-        running AppHarness instance
+        an AppHarness instance
     """
     root = tmp_path_factory.mktemp(f"app1000")
 
@@ -276,7 +276,7 @@ def app_with_thousand_pages(
 def app_with_ten_thousand_pages(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
-    """Start Blank Template app at tmp_path via AppHarness.
+    """Create an app with 10000 pages at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
