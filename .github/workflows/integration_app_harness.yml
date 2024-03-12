@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         state_manager: [ "redis", "memory" ]
-        python-version: ["3.11.5", "3.12.0"]
+        python-version: ["3.8.10", "3.11.5", "3.12.0"]
     runs-on: ubuntu-latest
     services:
       # Label used to access the service container
