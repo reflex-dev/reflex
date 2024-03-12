@@ -6,7 +6,7 @@ import inspect
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, List, Union, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
