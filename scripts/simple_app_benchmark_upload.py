@@ -55,6 +55,8 @@ def insert_benchmarking_data(
     performance_data: list[dict],
     commit_sha: str,
     pr_title: str,
+    branch_name: str,
+    event_type: str
 ):
     """Insert the benchmarking data into the database.
 
@@ -65,7 +67,10 @@ def insert_benchmarking_data(
         performance_data: The performance data of reflex web to insert.
         commit_sha: The commit SHA to insert.
         pr_title: The PR title to insert.
+        branch_name: The name of the branch.
+        event_type: Type of github event(push, pull request, etc)
     """
+    print(f"branch name : {branch_name} | event type: {event_type}")
     # Serialize the JSON data
     simple_app_performance_json = json.dumps(performance_data)
 
@@ -120,6 +125,16 @@ def main():
         help="The PR title to insert into the database.",
         required=True,
     )
+    parser.add_argument(
+        "--branch-name",
+        help="The current branch",
+        required=True,
+    )
+    parser.add_argument(
+        "--event-type",
+        help="The github event type",
+        required=True,
+    )
     args = parser.parse_args()
 
     # Get the results of pytest benchmarks
@@ -132,6 +147,8 @@ def main():
         performance_data=cleaned_benchmark_results,
         commit_sha=args.commit_sha,
         pr_title=args.pr_title,
+        branch_name=args.branch_name,
+        event_type=args.event_type
     )
 
 
