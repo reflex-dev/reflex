@@ -812,8 +812,11 @@ class Component(BaseComponent, ABC):
                         event_args.extend(args)
                 yield event_trigger, event_args
 
-    def _get_vars(self) -> list[Var]:
+    def _get_vars(self, include_children: bool = False) -> list[Var]:
         """Walk all Vars used in this component.
+
+        Args:
+            include_children: Whether to include Vars from children.
 
         Returns:
             Each var referenced by the component (props, styles, event handlers).
@@ -860,7 +863,29 @@ class Component(BaseComponent, ABC):
                 var = Var.create_safe(comp_prop)
                 if var._var_data is not None:
                     vars.append(var)
+
+        # Get Vars associated with children.
+        if include_children:
+            for child in self.children:
+                if not isinstance(child, Component):
+                    continue
+                vars.extend(child._get_vars(include_children=include_children))
+
         return vars
+
+    def _has_event_triggers(self) -> bool:
+        """Check if the component or children have any event triggers.
+
+        Returns:
+            True if the component or children have any event triggers.
+        """
+        if self.event_triggers:
+            return True
+        else:
+            for child in self.children:
+                if isinstance(child, Component) and child._has_event_triggers():
+                    return True
+        return False
 
     def _get_custom_code(self) -> str | None:
         """Get custom code for the component.

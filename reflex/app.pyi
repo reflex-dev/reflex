@@ -64,6 +64,11 @@ Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
 def default_overlay_component() -> Component: ...
 
+class OverlayFragment(Fragment):
+    @overload
+    @classmethod
+    def create(cls, *children, **props) -> "OverlayFragment": ...  # type: ignore
+
 class App(Base):
     pages: Dict[str, Component]
     stylesheets: List[str]
@@ -122,6 +127,7 @@ class App(Base):
     def compile(self) -> None: ...
     def compile_(self) -> None: ...
     def modify_state(self, token: str) -> AsyncContextManager[State]: ...
+    def _setup_overlay_component(self) -> None: ...
     def _process_background(
         self, state: State, event: Event
     ) -> asyncio.Task | None: ...

@@ -23,6 +23,7 @@ from typing import (
 
 import sqlalchemy
 from pydantic.fields import ModelField
+from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 
@@ -194,6 +195,13 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                 return List[class_]
             else:
                 return class_
+        if isinstance(attr, AssociationProxyInstance):
+            return List[
+                get_attribute_access_type(
+                    attr.target_class,
+                    attr.remote_attr.key,  # type: ignore[attr-defined]
+                )
+            ]
     elif isinstance(cls, type) and issubclass(cls, Model):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)

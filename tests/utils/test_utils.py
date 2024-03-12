@@ -309,7 +309,7 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
         """
         )
 
-    prerequisites.initialize_gitignore()
+    prerequisites.initialize_gitignore(gitignore_file=gitignore_file)
 
     assert gitignore_file.exists()
     file_content = [
@@ -515,9 +515,9 @@ def test_style_prop_with_event_handler_value(callable):
 
     """
     style = {
-        "color": EventHandler(fn=callable)
-        if type(callable) != EventHandler
-        else callable
+        "color": (
+            EventHandler(fn=callable) if type(callable) != EventHandler else callable
+        )
     }
 
     with pytest.raises(TypeError):

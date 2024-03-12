@@ -12,7 +12,7 @@ from reflex import el
 from reflex.components.component import ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import RadixThemesComponent
+from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
 class DialogRoot(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
@@ -99,7 +99,7 @@ class DialogRoot(RadixThemesComponent):
         """
         ...
 
-class DialogTrigger(RadixThemesComponent):
+class DialogTrigger(RadixThemesTriggerComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -158,23 +158,14 @@ class DialogTrigger(RadixThemesComponent):
         ] = None,
         **props
     ) -> "DialogTrigger":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a new RadixThemesTriggerComponent instance.
 
         Args:
-            *children: Child components.
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: Component properties.
+            children: The children of the component.
+            props: The properties of the component.
 
         Returns:
-            A new component instance.
+            The new RadixThemesTriggerComponent instance.
         """
         ...
 
@@ -491,7 +482,7 @@ class DialogDescription(RadixThemesComponent):
         """
         ...
 
-class DialogClose(RadixThemesComponent):
+class DialogClose(RadixThemesTriggerComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -550,23 +541,14 @@ class DialogClose(RadixThemesComponent):
         ] = None,
         **props
     ) -> "DialogClose":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a new RadixThemesTriggerComponent instance.
 
         Args:
-            *children: Child components.
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: Component properties.
+            children: The children of the component.
+            props: The properties of the component.
 
         Returns:
-            A new component instance.
+            The new RadixThemesTriggerComponent instance.
         """
         ...
 

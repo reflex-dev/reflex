@@ -49,6 +49,9 @@ try:
     )
 
     if TYPE_CHECKING:
+        from selenium.webdriver.common.options import (
+            ArgOptions,  # pyright: ignore [reportMissingImports]
+        )
         from selenium.webdriver.remote.webelement import (  # pyright: ignore [reportMissingImports]
             WebElement,
         )
@@ -222,6 +225,8 @@ class AppHarness:
         with chdir(self.app_path):
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
+            # Clean out any `rx.page` decorators from other tests.
+            reflex.app.DECORATED_PAGES.clear()
             # reset rx.State subclasses
             State.class_subclasses.clear()
             State.class_subclasses.update(INTERNAL_STATES)
@@ -229,7 +234,6 @@ class AppHarness:
             State.get_class_substate.cache_clear()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
-            # self.app_module.app.
             self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
         self.app_instance = self.app_module.app
         if isinstance(self.app_instance._state_manager, StateManagerRedis):
@@ -485,12 +489,13 @@ class AppHarness:
         if self.frontend_url is None:
             raise RuntimeError("Frontend is not running.")
         want_headless = False
-        options = None
+        options: ArgOptions | None = None
         if os.environ.get("APP_HARNESS_HEADLESS"):
             want_headless = True
         if driver_clz is None:
             requested_driver = os.environ.get("APP_HARNESS_DRIVER", "Chrome")
             driver_clz = getattr(webdriver, requested_driver)
+            options = webdriver.ChromeOptions()
         if driver_clz is webdriver.Chrome and want_headless:
             options = webdriver.ChromeOptions()
             options.add_argument("--headless=new")
@@ -500,6 +505,9 @@ class AppHarness:
         elif driver_clz is webdriver.Edge and want_headless:
             options = webdriver.EdgeOptions()
             options.add_argument("headless")
+        if options and (args := os.environ.get("APP_HARNESS_DRIVER_ARGS")):
+            for arg in args.split(","):
+                options.add_argument(arg)
         driver = driver_clz(options=options)  # type: ignore
         driver.get(self.frontend_url)
         self._frontends.append(driver)

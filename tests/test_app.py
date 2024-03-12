@@ -20,6 +20,7 @@ from reflex import AdminDash, constants
 from reflex.app import (
     App,
     ComponentCallable,
+    OverlayFragment,
     default_overlay_component,
     process,
     upload,
@@ -1182,12 +1183,13 @@ def test_overlay_component(
         exp_page_child: The type of the expected child in the page fragment.
     """
     app = App(state=state, overlay_component=overlay_component)
+    app._setup_overlay_component()
     if exp_page_child is None:
         assert app.overlay_component is None
-    elif isinstance(exp_page_child, Fragment):
+    elif isinstance(exp_page_child, OverlayFragment):
         assert app.overlay_component is not None
         generated_component = app._generate_component(app.overlay_component)  # type: ignore
-        assert isinstance(generated_component, Fragment)
+        assert isinstance(generated_component, OverlayFragment)
         assert isinstance(
             generated_component.children[0],
             Cond,  # ConnectionModal is a Cond under the hood
@@ -1200,7 +1202,10 @@ def test_overlay_component(
         )
 
     app.add_page(rx.box("Index"), route="/test")
+    # overlay components are wrapped during compile only
+    app._setup_overlay_component()
     page = app.pages["test"]
+
     if exp_page_child is not None:
         assert len(page.children) == 3
         children_types = (type(child) for child in page.children)
@@ -1314,3 +1319,38 @@ def test_app_wrap_priority(compilable_app):
         ")"
         "}"
     ) in "".join(app_js_lines)
+
+
+def test_app_state_determination():
+    """Test that the stateless status of an app is determined correctly."""
+    a1 = App()
+    assert a1.state is None
+
+    # No state, no router, no event handlers.
+    a1.add_page(rx.box("Index"), route="/")
+    assert a1.state is None
+
+    # Add a page with `on_load` enables state.
+    a1.add_page(rx.box("About"), route="/about", on_load=rx.console_log(""))
+    assert a1.state is not None
+
+    a2 = App()
+    assert a2.state is None
+
+    # Referencing a state Var enables state.
+    a2.add_page(rx.box(rx.text(GenState.value)), route="/")
+    assert a2.state is not None
+
+    a3 = App()
+    assert a3.state is None
+
+    # Referencing router enables state.
+    a3.add_page(rx.box(rx.text(State.router.page.full_path)), route="/")
+    assert a3.state is not None
+
+    a4 = App()
+    assert a4.state is None
+
+    # Referencing an event handler enables state.
+    a4.add_page(rx.box(rx.button("Click", on_click=rx.console_log(""))), route="/")
+    assert a4.state is not None
