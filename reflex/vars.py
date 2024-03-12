@@ -633,7 +633,7 @@ class Var:
             if types.is_generic_alias(self._var_type):
                 index = i if not isinstance(i, Var) else 0
                 type_ = types.get_args(self._var_type)
-                type_ = type_[index % len(type_)]
+                type_ = type_[index % len(type_)] if type_ else Any
             elif types._issubclass(self._var_type, str):
                 type_ = str
 
@@ -1449,7 +1449,7 @@ class Var:
         return self._replace(
             _var_name=f"{self._var_name}.split({other._var_full_name})",
             _var_is_string=False,
-            _var_type=list[str],
+            _var_type=List[str],
             merge_var_data=other._var_data,
         )
 
@@ -1555,7 +1555,7 @@ class Var:
 
         return BaseVar(
             _var_name=f"Array.from(range({v1._var_full_name}, {v2._var_full_name}, {step._var_name}))",
-            _var_type=list[int],
+            _var_type=List[int],
             _var_is_local=False,
             _var_data=VarData.merge(
                 v1._var_data,
