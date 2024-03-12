@@ -75,7 +75,7 @@ class Grid(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Grid":
         """Create the component.
 
@@ -168,7 +168,7 @@ class GridItem(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "GridItem":
         """Create the component.
 
@@ -267,7 +267,7 @@ class ResponsiveGrid(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ResponsiveGrid":
         """Create the component.
 

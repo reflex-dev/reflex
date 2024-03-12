@@ -67,7 +67,7 @@ class Recharts(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Recharts":
         """Create the component.
 
@@ -146,7 +146,7 @@ class RechartsCharts(NoSSRComponent, MemoizationLeaf):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "RechartsCharts":
         """Create a new memoization leaf component.
 

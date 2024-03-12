@@ -133,7 +133,7 @@ class Area(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Area":
         """Create the component.
 
@@ -299,7 +299,7 @@ class Audio(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Audio":
         """Create the component.
 
@@ -474,7 +474,7 @@ class Img(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Img":
         """Create the component.
 
@@ -622,7 +622,7 @@ class Map(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Map":
         """Create the component.
 
@@ -769,7 +769,7 @@ class Track(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Track":
         """Create the component.
 
@@ -935,7 +935,7 @@ class Video(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Video":
         """Create the component.
 
@@ -1082,7 +1082,7 @@ class Embed(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Embed":
         """Create the component.
 
@@ -1240,7 +1240,7 @@ class Iframe(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Iframe":
         """Create the component.
 
@@ -1391,7 +1391,7 @@ class Object(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Object":
         """Create the component.
 
@@ -1531,7 +1531,7 @@ class Picture(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Picture":
         """Create the component.
 
@@ -1666,7 +1666,7 @@ class Portal(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Portal":
         """Create the component.
 
@@ -1812,7 +1812,7 @@ class Source(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Source":
         """Create the component.
 
@@ -1952,7 +1952,7 @@ class Svg(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Svg":
         """Create the component.
 
@@ -2088,7 +2088,7 @@ class Path(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Path":
         """Create the component.
 

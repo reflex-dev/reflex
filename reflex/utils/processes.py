@@ -145,7 +145,9 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     # Add the node bin path to the PATH environment variable.
     env = {
         **os.environ,
-        "PATH": os.pathsep.join([node_bin_path if node_bin_path else "", os.environ["PATH"]]),  # type: ignore
+        "PATH": os.pathsep.join(
+            [node_bin_path if node_bin_path else "", os.environ["PATH"]]
+        ),  # type: ignore
         **kwargs.pop("env", {}),
     }
     kwargs = {

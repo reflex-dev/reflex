@@ -142,7 +142,7 @@ class Button(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Button":
         """Create the component.
 
@@ -245,7 +245,7 @@ class ButtonGroup(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ButtonGroup":
         """Create the component.
 

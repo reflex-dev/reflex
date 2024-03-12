@@ -185,7 +185,7 @@ class Blockquote(el.Blockquote, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Blockquote":
         """Create a new component instance.
 

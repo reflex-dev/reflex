@@ -187,7 +187,7 @@ class CalloutRoot(el.Div, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "CalloutRoot":
         """Create a new component instance.
 
@@ -327,7 +327,7 @@ class CalloutIcon(el.Div, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "CalloutIcon":
         """Create a new component instance.
 
@@ -462,7 +462,7 @@ class CalloutText(el.P, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "CalloutText":
         """Create a new component instance.
 
@@ -672,7 +672,7 @@ class Callout(CalloutRoot):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Callout":
         """Create a callout component.
 
@@ -888,7 +888,7 @@ class CalloutNamespace(ComponentNamespace):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Callout":
         """Create a callout component.
 

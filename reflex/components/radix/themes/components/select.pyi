@@ -88,7 +88,7 @@ class SelectRoot(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "SelectRoot":
         """Create a new component instance.
 
@@ -250,7 +250,7 @@ class SelectTrigger(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "SelectTrigger":
         """Create a new component instance.
 
@@ -429,7 +429,7 @@ class SelectContent(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "SelectContent":
         """Create a new component instance.
 
@@ -516,7 +516,7 @@ class SelectGroup(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "SelectGroup":
         """Create a new component instance.
 
@@ -597,7 +597,7 @@ class SelectItem(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "SelectItem":
         """Create a new component instance.
 
@@ -678,7 +678,7 @@ class SelectLabel(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "SelectLabel":
         """Create a new component instance.
 
@@ -757,7 +757,7 @@ class SelectSeparator(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "SelectSeparator":
         """Create a new component instance.
 
@@ -937,7 +937,7 @@ class HighLevelSelect(SelectRoot):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "HighLevelSelect":
         """Create a select component.
 
@@ -1137,7 +1137,7 @@ class Select(ComponentNamespace):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "HighLevelSelect":
         """Create a select component.
 

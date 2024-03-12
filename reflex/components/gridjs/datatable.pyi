@@ -71,7 +71,7 @@ class Gridjs(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Gridjs":
         """Create the component.
 
@@ -156,7 +156,7 @@ class DataTable(Gridjs):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "DataTable":
         """Create a datatable component.
 

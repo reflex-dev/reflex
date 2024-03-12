@@ -69,7 +69,7 @@ class RawLink(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "RawLink":
         """Create the component.
 
@@ -157,7 +157,7 @@ class ScriptTag(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ScriptTag":
         """Create the component.
 

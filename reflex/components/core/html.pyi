@@ -111,7 +111,7 @@ class Html(Div):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Html":
         """Create a html component.
 

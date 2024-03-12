@@ -101,7 +101,7 @@ class PinInput(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "PinInput":
         """Create a pin input component.
 
@@ -200,7 +200,7 @@ class PinInputField(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "PinInputField":
         """Create the component.
 

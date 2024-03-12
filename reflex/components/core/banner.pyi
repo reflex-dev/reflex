@@ -89,7 +89,7 @@ class WebsocketTargetURL(Bare):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "WebsocketTargetURL":
         """Create a websocket target URL component.
 
@@ -157,7 +157,7 @@ class ConnectionBanner(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ConnectionBanner":
         """Create a connection banner component.
 
@@ -226,7 +226,7 @@ class ConnectionModal(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ConnectionModal":
         """Create a connection banner component.
 
@@ -296,7 +296,7 @@ class WifiOffPulse(Icon):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "WifiOffPulse":
         """Create a wifi_off icon with an animated opacity pulse.
 
@@ -412,7 +412,7 @@ class ConnectionPulser(Div):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ConnectionPulser":
         """Create a connection pulser component.
 

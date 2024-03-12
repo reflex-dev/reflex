@@ -73,7 +73,7 @@ class List(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "List":
         """Create a list component.
 
@@ -153,7 +153,7 @@ class ListItem(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ListItem":
         """Create the component.
 
@@ -236,7 +236,7 @@ class OrderedList(List):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "OrderedList":
         """Create a list component.
 
@@ -320,7 +320,7 @@ class UnorderedList(List):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "UnorderedList":
         """Create a list component.
 

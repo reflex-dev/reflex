@@ -266,7 +266,7 @@ class Text(el.Span, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Text":
         """Create a new component instance.
 
@@ -543,7 +543,7 @@ class Span(Text):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Span":
         """Create a new component instance.
 
@@ -686,7 +686,7 @@ class Em(el.Em, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Em":
         """Create a new component instance.
 
@@ -827,7 +827,7 @@ class Kbd(el.Kbd, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Kbd":
         """Create a new component instance.
 
@@ -964,7 +964,7 @@ class Quote(el.Q, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Quote":
         """Create a new component instance.
 
@@ -1100,7 +1100,7 @@ class Strong(el.Strong, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Strong":
         """Create a new component instance.
 
@@ -1373,7 +1373,7 @@ class TextNamespace(ComponentNamespace):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Text":
         """Create a new component instance.
 

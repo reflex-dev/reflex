@@ -354,11 +354,17 @@ class App(Base):
         for middleware in self.middleware:
             if asyncio.iscoroutinefunction(middleware.postprocess):
                 out = await middleware.postprocess(
-                    app=self, state=state, event=event, update=update  # type: ignore
+                    app=self,
+                    state=state,
+                    event=event,
+                    update=update,  # type: ignore
                 )
             else:
                 out = middleware.postprocess(
-                    app=self, state=state, event=event, update=update  # type: ignore
+                    app=self,
+                    state=state,
+                    event=event,
+                    update=update,  # type: ignore
                 )
             if out is not None:
                 return out  # type: ignore

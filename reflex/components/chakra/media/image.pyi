@@ -89,7 +89,7 @@ class Image(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Image":
         """Create an Image component.
 

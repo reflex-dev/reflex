@@ -90,7 +90,7 @@ class Editable(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Editable":
         """Create the component.
 
@@ -177,7 +177,7 @@ class EditableInput(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "EditableInput":
         """Create the component.
 
@@ -256,7 +256,7 @@ class EditableTextarea(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "EditableTextarea":
         """Create the component.
 
@@ -335,7 +335,7 @@ class EditablePreview(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "EditablePreview":
         """Create the component.
 

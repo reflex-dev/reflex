@@ -109,7 +109,7 @@ class Blockquote(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Blockquote":
         """Create the component.
 
@@ -245,7 +245,7 @@ class Dd(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Dd":
         """Create the component.
 
@@ -380,7 +380,7 @@ class Div(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Div":
         """Create the component.
 
@@ -515,7 +515,7 @@ class Dl(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Dl":
         """Create the component.
 
@@ -650,7 +650,7 @@ class Dt(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Dt":
         """Create the component.
 
@@ -785,7 +785,7 @@ class Figcaption(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Figcaption":
         """Create the component.
 
@@ -923,7 +923,7 @@ class Hr(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Hr":
         """Create the component.
 
@@ -1059,7 +1059,7 @@ class Li(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Li":
         """Create the component.
 
@@ -1195,7 +1195,7 @@ class Menu(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Menu":
         """Create the component.
 
@@ -1338,7 +1338,7 @@ class Ol(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Ol":
         """Create the component.
 
@@ -1476,7 +1476,7 @@ class P(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "P":
         """Create the component.
 
@@ -1611,7 +1611,7 @@ class Pre(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Pre":
         """Create the component.
 
@@ -1746,7 +1746,7 @@ class Ul(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Ul":
         """Create the component.
 
@@ -1885,7 +1885,7 @@ class Ins(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Ins":
         """Create the component.
 
@@ -2026,7 +2026,7 @@ class Del(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Del":
         """Create the component.
 

@@ -74,7 +74,7 @@ class TagLabel(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TagLabel":
         """Create the component.
 
@@ -153,7 +153,7 @@ class TagLeftIcon(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TagLeftIcon":
         """Create the component.
 
@@ -232,7 +232,7 @@ class TagRightIcon(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TagRightIcon":
         """Create the component.
 
@@ -311,7 +311,7 @@ class TagCloseButton(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TagCloseButton":
         """Create the component.
 
@@ -432,7 +432,7 @@ class Tag(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Tag":
         """Creates a Chakra Tag with a label and optionally left_icon, right_icon, and close_button, and returns it.
 

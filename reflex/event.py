@@ -374,7 +374,9 @@ class FileUpload(Base):
                 ]
             elif isinstance(on_upload_progress, Callable):
                 # Call the lambda to get the event chain.
-                events = call_event_fn(on_upload_progress, self.on_upload_progress_args_spec)  # type: ignore
+                events = call_event_fn(
+                    on_upload_progress, self.on_upload_progress_args_spec
+                )  # type: ignore
             else:
                 raise ValueError(f"{on_upload_progress} is not a valid event handler.")
             on_upload_progress_chain = EventChain(

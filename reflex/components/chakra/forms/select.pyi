@@ -93,7 +93,7 @@ class Select(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Select":
         """Create a select component.
 
@@ -186,7 +186,7 @@ class Option(Text):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Option":
         """Create a select option component.
 

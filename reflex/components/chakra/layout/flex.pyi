@@ -77,7 +77,7 @@ class Flex(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Flex":
         """Create the component.
 

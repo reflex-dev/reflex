@@ -72,7 +72,7 @@ class Stat(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Stat":
         """Create a stat component.
 
@@ -152,7 +152,7 @@ class StatLabel(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "StatLabel":
         """Create the component.
 
@@ -231,7 +231,7 @@ class StatNumber(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "StatNumber":
         """Create the component.
 
@@ -310,7 +310,7 @@ class StatHelpText(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "StatHelpText":
         """Create the component.
 
@@ -390,7 +390,7 @@ class StatArrow(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "StatArrow":
         """Create the component.
 
@@ -470,7 +470,7 @@ class StatGroup(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "StatGroup":
         """Create the component.
 

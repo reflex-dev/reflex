@@ -78,7 +78,7 @@ class ColorModeIcon(Cond):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ColorModeIcon":
         """Create an icon component based on color_mode.
 
@@ -209,7 +209,7 @@ class ColorModeSwitch(Switch):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ColorModeSwitch":
         """Create a switch component bound to color_mode.
 
@@ -364,7 +364,7 @@ class ColorModeButton(Button):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ColorModeButton":
         """Create a button component that calls toggle_color_mode on click.
 
@@ -452,7 +452,7 @@ class ColorModeScript(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ColorModeScript":
         """Create the component.
 

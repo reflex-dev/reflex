@@ -77,7 +77,7 @@ class Audio(ReactPlayer):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Audio":
         """Create the component.
 

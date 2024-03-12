@@ -110,7 +110,7 @@ class Popover(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Popover":
         """Create a popover component.
 
@@ -211,7 +211,7 @@ class PopoverContent(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "PopoverContent":
         """Create the component.
 
@@ -290,7 +290,7 @@ class PopoverHeader(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "PopoverHeader":
         """Create the component.
 
@@ -369,7 +369,7 @@ class PopoverFooter(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "PopoverFooter":
         """Create the component.
 
@@ -448,7 +448,7 @@ class PopoverBody(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "PopoverBody":
         """Create the component.
 
@@ -527,7 +527,7 @@ class PopoverArrow(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "PopoverArrow":
         """Create the component.
 
@@ -606,7 +606,7 @@ class PopoverCloseButton(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "PopoverCloseButton":
         """Create the component.
 
@@ -685,7 +685,7 @@ class PopoverAnchor(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "PopoverAnchor":
         """Create the component.
 
@@ -764,7 +764,7 @@ class PopoverTrigger(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "PopoverTrigger":
         """Create the component.
 

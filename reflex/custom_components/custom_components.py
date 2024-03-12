@@ -525,7 +525,6 @@ def _ensure_dist_dir(version_to_publish: str, build: bool):
     if build:
         # Need to check if the files here are for the version to be published.
         if dist_dir.exists():
-
             # Check if the distribution files are for the version to be published.
             needs_rebuild = False
             for suffix in CustomComponents.DISTRIBUTION_FILE_SUFFIXES:

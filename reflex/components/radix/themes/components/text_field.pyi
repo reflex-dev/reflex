@@ -192,7 +192,7 @@ class TextFieldRoot(el.Div, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TextFieldRoot":
         """Create a new component instance.
 
@@ -489,7 +489,7 @@ class TextFieldInput(el.Input, TextFieldRoot):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TextFieldInput":
         """Create an Input component.
 
@@ -680,7 +680,7 @@ class TextFieldSlot(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TextFieldSlot":
         """Create a new component instance.
 
@@ -857,7 +857,7 @@ class Input(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Input":
         """Create an Input component.
 
@@ -1047,7 +1047,7 @@ class TextField(ComponentNamespace):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Input":
         """Create an Input component.
 

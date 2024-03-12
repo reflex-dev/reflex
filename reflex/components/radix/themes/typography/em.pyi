@@ -171,7 +171,7 @@ class Em(el.Em, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Em":
         """Create a new component instance.
 

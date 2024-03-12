@@ -146,7 +146,7 @@ class Button(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Button":
         """Create the component.
 
@@ -292,7 +292,7 @@ class Datalist(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Datalist":
         """Create the component.
 
@@ -392,7 +392,7 @@ class Fieldset(Element):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Fieldset":
         """Create the component.
 
@@ -545,7 +545,7 @@ class Form(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Form":
         """Create a form component.
 
@@ -773,7 +773,7 @@ class Input(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Input":
         """Create the component.
 
@@ -945,7 +945,7 @@ class Label(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Label":
         """Create the component.
 
@@ -1082,7 +1082,7 @@ class Legend(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Legend":
         """Create the component.
 
@@ -1228,7 +1228,7 @@ class Meter(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Meter":
         """Create the component.
 
@@ -1376,7 +1376,7 @@ class Optgroup(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Optgroup":
         """Create the component.
 
@@ -1525,7 +1525,7 @@ class Option(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Option":
         """Create the component.
 
@@ -1669,7 +1669,7 @@ class Output(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Output":
         """Create the component.
 
@@ -1812,7 +1812,7 @@ class Progress(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Progress":
         """Create the component.
 
@@ -1972,7 +1972,7 @@ class Select(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Select":
         """Create the component.
 
@@ -2160,7 +2160,7 @@ class Textarea(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Textarea":
         """Create the component.
 

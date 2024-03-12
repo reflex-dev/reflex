@@ -172,7 +172,7 @@ class Quote(el.Q, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Quote":
         """Create a new component instance.
 

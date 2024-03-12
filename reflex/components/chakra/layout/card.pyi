@@ -74,7 +74,7 @@ class CardHeader(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "CardHeader":
         """Create the component.
 
@@ -153,7 +153,7 @@ class CardBody(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "CardBody":
         """Create the component.
 
@@ -232,7 +232,7 @@ class CardFooter(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "CardFooter":
         """Create the component.
 
@@ -373,7 +373,7 @@ class Card(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Card":
         """Creates a Chakra Card with a body and optionally header and/or footer, and returns it.
         If header, body or footer are not already instances of Chead, Cbody or Cfoot respectively,

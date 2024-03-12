@@ -126,7 +126,7 @@ class Stepper(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Stepper":
         """Create a Stepper component.
 
@@ -208,7 +208,7 @@ class Step(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Step":
         """Create the component.
 
@@ -287,7 +287,7 @@ class StepDescription(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "StepDescription":
         """Create the component.
 
@@ -366,7 +366,7 @@ class StepIcon(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "StepIcon":
         """Create the component.
 
@@ -445,7 +445,7 @@ class StepIndicator(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "StepIndicator":
         """Create the component.
 
@@ -524,7 +524,7 @@ class StepNumber(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "StepNumber":
         """Create the component.
 
@@ -603,7 +603,7 @@ class StepSeparator(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "StepSeparator":
         """Create the component.
 
@@ -685,7 +685,7 @@ class StepStatus(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "StepStatus":
         """Create the component.
 
@@ -765,7 +765,7 @@ class StepTitle(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "StepTitle":
         """Create the component.
 

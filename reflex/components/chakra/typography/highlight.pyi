@@ -71,7 +71,7 @@ class Highlight(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Highlight":
         """Create the component.
 

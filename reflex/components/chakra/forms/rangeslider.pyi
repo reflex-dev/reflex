@@ -95,7 +95,7 @@ class RangeSlider(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "RangeSlider":
         """Create a RangeSlider component.
 
@@ -184,7 +184,7 @@ class RangeSliderTrack(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "RangeSliderTrack":
         """Create the component.
 
@@ -263,7 +263,7 @@ class RangeSliderFilledTrack(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "RangeSliderFilledTrack":
         """Create the component.
 
@@ -344,7 +344,7 @@ class RangeSliderThumb(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "RangeSliderThumb":
         """Create the component.
 

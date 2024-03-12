@@ -158,7 +158,7 @@ class Tabs(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Tabs":
         """Create a tab component.
 
@@ -249,7 +249,7 @@ class Tab(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Tab":
         """Create the component.
 
@@ -332,7 +332,7 @@ class TabList(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TabList":
         """Create the component.
 
@@ -411,7 +411,7 @@ class TabPanels(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TabPanels":
         """Create the component.
 
@@ -490,7 +490,7 @@ class TabPanel(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TabPanel":
         """Create the component.
 
