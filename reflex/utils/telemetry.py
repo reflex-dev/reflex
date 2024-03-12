@@ -10,6 +10,7 @@ import httpx
 import psutil
 
 from reflex import constants
+from reflex.utils import console
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
@@ -73,10 +74,8 @@ def _prepare_event(event: str) -> dict:
     project_hash = get_project_hash(raise_on_fail=True)
 
     if installation_id is None or project_hash is None:
-        print(
-            "Error getting installation_id or project_hash.",
-            installation_id,
-            project_hash,
+        console.debug(
+            f"Could not get installation_id or project_hash: {installation_id}, {project_hash}"
         )
         return {}
 
@@ -122,12 +121,13 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
 
     # Return if telemetry is disabled.
     if not telemetry_enabled:
-        print("disabled")
+        console.warn("Telemetry is disabled.")
         return False
+    else:
+        console.warn("Telemetry is enabled.")
 
     event_data = _prepare_event(event)
     if not event_data:
-        print("no data")
         return False
 
     return _send_event(event_data)
