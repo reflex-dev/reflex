@@ -706,16 +706,25 @@ class App(Base):
         )
         return
 
+    def _apply_decorated_pages(self):
+        """Add @rx.page decorated pages to the app.
+
+        This has to be done in the MainThread for py38 and py39 compatibility, so the
+        decorated pages are added to the app before the app is compiled (in a thread)
+        to workaround REF-2172.
+
+        This can move back into `compile_` when py39 support is dropped.
+        """
+        # Add the @rx.page decorated pages to collect on_load events.
+        for render, kwargs in DECORATED_PAGES:
+            self.add_page(render, **kwargs)
+
     def compile_(self):
         """Compile the app and output it to the pages folder.
 
         Raises:
             RuntimeError: When any page uses state, but no rx.State subclass is defined.
         """
-        # add the pages before the compile check so App know onload methods
-        for render, kwargs in DECORATED_PAGES:
-            self.add_page(render, **kwargs)
-
         # Render a default 404 page if the user didn't supply one
         if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
