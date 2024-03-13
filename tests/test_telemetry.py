@@ -47,6 +47,6 @@ def test_send(mocker, event):
     if telemetry.get_os() == "Windows":
         open.assert_called_with(".web\\reflex.json", "r")
     elif telemetry.get_os() == "Linux":
-        open.assert_called_with("proc/meminfo", "rb", buffering=32768)
+        open.assert_called_with("/proc/meminfo", "rb", buffering=32768)
     else:
         open.assert_called_with(".web/reflex.json", "r")
