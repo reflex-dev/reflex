@@ -181,9 +181,6 @@ class HighLevelSelect(SelectRoot):
     # The radius of the select.
     radius: Var[LiteralRadius]
 
-    # The width of the select.
-    width: Var[str]
-
     # The positioning mode to use. Default is "item-aligned".
     position: Var[Literal["item-aligned", "popper"]]
 
@@ -206,7 +203,7 @@ class HighLevelSelect(SelectRoot):
 
         trigger_props = {
             prop: props.pop(prop)
-            for prop in ["placeholder", "variant", "radius", "width"]
+            for prop in ["placeholder", "variant", "radius"]
             if prop in props
         }
 
