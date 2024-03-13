@@ -1,3 +1,5 @@
+import httpx
+import pytest
 from packaging.version import parse as parse_python_version
 
 from reflex.utils import telemetry
@@ -28,3 +30,23 @@ def test_telemetry():
 def test_disable():
     """Test that disabling telemetry works."""
     assert not telemetry.send("test", telemetry_enabled=False)
+
+
+@pytest.mark.parametrize("event", ["init", "reinit", "run-dev", "run-prod", "export"])
+def test_send(mocker, event):
+    mocker.patch("httpx.post")
+    mocker.patch(
+        "builtins.open",
+        mocker.mock_open(
+            read_data='{"project_hash": "78285505863498957834586115958872998605"}'
+        ),
+    )
+
+    telemetry.send(event, telemetry_enabled=True)
+    httpx.post.assert_called_once()
+    if telemetry.get_os() == "Windows":
+        open.assert_called_with(".web\\reflex.json", "r")
+    elif telemetry.get_os() == "Linux":
+        open.assert_called_with("/proc/meminfo", "rb", buffering=32768)
+    else:
+        open.assert_called_with(".web/reflex.json", "r")

@@ -382,21 +382,12 @@ class Component(BaseComponent, ABC):
 
         arg_spec = triggers.get(event_trigger, lambda: [])
 
-        wrapped = False
         # If the input is a single event handler, wrap it in a list.
         if isinstance(value, (EventHandler, EventSpec)):
-            wrapped = True
             value = [value]
 
         # If the input is a list of event handlers, create an event chain.
         if isinstance(value, List):
-            if not wrapped:
-                console.deprecate(
-                    feature_name="EventChain",
-                    reason="to avoid confusion, only use yield API",
-                    deprecation_version="0.2.8",
-                    removal_version="0.5.0",
-                )
             events: list[EventSpec] = []
             for v in value:
                 if isinstance(v, EventHandler):
@@ -829,8 +820,11 @@ class Component(BaseComponent, ABC):
                         event_args.extend(args)
                 yield event_trigger, event_args
 
-    def _get_vars(self) -> list[Var]:
+    def _get_vars(self, include_children: bool = False) -> list[Var]:
         """Walk all Vars used in this component.
+
+        Args:
+            include_children: Whether to include Vars from children.
 
         Returns:
             Each var referenced by the component (props, styles, event handlers).
@@ -877,7 +871,29 @@ class Component(BaseComponent, ABC):
                 var = Var.create_safe(comp_prop)
                 if var._var_data is not None:
                     vars.append(var)
+
+        # Get Vars associated with children.
+        if include_children:
+            for child in self.children:
+                if not isinstance(child, Component):
+                    continue
+                vars.extend(child._get_vars(include_children=include_children))
+
         return vars
+
+    def _has_event_triggers(self) -> bool:
+        """Check if the component or children have any event triggers.
+
+        Returns:
+            True if the component or children have any event triggers.
+        """
+        if self.event_triggers:
+            return True
+        else:
+            for child in self.children:
+                if isinstance(child, Component) and child._has_event_triggers():
+                    return True
+        return False
 
     def _get_custom_code(self) -> str | None:
         """Get custom code for the component.
@@ -1309,12 +1325,18 @@ class CustomComponent(Component):
 
             # Handle subclasses of Base.
             if types._issubclass(type_, Base):
-                try:
-                    value = BaseVar(
-                        _var_name=value.json(), _var_type=type_, _var_is_local=True
+                base_value = Var.create(value)
+
+                # Track hooks and imports associated with Component instances.
+                if base_value is not None and types._issubclass(type_, Component):
+                    value = base_value._replace(
+                        merge_var_data=VarData(  # type: ignore
+                            imports=value.get_imports(),
+                            hooks=value.get_hooks(),
+                        )
                     )
-                except Exception:
-                    value = Var.create(value)
+                else:
+                    value = base_value
             else:
                 value = Var.create(value, _var_is_string=type(value) is str)
 
@@ -1397,6 +1419,19 @@ class CustomComponent(Component):
                 else type(prop),
             )
             for name, prop in self.props.items()
+        ]
+
+    def _get_vars(self, include_children: bool = False) -> list[Var]:
+        """Walk all Vars used in this component.
+
+        Args:
+            include_children: Whether to include Vars from children.
+
+        Returns:
+            Each var referenced by the component (props, styles, event handlers).
+        """
+        return super()._get_vars(include_children=include_children) + [
+            prop for prop in self.props.values() if isinstance(prop, Var)
         ]
 
     @lru_cache(maxsize=None)  # noqa

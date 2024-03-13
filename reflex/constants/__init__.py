@@ -2,6 +2,7 @@
 
 from .base import (
     COOKIES,
+    ENV_MODE_ENV_VAR,
     IS_WINDOWS,
     LOCAL_STORAGE,
     POLLING_MAX_HTTP_BUFFER_SIZE,

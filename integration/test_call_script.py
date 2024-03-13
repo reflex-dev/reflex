@@ -12,6 +12,8 @@ from reflex.testing import AppHarness
 
 def CallScript():
     """A test app for browser javascript integration."""
+    from typing import Dict, List, Optional, Union
+
     import reflex as rx
 
     inline_scripts = """
@@ -37,7 +39,7 @@ def CallScript():
     external_scripts = inline_scripts.replace("inline", "external")
 
     class CallScriptState(rx.State):
-        results: list[str | dict | list | None] = []
+        results: List[Optional[Union[str, Dict, List]]] = []
         inline_counter: int = 0
         external_counter: int = 0
 

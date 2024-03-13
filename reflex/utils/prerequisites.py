@@ -34,6 +34,8 @@ from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 
+CURRENTLY_INSTALLING_NODE = False
+
 
 def check_latest_package_version(package_name: str):
     """Check if the latest version of the package is installed.
@@ -103,8 +105,11 @@ def get_node_version() -> version.Version | None:
     Returns:
         The version of node.
     """
+    node_path = path_ops.get_node_path()
+    if node_path is None:
+        return None
     try:
-        result = processes.new_process([path_ops.get_node_path(), "-v"], run=True)
+        result = processes.new_process([node_path, "-v"], run=True)
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
         return version.parse(result.stdout)  # type: ignore
     except (FileNotFoundError, TypeError):
@@ -185,16 +190,16 @@ def get_app(reload: bool = False) -> ModuleType:
             "Cannot get the app module because `app_name` is not set in rxconfig! "
             "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
         )
-    module = ".".join([config.app_name, config.app_name])
+    module = config.module
     sys.path.insert(0, os.getcwd())
     app = __import__(module, fromlist=(constants.CompileVars.APP,))
+
     if reload:
-        from reflex.state import State
+        from reflex.state import reload_state_module
 
         # Reset rx.State subclasses to avoid conflict when reloading.
-        for subclass in tuple(State.class_subclasses):
-            if subclass.__module__ == module:
-                State.class_subclasses.remove(subclass)
+        reload_state_module(module=module)
+
         # Reload the app module.
         importlib.reload(app)
 
@@ -211,7 +216,11 @@ def get_compiled_app(reload: bool = False) -> ModuleType:
         The compiled app based on the default config.
     """
     app_module = get_app(reload=reload)
-    getattr(app_module, constants.CompileVars.APP).compile_()
+    app = getattr(app_module, constants.CompileVars.APP)
+    # For py3.8 and py3.9 compatibility when redis is used, we MUST add any decorator pages
+    # before compiling the app in a thread to avoid event loop error (REF-2172).
+    app._apply_decorated_pages()
+    app.compile_()
     return app_module
 
 
@@ -327,20 +336,25 @@ def create_config(app_name: str):
         f.write(templates.RXCONFIG.render(app_name=app_name, config_name=config_name))
 
 
-def initialize_gitignore():
-    """Initialize the template .gitignore file."""
-    # The files to add to the .gitignore file.
-    files = constants.GitIgnore.DEFAULTS
+def initialize_gitignore(
+    gitignore_file: str = constants.GitIgnore.FILE,
+    files_to_ignore: set[str] = constants.GitIgnore.DEFAULTS,
+):
+    """Initialize the template .gitignore file.
 
-    # Subtract current ignored files.
-    if os.path.exists(constants.GitIgnore.FILE):
-        with open(constants.GitIgnore.FILE, "r") as f:
-            files |= set([line.strip() for line in f.readlines()])
+    Args:
+        gitignore_file: The .gitignore file to create.
+        files_to_ignore: The files to add to the .gitignore file.
+    """
+    # Combine with the current ignored files.
+    if os.path.exists(gitignore_file):
+        with open(gitignore_file, "r") as f:
+            files_to_ignore |= set([line.strip() for line in f.readlines()])
 
     # Write files to the .gitignore file.
-    with open(constants.GitIgnore.FILE, "w") as f:
-        console.debug(f"Creating {constants.GitIgnore.FILE}")
-        f.write(f"{(path_ops.join(sorted(files))).lstrip()}")
+    with open(gitignore_file, "w", newline="\n") as f:
+        console.debug(f"Creating {gitignore_file}")
+        f.write(f"{(path_ops.join(sorted(files_to_ignore))).lstrip()}")
 
 
 def initialize_requirements_txt():
@@ -420,19 +434,21 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
     )
 
 
-def get_project_hash() -> int | None:
+def get_project_hash(raise_on_fail: bool = False) -> int | None:
     """Get the project hash from the reflex.json file if the file exists.
+
+    Args:
+        raise_on_fail: Whether to raise an error if the file does not exist.
 
     Returns:
         project_hash: The app hash.
     """
-    if not os.path.exists(constants.Reflex.JSON):
+    if not os.path.exists(constants.Reflex.JSON) and not raise_on_fail:
         return None
     # Open and read the file
     with open(constants.Reflex.JSON, "r") as file:
         data = json.load(file)
-        project_hash = data["project_hash"]
-        return project_hash
+        return data["project_hash"]
 
 
 def initialize_web_directory():
@@ -606,6 +622,11 @@ def install_node():
         console.debug("")
         return
 
+    # Skip installation if check_node_version() checks out
+    if check_node_version():
+        console.debug("Skipping node installation as it is already installed.")
+        return
+
     path_ops.mkdir(constants.Fnm.DIR)
     if not os.path.exists(constants.Fnm.EXE):
         download_and_extract_fnm_zip()
@@ -622,7 +643,6 @@ def install_node():
             ],
         )
     else:  # All other platforms (Linux, MacOS).
-        # TODO we can skip installation if check_node_version() checks out
         # Add execute permissions to fnm executable.
         os.chmod(constants.Fnm.EXE, stat.S_IXUSR)
         # Install node.
@@ -923,8 +943,12 @@ def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # validate dependencies before install
     validate_frontend_dependencies()
+    # Avoid warning about Node installation while we're trying to install it.
+    global CURRENTLY_INSTALLING_NODE
+    CURRENTLY_INSTALLING_NODE = True
     # Install the frontend dependencies.
     processes.run_concurrently(install_node, install_bun)
+    CURRENTLY_INSTALLING_NODE = False
     # Set up the web directory.
     initialize_web_directory()
 

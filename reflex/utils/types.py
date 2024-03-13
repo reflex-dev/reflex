@@ -23,12 +23,33 @@ from typing import (
 
 import sqlalchemy
 from pydantic.fields import ModelField
+from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import serializers
+
+# Potential GenericAlias types for isinstance checks.
+GenericAliasTypes = [_GenericAlias]
+
+with contextlib.suppress(ImportError):
+    # For newer versions of Python.
+    from types import GenericAlias  # type: ignore
+
+    GenericAliasTypes.append(GenericAlias)
+
+with contextlib.suppress(ImportError):
+    # For older versions of Python.
+    from typing import _SpecialGenericAlias  # type: ignore
+
+    GenericAliasTypes.append(_SpecialGenericAlias)
+
+GenericAliasTypes = tuple(GenericAliasTypes)
+
+# Potential Union types for isinstance checks (UnionType added in py3.10).
+UnionTypes = (Union, types.UnionType) if hasattr(types, "UnionType") else (Union,)
 
 # Union of generic types.
 GenericType = Union[Type, _GenericAlias]
@@ -75,22 +96,7 @@ def is_generic_alias(cls: GenericType) -> bool:
     Returns:
         Whether the class is a generic alias.
     """
-    # For older versions of Python.
-    if isinstance(cls, _GenericAlias):
-        return True
-
-    with contextlib.suppress(ImportError):
-        from typing import _SpecialGenericAlias  # type: ignore
-
-        if isinstance(cls, _SpecialGenericAlias):
-            return True
-    # For newer versions of Python.
-    try:
-        from types import GenericAlias  # type: ignore
-
-        return isinstance(cls, GenericAlias)
-    except ImportError:
-        return False
+    return isinstance(cls, GenericAliasTypes)
 
 
 def is_union(cls: GenericType) -> bool:
@@ -102,11 +108,7 @@ def is_union(cls: GenericType) -> bool:
     Returns:
         Whether the class is a Union.
     """
-    # UnionType added in py3.10
-    if not hasattr(types, "UnionType"):
-        return get_origin(cls) is Union
-
-    return get_origin(cls) in [Union, types.UnionType]
+    return get_origin(cls) in UnionTypes
 
 
 def is_literal(cls: GenericType) -> bool:
@@ -193,6 +195,13 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                 return List[class_]
             else:
                 return class_
+        if isinstance(attr, AssociationProxyInstance):
+            return List[
+                get_attribute_access_type(
+                    attr.target_class,
+                    attr.remote_attr.key,  # type: ignore[attr-defined]
+                )
+            ]
     elif isinstance(cls, type) and issubclass(cls, Model):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)

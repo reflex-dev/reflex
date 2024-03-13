@@ -28,3 +28,7 @@ class CustomComponents(SimpleNamespace):
         "pypi": "https://upload.pypi.org/legacy/",
         "testpypi": "https://test.pypi.org/legacy/",
     }
+    # The .gitignore file for the custom component project.
+    FILE = ".gitignore"
+    # Files to gitignore.
+    DEFAULTS = {"__pycache__/", "*.py[cod]", "*.egg-info/", "dist/"}

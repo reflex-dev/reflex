@@ -20,11 +20,14 @@ def index() -> rx.Component:
         rx.theme_panel(),
         rx.vstack(
             rx.heading("Welcome to Reflex!", size="9"),
-            rx.text("Test your custom component by editing ", rx.code(filename)),
+            rx.text(
+                "Test your custom component by editing ", 
+                rx.code(filename),
+                font_size="2em",
+            ),
             {{ module_name }}(),
             align="center",
             spacing="7",
-            font_size="2em",
         ),
         height="100vh",
     )

@@ -8,6 +8,7 @@ from reflex.vars import Var
 
 from ..base import (
     RadixThemesComponent,
+    RadixThemesTriggerComponent,
 )
 
 
@@ -34,7 +35,7 @@ class PopoverRoot(RadixThemesComponent):
         }
 
 
-class PopoverTrigger(RadixThemesComponent):
+class PopoverTrigger(RadixThemesTriggerComponent):
     """Wraps the control that will open the popover."""
 
     tag = "Popover.Trigger"
@@ -80,7 +81,7 @@ class PopoverContent(el.Div, RadixThemesComponent):
         }
 
 
-class PopoverClose(RadixThemesComponent):
+class PopoverClose(RadixThemesTriggerComponent):
     """Wraps the control that will close the popover."""
 
     tag = "Popover.Close"

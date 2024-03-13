@@ -219,6 +219,15 @@ class Config(Base):
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
 
+    @property
+    def module(self) -> str:
+        """Get the module name of the app.
+
+        Returns:
+            The module name.
+        """
+        return ".".join([self.app_name, self.app_name])
+
     @staticmethod
     def check_deprecated_values(**kwargs):
         """Check for deprecated config values.

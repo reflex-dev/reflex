@@ -8,6 +8,7 @@ from reflex.vars import Var
 
 from ..base import (
     RadixThemesComponent,
+    RadixThemesTriggerComponent,
 )
 
 
@@ -40,7 +41,7 @@ class HoverCardRoot(RadixThemesComponent):
         }
 
 
-class HoverCardTrigger(RadixThemesComponent):
+class HoverCardTrigger(RadixThemesTriggerComponent):
     """Wraps the link that will open the hover card."""
 
     tag = "HoverCard.Trigger"

@@ -863,7 +863,12 @@ class HighLevelSelect(SelectRoot):
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        width: Optional[Union[Var[str], str]] = None,
+        position: Optional[
+            Union[
+                Var[Literal["item-aligned", "popper"]],
+                Literal["item-aligned", "popper"],
+            ]
+        ] = None,
         size: Optional[
             Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
@@ -944,7 +949,7 @@ class HighLevelSelect(SelectRoot):
             high_contrast: Whether to render the select with higher contrast color against background.
             variant: The variant of the select.
             radius: The radius of the select.
-            width: The width of the select.
+            position: The positioning mode to use. Default is "item-aligned".
             size: The size of the select: "1" | "2" | "3"
             default_value: The value of the select when initially rendered. Use when you do not need to control the state of the select.
             value: The controlled value of the select. Should be used in conjunction with on_change.
@@ -1056,7 +1061,12 @@ class Select(ComponentNamespace):
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        width: Optional[Union[Var[str], str]] = None,
+        position: Optional[
+            Union[
+                Var[Literal["item-aligned", "popper"]],
+                Literal["item-aligned", "popper"],
+            ]
+        ] = None,
         size: Optional[
             Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
@@ -1137,7 +1147,7 @@ class Select(ComponentNamespace):
             high_contrast: Whether to render the select with higher contrast color against background.
             variant: The variant of the select.
             radius: The radius of the select.
-            width: The width of the select.
+            position: The positioning mode to use. Default is "item-aligned".
             size: The size of the select: "1" | "2" | "3"
             default_value: The value of the select when initially rendered. Use when you do not need to control the state of the select.
             value: The controlled value of the select. Should be used in conjunction with on_change.

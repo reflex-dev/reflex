@@ -1,4 +1,5 @@
 """Ensure that Event Chains are properly queued and handled between frontend and backend."""
+from __future__ import annotations
 
 from typing import Generator
 
@@ -14,6 +15,7 @@ def EventChain():
     """App with chained event handlers."""
     import asyncio
     import time
+    from typing import List
 
     import reflex as rx
 
@@ -21,7 +23,7 @@ def EventChain():
     MANY_EVENTS = 50
 
     class State(rx.State):
-        event_order: list[str] = []
+        event_order: List[str] = []
         interim_value: str = ""
 
         def event_no_args(self):

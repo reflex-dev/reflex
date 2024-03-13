@@ -229,6 +229,13 @@ def _encode_var(value: Var) -> str:
     return str(value)
 
 
+# Compile regex for finding reflex var tags.
+_decode_var_pattern_re = (
+    rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
+)
+_decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
+
+
 def _decode_var(value: str) -> tuple[VarData | None, str]:
     """Decode the state name from a formatted var.
 
@@ -240,6 +247,10 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
     """
     var_datas = []
     if isinstance(value, str):
+        # fast path if there is no encoded VarData
+        if constants.REFLEX_VAR_OPENING_TAG not in value:
+            return None, value
+
         offset = 0
 
         # Initialize some methods for reading json.
@@ -251,12 +262,8 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
             except json.decoder.JSONDecodeError:
                 return var_data_config.json_loads(var_data_config.json_loads(f'"{s}"'))
 
-        # Compile regex for finding reflex var tags.
-        pattern_re = rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
-        pattern = re.compile(pattern_re, flags=re.DOTALL)
-
         # Find all tags.
-        while m := pattern.search(value):
+        while m := _decode_var_pattern.search(value):
             start, end = m.span()
             value = value[:start] + value[end:]
 
@@ -626,7 +633,7 @@ class Var:
             if types.is_generic_alias(self._var_type):
                 index = i if not isinstance(i, Var) else 0
                 type_ = types.get_args(self._var_type)
-                type_ = type_[index % len(type_)]
+                type_ = type_[index % len(type_)] if type_ else Any
             elif types._issubclass(self._var_type, str):
                 type_ = str
 
@@ -1442,7 +1449,7 @@ class Var:
         return self._replace(
             _var_name=f"{self._var_name}.split({other._var_full_name})",
             _var_is_string=False,
-            _var_type=list[str],
+            _var_type=List[str],
             merge_var_data=other._var_data,
         )
 
@@ -1548,7 +1555,7 @@ class Var:
 
         return BaseVar(
             _var_name=f"Array.from(range({v1._var_full_name}, {v2._var_full_name}, {step._var_name}))",
-            _var_type=list[int],
+            _var_type=List[int],
             _var_is_local=False,
             _var_data=VarData.merge(
                 v1._var_data,
