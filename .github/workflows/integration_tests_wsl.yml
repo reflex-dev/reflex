@@ -25,9 +25,6 @@ jobs:
     # Confirmed through trial and error. 2022 has >80% failure rate (probably BSOD)
     runs-on: windows-2019
     steps:
-      - name: Show environment variables
-        run: |
-          env
       - uses: actions/checkout@v4
       - name: Clone Reflex Examples Repo
         uses: actions/checkout@v4
@@ -66,11 +63,12 @@ jobs:
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
-          echo "TELEMETRY_ENABLED=$TELEMETRY_ENABLED"
+          export TELEMETRY_ENABLED=false
           poetry run reflex export --backend-only
       - name: Check run --backend-only before init for counter example
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           dos2unix scripts/integration.sh
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev 8001 --backend-only --backend-port 8001
       - name: Init Website for counter example
