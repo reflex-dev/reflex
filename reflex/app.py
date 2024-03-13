@@ -1146,7 +1146,10 @@ class EventNamespace(AsyncNamespace):
         }
 
         # Get the client IP
-        client_ip = environ["asgi.scope"]["client"][0]
+        try:
+            client_ip = environ["asgi.scope"]["client"][0]
+        except (KeyError, IndexError):
+            client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
 
         # Process the events.
         async for update in process(self.app, event, sid, headers, client_ip):
