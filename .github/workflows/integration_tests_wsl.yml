@@ -25,6 +25,9 @@ jobs:
     # Confirmed through trial and error. 2022 has >80% failure rate (probably BSOD)
     runs-on: windows-2019
     steps:
+      - name: Show environment variables
+        run: |
+          env
       - uses: actions/checkout@v4
       - name: Clone Reflex Examples Repo
         uses: actions/checkout@v4
@@ -59,7 +62,7 @@ jobs:
           poetry run pip install -r requirements.txt
       - name: Check export --backend-only before init for counter example
         env:
-          TELEMETRY_ENABLED: false
+          TELEMETRY_ENABLED: False
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
