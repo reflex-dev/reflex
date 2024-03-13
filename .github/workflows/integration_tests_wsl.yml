@@ -58,6 +58,8 @@ jobs:
         run: |
           poetry run pip install -r requirements.txt
       - name: Check export --backend-only before init for counter example
+        env:
+          TELEMETRY_ENABLED: false
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
