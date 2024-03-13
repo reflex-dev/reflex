@@ -66,6 +66,7 @@ jobs:
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
+          echo "TELEMETRY_ENABLED=$TELEMETRY_ENABLED"
           poetry run reflex export --backend-only
       - name: Check run --backend-only before init for counter example
         shell: wsl-bash {0}
