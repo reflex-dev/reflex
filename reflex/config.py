@@ -254,6 +254,8 @@ class Config(Base):
         for key, field in self.__fields__.items():
             # The env var name is the key in uppercase.
             env_var = os.environ.get(key.upper())
+            if key.upper == "TELEMETRY_ENABLED":
+                console.info("Result of fetching TELEMETRY_ENABLEd", env_var)
 
             # If the env var is set, override the config value.
             if env_var is not None:
