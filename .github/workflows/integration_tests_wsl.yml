@@ -58,8 +58,6 @@ jobs:
         run: |
           poetry run pip install -r requirements.txt
       - name: Check export --backend-only before init for counter example
-        env:
-          TELEMETRY_ENABLED: False
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
@@ -75,13 +73,16 @@ jobs:
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           poetry run reflex init --loglevel debug
       - name: Check export for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           poetry run reflex export --frontend-only --loglevel debug
       - name: Run Website and Check for errors
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev
