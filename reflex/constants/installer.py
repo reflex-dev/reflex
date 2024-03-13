@@ -71,7 +71,7 @@ class Node(SimpleNamespace):
     # The Node version.
     VERSION = "18.17.0"
     # The minimum required node version.
-    MIN_VERSION = "16.8.0"
+    MIN_VERSION = "18.17.0"
 
     # The node bin path.
     BIN_PATH = os.path.join(
