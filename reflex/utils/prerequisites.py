@@ -34,6 +34,8 @@ from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 
+CURRENTLY_INSTALLING_NODE = False
+
 
 def check_latest_package_version(package_name: str):
     """Check if the latest version of the package is installed.
@@ -103,8 +105,11 @@ def get_node_version() -> version.Version | None:
     Returns:
         The version of node.
     """
+    node_path = path_ops.get_node_path()
+    if node_path is None:
+        return None
     try:
-        result = processes.new_process([path_ops.get_node_path(), "-v"], run=True)
+        result = processes.new_process([node_path, "-v"], run=True)
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
         return version.parse(result.stdout)  # type: ignore
     except (FileNotFoundError, TypeError):
@@ -429,19 +434,21 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
     )
 
 
-def get_project_hash() -> int | None:
+def get_project_hash(raise_on_fail: bool = False) -> int | None:
     """Get the project hash from the reflex.json file if the file exists.
+
+    Args:
+        raise_on_fail: Whether to raise an error if the file does not exist.
 
     Returns:
         project_hash: The app hash.
     """
-    if not os.path.exists(constants.Reflex.JSON):
+    if not os.path.exists(constants.Reflex.JSON) and not raise_on_fail:
         return None
     # Open and read the file
     with open(constants.Reflex.JSON, "r") as file:
         data = json.load(file)
-        project_hash = data["project_hash"]
-        return project_hash
+        return data["project_hash"]
 
 
 def initialize_web_directory():
@@ -615,6 +622,11 @@ def install_node():
         console.debug("")
         return
 
+    # Skip installation if check_node_version() checks out
+    if check_node_version():
+        console.debug("Skipping node installation as it is already installed.")
+        return
+
     path_ops.mkdir(constants.Fnm.DIR)
     if not os.path.exists(constants.Fnm.EXE):
         download_and_extract_fnm_zip()
@@ -631,10 +643,6 @@ def install_node():
             ],
         )
     else:  # All other platforms (Linux, MacOS).
-        # TODO we can skip installation if check_node_version() checks out
-        if check_node_version():
-            console.debug("Skipping node installation as it is already installed.")
-            return
         # Add execute permissions to fnm executable.
         os.chmod(constants.Fnm.EXE, stat.S_IXUSR)
         # Install node.
@@ -935,8 +943,12 @@ def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # validate dependencies before install
     validate_frontend_dependencies()
+    # Avoid warning about Node installation while we're trying to install it.
+    global CURRENTLY_INSTALLING_NODE
+    CURRENTLY_INSTALLING_NODE = True
     # Install the frontend dependencies.
     processes.run_concurrently(install_node, install_bun)
+    CURRENTLY_INSTALLING_NODE = False
     # Set up the web directory.
     initialize_web_directory()
 
