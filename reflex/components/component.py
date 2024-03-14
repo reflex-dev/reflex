@@ -1303,12 +1303,18 @@ class CustomComponent(Component):
 
             # Handle subclasses of Base.
             if types._issubclass(type_, Base):
-                try:
-                    value = BaseVar(
-                        _var_name=value.json(), _var_type=type_, _var_is_local=True
+                base_value = Var.create(value)
+
+                # Track hooks and imports associated with Component instances.
+                if base_value is not None and types._issubclass(type_, Component):
+                    value = base_value._replace(
+                        merge_var_data=VarData(  # type: ignore
+                            imports=value.get_imports(),
+                            hooks=value.get_hooks(),
+                        )
                     )
-                except Exception:
-                    value = Var.create(value)
+                else:
+                    value = base_value
             else:
                 value = Var.create(value, _var_is_string=type(value) is str)
 
@@ -1391,6 +1397,19 @@ class CustomComponent(Component):
                 else type(prop),
             )
             for name, prop in self.props.items()
+        ]
+
+    def _get_vars(self, include_children: bool = False) -> list[Var]:
+        """Walk all Vars used in this component.
+
+        Args:
+            include_children: Whether to include Vars from children.
+
+        Returns:
+            Each var referenced by the component (props, styles, event handlers).
+        """
+        return super()._get_vars(include_children=include_children) + [
+            prop for prop in self.props.values() if isinstance(prop, Var)
         ]
 
     @lru_cache(maxsize=None)  # noqa
