@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 from base64 import b64encode
+import json
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -22,6 +23,7 @@ from reflex.base import Base
 from reflex.utils import console, format
 from reflex.utils.types import ArgsSpec
 from reflex.vars import BaseVar, Var
+from reflex.config import get_config
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -651,6 +653,54 @@ def _callback_arg_spec(eval_result):
         Args for the callback function
     """
     return [eval_result]
+
+
+def set_http_only_cookie(
+    key: str,
+    value: str,
+    max_age: int = None,
+    secure: bool = False,
+    same_site: str = None,
+    http_only: bool = True,
+):
+    """Set a httpOnly cookie in frontend.
+
+    Args:
+        key: The name of the cookie on the client side.
+        value: The cookie Value.
+        max_age: Relative max age of the cookie in seconds from when the client receives it.
+        secure: Is the cookie only accessible through HTTPS?
+        same_site: Whether the cookie is sent with third party requests.
+            One of (true|false|none|lax|strict). Default is 'lax'
+        http_only: A cookie with the HttpOnly attribute is inaccessible to the JavaScript Document.cookie API; it's only sent to the server.
+
+    Returns:
+        A rx.call_script with fetch request.
+    """
+    cookie = {
+        "key": key,
+        "value": value,
+        "same_site": same_site,
+        "http_only": http_only,
+        "secure": secure,
+        "max_age": max_age,
+    }
+    jsonCookie = json.dumps(cookie)
+    config = get_config()
+    set_cookie_endpoint = config.api_url + "/_set_cookie"
+
+    return call_script(
+        """
+            fetch(getBackendURL("%s"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: 'include',
+                body: JSON.stringify(%s),
+            })"""
+        % (set_cookie_endpoint, jsonCookie)
+    )
 
 
 def call_script(
