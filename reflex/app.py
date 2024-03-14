@@ -147,9 +147,9 @@ class App(Base):
     html_custom_attrs: Optional[Dict[str, str]] = None
 
     # A component that is present on every page.
-    overlay_component: Optional[Union[Component, ComponentCallable]] = (
-        default_overlay_component
-    )
+    overlay_component: Optional[
+        Union[Component, ComponentCallable]
+    ] = default_overlay_component
 
     # Background tasks that are currently running
     background_tasks: Set[asyncio.Task] = set()
