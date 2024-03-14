@@ -1,4 +1,5 @@
 """Shared conftest for all integration tests."""
+
 import os
 import re
 from pathlib import Path
@@ -20,7 +21,7 @@ def xvfb():
     Yields:
         the pyvirtualdisplay object that the browser will be open on
     """
-    if os.environ.get("GITHUB_ACTIONS"):
+    if os.environ.get("GITHUB_ACTIONS") and not os.environ.get("APP_HARNESS_HEADLESS"):
         from pyvirtualdisplay.smartdisplay import (  # pyright: ignore [reportMissingImports]
             SmartDisplay,
         )
