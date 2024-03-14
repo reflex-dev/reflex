@@ -1265,6 +1265,9 @@ class CustomComponent(Component):
     # The props of the component.
     props: Dict[str, Any] = {}
 
+    # Props that reference other components.
+    component_props: Dict[str, Component] = {}
+
     def __init__(self, *args, **kwargs):
         """Initialize the custom component.
 
@@ -1302,6 +1305,7 @@ class CustomComponent(Component):
 
                 # Track hooks and imports associated with Component instances.
                 if base_value is not None and isinstance(value, Component):
+                    self.component_props[key] = value
                     value = base_value._replace(
                         merge_var_data=VarData(  # type: ignore
                             imports=value.get_imports(),
@@ -1334,6 +1338,25 @@ class CustomComponent(Component):
             The hash of the component.
         """
         return hash(self.tag)
+
+    def _get_imports(self) -> Dict[str, List[ImportVar]]:
+        """Get the imports for the component.
+
+        This is needed because otherwise the imports for the component are not
+        installed during compile time, but they are rendered into the page.
+
+        Returns:
+            The imports for the component and any custom component props.
+        """
+        return imports.merge_imports(
+            super()._get_imports(),
+            # Sweep up any imports from CustomComponent props for frontend installation.
+            {
+                library: [ImportVar(tag=None, render=False, install=True)]
+                for comp in self.get_custom_components()
+                for library in comp.get_component(comp).get_imports()
+            },
+        )
 
     @classmethod
     def get_props(cls) -> Set[str]:
@@ -1368,6 +1391,16 @@ class CustomComponent(Component):
             custom_components |= self.get_component(self).get_custom_components(
                 seen=seen
             )
+
+        # Fetch custom components from props as well.
+        for child_component in self.component_props.values():
+            if child_component.tag is None:
+                continue
+            if child_component.tag not in seen:
+                seen.add(child_component.tag)
+                if isinstance(child_component, CustomComponent):
+                    custom_components |= {child_component}
+                custom_components |= child_component.get_custom_components(seen=seen)
         return custom_components
 
     def _render(self) -> Tag:
