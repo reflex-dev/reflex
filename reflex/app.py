@@ -414,8 +414,8 @@ class App(Base):
         self,
         component: Component | ComponentCallable,
         route: str | None = None,
-        title: str = constants.DefaultPage.TITLE,
-        description: str = constants.DefaultPage.DESCRIPTION,
+        title: str | None = None,
+        description: str | None = None,
         image: str = constants.DefaultPage.IMAGE,
         on_load: (
             EventHandler | EventSpec | list[EventHandler | EventSpec] | None
@@ -474,13 +474,23 @@ class App(Base):
 
         component = OverlayFragment.create(component)
 
+        meta_args = {
+            "title": (
+                title
+                if title is not None
+                else format.make_default_page_title(get_config().app_name, route)
+            ),
+            "image": image,
+            "meta": meta,
+        }
+
+        if description is not None:
+            meta_args["description"] = description
+
         # Add meta information to the component.
         compiler_utils.add_meta(
             component,
-            title=title,
-            image=image,
-            description=description,
-            meta=meta,
+            **meta_args,
         )
 
         # Add script tags if given

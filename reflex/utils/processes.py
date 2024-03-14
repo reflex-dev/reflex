@@ -135,13 +135,20 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
 
     Returns:
         Execute a child program in a new process.
+
+    Raises:
+        Exit: When attempting to run a command with a None value.
     """
     node_bin_path = path_ops.get_node_bin_path()
-    if not node_bin_path:
+    if not node_bin_path and not prerequisites.CURRENTLY_INSTALLING_NODE:
         console.warn(
             "The path to the Node binary could not be found. Please ensure that Node is properly "
-            "installed and added to your system's PATH environment variable."
+            "installed and added to your system's PATH environment variable or try running "
+            "`reflex init` again."
         )
+    if None in args:
+        console.error(f"Invalid command: {args}")
+        raise typer.Exit(1)
     # Add the node bin path to the PATH environment variable.
     env = {
         **os.environ,
