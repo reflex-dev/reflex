@@ -1296,17 +1296,12 @@ class CustomComponent(Component):
                 self.props[format.to_camel_case(key)] = value
                 continue
 
-            # Convert the type to a Var, then get the type of the var.
-            if not types._issubclass(type_, Var):
-                type_ = Var[type_]
-            type_ = types.get_args(type_)[0]
-
             # Handle subclasses of Base.
-            if types._issubclass(type_, Base):
+            if isinstance(value, Base):
                 base_value = Var.create(value)
 
                 # Track hooks and imports associated with Component instances.
-                if base_value is not None and types._issubclass(type_, Component):
+                if base_value is not None and isinstance(value, Component):
                     value = base_value._replace(
                         merge_var_data=VarData(  # type: ignore
                             imports=value.get_imports(),
