@@ -5,6 +5,8 @@ from typing import Iterable, Literal, Optional, Union
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
 from reflex.components.el.elements.typography import Li
+from reflex.components.lucide.icon import Icon
+from reflex.components.radix.themes.typography.text import Text
 from reflex.style import Style
 from reflex.vars import Var
 
@@ -102,6 +104,7 @@ class UnorderedList(BaseList):
 
         Returns:
             The list component.
+
         """
         return super().create(
             *children, items=items, list_style_type=list_style_type, **props
@@ -138,7 +141,24 @@ class OrderedList(BaseList):
 class ListItem(Li):
     """Display an item of an ordered or unordered list."""
 
-    ...
+    @classmethod
+    def create(cls, *children, **props):
+        """Create a list item component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The list item component.
+
+        """
+        for child in children:
+            if isinstance(child, Text):
+                child.as_ = "span"
+            elif isinstance(child, Icon) and "display" not in child.style:
+                child.style["display"] = "inline"
+        return super().create(*children, **props)
 
 
 class List(ComponentNamespace):

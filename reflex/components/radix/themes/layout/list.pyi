@@ -11,6 +11,8 @@ from typing import Iterable, Literal, Optional, Union
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
 from reflex.components.el.elements.typography import Li
+from reflex.components.lucide.icon import Icon
+from reflex.components.radix.themes.typography.text import Text
 from reflex.style import Style
 from reflex.vars import Var
 from .base import LayoutComponent
@@ -581,6 +583,7 @@ class UnorderedList(BaseList):
 
         Returns:
             The list component.
+
         """
         ...
 
@@ -877,8 +880,6 @@ class OrderedList(BaseList):
         ...
 
 class ListItem(Li):
-    ...
-
     @overload
     @classmethod
     def create(  # type: ignore
@@ -977,7 +978,7 @@ class ListItem(Li):
         ] = None,
         **props
     ) -> "ListItem":
-        """Create the component.
+        """Create a list item component.
 
         Args:
             *children: The children of the component.
@@ -1003,13 +1004,11 @@ class ListItem(Li):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the component.
 
         Returns:
-            The component.
+            The list item component.
 
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
