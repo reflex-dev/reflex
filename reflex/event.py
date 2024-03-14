@@ -677,31 +677,34 @@ def set_http_only_cookie(
     Returns:
         A rx.call_script with fetch request to '_set_cookie' api route.
     """
-    config = get_config()
-    set_cookie_endpoint = config.api_url + "/_set_cookie"
-    jsonCookie = json.dumps(
-        {
-            "key": key,
-            "value": value,
-            "same_site": same_site,
-            "http_only": http_only,
-            "secure": secure,
-            "max_age": max_age,
-        }
-    )
+    try:
+        config = get_config()
+        set_cookie_endpoint = config.api_url + "/_set_cookie"
+        jsonCookie = json.dumps(
+            {
+                "key": key,
+                "value": value,
+                "same_site": same_site,
+                "http_only": http_only,
+                "secure": secure,
+                "max_age": max_age,
+            }
+        )
 
-    return call_script(
-        """
-            fetch(getBackendURL("%s"), {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials: 'include',
-                body: JSON.stringify(%s),
-            })"""
-        % (set_cookie_endpoint, jsonCookie)
-    )
+        return call_script(
+            """
+                fetch(getBackendURL("%s"), {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(%s),
+                })"""
+            % (set_cookie_endpoint, jsonCookie)
+        )
+    except Exception as e:
+        raise RuntimeError(f"Invalid data. Error: {repr(e)}")
 
 
 def call_script(

@@ -1070,19 +1070,24 @@ async def set_http_only_cookie(
     Returns:
         The response with set-cookie header.
     """
-    content = {"message": "success"}
-    response = JSONResponse(content=content)
-    response.set_cookie(
-        key=cookie.key,
-        value=cookie.value,
-        max_age=cookie.max_age,
-        secure=cookie.secure,
-        samesite=cookie.same_site,
-        httponly=cookie.http_only,
-        # domain=cookie.domain,
-        # path=cookie.path,
-    )
-    return response
+    try:
+        content = {"message": "success"}
+        response = JSONResponse(content=content)
+        response.set_cookie(
+            key=cookie.key,
+            value=cookie.value,
+            max_age=cookie.max_age,
+            secure=cookie.secure,
+            samesite=cookie.same_site,
+            httponly=cookie.http_only,
+            # domain=cookie.domain,
+            # path=cookie.path,
+        )
+        return response
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Unable to set cookie. Error: {repr(e)}"
+        )
 
 
 def upload(app: App):
