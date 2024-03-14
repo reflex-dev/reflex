@@ -660,7 +660,7 @@ def set_http_only_cookie(
     value: str,
     max_age: int = None,
     secure: bool = False,
-    same_site: str = None,
+    same_site: str = "lax",
     http_only: bool = True,
 ):
     """Set a httpOnly cookie in frontend.
@@ -675,19 +675,20 @@ def set_http_only_cookie(
         http_only: A cookie with the HttpOnly attribute is inaccessible to the JavaScript Document.cookie API; it's only sent to the server.
 
     Returns:
-        A rx.call_script with fetch request.
+        A rx.call_script with fetch request to '_set_cookie' api route.
     """
-    cookie = {
-        "key": key,
-        "value": value,
-        "same_site": same_site,
-        "http_only": http_only,
-        "secure": secure,
-        "max_age": max_age,
-    }
-    jsonCookie = json.dumps(cookie)
     config = get_config()
     set_cookie_endpoint = config.api_url + "/_set_cookie"
+    jsonCookie = json.dumps(
+        {
+            "key": key,
+            "value": value,
+            "same_site": same_site,
+            "http_only": http_only,
+            "secure": secure,
+            "max_age": max_age,
+        }
+    )
 
     return call_script(
         """
