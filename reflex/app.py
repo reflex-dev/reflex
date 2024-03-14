@@ -1043,9 +1043,9 @@ class CookieHttpOnlyBaseModel(BaseModel):
     key: str
     value: str
     http_only: bool = True
-    secure: bool = False
+    secure: bool = True
     max_age: int = None
-    same_site: str = None  # default to 'lax'
+    same_site: str = "strict"
     # domain: str = None # It should always be the default
     # path: str = "/" # It should not be used because self.router.headers.cookie cannot see cookies that are not at default path
 
@@ -1059,9 +1059,7 @@ async def set_http_only_cookie(
     Args:
         key: The name of the cookie on the client side.
         value: The cookie Value.
-        path: Cookie path. Use / as the path if the cookie should be accessible on all pages.
         max_age: Relative max age of the cookie in seconds from when the client receives it.
-        domain: Domain for the cookie (sub.domain.com or .allsubdomains.com).
         secure: Is the cookie only accessible through HTTPS?
         same_site: Whether the cookie is sent with third party requests.
             One of (true|false|none|lax|strict)
@@ -1080,8 +1078,6 @@ async def set_http_only_cookie(
             secure=cookie.secure,
             samesite=cookie.same_site,
             httponly=cookie.http_only,
-            # domain=cookie.domain,
-            # path=cookie.path,
         )
         return response
     except Exception as e:

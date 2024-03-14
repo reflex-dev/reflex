@@ -659,8 +659,8 @@ def set_http_only_cookie(
     key: str,
     value: str,
     max_age: int = None,
-    secure: bool = False,
-    same_site: str = "lax",
+    secure: bool = True,
+    same_site: str = "strict",
     http_only: bool = True,
 ):
     """Set a httpOnly cookie in frontend.
@@ -671,7 +671,7 @@ def set_http_only_cookie(
         max_age: Relative max age of the cookie in seconds from when the client receives it.
         secure: Is the cookie only accessible through HTTPS?
         same_site: Whether the cookie is sent with third party requests.
-            One of (true|false|none|lax|strict). Default is 'lax'
+            One of (true|false|none|lax|strict).
         http_only: A cookie with the HttpOnly attribute is inaccessible to the JavaScript Document.cookie API; it's only sent to the server.
 
     Returns:
