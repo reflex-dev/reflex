@@ -41,12 +41,15 @@ LiteralListStyleTypeOrdered = Literal[
 class BaseList(Flex, LayoutComponent):
     """Base class for ordered and unordered lists."""
 
+    list_style_type: Var[
+        Union[LiteralListStyleTypeUnordered, LiteralListStyleTypeOrdered]
+    ]
+
     @classmethod
     def create(
         cls,
         *children,
         items: Optional[Union[Var[Iterable], Iterable]] = None,
-        list_style_type: str = "",
         **props,
     ):
         """Create a list component.
@@ -54,21 +57,23 @@ class BaseList(Flex, LayoutComponent):
         Args:
             *children: The children of the component.
             items: A list of items to add to the list.
-            list_style_type: The style of the list.
             **props: The properties of the component.
 
         Returns:
             The list component.
+
         """
+        list_style_type = props.pop("list_style_type", "none")
         if not children and items is not None:
             if isinstance(items, Var):
                 children = [Foreach.create(items, ListItem.create)]
             else:
                 children = [ListItem.create(item) for item in items]
-        props["list_style_type"] = list_style_type
+        # props["list_style_type"] = list_style_type
         props["direction"] = "column"
         style = props.setdefault("style", {})
         style["list_style_position"] = "outside"
+        style["list_style_type"] = list_style_type
         if "gap" in props:
             style["gap"] = props["gap"]
         return super().create(*children, **props)
@@ -132,6 +137,7 @@ class OrderedList(BaseList):
 
         Returns:
             The list component.
+
         """
         return super().create(
             *children, items=items, list_style_type=list_style_type, **props

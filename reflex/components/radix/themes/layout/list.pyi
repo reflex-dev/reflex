@@ -43,7 +43,50 @@ class BaseList(Flex, LayoutComponent):
         cls,
         *children,
         items: Optional[Union[Union[Var[Iterable], Iterable], Iterable]] = None,
-        list_style_type: Optional[str] = "",
+        list_style_type: Optional[
+            Union[
+                Var[
+                    Union[
+                        Literal["none", "disc", "circle", "square"],
+                        Literal[
+                            "none",
+                            "decimal",
+                            "decimal-leading-zero",
+                            "lower-roman",
+                            "upper-roman",
+                            "lower-greek",
+                            "lower-latin",
+                            "upper-latin",
+                            "armenian",
+                            "georgian",
+                            "lower-alpha",
+                            "upper-alpha",
+                            "hiragana",
+                            "katakana",
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["none", "disc", "circle", "square"],
+                    Literal[
+                        "none",
+                        "decimal",
+                        "decimal-leading-zero",
+                        "lower-roman",
+                        "upper-roman",
+                        "lower-greek",
+                        "lower-latin",
+                        "upper-latin",
+                        "armenian",
+                        "georgian",
+                        "lower-alpha",
+                        "upper-alpha",
+                        "hiragana",
+                        "katakana",
+                    ],
+                ],
+            ]
+        ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
@@ -259,7 +302,6 @@ class BaseList(Flex, LayoutComponent):
         Args:
             *children: The children of the component.
             items: A list of items to add to the list.
-            list_style_type: The style of the list.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
             align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
@@ -308,6 +350,7 @@ class BaseList(Flex, LayoutComponent):
 
         Returns:
             The list component.
+
         """
         ...
 
@@ -876,6 +919,7 @@ class OrderedList(BaseList):
 
         Returns:
             The list component.
+
         """
         ...
 
