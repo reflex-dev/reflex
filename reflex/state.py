@@ -67,6 +67,7 @@ class HeaderData(Base):
     sec_websocket_extensions: str = ""
     accept_encoding: str = ""
     accept_language: str = ""
+    cookie: str = ""
 
     def __init__(self, router_data: Optional[dict] = None):
         """Initalize the HeaderData object based on router_data.
@@ -1674,10 +1675,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if initial:
             computed_vars = {
                 # Include initial computed vars.
-                prop_name: cv._initial_value
-                if isinstance(cv, ComputedVar)
-                and not isinstance(cv._initial_value, types.Unset)
-                else self.get_value(getattr(self, prop_name))
+                prop_name: (
+                    cv._initial_value
+                    if isinstance(cv, ComputedVar)
+                    and not isinstance(cv._initial_value, types.Unset)
+                    else self.get_value(getattr(self, prop_name))
+                )
                 for prop_name, cv in self.computed_vars.items()
             }
         elif include_computed:
