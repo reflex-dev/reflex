@@ -211,7 +211,9 @@ class AppHarness:
             # get the source from a function or module object
             source_code = "\n".join(
                 [
-                    "\n".join(f"{k} = {v!r}" for k, v in app_globals.items()),
+                    "\n".join(
+                        self.get_app_global_source(k, v) for k, v in app_globals.items()
+                    ),
                     self._get_source_from_app_source(self.app_source),
                 ]
             )
@@ -330,6 +332,24 @@ class AppHarness:
         self._start_frontend()
         self._wait_frontend()
         return self
+
+    @staticmethod
+    def get_app_global_source(key, value):
+        """Get the source code of a global object.
+        If value is a function or class we render the actual
+        source of value otherwise we assign value to key.
+
+        Args:
+            key: variable name to assign value to.
+            value: value of the global variable.
+
+        Returns:
+            The rendered app global code.
+
+        """
+        if not inspect.isclass(value) and not inspect.isfunction(value):
+            return f"{key} = {value!r}"
+        return inspect.getsource(value)
 
     def __enter__(self) -> "AppHarness":
         """Contextmanager protocol for `start()`.

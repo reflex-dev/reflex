@@ -35,7 +35,7 @@ def VarOperations():
     app = rx.App(state=rx.State)
 
     @rx.memo
-    def memo_comp(list1: list[int], int_var1: int, id: str):
+    def memo_comp(list1: List[int], int_var1: int, id: str):
         return rx.text(list1, int_var1, id=id)
 
     @rx.memo
