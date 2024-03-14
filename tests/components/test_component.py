@@ -1269,3 +1269,28 @@ def test_deprecated_props(capsys):
     assert "type={`type1`}" in c2_1_render["props"]
     assert "min={`min1`}" in c2_1_render["props"]
     assert "max={`max1`}" in c2_1_render["props"]
+
+
+def test_custom_component_get_imports():
+    class Inner(Component):
+        tag = "Inner"
+        library = "inner"
+
+    class Other(Component):
+        tag = "Other"
+        library = "other"
+
+    @rx.memo
+    def wrapper():
+        return Inner.create()
+
+    @rx.memo
+    def outer(c: Component):
+        return Other.create(c)
+
+    custom_comp = wrapper()
+    assert "inner" in custom_comp.get_imports()
+
+    outer_comp = outer(c=wrapper())
+    assert "inner" in outer_comp.get_imports()
+    assert "other" in outer_comp.get_imports()
