@@ -16,6 +16,7 @@ import {
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
 const UPLOADURL = env.UPLOAD;
+const SETCOOKIEURL = env.SETCOOKIE;
 
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
@@ -524,8 +525,20 @@ const applyClientStorageDelta = (client_storage, delta) => {
       if (client_storage.cookies && state_key in client_storage.cookies) {
         const cookie_options = { ...client_storage.cookies[state_key] };
         const cookie_name = cookie_options.name || state_key;
+        console.log("cookie options: ", cookie_options);
         delete cookie_options.name; // name is not a valid cookie option
-        cookies.set(cookie_name, delta[substate][key], cookie_options);
+        if(cookie_options.http_only) {
+          fetch(getBackendURL(SETCOOKIEURL), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: 'include',
+            body: JSON.stringify(cookie_options),
+          });
+        } else {
+          cookies.set(cookie_name, delta[substate][key], cookie_options);
+        }
       } else if (
         client_storage.local_storage &&
         state_key in client_storage.local_storage &&
