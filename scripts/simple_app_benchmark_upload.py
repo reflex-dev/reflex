@@ -31,7 +31,7 @@ def extract_stats_from_json(json_file: str) -> list[dict]:
     for test in data.get("benchmarks", []):
         group = test.get("group", None)
         stats = test.get("stats", {})
-        full_name = test.get("full_name")
+        full_name = test.get("fullname")
         test_name = test.get("name", "Unknown Test")
 
         test_stats.append(
