@@ -4,6 +4,7 @@ import pytest
 
 import reflex as rx
 from reflex.base import Base
+from reflex.compiler.compiler import compile_components
 from reflex.components.base.bare import Bare
 from reflex.components.chakra.layout.box import Box
 from reflex.components.component import (
@@ -1269,3 +1270,41 @@ def test_deprecated_props(capsys):
     assert "type={`type1`}" in c2_1_render["props"]
     assert "min={`min1`}" in c2_1_render["props"]
     assert "max={`max1`}" in c2_1_render["props"]
+
+
+def test_custom_component_get_imports():
+    class Inner(Component):
+        tag = "Inner"
+        library = "inner"
+
+    class Other(Component):
+        tag = "Other"
+        library = "other"
+
+    @rx.memo
+    def wrapper():
+        return Inner.create()
+
+    @rx.memo
+    def outer(c: Component):
+        return Other.create(c)
+
+    custom_comp = wrapper()
+
+    # Inner is not imported directly, but it is imported by the custom component.
+    assert "inner" not in custom_comp.get_imports()
+
+    # The imports are only resolved during compilation.
+    _, _, imports_inner = compile_components(custom_comp.get_custom_components())
+    assert "inner" in imports_inner
+
+    outer_comp = outer(c=wrapper())
+
+    # Libraries are not imported directly, but are imported by the custom component.
+    assert "inner" not in outer_comp.get_imports()
+    assert "other" not in outer_comp.get_imports()
+
+    # The imports are only resolved during compilation.
+    _, _, imports_outer = compile_components(outer_comp.get_custom_components())
+    assert "inner" in imports_outer
+    assert "other" in imports_outer
