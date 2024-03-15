@@ -25,6 +25,12 @@ repos:
       - id: darglint
         exclude: '^reflex/reflex.py'
 
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=150', "--enforce-all"]
+
   - repo: local
     hooks:
       - id: update-pyi-files
