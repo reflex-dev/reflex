@@ -41,6 +41,7 @@ LiteralListStyleTypeOrdered = Literal[
 class BaseList(Flex, LayoutComponent):
     """Base class for ordered and unordered lists."""
 
+    # The style of the list. Default to "none".
     list_style_type: Var[
         Union[LiteralListStyleTypeUnordered, LiteralListStyleTypeOrdered]
     ]

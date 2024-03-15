@@ -302,6 +302,7 @@ class BaseList(Flex, LayoutComponent):
         Args:
             *children: The children of the component.
             items: A list of items to add to the list.
+            list_style_type: The style of the list. Default to "none".
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
             align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
