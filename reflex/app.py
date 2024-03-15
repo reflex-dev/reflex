@@ -875,6 +875,7 @@ class App(Base):
 
         with executor:
             result_futures = []
+            custom_components_future = None
 
             def _mark_complete(_=None):
                 progress.advance(task)
@@ -892,7 +893,10 @@ class App(Base):
             _submit_work(ExecutorSafeFunctions.compile_app)
 
             # Compile the custom components.
-            _submit_work(ExecutorSafeFunctions.compile_custom_components)
+            custom_components_future = executor.submit(
+                ExecutorSafeFunctions.compile_custom_components,
+            )
+            custom_components_future.add_done_callback(_mark_complete)
 
             # Compile the root stylesheet with base styles.
             _submit_work(compiler.compile_root_stylesheet, self.stylesheets)
@@ -913,12 +917,11 @@ class App(Base):
             for future in concurrent.futures.as_completed(result_futures):
                 compile_results.append(future.result())
 
-        # Get imports from AppWrap components.
-        all_imports.update(app_root.get_imports())
-
-        # Iterate through all the custom components and add their imports to the all_imports.
-        for component in custom_components:
-            all_imports.update(component.get_imports())
+            # Special case for custom_components, since we need the compiled imports
+            # to install proper frontend packages.
+            *custom_components_result, custom_components_imports = custom_components_future.result()
+            compile_results.append(custom_components_result)
+            all_imports.update(custom_components_imports)
 
         progress.advance(task)
 

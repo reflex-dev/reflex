@@ -186,7 +186,9 @@ def _compile_component(component: Component) -> str:
     return templates.COMPONENT.render(component=component)
 
 
-def _compile_components(components: set[CustomComponent]) -> str:
+def _compile_components(
+    components: set[CustomComponent],
+) -> tuple[str, Dict[str, list[ImportVar]]]:
     """Compile the components.
 
     Args:
@@ -208,9 +210,12 @@ def _compile_components(components: set[CustomComponent]) -> str:
         imports = utils.merge_imports(imports, component_imports)
 
     # Compile the components page.
-    return templates.COMPONENTS.render(
-        imports=utils.compile_imports(imports),
-        components=component_renders,
+    return (
+        templates.COMPONENTS.render(
+            imports=utils.compile_imports(imports),
+            components=component_renders,
+        ),
+        imports,
     )
 
 
@@ -401,7 +406,9 @@ def compile_page(
     return output_path, code
 
 
-def compile_components(components: set[CustomComponent]):
+def compile_components(
+    components: set[CustomComponent],
+) -> tuple[str, str, Dict[str, list[ImportVar]]]:
     """Compile the custom components.
 
     Args:
@@ -414,8 +421,8 @@ def compile_components(components: set[CustomComponent]):
     output_path = utils.get_components_path()
 
     # Compile the components.
-    code = _compile_components(components)
-    return output_path, code
+    code, imports = _compile_components(components)
+    return output_path, code, imports
 
 
 def compile_stateful_components(
