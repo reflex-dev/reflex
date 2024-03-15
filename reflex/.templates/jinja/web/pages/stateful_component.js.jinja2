@@ -1,11 +1,15 @@
 {% import 'web/pages/utils.js.jinja2' as utils %}
 
 export function {{tag_name}} () {
-  {% for hook in component.get_hooks() %}
+  {% for hook in component.get_hooks_internal() %}
   {{ hook }}
   {% endfor %}
 
   {% for hook in memo_trigger_hooks %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook in component.get_hooks() %}
   {{ hook }}
   {% endfor %}
 

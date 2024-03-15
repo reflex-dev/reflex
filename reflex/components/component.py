@@ -75,6 +75,14 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
+    def get_hooks_internal(self) -> set[str]:
+        """Get the reflex internal hooks for the component and its children.
+
+        Returns:
+            The code that should appear just before user-defined hooks.
+        """
+
+    @abstractmethod
     def get_hooks(self) -> set[str]:
         """Get the React hooks for this component.
 
@@ -1141,14 +1149,28 @@ class Component(BaseComponent, ABC):
         """
         return
 
+    def get_hooks_internal(self) -> set[str]:
+        """Get the reflex internal hooks for the component and its children.
+
+        Returns:
+            The code that should appear just before user-defined hooks.
+        """
+        # Store the code in a set to avoid duplicates.
+        code = self._get_hooks_internal()
+
+        # Add the hook code for the children.
+        for child in self.children:
+            code |= child.get_hooks_internal()
+
+        return code
+
     def get_hooks(self) -> Set[str]:
         """Get the React hooks for this component and its children.
 
         Returns:
             The code that should appear just before returning the rendered component.
         """
-        # Store the code in a set to avoid duplicates.
-        code = self._get_hooks_internal()
+        code = set()
 
         # Add the hook code for this component.
         hooks = self._get_hooks()
@@ -1785,6 +1807,14 @@ class StatefulComponent(BaseComponent):
             )
         return trigger_memo
 
+    def get_hooks_internal(self) -> set[str]:
+        """Get the reflex internal hooks for the component and its children.
+
+        Returns:
+            The code that should appear just before user-defined hooks.
+        """
+        return set()
+
     def get_hooks(self) -> set[str]:
         """Get the React hooks for this component.
 
@@ -1893,7 +1923,7 @@ class MemoizationLeaf(Component):
             The memoization leaf
         """
         comp = super().create(*children, **props)
-        if comp.get_hooks():
+        if comp.get_hooks() or comp.get_hooks_internal():
             comp._memoization_mode = cls._memoization_mode.copy(
                 update={"disposition": MemoizationDisposition.ALWAYS}
             )
