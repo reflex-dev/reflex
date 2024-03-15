@@ -824,6 +824,11 @@ def check_initialized(frontend: bool = True):
         console.warn(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
+        if sys.version_info >= (3, 12):
+            console.warn(
+                "Python 3.12 on Windows has known issues with hot reload (reflex-dev/reflex#2335). "
+                "Python 3.11 is recommended with this release of Reflex."
+            )
 
 
 def is_latest_template() -> bool:
