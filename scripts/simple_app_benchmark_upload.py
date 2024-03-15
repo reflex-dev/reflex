@@ -32,7 +32,11 @@ def extract_stats_from_json(json_file: str) -> list[dict]:
         group = test.get("group", None)
         stats = test.get("stats", {})
         full_name = test.get("fullname")
-        file_name = full_name.split("/")[-1].split("::")[0].removesuffix(".py") if full_name else None
+        file_name = (
+            full_name.split("/")[-1].split("::")[0].removesuffix(".py")
+            if full_name
+            else None
+        )
         test_name = test.get("name", "Unknown Test")
 
         test_stats.append(
@@ -41,7 +45,7 @@ def extract_stats_from_json(json_file: str) -> list[dict]:
                 "group": group,
                 "stats": stats,
                 "full_name": full_name,
-                "file_name": file_name
+                "file_name": file_name,
             }
         )
     return test_stats
