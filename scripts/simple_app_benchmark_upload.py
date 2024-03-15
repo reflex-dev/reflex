@@ -29,20 +29,17 @@ def extract_stats_from_json(json_file: str) -> list[dict]:
 
     # Iterate over each test in the 'benchmarks' list
     for test in data.get("benchmarks", []):
+        group = test.get("group", None)
         stats = test.get("stats", {})
+        full_name = test.get("full_name")
         test_name = test.get("name", "Unknown Test")
-        min_value = stats.get("min", None)
-        max_value = stats.get("max", None)
-        mean_value = stats.get("mean", None)
-        stdev_value = stats.get("stddev", None)
 
         test_stats.append(
             {
                 "test_name": test_name,
-                "min": min_value,
-                "max": max_value,
-                "mean": mean_value,
-                "stdev": stdev_value,
+                "group": group,
+                "stats": stats,
+                "full_name": full_name,
             }
         )
     return test_stats
