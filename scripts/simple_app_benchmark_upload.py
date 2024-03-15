@@ -33,9 +33,7 @@ def extract_stats_from_json(json_file: str) -> list[dict]:
         stats = test.get("stats", {})
         full_name = test.get("fullname")
         file_name = (
-            full_name.split("/")[-1].split("::")[0].removesuffix(".py")
-            if full_name
-            else None
+            full_name.split("/")[-1].split("::")[0].strip(".py") if full_name else None
         )
         test_name = test.get("name", "Unknown Test")
 
