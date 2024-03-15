@@ -818,6 +818,7 @@ class App(Base):
             compile_results.append((stateful_components_path, stateful_components_code))
 
             result_futures = []
+            custom_components_future = None
 
             def submit_work(fn, *args, **kwargs):
                 """Submit work to the thread pool and add a callback to mark the task as complete.
@@ -847,7 +848,10 @@ class App(Base):
             submit_work(compiler.compile_app, app_root)
 
             # Compile the custom components.
-            submit_work(compiler.compile_components, custom_components)
+            custom_components_future = thread_pool.submit(
+                compiler.compile_components, custom_components
+            )
+            custom_components_future.add_done_callback(mark_complete)
 
             # Compile the root stylesheet with base styles.
             submit_work(compiler.compile_root_stylesheet, self.stylesheets)
@@ -878,13 +882,14 @@ class App(Base):
             # Get imports from AppWrap components.
             all_imports.update(app_root.get_imports())
 
-            # Iterate through all the custom components and add their imports to the all_imports.
-            for component in custom_components:
-                all_imports.update(component.get_imports())
-
             # Wait for all compilation tasks to complete.
             for future in concurrent.futures.as_completed(result_futures):
                 compile_results.append(future.result())
+
+            # Iterate through all the custom components and add their imports to the all_imports.
+            custom_components_result = custom_components_future.result()
+            compile_results.append(custom_components_result[:2])
+            all_imports.update(custom_components_result[2])
 
             # Empty the .web pages directory.
             compiler.purge_web_pages_dir()
