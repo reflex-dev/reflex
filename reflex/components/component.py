@@ -1352,9 +1352,15 @@ class CustomComponent(Component):
             super()._get_imports(),
             # Sweep up any imports from CustomComponent props for frontend installation.
             {
-                library: [ImportVar(tag=None, render=False, install=True)]
+                library: [
+                    ImportVar(
+                        tag=None,
+                        render=False,
+                        install=not any(not imp.install for imp in imps),
+                    ),
+                ]
                 for comp in self.get_custom_components()
-                for library in comp.get_component(comp).get_imports()
+                for library, imps in comp.get_component(comp).get_imports().items()
             },
         )
 
