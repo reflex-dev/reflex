@@ -1356,7 +1356,7 @@ class CustomComponent(Component):
                     ImportVar(
                         tag=None,
                         render=False,
-                        install=not any(not imp.install for imp in imps),
+                        install=any(imp.install for imp in imps),
                     ),
                 ]
                 for comp in self.get_custom_components()
