@@ -1287,6 +1287,9 @@ class CustomComponent(Component):
     # The props of the component.
     props: Dict[str, Any] = {}
 
+    # Props that reference other components.
+    component_props: Dict[str, Component] = {}
+
     def __init__(self, *args, **kwargs):
         """Initialize the custom component.
 
@@ -1318,17 +1321,13 @@ class CustomComponent(Component):
                 self.props[format.to_camel_case(key)] = value
                 continue
 
-            # Convert the type to a Var, then get the type of the var.
-            if not types._issubclass(type_, Var):
-                type_ = Var[type_]
-            type_ = types.get_args(type_)[0]
-
             # Handle subclasses of Base.
-            if types._issubclass(type_, Base):
+            if isinstance(value, Base):
                 base_value = Var.create(value)
 
                 # Track hooks and imports associated with Component instances.
-                if base_value is not None and types._issubclass(type_, Component):
+                if base_value is not None and isinstance(value, Component):
+                    self.component_props[key] = value
                     value = base_value._replace(
                         merge_var_data=VarData(  # type: ignore
                             imports=value.get_imports(),
@@ -1395,6 +1394,16 @@ class CustomComponent(Component):
             custom_components |= self.get_component(self).get_custom_components(
                 seen=seen
             )
+
+        # Fetch custom components from props as well.
+        for child_component in self.component_props.values():
+            if child_component.tag is None:
+                continue
+            if child_component.tag not in seen:
+                seen.add(child_component.tag)
+                if isinstance(child_component, CustomComponent):
+                    custom_components |= {child_component}
+                custom_components |= child_component.get_custom_components(seen=seen)
         return custom_components
 
     def _render(self) -> Tag:
