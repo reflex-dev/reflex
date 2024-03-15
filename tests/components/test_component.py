@@ -4,6 +4,7 @@ import pytest
 
 import reflex as rx
 from reflex.base import Base
+from reflex.compiler.compiler import compile_components
 from reflex.components.base.bare import Bare
 from reflex.components.chakra.layout.box import Box
 from reflex.components.component import (
@@ -1289,8 +1290,21 @@ def test_custom_component_get_imports():
         return Other.create(c)
 
     custom_comp = wrapper()
-    assert "inner" in custom_comp.get_imports()
+
+    # Inner is not imported directly, but it is imported by the custom component.
+    assert "inner" not in custom_comp.get_imports()
+
+    # The imports are only resolved during compilation.
+    _, _, imports_inner = compile_components(custom_comp.get_custom_components())
+    assert "inner" in imports_inner
 
     outer_comp = outer(c=wrapper())
-    assert "inner" in outer_comp.get_imports()
-    assert "other" in outer_comp.get_imports()
+
+    # Libraries are not imported directly, but are imported by the custom component.
+    assert "inner" not in outer_comp.get_imports()
+    assert "other" not in outer_comp.get_imports()
+
+    # The imports are only resolved during compilation.
+    _, _, imports_outer = compile_components(outer_comp.get_custom_components())
+    assert "inner" in imports_outer
+    assert "other" in imports_outer

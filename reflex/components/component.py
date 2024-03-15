@@ -1339,31 +1339,6 @@ class CustomComponent(Component):
         """
         return hash(self.tag)
 
-    def _get_imports(self) -> Dict[str, List[ImportVar]]:
-        """Get the imports for the component.
-
-        This is needed because otherwise the imports for the component are not
-        installed during compile time, but they are rendered into the page.
-
-        Returns:
-            The imports for the component and any custom component props.
-        """
-        return imports.merge_imports(
-            super()._get_imports(),
-            # Sweep up any imports from CustomComponent props for frontend installation.
-            {
-                library: [
-                    ImportVar(
-                        tag=None,
-                        render=False,
-                        install=any(imp.install for imp in imps),
-                    ),
-                ]
-                for comp in self.get_custom_components()
-                for library, imps in comp.get_component(comp).get_imports().items()
-            },
-        )
-
     @classmethod
     def get_props(cls) -> Set[str]:
         """Get the props for the component.
