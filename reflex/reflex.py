@@ -169,10 +169,10 @@ def _run(
 
     # If something is running on the ports, ask the user if they want to kill or change it.
     if frontend and processes.is_process_on_port(frontend_port):
-        frontend_port = processes.change_or_terminate_port(frontend_port, "frontend")
+        frontend_port = processes.change_port(frontend_port)
 
     if backend and processes.is_process_on_port(backend_port):
-        backend_port = processes.change_or_terminate_port(backend_port, "backend")
+        backend_port = processes.change_port(backend_port)
 
     # Apply the new ports to the config.
     if frontend_port != str(config.frontend_port):
