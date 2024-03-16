@@ -31,7 +31,7 @@ repos:
     rev: v4.5.0
     hooks:
       - id: check-added-large-files
-        args: ['--maxkb=150', "--enforce-all"]
+        args: ['--maxkb=300', "--enforce-all"]
 
   - repo: local
     hooks:
