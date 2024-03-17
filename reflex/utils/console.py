@@ -111,6 +111,7 @@ def deprecate(
     reason: str,
     deprecation_version: str,
     removal_version: str,
+    dedupe: bool = True,
     **kwargs,
 ):
     """Print a deprecation warning.
@@ -119,15 +120,21 @@ def deprecate(
         feature_name: The feature to deprecate.
         reason: The reason for deprecation.
         deprecation_version: The version the feature was deprecated
-        removal_version: The version the deprecated feature will be removed.
+        removal_version: The version the deprecated feature will be removed
+        dedupe: Whether to allow multiple console logs of deprecation message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    msg = (
-        f"{feature_name} has been deprecated in version {deprecation_version} {reason.rstrip('.')}. It will be completely "
-        f"removed in {removal_version}"
-    )
-    if _LOG_LEVEL <= LogLevel.WARNING:
-        print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
+    from reflex.utils import DEPRECATED_FEATURES
+
+    if feature_name not in DEPRECATED_FEATURES:
+        msg = (
+            f"{feature_name} has been deprecated in version {deprecation_version} {reason.rstrip('.')}. It will be completely "
+            f"removed in {removal_version}"
+        )
+        if _LOG_LEVEL <= LogLevel.WARNING:
+            print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
+        if dedupe:
+            DEPRECATED_FEATURES.add(feature_name)
 
 
 def error(msg: str, **kwargs):
