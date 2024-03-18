@@ -119,8 +119,10 @@ jobs:
       - name: Upload benchmark results
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
-        run: poetry run python scripts/simple_app_benchmark_upload.py --os "${{ matrix.os }}"
-          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}" 
-          --benchmark-json "${{ env.OUTPUT_FILE }}" --pr-title "${{ github.event.pull_request.title }}"
+        run: |
+          escaped_pr_title=$(echo ${{ github.event.pull_request.title }} | sed 's/"/\\"/g')
+          poetry run python scripts/simple_app_benchmark_upload.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --benchmark-json "${{ env.OUTPUT_FILE }}" --pr-title "${escaped_pr_title}"
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
           --event-type "${{ github.event_name }}" --actor "${{ github.actor }}"
