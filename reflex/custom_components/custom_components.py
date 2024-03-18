@@ -9,8 +9,9 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
+import httpx
 import typer
 
 from reflex import constants
@@ -20,6 +21,10 @@ from reflex.utils import console
 
 config = get_config()
 custom_components_cli = typer.Typer()
+
+POST_CUSTOM_COMPONENTS_GALLERY_ENDPOINT = (
+    f"{config.cp_backend_url}/custom-components/gallery"
+)
 
 
 @contextmanager
@@ -601,6 +606,10 @@ def publish(
         True,
         help="Whether to build the package before publishing. If the package is already built, set this to False.",
     ),
+    share: bool = typer.Option(
+        True,
+        help="Whether to prompt to share more details on the published package. Only applicable when published to PyPI. Defaults to True.",
+    ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
@@ -613,6 +622,7 @@ def publish(
         username: The username to use for authentication on python package repository.
         password: The password to use for authentication on python package repository.
         build: Whether to build the distribution files. Defaults to True.
+        share: Whether to prompt to share more details on the published package. Defaults to True.
         loglevel: The log level to use.
 
     Raises:
@@ -657,3 +667,148 @@ def publish(
         console.info("Custom component published successfully!")
     else:
         raise typer.Exit(1)
+
+    # Only prompt to share more details on the published package if it is published to PyPI.
+    if repository != "pypi" or not share:
+        return
+
+    # Ask user to share more details on the published package.
+    if (
+        console.ask(
+            "Would you like to include your published component on our gallery?",
+            choices=["n", "y"],
+            default="y",
+        )
+        == "n"
+    ):
+        console.print(
+            "If you decide to do this later, you can run `reflex custom-components share` command. Thank you!"
+        )
+        return
+
+    _collect_details_for_gallery()
+
+
+def _collect_details_for_gallery():
+    """Helper to collect details on the custom component to be included in the gallery.
+
+    Raises:
+        Exit: If pyproject.toml file is ill-formed or the request to the backend services fails.
+    """
+    from reflex.reflex import _login
+
+    console.print(
+        "We will collect the URL of your demo app for this component towards the end."
+    )
+    console.print("If not already deployed, please deploy it separately first.")
+    if console.ask("Continue?", choices=["y", "n"], default="y") != "y":
+        return
+
+    console.print("First let's log in to Reflex backend services.")
+    access_token = _login()
+
+    params = {}
+
+    package_name = None
+    if not os.path.exists(CustomComponents.PYPROJECT_TOML):
+        package_name = console.ask("Published python package name")
+    else:
+        with open(CustomComponents.PYPROJECT_TOML, "r") as f:
+            pyproject_toml = f.read()
+            # Note below does not capture non-matching quotes. Not performing full syntax check here.
+            match = re.search(r'name\s*=\s*["\'](.*?)["\']', pyproject_toml)
+            if match:
+                package_name = match.group(1)
+                console.debug(f"Package name: {package_name}")
+            else:
+                console.error(
+                    f"Could not find the package name in {CustomComponents.PYPROJECT_TOML}"
+                )
+                raise typer.Exit(code=1)
+    params["package_name"] = package_name
+
+    description = None
+    while not description:
+        description = console.ask("Short description (required)")
+    params["description"] = description
+
+    display_name = (
+        console.ask("Friendly display name for your component (enter to skip)") or None
+    )
+    if display_name:
+        params["display_name"] = display_name
+
+    tags_str = console.ask("List of tags separated by comma (enter to skip)")
+    tags = [t.strip() for t in tags_str.split(",") if t] or None
+    if tags:
+        params["tags"] = tags
+
+    files = []
+    if (gif_file := _get_file_from_prompt_in_loop("gif")) is not None:
+        files.append(("files", ("gif", gif_file)))
+    if (image_file := _get_file_from_prompt_in_loop("image")) is not None:
+        files.append(("files", ("image", image_file)))
+
+    source = (
+        console.ask(
+            "Full URL of the source code, e.g. `https://github.com/my-repo` (enter to skip)"
+        )
+        or None
+    )
+    if source:
+        params["source"] = source
+
+    demo_url = (
+        console.ask(
+            "Full URL of deployed demo app, e.g. `https://my-app.reflex.run` (enter to skip)"
+        )
+        or None
+    )
+    if demo_url:
+        params["demo_url"] = demo_url
+
+    # Now send the post request to Reflex backend services.
+    try:
+        response = httpx.post(
+            POST_CUSTOM_COMPONENTS_GALLERY_ENDPOINT,
+            headers={"Authorization": f"Bearer {access_token}"},
+            data=params,
+            files=files,
+        )
+        response.raise_for_status()
+
+    except httpx.HTTPError as he:
+        console.error(f"Unable to complete request due to {he}.")
+        raise typer.Exit(code=1) from he
+
+
+def _get_file_from_prompt_in_loop(file_type: Literal["image", "gif"]):
+    image_file = None
+    while image_file is None:
+        image_filepath = console.ask(
+            f"Local path to a preview {file_type} (enter to skip)"
+        )
+        if not image_filepath:
+            break
+        try:
+            with open(image_filepath, "r") as f:
+                image_file = f.read()
+        except OSError as ose:
+            console.error(f"Unable to read the {file_type} file due to {ose}")
+    return image_file
+
+
+@custom_components_cli.command(name="share")
+def share_more_detail(
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Collect more details on the published package for gallery.
+
+    Args:
+        loglevel: The log level to use.
+    """
+    console.set_log_level(loglevel)
+
+    _collect_details_for_gallery()

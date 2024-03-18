@@ -300,22 +300,14 @@ def export(
     )
 
 
-@cli.command()
-def login(
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
-    ),
-):
-    """Authenticate with Reflex hosting service."""
+def _login() -> str:
+    """Helper function to authenticate with Reflex hosting service."""
     from reflex_cli.utils import hosting
-
-    # Set the log level.
-    console.set_log_level(loglevel)
 
     access_token, invitation_code = hosting.authenticated_token()
     if access_token:
         console.print("You already logged in.")
-        return
+        return access_token
 
     # If not already logged in, open a browser window/tab to the login page.
     access_token = hosting.authenticate_on_browser(invitation_code)
@@ -325,6 +317,20 @@ def login(
         raise typer.Exit(1)
 
     console.print("Successfully logged in.")
+    return access_token
+
+
+@cli.command()
+def login(
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Authenticate with Reflex hosting service."""
+    # Set the log level.
+    console.set_log_level(loglevel)
+
+    _login()
 
 
 @cli.command()
