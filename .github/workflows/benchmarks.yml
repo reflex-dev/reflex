@@ -135,7 +135,7 @@ jobs:
       fail-fast: false
       matrix:
         # Show OS combos first in GUI
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ ubuntu-latest ]
         python-version: [ '3.11.5' ]
 
     runs-on: ${{ matrix.os }}
