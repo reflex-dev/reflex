@@ -160,9 +160,12 @@ jobs:
       needs: reflex-install-size
       runs-on: ${{ matrix.os }}
       steps:
-        - name: Download package size JSON file
-          uses: actions/download-artifact@v2
+        - uses: actions/checkout@v4
+        - uses: ./.github/actions/setup_build_env
           with:
+            python-version: ${{ matrix.python-version }}
+            run-poetry-install: true
+            create-venv-at-path: .venv
             name: package-size
             path: ${{ github.workspace }}
         - name: Print package size from JSON file
