@@ -177,7 +177,7 @@ jobs:
           name: package-size
           path: ${{ github.workspace }}
       - name: Print package size from JSON file
-        run: cat package_size.json
+        run: ls && cat package_size.json
 #      - name: Upload benchmark results
 #        # Only run if the database creds are available in this context.
 #        if: ${{ env.DATABASE_URL }}
