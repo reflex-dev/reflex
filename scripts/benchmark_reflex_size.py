@@ -1,7 +1,11 @@
 import os
 import sys
 import subprocess
+import argparse
 import json
+import datetime
+
+import psycopg2
 
 def get_directory_size(directory):
     total_size = 0
@@ -34,20 +38,115 @@ def get_package_size(venv_path):
     total_size = get_directory_size(package_dir)
     return total_size
 
+def insert_benchmarking_data(
+    db_connection_url: str,
+    os_type_version: str,
+    python_version: str,
+    measurement_type: str,
+    commit_sha: str,
+    pr_title: str,
+    branch_name: str,
+    pr_id: str,
+):
+    """Insert the benchmarking data into the database.
+
+    Args:
+        db_connection_url: The URL to connect to the database.
+        os_type_version: The OS type and version to insert.
+        python_version: The Python version to insert.
+        performance_data: The performance data of reflex web to insert.
+        commit_sha: The commit SHA to insert.
+        pr_title: The PR title to insert.
+        branch_name: The name of the branch.
+        event_type: Type of github event(push, pull request, etc)
+        actor: Username of the user that triggered the run.
+    """
+    # Serialize the JSON data
+
+    if measurement_type == "reflex-package":
+        size = get_package_size("./.venv")
+    else:
+        raise ValueError(f"measurement_type should be of the following values: `reflex-package`")
+
+    # Get the current timestamp
+    current_timestamp = datetime.now()
+
+    # Connect to the database and insert the data
+    with psycopg2.connect(db_connection_url) as conn, conn.cursor() as cursor:
+        insert_query = """
+            INSERT INTO simple_app_benchmarks (os, python_version, commit_sha, created_at, pr_title, branch_name, pr_id, measurement_type, size)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+            """
+        cursor.execute(
+            insert_query,
+            (
+                os_type_version,
+                python_version,
+                commit_sha,
+                current_timestamp,
+                pr_title,
+                branch_name,
+                pr_id,
+                measurement_type,
+                size,
+            ),
+        )
+        # Commit the transaction
+        conn.commit()
+
+def main():
+    """Runs the benchmarks and inserts the results."""
+    # Get the commit SHA and JSON directory from the command line arguments
+    parser = argparse.ArgumentParser(description="Run benchmarks and process results.")
+    parser.add_argument(
+        "--os", help="The OS type and version to insert into the database."
+    )
+    parser.add_argument(
+        "--python-version", help="The Python version to insert into the database."
+    )
+    parser.add_argument(
+        "--commit-sha", help="The commit SHA to insert into the database."
+    )
+    parser.add_argument(
+        "--db-url",
+        help="The URL to connect to the database.",
+        required=True,
+    )
+    parser.add_argument(
+        "--pr-title",
+        help="The PR title to insert into the database.",
+        required=True,
+    )
+    parser.add_argument(
+        "--branch-name",
+        help="The current branch",
+        required=True,
+    )
+    parser.add_argument(
+        "--pr-id",
+        help="The github event type",
+        required=True,
+    )
+    parser.add_argument(
+        "--measurement-type",
+        help="Username of the user that triggered the run.",
+        required=True,
+    )
+    args = parser.parse_args()
+
+    # Get the results of pytest benchmarks
+    # Insert the data into the database
+    insert_benchmarking_data(
+        db_connection_url=args.db_url,
+        os_type_version=args.os,
+        python_version=args.python_version,
+        measurement_type=args.measurement_type,
+        commit_sha=args.commit_sha,
+        pr_title=args.pr_title,
+        branch_name=args.branch_name,
+        pr_id=args.pr_id,
+    )
+
+
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python script.py /path/to/.venv /path/to/output.json")
-        sys.exit(1)
-
-    venv_path = sys.argv[1]
-    output_json_path = sys.argv[2]
-
-    total_package_size = get_package_size(venv_path)
-    if total_package_size is not None:
-        total_package_size_mb = total_package_size / (1024*1024)
-        print(f"Total size of packages in virtual environment: {total_package_size_mb:.2f} MB")
-
-        # Save the result to a JSON file
-        result = {"total_package_size_mb": total_package_size_mb}
-        with open(output_json_path, "w") as json_file:
-            json.dump(result, json_file)
+    main()
