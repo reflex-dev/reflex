@@ -9,7 +9,7 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Optional, Tuple
 
 import httpx
 import typer
@@ -25,6 +25,12 @@ custom_components_cli = typer.Typer()
 POST_CUSTOM_COMPONENTS_GALLERY_ENDPOINT = (
     f"{config.cp_backend_url}/custom-components/gallery"
 )
+
+GET_CUSTOM_COMPONENTS_GALLERY_BY_NAME_ENDPOINT = (
+    f"{config.cp_backend_url}/custom-components/gallery"
+)
+
+POST_CUSTOM_COMPONENTS_GALLERY_TIMEOUT = 15
 
 
 @contextmanager
@@ -704,14 +710,15 @@ def _collect_details_for_gallery():
     if console.ask("Continue?", choices=["y", "n"], default="y") != "y":
         return
 
+    console.rule("[bold]Authentication with Reflex Services")
     console.print("First let's log in to Reflex backend services.")
     access_token = _login()
 
+    console.rule("[bold]Custom Component Information")
     params = {}
-
     package_name = None
     if not os.path.exists(CustomComponents.PYPROJECT_TOML):
-        package_name = console.ask("Published python package name")
+        package_name = console.ask("[ Published python package name ]")
     else:
         with open(CustomComponents.PYPROJECT_TOML, "r") as f:
             pyproject_toml = f.read()
@@ -725,46 +732,85 @@ def _collect_details_for_gallery():
                     f"Could not find the package name in {CustomComponents.PYPROJECT_TOML}"
                 )
                 raise typer.Exit(code=1)
-        console.print(f"Custom component package name: {package_name}")
+        console.print(f"[ Custom component package name ] : {package_name}")
+    # Check the backend services if the user is allowed to update information of this package is already shared.
+    expected_status_code = False
+    try:
+        console.debug(
+            f"Checking if user has permission to modify information for {package_name} if already exists."
+        )
+        response = httpx.get(
+            f"{GET_CUSTOM_COMPONENTS_GALLERY_BY_NAME_ENDPOINT}/{package_name}",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        if response.status_code == httpx.codes.FORBIDDEN:
+            console.error(
+                f"{package_name} is owned by another user. Unable to update the information for it."
+            )
+            raise typer.Exit(code=1)
+        elif response.status_code == httpx.codes.NOT_FOUND:
+            console.debug(f"{package_name} is not found. This is a new share.")
+            expected_status_code = True
+
+        response.raise_for_status()
+        console.debug(f"{package_name} is found. This is an update.")
+    except httpx.HTTPError as he:
+        if not expected_status_code:
+            console.error(f"Unable to complete request due to {he}.")
+            raise typer.Exit(code=1) from he
+
     params["package_name"] = package_name
 
     description = None
     while not description:
-        description = console.ask("Short description (required)")
+        description = console.ask("[ Short description ] (required)")
     params["description"] = description
 
     display_name = (
-        console.ask("Friendly display name for your component (enter to skip)") or None
+        console.ask("[ Friendly display name for your component ] (enter to skip)")
+        or None
     )
     if display_name:
         params["display_name"] = display_name
 
-    tags_str = console.ask("List of tags separated by comma (enter to skip)")
+    tags_str = console.ask("[ List of tags separated by comma ] (enter to skip)")
     tags = [t.strip() for t in tags_str.split(",") if t] or None
     if tags:
         params["tags"] = tags
 
     files = []
-    if (gif_file := _get_file_from_prompt_in_loop("gif")) is not None:
-        files.append(("files", ("gif", gif_file)))
-    if (image_file := _get_file_from_prompt_in_loop("image")) is not None:
-        files.append(("files", ("image", image_file)))
-
-    source = (
-        console.ask(
-            "Full URL of the source code, e.g. `https://github.com/my-repo` (enter to skip)"
+    if (gif_file_and_extension := _get_file_from_prompt_in_loop("gif")) is not None:
+        files.append(("files", ("gif", gif_file_and_extension[0])))
+    if (
+        image_file_and_extension := _get_file_from_prompt_in_loop("image"),
+    ) is not None:
+        files.append(
+            ("files", (image_file_and_extension[1], image_file_and_extension[0]))
         )
-        or None
-    )
+
+    source = None
+    while True:
+        source = (
+            console.ask(
+                "[ Full URL of the source code: `https://github.com/my-repo` ] (enter to skip)"
+            )
+            or None
+        )
+        if _validate_url_with_protocol_prefix(source):
+            break
     if source:
         params["source"] = source
 
-    demo_url = (
-        console.ask(
-            "Full URL of deployed demo app, e.g. `https://my-app.reflex.run` (enter to skip)"
+    demo_url = None
+    while True:
+        demo_url = (
+            console.ask(
+                "[ Full URL of deployed demo app : `https://my-app.reflex.run` ] (enter to skip)"
+            )
+            or None
         )
-        or None
-    )
+        if _validate_url_with_protocol_prefix(demo_url):
+            break
     if demo_url:
         params["demo_url"] = demo_url
 
@@ -776,6 +822,7 @@ def _collect_details_for_gallery():
             headers={"Authorization": f"Bearer {access_token}"},
             data=params,
             files=files,
+            timeout=POST_CUSTOM_COMPONENTS_GALLERY_TIMEOUT,
         )
         response.raise_for_status()
 
@@ -783,21 +830,41 @@ def _collect_details_for_gallery():
         console.error(f"Unable to complete request due to {he}.")
         raise typer.Exit(code=1) from he
 
+    console.info("Custom component information successfully shared!")
 
-def _get_file_from_prompt_in_loop(file_type: Literal["image", "gif"]):
-    image_file = None
+
+def _validate_url_with_protocol_prefix(url: str | None) -> bool:
+    """Validate the URL with protocol prefix. Empty string is acceptable.
+
+    Args:
+        url: the URL string to check.
+
+    Returns:
+        Whether the entered URL is acceptable.
+    """
+    return not url or (url.startswith("http://") or url.startswith("https://"))
+
+
+def _get_file_from_prompt_in_loop(
+    file_type: str,
+) -> Tuple[bytes | None, str | None]:
+    image_file = file_extension = None
     while image_file is None:
         image_filepath = console.ask(
             f"Local path to a preview {file_type} (enter to skip)"
         )
         if not image_filepath:
             break
+        file_extension = image_filepath.split(".")[-1]
         try:
-            with open(image_filepath, "r") as f:
+            with open(image_filepath, "rb") as f:
                 image_file = f.read()
         except OSError as ose:
-            console.error(f"Unable to read the {file_type} file due to {ose}")
-    return image_file
+            console.error(f"Unable to read the {file_extension} file due to {ose}")
+            raise typer.Exit(code=1) from ose
+
+    console.debug(f"File extension detected: {file_extension}")
+    return image_file, file_extension
 
 
 @custom_components_cli.command(name="share")
