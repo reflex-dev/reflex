@@ -725,6 +725,7 @@ def _collect_details_for_gallery():
                     f"Could not find the package name in {CustomComponents.PYPROJECT_TOML}"
                 )
                 raise typer.Exit(code=1)
+        console.print(f"Custom component package name: {package_name}")
     params["package_name"] = package_name
 
     description = None
@@ -769,6 +770,7 @@ def _collect_details_for_gallery():
 
     # Now send the post request to Reflex backend services.
     try:
+        console.debug(f"Sending custom component data: {params}")
         response = httpx.post(
             POST_CUSTOM_COMPONENTS_GALLERY_ENDPOINT,
             headers={"Authorization": f"Bearer {access_token}"},
