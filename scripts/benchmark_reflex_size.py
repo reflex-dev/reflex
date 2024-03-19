@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+import json
 
 def get_directory_size(directory):
     total_size = 0
@@ -34,11 +35,19 @@ def get_package_size(venv_path):
     return total_size
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python script.py /path/to/.venv")
+    if len(sys.argv) != 3:
+        print("Usage: python script.py /path/to/.venv /path/to/output.json")
         sys.exit(1)
 
     venv_path = sys.argv[1]
+    output_json_path = sys.argv[2]
+
     total_package_size = get_package_size(venv_path)
     if total_package_size is not None:
-        print(f"Total size of packages in virtual environment: {total_package_size / (1024*1024):.2f} MB")
+        total_package_size_mb = total_package_size / (1024*1024)
+        print(f"Total size of packages in virtual environment: {total_package_size_mb:.2f} MB")
+
+        # Save the result to a JSON file
+        result = {"total_package_size_mb": total_package_size_mb}
+        with open(output_json_path, "w") as json_file:
+            json.dump(result, json_file)
