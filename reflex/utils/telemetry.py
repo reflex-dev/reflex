@@ -11,6 +11,7 @@ import psutil
 
 from reflex import constants
 from reflex.utils import console
+from reflex.utils.exec import should_skip_compile
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
@@ -64,6 +65,22 @@ def get_memory() -> int:
         return 0
 
 
+def _raise_on_missing_project_hash() -> bool:
+    """Check if an error should be raised when project hash is missing.
+
+    When running reflex with --backend-only, or doing database migration
+    operations, there is no requirement for a .web directory, so the reflex.json
+    file may not exist, and this should not be considered an error.
+
+    Returns:
+        False when compilation should be skipped (i.e. no .web directory is required).
+        Otherwise return True.
+    """
+    if should_skip_compile():
+        return False
+    return True
+
+
 def _prepare_event(event: str) -> dict:
     """Prepare the event to be sent to the PostHog server.
 
@@ -74,7 +91,7 @@ def _prepare_event(event: str) -> dict:
         The event data.
     """
     installation_id = ensure_reflex_installation_id()
-    project_hash = get_project_hash(raise_on_fail=True)
+    project_hash = get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
 
     if installation_id is None or project_hash is None:
         console.debug(
