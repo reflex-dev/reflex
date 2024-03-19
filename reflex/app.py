@@ -77,7 +77,7 @@ from reflex.state import (
     code_uses_state_contexts,
 )
 from reflex.utils import console, exceptions, format, prerequisites, types
-from reflex.utils.exec import is_testing_env
+from reflex.utils.exec import is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
@@ -672,7 +672,7 @@ class App(Base):
             Whether the app should be compiled.
         """
         # Check the environment variable.
-        if os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes":
+        if should_skip_compile():
             return False
 
         # Check the nocompile file.
