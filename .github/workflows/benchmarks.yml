@@ -157,6 +157,7 @@ jobs:
 
   upload-size-benchmarks:
     timeout-minutes: 30
+    needs: reflex-install-size
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
       fail-fast: false
