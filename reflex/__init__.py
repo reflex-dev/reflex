@@ -104,6 +104,7 @@ _ALL_COMPONENTS = [
     "EditorOptions",
     "icon",
     "markdown",
+    "list",
     "list_item",
     "unordered_list",
     "ordered_list",
