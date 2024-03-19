@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Optional, Union
 
@@ -126,7 +127,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
     def create(
         cls,
         items: Var[List[Optional[Union[str, int, float, list, dict, bool]]]],
-        **props
+        **props,
     ) -> Component:
         """Create a radio group component.
 

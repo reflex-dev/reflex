@@ -75,6 +75,14 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
+    def get_hooks_internal(self) -> set[str]:
+        """Get the reflex internal hooks for the component and its children.
+
+        Returns:
+            The code that should appear just before user-defined hooks.
+        """
+
+    @abstractmethod
     def get_hooks(self) -> set[str]:
         """Get the React hooks for this component.
 
@@ -1141,14 +1149,28 @@ class Component(BaseComponent, ABC):
         """
         return
 
+    def get_hooks_internal(self) -> set[str]:
+        """Get the reflex internal hooks for the component and its children.
+
+        Returns:
+            The code that should appear just before user-defined hooks.
+        """
+        # Store the code in a set to avoid duplicates.
+        code = self._get_hooks_internal()
+
+        # Add the hook code for the children.
+        for child in self.children:
+            code |= child.get_hooks_internal()
+
+        return code
+
     def get_hooks(self) -> Set[str]:
         """Get the React hooks for this component and its children.
 
         Returns:
             The code that should appear just before returning the rendered component.
         """
-        # Store the code in a set to avoid duplicates.
-        code = self._get_hooks_internal()
+        code = set()
 
         # Add the hook code for this component.
         hooks = self._get_hooks()
@@ -1265,6 +1287,9 @@ class CustomComponent(Component):
     # The props of the component.
     props: Dict[str, Any] = {}
 
+    # Props that reference other components.
+    component_props: Dict[str, Component] = {}
+
     def __init__(self, *args, **kwargs):
         """Initialize the custom component.
 
@@ -1296,19 +1321,21 @@ class CustomComponent(Component):
                 self.props[format.to_camel_case(key)] = value
                 continue
 
-            # Convert the type to a Var, then get the type of the var.
-            if not types._issubclass(type_, Var):
-                type_ = Var[type_]
-            type_ = types.get_args(type_)[0]
-
             # Handle subclasses of Base.
-            if types._issubclass(type_, Base):
-                try:
-                    value = BaseVar(
-                        _var_name=value.json(), _var_type=type_, _var_is_local=True
+            if isinstance(value, Base):
+                base_value = Var.create(value)
+
+                # Track hooks and imports associated with Component instances.
+                if base_value is not None and isinstance(value, Component):
+                    self.component_props[key] = value
+                    value = base_value._replace(
+                        merge_var_data=VarData(  # type: ignore
+                            imports=value.get_imports(),
+                            hooks=value.get_hooks(),
+                        )
                     )
-                except Exception:
-                    value = Var.create(value)
+                else:
+                    value = base_value
             else:
                 value = Var.create(value, _var_is_string=type(value) is str)
 
@@ -1367,6 +1394,16 @@ class CustomComponent(Component):
             custom_components |= self.get_component(self).get_custom_components(
                 seen=seen
             )
+
+        # Fetch custom components from props as well.
+        for child_component in self.component_props.values():
+            if child_component.tag is None:
+                continue
+            if child_component.tag not in seen:
+                seen.add(child_component.tag)
+                if isinstance(child_component, CustomComponent):
+                    custom_components |= {child_component}
+                custom_components |= child_component.get_custom_components(seen=seen)
         return custom_components
 
     def _render(self) -> Tag:
@@ -1391,6 +1428,19 @@ class CustomComponent(Component):
                 else type(prop),
             )
             for name, prop in self.props.items()
+        ]
+
+    def _get_vars(self, include_children: bool = False) -> list[Var]:
+        """Walk all Vars used in this component.
+
+        Args:
+            include_children: Whether to include Vars from children.
+
+        Returns:
+            Each var referenced by the component (props, styles, event handlers).
+        """
+        return super()._get_vars(include_children=include_children) + [
+            prop for prop in self.props.values() if isinstance(prop, Var)
         ]
 
     @lru_cache(maxsize=None)  # noqa
@@ -1757,6 +1807,14 @@ class StatefulComponent(BaseComponent):
             )
         return trigger_memo
 
+    def get_hooks_internal(self) -> set[str]:
+        """Get the reflex internal hooks for the component and its children.
+
+        Returns:
+            The code that should appear just before user-defined hooks.
+        """
+        return set()
+
     def get_hooks(self) -> set[str]:
         """Get the React hooks for this component.
 
@@ -1865,7 +1923,7 @@ class MemoizationLeaf(Component):
             The memoization leaf
         """
         comp = super().create(*children, **props)
-        if comp.get_hooks():
+        if comp.get_hooks() or comp.get_hooks_internal():
             comp._memoization_mode = cls._memoization_mode.copy(
                 update={"disposition": MemoizationDisposition.ALWAYS}
             )

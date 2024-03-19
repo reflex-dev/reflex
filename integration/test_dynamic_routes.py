@@ -1,4 +1,6 @@
 """Integration tests for dynamic route page behavior."""
+from __future__ import annotations
+
 from typing import Callable, Coroutine, Generator, Type
 from urllib.parse import urlsplit
 
@@ -12,10 +14,12 @@ from .utils import poll_for_navigation
 
 def DynamicRoute():
     """App for testing dynamic routes."""
+    from typing import List
+
     import reflex as rx
 
     class DynamicState(rx.State):
-        order: list[str] = []
+        order: List[str] = []
         page_id: str = ""
 
         def on_load(self):

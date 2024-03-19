@@ -291,8 +291,10 @@ class Markdown(Component):
 
     def _get_custom_code(self) -> str | None:
         hooks = set()
-        for component in self.component_map.values():
-            hooks |= component(_MOCK_ARG).get_hooks()
+        for _component in self.component_map.values():
+            comp = _component(_MOCK_ARG)
+            hooks |= comp.get_hooks_internal()
+            hooks |= comp.get_hooks()
         formatted_hooks = "\n".join(hooks)
         return f"""
         function {self._get_component_map_name()} () {{

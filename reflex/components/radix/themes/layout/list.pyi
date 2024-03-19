@@ -11,6 +11,8 @@ from typing import Iterable, Literal, Optional, Union
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
 from reflex.components.el.elements.typography import Li
+from reflex.components.lucide.icon import Icon
+from reflex.components.radix.themes.typography.text import Text
 from reflex.style import Style
 from reflex.vars import Var
 from .base import LayoutComponent
@@ -41,7 +43,50 @@ class BaseList(Flex, LayoutComponent):
         cls,
         *children,
         items: Optional[Union[Union[Var[Iterable], Iterable], Iterable]] = None,
-        list_style_type: Optional[str] = "",
+        list_style_type: Optional[
+            Union[
+                Var[
+                    Union[
+                        Literal["none", "disc", "circle", "square"],
+                        Literal[
+                            "none",
+                            "decimal",
+                            "decimal-leading-zero",
+                            "lower-roman",
+                            "upper-roman",
+                            "lower-greek",
+                            "lower-latin",
+                            "upper-latin",
+                            "armenian",
+                            "georgian",
+                            "lower-alpha",
+                            "upper-alpha",
+                            "hiragana",
+                            "katakana",
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["none", "disc", "circle", "square"],
+                    Literal[
+                        "none",
+                        "decimal",
+                        "decimal-leading-zero",
+                        "lower-roman",
+                        "upper-roman",
+                        "lower-greek",
+                        "lower-latin",
+                        "upper-latin",
+                        "armenian",
+                        "georgian",
+                        "lower-alpha",
+                        "upper-alpha",
+                        "hiragana",
+                        "katakana",
+                    ],
+                ],
+            ]
+        ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
@@ -257,7 +302,7 @@ class BaseList(Flex, LayoutComponent):
         Args:
             *children: The children of the component.
             items: A list of items to add to the list.
-            list_style_type: The style of the list.
+            list_style_type: The style of the list. Default to "none".
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
             align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
@@ -306,6 +351,7 @@ class BaseList(Flex, LayoutComponent):
 
         Returns:
             The list component.
+
         """
         ...
 
@@ -581,6 +627,7 @@ class UnorderedList(BaseList):
 
         Returns:
             The list component.
+
         """
         ...
 
@@ -873,12 +920,11 @@ class OrderedList(BaseList):
 
         Returns:
             The list component.
+
         """
         ...
 
 class ListItem(Li):
-    ...
-
     @overload
     @classmethod
     def create(  # type: ignore
@@ -977,7 +1023,7 @@ class ListItem(Li):
         ] = None,
         **props
     ) -> "ListItem":
-        """Create the component.
+        """Create a list item component.
 
         Args:
             *children: The children of the component.
@@ -1003,13 +1049,11 @@ class ListItem(Li):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the component.
 
         Returns:
-            The component.
+            The list item component.
 
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 

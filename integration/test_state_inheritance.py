@@ -1,4 +1,5 @@
 """Test state inheritance."""
+from __future__ import annotations
 
 from contextlib import suppress
 from typing import Generator
