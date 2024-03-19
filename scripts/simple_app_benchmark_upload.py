@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from datetime import datetime
 
 import psycopg2
@@ -103,7 +104,11 @@ def insert_benchmarking_data(
 
 
 def main():
-    """Runs the benchmarks and inserts the results."""
+    """Runs the benchmarks and inserts the results.
+
+    Raises:
+        ValueError: If the PR title is not provided.
+    """
     # Get the commit SHA and JSON directory from the command line arguments
     parser = argparse.ArgumentParser(description="Run benchmarks and process results.")
     parser.add_argument(
@@ -127,7 +132,6 @@ def main():
     parser.add_argument(
         "--pr-title",
         help="The PR title to insert into the database.",
-        required=True,
     )
     parser.add_argument(
         "--branch-name",
@@ -146,6 +150,10 @@ def main():
     )
     args = parser.parse_args()
 
+    pr_title = args.pr_title or os.getenv("PR_TITLE")
+    if not pr_title:
+        raise ValueError("PR title is required")
+
     # Get the results of pytest benchmarks
     cleaned_benchmark_results = extract_stats_from_json(args.benchmark_json)
     # Insert the data into the database
@@ -155,7 +163,7 @@ def main():
         python_version=args.python_version,
         performance_data=cleaned_benchmark_results,
         commit_sha=args.commit_sha,
-        pr_title=args.pr_title,
+        pr_title=pr_title,
         branch_name=args.branch_name,
         event_type=args.event_type,
         actor=args.actor,
