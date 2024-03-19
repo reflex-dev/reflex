@@ -3,7 +3,7 @@ import sys
 import subprocess
 import argparse
 import json
-import datetime
+from datetime import datetime
 
 import psycopg2
 
