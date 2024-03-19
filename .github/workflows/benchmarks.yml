@@ -127,3 +127,33 @@ jobs:
           --benchmark-json "${{ env.OUTPUT_FILE }}"
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
           --event-type "${{ github.event_name }}" --actor "${{ github.actor }}" --pr-id "${{ github.event.pull_request.id }}"
+
+  reflex-install-size:
+    timeout-minutes: 30
+    strategy:
+      # Prioritize getting more information out of the workflow (even if something fails)
+      fail-fast: false
+      matrix:
+        # Show OS combos first in GUI
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        python-version: [ '3.11.5' ]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-poetry-install: true
+          create-venv-at-path: .venv
+      - name: Check and upload reflex install size.
+        run: |
+          poetry run python scripts/benchmark_reflex_size.py ./.venv
+#      - name: Upload benchmark results
+#        # Only run if the database creds are available in this context.
+#        if: ${{ env.DATABASE_URL }}
+#        run: poetry run python scripts/simple_app_benchmark_upload.py --os "${{ matrix.os }}"
+#          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+#          --benchmark-json "${{ env.OUTPUT_FILE }}" --pr-title "${{ github.event.pull_request.title }}"
+#          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+#          --event-type "${{ github.event_name }}" --actor "${{ github.actor }}"
