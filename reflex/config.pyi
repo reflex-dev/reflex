@@ -97,7 +97,7 @@ class Config(Base):
         cp_web_url: Optional[str] = None,
         username: Optional[str] = None,
         gunicorn_worker_class: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> None: ...
     @property
     def module(self) -> str: ...

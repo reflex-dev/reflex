@@ -1082,7 +1082,7 @@ class CodeBlock(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "CodeBlock":
         """Create a text component.
 

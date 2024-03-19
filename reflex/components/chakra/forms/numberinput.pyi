@@ -104,7 +104,7 @@ class NumberInput(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "NumberInput":
         """Create a number input component.
 
@@ -200,7 +200,7 @@ class NumberInputField(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "NumberInputField":
         """Create the component.
 
@@ -279,7 +279,7 @@ class NumberInputStepper(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "NumberInputStepper":
         """Create the component.
 
@@ -358,7 +358,7 @@ class NumberIncrementStepper(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "NumberIncrementStepper":
         """Create the component.
 
@@ -437,7 +437,7 @@ class NumberDecrementStepper(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "NumberDecrementStepper":
         """Create the component.
 

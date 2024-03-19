@@ -130,7 +130,7 @@ class Stack(Flex):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Stack":
         """Create a new instance of the component.
 
@@ -289,7 +289,7 @@ class VStack(Stack):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "VStack":
         """Create a new instance of the component.
 
@@ -448,7 +448,7 @@ class HStack(Stack):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "HStack":
         """Create a new instance of the component.
 

@@ -77,7 +77,7 @@ class Video(ReactPlayer):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Video":
         """Create the component.
 

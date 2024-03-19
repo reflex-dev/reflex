@@ -142,7 +142,7 @@ class AlertDialogRoot(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AlertDialogRoot":
         """Create a new component instance.
 
@@ -289,7 +289,7 @@ class AlertDialogTrigger(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AlertDialogTrigger":
         """Create a new component instance.
 
@@ -489,7 +489,7 @@ class AlertDialogContent(el.Div, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AlertDialogContent":
         """Create a new component instance.
 
@@ -653,7 +653,7 @@ class AlertDialogTitle(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AlertDialogTitle":
         """Create a new component instance.
 
@@ -799,7 +799,7 @@ class AlertDialogDescription(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AlertDialogDescription":
         """Create a new component instance.
 
@@ -945,7 +945,7 @@ class AlertDialogAction(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AlertDialogAction":
         """Create a new component instance.
 
@@ -1091,7 +1091,7 @@ class AlertDialogCancel(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AlertDialogCancel":
         """Create a new component instance.
 

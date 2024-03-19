@@ -330,7 +330,7 @@ def format_cond(
     cond = f"isTrue({cond})"
 
     def create_var(cond_part):
-        return Var.create_safe(cond_part, _var_is_string=type(cond_part) is str)
+        return Var.create_safe(cond_part, _var_is_string=isinstance(cond_part, str))
 
     # Format prop conds.
     if is_prop:

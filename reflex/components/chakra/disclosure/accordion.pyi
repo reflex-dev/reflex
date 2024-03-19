@@ -80,7 +80,7 @@ class Accordion(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Accordion":
         """Create an accordion component.
 
@@ -166,7 +166,7 @@ class AccordionItem(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AccordionItem":
         """Create the component.
 
@@ -248,7 +248,7 @@ class AccordionButton(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AccordionButton":
         """Create the component.
 
@@ -327,7 +327,7 @@ class AccordionPanel(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AccordionPanel":
         """Create the component.
 
@@ -406,7 +406,7 @@ class AccordionIcon(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AccordionIcon":
         """Create the component.
 

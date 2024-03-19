@@ -122,7 +122,7 @@ class TableRoot(el.Table, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TableRoot":
         """Create a new component instance.
 
@@ -264,7 +264,7 @@ class TableHeader(el.Thead, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TableHeader":
         """Create a new component instance.
 
@@ -406,7 +406,7 @@ class TableRow(el.Tr, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TableRow":
         """Create a new component instance.
 
@@ -563,7 +563,7 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TableColumnHeaderCell":
         """Create a new component instance.
 
@@ -707,7 +707,7 @@ class TableBody(el.Tbody, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TableBody":
         """Create a new component instance.
 
@@ -861,7 +861,7 @@ class TableCell(el.Td, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TableCell":
         """Create a new component instance.
 
@@ -1022,7 +1022,7 @@ class TableRowHeaderCell(el.Th, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "TableRowHeaderCell":
         """Create a new component instance.
 

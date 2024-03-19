@@ -114,7 +114,7 @@ class Axis(Recharts):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Axis":
         """Create the component.
 
@@ -237,7 +237,7 @@ class XAxis(Axis):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "XAxis":
         """Create the component.
 
@@ -360,7 +360,7 @@ class YAxis(Axis):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "YAxis":
         """Create the component.
 
@@ -497,7 +497,7 @@ class ZAxis(Recharts):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ZAxis":
         """Create the component.
 
@@ -551,7 +551,7 @@ class Brush(Recharts):
         on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Brush":
         """Create the component.
 
@@ -624,7 +624,7 @@ class Cartesian(Recharts):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Cartesian":
         """Create the component.
 
@@ -736,7 +736,7 @@ class Area(Cartesian):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Area":
         """Create the component.
 
@@ -817,7 +817,7 @@ class Bar(Cartesian):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Bar":
         """Create the component.
 
@@ -937,7 +937,7 @@ class Line(Cartesian):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Line":
         """Create the component.
 
@@ -1036,7 +1036,7 @@ class Scatter(Cartesian):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Scatter":
         """Create the component.
 
@@ -1117,7 +1117,7 @@ class Funnel(Cartesian):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Funnel":
         """Create the component.
 
@@ -1211,7 +1211,7 @@ class ErrorBar(Recharts):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ErrorBar":
         """Create the component.
 
@@ -1306,7 +1306,7 @@ class Reference(Recharts):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Reference":
         """Create the component.
 
@@ -1403,7 +1403,7 @@ class ReferenceLine(Reference):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ReferenceLine":
         """Create the component.
 
@@ -1474,7 +1474,7 @@ class ReferenceDot(Reference):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ReferenceDot":
         """Create the component.
 
@@ -1575,7 +1575,7 @@ class ReferenceArea(Recharts):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ReferenceArea":
         """Create the component.
 
@@ -1669,7 +1669,7 @@ class Grid(Recharts):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Grid":
         """Create the component.
 
@@ -1761,7 +1761,7 @@ class CartesianGrid(Grid):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "CartesianGrid":
         """Create the component.
 
@@ -1872,7 +1872,7 @@ class CartesianAxis(Grid):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "CartesianAxis":
         """Create the component.
 

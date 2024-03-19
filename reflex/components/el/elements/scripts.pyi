@@ -108,7 +108,7 @@ class Canvas(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Canvas":
         """Create the component.
 
@@ -243,7 +243,7 @@ class Noscript(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Noscript":
         """Create the component.
 
@@ -401,7 +401,7 @@ class Script(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Script":
         """Create the component.
 

@@ -104,7 +104,7 @@ class Menu(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Menu":
         """Create a menu component.
 
@@ -200,7 +200,7 @@ class MenuButton(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "MenuButton":
         """Create the component.
 
@@ -282,7 +282,7 @@ class MenuList(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "MenuList":
         """Create a MenuList component, and automatically wrap in MenuItem if not already one.
 
@@ -364,7 +364,7 @@ class MenuItem(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "MenuItem":
         """Create the component.
 
@@ -458,7 +458,7 @@ class MenuItemOption(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "MenuItemOption":
         """Create the component.
 
@@ -545,7 +545,7 @@ class MenuGroup(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "MenuGroup":
         """Create the component.
 
@@ -628,7 +628,7 @@ class MenuOptionGroup(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "MenuOptionGroup":
         """Create the component.
 
@@ -709,7 +709,7 @@ class MenuDivider(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "MenuDivider":
         """Create the component.
 

@@ -35,7 +35,7 @@ class Accordion(ChakraComponent):
         icon_pos="right",
         allow_multiple: Optional[Var[bool]] = None,
         allow_toggle: Optional[Var[bool]] = None,
-        **props
+        **props,
     ) -> Component:
         """Create an accordion component.
 

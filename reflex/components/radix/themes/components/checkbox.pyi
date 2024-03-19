@@ -158,7 +158,7 @@ class Checkbox(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Checkbox":
         """Create a new component instance.
 
@@ -338,7 +338,7 @@ class HighLevelCheckbox(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "HighLevelCheckbox":
         """Create a checkbox with a label.
 
@@ -514,7 +514,7 @@ class CheckboxNamespace(ComponentNamespace):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "HighLevelCheckbox":
         """Create a checkbox with a label.
 

@@ -85,7 +85,7 @@ class Avatar(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Avatar":
         """Create the component.
 
@@ -172,7 +172,7 @@ class AvatarBadge(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AvatarBadge":
         """Create the component.
 
@@ -253,7 +253,7 @@ class AvatarGroup(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AvatarGroup":
         """Create the component.
 

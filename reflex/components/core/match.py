@@ -67,7 +67,7 @@ class Match(MemoizationLeaf):
         Raises:
             ValueError: If the condition is not provided.
         """
-        match_cond_var = Var.create(cond, _var_is_string=type(cond) is str)
+        match_cond_var = Var.create(cond, _var_is_string=isinstance(cond, str))
 
         if match_cond_var is None:
             raise ValueError("The condition must be set")
@@ -118,8 +118,7 @@ class Match(MemoizationLeaf):
         """
         _var_data = case_element._var_data if isinstance(case_element, Style) else None  # type: ignore
         case_element = Var.create(
-            case_element,
-            _var_is_string=type(case_element) is str or isinstance(case_element, Color),
+            case_element, _var_is_string=isinstance(case_element, (str, Color))
         )
         if _var_data is not None:
             case_element._var_data = VarData.merge(case_element._var_data, _var_data)  # type: ignore

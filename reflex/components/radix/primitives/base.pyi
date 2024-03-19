@@ -71,7 +71,7 @@ class RadixPrimitiveComponent(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "RadixPrimitiveComponent":
         """Create the component.
 
@@ -152,7 +152,7 @@ class RadixPrimitiveComponentWithClassName(RadixPrimitiveComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "RadixPrimitiveComponentWithClassName":
         """Create the component.
 

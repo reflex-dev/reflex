@@ -73,7 +73,7 @@ class PlotlyLib(NoSSRComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "PlotlyLib":
         """Create the component.
 
@@ -158,7 +158,7 @@ class Plotly(PlotlyLib):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Plotly":
         """Create the component.
 

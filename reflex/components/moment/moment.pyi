@@ -105,7 +105,7 @@ class Moment(NoSSRComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Moment":
         """Create a Moment component.
 

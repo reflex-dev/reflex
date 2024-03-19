@@ -176,7 +176,7 @@ class Slider(RadixThemesComponent):
         on_value_commit: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Slider":
         """Create a Slider component.
 

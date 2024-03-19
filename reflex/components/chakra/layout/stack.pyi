@@ -81,7 +81,7 @@ class Stack(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Stack":
         """Create the component.
 
@@ -181,7 +181,7 @@ class Hstack(Stack):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Hstack":
         """Create the component.
 
@@ -281,7 +281,7 @@ class Vstack(Stack):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Vstack":
         """Create the component.
 

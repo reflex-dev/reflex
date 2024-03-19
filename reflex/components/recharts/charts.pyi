@@ -66,7 +66,7 @@ class ChartBase(RechartsCharts):
         on_mouse_move: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ChartBase":
         """Create a chart component.
 
@@ -143,7 +143,7 @@ class AreaChart(ChartBase):
         on_mouse_move: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "AreaChart":
         """Create a chart component.
 
@@ -220,7 +220,7 @@ class BarChart(ChartBase):
         on_mouse_move: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "BarChart":
         """Create a chart component.
 
@@ -296,7 +296,7 @@ class LineChart(ChartBase):
         on_mouse_move: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "LineChart":
         """Create a chart component.
 
@@ -377,7 +377,7 @@ class ComposedChart(ChartBase):
         on_mouse_move: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ComposedChart":
         """Create a chart component.
 
@@ -451,7 +451,7 @@ class PieChart(ChartBase):
         on_mouse_leave: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "PieChart":
         """Create a chart component.
 
@@ -529,7 +529,7 @@ class RadarChart(ChartBase):
         on_mouse_move: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "RadarChart":
         """Create a chart component.
 
@@ -616,7 +616,7 @@ class RadialBarChart(ChartBase):
         on_mouse_move: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "RadialBarChart":
         """Create a chart component.
 
@@ -703,7 +703,7 @@ class ScatterChart(ChartBase):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "ScatterChart":
         """Create a chart component.
 
@@ -768,7 +768,7 @@ class FunnelChart(RechartsCharts):
         on_mouse_move: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "FunnelChart":
         """Create a new memoization leaf component.
 
@@ -866,7 +866,7 @@ class Treemap(RechartsCharts):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Treemap":
         """Create a chart component.
 

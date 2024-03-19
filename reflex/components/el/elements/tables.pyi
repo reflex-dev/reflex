@@ -111,7 +111,7 @@ class Caption(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Caption":
         """Create the component.
 
@@ -251,7 +251,7 @@ class Col(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Col":
         """Create the component.
 
@@ -392,7 +392,7 @@ class Colgroup(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Colgroup":
         """Create the component.
 
@@ -535,7 +535,7 @@ class Table(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Table":
         """Create the component.
 
@@ -675,7 +675,7 @@ class Tbody(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Tbody":
         """Create the component.
 
@@ -823,7 +823,7 @@ class Td(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Td":
         """Create the component.
 
@@ -965,7 +965,7 @@ class Tfoot(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Tfoot":
         """Create the component.
 
@@ -1116,7 +1116,7 @@ class Th(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Th":
         """Create the component.
 
@@ -1259,7 +1259,7 @@ class Thead(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Thead":
         """Create the component.
 
@@ -1398,7 +1398,7 @@ class Tr(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Tr":
         """Create the component.
 

@@ -220,7 +220,7 @@ class Button(el.Button, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Button":
         """Create a new component instance.
 

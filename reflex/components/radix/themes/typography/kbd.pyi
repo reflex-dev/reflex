@@ -179,7 +179,7 @@ class Kbd(el.Kbd, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Kbd":
         """Create a new component instance.
 

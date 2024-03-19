@@ -808,9 +808,7 @@ class PyiGenerator:
             mode=black.mode.Mode(is_pyi=True),
         ).splitlines():
             # Bit of a hack here, since the AST cannot represent comments.
-            if "def create(" in formatted_line:
-                pyi_content.append(formatted_line + "  # type: ignore")
-            elif "Figure" in formatted_line:
+            if "def create(" in formatted_line or "Figure" in formatted_line:
                 pyi_content.append(formatted_line + "  # type: ignore")
             else:
                 pyi_content.append(formatted_line)

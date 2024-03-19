@@ -69,7 +69,7 @@ class Title(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Title":
         """Create the component.
 
@@ -153,7 +153,7 @@ class Meta(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Meta":
         """Create the component.
 
@@ -242,7 +242,7 @@ class Description(Meta):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Description":
         """Create the component.
 
@@ -331,7 +331,7 @@ class Image(Meta):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Image":
         """Create the component.
 

@@ -149,7 +149,7 @@ class DropdownMenuRoot(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "DropdownMenuRoot":
         """Create a new component instance.
 
@@ -300,7 +300,7 @@ class DropdownMenuTrigger(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "DropdownMenuTrigger":
         """Create a new component instance.
 
@@ -499,7 +499,7 @@ class DropdownMenuContent(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "DropdownMenuContent":
         """Create a new component instance.
 
@@ -663,7 +663,7 @@ class DropdownMenuSubTrigger(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "DropdownMenuSubTrigger":
         """Create a new component instance.
 
@@ -818,7 +818,7 @@ class DropdownMenuSub(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "DropdownMenuSub":
         """Create a new component instance.
 
@@ -998,7 +998,7 @@ class DropdownMenuSubContent(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "DropdownMenuSubContent":
         """Create a new component instance.
 
@@ -1162,7 +1162,7 @@ class DropdownMenuItem(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "DropdownMenuItem":
         """Create a new component instance.
 
@@ -1312,7 +1312,7 @@ class DropdownMenuSeparator(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "DropdownMenuSeparator":
         """Create a new component instance.
 

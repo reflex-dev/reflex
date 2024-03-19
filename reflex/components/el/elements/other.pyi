@@ -109,7 +109,7 @@ class Details(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Details":
         """Create the component.
 
@@ -246,7 +246,7 @@ class Dialog(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Dialog":
         """Create the component.
 
@@ -382,7 +382,7 @@ class Summary(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Summary":
         """Create the component.
 
@@ -517,7 +517,7 @@ class Slot(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Slot":
         """Create the component.
 
@@ -652,7 +652,7 @@ class Template(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Template":
         """Create the component.
 
@@ -787,7 +787,7 @@ class Math(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Math":
         """Create the component.
 
@@ -925,7 +925,7 @@ class Html(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props
+        **props,
     ) -> "Html":
         """Create the component.
 
