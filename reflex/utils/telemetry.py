@@ -74,7 +74,7 @@ def _prepare_event(event: str) -> dict:
         The event data.
     """
     installation_id = ensure_reflex_installation_id()
-    project_hash = get_project_hash(raise_on_fail=True)
+    project_hash = get_project_hash(raise_on_fail=False)
 
     if installation_id is None or project_hash is None:
         console.debug(
