@@ -1,3 +1,5 @@
+fail_fast: true
+
 repos:
   - repo: https://github.com/psf/black
     rev: 22.10.0
@@ -24,6 +26,12 @@ repos:
     hooks:
       - id: darglint
         exclude: '^reflex/reflex.py'
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=300', "--enforce-all"]
 
   - repo: local
     hooks:
