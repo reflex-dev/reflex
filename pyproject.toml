@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reflex"
-version = "0.4.4"
+version = "0.4.5"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
