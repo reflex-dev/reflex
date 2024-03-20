@@ -24,16 +24,21 @@ def get_directory_size(directory):
     return total_size
 
 
-def get_python_version(venv_path):
+def get_python_version(venv_path, os_name):
     """Get the python version of python in a virtual env.
 
     Args:
         venv_path: Path to virtual environment.
+        os_name: Name of os.
 
     Returns:
         The python version.
     """
-    python_executable = os.path.join(venv_path, "bin", "python")
+    python_executable = (
+        os.path.join(venv_path, "bin", "python")
+        if "windows" not in os_name
+        else os.path.join(venv_path, "Scripts", "python.exe")
+    )
     try:
         output = subprocess.check_output(
             [python_executable, "--version"], stderr=subprocess.STDOUT
@@ -44,24 +49,36 @@ def get_python_version(venv_path):
         return None
 
 
-def get_package_size(venv_path):
+def get_package_size(venv_path, os_name):
     """Get the size of a specified package.
 
     Args:
         venv_path: The path to the venv.
+        os_name: Name of os.
 
     Returns:
         The total size of the package in bytes.
-    """
-    python_version = get_python_version(venv_path)
-    if python_version is None:
-        ValueError("Error: Failed to determine Python version.")
 
-    package_dir = os.path.join(
-        venv_path, "lib", f"python{python_version}", "site-packages"
+    Raises:
+        ValueError: when venv does not exist or python version is None.
+    """
+    python_version = get_python_version(venv_path, os_name)
+    if python_version is None:
+        raise ValueError("Error: Failed to determine Python version.")
+
+    is_windows = "windows" in os_name
+
+    full_path = (
+        ["lib", f"python{python_version}", "site-packages"]
+        if not is_windows
+        else ["Lib", "site-packages"]
     )
+
+    package_dir = os.path.join(venv_path, *full_path)
     if not os.path.exists(package_dir):
-        ValueError("Error: Virtual environment does not exist or is not activated.")
+        raise ValueError(
+            "Error: Virtual environment does not exist or is not activated."
+        )
 
     total_size = get_directory_size(package_dir)
     return total_size
@@ -94,7 +111,7 @@ def insert_benchmarking_data(
     # Serialize the JSON data
 
     if measurement_type == "reflex-package":
-        size = get_package_size(path)
+        size = get_package_size(path, os_type_version)
     else:
         size = get_directory_size(path)
 
