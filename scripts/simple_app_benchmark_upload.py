@@ -99,7 +99,7 @@ def insert_benchmarking_data(
                 event_type,
                 actor,
                 simple_app_performance_json,
-                pr_id
+                pr_id,
             ),
         )
         # Commit the transaction
@@ -168,7 +168,7 @@ def main():
         branch_name=args.branch_name,
         event_type=args.event_type,
         actor=args.actor,
-        pr_id=args.pr_id
+        pr_id=args.pr_id,
     )
 
 
