@@ -91,6 +91,14 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev
+      - name: Measure and upload .web size
+#        working-directory: ./reflex-examples/counter
+        if: ${{ env.DATABASE_URL }}
+        run: poetry run python scripts/benchmark_reflex_size.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --pr-id "${{ github.event.pull_request.id }}" --pr-title "${{ github.event.pull_request.title }}"
+          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+          --measurement-type "counter-app-dot-web" --path ./reflex-examples/counter/.web
 
   reflex-web:
     strategy:
@@ -129,3 +137,11 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-web prod
+      - name: Measure and upload .web size
+#        working-directory: ./reflex-examples/counter
+        if: ${{ env.DATABASE_URL }}
+        run: poetry run python scripts/benchmark_reflex_size.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --pr-id "${{ github.event.pull_request.id }}" --pr-title "${{ github.event.pull_request.title }}"
+          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+          --measurement-type "counter-app-dot-web" --path ./reflex-web/.web

@@ -157,49 +157,49 @@ jobs:
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "reflex-package" --path ./.venv
 
-  counter-app-dot-web-size:
-    timeout-minutes: 30
-    strategy:
-      # Prioritize getting more information out of the workflow (even if something fails)
-      fail-fast: false
-      matrix:
-        # Show OS combos first in GUI
-        os: [ ubuntu-latest ]
-        python-version: [  '3.11.5']
-
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup_build_env
-        with:
-          python-version: ${{ matrix.python-version }}
-          run-poetry-install: true
-          create-venv-at-path: .venv
-
-      - name: Clone Reflex Examples Repo
-        uses: actions/checkout@v4
-        with:
-          repository: reflex-dev/reflex-examples
-          path: reflex-examples
-
-      - name: Install requirements for counter example
-        working-directory: ./reflex-examples/counter
-        run: |
-          poetry run pip install -r requirements.txt
-      - name: Install additional dependencies for DB access
-        run: poetry run pip install psycopg2-binary
-      - name: Run reflex init for counter example
-        working-directory: ./reflex-examples/counter
-        run: |
-          poetry run reflex init
-      - name: Run reflex run for counter example
-        run: |
-          poetry run bash scripts/integration.sh ./reflex-examples/counter dev
-      - name: Measure and upload .web size
+#  counter-app-dot-web-size:
+#    timeout-minutes: 30
+#    strategy:
+#      # Prioritize getting more information out of the workflow (even if something fails)
+#      fail-fast: false
+#      matrix:
+#        # Show OS combos first in GUI
+#        os: [ ubuntu-latest ]
+#        python-version: [  '3.11.5']
+#
+#    runs-on: ${{ matrix.os }}
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: ./.github/actions/setup_build_env
+#        with:
+#          python-version: ${{ matrix.python-version }}
+#          run-poetry-install: true
+#          create-venv-at-path: .venv
+#
+#      - name: Clone Reflex Examples Repo
+#        uses: actions/checkout@v4
+#        with:
+#          repository: reflex-dev/reflex-examples
+#          path: reflex-examples
+#
+#      - name: Install requirements for counter example
 #        working-directory: ./reflex-examples/counter
-        if: ${{ env.DATABASE_URL }}
-        run: poetry run python scripts/benchmark_reflex_size.py --os "${{ matrix.os }}"
-          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}" --pr-title "${{ github.event.pull_request.title }}"
-          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
-          --measurement-type "counter-app-dot-web" --path ./reflex-examples/counter/.web
+#        run: |
+#          poetry run pip install -r requirements.txt
+#      - name: Install additional dependencies for DB access
+#        run: poetry run pip install psycopg2-binary
+#      - name: Run reflex init for counter example
+#        working-directory: ./reflex-examples/counter
+#        run: |
+#          poetry run reflex init
+#      - name: Run reflex run for counter example
+#        run: |
+#          poetry run bash scripts/integration.sh ./reflex-examples/counter dev
+#      - name: Measure and upload .web size
+##        working-directory: ./reflex-examples/counter
+#        if: ${{ env.DATABASE_URL }}
+#        run: poetry run python scripts/benchmark_reflex_size.py --os "${{ matrix.os }}"
+#          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+#          --pr-id "${{ github.event.pull_request.id }}" --pr-title "${{ github.event.pull_request.title }}"
+#          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+#          --measurement-type "counter-app-dot-web" --path ./reflex-examples/counter/.web
