@@ -1,13 +1,21 @@
-import os
-import sys
-import subprocess
+"""Checks the size of a specific directory and uploads result."""
 import argparse
-import json
+import os
+import subprocess
 from datetime import datetime
 
 import psycopg2
 
+
 def get_directory_size(directory):
+    """Get the size of a directory in bytes.
+
+    Args:
+        directory: The directory to check.
+
+    Returns:
+        The size of the dir in bytes.
+    """
     total_size = 0
     for dirpath, _, filenames in os.walk(directory):
         for f in filenames:
@@ -15,28 +23,49 @@ def get_directory_size(directory):
             total_size += os.path.getsize(fp)
     return total_size
 
+
 def get_python_version(venv_path):
-    python_executable = os.path.join(venv_path, 'bin', 'python')
+    """Get the python version of python in a virtual env.
+
+    Args:
+        venv_path: Path to virtual environment.
+
+    Returns:
+        The python version.
+    """
+    python_executable = os.path.join(venv_path, "bin", "python")
     try:
-        output = subprocess.check_output([python_executable, '--version'], stderr=subprocess.STDOUT)
-        python_version = output.decode('utf-8').strip().split()[1]
+        output = subprocess.check_output(
+            [python_executable, "--version"], stderr=subprocess.STDOUT
+        )
+        python_version = output.decode("utf-8").strip().split()[1]
         return ".".join(python_version.split(".")[:-1])
     except subprocess.CalledProcessError:
         return None
 
+
 def get_package_size(venv_path):
+    """Get the size of a specified package.
+
+    Args:
+        venv_path: The path to the venv.
+
+    Returns:
+        The total size of the package in bytes.
+    """
     python_version = get_python_version(venv_path)
     if python_version is None:
-        print("Error: Failed to determine Python version.")
-        return
+        ValueError("Error: Failed to determine Python version.")
 
-    package_dir = os.path.join(venv_path,  'lib', f"python{python_version}", 'site-packages')
+    package_dir = os.path.join(
+        venv_path, "lib", f"python{python_version}", "site-packages"
+    )
     if not os.path.exists(package_dir):
-        print("Error: Virtual environment does not exist or is not activated.")
-        return
+        ValueError("Error: Virtual environment does not exist or is not activated.")
 
     total_size = get_directory_size(package_dir)
     return total_size
+
 
 def insert_benchmarking_data(
     db_connection_url: str,
@@ -55,12 +84,15 @@ def insert_benchmarking_data(
         db_connection_url: The URL to connect to the database.
         os_type_version: The OS type and version to insert.
         python_version: The Python version to insert.
-        performance_data: The performance data of reflex web to insert.
+        measurement_type: The type of metric to measure.
         commit_sha: The commit SHA to insert.
         pr_title: The PR title to insert.
         branch_name: The name of the branch.
-        event_type: Type of github event(push, pull request, etc)
-        actor: Username of the user that triggered the run.
+        pr_id: The id of the PR.
+        path: The path to the dir or file to check size.
+
+    Raises:
+        ValueError: When the measure-type is not valid.
     """
     # Serialize the JSON data
 
@@ -69,7 +101,9 @@ def insert_benchmarking_data(
     elif measurement_type == "counter-app-dot-web" or "reflex-web-dot-web":
         size = get_directory_size(path)
     else:
-        raise ValueError(f"measurement_type should be of the following values: `reflex-package`")
+        raise ValueError(
+            f"measurement_type should be of the following values: `reflex-package`"
+        )
 
     # Get the current timestamp
     current_timestamp = datetime.now()
@@ -96,6 +130,7 @@ def insert_benchmarking_data(
         )
         # Commit the transaction
         conn.commit()
+
 
 def main():
     """Runs the benchmarks and inserts the results."""
@@ -127,26 +162,20 @@ def main():
     )
     parser.add_argument(
         "--pr-id",
-        help="The github event type",
+        help="The pr id",
         required=True,
     )
     parser.add_argument(
         "--measurement-type",
-        help="Username of the user that triggered the run.",
+        help="The type of metric to be checked.",
         required=True,
     )
     parser.add_argument(
         "--path",
-        help="Username of the user that triggered the run.",
-        required=True,
-    )
-    parser.add_argument(
-        "--ci-run-id",
-        help="Id of the current run.",
+        help="the current path to check size.",
         required=True,
     )
     args = parser.parse_args()
-    print(f"ci run id: {args.ci_run_id}")
 
     # Get the results of pytest benchmarks
     # Insert the data into the database
@@ -159,7 +188,7 @@ def main():
         pr_title=args.pr_title,
         branch_name=args.branch_name,
         pr_id=args.pr_id,
-        path=args.path
+        path=args.path,
     )
 
 
