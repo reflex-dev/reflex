@@ -63,13 +63,13 @@ jobs:
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash scripts/benchmarks.sh ./reflex-web prod
+          poetry run bash scripts/benchmarks/benchmarks.sh ./reflex-web prod
         env:
           LHCI_GITHUB_APP_TOKEN: $
       - name: Run Benchmarks
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
-        run: poetry run python scripts/lighthouse_score_upload.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
+        run: poetry run python scripts/benchmarks/lighthouse_score_upload.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
         env:
           GITHUB_SHA: ${{ github.sha }}
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -122,7 +122,7 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run:
-          poetry run python scripts/simple_app_benchmark_upload.py --os "${{ matrix.os }}"
+          poetry run python scripts/benchmarks/simple_app_benchmark_upload.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --benchmark-json "${{ env.OUTPUT_FILE }}"
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
@@ -149,7 +149,7 @@ jobs:
       - name: Upload benchmark results
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
-        run: poetry run python scripts/benchmark_reflex_size.py --os ubuntu-latest
+        run: poetry run python scripts/benchmarks/benchmark_reflex_size.py --os ubuntu-latest
           --python-version 3.11.5 --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}" --pr-title "${{ github.event.pull_request.title }}"
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
