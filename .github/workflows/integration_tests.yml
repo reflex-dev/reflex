@@ -102,7 +102,7 @@ jobs:
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
         run: |
-          ls && -poetry run python scripts/benchmark_reflex_size.py --os "${{ matrix.os }}"
+          ls && poetry run python scripts/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}" --pr-title "${{ github.event.pull_request.title }}"
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
