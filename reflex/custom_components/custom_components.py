@@ -688,7 +688,7 @@ def publish(
         == "n"
     ):
         console.print(
-            "If you decide to do this later, you can run `reflex custom-components share` command. Thank you!"
+            "If you decide to do this later, you can run `reflex component share` command. Thank you!"
         )
         return
 
