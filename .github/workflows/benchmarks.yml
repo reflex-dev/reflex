@@ -155,7 +155,7 @@ jobs:
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}" --pr-title "${{ github.event.pull_request.title }}"
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
-          --measurement-type "reflex-package" --path ./.venv
+          --measurement-type "reflex-package" --path ./.venv --ci-run-id "${{ github.run_id }}"
 
 #  counter-app-dot-web-size:
 #    timeout-minutes: 30

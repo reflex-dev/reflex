@@ -140,7 +140,13 @@ def main():
         help="Username of the user that triggered the run.",
         required=True,
     )
+    parser.add_argument(
+        "--ci-run-id",
+        help="Id of the current run.",
+        required=True,
+    )
     args = parser.parse_args()
+    print(f"ci run id: {args.ci_run_id}")
 
     # Get the results of pytest benchmarks
     # Insert the data into the database
