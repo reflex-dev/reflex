@@ -90,20 +90,13 @@ def insert_benchmarking_data(
         branch_name: The name of the branch.
         pr_id: The id of the PR.
         path: The path to the dir or file to check size.
-
-    Raises:
-        ValueError: When the measure-type is not valid.
     """
     # Serialize the JSON data
 
     if measurement_type == "reflex-package":
         size = get_package_size(path)
-    elif measurement_type == "counter-app-dot-web" or "reflex-web-dot-web":
-        size = get_directory_size(path)
     else:
-        raise ValueError(
-            f"measurement_type should be of the following values: `reflex-package`"
-        )
+        size = get_directory_size(path)
 
     # Get the current timestamp
     current_timestamp = datetime.now()
