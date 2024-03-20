@@ -94,10 +94,6 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev
-#      - name: Check OS and run command accordingly windows
-#        if:  ${{ matrix.os }} == "windows-latest"
-#        run: dir -a:h
-#
       - name: Check reflex install size with dependencies
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
