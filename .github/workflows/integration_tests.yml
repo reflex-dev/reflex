@@ -57,26 +57,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-#      - uses: ./.github/actions/setup_build_env
-#        with:
-#          python-version: ${{ matrix.python-version }}
-#          run-poetry-install: true
-#          create-venv-at-path: .venv
-
-      - name: Set up build environment
-        id: setup_env
-        uses: ./.github/actions/setup_build_env
+      - uses: ./.github/actions/setup_build_env
         with:
-            python-version: ${{ matrix.python-version }}
-            run-poetry-install: true
-            create-venv-at-path: .venv
-
-      - name: Save create-venv-at-path as an output
-        run: echo "::set-output name=venv-path::${{ steps.setup_env.outputs.create-venv-at-path }}"
-
-
-
-
+          python-version: ${{ matrix.python-version }}
+          run-poetry-install: true
+          create-venv-at-path: venv
       - name: Clone Reflex Examples Repo
         uses: actions/checkout@v4
         with:
@@ -113,14 +98,15 @@ jobs:
 #        if:  ${{ matrix.os }} == "windows-latest"
 #        run: dir -a:h
 #
-#      - name: Check reflex install size with dependencies
-#        # Only run if the database creds are available in this context.
-#        if: ${{ env.DATABASE_URL }}
-#        run: poetry run python scripts/benchmark_reflex_size.py --os "${{ matrix.os }}"
-#          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-#          --pr-id "${{ github.event.pull_request.id }}" --pr-title "${{ github.event.pull_request.title }}"
-#          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
-#          --measurement-type "reflex-package" --path "${{ steps.setup_env.outputs.venv-path }}"
+      - name: Check reflex install size with dependencies
+        # Only run if the database creds are available in this context.
+        if: ${{ env.DATABASE_URL }}
+        run: |
+          ls && -poetry run python scripts/benchmark_reflex_size.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --pr-id "${{ github.event.pull_request.id }}" --pr-title "${{ github.event.pull_request.title }}"
+          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+          --measurement-type "reflex-package" --path ./venv
       - name: Measure and upload .web size
 #        working-directory: ./reflex-examples/counter
         if: ${{ env.DATABASE_URL }}
