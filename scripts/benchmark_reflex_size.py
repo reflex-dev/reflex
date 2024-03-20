@@ -47,6 +47,7 @@ def insert_benchmarking_data(
     pr_title: str,
     branch_name: str,
     pr_id: str,
+    path: str,
 ):
     """Insert the benchmarking data into the database.
 
@@ -64,7 +65,9 @@ def insert_benchmarking_data(
     # Serialize the JSON data
 
     if measurement_type == "reflex-package":
-        size = get_package_size("./.venv")
+        size = get_package_size(path)
+    elif measurement_type == "counter-app-dot-web":
+        size = get_directory_size(path)
     else:
         raise ValueError(f"measurement_type should be of the following values: `reflex-package`")
 
@@ -132,6 +135,11 @@ def main():
         help="Username of the user that triggered the run.",
         required=True,
     )
+    parser.add_argument(
+        "--path",
+        help="Username of the user that triggered the run.",
+        required=True,
+    )
     args = parser.parse_args()
 
     # Get the results of pytest benchmarks
@@ -145,6 +153,7 @@ def main():
         pr_title=args.pr_title,
         branch_name=args.branch_name,
         pr_id=args.pr_id,
+        path=args.path
     )
 
 
