@@ -103,7 +103,6 @@ jobs:
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "reflex-package" --path ./.venv
       - name: Measure and upload .web size
-#        working-directory: ./reflex-examples/counter
         if: ${{ env.DATABASE_URL }}
         run: poetry run python scripts/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
@@ -151,7 +150,6 @@ jobs:
           npm -v
           poetry run bash scripts/integration.sh ./reflex-web prod
       - name: Measure and upload .web size
-#        working-directory: ./reflex-examples/counter
         if: ${{ env.DATABASE_URL }}
         run: poetry run python scripts/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
