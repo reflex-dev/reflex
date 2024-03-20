@@ -448,7 +448,7 @@ def get_project_hash(raise_on_fail: bool = False) -> int | None:
     # Open and read the file
     with open(constants.Reflex.JSON, "r") as file:
         data = json.load(file)
-        return data["project_hash"]
+        return data.get("project_hash")
 
 
 def initialize_web_directory():
