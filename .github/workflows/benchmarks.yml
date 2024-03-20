@@ -158,7 +158,7 @@ jobs:
           --measurement-type "reflex-package" --path ./.venv
 
   counter-app-dot-web-size:
-    timeout: 30
+    timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
       fail-fast: false
@@ -166,20 +166,6 @@ jobs:
         # Show OS combos first in GUI
         os: [ ubuntu-latest ]
         python-version: [  '3.11.5']
-#        exclude:
-#          - os: windows-latest
-#            python-version: '3.10.13'
-#          - os: windows-latest
-#            python-version: '3.9.18'
-#          - os: windows-latest
-#            python-version: '3.8.18'
-#        include:
-#          - os: windows-latest
-#            python-version: '3.10.11'
-#          - os: windows-latest
-#            python-version: '3.9.13'
-#          - os: windows-latest
-#            python-version: '3.8.10'
 
     runs-on: ${{ matrix.os }}
     steps:
