@@ -108,8 +108,6 @@ def insert_benchmarking_data(
         pr_id: The id of the PR.
         path: The path to the dir or file to check size.
     """
-    # Serialize the JSON data
-
     if measurement_type == "reflex-package":
         size = get_package_size(path, os_type_version)
     else:
@@ -144,7 +142,6 @@ def insert_benchmarking_data(
 
 def main():
     """Runs the benchmarks and inserts the results."""
-    # Get the commit SHA and JSON directory from the command line arguments
     parser = argparse.ArgumentParser(description="Run benchmarks and process results.")
     parser.add_argument(
         "--os", help="The OS type and version to insert into the database."
@@ -187,7 +184,6 @@ def main():
     )
     args = parser.parse_args()
 
-    # Get the results of pytest benchmarks
     # Insert the data into the database
     insert_benchmarking_data(
         db_connection_url=args.db_url,
