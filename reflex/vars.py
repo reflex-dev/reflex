@@ -1861,6 +1861,8 @@ class ComputedVar(Var, property):
         # handle caching
         if not hasattr(instance, self._cache_attr):
             setattr(instance, self._cache_attr, super().__get__(instance, owner))
+            # Ensure the computed var gets serialized to redis.
+            instance._was_touched = True
         return getattr(instance, self._cache_attr)
 
     def _deps(
