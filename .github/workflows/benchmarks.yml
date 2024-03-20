@@ -191,9 +191,8 @@ jobs:
         run: |
           poetry run reflex init
       - name: Run reflex run for counter example
-        working-directory: ./reflex-examples/counter
         run: |
-          poetry run reflex run --loglevel debug
+          poetry run bash scripts/integration.sh ./reflex-examples/counter dev
       - name: Measure and upload .web size
 #        working-directory: ./reflex-examples/counter
         if: ${{ env.DATABASE_URL }}
