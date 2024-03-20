@@ -144,4 +144,4 @@ jobs:
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}" --pr-title "${{ github.event.pull_request.title }}"
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
-          --measurement-type "counter-app-dot-web" --path ./reflex-web/.web
+          --measurement-type "reflex-web-dot-web" --path ./reflex-web/.web

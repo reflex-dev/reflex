@@ -66,7 +66,7 @@ def insert_benchmarking_data(
 
     if measurement_type == "reflex-package":
         size = get_package_size(path)
-    elif measurement_type == "counter-app-dot-web":
+    elif measurement_type == "counter-app-dot-web" or "reflex-web-dot-web":
         size = get_directory_size(path)
     else:
         raise ValueError(f"measurement_type should be of the following values: `reflex-package`")
