@@ -104,11 +104,7 @@ def insert_benchmarking_data(
 
 
 def main():
-    """Runs the benchmarks and inserts the results.
-
-    Raises:
-        ValueError: If the PR title is not provided.
-    """
+    """Runs the benchmarks and inserts the results."""
     # Get the commit SHA and JSON directory from the command line arguments
     parser = argparse.ArgumentParser(description="Run benchmarks and process results.")
     parser.add_argument(
@@ -150,9 +146,8 @@ def main():
     )
     args = parser.parse_args()
 
-    pr_title = args.pr_title or os.getenv("PR_TITLE")
-    if not pr_title:
-        raise ValueError("PR title is required")
+    # Get the PR title from env or the args. For the PR merge or push event, there is no PR title, leaving it empty.
+    pr_title = args.pr_title or os.getenv("PR_TITLE", "")
 
     # Get the results of pytest benchmarks
     cleaned_benchmark_results = extract_stats_from_json(args.benchmark_json)
