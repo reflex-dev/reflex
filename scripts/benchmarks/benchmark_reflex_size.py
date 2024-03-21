@@ -183,9 +183,8 @@ def main():
     )
     args = parser.parse_args()
 
-    pr_title = args.pr_title or os.getenv("PR_TITLE")
-    if not pr_title:
-        raise ValueError("PR title is required")
+    # Get the PR title from env or the args. For the PR merge or push event, there is no PR title, leaving it empty.
+    pr_title = args.pr_title or os.getenv("PR_TITLE", "")
 
     # Insert the data into the database
     insert_benchmarking_data(
