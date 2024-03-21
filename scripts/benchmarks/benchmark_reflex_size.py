@@ -184,7 +184,6 @@ def main():
     args = parser.parse_args()
 
     pr_title = args.pr_title or os.getenv("PR_TITLE")
-    print(f"PR TITLE: {pr_title}")
     if not pr_title:
         raise ValueError("PR title is required")
 
@@ -195,7 +194,7 @@ def main():
         python_version=args.python_version,
         measurement_type=args.measurement_type,
         commit_sha=args.commit_sha,
-        pr_title=args.pr_title,
+        pr_title=pr_title,
         branch_name=args.branch_name,
         pr_id=args.pr_id,
         path=args.path,
