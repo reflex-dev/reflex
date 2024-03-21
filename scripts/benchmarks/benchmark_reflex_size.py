@@ -160,7 +160,6 @@ def main():
     parser.add_argument(
         "--pr-title",
         help="The PR title to insert into the database.",
-        required=True,
     )
     parser.add_argument(
         "--branch-name",
