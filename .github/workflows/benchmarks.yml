@@ -22,6 +22,8 @@ env:
   TELEMETRY_ENABLED: false
   NODE_OPTIONS: '--max_old_space_size=4096'
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  PR_TITLE: ${{ github.event.pull_request.title }}
+
 
 jobs:
   reflex-web:
@@ -72,7 +74,6 @@ jobs:
         run: poetry run python scripts/benchmarks/lighthouse_score_upload.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
         env:
           GITHUB_SHA: ${{ github.sha }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
 
   simple-apps-benchmarks:
     env:
@@ -150,7 +151,6 @@ jobs:
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
         run: poetry run python scripts/benchmarks/benchmark_reflex_size.py --os ubuntu-latest
-          --python-version 3.11.5 --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}" --pr-title "${{ github.event.pull_request.title }}"
+          --python-version 3.11.5 --commit-sha "${{ github.sha }}" --pr-id "${{ github.event.pull_request.id }}" 
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "reflex-build" --path ./dist

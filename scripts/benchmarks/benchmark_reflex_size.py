@@ -184,6 +184,10 @@ def main():
     )
     args = parser.parse_args()
 
+    pr_title = args.pr_title or os.getenv("PR_TITLE")
+    if not pr_title:
+        raise ValueError("PR title is required")
+
     # Insert the data into the database
     insert_benchmarking_data(
         db_connection_url=args.db_url,
