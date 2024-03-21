@@ -16,6 +16,9 @@ _console = Console()
 # The current log level.
 _LOG_LEVEL = LogLevel.INFO
 
+# Deprecated features who's warning has been printed.
+_EMITTED_DEPRECATION_WARNINGS = set()
+
 
 def set_log_level(log_level: LogLevel):
     """Set the log level.
@@ -124,9 +127,7 @@ def deprecate(
         dedupe: If True, suppress multiple console logs of deprecation message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    from reflex.utils import DEPRECATED_FEATURES
-
-    if feature_name not in DEPRECATED_FEATURES:
+    if feature_name not in _EMITTED_DEPRECATION_WARNINGS:
         msg = (
             f"{feature_name} has been deprecated in version {deprecation_version} {reason.rstrip('.')}. It will be completely "
             f"removed in {removal_version}"
@@ -134,7 +135,7 @@ def deprecate(
         if _LOG_LEVEL <= LogLevel.WARNING:
             print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
         if dedupe:
-            DEPRECATED_FEATURES.add(feature_name)
+            _EMITTED_DEPRECATION_WARNINGS.add(feature_name)
 
 
 def error(msg: str, **kwargs):
