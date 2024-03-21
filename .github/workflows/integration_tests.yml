@@ -101,14 +101,14 @@ jobs:
         run: poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}" 
-          --branch-name "${{ github.head_ref || github.ref_name }}"
+          --branch-name "${{ github.head_ref || github.ref_name }}" --pr-title "${{ env.PR_TITLE }}"
           --measurement-type "reflex-package" --path ./.venv
       - name: Measure and upload .web size
         if: ${{ env.DATABASE_URL }}
         run: poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}" 
-          --branch-name "${{ github.head_ref || github.ref_name }}"
+          --branch-name "${{ github.head_ref || github.ref_name }}" --pr-title "${{ env.PR_TITLE }}"
           --measurement-type "counter-app-dot-web" --path ./reflex-examples/counter/.web
 
   reflex-web:
@@ -154,6 +154,6 @@ jobs:
         if: ${{ env.DATABASE_URL }}
         run: poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}"
+          --pr-id "${{ github.event.pull_request.id }}" --pr-title "${{ env.PR_TITLE }}"
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "reflex-web-dot-web" --path ./reflex-web/.web
