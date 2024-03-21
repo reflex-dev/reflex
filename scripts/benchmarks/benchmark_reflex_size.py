@@ -184,6 +184,7 @@ def main():
     args = parser.parse_args()
 
     pr_title = args.pr_title or os.getenv("PR_TITLE")
+    print(f"PR TITLE: {pr_title}")
     if not pr_title:
         raise ValueError("PR title is required")
 
