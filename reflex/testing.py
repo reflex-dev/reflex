@@ -510,12 +510,15 @@ class AppHarness:
             raise TimeoutError("Backend is not listening.")
         return backend.servers[0].sockets[0]
 
-    def frontend(self, driver_clz: Optional[Type["WebDriver"]] = None) -> "WebDriver":
+    def frontend(
+        self, driver_clz: Optional[Type["WebDriver"]] = None, driver_kwargs=None
+    ) -> "WebDriver":
         """Get a selenium webdriver instance pointed at the app.
 
         Args:
             driver_clz: webdriver.Chrome (default), webdriver.Firefox, webdriver.Safari,
                 webdriver.Edge, etc
+            driver_kwargs: additional keyword arguments to pass to the webdriver constructor
 
         Returns:
             Instance of the given webdriver navigated to the frontend url of the app.
@@ -550,7 +553,9 @@ class AppHarness:
         if options and (args := os.environ.get("APP_HARNESS_DRIVER_ARGS")):
             for arg in args.split(","):
                 options.add_argument(arg)
-        driver = driver_clz(options=options)  # type: ignore
+        if driver_kwargs is None:
+            driver_kwargs = {}
+        driver = driver_clz(options=options, **driver_kwargs)  # type: ignore
         driver.get(self.frontend_url)
         self._frontends.append(driver)
         return driver
