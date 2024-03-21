@@ -87,7 +87,7 @@ def kill_process_on_port(port):
             get_process_on_port(port).kill()  # type: ignore
 
 
-def change_port(port: str) -> str:
+def change_port(port: str, _type: str) -> str:
     """Change the port.
 
     Args:
@@ -100,6 +100,9 @@ def change_port(port: str) -> str:
     new_port = str(int(port) + 1)
     if is_process_on_port(new_port):
         return change_port(new_port)
+    console.info(
+        f"The {_type} will run on port [bold underline]{new_port}[/bold underline]."
+    )
     return new_port
 
 
