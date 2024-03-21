@@ -30,20 +30,21 @@ def extract_stats_from_json(json_file: str) -> list[dict]:
 
     # Iterate over each test in the 'benchmarks' list
     for test in data.get("benchmarks", []):
+        group = test.get("group", None)
         stats = test.get("stats", {})
+        full_name = test.get("fullname")
+        file_name = (
+            full_name.split("/")[-1].split("::")[0].strip(".py") if full_name else None
+        )
         test_name = test.get("name", "Unknown Test")
-        min_value = stats.get("min", None)
-        max_value = stats.get("max", None)
-        mean_value = stats.get("mean", None)
-        stdev_value = stats.get("stddev", None)
 
         test_stats.append(
             {
                 "test_name": test_name,
-                "min": min_value,
-                "max": max_value,
-                "mean": mean_value,
-                "stdev": stdev_value,
+                "group": group,
+                "stats": stats,
+                "full_name": full_name,
+                "file_name": file_name,
             }
         )
     return test_stats
@@ -59,6 +60,7 @@ def insert_benchmarking_data(
     branch_name: str,
     event_type: str,
     actor: str,
+    pr_id: str,
 ):
     """Insert the benchmarking data into the database.
 
@@ -72,6 +74,7 @@ def insert_benchmarking_data(
         branch_name: The name of the branch.
         event_type: Type of github event(push, pull request, etc)
         actor: Username of the user that triggered the run.
+        pr_id: Id of the PR.
     """
     # Serialize the JSON data
     simple_app_performance_json = json.dumps(performance_data)
@@ -82,8 +85,8 @@ def insert_benchmarking_data(
     # Connect to the database and insert the data
     with psycopg2.connect(db_connection_url) as conn, conn.cursor() as cursor:
         insert_query = """
-            INSERT INTO simple_app_benchmarks (os, python_version, commit_sha, time, pr_title, branch_name, event_type, actor, performance)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+            INSERT INTO simple_app_benchmarks (os, python_version, commit_sha, time, pr_title, branch_name, event_type, actor, performance, pr_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """
         cursor.execute(
             insert_query,
@@ -97,6 +100,7 @@ def insert_benchmarking_data(
                 event_type,
                 actor,
                 simple_app_performance_json,
+                pr_id,
             ),
         )
         # Commit the transaction
@@ -144,6 +148,11 @@ def main():
         help="Username of the user that triggered the run.",
         required=True,
     )
+    parser.add_argument(
+        "--pr-id",
+        help="ID of the PR.",
+        required=True,
+    )
     args = parser.parse_args()
 
     # Get the PR title from env or the args. For the PR merge or push event, there is no PR title, leaving it empty.
@@ -162,6 +171,7 @@ def main():
         branch_name=args.branch_name,
         event_type=args.event_type,
         actor=args.actor,
+        pr_id=args.pr_id,
     )
 
 

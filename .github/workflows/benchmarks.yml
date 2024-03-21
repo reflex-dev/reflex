@@ -126,4 +126,4 @@ jobs:
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --benchmark-json "${{ env.OUTPUT_FILE }}"
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
-          --event-type "${{ github.event_name }}" --actor "${{ github.actor }}"
+          --event-type "${{ github.event_name }}" --actor "${{ github.actor }}" --pr-id "${{ github.event.pull_request.id }}"
