@@ -121,7 +121,7 @@ def deprecate(
         reason: The reason for deprecation.
         deprecation_version: The version the feature was deprecated
         removal_version: The version the deprecated feature will be removed
-        dedupe: Whether to allow multiple console logs of deprecation message.
+        dedupe: If True, suppress multiple console logs of deprecation message.
         kwargs: Keyword arguments to pass to the print function.
     """
     from reflex.utils import DEPRECATED_FEATURES
