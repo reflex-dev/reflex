@@ -26,6 +26,8 @@ class Ext(SimpleNamespace):
     CSS = ".css"
     # The extension for zip files.
     ZIP = ".zip"
+    # The extension for executable files on Windows.
+    EXE = ".exe"
 
 
 class CompileVars(SimpleNamespace):
