@@ -65,13 +65,6 @@ runs:
         virtualenvs-in-project: true
         virtualenvs-path: ${{ inputs.create-venv-at-path }}
 
-    - name: Print size of site-packages
-      shell: bash
-      run: |
-        cd ${{ inputs.create-venv-at-path }}/lib/python*/site-packages
-        du -sh .
-    
-
     - if: steps.restore-poetry-cache.outputs.cache-hit != 'true'
       name: Save poetry install to cache
       uses: actions/cache/save@v4

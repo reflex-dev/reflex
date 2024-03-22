@@ -120,8 +120,6 @@ jobs:
       - name: Upload benchmark results
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
         run:
           poetry run python scripts/benchmarks/simple_app_benchmark_upload.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
@@ -154,3 +152,57 @@ jobs:
           --python-version 3.11.5 --commit-sha "${{ github.sha }}" --pr-id "${{ github.event.pull_request.id }}" 
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "reflex-build" --path ./dist
+
+  reflex-plus-dependency-size:
+    timeout-minutes: 30
+    strategy:
+      # Prioritize getting more information out of the workflow (even if something fails)
+      fail-fast: false
+      matrix:
+        # Show OS combos first in GUI
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        python-version: [ '3.8.18', '3.9.18', '3.10.13', '3.11.5', '3.12.0' ]
+        exclude:
+          - os: windows-latest
+            python-version: '3.10.13'
+          - os: windows-latest
+            python-version: '3.9.18'
+          - os: windows-latest
+            python-version: '3.8.18'
+        include:
+          - os: windows-latest
+            python-version: '3.10.11'
+          - os: windows-latest
+            python-version: '3.9.13'
+          - os: windows-latest
+            python-version: '3.8.10'
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version : 1.3.1
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+
+      - name: Run poetry install
+        shell: bash
+        run: |
+          python -m venv .venv
+          source .venv/*/activate
+          poetry install --without dev --no-interaction --no-root  
+
+      - name: Install additional dependencies for DB access
+        run: poetry run pip install psycopg2-binary
+
+      - if: ${{ env.DATABASE_URL }}
+        name: calculate and upload size
+        run: poetry run python scripts/benchmark_reflex_size.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}"
+          --branch-name "${{ github.head_ref || github.ref_name }}"
+          --measurement-type "reflex-package" --path ./.venv
