@@ -133,7 +133,9 @@ def insert_benchmarking_data(
                 branch_name,
                 pr_id,
                 measurement_type,
-                round(size / (1024 * 1024), 3),  # save size in mb and round to 3 places.
+                round(
+                    size / (1024 * 1024), 3
+                ),  # save size in mb and round to 3 places.
             ),
         )
         # Commit the transaction
