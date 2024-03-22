@@ -27,7 +27,7 @@ from typing import (
     Type,
 )
 
-import cloudpickle
+import dill
 import pydantic
 import wrapt
 from redis.asyncio import Redis
@@ -38,7 +38,6 @@ from reflex.event import (
     Event,
     EventHandler,
     EventSpec,
-    _no_chain_background_task,
     fix_events,
     window_alert,
 )
@@ -149,6 +148,44 @@ class RouterData(Base):
         self.page = PageData(router_data)
 
 
+def _no_chain_background_task(
+    state_cls: Type["BaseState"], name: str, fn: Callable
+) -> Callable:
+    """Protect against directly chaining a background task from another event handler.
+
+    Args:
+        state_cls: The state class that the event handler is in.
+        name: The name of the background task.
+        fn: The background task coroutine function / generator.
+
+    Returns:
+        A compatible coroutine function / generator that raises a runtime error.
+
+    Raises:
+        TypeError: If the background task is not async.
+    """
+    call = f"{state_cls.__name__}.{name}"
+    message = (
+        f"Cannot directly call background task {name!r}, use "
+        f"`yield {call}` or `return {call}` instead."
+    )
+    if inspect.iscoroutinefunction(fn):
+
+        async def _no_chain_background_task_co(*args, **kwargs):
+            raise RuntimeError(message)
+
+        return _no_chain_background_task_co
+    if inspect.isasyncgenfunction(fn):
+
+        async def _no_chain_background_task_gen(*args, **kwargs):
+            yield
+            raise RuntimeError(message)
+
+        return _no_chain_background_task_gen
+
+    raise TypeError(f"{fn} is marked as a background task, but is not async.")
+
+
 RESERVED_BACKEND_VAR_NAMES = {
     "_backend_vars",
     "_computed_var_dependencies",
@@ -256,6 +293,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
     # Whether the state has ever been touched since instantiation.
     _was_touched: bool = False
+
+    # Whether the state was defined dynamically (via type() or as a function local)
+    _is_defined_dynamically: ClassVar[bool] = False
 
     def __init__(
         self,
@@ -400,6 +440,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     )
             # Track this new subclass in the parent state's subclasses set.
             parent_state.class_subclasses.add(cls)
+
+            # Determine if this class is defined dynamically
+            try:
+                inspect.getsource(cls)
+            except OSError:
+                cls._is_defined_dynamically = True
 
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
@@ -2159,6 +2205,22 @@ class StateManagerMemory(StateManager):
             await self.set_state(token, state)
 
 
+@dill.register(type(State.validate.__func__))
+def _dill_reduce_cyfunction(pickler, obj):
+    # Ignore cyfunction when pickling.
+    pass
+
+
+@dill.register(type(State))
+def _dill_reduce_state(pickler, obj):
+    if issubclass(obj, State) and obj._is_defined_dynamically:
+        # Dynamically defined State cannot be loaded in the usual way, and must be fetched
+        # by reference from the base State class.
+        pickler.save_reduce(State.get_class_substate, (obj.get_full_name(),), obj=obj)
+    else:
+        dill.Pickler.dispatch[type](pickler, obj)
+
+
 class StateManagerRedis(StateManager):
     """A state manager that stores states in redis."""
 
@@ -2301,7 +2363,7 @@ class StateManagerRedis(StateManager):
 
         if redis_state is not None:
             # Deserialize the substate.
-            state = cloudpickle.loads(redis_state)
+            state = dill.loads(redis_state)
 
             # Populate parent state if missing and requested.
             if parent_state is None:
@@ -2412,7 +2474,7 @@ class StateManagerRedis(StateManager):
             )
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
         if state._get_was_touched():
-            pickle_state = cloudpickle.dumps(state)
+            pickle_state = dill.dumps(state, byref=True)
             self._warn_if_too_large(state, len(pickle_state))
             await self.redis.set(
                 _substate_key(client_token, state),
