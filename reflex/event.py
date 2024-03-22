@@ -75,7 +75,7 @@ def background(fn):
 
 
 def _no_chain_background_task(
-    state_cls: Type["BaseState"], name: str, fn: Callable
+        state_cls: Type["BaseState"], name: str, fn: Callable
 ) -> Callable:
     """Protect against directly chaining a background task from another event handler.
 
@@ -96,13 +96,11 @@ def _no_chain_background_task(
         f"`yield {call}` or `return {call}` instead."
     )
     if inspect.iscoroutinefunction(fn):
-
         async def _no_chain_background_task_co(*args, **kwargs):
             raise RuntimeError(message)
 
         return _no_chain_background_task_co
     if inspect.isasyncgenfunction(fn):
-
         async def _no_chain_background_task_gen(*args, **kwargs):
             yield
             raise RuntimeError(message)
@@ -567,10 +565,29 @@ def set_clipboard(content: str) -> EventSpec:
     )
 
 
+def scroll_to(elem_id: str) -> EventSpec:
+
+    """ select the id of a html element for scrolling into view
+
+    Args:
+        elem_id: the id of the element
+
+    Returns:
+        EventSpec: an event to scroll the page to the selected element
+
+    """
+
+    elem_id = "#" + elem_id
+
+    js_code = f"document.getElementById('{elem_id}').scrollIntoView();"
+
+    return call_script(js_code)
+
+
 def download(
-    url: str | Var | None = None,
-    filename: Optional[str | Var] = None,
-    data: str | bytes | Var | None = None,
+        url: str | Var | None = None,
+        filename: Optional[str | Var] = None,
+        data: str | bytes | Var | None = None,
 ) -> EventSpec:
     """Download the file at a given path or with the specified data.
 
@@ -653,8 +670,8 @@ def _callback_arg_spec(eval_result):
 
 
 def call_script(
-    javascript_code: str,
-    callback: EventHandler | Callable | None = None,
+        javascript_code: str,
+        callback: EventHandler | Callable | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -714,7 +731,7 @@ def get_hydrate_event(state) -> str:
 
 
 def call_event_handler(
-    event_handler: EventHandler, arg_spec: Union[Var, ArgsSpec]
+        event_handler: EventHandler, arg_spec: Union[Var, ArgsSpec]
 ) -> EventSpec:
     """Call an event handler to get the event spec.
 
@@ -756,7 +773,7 @@ def call_event_handler(
         if len(args) == 1:
             return event_handler()
         assert (
-            len(args) == 2
+                len(args) == 2
         ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
         return event_handler(arg_spec)  # type: ignore
 
@@ -857,9 +874,9 @@ def get_handler_args(event_spec: EventSpec) -> tuple[tuple[Var, Var], ...]:
 
 
 def fix_events(
-    events: list[EventHandler | EventSpec] | None,
-    token: str,
-    router_data: dict[str, Any] | None = None,
+        events: list[EventHandler | EventSpec] | None,
+        token: str,
+        router_data: dict[str, Any] | None = None,
 ) -> list[Event]:
     """Fix a list of events returned by an event handler.
 
