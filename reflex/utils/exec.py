@@ -307,3 +307,12 @@ def is_prod_mode() -> bool:
         constants.Env.DEV.value,
     )
     return current_mode == constants.Env.PROD.value
+
+
+def should_skip_compile() -> bool:
+    """Whether the app should skip compile.
+
+    Returns:
+        True if the app should skip compile.
+    """
+    return os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes"
