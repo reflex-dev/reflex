@@ -61,6 +61,7 @@ wheel = "^0.42.0"
 build = "^1.0.3"
 setuptools = "^69.1.1"
 httpx = ">=0.25.1"
+tomlkit = "^0.12.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"

@@ -12,7 +12,9 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import httpx
+import tomlkit
 import typer
+from tomlkit.exceptions import TOMLKitError
 
 from reflex import constants
 from reflex.config import get_config
@@ -504,21 +506,16 @@ def _get_version_to_publish() -> str:
         The version to publish.
     """
     # Get the version from the pyproject.toml.
-    version_to_publish = None
-    with open(CustomComponents.PYPROJECT_TOML, "r") as f:
-        pyproject_toml = f.read()
-        # Note below does not capture non-matching quotes. Not performing full syntax check here.
-        match = re.search(r'version\s*=\s*["\'](.*?)["\']', pyproject_toml)
-        if match:
-            version_to_publish = match.group(1)
-            console.debug(f"Version to be published: {version_to_publish}")
-    if not version_to_publish:
-        console.error(
-            f"Could not find the version to be published in {CustomComponents.PYPROJECT_TOML}"
-        )
-        raise typer.Exit(code=1)
+    try:
+        with open(CustomComponents.PYPROJECT_TOML, "rb"):
+            project_toml = tomlkit.parse(CustomComponents.PYPROJECT_TOML)
+            return project_toml.value["project"]["version"]
 
-    return version_to_publish
+    except (KeyError, TOMLKitError) as ex:
+        console.error(
+            f"Cannot find the version in {CustomComponents.PYPROJECT_TOML} due to {ex}"
+        )
+        raise typer.Exit(code=1) from ex
 
 
 def _ensure_dist_dir(version_to_publish: str, build: bool):
@@ -616,6 +613,10 @@ def publish(
         True,
         help="Whether to prompt to share more details on the published package. Only applicable when published to PyPI. Defaults to True.",
     ),
+    validate_project_info: bool = typer.Option(
+        True,
+        help="Whether to interactively validate the project information in the pyproject.toml file.",
+    ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
@@ -629,6 +630,7 @@ def publish(
         password: The password to use for authentication on python package repository.
         build: Whether to build the distribution files. Defaults to True.
         share: Whether to prompt to share more details on the published package. Defaults to True.
+        validate_project_info: whether to interactively validate the project information in the pyproject.toml file. Defaults to True.
         loglevel: The log level to use.
 
     Raises:
@@ -655,6 +657,18 @@ def publish(
     except (ImportError, ModuleNotFoundError) as ex:
         if not _pip_install_on_demand("twine"):
             raise typer.Exit(code=1) from ex
+
+    if validate_project_info:
+        if (
+            console.ask(
+                "Would you like to interactively verify the package information?",
+                choices=["Y", "n"],
+                default="Y",
+            )
+            == "Y"
+        ):
+            _validate_project_info()
+
     publish_cmds = [
         sys.executable,
         "-m",
@@ -695,6 +709,73 @@ def publish(
     _collect_details_for_gallery()
 
 
+def _process_entered_list(input: str) -> list | None:
+    """Process the user entered comma separated list into a list if applicable.
+
+    Args:
+        input: the user entered comma separated list
+
+    Returns:
+        The list of items or None.
+    """
+    return [t.strip() for t in input.split(",") if t if input] or None
+
+
+def _validate_project_info():
+    """Validate the project information in the pyproject.toml file."""
+    try:
+        pyproject_toml = tomlkit.parse(CustomComponents.PYPROJECT_TOML)
+        project = pyproject_toml.value["project"]
+        console.print(
+            f'Double check the information before publishing: {project["name"]} version {project["version"]}'
+        )
+        console.print("Update or enter to keep the current information.")
+        project["description"] = console.ask(
+            "description", default=project.get("description", "")
+        )
+        authors = project.get("authors", [{}])
+        for i, author in enumerate(authors):
+            author["name"] = console.ask(
+                f"Author {i} name", default=author.get("name", "")
+            )
+            author["email"] = console.ask(
+                f"Author {i} email", default=author.get("email", "")
+            )
+
+        console.print(f'Current key words {project["keywords"]}')
+        keyword_action = console.ask(
+            "Keep, replace or append?", choices=["k", "r", "a"]
+        )
+        new_keywords = []
+        if keyword_action == "r":
+            new_keywords = (
+                _process_entered_list(
+                    console.ask("Enter new set of keywords separated by commas")
+                )
+                or []
+            )
+        elif keyword_action == "a":
+            new_keywords = (
+                _process_entered_list(
+                    console.ask("Enter new set of keywords separated by commas")
+                )
+                or []
+            )
+        project["keywords"] += new_keywords
+
+        project["urls"]["homepage"] = console.ask(
+            "homepage URL", default=project["urls"]["homepage"]
+        )
+        project["urls"]["source"] = console.ask(
+            "source code URL", default=project["urls"]["source"]
+        )
+        with open(CustomComponents.PYPROJECT_TOML, "w") as f:
+            tomlkit.dump(pyproject_toml, f)
+    except TOMLKitError as tke:
+        console.error(f"Unable to read from pyproject.toml due to {tke}")
+        raise typer.Exit(code=1) from tke
+
+
 def _collect_details_for_gallery():
     """Helper to collect details on the custom component to be included in the gallery.
 
@@ -717,21 +798,14 @@ def _collect_details_for_gallery():
     console.rule("[bold]Custom Component Information")
     params = {}
     package_name = None
-    if not os.path.exists(CustomComponents.PYPROJECT_TOML):
+    try:
+        project_toml = tomlkit.parse(CustomComponents.PYPROJECT_TOML)
+        package_name = project_toml.value["project"]["name"]
+    except (TOMLKitError, KeyError) as ex:
+        console.debug(
+            f"Unable to read from pyproject.toml in current directory due to {ex}"
+        )
         package_name = console.ask("[ Published python package name ]")
-    else:
-        with open(CustomComponents.PYPROJECT_TOML, "r") as f:
-            pyproject_toml = f.read()
-            # Note below does not capture non-matching quotes. Not performing full syntax check here.
-            match = re.search(r'name\s*=\s*["\'](.*?)["\']', pyproject_toml)
-            if match:
-                package_name = match.group(1)
-                console.debug(f"Package name: {package_name}")
-            else:
-                console.error(
-                    f"Could not find the package name in {CustomComponents.PYPROJECT_TOML}"
-                )
-                raise typer.Exit(code=1)
         console.print(f"[ Custom component package name ] : {package_name}")
 
     # Check the backend services if the user is allowed to update information of this package is already shared.
@@ -800,8 +874,9 @@ def _collect_details_for_gallery():
     if display_name:
         params["display_name"] = display_name
 
-    tags_str = console.ask("[ List of tags separated by comma ] (enter to skip)")
-    tags = [t.strip() for t in tags_str.split(",") if t if tags_str] or None
+    tags = _process_entered_list(
+        console.ask("[ List of tags separated by comma ] (enter to skip)")
+    )
     if tags:
         params["tags"] = tags
 
