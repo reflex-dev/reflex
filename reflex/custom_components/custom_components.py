@@ -704,7 +704,7 @@ def _collect_details_for_gallery():
     from reflex.reflex import _login
 
     console.print(
-        "We will collect the URL of your demo app for this component towards the end."
+        "We recommend that you deploy a demo app using showcasing the component."
     )
     console.print("If not already deployed, please deploy it separately first.")
     if console.ask("Continue?", choices=["y", "n"], default="y") != "y":
@@ -733,6 +733,7 @@ def _collect_details_for_gallery():
                 )
                 raise typer.Exit(code=1)
         console.print(f"[ Custom component package name ] : {package_name}")
+
     # Check the backend services if the user is allowed to update information of this package is already shared.
     expected_status_code = False
     try:
@@ -761,32 +762,18 @@ def _collect_details_for_gallery():
 
     params["package_name"] = package_name
 
-    description = None
-    while not description:
-        description = console.ask("[ Short description ] (required)")
-    params["description"] = description
-
-    display_name = (
-        console.ask("[ Friendly display name for your component ] (enter to skip)")
-        or None
-    )
-    if display_name:
-        params["display_name"] = display_name
-
-    tags_str = console.ask("[ List of tags separated by comma ] (enter to skip)")
-    tags = [t.strip() for t in tags_str.split(",") if t] or None
-    if tags:
-        params["tags"] = tags
-
-    files = []
-    if (gif_file_and_extension := _get_file_from_prompt_in_loop("gif")) is not None:
-        files.append(("files", ("gif", gif_file_and_extension[0])))
-    if (
-        image_file_and_extension := _get_file_from_prompt_in_loop("image"),
-    ) is not None:
-        files.append(
-            ("files", (image_file_and_extension[1], image_file_and_extension[0]))
+    demo_url = None
+    while True:
+        demo_url = (
+            console.ask(
+                "[ Full URL of deployed demo app : `https://my-app.reflex.run` ] (enter to skip)"
+            )
+            or None
         )
+        if _validate_url_with_protocol_prefix(demo_url):
+            break
+    if demo_url:
+        params["demo_url"] = demo_url
 
     source = None
     while True:
@@ -801,18 +788,32 @@ def _collect_details_for_gallery():
     if source:
         params["source"] = source
 
-    demo_url = None
-    while True:
-        demo_url = (
-            console.ask(
-                "[ Full URL of deployed demo app : `https://my-app.reflex.run` ] (enter to skip)"
-            )
-            or None
+    description = None
+    while not description:
+        description = console.ask("[ Short description ] (required)")
+    params["description"] = description
+
+    display_name = (
+        console.ask("[ Friendly display name for your component ] (enter to skip)")
+        or None
+    )
+    if display_name:
+        params["display_name"] = display_name
+
+    tags_str = console.ask("[ List of tags separated by comma ] (enter to skip)")
+    tags = [t.strip() for t in tags_str.split(",") if t if tags_str] or None
+    if tags:
+        params["tags"] = tags
+
+    files = []
+    if (gif_file_and_extension := _get_file_from_prompt_in_loop("gif")) is not None:
+        files.append(("files", ("gif", gif_file_and_extension[0])))
+    if (
+        image_file_and_extension := _get_file_from_prompt_in_loop("image"),
+    ) is not None:
+        files.append(
+            ("files", (image_file_and_extension[1], image_file_and_extension[0]))
         )
-        if _validate_url_with_protocol_prefix(demo_url):
-            break
-    if demo_url:
-        params["demo_url"] = demo_url
 
     # Now send the post request to Reflex backend services.
     try:
