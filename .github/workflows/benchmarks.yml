@@ -187,7 +187,7 @@ jobs:
 
       - if: ${{ env.DATABASE_URL }}
         name: calculate and upload size
-        run: ls && poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
+        run: poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}"
           --branch-name "${{ github.head_ref || github.ref_name }}"
