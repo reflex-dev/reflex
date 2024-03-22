@@ -67,7 +67,8 @@ runs:
 
     - name: print size of sites-packages
       shell: bash
-      run: du -h ${{ inputs.create-venv-at-path }}/lib/
+      working-directory: ${{ inputs.create-venv-at-path }}
+      run: ls &&  du -h
 
     - if: steps.restore-poetry-cache.outputs.cache-hit != 'true'
       name: Save poetry install to cache
