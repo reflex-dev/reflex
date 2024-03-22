@@ -66,6 +66,7 @@ runs:
         virtualenvs-path: ${{ inputs.create-venv-at-path }}
 
     - name: print size of sites-packages
+      shell: bash
       run: du -h ${{ inputs.create-venv-at-path }}/lib/
 
     - if: steps.restore-poetry-cache.outputs.cache-hit != 'true'
