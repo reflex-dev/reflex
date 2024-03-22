@@ -577,7 +577,6 @@ def scroll_to(elem_id: str) -> EventSpec:
         EventSpec: an event to scroll the page to the selected element
 
     """
-    elem_id = "#" + elem_id
 
     js_code = f"document.getElementById('{elem_id}').scrollIntoView();"
 
