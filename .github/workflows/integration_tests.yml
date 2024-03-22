@@ -63,12 +63,19 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
+      - name: Check reflex install size with dependencies
+        # Only run if the database creds are available in this context.
+        if: ${{ env.DATABASE_URL }}
+        run: poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}"
+          --branch-name "${{ github.head_ref || github.ref_name }}"
+          --measurement-type "reflex-package" --path ./.venv
       - name: Clone Reflex Examples Repo
         uses: actions/checkout@v4
         with:
           repository: reflex-dev/reflex-examples
           path: reflex-examples
-
       - name: Install requirements for counter example
         working-directory: ./reflex-examples/counter
         run: |
@@ -95,14 +102,6 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev
-      - name: Check reflex install size with dependencies
-        # Only run if the database creds are available in this context.
-        if: ${{ env.DATABASE_URL }}
-        run: poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
-          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}" 
-          --branch-name "${{ github.head_ref || github.ref_name }}"
-          --measurement-type "reflex-package" --path ./.venv
       - name: Measure and upload .web size
         if: ${{ env.DATABASE_URL }}
         run: poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
