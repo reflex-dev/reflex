@@ -33,6 +33,9 @@ class Endpoint(Enum):
 
         # The event endpoint is a websocket.
         if self == Endpoint.EVENT:
+            # Get the EVENT URL from the config if is set.
+            if config.event_url:
+                url = "".join([config.event_url, str(self)])
             # Replace the protocol with ws.
             url = url.replace("https://", "wss://").replace("http://", "ws://")
 
