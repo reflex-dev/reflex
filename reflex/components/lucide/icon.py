@@ -9,7 +9,7 @@ from reflex.vars import Var
 class LucideIconComponent(Component):
     """Lucide Icon Component."""
 
-    library = "lucide-react@0.314.0"
+    library = "lucide-react@0.363.0"
 
 
 class Icon(LucideIconComponent):
