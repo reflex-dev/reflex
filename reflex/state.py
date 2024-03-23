@@ -480,6 +480,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
+        # Initialize per-class var dependency tracking.
+        cls._computed_var_dependencies = defaultdict(set)
+        cls._substate_var_dependencies = defaultdict(set)
         cls._init_var_dependency_dicts()
 
     @staticmethod
@@ -544,10 +547,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Additional updates tracking dicts for vars and substates that always
         need to be recomputed.
         """
-        # Initialize per-class var dependency tracking.
-        cls._computed_var_dependencies = defaultdict(set)
-        cls._substate_var_dependencies = defaultdict(set)
-
         inherited_vars = set(cls.inherited_vars).union(
             set(cls.inherited_backend_vars),
         )
@@ -587,6 +586,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     parent_state.get_name(),
                     parent_state.get_parent_state(),
                 )
+
+    @classmethod
+    def _reinit_var_dependency_dicts(cls):
+        """Reinitialize the var dependency tracking dicts.
+
+        For example: when adding a new var to a state, all substate dependency tracking dicts must be
+        recursively updated to account for the new var.
+        """
+        for substate in cls.get_substates():
+            substate._reinit_var_dependency_dicts()
+            substate._init_var_dependency_dicts()
+        cls._init_var_dependency_dicts()
 
     @classmethod
     def _check_overridden_methods(cls):
@@ -781,11 +792,27 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls.vars.update({name: var})
 
         # let substates know about the new variable
-        for substate_class in cls.__subclasses__():
-            substate_class.vars.setdefault(name, var)
+        cls._update_substate_inherited_vars(name, var)
 
         # Reinitialize dependency tracking dicts.
-        cls._init_var_dependency_dicts()
+        cls._reinit_var_dependency_dicts()
+
+    @classmethod
+    def _update_substate_inherited_vars(cls, name, var):
+        """Update the inherited vars of the substates, when a new var is added.
+
+        Args:
+            name: The name of the var.
+            var: The var instance.
+        """
+        for substate_class in cls.class_subclasses:
+            if types.is_backend_variable(name, cls):
+                substate_class.backend_vars.setdefault(name, var)
+                substate_class.inherited_backend_vars.setdefault(name, var)
+            else:
+                substate_class.vars.setdefault(name, var)
+                substate_class.inherited_vars.setdefault(name, var)
+            substate_class._update_substate_inherited_vars(name, var)
 
     @classmethod
     def _set_var(cls, prop: BaseVar):
@@ -1008,8 +1035,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
-            # Reinitialize dependency tracking dicts.
-            cls._init_var_dependency_dicts()
+            # Let substates know about the new var.
+            cls._update_substate_inherited_vars(param, func)
+
+        # Reinitialize dependency tracking dicts.
+        cls._reinit_var_dependency_dicts()
 
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.
