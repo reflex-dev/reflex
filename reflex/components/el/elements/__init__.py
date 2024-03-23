@@ -47,15 +47,20 @@ from .inline import (
 from .media import (
     Area,
     Audio,
+    Circle,
+    Defs,
     Embed,
     Iframe,
     Img,
+    G,
+    Lineargradient,
     Map,
     Object,
     Path,
     Picture,
     Portal,
     Source,
+    Stop,
     Svg,
     Track,
     Video,
@@ -139,7 +144,12 @@ picture = Picture.create
 portal = Portal.create
 source = Source.create
 svg = Svg.create
+lineargradient = Lineargradient.create
+defs = Defs.create
+stop = Stop.create
+circle = Circle.create
 path = Path.create
+g = G.create
 
 # Sectioning
 address = Address.create
@@ -148,6 +158,7 @@ aside = Aside.create
 body = Body.create
 header = Header.create
 footer = Footer.create
+header = Header.create
 
 # Typography
 blockquote = Blockquote.create

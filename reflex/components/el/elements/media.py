@@ -290,6 +290,66 @@ class Svg(BaseHTML):
     tag = "svg"
 
 
+class Lineargradient(BaseHTML):
+    """Lets authors define linear gradients to apply to other SVG elements."""
+
+    tag = "lineargradient"
+    
+    # Defines the coordinate system for attributes x1, x2, y1, y2
+    gradient_units: Var[Union[str, int, bool]]
+
+    # Defines the x coordinate of the starting point of the vector gradient along which the linear gradient is drawn
+    x1: Var[Union[str, int, bool]]
+
+    # Defines the x coordinate of the ending point of the vector gradient along which the linear gradient is drawn
+    x2: Var[Union[str, int, bool]]
+
+    # Defines the y coordinate of the starting point of the vector gradient along which the linear gradient is drawn
+    y1: Var[Union[str, int, bool]]
+
+    # Defines the y coordinate of the ending point of the vector gradient along which the linear gradient is drawn
+    y2: Var[Union[str, int, bool]]
+
+
+class Defs(BaseHTML):
+    """Used to store graphical objects that will be used at a later time."""
+
+    tag = "defs"
+
+
+class Stop(BaseHTML):
+    """Defines a color and its position to use on a gradient. This element is always a child of a <linearGradient> or <radialGradient> element."""
+
+    tag = "stop"
+
+    # Defines where the gradient stop is placed along the gradient vector
+    offset: Var[Union[str, int, bool]]
+
+    # Defines the color of the gradient stop
+    stop_color: Var[Union[str, int, bool]]
+
+    # Defines the opacity of the gradient stop
+    stop_opacity: Var[Union[str, int, bool]]
+
+
+class Circle(BaseHTML):
+    """An SVG basic shape, used to draw circles based on a center point and a radius."""
+
+    tag = "circle"
+
+    # The x-axis coordinate of the center of the circle
+    cx: Var[Union[str, int, bool]]
+
+    # The y-axis coordinate of the center of the circle
+    cy: Var[Union[str, int, bool]]
+
+    # The radius of the circle
+    r: Var[Union[str, int, bool]]
+
+    # The total length for the circle's circumference, in user units.
+    path_length: Var[Union[str, int, bool]]
+
+
 class Path(BaseHTML):
     """Display the path element."""
 
@@ -297,3 +357,89 @@ class Path(BaseHTML):
 
     # Defines the shape of the path
     d: Var[Union[str, int, bool]]
+
+
+class G(BaseHTML):
+    """The <g> SVG element is a container used to group other SVG elements."""
+
+    tag = "g"
+
+    # Defines or associates a clipping path with the element it is related to
+    clip_path: Var[Union[str, int, bool]]
+
+    # Works as the fill-rule attribute, except that it applies to <clipPath> definitions
+    clip_rule: Var[Union[str, int, bool]]
+
+    # Provides a potential indirect value, currentcolor, for the fill, stroke, stop-color, flood-color, and lighting-color attributes
+    color: Var[Union[str, int, bool]]
+
+    # Specifies the color space for gradient interpolations, color animations, and alpha compositing.
+    color_interpolation: Var[Union[str, int, bool]]
+
+    # Specifies the color rendering intent of the element
+    color_rendering: Var[Union[str, int, bool]]
+
+    # Specifies the type of cursor to be displayed when pointing over an element
+    cursor: Var[Union[str, int, bool]]
+
+    # Lets you control the rendering of graphical or container elements
+    display: Var[Union[str, int, bool]]
+
+    # Specifies the fill color of the element
+    fill: Var[Union[str, int, bool]]
+
+    # Specifies the opacity of the fill color
+    fill_opacity: Var[Union[str, int, bool]]
+
+    # Specifies the algorithm used to determine the inside part of a shape for the purpose of determining the shape to be filled
+    fill_rule: Var[Union[str, int, bool]]
+
+    # Specifies the filter effects applied to the element
+    filter: Var[Union[str, int, bool]]
+
+    # Used to bind a given <mask> element with the element the attribute belongs to
+    mask: Var[Union[str, int, bool]]
+
+    # Specifies the transparency of an object or of a group of objects, that is, the degree to which the background behind the element is overlaid
+    opacity: Var[Union[str, int, bool]]
+
+    # Specifies whether the element can be the target of pointer events
+    pointer_events: Var[Union[str, int, bool]]
+
+    # Provides hints to the renderer about what tradeoffs to make when rendering shapes like paths, circles, or rectangles
+    shape_rendering: Var[Union[str, int, bool]]
+
+    # Specifies the color used to paint the outline of the shape
+    stroke: Var[Union[str, int, bool]]
+
+    # Specifies the pattern of dashes and gaps used to paint the outline of the shape
+    stroke_dasharray: Var[Union[str, int, bool]]
+
+    # Specifies the offset into the dash pattern
+    stroke_dashoffset: Var[Union[str, int, bool]]
+
+    # Specifies the shape to be used at the end of open subpaths when they are stroked
+    stroke_linecap: Var[Union[str, int, bool]]
+
+    # Specifies the shape to be used at the corners of paths or basic shapes when they are stroked
+    stroke_linejoin: Var[Union[str, int, bool]]
+
+    # Specifies the limit on the ratio of the miter length to the stroke width
+    stroke_miterlimit: Var[Union[str, int, bool]]
+
+    # Specifies the opacity of the stroke of the element
+    stroke_opacity: Var[Union[str, int, bool]]
+
+    # Specifies the width of the stroke of the element
+    stroke_width: Var[Union[str, int, bool]]
+
+    # Specifies a list of transformations applied to the element and the element's children
+    transform: Var[Union[str, int, bool]]
+
+    # Specifies the vector effect to be applied to the element
+    vector_effect: Var[Union[str, int, bool]]
+
+    # Specifies the visibility of the element (with a value of hidden or collapse the current graphics element is invisible)
+    visibility: Var[Union[str, int, bool]]
+    
+
