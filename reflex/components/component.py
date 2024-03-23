@@ -75,6 +75,14 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
+    def get_ref_hooks(self) -> set[str]:
+        """Get the hooks required by refs in this component.
+
+        Returns:
+            The hooks for the refs.
+        """
+
+    @abstractmethod
     def get_hooks_internal(self) -> set[str]:
         """Get the reflex internal hooks for the component and its children.
 
@@ -1134,11 +1142,7 @@ class Component(BaseComponent, ABC):
             self._get_vars_hooks()
             | self._get_events_hooks()
             | self._get_special_hooks()
-            | set(
-                hook
-                for hook in [self._get_ref_hook(), self._get_mount_lifecycle_hook()]
-                if hook
-            )
+            | set(hook for hook in [self._get_mount_lifecycle_hook()] if hook)
         )
 
     def _get_hooks(self) -> str | None:
@@ -1150,6 +1154,19 @@ class Component(BaseComponent, ABC):
             The hooks for just this component.
         """
         return
+
+    def get_ref_hooks(self) -> Set[str]:
+        """Get the ref hooks for the component and its children.
+
+        Returns:
+            The ref hooks.
+        """
+        ref_hook = self._get_ref_hook()
+        hooks = set() if ref_hook is None else {ref_hook}
+
+        for child in self.children:
+            hooks |= child.get_ref_hooks()
+        return hooks
 
     def get_hooks_internal(self) -> set[str]:
         """Get the reflex internal hooks for the component and its children.
