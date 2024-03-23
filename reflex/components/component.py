@@ -635,9 +635,11 @@ class Component(BaseComponent, ABC):
                 )
 
         children = [
-            child
-            if isinstance(child, Component)
-            else Bare.create(contents=Var.create(child, _var_is_string=True))
+            (
+                child
+                if isinstance(child, Component)
+                else Bare.create(contents=Var.create(child, _var_is_string=True))
+            )
             for child in children
         ]
 
@@ -1129,14 +1131,14 @@ class Component(BaseComponent, ABC):
             Set of internally managed hooks.
         """
         return (
-            set(
-                hook
-                for hook in [self._get_mount_lifecycle_hook(), self._get_ref_hook()]
-                if hook
-            )
-            | self._get_vars_hooks()
+            self._get_vars_hooks()
             | self._get_events_hooks()
             | self._get_special_hooks()
+            | set(
+                hook
+                for hook in [self._get_ref_hook(), self._get_mount_lifecycle_hook()]
+                if hook
+            )
         )
 
     def _get_hooks(self) -> str | None:
@@ -1423,9 +1425,9 @@ class CustomComponent(Component):
         return [
             BaseVar(
                 _var_name=name,
-                _var_type=prop._var_type
-                if types._isinstance(prop, Var)
-                else type(prop),
+                _var_type=(
+                    prop._var_type if types._isinstance(prop, Var) else type(prop)
+                ),
             )
             for name, prop in self.props.items()
         ]
