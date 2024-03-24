@@ -100,7 +100,7 @@ def change_port(port: str, _type: str) -> str:
     """
     new_port = str(int(port) + 1)
     if is_process_on_port(new_port):
-        return change_port(new_port)
+        return change_port(new_port, _type)
     console.info(
         f"The {_type} will run on port [bold underline]{new_port}[/bold underline]."
     )
