@@ -92,6 +92,7 @@ def change_port(port: str, _type: str) -> str:
 
     Args:
         port: The port.
+        _type: The type of the port.
 
     Returns:
         The new port.
