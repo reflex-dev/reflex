@@ -2976,8 +2976,11 @@ def reload_state_module(
     Args:
         module: The module to reload.
         state: Recursive argument for the state class to reload.
+
     """
     for subclass in tuple(state.class_subclasses):
         reload_state_module(module=module, state=subclass)
         if subclass.__module__ == module and module is not None:
             state.class_subclasses.remove(subclass)
+            state._always_dirty_substates.discard(subclass.get_name())
+    state._init_var_dependency_dicts()

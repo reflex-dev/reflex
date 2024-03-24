@@ -40,7 +40,13 @@ import reflex.utils.build
 import reflex.utils.exec
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.state import BaseState, State, StateManagerMemory, StateManagerRedis
+from reflex.state import (
+    BaseState,
+    State,
+    StateManagerMemory,
+    StateManagerRedis,
+    reload_state_module,
+)
 
 try:
     from selenium import webdriver  # pyright: ignore [reportMissingImports]
@@ -72,9 +78,6 @@ if platform.system == "Windows":
 else:
     FRONTEND_POPEN_ARGS["start_new_session"] = True
 
-
-# Save a copy of internal substates to reset after each test.
-INTERNAL_STATES = State.class_subclasses.copy()
 
 
 # borrowed from py3.11
@@ -229,11 +232,6 @@ class AppHarness:
             reflex.config.get_config(reload=True)
             # Clean out any `rx.page` decorators from other tests.
             reflex.app.DECORATED_PAGES.clear()
-            # reset rx.State subclasses
-            State.class_subclasses.clear()
-            State.class_subclasses.update(INTERNAL_STATES)
-            State._always_dirty_substates = set()
-            State.get_class_substate.cache_clear()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
@@ -361,6 +359,10 @@ class AppHarness:
 
     def stop(self) -> None:
         """Stop the frontend and backend servers."""
+        # Reset rx.State subclasses to avoid conflict when reloading.
+        reload_state_module(module=f"{self.app_name}.{self.app_name}")
+        State.get_class_substate.cache_clear()
+
         if self.backend is not None:
             self.backend.should_exit = True
         if self.frontend_process is not None:
