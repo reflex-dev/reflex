@@ -603,7 +603,7 @@ class App(Base):
                 feature_name="Admin Dash",
                 reason="as it will be no longer supported",
                 deprecation_version="0.4.6",
-                removal_version="0.5.0"
+                removal_version="0.5.0",
             )
 
         if admin_dash and admin_dash.models:
