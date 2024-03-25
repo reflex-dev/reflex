@@ -598,6 +598,14 @@ class App(Base):
         # Get the admin dash.
         admin_dash = self.admin_dash
 
+        if admin_dash is not None:
+            console.deprecate(
+                feature_name="Admin Dash",
+                reason="as it will be no longer supported",
+                deprecation_version="0.4.6",
+                removal_version="0.5.0"
+            )
+
         if admin_dash and admin_dash.models:
             # Build the admin dashboard
             admin = (
