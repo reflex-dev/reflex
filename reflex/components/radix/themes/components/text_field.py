@@ -35,12 +35,6 @@ class TextFieldRoot(el.Div, RadixThemesComponent):
     # Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
 
-
-class TextFieldInput(el.Input, TextFieldRoot):
-    """The input part of a TextField, may be used by itself."""
-
-    tag = "TextField.Input"
-
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create an Input component.
@@ -140,7 +134,7 @@ class Input(RadixThemesComponent):
         Returns:
             The component.
         """
-        return TextFieldInput.create(**props)
+        return TextFieldRoot.create(**props)
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
@@ -162,7 +156,7 @@ class TextField(ComponentNamespace):
     """TextField components namespace."""
 
     root = staticmethod(TextFieldRoot.create)
-    input = staticmethod(TextFieldInput.create)
+    # input = staticmethod(TextFieldInput.create)
     slot = staticmethod(TextFieldSlot.create)
     __call__ = staticmethod(Input.create)
 
