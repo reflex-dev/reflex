@@ -334,8 +334,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     parent_state=self,
                     _reflex_internal_init=True,
                 )
-        # Convert the event handlers to functions.
-        self._init_event_handlers()
 
         # Create a fresh copy of the backend variables for this instance
         self._backend_vars = copy.deepcopy(
@@ -345,32 +343,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if name not in self.computed_vars
             }
         )
-
-    def _init_event_handlers(self, state: BaseState | None = None):
-        """Initialize event handlers.
-
-        Allow event handlers to be called directly on the instance. This is
-        called recursively for all parent states.
-
-        Args:
-            state: The state to initialize the event handlers on.
-        """
-        if state is None:
-            state = self
-
-        # Convert the event handlers to functions.
-        for name, event_handler in state.event_handlers.items():
-            if event_handler.is_background:
-                fn = _no_chain_background_task(type(state), name, event_handler.fn)
-            else:
-                fn = functools.partial(event_handler.fn, self)
-            fn.__module__ = event_handler.fn.__module__  # type: ignore
-            fn.__qualname__ = event_handler.fn.__qualname__  # type: ignore
-            setattr(self, name, fn)
-
-        # Also allow direct calling of parent state event handlers
-        if state.parent_state is not None:
-            self._init_event_handlers(state.parent_state)
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -1083,11 +1055,30 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if parent_state is not None:
                 return getattr(parent_state, name)
 
+        # Allow event handlers to be called on the instance directly.
+        event_handlers = super().__getattribute__("event_handlers")
+        if name in event_handlers:
+            handler = event_handlers[name]
+            if handler.is_background:
+                fn = _no_chain_background_task(type(self), name, handler.fn)
+            else:
+                fn = functools.partial(handler.fn, self)
+            fn.__module__ = handler.fn.__module__  # type: ignore
+            fn.__qualname__ = handler.fn.__qualname__  # type: ignore
+            return fn
+
         backend_vars = super().__getattribute__("_backend_vars")
         if name in backend_vars:
             value = backend_vars[name]
         else:
             value = super().__getattribute__(name)
+
+        if isinstance(value, EventHandler):
+            # The event handler is inherited from a parent, so let the parent convert
+            # it to a callable function.
+            parent_state = super().__getattribute__("parent_state")
+            if parent_state is not None:
+                return getattr(parent_state, name)
 
         if isinstance(value, MutableProxy.__mutable_types__) and (
             name in super().__getattribute__("base_vars") or name in backend_vars
