@@ -68,6 +68,7 @@ from reflex.components import section as section
 from reflex.components import select as select
 from reflex.components import slider as slider
 from reflex.components import spacer as spacer
+from reflex.components import spinner as spinner
 from reflex.components import stack as stack
 from reflex.components import switch as switch
 from reflex.components import table as table

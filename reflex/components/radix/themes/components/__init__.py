@@ -23,6 +23,7 @@ from .select import select as select
 from .separator import divider as divider
 from .separator import separator as separator
 from .slider import slider as slider
+from .spinner import spinner as spinner
 from .switch import switch as switch
 from .table import table as table
 from .tabs import tabs as tabs
@@ -57,6 +58,7 @@ __all__ = [
     "select",
     "separator",
     "slider",
+    "spinner",
     "switch",
     "table",
     "tabs",
