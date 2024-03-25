@@ -864,7 +864,7 @@ def _collect_details_for_gallery():
         params["display_name"] = display_name
 
     files = []
-    if (image_file_and_extension := _get_file_from_prompt_in_loop()) != (None, None):
+    if (image_file_and_extension := _get_file_from_prompt_in_loop()) is not None:
         files.append(
             ("files", (image_file_and_extension[1], image_file_and_extension[0]))
         )
@@ -900,7 +900,7 @@ def _validate_url_with_protocol_prefix(url: str | None) -> bool:
     return not url or (url.startswith("http://") or url.startswith("https://"))
 
 
-def _get_file_from_prompt_in_loop() -> Tuple[bytes | None, str | None]:
+def _get_file_from_prompt_in_loop() -> Tuple[bytes, str] | None:
     image_file = file_extension = None
     while image_file is None:
         image_filepath = console.ask(
@@ -912,12 +912,13 @@ def _get_file_from_prompt_in_loop() -> Tuple[bytes | None, str | None]:
         try:
             with open(image_filepath, "rb") as f:
                 image_file = f.read()
+                return image_file, file_extension
         except OSError as ose:
             console.error(f"Unable to read the {file_extension} file due to {ose}")
             raise typer.Exit(code=1) from ose
 
     console.debug(f"File extension detected: {file_extension}")
-    return image_file, file_extension
+    return None
 
 
 @custom_components_cli.command(name="share")
