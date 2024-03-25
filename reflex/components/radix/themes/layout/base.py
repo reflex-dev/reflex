@@ -43,7 +43,7 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
     pl: Var[LiteralSpacing]
 
     # Whether the element will take up the smallest possible space: "0" | "1"
-    shrink: Var[LiteralBoolNumber]
+    flex_shrink: Var[LiteralBoolNumber]
 
     # Whether the element will take up the largest possible space: "0" | "1"
-    grow: Var[LiteralBoolNumber]
+    flex_grow: Var[LiteralBoolNumber]

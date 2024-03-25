@@ -61,8 +61,8 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
-        shrink: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
-        grow: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
+        flex_shrink: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
+        flex_grow: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
         m: Optional[
             Union[
                 Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -172,8 +172,8 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
             pr: Padding right: "0" - "9"
             pb: Padding bottom: "0" - "9"
             pl: Padding left: "0" - "9"
-            shrink: Whether the element will take up the smallest possible space: "0" | "1"
-            grow: Whether the element will take up the largest possible space: "0" | "1"
+            flex_shrink: Whether the element will take up the smallest possible space: "0" | "1"
+            flex_grow: Whether the element will take up the largest possible space: "0" | "1"
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
