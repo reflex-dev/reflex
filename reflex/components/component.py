@@ -1806,6 +1806,7 @@ class StatefulComponent(BaseComponent):
             # Calculate Var dependencies accessed by the handler for useCallback dep array.
             var_deps = ["addEvents", "Event"]
             for arg in event_args:
+                print("arg:", arg, "in event_args")
                 if arg._var_data is None:
                     continue
                 for hook in arg._var_data.hooks:
@@ -1816,6 +1817,7 @@ class StatefulComponent(BaseComponent):
                     imports={"react": {ImportVar(tag="useCallback")}},
                 ),
             )
+            print(memo_var_data)
 
             # Store the memoized function name and hook code for this event trigger.
             trigger_memo[event_trigger] = (
@@ -1825,6 +1827,14 @@ class StatefulComponent(BaseComponent):
                 f"const {memo_name} = useCallback({rendered_chain}, [{', '.join(var_deps)}])",
             )
         return trigger_memo
+
+    def get_ref_hooks(self) -> set[str]:
+        """Get the ref hooks for the component and its children.
+
+        Returns:
+            The ref hooks.
+        """
+        return set()
 
     def get_hooks_internal(self) -> set[str]:
         """Get the reflex internal hooks for the component and its children.
