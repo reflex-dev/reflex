@@ -658,16 +658,15 @@ def publish(
         if not _pip_install_on_demand("twine"):
             raise typer.Exit(code=1) from ex
 
-    if validate_project_info:
-        if (
-            console.ask(
-                "Would you like to interactively verify the package information?",
-                choices=["Y", "n"],
-                default="Y",
-            )
-            == "Y"
-        ):
-            _validate_project_info()
+    if validate_project_info and (
+        console.ask(
+            "Would you like to interactively review the package information?",
+            choices=["Y", "n"],
+            default="Y",
+        )
+        == "Y"
+    ):
+        _validate_project_info()
 
     publish_cmds = [
         sys.executable,
@@ -722,7 +721,11 @@ def _process_entered_list(input: str) -> list | None:
 
 
 def _validate_project_info():
-    """Validate the project information in the pyproject.toml file."""
+    """Validate the project information in the pyproject.toml file.
+
+    Raises:
+        Exit: If the pyproject.toml file is ill-formed.
+    """
     try:
         pyproject_toml = tomlkit.parse(CustomComponents.PYPROJECT_TOML)
         project = pyproject_toml.value["project"]
@@ -733,14 +736,10 @@ def _validate_project_info():
         project["description"] = console.ask(
             "description", default=project.get("description", "")
         )
-        authors = project.get("authors", [{}])
-        for i, author in enumerate(authors):
-            author["name"] = console.ask(
-                f"Author {i} name", default=author.get("name", "")
-            )
-            author["email"] = console.ask(
-                f"Author {i} email", default=author.get("email", "")
-            )
+        # PyPI only shows the first author.
+        author = project.get("authors", [{}])[0]
+        author["name"] = console.ask(f"Author name", default=author.get("name", ""))
+        author["email"] = console.ask(f"Author email", default=author.get("email", ""))
 
         console.print(f'Current key words {project["keywords"]}')
         keyword_action = console.ask(
@@ -784,10 +783,8 @@ def _collect_details_for_gallery():
     """
     from reflex.reflex import _login
 
-    console.print(
-        "We recommend that you deploy a demo app using showcasing the component."
-    )
-    console.print("If not already deployed, please deploy it separately first.")
+    console.print("We recommend that you deploy a demo app showcasing the component.")
+    console.print("If not already, please deploy it first.")
     if console.ask("Continue?", choices=["y", "n"], default="y") != "y":
         return
 
@@ -849,24 +846,6 @@ def _collect_details_for_gallery():
     if demo_url:
         params["demo_url"] = demo_url
 
-    source = None
-    while True:
-        source = (
-            console.ask(
-                "[ Full URL of the source code: `https://github.com/my-repo` ] (enter to skip)"
-            )
-            or None
-        )
-        if _validate_url_with_protocol_prefix(source):
-            break
-    if source:
-        params["source"] = source
-
-    description = None
-    while not description:
-        description = console.ask("[ Short description ] (required)")
-    params["description"] = description
-
     display_name = (
         console.ask("[ Friendly display name for your component ] (enter to skip)")
         or None
@@ -874,18 +853,8 @@ def _collect_details_for_gallery():
     if display_name:
         params["display_name"] = display_name
 
-    tags = _process_entered_list(
-        console.ask("[ List of tags separated by comma ] (enter to skip)")
-    )
-    if tags:
-        params["tags"] = tags
-
     files = []
-    if (gif_file_and_extension := _get_file_from_prompt_in_loop("gif")) is not None:
-        files.append(("files", ("gif", gif_file_and_extension[0])))
-    if (
-        image_file_and_extension := _get_file_from_prompt_in_loop("image"),
-    ) is not None:
+    if (image_file_and_extension := _get_file_from_prompt_in_loop()) is not None:
         files.append(
             ("files", (image_file_and_extension[1], image_file_and_extension[0]))
         )
@@ -921,13 +890,11 @@ def _validate_url_with_protocol_prefix(url: str | None) -> bool:
     return not url or (url.startswith("http://") or url.startswith("https://"))
 
 
-def _get_file_from_prompt_in_loop(
-    file_type: str,
-) -> Tuple[bytes | None, str | None]:
+def _get_file_from_prompt_in_loop() -> Tuple[bytes | None, str | None]:
     image_file = file_extension = None
     while image_file is None:
         image_filepath = console.ask(
-            f"Local path to a preview {file_type} (enter to skip)"
+            f"Local path to a preview gif or image (enter to skip)"
         )
         if not image_filepath:
             break
