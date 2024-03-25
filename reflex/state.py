@@ -294,9 +294,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # Whether the state has ever been touched since instantiation.
     _was_touched: bool = False
 
-    # Whether the state was defined dynamically (via type() or as a function local)
-    _is_defined_dynamically: ClassVar[bool] = False
-
     def __init__(
         self,
         *args,
@@ -412,12 +409,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     )
             # Track this new subclass in the parent state's subclasses set.
             parent_state.class_subclasses.add(cls)
-
-            # Determine if this class is defined dynamically
-            try:
-                inspect.getsource(cls)
-            except OSError:
-                cls._is_defined_dynamically = True
 
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
@@ -2208,9 +2199,8 @@ if not isinstance(State.validate.__func__, FunctionType):
 
 @dill.register(type(State))
 def _dill_reduce_state(pickler, obj):
-    if issubclass(obj, State) and obj._is_defined_dynamically:
-        # Dynamically defined State cannot be loaded in the usual way, and must be fetched
-        # by reference from the base State class.
+    if obj is not State and issubclass(obj, State):
+        # Avoid serializing subclasses of State, instead get them by reference from the State class.
         pickler.save_reduce(State.get_class_substate, (obj.get_full_name(),), obj=obj)
     else:
         dill.Pickler.dispatch[type](pickler, obj)
