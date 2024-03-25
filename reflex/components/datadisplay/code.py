@@ -387,9 +387,9 @@ class CodeBlock(Component):
         merged_imports = imports.merge_imports(
             merged_imports,
             {
-                f"react-syntax-highlighter/dist/cjs/styles/prism/{theme}": {
+                f"react-syntax-highlighter/dist/cjs/styles/prism/{self.convert_theme_name(theme)}": {
                     ImportVar(
-                        tag=format.to_camel_case(theme),
+                        tag=format.to_camel_case(self.convert_theme_name(theme)),
                         is_default=True,
                         install=False,
                     )
@@ -451,13 +451,7 @@ class CodeBlock(Component):
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
         if "theme" in props and not isinstance(props["theme"], Var):
-            props["theme"] = (
-                "one-light"
-                if props["theme"] == "light"
-                else "one-dark"
-                if props["theme"] == "dark"
-                else props["theme"]
-            )
+            props["theme"] = cls.convert_theme_name(props["theme"])
 
         if can_copy:
             code = children[0]
@@ -511,3 +505,17 @@ class CodeBlock(Component):
         if self.code is not None:
             out.special_props.add(Var.create_safe(f"children={str(self.code)}"))
         return out
+
+    @staticmethod
+    def convert_theme_name(theme) -> str:
+        """Convert theme names to appropriate names.
+
+        Args:
+            theme: The theme name.
+
+        Returns:
+            The right theme name.
+        """
+        if theme in ["light", "dark"]:
+            return f"one-{theme}"
+        return theme
