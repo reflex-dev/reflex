@@ -18,12 +18,13 @@ from ..base import (
     LiteralAccentColor,
     LiteralRadius,
     LiteralVariant,
+    RadixLoadingProp,
     RadixThemesComponent,
 )
 
 LiteralButtonSize = Literal["1", "2", "3", "4"]
 
-class IconButton(el.Button, RadixThemesComponent):
+class IconButton(el.Button, RadixLoadingProp, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -108,6 +109,7 @@ class IconButton(el.Button, RadixThemesComponent):
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
+        loading: Optional[Union[Var[bool], bool]] = None,
         auto_focus: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -236,6 +238,7 @@ class IconButton(el.Button, RadixThemesComponent):
             color_scheme: Override theme color for button
             high_contrast: Whether to render the button with higher contrast color against background
             radius: Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
+            loading: If set, show an rx.spinner instead of the component children.
             auto_focus: Automatically focuses the button when the page loads
             disabled: Disables the button
             form: Associates the button with a form (by id)
