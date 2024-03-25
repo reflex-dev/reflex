@@ -2196,10 +2196,14 @@ class StateManagerMemory(StateManager):
             await self.set_state(token, state)
 
 
-@dill.register(type(State.validate.__func__))
-def _dill_reduce_cyfunction(pickler, obj):
-    # Ignore cyfunction when pickling.
-    pass
+# Workaround https://github.com/cloudpipe/cloudpickle/issues/408 for dynamic pydantic classes
+if not isinstance(State.validate.__func__, FunctionType):
+    cython_function_or_method = type(State.validate.__func__)
+
+    @dill.register(cython_function_or_method)
+    def _dill_reduce_cython_function_or_method(pickler, obj):
+        # Ignore cython function when pickling.
+        pass
 
 
 @dill.register(type(State))
