@@ -507,11 +507,10 @@ def _get_version_to_publish() -> str:
     """
     # Get the version from the pyproject.toml.
     try:
-        with open(CustomComponents.PYPROJECT_TOML, "rb"):
-            project_toml = tomlkit.parse(CustomComponents.PYPROJECT_TOML)
-            return project_toml.value["project"]["version"]
-
-    except (KeyError, TOMLKitError) as ex:
+        with open(CustomComponents.PYPROJECT_TOML, "rb") as f:
+            project_toml = tomlkit.parse(f.read())
+            return project_toml.get("project", {})["version"]
+    except (OSError, KeyError, TOMLKitError) as ex:
         console.error(
             f"Cannot find the version in {CustomComponents.PYPROJECT_TOML} due to {ex}"
         )
@@ -727,52 +726,69 @@ def _validate_project_info():
         Exit: If the pyproject.toml file is ill-formed.
     """
     try:
-        pyproject_toml = tomlkit.parse(CustomComponents.PYPROJECT_TOML)
-        project = pyproject_toml.value["project"]
+        with open(CustomComponents.PYPROJECT_TOML, "rb") as f:
+            pyproject_toml = tomlkit.parse(f.read())
+    except TOMLKitError as ex:
+        console.error(f"Unable to read from pyproject.toml due to {ex}")
+        raise typer.Exit(code=1) from ex
+
+    try:
+        project = pyproject_toml.get("project", {})
+        if not project:
+            console.error("The project section not found in pyproject.toml")
+            raise typer.Exit(code=1)
         console.print(
             f'Double check the information before publishing: {project["name"]} version {project["version"]}'
         )
-        console.print("Update or enter to keep the current information.")
-        project["description"] = console.ask(
-            "description", default=project.get("description", "")
-        )
-        # PyPI only shows the first author.
-        author = project.get("authors", [{}])[0]
-        author["name"] = console.ask(f"Author name", default=author.get("name", ""))
-        author["email"] = console.ask(f"Author email", default=author.get("email", ""))
+    except KeyError as ke:
+        console.error(f"The pyproject.toml is possibly ill-formed due to {ke}")
+        raise typer.Exit(code=1) from ke
 
-        console.print(f'Current key words {project["keywords"]}')
-        keyword_action = console.ask(
-            "Keep, replace or append?", choices=["k", "r", "a"]
-        )
-        new_keywords = []
-        if keyword_action == "r":
-            new_keywords = (
-                _process_entered_list(
-                    console.ask("Enter new set of keywords separated by commas")
-                )
-                or []
-            )
-        elif keyword_action == "a":
-            new_keywords = (
-                _process_entered_list(
-                    console.ask("Enter new set of keywords separated by commas")
-                )
-                or []
-            )
-        project["keywords"] += new_keywords
+    console.print("Update or enter to keep the current information.")
+    project["description"] = console.ask(
+        "short description", default=project.get("description", "")
+    )
+    # PyPI only shows the first author.
+    author = project.get("authors", [{}])[0]
+    author["name"] = console.ask(f"Author Name", default=author.get("name", ""))
+    author["email"] = console.ask(f"Author Email", default=author.get("email", ""))
 
-        project["urls"]["homepage"] = console.ask(
-            "homepage URL", default=project["urls"]["homepage"]
+    console.print(f'Current keywords are: {project.get("keywords") or []}')
+    keyword_action = console.ask(
+        "Keep, replace or append?", choices=["k", "r", "a"], default="k"
+    )
+    new_keywords = []
+    if keyword_action == "r":
+        new_keywords = (
+            _process_entered_list(
+                console.ask("Enter new set of keywords separated by commas")
+            )
+            or []
         )
-        project["urls"]["source"] = console.ask(
-            "source code URL", default=project["urls"]["source"]
+    elif keyword_action == "a":
+        new_keywords = (
+            _process_entered_list(
+                console.ask("Enter new set of keywords separated by commas")
+            )
+            or []
         )
+    project["keywords"] = project.get("keywords", []) + new_keywords
+
+    if not project.get("urls"):
+        project["urls"] = {}
+    project["urls"]["homepage"] = console.ask(
+        "homepage URL", default=project["urls"].get("homepage", "")
+    )
+    project["urls"]["source"] = console.ask(
+        "source code URL", default=project["urls"].get("source", "")
+    )
+    pyproject_toml["project"] = project
+    try:
         with open(CustomComponents.PYPROJECT_TOML, "w") as f:
             tomlkit.dump(pyproject_toml, f)
-    except TOMLKitError as tke:
-        console.error(f"Unable to read from pyproject.toml due to {tke}")
-        raise typer.Exit(code=1) from tke
+    except (OSError, TOMLKitError) as ex:
+        console.error(f"Unable to read from pyproject.toml due to {ex}")
+        raise typer.Exit(code=1) from ex
 
 
 def _collect_details_for_gallery():
@@ -796,14 +812,15 @@ def _collect_details_for_gallery():
     params = {}
     package_name = None
     try:
-        project_toml = tomlkit.parse(CustomComponents.PYPROJECT_TOML)
-        package_name = project_toml.value["project"]["name"]
-    except (TOMLKitError, KeyError) as ex:
+        with open(CustomComponents.PYPROJECT_TOML, "rb") as f:
+            project_toml = tomlkit.parse(f.read())
+        package_name = project_toml.get("project", {})["name"]
+    except (OSError, TOMLKitError, KeyError) as ex:
         console.debug(
             f"Unable to read from pyproject.toml in current directory due to {ex}"
         )
         package_name = console.ask("[ Published python package name ]")
-        console.print(f"[ Custom component package name ] : {package_name}")
+    console.print(f"[ Custom component package name ] : {package_name}")
 
     # Check the backend services if the user is allowed to update information of this package is already shared.
     expected_status_code = False
@@ -837,7 +854,7 @@ def _collect_details_for_gallery():
     while True:
         demo_url = (
             console.ask(
-                "[ Full URL of deployed demo app : `https://my-app.reflex.run` ] (enter to skip)"
+                "[ Full URL of deployed demo app, e.g. `https://my-app.reflex.run` ] (enter to skip)"
             )
             or None
         )
@@ -854,7 +871,7 @@ def _collect_details_for_gallery():
         params["display_name"] = display_name
 
     files = []
-    if (image_file_and_extension := _get_file_from_prompt_in_loop()) is not None:
+    if (image_file_and_extension := _get_file_from_prompt_in_loop()) != (None, None):
         files.append(
             ("files", (image_file_and_extension[1], image_file_and_extension[0]))
         )
