@@ -202,7 +202,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                     attr.remote_attr.key,  # type: ignore[attr-defined]
                 )
             ]
-    elif isinstance(cls, type) and issubclass(cls, Model):
+    elif isinstance(cls, type) and not is_generic_alias(cls) and issubclass(cls, Model):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)
         if name in hints:
