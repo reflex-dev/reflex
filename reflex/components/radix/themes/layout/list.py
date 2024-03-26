@@ -171,6 +171,10 @@ class ListItem(Li):
 class List(ComponentNamespace):
     """List components."""
 
-    item = ListItem.create
-    ordered = OrderedList.create
-    unordered = UnorderedList.create
+    item = staticmethod(ListItem.create)
+    ordered = staticmethod(OrderedList.create)
+    unordered = staticmethod(UnorderedList.create)
+    __call__ = staticmethod(BaseList.create)
+
+
+list_ns = List()

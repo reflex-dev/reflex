@@ -5,7 +5,7 @@ from .center import Center
 from .container import Container
 from .flex import Flex
 from .grid import Grid
-from .list import ListItem, OrderedList, UnorderedList
+from .list import list_ns as list
 from .section import Section
 from .spacer import Spacer
 from .stack import HStack, Stack, VStack
@@ -20,9 +20,9 @@ spacer = Spacer.create
 stack = Stack.create
 hstack = HStack.create
 vstack = VStack.create
-list_item = ListItem.create
-ordered_list = OrderedList.create
-unordered_list = UnorderedList.create
+list_item = list.item
+ordered_list = list.ordered
+unordered_list = list.unordered
 
 __all__ = [
     "box",
@@ -35,6 +35,7 @@ __all__ = [
     "stack",
     "hstack",
     "vstack",
+    "list",
     "list_item",
     "ordered_list",
     "unordered_list",

@@ -26,6 +26,9 @@ env:
   PYTHONIOENCODING: 'utf8'
   TELEMETRY_ENABLED: false
   NODE_OPTIONS: '--max_old_space_size=4096'
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  PR_TITLE: ${{ github.event.pull_request.title }}
+
 
 jobs:
   example-counter:
@@ -60,17 +63,17 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-
       - name: Clone Reflex Examples Repo
         uses: actions/checkout@v4
         with:
           repository: reflex-dev/reflex-examples
           path: reflex-examples
-
       - name: Install requirements for counter example
         working-directory: ./reflex-examples/counter
         run: |
           poetry run pip install -r requirements.txt
+      - name: Install additional dependencies for DB access
+        run: poetry run pip install psycopg2-binary
       - name: Check export --backend-only before init for counter example
         working-directory: ./reflex-examples/counter
         run: |
@@ -91,6 +94,13 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev
+      - name: Measure and upload .web size
+        if: ${{ env.DATABASE_URL }}
+        run: poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}" 
+          --branch-name "${{ github.head_ref || github.ref_name }}"
+          --measurement-type "counter-app-dot-web" --path ./reflex-examples/counter/.web
 
   reflex-web:
     strategy:
@@ -121,6 +131,8 @@ jobs:
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
         run: poetry run pip install -r requirements.txt
+      - name: Install additional dependencies for DB access
+        run: poetry run pip install psycopg2-binary
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: poetry run reflex init
@@ -129,3 +141,10 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-web prod
+      - name: Measure and upload .web size
+        if: ${{ env.DATABASE_URL }}
+        run: poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --pr-id "${{ github.event.pull_request.id }}" 
+          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+          --measurement-type "reflex-web-dot-web" --path ./reflex-web/.web

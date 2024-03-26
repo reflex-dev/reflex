@@ -633,12 +633,6 @@ def publish(
     # Validate the distribution directory.
     _ensure_dist_dir(version_to_publish=version_to_publish, build=build)
 
-    # We install twine on the fly if required so it is not a stable dependency of reflex.
-    try:
-        import twine  # noqa: F401  # type: ignore
-    except (ImportError, ModuleNotFoundError) as ex:
-        if not _pip_install_on_demand("twine"):
-            raise typer.Exit(code=1) from ex
     publish_cmds = [
         sys.executable,
         "-m",
