@@ -1,6 +1,6 @@
 """Responsive components."""
 
-from reflex.components.chakra.layout.box import Box
+from reflex.components.radix.themes.layout import Box
 
 
 # Add responsive styles shortcuts.
