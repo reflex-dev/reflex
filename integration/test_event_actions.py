@@ -137,7 +137,7 @@ def TestEventAction():
     app.add_page(index)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def event_action(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start TestEventAction app at tmp_path via AppHarness.
 

@@ -97,7 +97,7 @@ def BackgroundTask():
     app.add_page(index)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def background_task(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:

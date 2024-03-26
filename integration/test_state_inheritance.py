@@ -200,7 +200,7 @@ def StateInheritance():
     app.add_page(index)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def state_inheritance(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
