@@ -1010,7 +1010,7 @@ class Component(BaseComponent, ABC):
             )
         return _imports
 
-    def add_imports(self) -> Dict[str, Union[str, Iterable[str]]]:
+    def add_imports(self) -> Dict[str, Union[str, List[str]]]:
         """User defined imports for the component.
 
         Returns:
@@ -1039,13 +1039,13 @@ class Component(BaseComponent, ABC):
         ]
 
         # If the subclass implements add_imports, merge the imports.
-        def _make_iterable(value):
-            if not isinstance(value, Iterable):
+        def _make_list(value: str | list[str]) -> list[str]:
+            if isinstance(value, str):
                 return [value]
             return value
 
         added_imports = {
-            package: ",".join(_make_iterable(maybe_tags))
+            package: [ImportVar(tag=tag) for tag in _make_list(maybe_tags)]
             for package, maybe_tags in self.add_imports().items()
         }
 
@@ -1055,8 +1055,8 @@ class Component(BaseComponent, ABC):
             self._get_hooks_imports(),
             _imports,
             event_imports,
-            *var_imports,
             added_imports,
+            *var_imports,
         )
 
     def get_imports(self) -> imports.ImportDict:

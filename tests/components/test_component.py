@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, Iterable, List, Type
 
 import pytest
 
@@ -1308,3 +1308,27 @@ def test_custom_component_get_imports():
     _, _, imports_outer = compile_components(outer_comp.get_custom_components())
     assert "inner" in imports_outer
     assert "other" in imports_outer
+
+
+@pytest.mark.parametrize("tags", (["Component"], ["Component", "useState"]))
+def test_custom_component_add_imports(tags):
+    class BaseComponent(Component):
+        def _get_imports(self) -> imports.ImportDict:
+            return {}
+
+    class Reference(Component):
+        def _get_imports(self) -> imports.ImportDict:
+            return imports.merge_imports(
+                super()._get_imports(),
+                {"react": [imports.ImportVar(tag=tag) for tag in tags]},
+            )
+
+    class Test(Component):
+        def add_imports(self) -> Dict[str, str | Iterable[str]]:
+            return {"react": tags[0] if len(tags) == 1 else tags}
+
+    baseline = Reference.create()
+    test = Test.create()
+
+    assert baseline.get_imports() == {"react": [ImportVar(tag=tag) for tag in tags]}
+    assert test.get_imports() == baseline.get_imports()
