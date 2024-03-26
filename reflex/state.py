@@ -2984,3 +2984,4 @@ def reload_state_module(
             state.class_subclasses.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
     state._init_var_dependency_dicts()
+    state.get_class_substate.cache_clear()

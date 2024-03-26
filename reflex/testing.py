@@ -241,6 +241,10 @@ class AppHarness:
         else:
             self.state_manager = self.app_instance._state_manager
 
+    def _reload_state_module(self):
+        """Reload the rx.State module to avoid conflict when reloading."""
+        reload_state_module(module=f"{self.app_name}.{self.app_name}")
+
     def _get_backend_shutdown_handler(self):
         if self.backend is None:
             raise RuntimeError("Backend was not initialized.")
@@ -358,9 +362,7 @@ class AppHarness:
 
     def stop(self) -> None:
         """Stop the frontend and backend servers."""
-        # Reset rx.State subclasses to avoid conflict when reloading.
-        reload_state_module(module=f"{self.app_name}.{self.app_name}")
-        State.get_class_substate.cache_clear()
+        self._reload_state_module()
 
         if self.backend is not None:
             self.backend.should_exit = True
