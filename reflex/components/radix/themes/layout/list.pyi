@@ -10,13 +10,11 @@ from reflex.style import Style
 from typing import Iterable, Literal, Optional, Union
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
-from reflex.components.el.elements.typography import Li
+from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.typography.text import Text
 from reflex.style import Style
 from reflex.vars import Var
-from .base import LayoutComponent
-from .flex import Flex
 
 LiteralListStyleTypeUnordered = Literal["none", "disc", "circle", "square"]
 LiteralListStyleTypeOrdered = Literal[
@@ -36,7 +34,7 @@ LiteralListStyleTypeOrdered = Literal[
     "katakana",
 ]
 
-class BaseList(Flex, LayoutComponent):
+class BaseList(Component):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -85,163 +83,6 @@ class BaseList(Flex, LayoutComponent):
                         "katakana",
                     ],
                 ],
-            ]
-        ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        direction: Optional[
-            Union[
-                Var[Literal["row", "column", "row-reverse", "column-reverse"]],
-                Literal["row", "column", "row-reverse", "column-reverse"],
-            ]
-        ] = None,
-        align: Optional[
-            Union[
-                Var[Literal["start", "center", "end", "baseline", "stretch"]],
-                Literal["start", "center", "end", "baseline", "stretch"],
-            ]
-        ] = None,
-        justify: Optional[
-            Union[
-                Var[Literal["start", "center", "end", "between"]],
-                Literal["start", "center", "end", "between"],
-            ]
-        ] = None,
-        wrap: Optional[
-            Union[
-                Var[Literal["nowrap", "wrap", "wrap-reverse"]],
-                Literal["nowrap", "wrap", "wrap-reverse"],
-            ]
-        ] = None,
-        spacing: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        access_key: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        dir: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        draggable: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        lang: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        role: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        slot: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        p: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        px: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        py: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pt: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pr: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pb: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pl: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        shrink: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
-        grow: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
-        m: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -303,44 +144,6 @@ class BaseList(Flex, LayoutComponent):
             *children: The children of the component.
             items: A list of items to add to the list.
             list_style_type: The style of the list. Default to "none".
-            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
-            align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
-            justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
-            wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
-            spacing: Gap between children: "0" - "9"
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
-            auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
-            content_editable: Indicates whether the element's content is editable.
-            context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
-            dir: Defines the text direction. Allowed values are ltr (Left-To-Right) or rtl (Right-To-Left)
-            draggable: Defines whether the element can be dragged.
-            enter_key_hint: Hints what media types the media element is able to play.
-            hidden: Defines whether the element is hidden.
-            input_mode: Defines the type of the element.
-            item_prop: Defines the name of the element for metadata purposes.
-            lang: Defines the language used in the element.
-            role: Defines the role of the element.
-            slot: Assigns a slot in a shadow DOM shadow tree to an element.
-            spell_check: Defines whether the element may be checked for spelling errors.
-            tab_index: Defines the position of the current element in the tabbing order.
-            title: Defines a tooltip for the element.
-            p: Padding: "0" - "9"
-            px: Padding horizontal: "0" - "9"
-            py: Padding vertical: "0" - "9"
-            pt: Padding top: "0" - "9"
-            pr: Padding right: "0" - "9"
-            pb: Padding bottom: "0" - "9"
-            pl: Padding left: "0" - "9"
-            shrink: Whether the element will take up the smallest possible space: "0" | "1"
-            grow: Whether the element will take up the largest possible space: "0" | "1"
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -355,7 +158,7 @@ class BaseList(Flex, LayoutComponent):
         """
         ...
 
-class UnorderedList(BaseList):
+class UnorderedList(BaseList, Ul):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -363,37 +166,6 @@ class UnorderedList(BaseList):
         *children,
         items: Optional[Union[Var[Iterable], Iterable]] = None,
         list_style_type: Optional[Literal["none", "disc", "circle", "square"]] = "disc",
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        direction: Optional[
-            Union[
-                Var[Literal["row", "column", "row-reverse", "column-reverse"]],
-                Literal["row", "column", "row-reverse", "column-reverse"],
-            ]
-        ] = None,
-        align: Optional[
-            Union[
-                Var[Literal["start", "center", "end", "baseline", "stretch"]],
-                Literal["start", "center", "end", "baseline", "stretch"],
-            ]
-        ] = None,
-        justify: Optional[
-            Union[
-                Var[Literal["start", "center", "end", "between"]],
-                Literal["start", "center", "end", "between"],
-            ]
-        ] = None,
-        wrap: Optional[
-            Union[
-                Var[Literal["nowrap", "wrap", "wrap-reverse"]],
-                Literal["nowrap", "wrap", "wrap-reverse"],
-            ]
-        ] = None,
-        spacing: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -433,92 +205,6 @@ class UnorderedList(BaseList):
         ] = None,
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        p: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        px: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        py: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pt: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pr: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pb: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pl: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        shrink: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
-        grow: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
-        m: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -579,12 +265,6 @@ class UnorderedList(BaseList):
             *children: The children of the component.
             items: A list of items to add to the list.
             list_style_type: The style of the list.
-            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
-            align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
-            justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
-            wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
-            spacing: Gap between children: "0" - "9"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -601,22 +281,6 @@ class UnorderedList(BaseList):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            p: Padding: "0" - "9"
-            px: Padding horizontal: "0" - "9"
-            py: Padding vertical: "0" - "9"
-            pt: Padding top: "0" - "9"
-            pr: Padding right: "0" - "9"
-            pb: Padding bottom: "0" - "9"
-            pl: Padding left: "0" - "9"
-            shrink: Whether the element will take up the smallest possible space: "0" | "1"
-            grow: Whether the element will take up the largest possible space: "0" | "1"
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -631,7 +295,7 @@ class UnorderedList(BaseList):
         """
         ...
 
-class OrderedList(BaseList):
+class OrderedList(BaseList, Ol):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -656,37 +320,13 @@ class OrderedList(BaseList):
                 "katakana",
             ]
         ] = "decimal",
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        direction: Optional[
-            Union[
-                Var[Literal["row", "column", "row-reverse", "column-reverse"]],
-                Literal["row", "column", "row-reverse", "column-reverse"],
-            ]
+        reversed: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        align: Optional[
-            Union[
-                Var[Literal["start", "center", "end", "baseline", "stretch"]],
-                Literal["start", "center", "end", "baseline", "stretch"],
-            ]
+        start: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        justify: Optional[
-            Union[
-                Var[Literal["start", "center", "end", "between"]],
-                Literal["start", "center", "end", "between"],
-            ]
-        ] = None,
-        wrap: Optional[
-            Union[
-                Var[Literal["nowrap", "wrap", "wrap-reverse"]],
-                Literal["nowrap", "wrap", "wrap-reverse"],
-            ]
-        ] = None,
-        spacing: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
+        type: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -726,92 +366,6 @@ class OrderedList(BaseList):
         ] = None,
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        p: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        px: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        py: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pt: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pr: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pb: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pl: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        shrink: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
-        grow: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
-        m: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -872,12 +426,9 @@ class OrderedList(BaseList):
             *children: The children of the component.
             items: A list of items to add to the list.
             list_style_type: The style of the list.
-            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
-            align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
-            justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
-            wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
-            spacing: Gap between children: "0" - "9"
+            reversed: Reverses the order of the list.
+            start: Specifies the start value of the first list item in an ordered list.
+            type: Specifies the kind of marker to use in the list (letters or numbers).
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -894,22 +445,6 @@ class OrderedList(BaseList):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            p: Padding: "0" - "9"
-            px: Padding horizontal: "0" - "9"
-            py: Padding vertical: "0" - "9"
-            pt: Padding top: "0" - "9"
-            pr: Padding right: "0" - "9"
-            pb: Padding bottom: "0" - "9"
-            pl: Padding left: "0" - "9"
-            shrink: Whether the element will take up the smallest possible space: "0" | "1"
-            grow: Whether the element will take up the largest possible space: "0" | "1"
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1110,163 +645,6 @@ class List(ComponentNamespace):
                 ],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        direction: Optional[
-            Union[
-                Var[Literal["row", "column", "row-reverse", "column-reverse"]],
-                Literal["row", "column", "row-reverse", "column-reverse"],
-            ]
-        ] = None,
-        align: Optional[
-            Union[
-                Var[Literal["start", "center", "end", "baseline", "stretch"]],
-                Literal["start", "center", "end", "baseline", "stretch"],
-            ]
-        ] = None,
-        justify: Optional[
-            Union[
-                Var[Literal["start", "center", "end", "between"]],
-                Literal["start", "center", "end", "between"],
-            ]
-        ] = None,
-        wrap: Optional[
-            Union[
-                Var[Literal["nowrap", "wrap", "wrap-reverse"]],
-                Literal["nowrap", "wrap", "wrap-reverse"],
-            ]
-        ] = None,
-        spacing: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        access_key: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        dir: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        draggable: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        lang: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        role: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        slot: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        p: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        px: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        py: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pt: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pr: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pb: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        pl: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        shrink: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
-        grow: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
-        m: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1326,44 +704,6 @@ class List(ComponentNamespace):
             *children: The children of the component.
             items: A list of items to add to the list.
             list_style_type: The style of the list. Default to "none".
-            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
-            align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
-            justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
-            wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
-            spacing: Gap between children: "0" - "9"
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
-            auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
-            content_editable: Indicates whether the element's content is editable.
-            context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
-            dir: Defines the text direction. Allowed values are ltr (Left-To-Right) or rtl (Right-To-Left)
-            draggable: Defines whether the element can be dragged.
-            enter_key_hint: Hints what media types the media element is able to play.
-            hidden: Defines whether the element is hidden.
-            input_mode: Defines the type of the element.
-            item_prop: Defines the name of the element for metadata purposes.
-            lang: Defines the language used in the element.
-            role: Defines the role of the element.
-            slot: Assigns a slot in a shadow DOM shadow tree to an element.
-            spell_check: Defines whether the element may be checked for spelling errors.
-            tab_index: Defines the position of the current element in the tabbing order.
-            title: Defines a tooltip for the element.
-            p: Padding: "0" - "9"
-            px: Padding horizontal: "0" - "9"
-            py: Padding vertical: "0" - "9"
-            pt: Padding top: "0" - "9"
-            pr: Padding right: "0" - "9"
-            pb: Padding bottom: "0" - "9"
-            pl: Padding left: "0" - "9"
-            shrink: Whether the element will take up the smallest possible space: "0" | "1"
-            grow: Whether the element will take up the largest possible space: "0" | "1"
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
