@@ -13,6 +13,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    Iterable,
     Iterator,
     List,
     Optional,
@@ -636,9 +637,11 @@ class Component(BaseComponent, ABC):
                 )
 
         children = [
-            child
-            if isinstance(child, Component)
-            else Bare.create(contents=Var.create(child, _var_is_string=True))
+            (
+                child
+                if isinstance(child, Component)
+                else Bare.create(contents=Var.create(child, _var_is_string=True))
+            )
             for child in children
         ]
 
@@ -1007,6 +1010,14 @@ class Component(BaseComponent, ABC):
             )
         return _imports
 
+    def add_imports(self) -> Dict[str, Union[str, Iterable[str]]]:
+        """User defined imports for the component.
+
+        Returns:
+            The user defined imports as a dict.
+        """
+        return {}
+
     def _get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
 
@@ -1027,6 +1038,17 @@ class Component(BaseComponent, ABC):
             var._var_data.imports for var in self._get_vars() if var._var_data
         ]
 
+        # If the subclass implements add_imports, merge the imports.
+        def _make_iterable(value):
+            if not isinstance(value, Iterable):
+                return [value]
+            return value
+
+        added_imports = {
+            package: ",".join(_make_iterable(maybe_tags))
+            for package, maybe_tags in self.add_imports().items()
+        }
+
         return imports.merge_imports(
             *self._get_props_imports(),
             self._get_dependencies_imports(),
@@ -1034,6 +1056,7 @@ class Component(BaseComponent, ABC):
             _imports,
             event_imports,
             *var_imports,
+            added_imports,
         )
 
     def get_imports(self) -> imports.ImportDict:
@@ -1424,9 +1447,9 @@ class CustomComponent(Component):
         return [
             BaseVar(
                 _var_name=name,
-                _var_type=prop._var_type
-                if types._isinstance(prop, Var)
-                else type(prop),
+                _var_type=(
+                    prop._var_type if types._isinstance(prop, Var) else type(prop)
+                ),
             )
             for name, prop in self.props.items()
         ]
