@@ -16,7 +16,6 @@ def SharedStateApp():
     class State(SharedState):
         pass
 
-
     def index() -> rx.Component:
         return rx.vstack()
 
@@ -61,7 +60,6 @@ def driver(shared_state: AppHarness) -> Generator[WebDriver, None, None]:
         yield driver
     finally:
         driver.quit()
-
 
 
 def test_shared_state(
