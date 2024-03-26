@@ -47,7 +47,7 @@ def LoginSample():
     app.add_page(login)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def login_sample(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start LoginSample app at tmp_path via AppHarness.
 
