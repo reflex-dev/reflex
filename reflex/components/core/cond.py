@@ -206,7 +206,7 @@ def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
         The conditional component or prop.
     """
     return cond(
-        color_mode == LIGHT_COLOR_MODE,
+        color_mode == Var.create(LIGHT_COLOR_MODE, _var_is_string=True),
         light,
         dark,
     )
