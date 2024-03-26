@@ -141,7 +141,7 @@ def FormSubmitName(form_component):
 
 
 @pytest.fixture(
-    scope="session",
+    scope="module",
     params=[
         functools.partial(FormSubmit, form_component="rx.form.root"),
         functools.partial(FormSubmitName, form_component="rx.form.root"),

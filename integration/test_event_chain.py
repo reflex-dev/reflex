@@ -247,7 +247,7 @@ def EventChain():
     app.add_page(on_mount_yield_chain)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def event_chain(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start EventChain app at tmp_path via AppHarness.
 

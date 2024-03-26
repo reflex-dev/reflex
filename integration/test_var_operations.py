@@ -586,7 +586,7 @@ def VarOperations():
         )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def var_operations(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start VarOperations app at tmp_path via AppHarness.
 

@@ -5,8 +5,6 @@ import pytest
 
 import reflex as rx
 from reflex.components.base.fragment import Fragment
-from reflex.components.chakra.layout.box import Box
-from reflex.components.chakra.typography.text import Text
 from reflex.components.core.cond import Cond, cond
 from reflex.components.core.responsive import (
     desktop_only,
@@ -15,6 +13,8 @@ from reflex.components.core.responsive import (
     tablet_and_desktop,
     tablet_only,
 )
+from reflex.components.radix.themes.layout.box import Box
+from reflex.components.radix.themes.typography.text import Text
 from reflex.state import BaseState
 from reflex.vars import Var
 
@@ -64,7 +64,7 @@ def test_validate_cond(cond_state: rx.Var):
     assert true_value["name"] == "Fragment"
 
     [true_value_text] = true_value["children"]
-    assert true_value_text["name"] == "Text"
+    assert true_value_text["name"] == "RadixThemesText"
     assert true_value_text["children"][0]["contents"] == "{`cond is True`}"
 
     # false value
@@ -72,7 +72,7 @@ def test_validate_cond(cond_state: rx.Var):
     assert false_value["name"] == "Fragment"
 
     [false_value_text] = false_value["children"]
-    assert false_value_text["name"] == "Text"
+    assert false_value_text["name"] == "RadixThemesText"
     assert false_value_text["children"][0]["contents"] == "{`cond is False`}"
 
 
