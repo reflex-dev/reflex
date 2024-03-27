@@ -864,6 +864,7 @@ def validate_bun():
     # This is specific to non-FHS OS
     bun_path = get_config().bun_path
     if bun_path != constants.Bun.DEFAULT_PATH:
+        console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()
         if not bun_version:
             console.error(
