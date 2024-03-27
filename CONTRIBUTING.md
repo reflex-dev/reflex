@@ -103,5 +103,5 @@ For some pull requests when adding new components you will have to generate a py
 (Please check in with the team before adding a new component to Reflex we are cautious about adding new components to Reflex's core.)
 
 ``` bash
-poetry run python scripts/pyi_generator.py 
+poetry run python scripts/make_pyi.py 
 ```
