@@ -1,5 +1,7 @@
 """The pyi generator module."""
 
+from __future__ import annotations
+
 import ast
 import contextlib
 import importlib
