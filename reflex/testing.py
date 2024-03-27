@@ -73,8 +73,9 @@ FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
 TimeoutType = Optional[Union[int, float]]
 
-if platform.system == "Windows":
+if platform.system() == "Windows":
     FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
+    FRONTEND_POPEN_ARGS["shell"] = True
 else:
     FRONTEND_POPEN_ARGS["start_new_session"] = True
 
