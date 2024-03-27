@@ -139,6 +139,7 @@ from reflex import state as state
 from reflex.state import var as var
 from reflex.state import Cookie as Cookie
 from reflex.state import LocalStorage as LocalStorage
+from reflex.state import ComponentState as ComponentState
 from reflex.state import State as State
 from reflex import style as style
 from reflex.style import toggle_color_mode as toggle_color_mode

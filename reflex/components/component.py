@@ -21,6 +21,7 @@ from typing import (
     Union,
 )
 
+import reflex.state
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.tags import Tag
@@ -213,6 +214,9 @@ class Component(BaseComponent, ABC):
 
     # When to memoize this component and its children.
     _memoization_mode: MemoizationMode = MemoizationMode()
+
+    # State class associated with this component instance
+    State: Optional[Type[reflex.state.State]] = None
 
     @classmethod
     def __init_subclass__(cls, **kwargs):

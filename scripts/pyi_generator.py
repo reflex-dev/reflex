@@ -57,6 +57,7 @@ EXCLUDED_PROPS = [
     "_rename_props",
     "_valid_children",
     "_valid_parents",
+    "State",
 ]
 
 DEFAULT_TYPING_IMPORTS = {
