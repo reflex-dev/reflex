@@ -141,6 +141,7 @@ _MAPPING = {
         "remove_cookie",
         "remove_local_storage",
         "set_clipboard",
+        "scroll_to",
         "set_focus",
         "set_value",
         "stop_propagation",

@@ -125,6 +125,7 @@ from reflex.event import remove_local_storage as remove_local_storage
 from reflex.event import set_clipboard as set_clipboard
 from reflex.event import set_focus as set_focus
 from reflex.event import set_value as set_value
+from reflex.event import scroll_to as scroll_to
 from reflex.event import stop_propagation as stop_propagation
 from reflex.event import upload_files as upload_files
 from reflex.event import window_alert as window_alert
