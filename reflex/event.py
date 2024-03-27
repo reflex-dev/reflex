@@ -325,7 +325,7 @@ class FileUpload(Base):
     on_upload_progress: Optional[Union[EventHandler, Callable]] = None
 
     @staticmethod
-    def on_upload_progress_args_spec(_prog: dict[str, int | float | bool]):
+    def on_upload_progress_args_spec(_prog: Dict[str, Union[int, float, bool]]):
         """Args spec for on_upload_progress event handler.
 
         Returns:
