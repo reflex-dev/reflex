@@ -1007,7 +1007,9 @@ class Component(BaseComponent, ABC):
             )
         return _imports
 
-    def add_imports(self) -> Dict[str, Union[str, List[str]]]:
+    def add_imports(
+        self,
+    ) -> Dict[str, Union[str, ImportVar, List[str | ImportVar]]]:
         """User defined imports for the component. Need to be overriden in subclass.
 
         Returns:
@@ -1036,13 +1038,18 @@ class Component(BaseComponent, ABC):
         ]
 
         # If the subclass implements add_imports, merge the imports.
-        def _make_list(value: str | list[str]) -> list[str]:
-            if isinstance(value, str):
+        def _make_list(
+            value: str | ImportVar | list[str | ImportVar],
+        ) -> list[str | ImportVar]:
+            if isinstance(value, (str, ImportVar)):
                 return [value]
             return value
 
         added_imports = {
-            package: [ImportVar(tag=tag) for tag in _make_list(maybe_tags)]
+            package: [
+                ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
+                for tag in _make_list(maybe_tags)
+            ]
             for package, maybe_tags in self.add_imports().items()
         }
 
