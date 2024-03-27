@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Type
+from typing import Any, Dict, List, Type
 
 import pytest
 
@@ -1324,7 +1324,7 @@ def test_custom_component_add_imports(tags):
             )
 
     class Test(Component):
-        def add_imports(self) -> Dict[str, str | Iterable[str]]:
+        def add_imports(self) -> Dict[str, str | List[str]]:
             return {"react": tags[0] if len(tags) == 1 else tags}
 
     baseline = Reference.create()
