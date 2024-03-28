@@ -127,6 +127,11 @@ def get_fnm_version() -> version.Version | None:
         return version.parse(result.stdout.split(" ")[1])  # type: ignore
     except (FileNotFoundError, TypeError):
         return None
+    except version.InvalidVersion as e:
+        console.warn(
+            f"The detected fnm version ({e.args[0]}) is not valid. Defaulting to None."
+        )
+        return None
 
 
 def get_bun_version() -> version.Version | None:
@@ -140,6 +145,11 @@ def get_bun_version() -> version.Version | None:
         result = processes.new_process([get_config().bun_path, "-v"], run=True)
         return version.parse(result.stdout)  # type: ignore
     except FileNotFoundError:
+        return None
+    except version.InvalidVersion as e:
+        console.warn(
+            f"The detected bun version ({e.args[0]}) is not valid. Defaulting to None."
+        )
         return None
 
 
@@ -854,6 +864,7 @@ def validate_bun():
     # This is specific to non-FHS OS
     bun_path = get_config().bun_path
     if bun_path != constants.Bun.DEFAULT_PATH:
+        console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()
         if not bun_version:
             console.error(

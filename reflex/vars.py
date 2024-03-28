@@ -677,6 +677,33 @@ class Var:
             _var_is_string=False,
         )
 
+    def __getattribute__(self, name: str) -> Any:
+        """Get a var attribute.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The var attribute.
+
+        Raises:
+            AttributeError: If the attribute cannot be found, or if __getattr__ fallback should be used.
+        """
+        try:
+            var_attribute = super().__getattribute__(name)
+            if not name.startswith("_"):
+                # Check if the attribute should be accessed through the Var instead of
+                # accessing one of the Var operations
+                type_ = types.get_attribute_access_type(
+                    super().__getattribute__("_var_type"), name
+                )
+                if type_ is not None:
+                    raise AttributeError(f"{name} is being accessed through the Var.")
+            # Return the attribute as-is.
+            return var_attribute
+        except AttributeError:
+            raise  # fall back to __getattr__ anyway
+
     def __getattr__(self, name: str) -> Var:
         """Get a var attribute.
 
@@ -1891,8 +1918,9 @@ class ComputedVar(Var, property):
         """
         d = set()
         if obj is None:
-            if self.fget is not None:
-                obj = cast(FunctionType, self.fget)
+            fget = property.__getattribute__(self, "fget")
+            if fget is not None:
+                obj = cast(FunctionType, fget)
             else:
                 return set()
         with contextlib.suppress(AttributeError):
@@ -1976,7 +2004,7 @@ class ComputedVar(Var, property):
         Returns:
             The type of the var.
         """
-        hints = get_type_hints(self.fget)
+        hints = get_type_hints(property.__getattribute__(self, "fget"))
         if "return" in hints:
             return hints["return"]
         return Any

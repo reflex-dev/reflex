@@ -119,7 +119,7 @@ def UploadFile():
     app.add_page(index)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def upload_file(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start UploadFile app at tmp_path via AppHarness.
 

@@ -87,41 +87,24 @@ def kill_process_on_port(port):
             get_process_on_port(port).kill()  # type: ignore
 
 
-def change_or_terminate_port(port, _type) -> str:
-    """Terminate or change the port.
+def change_port(port: str, _type: str) -> str:
+    """Change the port.
 
     Args:
         port: The port.
         _type: The type of the port.
 
     Returns:
-        The new port or the current one.
+        The new port.
 
-
-    Raises:
-        Exit: If the user wants to exit.
     """
+    new_port = str(int(port) + 1)
+    if is_process_on_port(new_port):
+        return change_port(new_port, _type)
     console.info(
-        f"Something is already running on port [bold underline]{port}[/bold underline]. This is the port the {_type} runs on."
+        f"The {_type} will run on port [bold underline]{new_port}[/bold underline]."
     )
-    frontend_action = console.ask("Kill or change it?", choices=["k", "c", "n"])
-    if frontend_action == "k":
-        kill_process_on_port(port)
-        return port
-    elif frontend_action == "c":
-        new_port = console.ask("Specify the new port")
-
-        # Check if also the new port is used
-        if is_process_on_port(new_port):
-            return change_or_terminate_port(new_port, _type)
-        else:
-            console.info(
-                f"The {_type} will run on port [bold underline]{new_port}[/bold underline]."
-            )
-            return new_port
-    else:
-        console.log("Exiting...")
-        raise typer.Exit()
+    return new_port
 
 
 def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
