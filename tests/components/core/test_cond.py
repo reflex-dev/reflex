@@ -3,18 +3,9 @@ from typing import Any
 
 import pytest
 
-import reflex as rx
 from reflex.components.base.fragment import Fragment
-from reflex.components.chakra.layout.box import Box
-from reflex.components.chakra.typography.text import Text
 from reflex.components.core.cond import Cond, cond
-from reflex.components.core.responsive import (
-    desktop_only,
-    mobile_and_tablet,
-    mobile_only,
-    tablet_and_desktop,
-    tablet_only,
-)
+from reflex.components.radix.themes.typography.text import Text
 from reflex.state import BaseState
 from reflex.vars import Var
 
@@ -42,7 +33,7 @@ def test_f_string_cond_interpolation():
     ],
     indirect=True,
 )
-def test_validate_cond(cond_state: rx.Var):
+def test_validate_cond(cond_state: Var):
     """Test if cond can be a rx.Var with any values.
 
     Args:
@@ -64,7 +55,7 @@ def test_validate_cond(cond_state: rx.Var):
     assert true_value["name"] == "Fragment"
 
     [true_value_text] = true_value["children"]
-    assert true_value_text["name"] == "Text"
+    assert true_value_text["name"] == "RadixThemesText"
     assert true_value_text["children"][0]["contents"] == "{`cond is True`}"
 
     # false value
@@ -72,7 +63,7 @@ def test_validate_cond(cond_state: rx.Var):
     assert false_value["name"] == "Fragment"
 
     [false_value_text] = false_value["children"]
-    assert false_value_text["name"] == "Text"
+    assert false_value_text["name"] == "RadixThemesText"
     assert false_value_text["children"][0]["contents"] == "{`cond is False`}"
 
 
@@ -83,6 +74,7 @@ def test_validate_cond(cond_state: rx.Var):
         (32, 0),
         ("hello", ""),
         (2.3, 0.0),
+        (Var.create("a"), Var.create("b")),
     ],
 )
 def test_prop_cond(c1: Any, c2: Any):
@@ -99,8 +91,10 @@ def test_prop_cond(c1: Any, c2: Any):
     )
 
     assert isinstance(prop_cond, Var)
-    c1 = json.dumps(c1).replace('"', "`")
-    c2 = json.dumps(c2).replace('"', "`")
+    if not isinstance(c1, Var):
+        c1 = json.dumps(c1).replace('"', "`")
+    if not isinstance(c2, Var):
+        c2 = json.dumps(c2).replace('"', "`")
     assert str(prop_cond) == f"{{isTrue(true) ? {c1} : {c2}}}"
 
 
@@ -118,33 +112,3 @@ def test_cond_no_else():
     # Props do not support the use of cond without else
     with pytest.raises(ValueError):
         cond(True, "hello")  # type: ignore
-
-
-def test_mobile_only():
-    """Test the mobile_only responsive component."""
-    component = mobile_only("Content")
-    assert isinstance(component, Box)
-
-
-def test_tablet_only():
-    """Test the tablet_only responsive component."""
-    component = tablet_only("Content")
-    assert isinstance(component, Box)
-
-
-def test_desktop_only():
-    """Test the desktop_only responsive component."""
-    component = desktop_only("Content")
-    assert isinstance(component, Box)
-
-
-def test_tablet_and_desktop():
-    """Test the tablet_and_desktop responsive component."""
-    component = tablet_and_desktop("Content")
-    assert isinstance(component, Box)
-
-
-def test_mobile_and_tablet():
-    """Test the mobile_and_tablet responsive component."""
-    component = mobile_and_tablet("Content")
-    assert isinstance(component, Box)

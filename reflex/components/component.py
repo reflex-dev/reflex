@@ -635,9 +635,11 @@ class Component(BaseComponent, ABC):
                 )
 
         children = [
-            child
-            if isinstance(child, Component)
-            else Bare.create(contents=Var.create(child, _var_is_string=True))
+            (
+                child
+                if isinstance(child, Component)
+                else Bare.create(contents=Var.create(child, _var_is_string=True))
+            )
             for child in children
         ]
 
@@ -1035,15 +1037,16 @@ class Component(BaseComponent, ABC):
             *var_imports,
         )
 
-    def get_imports(self) -> imports.ImportDict:
+    def get_imports(self, collapse: bool = False) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component and its children.
 
         Returns:
             The import dict with the required imports.
         """
-        return imports.merge_imports(
+        _imports = imports.merge_imports(
             self._get_imports(), *[child.get_imports() for child in self.children]
         )
+        return imports.collapse_imports(_imports) if collapse else _imports
 
     def _get_mount_lifecycle_hook(self) -> str | None:
         """Generate the component lifecycle hook.
@@ -1423,9 +1426,9 @@ class CustomComponent(Component):
         return [
             BaseVar(
                 _var_name=name,
-                _var_type=prop._var_type
-                if types._isinstance(prop, Var)
-                else type(prop),
+                _var_type=(
+                    prop._var_type if types._isinstance(prop, Var) else type(prop)
+                ),
             )
             for name, prop in self.props.items()
         ]

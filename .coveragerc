@@ -24,6 +24,9 @@ exclude_also =
 
     # Don't complain about abstract methods, they aren't run:
     @(abc\.)?abstractmethod
+    
+    # Don't complain about overloaded methods:
+    @overload
 
 ignore_errors = True
 
