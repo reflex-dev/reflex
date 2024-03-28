@@ -21,7 +21,6 @@ from reflex.components.radix.themes.components.dialog import (
 from reflex.components.radix.themes.layout import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.constants import Dirs, Hooks, Imports
-from reflex.state import State
 from reflex.utils import imports
 from reflex.vars import Var, VarData
 
