@@ -474,7 +474,7 @@ class Component(BaseComponent, ABC):
         # Look at the fields for EventHandler types.
         for field in self.get_fields().values():
             if types._issubclass(field.type_, EventHandler):
-                default_triggers[field.name] = field.type_.args_spec
+                default_triggers[field.name] = getattr(field.type_, "args_spec", lambda: [])
         return default_triggers
 
     def __repr__(self) -> str:
