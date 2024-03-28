@@ -113,6 +113,7 @@ from reflex import constants as constants
 from reflex.constants import Env as Env
 from reflex import event as event
 from reflex.event import EventChain as EventChain
+from reflex.event import EventHandler as EventHandler
 from reflex.event import background as background
 from reflex.event import call_script as call_script
 from reflex.event import clear_local_storage as clear_local_storage
