@@ -1,6 +1,8 @@
 [run]
 source = reflex
 branch = true
+omit =
+    */pyi_generator.py
 
 [report]
 show_missing = true
