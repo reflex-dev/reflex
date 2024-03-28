@@ -20,8 +20,8 @@ from typing import Any, Callable, Iterable, Type, get_args
 try:
     import black
     import black.mode
-except Exception:
-    pass
+except ImportError:
+    black = None
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
@@ -729,7 +729,7 @@ class PyiGenerator:
             "# ------------------------------------------------------",
             "",
         ]
-        try:
+        if black is not None:
             for formatted_line in black.format_file_contents(
                 src_contents=source,
                 fast=True,
@@ -743,7 +743,7 @@ class PyiGenerator:
                 else:
                     pyi_content.append(formatted_line)
             pyi_content.append("")  # add empty line at the end for formatting
-        except Exception:
+        else:
             pyi_content = source.splitlines()
 
         pyi_path = module_path.with_suffix(".pyi")
