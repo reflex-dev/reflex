@@ -1,5 +1,6 @@
-# !! Do not add `from __future__ import annotations` to this file.
-from typing import Any, Dict
+from __future__ import annotations
+
+from typing import Any
 
 from reflex.components.component import Component
 from reflex.event import EventHandler
@@ -8,7 +9,7 @@ from reflex.event import EventHandler
 # This is a repeat of its namesake in test_component.py.
 def test_custom_component_declare_event_handlers_in_fields():
     class ReferenceComponent(Component):
-        def get_event_triggers(self) -> Dict[str, Any]:
+        def get_event_triggers(self) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:

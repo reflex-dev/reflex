@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any, Dict, List, Type, Union
 
 import pytest
@@ -1356,7 +1354,7 @@ def test_custom_component_add_imports(tags):
 
 def test_custom_component_declare_event_handlers_in_fields():
     class ReferenceComponent(Component):
-        def get_event_triggers(self) -> dict[str, Any]:
+        def get_event_triggers(self) -> Dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
