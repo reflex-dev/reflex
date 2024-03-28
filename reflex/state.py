@@ -1216,9 +1216,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Determine which parent states to fetch from the common ancestor down to the target_state_cls.
         fetch_parent_states = [common_ancestor_name]
-        for ix, relative_parent_state_name in enumerate(relative_target_state_parts):
+        for relative_parent_state_name in relative_target_state_parts:
             fetch_parent_states.append(
-                ".".join([*fetch_parent_states[: ix + 1], relative_parent_state_name])
+                ".".join((fetch_parent_states[-1], relative_parent_state_name))
             )
 
         return common_ancestor_name, fetch_parent_states[1:-1]
