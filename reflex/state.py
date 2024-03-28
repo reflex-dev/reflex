@@ -27,7 +27,7 @@ from typing import (
     Type,
 )
 
-import cloudpickle
+import dill
 import pydantic
 import wrapt
 from redis.asyncio import Redis
@@ -38,7 +38,6 @@ from reflex.event import (
     Event,
     EventHandler,
     EventSpec,
-    _no_chain_background_task,
     fix_events,
     window_alert,
 )
@@ -147,6 +146,44 @@ class RouterData(Base):
         self.session = SessionData(router_data)
         self.headers = HeaderData(router_data)
         self.page = PageData(router_data)
+
+
+def _no_chain_background_task(
+    state_cls: Type["BaseState"], name: str, fn: Callable
+) -> Callable:
+    """Protect against directly chaining a background task from another event handler.
+
+    Args:
+        state_cls: The state class that the event handler is in.
+        name: The name of the background task.
+        fn: The background task coroutine function / generator.
+
+    Returns:
+        A compatible coroutine function / generator that raises a runtime error.
+
+    Raises:
+        TypeError: If the background task is not async.
+    """
+    call = f"{state_cls.__name__}.{name}"
+    message = (
+        f"Cannot directly call background task {name!r}, use "
+        f"`yield {call}` or `return {call}` instead."
+    )
+    if inspect.iscoroutinefunction(fn):
+
+        async def _no_chain_background_task_co(*args, **kwargs):
+            raise RuntimeError(message)
+
+        return _no_chain_background_task_co
+    if inspect.isasyncgenfunction(fn):
+
+        async def _no_chain_background_task_gen(*args, **kwargs):
+            yield
+            raise RuntimeError(message)
+
+        return _no_chain_background_task_gen
+
+    raise TypeError(f"{fn} is marked as a background task, but is not async.")
 
 
 RESERVED_BACKEND_VAR_NAMES = {
@@ -294,8 +331,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     parent_state=self,
                     _reflex_internal_init=True,
                 )
-        # Convert the event handlers to functions.
-        self._init_event_handlers()
 
         # Create a fresh copy of the backend variables for this instance
         self._backend_vars = copy.deepcopy(
@@ -305,32 +340,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if name not in self.computed_vars
             }
         )
-
-    def _init_event_handlers(self, state: BaseState | None = None):
-        """Initialize event handlers.
-
-        Allow event handlers to be called directly on the instance. This is
-        called recursively for all parent states.
-
-        Args:
-            state: The state to initialize the event handlers on.
-        """
-        if state is None:
-            state = self
-
-        # Convert the event handlers to functions.
-        for name, event_handler in state.event_handlers.items():
-            if event_handler.is_background:
-                fn = _no_chain_background_task(type(state), name, event_handler.fn)
-            else:
-                fn = functools.partial(event_handler.fn, self)
-            fn.__module__ = event_handler.fn.__module__  # type: ignore
-            fn.__qualname__ = event_handler.fn.__qualname__  # type: ignore
-            setattr(self, name, fn)
-
-        # Also allow direct calling of parent state event handlers
-        if state.parent_state is not None:
-            self._init_event_handlers(state.parent_state)
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -1037,11 +1046,30 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if parent_state is not None:
                 return getattr(parent_state, name)
 
+        # Allow event handlers to be called on the instance directly.
+        event_handlers = super().__getattribute__("event_handlers")
+        if name in event_handlers:
+            handler = event_handlers[name]
+            if handler.is_background:
+                fn = _no_chain_background_task(type(self), name, handler.fn)
+            else:
+                fn = functools.partial(handler.fn, self)
+            fn.__module__ = handler.fn.__module__  # type: ignore
+            fn.__qualname__ = handler.fn.__qualname__  # type: ignore
+            return fn
+
         backend_vars = super().__getattribute__("_backend_vars")
         if name in backend_vars:
             value = backend_vars[name]
         else:
             value = super().__getattribute__(name)
+
+        if isinstance(value, EventHandler):
+            # The event handler is inherited from a parent, so let the parent convert
+            # it to a callable function.
+            parent_state = super().__getattribute__("parent_state")
+            if parent_state is not None:
+                return getattr(parent_state, name)
 
         if isinstance(value, MutableProxy.__mutable_types__) and (
             name in super().__getattribute__("base_vars") or name in backend_vars
@@ -2159,6 +2187,25 @@ class StateManagerMemory(StateManager):
             await self.set_state(token, state)
 
 
+# Workaround https://github.com/cloudpipe/cloudpickle/issues/408 for dynamic pydantic classes
+if not isinstance(State.validate.__func__, FunctionType):
+    cython_function_or_method = type(State.validate.__func__)
+
+    @dill.register(cython_function_or_method)
+    def _dill_reduce_cython_function_or_method(pickler, obj):
+        # Ignore cython function when pickling.
+        pass
+
+
+@dill.register(type(State))
+def _dill_reduce_state(pickler, obj):
+    if obj is not State and issubclass(obj, State):
+        # Avoid serializing subclasses of State, instead get them by reference from the State class.
+        pickler.save_reduce(State.get_class_substate, (obj.get_full_name(),), obj=obj)
+    else:
+        dill.Pickler.dispatch[type](pickler, obj)
+
+
 class StateManagerRedis(StateManager):
     """A state manager that stores states in redis."""
 
@@ -2301,7 +2348,7 @@ class StateManagerRedis(StateManager):
 
         if redis_state is not None:
             # Deserialize the substate.
-            state = cloudpickle.loads(redis_state)
+            state = dill.loads(redis_state)
 
             # Populate parent state if missing and requested.
             if parent_state is None:
@@ -2412,7 +2459,7 @@ class StateManagerRedis(StateManager):
             )
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
         if state._get_was_touched():
-            pickle_state = cloudpickle.dumps(state)
+            pickle_state = dill.dumps(state, byref=True)
             self._warn_if_too_large(state, len(pickle_state))
             await self.redis.set(
                 _substate_key(client_token, state),
@@ -2976,8 +3023,12 @@ def reload_state_module(
     Args:
         module: The module to reload.
         state: Recursive argument for the state class to reload.
+
     """
     for subclass in tuple(state.class_subclasses):
         reload_state_module(module=module, state=subclass)
         if subclass.__module__ == module and module is not None:
             state.class_subclasses.remove(subclass)
+            state._always_dirty_substates.discard(subclass.get_name())
+    state._init_var_dependency_dicts()
+    state.get_class_substate.cache_clear()

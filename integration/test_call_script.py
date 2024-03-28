@@ -230,7 +230,7 @@ def CallScript():
         )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def call_script(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start CallScript app at tmp_path via AppHarness.
 

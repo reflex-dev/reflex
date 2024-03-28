@@ -74,7 +74,7 @@ def DynamicRoute():
     app.add_custom_404_page(on_load=DynamicState.on_load)  # type: ignore
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def dynamic_route(
     app_harness_env: Type[AppHarness], tmp_path_factory
 ) -> Generator[AppHarness, None, None]:

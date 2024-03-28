@@ -76,7 +76,7 @@ def ServerSideEvent():
         )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def server_side_event(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start ServerSideEvent app at tmp_path via AppHarness.
 
