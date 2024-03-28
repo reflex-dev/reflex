@@ -25,10 +25,11 @@ from typing import (
     get_type_hints,
 )
 
-from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi import FastAPI, HTTPException, Request, Response, UploadFile
 from fastapi.middleware import cors
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette_admin.contrib.sqla.admin import Admin
@@ -276,6 +277,7 @@ class App(Base):
         """Add default api endpoints (ping)."""
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
+        self.api.post("/_set_cookie/")(set_http_only_cookie)
 
     def add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
@@ -1082,6 +1084,55 @@ async def ping() -> str:
         The response.
     """
     return "pong"
+
+
+class CookieHttpOnlyBaseModel(BaseModel):
+    """The Request Body for api route /_set_cookie."""
+
+    key: str
+    value: str
+    http_only: bool = True
+    secure: bool = True
+    max_age: int = None
+    same_site: str = "strict"
+    # domain: str = None # It should always be the default
+    # path: str = "/" # It should not be used because self.router.headers.cookie cannot see cookies that are not at default path
+
+
+async def set_http_only_cookie(
+    cookie: CookieHttpOnlyBaseModel,
+    response: Response,
+) -> Response:
+    """Set a httpOnly cookie in frontend - API endpoint.
+
+    Args:
+        key: The name of the cookie on the client side.
+        value: The cookie Value.
+        max_age: Relative max age of the cookie in seconds from when the client receives it.
+        secure: Is the cookie only accessible through HTTPS?
+        same_site: Whether the cookie is sent with third party requests.
+            One of (true|false|none|lax|strict)
+        http_only: A cookie with the HttpOnly attribute is inaccessible to the JavaScript Document.cookie API; it's only sent to the server.
+
+    Returns:
+        The response with set-cookie header.
+    """
+    try:
+        content = {"message": "success"}
+        response = JSONResponse(content=content)
+        response.set_cookie(
+            key=cookie.key,
+            value=cookie.value,
+            max_age=cookie.max_age,
+            secure=cookie.secure,
+            samesite=cookie.same_site,
+            httponly=cookie.http_only,
+        )
+        return response
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Unable to set cookie. Error: {repr(e)}"
+        )
 
 
 def upload(app: App):

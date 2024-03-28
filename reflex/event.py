@@ -1,8 +1,10 @@
 """Define event classes to connect the frontend and backend."""
+
 from __future__ import annotations
 
 import inspect
 from base64 import b64encode
+import json
 from types import FunctionType
 from typing import (
     Any,
@@ -19,6 +21,7 @@ from reflex.base import Base
 from reflex.utils import console, format
 from reflex.utils.types import ArgsSpec
 from reflex.vars import BaseVar, Var
+from reflex.config import get_config
 
 
 class Event(Base):
@@ -607,6 +610,58 @@ def _callback_arg_spec(eval_result):
         Args for the callback function
     """
     return [eval_result]
+
+
+def set_http_only_cookie(
+    key: str,
+    value: str,
+    max_age: int = None,
+    secure: bool = True,
+    same_site: str = "strict",
+    http_only: bool = True,
+):
+    """Set a httpOnly cookie in frontend.
+
+    Args:
+        key: The name of the cookie on the client side.
+        value: The cookie Value.
+        max_age: Relative max age of the cookie in seconds from when the client receives it.
+        secure: Is the cookie only accessible through HTTPS?
+        same_site: Whether the cookie is sent with third party requests.
+            One of (true|false|none|lax|strict).
+        http_only: A cookie with the HttpOnly attribute is inaccessible to the JavaScript Document.cookie API; it's only sent to the server.
+
+    Returns:
+        A rx.call_script with fetch request to '_set_cookie' api route.
+    """
+    try:
+        config = get_config()
+        set_cookie_endpoint = config.api_url + "/_set_cookie"
+        jsonCookie = json.dumps(
+            {
+                "key": key,
+                "value": value,
+                "same_site": same_site,
+                "http_only": http_only,
+                "secure": secure,
+                "max_age": max_age,
+            }
+        )
+
+        return call_script(
+            """
+                fetch(getBackendURL("%s"), {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(%s),
+                })"""
+            % (set_cookie_endpoint, jsonCookie)
+        )
+    except Exception as e:
+        raise RuntimeError(f"Invalid data. Error: {repr(e)}")
 
 
 def call_script(
