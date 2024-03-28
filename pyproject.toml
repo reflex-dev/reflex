@@ -62,6 +62,7 @@ build = "^1.0.3"
 setuptools = "^69.1.1"
 httpx = ">=0.25.1"
 twine = ">=4.0.0"
+black = "^22.10.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
@@ -71,7 +72,6 @@ darglint = "^1.8.1"
 toml = "^0.10.2"
 pytest-asyncio = "^0.20.1"
 pytest-cov = "^4.0.0"
-black = "^22.10.0"
 ruff = "^0.0.244"
 pandas = [
     {version = "^2.1.1", python = ">=3.9,<3.13"},
