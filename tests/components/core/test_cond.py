@@ -98,6 +98,12 @@ def test_prop_cond(c1: Any, c2: Any):
     assert str(prop_cond) == f"{{isTrue(true) ? {c1} : {c2}}}"
 
 
+def test_cond_no_mix():
+    """Test if cond can't mix components and props."""
+    with pytest.raises(ValueError):
+        cond(True, Var.create("hello"), Text.create("world"))
+
+
 def test_cond_no_else():
     """Test if cond can be used without else."""
     # Components should support the use of cond without else
