@@ -17,8 +17,11 @@ from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import Any, Callable, Iterable, Type, get_args
 
-import black
-import black.mode
+try:
+    import black
+    import black.mode
+except Exception:
+    pass
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
@@ -726,20 +729,22 @@ class PyiGenerator:
             "# ------------------------------------------------------",
             "",
         ]
-
-        for formatted_line in black.format_file_contents(
-            src_contents=source,
-            fast=True,
-            mode=black.mode.Mode(is_pyi=True),
-        ).splitlines():
-            # Bit of a hack here, since the AST cannot represent comments.
-            if "def create(" in formatted_line:
-                pyi_content.append(formatted_line + "  # type: ignore")
-            elif "Figure" in formatted_line:
-                pyi_content.append(formatted_line + "  # type: ignore")
-            else:
-                pyi_content.append(formatted_line)
-        pyi_content.append("")  # add empty line at the end for formatting
+        try:
+            for formatted_line in black.format_file_contents(
+                src_contents=source,
+                fast=True,
+                mode=black.mode.Mode(is_pyi=True),
+            ).splitlines():
+                # Bit of a hack here, since the AST cannot represent comments.
+                if "def create(" in formatted_line:
+                    pyi_content.append(formatted_line + "  # type: ignore")
+                elif "Figure" in formatted_line:
+                    pyi_content.append(formatted_line + "  # type: ignore")
+                else:
+                    pyi_content.append(formatted_line)
+            pyi_content.append("")  # add empty line at the end for formatting
+        except Exception:
+            pyi_content = source.splitlines()
 
         pyi_path = module_path.with_suffix(".pyi")
         pyi_path.write_text("\n".join(pyi_content))
