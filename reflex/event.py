@@ -1,4 +1,5 @@
 """Define event classes to connect the frontend and backend."""
+
 from __future__ import annotations
 
 import inspect
@@ -14,6 +15,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    _GenericAlias,  # type: ignore
 )
 
 from reflex import constants
@@ -148,7 +150,7 @@ class EventHandler(EventActionsMixin):
     fn: Any
 
     # The full name of the state class this event handler is attached to.
-    # Emtpy string means this event handler is a server side event.
+    # Empty string means this event handler is a server side event.
     state_full_name: str = ""
 
     class Config:
@@ -156,6 +158,21 @@ class EventHandler(EventActionsMixin):
 
         # Needed to allow serialization of Callable.
         frozen = True
+
+    @classmethod
+    def __class_getitem__(cls, type_: str) -> _GenericAlias:
+        """Get a typed var.
+
+        Args:
+            type_: The type of the var.
+
+        Returns:
+            The var class item.
+        """
+        gen = _GenericAlias(cls, Any)
+        # Cannot subclass special typing classes, so we need to set the args_spec dynamically as an attribute.
+        gen.args_spec = type_
+        return gen
 
     @property
     def is_background(self) -> bool:

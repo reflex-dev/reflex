@@ -228,6 +228,8 @@ class Component(BaseComponent, ABC):
             if types._issubclass(field.type_, Var):
                 field.required = False
                 field.default = Var.create(field.default)
+            elif types._issubclass(field.type_, EventHandler):
+                field.required = False
 
         # Ensure renamed props from parent classes are applied to the subclass.
         if cls._rename_props:
@@ -446,7 +448,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The event triggers.
         """
-        return {
+        default_triggers = {
             EventTriggers.ON_FOCUS: lambda: [],
             EventTriggers.ON_BLUR: lambda: [],
             EventTriggers.ON_CLICK: lambda: [],
@@ -463,6 +465,11 @@ class Component(BaseComponent, ABC):
             EventTriggers.ON_MOUNT: lambda: [],
             EventTriggers.ON_UNMOUNT: lambda: [],
         }
+        # Look at the fields for EventHandler types.
+        for field in self.get_fields().values():
+            if types._issubclass(field.type_, EventHandler):
+                default_triggers[field.name] = field.type_.args_spec
+        return default_triggers
 
     def __repr__(self) -> str:
         """Represent the component in React.
@@ -636,9 +643,11 @@ class Component(BaseComponent, ABC):
                 )
 
         children = [
-            child
-            if isinstance(child, Component)
-            else Bare.create(contents=Var.create(child, _var_is_string=True))
+            (
+                child
+                if isinstance(child, Component)
+                else Bare.create(contents=Var.create(child, _var_is_string=True))
+            )
             for child in children
         ]
 
@@ -1424,9 +1433,9 @@ class CustomComponent(Component):
         return [
             BaseVar(
                 _var_name=name,
-                _var_type=prop._var_type
-                if types._isinstance(prop, Var)
-                else type(prop),
+                _var_type=(
+                    prop._var_type if types._isinstance(prop, Var) else type(prop)
+                ),
             )
             for name, prop in self.props.items()
         ]
