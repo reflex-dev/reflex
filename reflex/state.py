@@ -1819,11 +1819,9 @@ class OnLoadInternalState(State):
         # Do not app.compile_()!  It should be already compiled by now.
         app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
         load_events = app.get_load_events(self.router.page.path)
-        if not load_events and self.is_hydrated:
-            return  # Fast path for page-to-page navigation
         if not load_events:
             self.is_hydrated = True
-            return  # Fast path for initial hydrate with no on_load events defined.
+            return  # Fast path for navigation with no on_load events defined.
         self.is_hydrated = False
         return [
             *fix_events(
