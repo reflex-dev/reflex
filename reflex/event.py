@@ -12,6 +12,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    get_type_hints,
 )
 
 from reflex import constants
@@ -281,7 +282,7 @@ class FileUpload(Base):
     on_upload_progress: Optional[Union[EventHandler, Callable]] = None
 
     @staticmethod
-    def on_upload_progress_args_spec(_prog: dict[str, int | float | bool]):
+    def on_upload_progress_args_spec(_prog: Dict[str, Union[int, float, bool]]):
         """Args spec for on_upload_progress event handler.
 
         Returns:
@@ -728,11 +729,12 @@ def parse_args_spec(arg_spec: ArgsSpec):
         The parsed args.
     """
     spec = inspect.getfullargspec(arg_spec)
+    annotations = get_type_hints(arg_spec)
     return arg_spec(
         *[
             BaseVar(
                 _var_name=f"_{l_arg}",
-                _var_type=spec.annotations.get(l_arg, FrontendEvent),
+                _var_type=annotations.get(l_arg, FrontendEvent),
                 _var_is_local=True,
             )
             for l_arg in spec.args
