@@ -75,6 +75,14 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
+    def get_ref_hooks(self) -> set[str]:
+        """Get the hooks required by refs in this component.
+
+        Returns:
+            The hooks for the refs.
+        """
+
+    @abstractmethod
     def get_hooks_internal(self) -> set[str]:
         """Get the reflex internal hooks for the component and its children.
 
@@ -1014,6 +1022,16 @@ class Component(BaseComponent, ABC):
             )
         return _imports
 
+    def add_imports(
+        self,
+    ) -> Dict[str, Union[str, ImportVar, List[str | ImportVar]]]:
+        """User defined imports for the component. Need to be overriden in subclass.
+
+        Returns:
+            The user defined imports as a dict.
+        """
+        return {}
+
     def _get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
 
@@ -1034,12 +1052,29 @@ class Component(BaseComponent, ABC):
             var._var_data.imports for var in self._get_vars() if var._var_data
         ]
 
+        # If the subclass implements add_imports, merge the imports.
+        def _make_list(
+            value: str | ImportVar | list[str | ImportVar],
+        ) -> list[str | ImportVar]:
+            if isinstance(value, (str, ImportVar)):
+                return [value]
+            return value
+
+        added_imports = {
+            package: [
+                ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
+                for tag in _make_list(maybe_tags)
+            ]
+            for package, maybe_tags in self.add_imports().items()
+        }
+
         return imports.merge_imports(
             *self._get_props_imports(),
             self._get_dependencies_imports(),
             self._get_hooks_imports(),
             _imports,
             event_imports,
+            added_imports,
             *var_imports,
         )
 
@@ -1137,14 +1172,10 @@ class Component(BaseComponent, ABC):
             Set of internally managed hooks.
         """
         return (
-            set(
-                hook
-                for hook in [self._get_mount_lifecycle_hook(), self._get_ref_hook()]
-                if hook
-            )
-            | self._get_vars_hooks()
+            self._get_vars_hooks()
             | self._get_events_hooks()
             | self._get_special_hooks()
+            | set(hook for hook in [self._get_mount_lifecycle_hook()] if hook)
         )
 
     def _get_hooks(self) -> str | None:
@@ -1156,6 +1187,19 @@ class Component(BaseComponent, ABC):
             The hooks for just this component.
         """
         return
+
+    def get_ref_hooks(self) -> Set[str]:
+        """Get the ref hooks for the component and its children.
+
+        Returns:
+            The ref hooks.
+        """
+        ref_hook = self._get_ref_hook()
+        hooks = set() if ref_hook is None else {ref_hook}
+
+        for child in self.children:
+            hooks |= child.get_ref_hooks()
+        return hooks
 
     def get_hooks_internal(self) -> set[str]:
         """Get the reflex internal hooks for the component and its children.
@@ -1822,6 +1866,14 @@ class StatefulComponent(BaseComponent):
                 f"const {memo_name} = useCallback({rendered_chain}, [{', '.join(var_deps)}])",
             )
         return trigger_memo
+
+    def get_ref_hooks(self) -> set[str]:
+        """Get the ref hooks for the component and its children.
+
+        Returns:
+            The ref hooks.
+        """
+        return set()
 
     def get_hooks_internal(self) -> set[str]:
         """Get the reflex internal hooks for the component and its children.

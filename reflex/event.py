@@ -6,16 +6,15 @@ import inspect
 from base64 import b64encode
 from types import FunctionType
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
     List,
     Optional,
     Tuple,
-    Type,
     Union,
     _GenericAlias,  # type: ignore
+    get_type_hints,
 )
 
 from reflex import constants
@@ -23,9 +22,6 @@ from reflex.base import Base
 from reflex.utils import console, format
 from reflex.utils.types import ArgsSpec
 from reflex.vars import BaseVar, Var
-
-if TYPE_CHECKING:
-    from reflex.state import BaseState
 
 
 class Event(Base):
@@ -74,44 +70,6 @@ def background(fn):
         raise TypeError("Background task must be async function or generator.")
     setattr(fn, BACKGROUND_TASK_MARKER, True)
     return fn
-
-
-def _no_chain_background_task(
-    state_cls: Type["BaseState"], name: str, fn: Callable
-) -> Callable:
-    """Protect against directly chaining a background task from another event handler.
-
-    Args:
-        state_cls: The state class that the event handler is in.
-        name: The name of the background task.
-        fn: The background task coroutine function / generator.
-
-    Returns:
-        A compatible coroutine function / generator that raises a runtime error.
-
-    Raises:
-        TypeError: If the background task is not async.
-    """
-    call = f"{state_cls.__name__}.{name}"
-    message = (
-        f"Cannot directly call background task {name!r}, use "
-        f"`yield {call}` or `return {call}` instead."
-    )
-    if inspect.iscoroutinefunction(fn):
-
-        async def _no_chain_background_task_co(*args, **kwargs):
-            raise RuntimeError(message)
-
-        return _no_chain_background_task_co
-    if inspect.isasyncgenfunction(fn):
-
-        async def _no_chain_background_task_gen(*args, **kwargs):
-            yield
-            raise RuntimeError(message)
-
-        return _no_chain_background_task_gen
-
-    raise TypeError(f"{fn} is marked as a background task, but is not async.")
 
 
 class EventActionsMixin(Base):
@@ -341,7 +299,7 @@ class FileUpload(Base):
     on_upload_progress: Optional[Union[EventHandler, Callable]] = None
 
     @staticmethod
-    def on_upload_progress_args_spec(_prog: dict[str, int | float | bool]):
+    def on_upload_progress_args_spec(_prog: Dict[str, Union[int, float, bool]]):
         """Args spec for on_upload_progress event handler.
 
         Returns:
@@ -788,11 +746,12 @@ def parse_args_spec(arg_spec: ArgsSpec):
         The parsed args.
     """
     spec = inspect.getfullargspec(arg_spec)
+    annotations = get_type_hints(arg_spec)
     return arg_spec(
         *[
             BaseVar(
                 _var_name=f"_{l_arg}",
-                _var_type=spec.annotations.get(l_arg, FrontendEvent),
+                _var_type=annotations.get(l_arg, FrontendEvent),
                 _var_is_local=True,
             )
             for l_arg in spec.args
