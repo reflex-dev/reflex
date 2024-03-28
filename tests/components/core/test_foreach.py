@@ -1,8 +1,9 @@
 from typing import Dict, List, Set, Tuple
 
 import pytest
+from pydantic import ValidationError
 
-from reflex.components import box, foreach, text
+from reflex.components import box, foreach, text, theme
 from reflex.components.core import Foreach
 from reflex.state import BaseState
 
@@ -32,6 +33,7 @@ class ForEachState(BaseState):
         "yellow",
     )
     colors_set: Set[str] = {"red", "green"}
+    bad_annotation_list: list = [["red", "orange"], ["yellow", "blue"]]
 
 
 def display_color(color):
@@ -185,3 +187,30 @@ def test_foreach_render(state_var, render_fn, render_dict):
     assert arg_index._var_name not in seen_index_vars
     assert arg_index._var_type == int
     seen_index_vars.add(arg_index._var_name)
+
+
+def test_foreach_apply_theme():
+    """Test that the foreach component applies the theme."""
+    tag = Foreach.create(ForEachState.colors_list, display_color)  # type: ignore
+    _theme = theme()
+    tag.apply_theme(_theme)
+    assert tag.theme == _theme
+    tag.render()
+
+
+def test_foreach_bad_annotations():
+    """Test that the foreach component raises a TypeError if the iterable is of type Any."""
+    with pytest.raises(TypeError):
+        Foreach.create(
+            ForEachState.bad_annotation_list,  # type: ignore
+            lambda sublist: Foreach.create(sublist, lambda color: text(color)),
+        )
+
+
+def test_foreach_no_param_in_signature():
+    """Test that the foreach component raises a TypeError if no parameters are passed."""
+    with pytest.raises(ValidationError):
+        Foreach.create(
+            ForEachState.colors_list,  # type: ignore
+            lambda: text("color"),
+        )

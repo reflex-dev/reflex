@@ -17,6 +17,7 @@ from reflex import constants
 from reflex.config import get_config
 from reflex.constants import CustomComponents
 from reflex.utils import console
+from reflex.utils.pyi_generator import PyiGenerator
 
 config = get_config()
 custom_components_cli = typer.Typer()
@@ -400,6 +401,18 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
         return False
 
 
+def _make_pyi_files():
+    """Create pyi files for the custom component."""
+    from glob import glob
+
+    package_name = glob("custom_components/*.egg-info")[0].replace(".egg-info", "")
+
+    for dir, _, _ in os.walk(f"./{package_name}"):
+        if "__pycache__" in dir:
+            continue
+        PyiGenerator().scan_all([dir])
+
+
 def _run_build():
     """Run the build command.
 
@@ -407,6 +420,8 @@ def _run_build():
         Exit: If the build fails.
     """
     console.print("Building custom component...")
+
+    _make_pyi_files()
 
     cmds = [sys.executable, "-m", "build", "."]
     if _run_commands_in_subprocess(cmds):

@@ -1,4 +1,5 @@
 """A bare component."""
+
 from __future__ import annotations
 
 from typing import Any, Iterator
@@ -27,7 +28,7 @@ class Bare(Component):
         if isinstance(contents, Var) and contents._var_data:
             contents = contents.to(str)
         else:
-            contents = str(contents)
+            contents = str(contents) if contents is not None else ""
         return cls(contents=contents)  # type: ignore
 
     def _render(self) -> Tag:
@@ -42,6 +43,4 @@ class Bare(Component):
         Yields:
             The contents if it is a Var, otherwise nothing.
         """
-        if isinstance(self.contents, Var):
-            # Fast path for Bare text components.
-            yield self.contents
+        yield self.contents

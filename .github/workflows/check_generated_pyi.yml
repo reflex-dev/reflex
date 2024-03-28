@@ -3,7 +3,7 @@ name: check-generated-pyi
 on:
   push:
     branches: [ "main" ]
-    # We don't just trigger on pyi_generator.py and the components dir, because
+    # We don't just trigger on make_pyi.py and the components dir, because
     # there are other things that can change the generator output
     # e.g. black version, reflex.Component, reflex.Var.
     paths-ignore:
@@ -25,11 +25,11 @@ jobs:
           run-poetry-install: true
           create-venv-at-path: .venv
       - run: |
-          poetry run python scripts/pyi_generator.py
+          poetry run python scripts/make_pyi.py
           if [[ $(git status --porcelain) ]]; then
             git status
             git diff
-            echo "ERROR: pyi_generator.py output is out of date. Please run scripts/pyi_generator.py and commit the changes."
+            echo "ERROR: make_pyi.py output is out of date. Please run scripts/make_pyi.py and commit the changes."
             exit 1
           else
             echo "No diffs - AOK!"
