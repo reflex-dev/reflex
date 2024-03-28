@@ -112,6 +112,7 @@ _ALL_COMPONENTS = [
 ]
 
 _MAPPING = {
+    "reflex.experimental": ["_x"],
     "reflex.admin": ["admin", "AdminDash"],
     "reflex.app": ["app", "App", "UploadFile"],
     "reflex.base": ["base", "Base"],
