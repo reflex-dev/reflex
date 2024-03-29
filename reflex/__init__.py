@@ -197,7 +197,7 @@ def _removeprefix(text, prefix):
     return text[text.startswith(prefix) and len(prefix) :]
 
 
-__all__ = [_removeprefix(mod, "reflex.") for mod in _MAPPING]
+__all__ = (_removeprefix(mod, "reflex.") for mod in _MAPPING)
 
 
 def __getattr__(name: str) -> Type:

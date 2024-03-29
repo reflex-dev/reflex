@@ -330,13 +330,14 @@ def test_initialize_with_custom_admin_dashboard(
         test_model_auth: The default model for an auth admin dashboard.
         test_custom_auth_admin: The custom auth provider.
     """
-    custom_admin = Admin(engine=test_get_engine, auth_provider=test_custom_auth_admin)
+    custom_auth_provider = test_custom_auth_admin()
+    custom_admin = Admin(engine=test_get_engine, auth_provider=custom_auth_provider)
     app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
     assert app.admin_dash is not None
     assert app.admin_dash.admin is not None
     assert len(app.admin_dash.models) > 0
     assert app.admin_dash.models[0] == test_model_auth
-    assert app.admin_dash.admin.auth_provider == test_custom_auth_admin
+    assert app.admin_dash.admin.auth_provider == custom_auth_provider
 
 
 def test_initialize_admin_dashboard_with_view_overrides(test_model):
