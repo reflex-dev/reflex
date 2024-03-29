@@ -306,3 +306,8 @@ def test_match_multiple_default_cases(match_case):
     """
     with pytest.raises(ValueError, match="rx.match can only have one default case."):
         Match.create(MatchState.value, *match_case)
+
+
+def test_match_no_cond():
+    with pytest.raises(ValueError):
+        _ = Match.create(None)
