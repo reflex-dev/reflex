@@ -919,7 +919,7 @@ def _get_file_from_prompt_in_loop() -> Tuple[bytes, str] | None:
     image_file = file_extension = None
     while image_file is None:
         image_filepath = console.ask(
-            f"Local path to a preview gif or image (enter to skip)"
+            f"Path on your computer from where to upload a preview image of your site (enter to skip)"
         )
         if not image_filepath:
             break
