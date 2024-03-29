@@ -15,6 +15,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from types import FunctionType, MethodType
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Callable,
@@ -46,6 +47,10 @@ from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.vars import BaseVar, ComputedVar, Var, computed_var
+
+if TYPE_CHECKING:
+    from reflex.components.component import Component
+
 
 Delta = Dict[str, Any]
 var = computed_var
@@ -1833,6 +1838,45 @@ class OnLoadInternalState(State):
             ),
             State.set_is_hydrated(True),  # type: ignore
         ]
+
+
+class ComponentState(Base):
+    """The base class for a State that is copied for each Component associated with it."""
+
+    _per_component_state_instance_count: ClassVar[int] = 0
+
+    @classmethod
+    def get_component(cls, *children, **props) -> "Component":
+        """Get the component instance.
+
+        Args:
+            children: The children of the component.
+            props: The props of the component.
+
+        Raises:
+            NotImplementedError: if the subclass does not override this method.
+        """
+        raise NotImplementedError(
+            f"{cls.__name__} must implement get_component to return the component instance."
+        )
+
+    @classmethod
+    def create(cls, *children, **props) -> "Component":
+        """Create a new instance of the Component.
+
+        Args:
+            children: The children of the component.
+            props: The props of the component.
+
+        Returns:
+            A new instance of the Component with an independent copy of the State.
+        """
+        cls._per_component_state_instance_count += 1
+        state_cls_name = f"{cls.__name__}_n{cls._per_component_state_instance_count}"
+        component_state = type(state_cls_name, (cls, State), {})
+        component = component_state.get_component(*children, **props)
+        component.State = component_state
+        return component
 
 
 class StateProxy(wrapt.ObjectProxy):

@@ -4,14 +4,11 @@ from typing import Iterable, Literal, Optional, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
-from reflex.components.el.elements.typography import Li
+from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.typography.text import Text
 from reflex.style import Style
 from reflex.vars import Var
-
-from .base import LayoutComponent
-from .flex import Flex
 
 LiteralListStyleTypeUnordered = Literal[
     "none",
@@ -38,8 +35,10 @@ LiteralListStyleTypeOrdered = Literal[
 ]
 
 
-class BaseList(Flex, LayoutComponent):
+class BaseList(Component):
     """Base class for ordered and unordered lists."""
+
+    tag = "ul"
 
     # The style of the list. Default to "none".
     list_style_type: Var[
@@ -70,10 +69,9 @@ class BaseList(Flex, LayoutComponent):
                 children = [Foreach.create(items, ListItem.create)]
             else:
                 children = [ListItem.create(item) for item in items]
-        # props["list_style_type"] = list_style_type
+        props["list_style_position"] = "outside"
         props["direction"] = "column"
         style = props.setdefault("style", {})
-        style["list_style_position"] = "outside"
         style["list_style_type"] = list_style_type
         if "gap" in props:
             style["gap"] = props["gap"]
@@ -83,14 +81,16 @@ class BaseList(Flex, LayoutComponent):
         self.style = Style(
             {
                 "direction": "column",
-                "list_style_position": "outside",
+                "list_style_position": "inside",
                 **self.style,
             }
         )
 
 
-class UnorderedList(BaseList):
+class UnorderedList(BaseList, Ul):
     """Display an unordered list."""
+
+    tag = "ul"
 
     @classmethod
     def create(
@@ -112,13 +112,16 @@ class UnorderedList(BaseList):
             The list component.
 
         """
+        props["margin_left"] = props.get("margin_left", "1.5rem")
         return super().create(
             *children, items=items, list_style_type=list_style_type, **props
         )
 
 
-class OrderedList(BaseList):
+class OrderedList(BaseList, Ol):
     """Display an ordered list."""
+
+    tag = "ol"
 
     @classmethod
     def create(
@@ -140,6 +143,7 @@ class OrderedList(BaseList):
             The list component.
 
         """
+        props["margin_left"] = props.get("margin_left", "1.5rem")
         return super().create(
             *children, items=items, list_style_type=list_style_type, **props
         )
