@@ -142,6 +142,7 @@ _MAPPING = {
         "remove_local_storage",
         "set_clipboard",
         "set_focus",
+        "scroll_to",
         "set_value",
         "stop_propagation",
         "upload_files",

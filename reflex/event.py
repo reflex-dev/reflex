@@ -443,6 +443,20 @@ def set_focus(ref: str) -> EventSpec:
     )
 
 
+def scroll_to(elem_id: str) -> EventSpec:
+    """Select the id of a html element for scrolling into view.
+
+    Args:
+        elem_id: the id of the element
+
+    Returns:
+        An EventSpec to scroll the page to the selected element.
+    """
+    js_code = f"document.getElementById('{elem_id}').scrollIntoView();"
+
+    return call_script(js_code)
+
+
 def set_value(ref: str, value: Any) -> EventSpec:
     """Set the value of a ref.
 
