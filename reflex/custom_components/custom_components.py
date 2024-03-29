@@ -564,7 +564,7 @@ def _ensure_dist_dir(version_to_publish: str, build: bool):
             needs_rebuild = (
                 console.ask(
                     "Distribution files for the version to be published already exist. Do you want to rebuild?",
-                    choices=["n", "y"],
+                    choices=["y", "n"],
                     default="n",
                 )
                 == "y"
@@ -668,10 +668,10 @@ def publish(
     if validate_project_info and (
         console.ask(
             "Would you like to interactively review the package information?",
-            choices=["Y", "n"],
-            default="Y",
+            choices=["y", "n"],
+            default="y",
         )
-        == "Y"
+        == "y"
     ):
         _validate_project_info()
 
@@ -702,7 +702,7 @@ def publish(
     if (
         console.ask(
             "Would you like to include your published component on our gallery?",
-            choices=["n", "y"],
+            choices=["y", "n"],
             default="y",
         )
         == "n"
