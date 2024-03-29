@@ -131,6 +131,7 @@ _MAPPING = {
     "reflex.event": [
         "event",
         "EventChain",
+        "EventHandler",
         "background",
         "call_script",
         "clear_local_storage",
