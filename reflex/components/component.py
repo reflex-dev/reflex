@@ -274,8 +274,8 @@ class Component(BaseComponent, ABC):
 
         # Get the component fields, triggers, and props.
         fields = self.get_fields()
-        event_triggers_in_component_declaration = self.get_event_triggers()
-        triggers = event_triggers_in_component_declaration.keys()
+        component_specific_triggers = self.get_event_triggers()
+        triggers = component_specific_triggers.keys()
         props = self.get_props()
 
         # Add any events triggers.
@@ -331,7 +331,7 @@ class Component(BaseComponent, ABC):
             if key in triggers:
                 # Temporarily disable full control for event triggers.
                 kwargs["event_triggers"][key] = self._create_event_chain(
-                    value=value, args_spec=event_triggers_in_component_declaration[key]
+                    value=value, args_spec=component_specific_triggers[key]
                 )
 
         # Remove any keys that were added as events.
@@ -471,10 +471,13 @@ class Component(BaseComponent, ABC):
             EventTriggers.ON_MOUNT: lambda: [],
             EventTriggers.ON_UNMOUNT: lambda: [],
         }
-        # Look at the fields for EventHandler types.
+        # Look for component specific triggers,
+        # e.g. variable declared as EventHandler types.
         for field in self.get_fields().values():
             if types._issubclass(field.type_, EventHandler):
-                default_triggers[field.name] = getattr(field.type_, "args_spec", lambda: [])
+                default_triggers[field.name] = getattr(
+                    field.type_, "args_spec", lambda: []
+                )
         return default_triggers
 
     def __repr__(self) -> str:

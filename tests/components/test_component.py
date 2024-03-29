@@ -1366,6 +1366,7 @@ def test_custom_component_declare_event_handlers_in_fields():
                 "on_b": lambda e: [e.target.value],
                 "on_c": lambda e: [],
                 "on_d": lambda: [],
+                "on_e": lambda: [],
             }
 
     class TestComponent(Component):
@@ -1373,6 +1374,7 @@ def test_custom_component_declare_event_handlers_in_fields():
         on_b: EventHandler[lambda e0: [e0.target.value]]
         on_c: EventHandler[lambda e0: []]
         on_d: EventHandler[lambda: []]
+        on_e: EventHandler
 
     custom_component = ReferenceComponent.create()
     test_component = TestComponent.create()

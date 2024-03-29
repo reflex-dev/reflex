@@ -118,18 +118,18 @@ class EventHandler(EventActionsMixin):
         frozen = True
 
     @classmethod
-    def __class_getitem__(cls, type_: str) -> _GenericAlias:
-        """Get a typed var.
+    def __class_getitem__(cls, args_spec: str) -> _GenericAlias:
+        """Get a typed EventHandler.
 
         Args:
-            type_: The type of the var.
+            args_spec: The args_spec of the EventHandler.
 
         Returns:
-            The var class item.
+            The EventHandler class item.
         """
         gen = _GenericAlias(cls, Any)
         # Cannot subclass special typing classes, so we need to set the args_spec dynamically as an attribute.
-        gen.args_spec = type_
+        gen.args_spec = args_spec
         return gen
 
     @property
