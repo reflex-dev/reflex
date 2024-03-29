@@ -1,7 +1,5 @@
 """Welcome to Reflex!."""
 
-from code import styles
-
 # Import all the pages.
 from code.pages import *
 
