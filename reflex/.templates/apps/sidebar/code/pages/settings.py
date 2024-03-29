@@ -19,7 +19,7 @@ def settings() -> rx.Component:
             rx.color_mode.switch(),
         ),
         rx.hstack(
-            rx.text("Theme color: "),
+            rx.text("Primary color: "),
             rx.select(
                 [
                     "tomato",
@@ -51,6 +51,21 @@ def settings() -> rx.Component:
                 ],
                 value=ThemeState.accent_color,
                 on_change=ThemeState.set_accent_color,
+            ),
+        ),
+        rx.hstack(
+            rx.text("Secondary color: "),
+            rx.select(
+                [
+                    "gray",
+                    "mauve",
+                    "slate",
+                    "sage",
+                    "olive",
+                    "sand",
+                ],
+                value=ThemeState.gray_color,
+                on_change=ThemeState.set_gray_color,
             ),
         ),
         rx.text(

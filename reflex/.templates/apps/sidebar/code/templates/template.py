@@ -43,12 +43,10 @@ def menu_button() -> rx.Component:
     return rx.box(
         rx.menu.root(
             rx.menu.trigger(
-                rx.icon(
-                    "menu",
-                    size=36,
-                    color=styles.accent_text_color,
-                ),
-                background_color=styles.accent_color,
+                rx.button(
+                    rx.icon("menu"),
+                    variant="soft",
+                )
             ),
             rx.menu.content(
                 *[
@@ -61,8 +59,8 @@ def menu_button() -> rx.Component:
             ),
         ),
         position="fixed",
-        right="1.5em",
-        top="1.5em",
+        right="2em",
+        top="2em",
         z_index="500",
     )
 
@@ -72,11 +70,12 @@ class ThemeState(rx.State):
 
     accent_color: str = "crimson"
 
+    gray_color: str = "gray"
+
 
 def template(
     route: str | None = None,
     title: str | None = None,
-    image: str | None = None,
     description: str | None = None,
     meta: str | None = None,
     script_tags: list[rx.Component] | None = None,
@@ -87,7 +86,7 @@ def template(
     Args:
         route: The route to reach the page.
         title: The title of the page.
-        image: The favicon of the page.
+        icon: The of the sidebar.
         description: The description of the page.
         meta: Additionnal meta to add to the page.
         on_load: The event handler(s) called when the page load.
@@ -121,14 +120,13 @@ def template(
                 ),
                 menu_button(),
                 align="start",
-                transition="left 0.5s, width 0.5s",
+                background=f"radial-gradient(circle at top right, {rx.color('accent', 2)}, {rx.color('mauve', 1)});",
                 position="relative",
             )
 
         @rx.page(
             route=route,
             title=title,
-            image=image,
             description=description,
             meta=all_meta,
             script_tags=script_tags,
@@ -137,7 +135,9 @@ def template(
         def theme_wrap():
             return rx.theme(
                 templated_page(),
+                has_background=True,
                 accent_color=ThemeState.accent_color,
+                gray_color=ThemeState.gray_color,
             )
 
         return theme_wrap

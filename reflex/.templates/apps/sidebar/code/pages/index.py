@@ -6,7 +6,7 @@ from code.templates import template
 import reflex as rx
 
 
-@template(route="/", title="Home", image="/github.svg")
+@template(route="/", title="Home")
 def index() -> rx.Component:
     """The home page.
 
