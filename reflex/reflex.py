@@ -234,6 +234,11 @@ def _run(
         # In dev mode, run the backend on the main thread.
         if backend and env == constants.Env.DEV:
             backend_cmd(backend_host, int(backend_port))
+            # The windows uvicorn bug workaround
+            # https://github.com/reflex-dev/reflex/issues/2335
+            if constants.IS_WINDOWS and exec.frontend_process:
+                # Sends SIGTERM in windows
+                exec.kill(exec.frontend_process.pid)
 
 
 @cli.command()
