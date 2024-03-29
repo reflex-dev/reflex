@@ -1,5 +1,9 @@
 name: integration-tests-wsl
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: ['main']
