@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 import sqlmodel
-from fastapi import UploadFile
+from fastapi import FastAPI, UploadFile
 from starlette_admin.auth import AuthProvider
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
@@ -35,12 +35,13 @@ from reflex.state import (
     OnLoadInternalState,
     RouterData,
     State,
+    StateManagerMemory,
     StateManagerRedis,
     StateUpdate,
     _substate_key,
 )
 from reflex.style import Style
-from reflex.utils import format
+from reflex.utils import exceptions, format
 from reflex.vars import ComputedVar
 
 from .conftest import chdir
@@ -1355,3 +1356,62 @@ def test_app_state_determination():
     # Referencing an event handler enables state.
     a4.add_page(rx.box(rx.button("Click", on_click=rx.console_log(""))), route="/")
     assert a4.state is not None
+
+
+# for coverage
+def test_raise_on_connect_error():
+    """Test that the connect_error function is called."""
+    with pytest.raises(ValueError):
+        App(connect_error_component="Foo")
+
+
+def test_raise_on_state():
+    """Test that the state is set."""
+    # state kwargs is deprecated, we just make sure the app is created anyway.
+    _app = App(state=State)
+    print(_app.state)
+    assert issubclass(_app.state, State)
+
+
+def test_call_app():
+    """Test that the app can be called."""
+    app = App()
+    api = app()
+    assert isinstance(api, FastAPI)
+
+
+def test_app_with_optional_endpoints():
+    from reflex.components.core.upload import Upload
+
+    app = App()
+    Upload.is_used = True
+    app.add_optional_endpoints()
+    # TODO: verify the availability of the endpoints in app.api
+
+
+def test_app_state_manager():
+    app = App()
+    with pytest.raises(ValueError):
+        app.state_manager
+    app.enable_state()
+    assert app.state_manager is not None
+    assert isinstance(app.state_manager, StateManagerMemory)
+
+
+def test_generate_component():
+    def index():
+        return rx.box("Index")
+
+    def index_mismatch():
+        return rx.match(
+            1,
+            (1, rx.box("Index")),
+            (2, "About"),
+            "Bar",
+        )
+
+    comp = App._generate_component(index)
+    assert isinstance(comp, Component)
+
+    with pytest.raises(exceptions.MatchTypeError):
+        App._generate_component(index_mismatch)

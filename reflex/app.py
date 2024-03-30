@@ -246,9 +246,6 @@ class App(Base):
         self.socket_app = ASGIApp(self.sio, socketio_path="")
         namespace = config.get_event_namespace()
 
-        if not namespace:
-            raise ValueError("event namespace must be provided in the config.")
-
         # Create the event namespace and attach the main app. Not related to any paths.
         self.event_namespace = EventNamespace(namespace, self)
 
