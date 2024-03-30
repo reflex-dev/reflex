@@ -633,6 +633,9 @@ class Component(BaseComponent, ABC):
                 )
                 props[prop] = props.pop(under_prop)
 
+        # Filter out None props
+        props = {key: value for key, value in props.items() if value is not None}
+
         # Validate all the children.
         for child in children:
             # Make sure the child is a valid type.

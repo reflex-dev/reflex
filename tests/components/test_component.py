@@ -420,6 +420,43 @@ def test_get_event_triggers(component1, component2):
     )
 
 
+@pytest.fixture
+def test_component() -> Type[Component]:
+    """A test component.
+
+    Returns:
+        A test component.
+    """
+
+    class TestComponent(Component):
+        pass
+
+    return TestComponent
+
+
+# Write a test case to check if the create method filters out None props
+def test_create_filters_none_props(test_component):
+    child1 = test_component()
+    child2 = test_component()
+    props = {
+        "prop1": "value1",
+        "prop2": None,
+        "prop3": "value3",
+        "prop4": None,
+        "style": {"color": "white", "text-align": "center"},  # Adding a style prop
+    }
+
+    component = test_component.create(child1, child2, **props)
+
+    # Assert that None props are not present in the component's props
+    assert "prop2" not in component.get_props()
+    assert "prop4" not in component.get_props()
+
+    # Assert that the style prop is present in the component's props
+    assert component.style["color"] == "white"
+    assert component.style["text-align"] == "center"
+
+
 class C1State(BaseState):
     """State for testing C1 component."""
 
@@ -1342,7 +1379,6 @@ def test_custom_component_add_imports(tags):
         def add_imports(
             self,
         ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
-
             return {"react": (tags[0] if len(tags) == 1 else tags)}
 
     baseline = Reference.create()
