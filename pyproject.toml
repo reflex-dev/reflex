@@ -96,6 +96,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.pyright]
 
 [tool.ruff]
+exclude = ["*.pyi"]
 target-version = "py37"
 lint.select = ["B", "D", "E", "F", "I", "SIM", "W"]
 lint.ignore = ["B008", "D203", "D205", "D213", "D401", "D406", "D407", "E501", "F403", "F405", "F541"]
