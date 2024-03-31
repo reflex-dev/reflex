@@ -162,7 +162,8 @@ def app_with_10_components(
     yield AppHarness.create(
         root=root,
         app_source=functools.partial(
-            AppWithTenComponentsOnePage, render_component=render_component  # type: ignore
+            AppWithTenComponentsOnePage,
+            render_component=render_component,  # type: ignore
         ),
     )  # type: ignore
 
@@ -184,7 +185,8 @@ def app_with_100_components(
     yield AppHarness.create(
         root=root,
         app_source=functools.partial(
-            AppWithHundredComponentOnePage, render_component=render_component  # type: ignore
+            AppWithHundredComponentOnePage,
+            render_component=render_component,  # type: ignore
         ),
     )  # type: ignore
 
@@ -206,7 +208,8 @@ def app_with_1000_components(
     yield AppHarness.create(
         root=root,
         app_source=functools.partial(
-            AppWithThousandComponentsOnePage, render_component=render_component  # type: ignore
+            AppWithThousandComponentsOnePage,
+            render_component=render_component,  # type: ignore
         ),
     )  # type: ignore
 

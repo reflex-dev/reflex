@@ -225,7 +225,12 @@ def app_with_ten_pages(
         an AppHarness instance
     """
     root = tmp_path_factory.mktemp(f"app10")
-    yield AppHarness.create(root=root, app_source=functools.partial(AppWithTenPages, render_comp=render_multiple_pages))  # type: ignore
+    yield AppHarness.create(
+        root=root,
+        app_source=functools.partial(
+            AppWithTenPages, render_comp=render_multiple_pages
+        ),
+    )  # type: ignore
 
 
 @pytest.fixture(scope="session")
@@ -245,7 +250,8 @@ def app_with_hundred_pages(
     yield AppHarness.create(
         root=root,
         app_source=functools.partial(
-            AppWithHundredPages, render_comp=render_multiple_pages  # type: ignore
+            AppWithHundredPages,
+            render_comp=render_multiple_pages,  # type: ignore
         ),
     )  # type: ignore
 
@@ -267,7 +273,8 @@ def app_with_thousand_pages(
     yield AppHarness.create(
         root=root,
         app_source=functools.partial(  # type: ignore
-            AppWithThousandPages, render_comp=render_multiple_pages  # type: ignore
+            AppWithThousandPages,
+            render_comp=render_multiple_pages,  # type: ignore
         ),
     )  # type: ignore
 
@@ -289,7 +296,8 @@ def app_with_ten_thousand_pages(
     yield AppHarness.create(
         root=root,
         app_source=functools.partial(
-            AppWithTenThousandPages, render_comp=render_multiple_pages  # type: ignore
+            AppWithTenThousandPages,
+            render_comp=render_multiple_pages,  # type: ignore
         ),
     )  # type: ignore
 

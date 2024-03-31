@@ -1342,7 +1342,6 @@ def test_custom_component_add_imports(tags):
         def add_imports(
             self,
         ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
-
             return {"react": (tags[0] if len(tags) == 1 else tags)}
 
     baseline = Reference.create()

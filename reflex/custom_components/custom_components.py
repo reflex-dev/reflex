@@ -765,14 +765,7 @@ def _validate_project_info():
         "Keep, replace or append?", choices=["k", "r", "a"], default="k"
     )
     new_keywords = []
-    if keyword_action == "r":
-        new_keywords = (
-            _process_entered_list(
-                console.ask("Enter new set of keywords separated by commas")
-            )
-            or []
-        )
-    elif keyword_action == "a":
+    if keyword_action in ("r", "a"):
         new_keywords = (
             _process_entered_list(
                 console.ask("Enter new set of keywords separated by commas")
