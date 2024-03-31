@@ -6,7 +6,7 @@ import inspect
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, List, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
@@ -160,16 +160,17 @@ def to_camel_case(text: str, allow_hyphens: bool = False) -> str:
     return leading_underscores_or_hyphens + converted_word
 
 
-def to_title_case(text: str) -> str:
+def to_title_case(text: str, sep: str = "") -> str:
     """Convert a string from snake case to title case.
 
     Args:
         text: The string to convert.
+        sep: The separator to use to join the words.
 
     Returns:
         The title case string.
     """
-    return "".join(word.capitalize() for word in text.split("_"))
+    return sep.join(word.title() for word in text.split("_"))
 
 
 def to_kebab_case(text: str) -> str:
@@ -185,6 +186,20 @@ def to_kebab_case(text: str) -> str:
         The title case string.
     """
     return to_snake_case(text).replace("_", "-")
+
+
+def make_default_page_title(app_name: str, route: str) -> str:
+    """Make a default page title from a route.
+
+    Args:
+        app_name: The name of the app owning the page.
+        route: The route to make the title from.
+
+    Returns:
+        The default page title.
+    """
+    title = constants.DefaultPage.TITLE.format(app_name, route)
+    return to_title_case(title, " ")
 
 
 def _escape_js_string(string: str) -> str:
@@ -512,9 +527,14 @@ def format_event(event_spec: EventSpec) -> str:
             ":".join(
                 (
                     name._var_name,
-                    wrap(json.dumps(val._var_name).strip('"').replace("`", "\\`"), "`")
-                    if val._var_is_string
-                    else val._var_full_name,
+                    (
+                        wrap(
+                            json.dumps(val._var_name).strip('"').replace("`", "\\`"),
+                            "`",
+                        )
+                        if val._var_is_string
+                        else val._var_full_name
+                    ),
                 )
             )
             for name, val in event_spec.args
@@ -583,11 +603,12 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 
-def format_state(value: Any) -> Any:
+def format_state(value: Any, key: Optional[str] = None) -> Any:
     """Recursively format values in the given state.
 
     Args:
         value: The state to format.
+        key: The key associated with the value (optional).
 
     Returns:
         The formatted state.
@@ -597,7 +618,7 @@ def format_state(value: Any) -> Any:
     """
     # Handle dicts.
     if isinstance(value, dict):
-        return {k: format_state(v) for k, v in value.items()}
+        return {k: format_state(v, k) for k, v in value.items()}
 
     # Handle lists, sets, typles.
     if isinstance(value, types.StateIterBases):
@@ -612,7 +633,14 @@ def format_state(value: Any) -> Any:
     if serialized is not None:
         return serialized
 
-    raise TypeError(f"No JSON serializer found for var {value} of type {type(value)}.")
+    if key is None:
+        raise TypeError(
+            f"No JSON serializer found for var {value} of type {type(value)}."
+        )
+    else:
+        raise TypeError(
+            f"No JSON serializer found for State Var '{key}' of value {value} of type {type(value)}."
+        )
 
 
 def format_state_name(state_name: str) -> str:

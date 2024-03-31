@@ -1,9 +1,10 @@
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Type, Union
 
 import pytest
 
 import reflex as rx
 from reflex.base import Base
+from reflex.compiler.compiler import compile_components
 from reflex.components.base.bare import Bare
 from reflex.components.chakra.layout.box import Box
 from reflex.components.component import (
@@ -1269,3 +1270,115 @@ def test_deprecated_props(capsys):
     assert "type={`type1`}" in c2_1_render["props"]
     assert "min={`min1`}" in c2_1_render["props"]
     assert "max={`max1`}" in c2_1_render["props"]
+
+
+def test_custom_component_get_imports():
+    class Inner(Component):
+        tag = "Inner"
+        library = "inner"
+
+    class Other(Component):
+        tag = "Other"
+        library = "other"
+
+    @rx.memo
+    def wrapper():
+        return Inner.create()
+
+    @rx.memo
+    def outer(c: Component):
+        return Other.create(c)
+
+    custom_comp = wrapper()
+
+    # Inner is not imported directly, but it is imported by the custom component.
+    assert "inner" not in custom_comp.get_imports()
+
+    # The imports are only resolved during compilation.
+    _, _, imports_inner = compile_components(custom_comp.get_custom_components())
+    assert "inner" in imports_inner
+
+    outer_comp = outer(c=wrapper())
+
+    # Libraries are not imported directly, but are imported by the custom component.
+    assert "inner" not in outer_comp.get_imports()
+    assert "other" not in outer_comp.get_imports()
+
+    # The imports are only resolved during compilation.
+    _, _, imports_outer = compile_components(outer_comp.get_custom_components())
+    assert "inner" in imports_outer
+    assert "other" in imports_outer
+
+
+@pytest.mark.parametrize(
+    "tags",
+    (
+        ["Component"],
+        ["Component", "useState"],
+        [ImportVar(tag="Component")],
+        [ImportVar(tag="Component"), ImportVar(tag="useState")],
+        ["Component", ImportVar(tag="useState")],
+    ),
+)
+def test_custom_component_add_imports(tags):
+    def _list_to_import_vars(tags: List[str]) -> List[ImportVar]:
+        return [
+            ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
+            for tag in tags
+        ]
+
+    class BaseComponent(Component):
+        def _get_imports(self) -> imports.ImportDict:
+            return {}
+
+    class Reference(Component):
+        def _get_imports(self) -> imports.ImportDict:
+            return imports.merge_imports(
+                super()._get_imports(),
+                {"react": _list_to_import_vars(tags)},
+            )
+
+    class Test(Component):
+        def add_imports(
+            self,
+        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
+
+            return {"react": (tags[0] if len(tags) == 1 else tags)}
+
+    baseline = Reference.create()
+    test = Test.create()
+
+    assert baseline.get_imports() == {"react": _list_to_import_vars(tags)}
+    assert test.get_imports() == baseline.get_imports()
+
+
+def test_custom_component_declare_event_handlers_in_fields():
+    class ReferenceComponent(Component):
+        def get_event_triggers(self) -> Dict[str, Any]:
+            """Test controlled triggers.
+
+            Returns:
+                Test controlled triggers.
+            """
+            return {
+                **super().get_event_triggers(),
+                "on_a": lambda e: [e],
+                "on_b": lambda e: [e.target.value],
+                "on_c": lambda e: [],
+                "on_d": lambda: [],
+                "on_e": lambda: [],
+            }
+
+    class TestComponent(Component):
+        on_a: EventHandler[lambda e0: [e0]]
+        on_b: EventHandler[lambda e0: [e0.target.value]]
+        on_c: EventHandler[lambda e0: []]
+        on_d: EventHandler[lambda: []]
+        on_e: EventHandler
+
+    custom_component = ReferenceComponent.create()
+    test_component = TestComponent.create()
+    assert (
+        custom_component.get_event_triggers().keys()
+        == test_component.get_event_triggers().keys()
+    )

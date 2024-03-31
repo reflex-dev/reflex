@@ -1,6 +1,8 @@
 [run]
 source = reflex
 branch = true
+omit =
+    */pyi_generator.py
 
 [report]
 show_missing = true
@@ -24,6 +26,9 @@ exclude_also =
 
     # Don't complain about abstract methods, they aren't run:
     @(abc\.)?abstractmethod
+    
+    # Don't complain about overloaded methods:
+    @overload
 
 ignore_errors = True
 

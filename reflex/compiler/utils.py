@@ -1,11 +1,21 @@
 """Common utility functions used in the compiler."""
+
 from __future__ import annotations
 
 import os
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
 
-from pydantic.fields import ModelField
+try:
+    # TODO The type checking guard can be removed once
+    # reflex-hosting-cli tools are compatible with pydantic v2
+
+    if not TYPE_CHECKING:
+        import pydantic.v1.fields as ModelField
+    else:
+        raise ModuleNotFoundError
+except ModuleNotFoundError:
+    from pydantic.fields import ModelField
 
 from reflex import constants
 from reflex.components.base import (
@@ -255,7 +265,7 @@ def compile_custom_component(
             "name": component.tag,
             "props": props,
             "render": render.render(),
-            "hooks": render.get_hooks(),
+            "hooks": render.get_hooks_internal() | render.get_hooks(),
             "custom_code": render.get_custom_code(),
         },
         imports,
@@ -404,7 +414,11 @@ def get_asset_path(filename: str | None = None) -> str:
 
 
 def add_meta(
-    page: Component, title: str, image: str, description: str, meta: list[dict]
+    page: Component,
+    title: str,
+    image: str,
+    meta: list[dict],
+    description: str | None = None,
 ) -> Component:
     """Add metadata to a page.
 
@@ -412,19 +426,24 @@ def add_meta(
         page: The component for the page.
         title: The title of the page.
         image: The image for the page.
-        description: The description of the page.
         meta: The metadata list.
+        description: The description of the page.
 
     Returns:
         The component with the metadata added.
     """
     meta_tags = [Meta.create(**item) for item in meta]
 
+    children: list[Any] = [
+        Title.create(title),
+    ]
+    if description:
+        children.append(Description.create(content=description))
+    children.append(Image.create(content=image))
+
     page.children.append(
         Head.create(
-            Title.create(title),
-            Description.create(content=description),
-            Image.create(content=image),
+            *children,
             *meta_tags,
         )
     )

@@ -1,5 +1,9 @@
 name: integration-tests-wsl
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: ['main']
@@ -61,23 +65,28 @@ jobs:
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           poetry run reflex export --backend-only
       - name: Check run --backend-only before init for counter example
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           dos2unix scripts/integration.sh
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev 8001 --backend-only --backend-port 8001
       - name: Init Website for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           poetry run reflex init --loglevel debug
       - name: Check export for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           poetry run reflex export --frontend-only --loglevel debug
       - name: Run Website and Check for errors
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev

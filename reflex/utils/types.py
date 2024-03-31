@@ -7,6 +7,7 @@ import inspect
 import types
 from functools import wraps
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Iterable,
@@ -22,7 +23,18 @@ from typing import (
 )
 
 import sqlalchemy
-from pydantic.fields import ModelField
+
+try:
+    # TODO The type checking guard can be removed once
+    # reflex-hosting-cli tools are compatible with pydantic v2
+
+    if not TYPE_CHECKING:
+        import pydantic.v1.fields as ModelField
+    else:
+        raise ModuleNotFoundError
+except ModuleNotFoundError:
+    from pydantic.fields import ModelField
+
 from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
@@ -202,7 +214,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                     attr.remote_attr.key,  # type: ignore[attr-defined]
                 )
             ]
-    elif isinstance(cls, type) and issubclass(cls, Model):
+    elif isinstance(cls, type) and not is_generic_alias(cls) and issubclass(cls, Model):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)
         if name in hints:

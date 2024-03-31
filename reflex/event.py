@@ -1,19 +1,20 @@
 """Define event classes to connect the frontend and backend."""
+
 from __future__ import annotations
 
 import inspect
 from base64 import b64encode
 from types import FunctionType
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
     List,
     Optional,
     Tuple,
-    Type,
     Union,
+    _GenericAlias,  # type: ignore
+    get_type_hints,
 )
 
 from reflex import constants
@@ -21,9 +22,6 @@ from reflex.base import Base
 from reflex.utils import console, format
 from reflex.utils.types import ArgsSpec
 from reflex.vars import BaseVar, Var
-
-if TYPE_CHECKING:
-    from reflex.state import BaseState
 
 
 class Event(Base):
@@ -74,44 +72,6 @@ def background(fn):
     return fn
 
 
-def _no_chain_background_task(
-    state_cls: Type["BaseState"], name: str, fn: Callable
-) -> Callable:
-    """Protect against directly chaining a background task from another event handler.
-
-    Args:
-        state_cls: The state class that the event handler is in.
-        name: The name of the background task.
-        fn: The background task coroutine function / generator.
-
-    Returns:
-        A compatible coroutine function / generator that raises a runtime error.
-
-    Raises:
-        TypeError: If the background task is not async.
-    """
-    call = f"{state_cls.__name__}.{name}"
-    message = (
-        f"Cannot directly call background task {name!r}, use "
-        f"`yield {call}` or `return {call}` instead."
-    )
-    if inspect.iscoroutinefunction(fn):
-
-        async def _no_chain_background_task_co(*args, **kwargs):
-            raise RuntimeError(message)
-
-        return _no_chain_background_task_co
-    if inspect.isasyncgenfunction(fn):
-
-        async def _no_chain_background_task_gen(*args, **kwargs):
-            yield
-            raise RuntimeError(message)
-
-        return _no_chain_background_task_gen
-
-    raise TypeError(f"{fn} is marked as a background task, but is not async.")
-
-
 class EventActionsMixin(Base):
     """Mixin for DOM event actions."""
 
@@ -148,7 +108,7 @@ class EventHandler(EventActionsMixin):
     fn: Any
 
     # The full name of the state class this event handler is attached to.
-    # Emtpy string means this event handler is a server side event.
+    # Empty string means this event handler is a server side event.
     state_full_name: str = ""
 
     class Config:
@@ -156,6 +116,21 @@ class EventHandler(EventActionsMixin):
 
         # Needed to allow serialization of Callable.
         frozen = True
+
+    @classmethod
+    def __class_getitem__(cls, args_spec: str) -> _GenericAlias:
+        """Get a typed EventHandler.
+
+        Args:
+            args_spec: The args_spec of the EventHandler.
+
+        Returns:
+            The EventHandler class item.
+        """
+        gen = _GenericAlias(cls, Any)
+        # Cannot subclass special typing classes, so we need to set the args_spec dynamically as an attribute.
+        gen.args_spec = args_spec
+        return gen
 
     @property
     def is_background(self) -> bool:
@@ -324,7 +299,7 @@ class FileUpload(Base):
     on_upload_progress: Optional[Union[EventHandler, Callable]] = None
 
     @staticmethod
-    def on_upload_progress_args_spec(_prog: dict[str, int | float | bool]):
+    def on_upload_progress_args_spec(_prog: Dict[str, Union[int, float, bool]]):
         """Args spec for on_upload_progress event handler.
 
         Returns:
@@ -485,6 +460,20 @@ def set_focus(ref: str) -> EventSpec:
         get_fn_signature(set_focus),
         ref=Var.create_safe(format.format_ref(ref), _var_is_string=True),
     )
+
+
+def scroll_to(elem_id: str) -> EventSpec:
+    """Select the id of a html element for scrolling into view.
+
+    Args:
+        elem_id: the id of the element
+
+    Returns:
+        An EventSpec to scroll the page to the selected element.
+    """
+    js_code = f"document.getElementById('{elem_id}').scrollIntoView();"
+
+    return call_script(js_code)
 
 
 def set_value(ref: str, value: Any) -> EventSpec:
@@ -773,11 +762,12 @@ def parse_args_spec(arg_spec: ArgsSpec):
         The parsed args.
     """
     spec = inspect.getfullargspec(arg_spec)
+    annotations = get_type_hints(arg_spec)
     return arg_spec(
         *[
             BaseVar(
                 _var_name=f"_{l_arg}",
-                _var_type=spec.annotations.get(l_arg, FrontendEvent),
+                _var_type=annotations.get(l_arg, FrontendEvent),
                 _var_is_local=True,
             )
             for l_arg in spec.args

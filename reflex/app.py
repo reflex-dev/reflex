@@ -7,7 +7,10 @@ import concurrent.futures
 import contextlib
 import copy
 import functools
+import io
+import multiprocessing
 import os
+import platform
 from typing import (
     Any,
     AsyncIterator,
@@ -37,6 +40,7 @@ from reflex.admin import AdminDash
 from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
+from reflex.compiler.compiler import ExecutorSafeFunctions
 from reflex.components import connection_modal, connection_pulser
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.fragment import Fragment
@@ -74,7 +78,7 @@ from reflex.state import (
     code_uses_state_contexts,
 )
 from reflex.utils import console, exceptions, format, prerequisites, types
-from reflex.utils.exec import is_testing_env
+from reflex.utils.exec import is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
@@ -414,8 +418,8 @@ class App(Base):
         self,
         component: Component | ComponentCallable,
         route: str | None = None,
-        title: str = constants.DefaultPage.TITLE,
-        description: str = constants.DefaultPage.DESCRIPTION,
+        title: str | None = None,
+        description: str | None = None,
         image: str = constants.DefaultPage.IMAGE,
         on_load: (
             EventHandler | EventSpec | list[EventHandler | EventSpec] | None
@@ -474,13 +478,23 @@ class App(Base):
 
         component = OverlayFragment.create(component)
 
+        meta_args = {
+            "title": (
+                title
+                if title is not None
+                else format.make_default_page_title(get_config().app_name, route)
+            ),
+            "image": image,
+            "meta": meta,
+        }
+
+        if description is not None:
+            meta_args["description"] = description
+
         # Add meta information to the component.
         compiler_utils.add_meta(
             component,
-            title=title,
-            image=image,
-            description=description,
-            meta=meta,
+            **meta_args,
         )
 
         # Add script tags if given
@@ -665,7 +679,7 @@ class App(Base):
             Whether the app should be compiled.
         """
         # Check the environment variable.
-        if os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes":
+        if should_skip_compile():
             return False
 
         # Check the nocompile file.
@@ -750,6 +764,17 @@ class App(Base):
             TimeElapsedColumn(),
         )
 
+        # try to be somewhat accurate - but still not 100%
+        adhoc_steps_without_executor = 6
+        fixed_pages_within_executor = 5
+        progress.start()
+        task = progress.add_task(
+            "Compiling:",
+            total=len(self.pages)
+            + fixed_pages_within_executor
+            + adhoc_steps_without_executor,
+        )
+
         # Get the env mode.
         config = get_config()
 
@@ -765,6 +790,8 @@ class App(Base):
             # If a theme component was provided, wrap the app with it
             app_wrappers[(20, "Theme")] = self.theme
 
+        progress.advance(task)
+
         # Fix up the style.
         self.style = evaluate_style_namespaces(self.style)
 
@@ -772,133 +799,156 @@ class App(Base):
         all_imports = {}
         custom_components = set()
 
-        # Compile the pages in parallel.
-        with progress, concurrent.futures.ThreadPoolExecutor() as thread_pool:
-            fixed_pages = 7
-            task = progress.add_task("Compiling:", total=len(self.pages) + fixed_pages)
+        for _route, component in self.pages.items():
+            # Merge the component style with the app style.
+            component.add_style(self.style)
 
-            def mark_complete(_=None):
+            component.apply_theme(self.theme)
+
+            # Add component.get_imports() to all_imports.
+            all_imports.update(component.get_imports())
+
+            # Add the app wrappers from this component.
+            app_wrappers.update(component.get_app_wrap_components())
+
+            # Add the custom components from the page to the set.
+            custom_components |= component.get_custom_components()
+
+        progress.advance(task)
+
+        # Perform auto-memoization of stateful components.
+        (
+            stateful_components_path,
+            stateful_components_code,
+            page_components,
+        ) = compiler.compile_stateful_components(self.pages.values())
+
+        progress.advance(task)
+
+        # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
+        if code_uses_state_contexts(stateful_components_code) and self.state is None:
+            raise RuntimeError(
+                "To access rx.State in frontend components, at least one "
+                "subclass of rx.State must be defined in the app."
+            )
+        compile_results.append((stateful_components_path, stateful_components_code))
+
+        # Compile the root document before fork.
+        compile_results.append(
+            compiler.compile_document_root(
+                self.head_components,
+                html_lang=self.html_lang,
+                html_custom_attrs=self.html_custom_attrs,  # type: ignore
+            )
+        )
+
+        # Compile the contexts before fork.
+        compile_results.append(
+            compiler.compile_contexts(self.state, self.theme),
+        )
+
+        app_root = self._app_root(app_wrappers=app_wrappers)
+
+        progress.advance(task)
+
+        # Prepopulate the global ExecutorSafeFunctions class with input data required by the compile functions.
+        # This is required for multiprocessing to work, in presence of non-picklable inputs.
+        for route, component in zip(self.pages, page_components):
+            ExecutorSafeFunctions.COMPILE_PAGE_ARGS_BY_ROUTE[route] = (
+                route,
+                component,
+                self.state,
+            )
+
+        ExecutorSafeFunctions.COMPILE_APP_APP_ROOT = app_root
+        ExecutorSafeFunctions.CUSTOM_COMPONENTS = custom_components
+        ExecutorSafeFunctions.STYLE = self.style
+
+        # Use a forking process pool, if possible.  Much faster, especially for large sites.
+        # Fallback to ThreadPoolExecutor as something that will always work.
+        executor = None
+        if (
+            platform.system() in ("Linux", "Darwin")
+            and os.environ.get("REFLEX_COMPILE_PROCESSES") is not None
+        ):
+            executor = concurrent.futures.ProcessPoolExecutor(
+                max_workers=int(os.environ.get("REFLEX_COMPILE_PROCESSES", 0)) or None,
+                mp_context=multiprocessing.get_context("fork"),
+            )
+        else:
+            executor = concurrent.futures.ThreadPoolExecutor(
+                max_workers=int(os.environ.get("REFLEX_COMPILE_THREADS", 0)) or None,
+            )
+
+        with executor:
+            result_futures = []
+            custom_components_future = None
+
+            def _mark_complete(_=None):
                 progress.advance(task)
 
-            for _route, component in self.pages.items():
-                # Merge the component style with the app style.
-                component.add_style(self.style)
-
-                component.apply_theme(self.theme)
-
-                # Add component.get_imports() to all_imports.
-                all_imports.update(component.get_imports())
-
-                # Add the app wrappers from this component.
-                app_wrappers.update(component.get_app_wrap_components())
-
-                # Add the custom components from the page to the set.
-                custom_components |= component.get_custom_components()
-
-            # Perform auto-memoization of stateful components.
-            (
-                stateful_components_path,
-                stateful_components_code,
-                page_components,
-            ) = compiler.compile_stateful_components(self.pages.values())
-
-            # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
-            if (
-                code_uses_state_contexts(stateful_components_code)
-                and self.state is None
-            ):
-                raise RuntimeError(
-                    "To access rx.State in frontend components, at least one "
-                    "subclass of rx.State must be defined in the app."
-                )
-            compile_results.append((stateful_components_path, stateful_components_code))
-
-            result_futures = []
-
-            def submit_work(fn, *args, **kwargs):
-                """Submit work to the thread pool and add a callback to mark the task as complete.
-
-                The Future will be added to the `result_futures` list.
-
-                Args:
-                    fn: The function to submit.
-                    *args: The args to submit.
-                    **kwargs: The kwargs to submit.
-                """
-                f = thread_pool.submit(fn, *args, **kwargs)
-                f.add_done_callback(mark_complete)
+            def _submit_work(fn, *args, **kwargs):
+                f = executor.submit(fn, *args, **kwargs)
+                f.add_done_callback(_mark_complete)
                 result_futures.append(f)
 
             # Compile all page components.
-            for route, component in zip(self.pages, page_components):
-                submit_work(
-                    compiler.compile_page,
-                    route,
-                    component,
-                    self.state,
-                )
+            for route in self.pages:
+                _submit_work(ExecutorSafeFunctions.compile_page, route)
 
             # Compile the app wrapper.
-            app_root = self._app_root(app_wrappers=app_wrappers)
-            submit_work(compiler.compile_app, app_root)
+            _submit_work(ExecutorSafeFunctions.compile_app)
 
             # Compile the custom components.
-            submit_work(compiler.compile_components, custom_components)
+            custom_components_future = executor.submit(
+                ExecutorSafeFunctions.compile_custom_components,
+            )
+            custom_components_future.add_done_callback(_mark_complete)
 
             # Compile the root stylesheet with base styles.
-            submit_work(compiler.compile_root_stylesheet, self.stylesheets)
-
-            # Compile the root document.
-            submit_work(
-                compiler.compile_document_root,
-                self.head_components,
-                html_lang=self.html_lang,
-                html_custom_attrs=self.html_custom_attrs,
-            )
+            _submit_work(compiler.compile_root_stylesheet, self.stylesheets)
 
             # Compile the theme.
-            submit_work(compiler.compile_theme, style=self.style)
-
-            # Compile the contexts.
-            submit_work(compiler.compile_contexts, self.state, self.theme)
+            _submit_work(ExecutorSafeFunctions.compile_theme)
 
             # Compile the Tailwind config.
             if config.tailwind is not None:
                 config.tailwind["content"] = config.tailwind.get(
                     "content", constants.Tailwind.CONTENT
                 )
-                submit_work(compiler.compile_tailwind, config.tailwind)
+                _submit_work(compiler.compile_tailwind, config.tailwind)
             else:
-                submit_work(compiler.remove_tailwind_from_postcss)
-
-            # Get imports from AppWrap components.
-            all_imports.update(app_root.get_imports())
-
-            # Iterate through all the custom components and add their imports to the all_imports.
-            for component in custom_components:
-                all_imports.update(component.get_imports())
+                _submit_work(compiler.remove_tailwind_from_postcss)
 
             # Wait for all compilation tasks to complete.
             for future in concurrent.futures.as_completed(result_futures):
                 compile_results.append(future.result())
 
-            # Empty the .web pages directory.
-            compiler.purge_web_pages_dir()
+            # Special case for custom_components, since we need the compiled imports
+            # to install proper frontend packages.
+            (
+                *custom_components_result,
+                custom_components_imports,
+            ) = custom_components_future.result()
+            compile_results.append(custom_components_result)
+            all_imports.update(custom_components_imports)
 
-            # Avoid flickering when installing frontend packages
-            progress.stop()
+        # Get imports from AppWrap components.
+        all_imports.update(app_root.get_imports())
 
-            # Install frontend packages.
-            self.get_frontend_packages(all_imports)
+        progress.advance(task)
 
-            # Write the pages at the end to trigger the NextJS hot reload only once.
-            write_page_futures = []
-            for output_path, code in compile_results:
-                write_page_futures.append(
-                    thread_pool.submit(compiler_utils.write_page, output_path, code)
-                )
-            for future in concurrent.futures.as_completed(write_page_futures):
-                future.result()
+        # Empty the .web pages directory.
+        compiler.purge_web_pages_dir()
+
+        progress.advance(task)
+        progress.stop()
+
+        # Install frontend packages.
+        self.get_frontend_packages(all_imports)
+
+        for output_path, code in compile_results:
+            compiler_utils.write_page(output_path, code)
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
@@ -1112,10 +1162,29 @@ def upload(app: App):
                 "List[rx.UploadFile]"
             )
 
+        # Make a copy of the files as they are closed after the request.
+        # This behaviour changed from fastapi 0.103.0 to 0.103.1 as the
+        # AsyncExitStack was removed from the request scope and is now
+        # part of the routing function which closes this before the
+        # event is handled.
+        file_copies = []
+        for file in files:
+            content_copy = io.BytesIO()
+            content_copy.write(await file.read())
+            content_copy.seek(0)
+            file_copies.append(
+                UploadFile(
+                    file=content_copy,
+                    filename=file.filename,
+                    size=file.size,
+                    headers=file.headers,
+                )
+            )
+
         event = Event(
             token=token,
             name=handler,
-            payload={handler_upload_param[0]: files},
+            payload={handler_upload_param[0]: file_copies},
         )
 
         async def _ndjson_updates():
@@ -1207,7 +1276,10 @@ class EventNamespace(AsyncNamespace):
         }
 
         # Get the client IP
-        client_ip = environ["REMOTE_ADDR"]
+        try:
+            client_ip = environ["asgi.scope"]["client"][0]
+        except (KeyError, IndexError):
+            client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
 
         # Process the events.
         async for update in process(self.app, event, sid, headers, client_ip):

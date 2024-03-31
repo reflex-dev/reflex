@@ -206,7 +206,7 @@ class HighLevelSelect(SelectRoot):
 
         trigger_props = {
             prop: props.pop(prop)
-            for prop in ["placeholder", "variant", "radius", "width"]
+            for prop in ["placeholder", "variant", "radius", "width", "flex_shrink"]
             if prop in props
         }
 

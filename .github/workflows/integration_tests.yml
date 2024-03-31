@@ -10,6 +10,10 @@ on:
     paths-ignore:
       - '**/*.md'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -26,6 +30,8 @@ env:
   PYTHONIOENCODING: 'utf8'
   TELEMETRY_ENABLED: false
   NODE_OPTIONS: '--max_old_space_size=4096'
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  PR_TITLE: ${{ github.event.pull_request.title }}
 
 jobs:
   example-counter:
@@ -36,7 +42,6 @@ jobs:
       matrix:
         # Show OS combos first in GUI
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: ['16.x']
         python-version: ['3.8.18', '3.9.18', '3.10.13', '3.11.5', '3.12.0']
         exclude:
           - os: windows-latest
@@ -56,26 +61,22 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-
       - name: Clone Reflex Examples Repo
         uses: actions/checkout@v4
         with:
           repository: reflex-dev/reflex-examples
           path: reflex-examples
-
       - name: Install requirements for counter example
         working-directory: ./reflex-examples/counter
         run: |
           poetry run pip install -r requirements.txt
+      - name: Install additional dependencies for DB access
+        run: poetry run pip install psycopg2-binary
       - name: Check export --backend-only before init for counter example
         working-directory: ./reflex-examples/counter
         run: |
@@ -96,6 +97,14 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev
+      - name: Measure and upload .web size
+        if: ${{ env.DATABASE_URL }}
+        run:
+          poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}"
+          --branch-name "${{ github.head_ref || github.ref_name }}"
+          --measurement-type "counter-app-dot-web" --path ./reflex-examples/counter/.web
 
   reflex-web:
     strategy:
@@ -104,17 +113,12 @@ jobs:
         # Show OS combos first in GUI
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.10.10', '3.11.4']
-        node-version: ['16.x']
 
     env:
       REFLEX_WEB_WINDOWS_OVERRIDE: '1'
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
@@ -131,6 +135,8 @@ jobs:
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
         run: poetry run pip install -r requirements.txt
+      - name: Install additional dependencies for DB access
+        run: poetry run pip install psycopg2-binary
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: poetry run reflex init
@@ -139,3 +145,11 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-web prod
+      - name: Measure and upload .web size
+        if: ${{ env.DATABASE_URL }}
+        run:
+          poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --pr-id "${{ github.event.pull_request.id }}"
+          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+          --measurement-type "reflex-web-dot-web" --path ./reflex-web/.web

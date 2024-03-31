@@ -8,22 +8,28 @@ from reflex.state import BaseState
 from reflex.vars import BaseVar
 
 
-def test_render_no_child():
+def test_create_no_child():
     """DebounceInput raises RuntimeError if no child is provided."""
     with pytest.raises(RuntimeError):
-        _ = rx.debounce_input().render()
+        _ = rx.debounce_input()
 
 
-def test_render_no_child_recursive():
+def test_create_no_child_recursive():
     """DebounceInput raises RuntimeError if no child is provided."""
     with pytest.raises(RuntimeError):
-        _ = rx.debounce_input(rx.debounce_input(rx.debounce_input())).render()
+        _ = rx.debounce_input(rx.debounce_input(rx.debounce_input()))
 
 
-def test_render_many_child():
+def test_create_many_child():
     """DebounceInput raises RuntimeError if more than 1 child is provided."""
     with pytest.raises(RuntimeError):
-        _ = rx.debounce_input("foo", "bar").render()
+        _ = rx.debounce_input("foo", "bar")
+
+
+def test_create_no_on_change():
+    """DebounceInput raises ValueError if child has no on_change handler."""
+    with pytest.raises(ValueError):
+        _ = rx.debounce_input(rx.input())
 
 
 class S(BaseState):
@@ -44,14 +50,16 @@ class S(BaseState):
 def test_render_child_props():
     """DebounceInput should render props from child component."""
     tag = rx.debounce_input(
-        rx.chakra.input(
+        rx.input(
             foo="bar",
             baz="quuc",
             value="real",
             on_change=S.on_change,
         )
     )._render()
-    assert tag.props["sx"] == {"foo": "bar", "baz": "quuc"}
+    assert "css" in tag.props and isinstance(tag.props["css"], rx.Var)
+    for prop in ["foo", "bar", "baz", "quuc"]:
+        assert prop in str(tag.props["css"])
     assert tag.props["value"].equals(
         BaseVar(
             _var_name="real", _var_type=str, _var_is_local=True, _var_is_string=False
@@ -60,6 +68,41 @@ def test_render_child_props():
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""
+
+
+def test_render_with_class_name():
+    tag = rx.debounce_input(
+        rx.input(
+            on_change=S.on_change,
+            class_name="foo baz",
+        )
+    )._render()
+    assert isinstance(tag.props["className"], rx.Var)
+    assert "foo baz" in str(tag.props["className"])
+
+
+def test_render_with_ref():
+    tag = rx.debounce_input(
+        rx.input(
+            on_change=S.on_change,
+            id="foo_bar",
+        )
+    )._render()
+    assert isinstance(tag.props["inputRef"], rx.Var)
+    assert "foo_bar" in str(tag.props["inputRef"])
+
+
+def test_event_triggers():
+    debounced_input = rx.debounce_input(
+        rx.input(
+            on_change=S.on_change,
+        )
+    )
+    default_event_triggers = list(rx.Component().get_event_triggers().keys())
+    assert list(debounced_input.get_event_triggers().keys()) == [
+        *default_event_triggers,
+        "on_change",
+    ]
 
 
 def test_render_child_props_recursive():
@@ -72,7 +115,7 @@ def test_render_child_props_recursive():
         rx.debounce_input(
             rx.debounce_input(
                 rx.debounce_input(
-                    rx.chakra.input(
+                    rx.input(
                         foo="bar",
                         baz="quuc",
                         value="real",
@@ -88,7 +131,9 @@ def test_render_child_props_recursive():
         ),
         force_notify_by_enter=False,
     )._render()
-    assert tag.props["sx"] == {"foo": "bar", "baz": "quuc"}
+    assert "css" in tag.props and isinstance(tag.props["css"], rx.Var)
+    for prop in ["foo", "bar", "baz", "quuc"]:
+        assert prop in str(tag.props["css"])
     assert tag.props["value"].equals(
         BaseVar(
             _var_name="outer", _var_type=str, _var_is_local=True, _var_is_string=False
@@ -104,7 +149,7 @@ def test_render_child_props_recursive():
 
 def test_full_control_implicit_debounce():
     """DebounceInput is used when value and on_change are used together."""
-    tag = rx.chakra.input(
+    tag = rx.input(
         value=S.value,
         on_change=S.on_change,
     )._render()

@@ -5,10 +5,6 @@ on:
     branches: [main]
     paths-ignore:
       - '**/*.md'
-  pull_request:
-    branches: [main]
-    paths-ignore:
-      - '**/*.md'
 
 permissions:
   contents: read
@@ -21,11 +17,11 @@ env:
   PYTHONIOENCODING: 'utf8'
   TELEMETRY_ENABLED: false
   NODE_OPTIONS: '--max_old_space_size=4096'
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  PR_TITLE: ${{ github.event.pull_request.title }}
 
 jobs:
   reflex-web:
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     strategy:
       fail-fast: false
       matrix:
@@ -64,14 +60,141 @@ jobs:
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash scripts/benchmarks.sh ./reflex-web prod
+          poetry run bash scripts/benchmarks/benchmarks.sh ./reflex-web prod
         env:
           LHCI_GITHUB_APP_TOKEN: $
       - name: Run Benchmarks
         # Only run if the database creds are available in this context.
         if: ${{ env.DATABASE_URL }}
-        working-directory: ./integration/benchmarks
-        run: poetry run python benchmarks.py "$GITHUB_SHA" .lighthouseci
+        run: poetry run python scripts/benchmarks/lighthouse_score_upload.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
         env:
           GITHUB_SHA: ${{ github.sha }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
+
+  simple-apps-benchmarks:
+    env:
+      OUTPUT_FILE: benchmarks.json
+    timeout-minutes: 50
+    strategy:
+      # Prioritize getting more information out of the workflow (even if something fails)
+      fail-fast: false
+      matrix:
+        # Show OS combos first in GUI
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8.18', '3.9.18', '3.10.13', '3.11.5', '3.12.0']
+        exclude:
+          - os: windows-latest
+            python-version: '3.10.13'
+          - os: windows-latest
+            python-version: '3.9.18'
+          - os: windows-latest
+            python-version: '3.8.18'
+          # keep only one python version for MacOS
+          - os: macos-latest
+            python-version: '3.8.18'
+          - os: macos-latest
+            python-version: '3.9.18'
+          - os: macos-latest
+            python-version: '3.10.13'
+          - os: macos-latest
+            python-version: '3.12.0'
+        include:
+          - os: windows-latest
+            python-version: '3.10.11'
+          - os: windows-latest
+            python-version: '3.9.13'
+          - os: windows-latest
+            python-version: '3.8.10'
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-poetry-install: true
+          create-venv-at-path: .venv
+      - name: Install additional dependencies for DB access
+        run: poetry run pip install psycopg2-binary
+      - name: Run benchmark tests
+        env:
+          APP_HARNESS_HEADLESS: 1
+          PYTHONUNBUFFERED: 1
+        run: |
+          poetry run pytest -v benchmarks/ --benchmark-json=${{ env.OUTPUT_FILE }} -s
+      - name: Upload benchmark results
+        # Only run if the database creds are available in this context.
+        if: ${{ env.DATABASE_URL }}
+        run:
+          poetry run python scripts/benchmarks/simple_app_benchmark_upload.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --benchmark-json "${{ env.OUTPUT_FILE }}"
+          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+          --event-type "${{ github.event_name }}" --actor "${{ github.actor }}" --pr-id "${{ github.event.pull_request.id }}"
+
+  reflex-build-size:
+    timeout-minutes: 30
+    strategy:
+      # Prioritize getting more information out of the workflow (even if something fails)
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: 3.11.5
+          run-poetry-install: true
+          create-venv-at-path: .venv
+      - name: Install additional dependencies for DB access
+        run: poetry run pip install psycopg2-binary
+      - name: Build reflex
+        run: |
+          poetry build
+      - name: Upload benchmark results
+        # Only run if the database creds are available in this context.
+        if: ${{ env.DATABASE_URL }}
+        run:
+          poetry run python scripts/benchmarks/benchmark_reflex_size.py --os ubuntu-latest
+          --python-version 3.11.5 --commit-sha "${{ github.sha }}" --pr-id "${{ github.event.pull_request.id }}"
+          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+          --measurement-type "reflex-build" --path ./dist
+
+  reflex-plus-dependency-size:
+    timeout-minutes: 30
+    strategy:
+      # Prioritize getting more information out of the workflow (even if something fails)
+      fail-fast: false
+      matrix:
+        # Show OS combos first in GUI
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.11.5']
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.3.1
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+
+      - name: Run poetry install
+        shell: bash
+        run: |
+          python -m venv .venv
+          source .venv/*/activate
+          poetry install --without dev --no-interaction --no-root
+
+      - name: Install additional dependencies for DB access
+        run: poetry run pip install psycopg2-binary
+
+      - if: ${{ env.DATABASE_URL }}
+        name: calculate and upload size
+        run:
+          poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}"
+          --branch-name "${{ github.head_ref || github.ref_name }}"
+          --measurement-type "reflex-package" --path ./.venv

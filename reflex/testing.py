@@ -40,7 +40,13 @@ import reflex.utils.build
 import reflex.utils.exec
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.state import BaseState, State, StateManagerMemory, StateManagerRedis
+from reflex.state import (
+    BaseState,
+    State,
+    StateManagerMemory,
+    StateManagerRedis,
+    reload_state_module,
+)
 
 try:
     from selenium import webdriver  # pyright: ignore [reportMissingImports]
@@ -67,14 +73,11 @@ FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
 TimeoutType = Optional[Union[int, float]]
 
-if platform.system == "Windows":
+if platform.system() == "Windows":
     FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
+    FRONTEND_POPEN_ARGS["shell"] = True
 else:
     FRONTEND_POPEN_ARGS["start_new_session"] = True
-
-
-# Save a copy of internal substates to reset after each test.
-INTERNAL_STATES = State.class_subclasses.copy()
 
 
 # borrowed from py3.11
@@ -211,7 +214,9 @@ class AppHarness:
             # get the source from a function or module object
             source_code = "\n".join(
                 [
-                    "\n".join(f"{k} = {v!r}" for k, v in app_globals.items()),
+                    "\n".join(
+                        self.get_app_global_source(k, v) for k, v in app_globals.items()
+                    ),
                     self._get_source_from_app_source(self.app_source),
                 ]
             )
@@ -227,11 +232,6 @@ class AppHarness:
             reflex.config.get_config(reload=True)
             # Clean out any `rx.page` decorators from other tests.
             reflex.app.DECORATED_PAGES.clear()
-            # reset rx.State subclasses
-            State.class_subclasses.clear()
-            State.class_subclasses.update(INTERNAL_STATES)
-            State._always_dirty_substates = set()
-            State.get_class_substate.cache_clear()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
@@ -241,6 +241,10 @@ class AppHarness:
             self.state_manager = StateManagerRedis.create(self.app_instance.state)
         else:
             self.state_manager = self.app_instance._state_manager
+
+    def _reload_state_module(self):
+        """Reload the rx.State module to avoid conflict when reloading."""
+        reload_state_module(module=f"{self.app_name}.{self.app_name}")
 
     def _get_backend_shutdown_handler(self):
         if self.backend is None:
@@ -331,6 +335,24 @@ class AppHarness:
         self._wait_frontend()
         return self
 
+    @staticmethod
+    def get_app_global_source(key, value):
+        """Get the source code of a global object.
+        If value is a function or class we render the actual
+        source of value otherwise we assign value to key.
+
+        Args:
+            key: variable name to assign value to.
+            value: value of the global variable.
+
+        Returns:
+            The rendered app global code.
+
+        """
+        if not inspect.isclass(value) and not inspect.isfunction(value):
+            return f"{key} = {value!r}"
+        return inspect.getsource(value)
+
     def __enter__(self) -> "AppHarness":
         """Contextmanager protocol for `start()`.
 
@@ -341,6 +363,8 @@ class AppHarness:
 
     def stop(self) -> None:
         """Stop the frontend and backend servers."""
+        self._reload_state_module()
+
         if self.backend is not None:
             self.backend.should_exit = True
         if self.frontend_process is not None:
