@@ -807,11 +807,6 @@ def _collect_details_for_gallery():
     """
     from reflex.reflex import _login
 
-    console.print("We recommend that you deploy a demo app showcasing the component.")
-    console.print("If not already, please deploy it first.")
-    if console.ask("Continue?", choices=["y", "n"], default="y") != "y":
-        return
-
     console.rule("[bold]Authentication with Reflex Services")
     console.print("First let's log in to Reflex backend services.")
     access_token = _login()
@@ -829,47 +824,30 @@ def _collect_details_for_gallery():
         )
         package_name = console.ask("[ Published python package name ]")
     console.print(f"[ Custom component package name ] : {package_name}")
+    params["package_name"] = package_name
 
     # Check the backend services if the user is allowed to update information of this package is already shared.
-    expected_status_code = False
     try:
         console.debug(
-            f"Checking if user has permission to modify information for {package_name} if already exists."
+            f"Checking if user has permission to upsert information for {package_name} by POST."
         )
-        response = httpx.get(
-            f"{GET_CUSTOM_COMPONENTS_GALLERY_BY_NAME_ENDPOINT}/{package_name}",
+        # Send a POST request to achieve two things at once:
+        # 1. Check if the package is already shared by the user. If not, the backend will return 403.
+        # 2. If this package is not shared before, this request records the package name in the backend.
+        response = httpx.post(
+            POST_CUSTOM_COMPONENTS_GALLERY_ENDPOINT,
             headers={"Authorization": f"Bearer {access_token}"},
+            data=params,
         )
         if response.status_code == httpx.codes.FORBIDDEN:
             console.error(
                 f"{package_name} is owned by another user. Unable to update the information for it."
             )
             raise typer.Exit(code=1)
-        elif response.status_code == httpx.codes.NOT_FOUND:
-            console.debug(f"{package_name} is not found. This is a new share.")
-            expected_status_code = True
-
         response.raise_for_status()
-        console.debug(f"{package_name} is found. This is an update.")
     except httpx.HTTPError as he:
-        if not expected_status_code:
-            console.error(f"Unable to complete request due to {he}.")
-            raise typer.Exit(code=1) from he
-
-    params["package_name"] = package_name
-
-    demo_url = None
-    while True:
-        demo_url = (
-            console.ask(
-                "[ Full URL of deployed demo app, e.g. `https://my-app.reflex.run` ] (enter to skip)"
-            )
-            or None
-        )
-        if _validate_url_with_protocol_prefix(demo_url):
-            break
-    if demo_url:
-        params["demo_url"] = demo_url
+        console.error(f"Unable to complete request due to {he}.")
+        raise typer.Exit(code=1) from he
 
     display_name = (
         console.ask("[ Friendly display name for your component ] (enter to skip)")
@@ -883,6 +861,19 @@ def _collect_details_for_gallery():
         files.append(
             ("files", (image_file_and_extension[1], image_file_and_extension[0]))
         )
+
+    demo_url = None
+    while True:
+        demo_url = (
+            console.ask(
+                "[ Full URL of deployed demo app, e.g. `https://my-app.reflex.run` ] (enter to skip)"
+            )
+            or None
+        )
+        if _validate_url_with_protocol_prefix(demo_url):
+            break
+    if demo_url:
+        params["demo_url"] = demo_url
 
     # Now send the post request to Reflex backend services.
     try:
