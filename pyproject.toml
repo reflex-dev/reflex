@@ -85,7 +85,6 @@ plotly = ">=5.13.0,<6.0"
 asynctest = ">=0.13.0,<1.0"
 pre-commit = {version = ">=3.2.1", python = ">=3.8,<4.0"}
 selenium = ">=4.11.0,<5.0"
-types-tabulate = ">=0.9.0.3,<0.10"
 pytest-benchmark = ">=4.0.0,<5.0"
 
 [tool.poetry.scripts]
