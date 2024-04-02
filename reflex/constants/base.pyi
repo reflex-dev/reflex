@@ -46,10 +46,8 @@ class ReflexHostingCLI(SimpleNamespace):
     MODULE_NAME = "reflex-hosting-cli"
 
 class Templates(SimpleNamespace):
-    template_dir = os.path.join(Reflex.ROOT_DIR, Reflex.MODULE_NAME, ".templates/apps")
-    template_dirs = next(os.walk(template_dir))[1]
-    Kind = Enum("Kind", {template.upper(): template for template in template_dirs})
     APP_TEMPLATES_ROUTE = "/app-templates"
+    DEFAULT = "blank"
 
     class Dirs(SimpleNamespace):
         BASE = os.path.join(Reflex.ROOT_DIR, Reflex.MODULE_NAME, ".templates")

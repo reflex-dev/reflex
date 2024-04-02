@@ -565,20 +565,6 @@ def demo(
     # Open the demo app in a terminal.
     webbrowser.open("https://demo.reflex.run")
 
-    # Later: open the demo app locally.
-    # with tempfile.TemporaryDirectory() as tmp_dir:
-    #     os.chdir(tmp_dir)
-    #     _init(
-    #         name="reflex_demo",
-    #         template=constants.Templates.Kind.DEMO,
-    #         loglevel=constants.LogLevel.DEBUG,
-    #     )
-    #     _run(
-    #         frontend_port=frontend_port,
-    #         backend_port=backend_port,
-    #         loglevel=constants.LogLevel.DEBUG,
-    #     )
-
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
 cli.add_typer(script_cli, name="script", help="Subcommands running helper scripts.")

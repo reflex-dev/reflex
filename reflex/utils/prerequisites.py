@@ -45,7 +45,7 @@ class Template(Base):
     name: str
     description: str
     code_url: str
-    deploy_url: str
+    demo_url: str
 
 
 def check_latest_package_version(package_name: str):
@@ -420,7 +420,7 @@ def initialize_requirements_txt():
 
 def initialize_app_directory(
     app_name: str,
-    template_name: str = constants.Templates.Kind.BLANK.value,
+    template_name: str = constants.Templates.DEFAULT,
     template_code_dir_name: str | None = None,
     template_dir: Path | None = None,
 ):
@@ -438,7 +438,7 @@ def initialize_app_directory(
     console.log("Initializing the app directory.")
 
     # By default, use the blank template from local assets.
-    if template_name == constants.Templates.Kind.BLANK.value:
+    if template_name == constants.Templates.DEFAULT:
         if template_code_dir_name is not None or template_dir is not None:
             console.error(
                 f"Only {template_name=} should be provided, got {template_code_dir_name=}, {template_dir=}."
@@ -1049,7 +1049,7 @@ def prompt_for_template(templates: list[Template]) -> str:
 
     # Prompt the user to select a template.
     id_to_name = {
-        str(idx): f"{template.name} ({template.deploy_url}) - {template.description}"
+        str(idx): f"{template.name} ({template.demo_url}) - {template.description}"
         for idx, template in enumerate(templates)
     }
     for id in range(len(id_to_name)):
@@ -1235,35 +1235,10 @@ def fetch_app_templates() -> dict[str, Template]:
             f"{config.cp_backend_url}{constants.Templates.APP_TEMPLATES_ROUTE}"
         )
         response.raise_for_status()
-        # TODO: remove this logic.
-        response = [
-            {
-                "name": "blank",
-                "description": "A minimal template.",
-                "deploy_url": "https://blank-template.reflex.run",
-                "code_url": "https://github.com/reflex-dev/blank-template/archive/main.zip",
-            },
-            {
-                "name": "dashboard",
-                "description": "A dashboard template.",
-                "deploy_url": "https://dashboard.reflex.run",
-                "code_url": "https://github.com/reflex-dev/dashboard-template/archive/main.zip",
-            },
-            {
-                "name": "chat",
-                "description": "A chat template.",
-                "deploy_url": "https://chat.reflex.run",
-                "code_url": "https://github.com/reflex-dev/reflex-chat/archive/main.zip",
-            },
-            {
-                "name": "sidebar",
-                "description": "A sidebar template.",
-                "deploy_url": "https://sidebar-template.reflex.run",
-                "code_url": "https://github.com/reflex-dev/sidebar-template/archive/main.zip",
-            },
-        ]
-        return {template["name"]: Template.parse_obj(template) for template in response}
-        # return [Template.parse_obj(template) for template in response.json()]
+        return {
+            template["name"]: Template.parse_obj(template)
+            for template in response.json()
+        }
     except httpx.HTTPError as ex:
         console.info(f"Failed to fetch app templates: {ex}")
         return {}
@@ -1376,11 +1351,11 @@ def initialize_app(app_name: str, template: str | None = None):
     if template is None and len(templates) > 0:
         template = prompt_for_template(list(templates.values()))
     else:
-        template = constants.Templates.Kind.BLANK.value
+        template = constants.Templates.DEFAULT
     assert template is not None
 
     # If the blank template is selected, create a blank app.
-    if template == constants.Templates.Kind.BLANK.value:
+    if template == constants.Templates.DEFAULT:
         # Default app creation behavior: a blank app.
         create_config(app_name)
         initialize_app_directory(app_name)
