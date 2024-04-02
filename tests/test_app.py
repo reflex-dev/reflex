@@ -1410,8 +1410,8 @@ def test_generate_component():
             "Bar",
         )
 
-    comp = App._generate_component(index)
+    comp = App._generate_component(index)  # type: ignore
     assert isinstance(comp, Component)
 
     with pytest.raises(exceptions.MatchTypeError):
-        App._generate_component(index_mismatch)
+        App._generate_component(index_mismatch)  # type: ignore
