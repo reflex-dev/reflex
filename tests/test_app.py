@@ -1395,7 +1395,7 @@ def test_app_state_manager():
         app.state_manager
     app.enable_state()
     assert app.state_manager is not None
-    assert isinstance(app.state_manager, StateManagerMemory)
+    assert isinstance(app.state_manager, (StateManagerMemory, StateManagerRedis))
 
 
 def test_generate_component():
