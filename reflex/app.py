@@ -214,12 +214,7 @@ class App(Base):
             self.setup_state()
 
     def setup_state(self) -> None:
-        """Set up the state for the app.
-
-        Raises:
-            ValueError: If the event namespace is not provided in the config.
-                        If the state has not been enabled.
-        """
+        """Set up the state for the app."""
         if not self.state:
             return
 
