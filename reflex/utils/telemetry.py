@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import multiprocessing
 import platform
-from datetime import UTC, datetime
+
+try:
+    from datetime import UTC, datetime
+except ImportError:
+    from datetime import datetime
+
+    UTC = None
 
 import httpx
 import psutil
@@ -98,6 +104,13 @@ def _prepare_event(event: str) -> dict:
             f"Could not get installation_id or project_hash: {installation_id}, {project_hash}"
         )
         return {}
+
+    if UTC is None:
+        # for python 3.8, 3.9 & 3.10
+        stamp = datetime.utcnow().isoformat()
+    else:
+        # for python 3.11 & 3.12
+        stamp = datetime.now(UTC).isoformat()
     return {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
         "event": event,
@@ -110,7 +123,7 @@ def _prepare_event(event: str) -> dict:
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
         },
-        "timestamp": datetime.now(UTC).isoformat(),
+        "timestamp": stamp,
     }
 
 
