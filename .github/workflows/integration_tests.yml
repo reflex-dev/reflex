@@ -10,6 +10,10 @@ on:
     paths-ignore:
       - '**/*.md'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -28,7 +32,6 @@ env:
   NODE_OPTIONS: '--max_old_space_size=4096'
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
   PR_TITLE: ${{ github.event.pull_request.title }}
-
 
 jobs:
   example-counter:
@@ -96,9 +99,10 @@ jobs:
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev
       - name: Measure and upload .web size
         if: ${{ env.DATABASE_URL }}
-        run: poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
+        run:
+          poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}" 
+          --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}"
           --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "counter-app-dot-web" --path ./reflex-examples/counter/.web
 
@@ -143,8 +147,9 @@ jobs:
           poetry run bash scripts/integration.sh ./reflex-web prod
       - name: Measure and upload .web size
         if: ${{ env.DATABASE_URL }}
-        run: poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
+        run:
+          poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}" 
+          --pr-id "${{ github.event.pull_request.id }}"
           --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "reflex-web-dot-web" --path ./reflex-web/.web
