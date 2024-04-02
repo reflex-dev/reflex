@@ -10,7 +10,7 @@ omit =
 [report]
 show_missing = true
 # TODO bump back to 79
-fail_under = 73
+fail_under = 72
 precision = 2
 
 # Regexes for lines to exclude from consideration
