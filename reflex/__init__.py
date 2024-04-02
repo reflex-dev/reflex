@@ -153,7 +153,14 @@ _MAPPING = {
     "reflex.model": ["model", "session", "Model"],
     "reflex.page": ["page"],
     "reflex.route": ["route"],
-    "reflex.state": ["state", "var", "Cookie", "LocalStorage", "State"],
+    "reflex.state": [
+        "state",
+        "var",
+        "Cookie",
+        "LocalStorage",
+        "ComponentState",
+        "State",
+    ],
     "reflex.style": ["style", "toggle_color_mode"],
     "reflex.testing": ["testing"],
     "reflex.utils": ["utils"],
@@ -190,7 +197,7 @@ def _removeprefix(text, prefix):
     return text[text.startswith(prefix) and len(prefix) :]
 
 
-__all__ = [_removeprefix(mod, "reflex.") for mod in _MAPPING]
+__all__ = (_removeprefix(mod, "reflex.") for mod in _MAPPING)
 
 
 def __getattr__(name: str) -> Type:

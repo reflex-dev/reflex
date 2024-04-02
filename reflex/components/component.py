@@ -21,6 +21,7 @@ from typing import (
     Union,
 )
 
+import reflex.state
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.tags import Tag
@@ -213,6 +214,9 @@ class Component(BaseComponent, ABC):
 
     # When to memoize this component and its children.
     _memoization_mode: MemoizationMode = MemoizationMode()
+
+    # State class associated with this component instance
+    State: Optional[Type[reflex.state.State]] = None
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -1025,16 +1029,6 @@ class Component(BaseComponent, ABC):
             )
         return _imports
 
-    def add_imports(
-        self,
-    ) -> Dict[str, Union[str, ImportVar, List[str | ImportVar]]]:
-        """User defined imports for the component. Need to be overriden in subclass.
-
-        Returns:
-            The user defined imports as a dict.
-        """
-        return {}
-
     def _get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
 
@@ -1055,41 +1049,28 @@ class Component(BaseComponent, ABC):
             var._var_data.imports for var in self._get_vars() if var._var_data
         ]
 
-        # If the subclass implements add_imports, merge the imports.
-        def _make_list(
-            value: str | ImportVar | list[str | ImportVar],
-        ) -> list[str | ImportVar]:
-            if isinstance(value, (str, ImportVar)):
-                return [value]
-            return value
-
-        added_imports = {
-            package: [
-                ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
-                for tag in _make_list(maybe_tags)
-            ]
-            for package, maybe_tags in self.add_imports().items()
-        }
-
         return imports.merge_imports(
             *self._get_props_imports(),
             self._get_dependencies_imports(),
             self._get_hooks_imports(),
             _imports,
             event_imports,
-            added_imports,
             *var_imports,
         )
 
-    def get_imports(self) -> imports.ImportDict:
+    def get_imports(self, collapse: bool = False) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component and its children.
+
+        Args:
+            collapse: Whether to collapse the imports by removing duplicates.
 
         Returns:
             The import dict with the required imports.
         """
-        return imports.merge_imports(
+        _imports = imports.merge_imports(
             self._get_imports(), *[child.get_imports() for child in self.children]
         )
+        return imports.collapse_imports(_imports) if collapse else _imports
 
     def _get_mount_lifecycle_hook(self) -> str | None:
         """Generate the component lifecycle hook.

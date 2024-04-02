@@ -1,5 +1,9 @@
 name: pre-commit
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     branches: ['main']

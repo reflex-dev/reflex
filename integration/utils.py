@@ -38,6 +38,8 @@ class LocalStorage:
     https://stackoverflow.com/a/46361900
     """
 
+    storage_key = "localStorage"
+
     def __init__(self, driver: WebDriver):
         """Initialize the class.
 
@@ -171,3 +173,12 @@ class LocalStorage:
             An iterator over the items in local storage.
         """
         return iter(self.keys())
+
+
+class SessionStorage(LocalStorage):
+    """Class to access session storage.
+
+    https://stackoverflow.com/a/46361900
+    """
+
+    storage_key = "sessionStorage"
