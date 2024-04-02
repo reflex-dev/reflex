@@ -457,6 +457,10 @@ class App(Base):
         # Generate the component if it is a callable.
         component = self._generate_component(component)
 
+        # unpack components that return tuples in an rx.fragment.
+        if isinstance(component, tuple):
+            component = Fragment.create(*component)
+
         # Ensure state is enabled if this page uses state.
         if self.state is None:
             if on_load or component._has_event_triggers():
