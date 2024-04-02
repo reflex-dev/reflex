@@ -1035,7 +1035,7 @@ def check_schema_up_to_date():
                 )
 
 
-def prompt_for_template(templates: list[Template]) -> Template:
+def prompt_for_template(templates: list[Template]) -> str:
     """Prompt the user to specify a template.
 
     Args:
@@ -1063,7 +1063,7 @@ def prompt_for_template(templates: list[Template]) -> Template:
     )
 
     # Return the template.
-    return templates[int(template)]
+    return templates[int(template)].name
 
 
 def should_show_rx_chakra_migration_instructions() -> bool:
@@ -1218,7 +1218,7 @@ def migrate_to_reflex():
                 print(line, end="")
 
 
-def fetch_app_templates() -> list[Template] | None:
+def fetch_app_templates() -> dict[str, Template]:
     """Fetch the list of app templates from the Reflex backend server.
 
     Returns:
@@ -1229,7 +1229,7 @@ def fetch_app_templates() -> list[Template] | None:
         console.info(
             "Skip fetching App templates. No backend URL is specified in the config."
         )
-        return None
+        return {}
     try:
         response = httpx.get(
             f"{config.cp_backend_url}{constants.Templates.APP_TEMPLATES_ROUTE}"
@@ -1257,25 +1257,25 @@ def fetch_app_templates() -> list[Template] | None:
                 "code_url": "https://api.github.com/repos/reflex-dev/reflex-chat/zipball/ee5b472",
             },
         ]
-        return [Template.parse_obj(template) for template in response]
+        return {template["name"]: Template.parse_obj(template) for template in response}
         # return [Template.parse_obj(template) for template in response.json()]
     except httpx.HTTPError as ex:
         console.info(f"Failed to fetch app templates: {ex}")
-        return None
+        return {}
     except (TypeError, KeyError, json.JSONDecodeError) as tkje:
         console.info(f"Unable to process server response for app templates: {tkje}")
-        return None
+        return {}
 
 
 def create_config_init_app_from_remote_template(
-    app_name: str, template: Template, template_name_to_url: dict[str, str]
+    app_name: str,
+    template: Template,
 ):
     """Create new rxconfig and initialize app using a remote template.
 
     Args:
         app_name: The name of the app.
         template: A valid template name.
-        template_name_to_url: The dictionary of template names to download URLs.
 
     Raises:
         Exit: If any download, file operations fail or unexpected zip file format.
@@ -1365,12 +1365,17 @@ def initialize_app(app_name: str, template: str | None = None):
         return
 
     # Get the available templates
-    templates = fetch_app_templates() or {}
-    if template is None:
-        template = prompt_for_template(templates)
+    templates: dict[str, Template] = fetch_app_templates() or {}
 
-    # By default, use the blank template. User can also explicitly choose it.
-    if template is None or template == constants.Templates.Kind.BLANK.value:
+    # Prompt for a template if not provided.
+    if template is None and len(templates) > 0:
+        template = prompt_for_template(list(templates.values()))
+    else:
+        template = constants.Templates.Kind.BLANK.value
+    assert template is not None
+
+    # If the blank template is selected, create a blank app.
+    if template == constants.Templates.Kind.BLANK.value:
         # Default app creation behavior: a blank app.
         create_config(app_name)
         initialize_app_directory(app_name)
@@ -1384,8 +1389,7 @@ def initialize_app(app_name: str, template: str | None = None):
             raise typer.Exit(1)
         create_config_init_app_from_remote_template(
             app_name=app_name,
-            template=template,
-            template_name_to_url=templates,
+            template=templates[template],
         )
 
     telemetry.send("init")
