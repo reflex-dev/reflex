@@ -15,6 +15,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from types import FunctionType, MethodType
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Callable,
@@ -28,7 +29,18 @@ from typing import (
 )
 
 import dill
-import pydantic
+
+try:
+    # TODO The type checking guard can be removed once
+    # reflex-hosting-cli tools are compatible with pydantic v2
+
+    if not TYPE_CHECKING:
+        import pydantic.v1 as pydantic
+    else:
+        raise ModuleNotFoundError
+except ModuleNotFoundError:
+    import pydantic
+
 import wrapt
 from redis.asyncio import Redis
 
@@ -46,6 +58,10 @@ from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.vars import BaseVar, ComputedVar, Var, computed_var
+
+if TYPE_CHECKING:
+    from reflex.components.component import Component
+
 
 Delta = Dict[str, Any]
 var = computed_var
@@ -1216,9 +1232,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Determine which parent states to fetch from the common ancestor down to the target_state_cls.
         fetch_parent_states = [common_ancestor_name]
-        for ix, relative_parent_state_name in enumerate(relative_target_state_parts):
+        for relative_parent_state_name in relative_target_state_parts:
             fetch_parent_states.append(
-                ".".join([*fetch_parent_states[: ix + 1], relative_parent_state_name])
+                ".".join((fetch_parent_states[-1], relative_parent_state_name))
             )
 
         return common_ancestor_name, fetch_parent_states[1:-1]
@@ -1262,9 +1278,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ) = self._determine_missing_parent_states(target_state_cls)
 
         # Fetch all missing parent states and link them up to the common ancestor.
-        parent_states_by_name = dict(self._get_parent_states())
+        parent_states_tuple = self._get_parent_states()
+        root_state = parent_states_tuple[-1][1]
+        parent_states_by_name = dict(parent_states_tuple)
         parent_state = parent_states_by_name[common_ancestor_name]
         for parent_state_name in missing_parent_states:
+            try:
+                parent_state = root_state.get_substate(parent_state_name.split("."))
+                # The requested state is already cached, do NOT fetch it again.
+                continue
+            except ValueError:
+                # The requested state is missing, fetch from redis.
+                pass
             parent_state = await state_manager.get_state(
                 token=_substate_key(
                     self.router.session.client_token, parent_state_name
@@ -1819,11 +1844,9 @@ class OnLoadInternalState(State):
         # Do not app.compile_()!  It should be already compiled by now.
         app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
         load_events = app.get_load_events(self.router.page.path)
-        if not load_events and self.is_hydrated:
-            return  # Fast path for page-to-page navigation
         if not load_events:
             self.is_hydrated = True
-            return  # Fast path for initial hydrate with no on_load events defined.
+            return  # Fast path for navigation with no on_load events defined.
         self.is_hydrated = False
         return [
             *fix_events(
@@ -1833,6 +1856,45 @@ class OnLoadInternalState(State):
             ),
             State.set_is_hydrated(True),  # type: ignore
         ]
+
+
+class ComponentState(Base):
+    """The base class for a State that is copied for each Component associated with it."""
+
+    _per_component_state_instance_count: ClassVar[int] = 0
+
+    @classmethod
+    def get_component(cls, *children, **props) -> "Component":
+        """Get the component instance.
+
+        Args:
+            children: The children of the component.
+            props: The props of the component.
+
+        Raises:
+            NotImplementedError: if the subclass does not override this method.
+        """
+        raise NotImplementedError(
+            f"{cls.__name__} must implement get_component to return the component instance."
+        )
+
+    @classmethod
+    def create(cls, *children, **props) -> "Component":
+        """Create a new instance of the Component.
+
+        Args:
+            children: The children of the component.
+            props: The props of the component.
+
+        Returns:
+            A new instance of the Component with an independent copy of the State.
+        """
+        cls._per_component_state_instance_count += 1
+        state_cls_name = f"{cls.__name__}_n{cls._per_component_state_instance_count}"
+        component_state = type(state_cls_name, (cls, State), {})
+        component = component_state.get_component(*children, **props)
+        component.State = component_state
+        return component
 
 
 class StateProxy(wrapt.ObjectProxy):

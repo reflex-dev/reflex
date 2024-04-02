@@ -1,12 +1,16 @@
 name: unit-tests
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
     paths-ignore:
       - '**/*.md'
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
     paths-ignore:
       - '**/*.md'
 
@@ -14,8 +18,8 @@ permissions:
   contents: read
 
 defaults:
-    run:
-        shell: bash
+  run:
+    shell: bash
 
 jobs:
   unit-tests:
@@ -24,22 +28,22 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8.18", "3.9.18", "3.10.13", "3.11.5", "3.12.0"]
+        python-version: ['3.8.18', '3.9.18', '3.10.13', '3.11.5', '3.12.0']
         # Windows is a bit behind on Python version availability in Github
         exclude:
           - os: windows-latest
-            python-version: "3.10.13"
+            python-version: '3.10.13'
           - os: windows-latest
-            python-version: "3.9.18"
+            python-version: '3.9.18'
           - os: windows-latest
-            python-version: "3.8.18"
+            python-version: '3.8.18'
         include:
           - os: windows-latest
-            python-version: "3.10.11"
+            python-version: '3.10.11'
           - os: windows-latest
-            python-version: "3.9.13"
+            python-version: '3.9.13'
           - os: windows-latest
-            python-version: "3.8.10"
+            python-version: '3.8.10'
     runs-on: ${{ matrix.os }}
     # Service containers to run with `runner-job`
     services:
@@ -56,20 +60,20 @@ jobs:
           # Maps port 6379 on service container to the host
           - 6379:6379
     steps:
-    - uses: actions/checkout@v4
-    - uses: ./.github/actions/setup_build_env
-      with:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-    - name: Run unit tests
-      run: |
-        export PYTHONUNBUFFERED=1
-        poetry run pytest tests --cov --no-cov-on-fail --cov-report=
-    - name: Run unit tests w/ redis
-      if: ${{ matrix.os == 'ubuntu-latest' }}
-      run: |
-        export PYTHONUNBUFFERED=1
-        export REDIS_URL=redis://localhost:6379
-        poetry run pytest tests --cov --no-cov-on-fail --cov-report=
-    - run: poetry run coverage html
+      - name: Run unit tests
+        run: |
+          export PYTHONUNBUFFERED=1
+          poetry run pytest tests --cov --no-cov-on-fail --cov-report=
+      - name: Run unit tests w/ redis
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          export PYTHONUNBUFFERED=1
+          export REDIS_URL=redis://localhost:6379
+          poetry run pytest tests --cov --no-cov-on-fail --cov-report=
+      - run: poetry run coverage html

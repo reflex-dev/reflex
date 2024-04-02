@@ -6,9 +6,19 @@ import importlib
 import os
 import sys
 import urllib.parse
-from typing import Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
-import pydantic
+try:
+    # TODO The type checking guard can be removed once
+    # reflex-hosting-cli tools are compatible with pydantic v2
+
+    if not TYPE_CHECKING:
+        import pydantic.v1 as pydantic
+    else:
+        raise ModuleNotFoundError
+except ModuleNotFoundError:
+    import pydantic
+
 from reflex_cli.constants.hosting import Hosting
 
 from reflex import constants

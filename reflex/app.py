@@ -7,6 +7,7 @@ import concurrent.futures
 import contextlib
 import copy
 import functools
+import io
 import multiprocessing
 import os
 import platform
@@ -1155,10 +1156,29 @@ def upload(app: App):
                 "List[rx.UploadFile]"
             )
 
+        # Make a copy of the files as they are closed after the request.
+        # This behaviour changed from fastapi 0.103.0 to 0.103.1 as the
+        # AsyncExitStack was removed from the request scope and is now
+        # part of the routing function which closes this before the
+        # event is handled.
+        file_copies = []
+        for file in files:
+            content_copy = io.BytesIO()
+            content_copy.write(await file.read())
+            content_copy.seek(0)
+            file_copies.append(
+                UploadFile(
+                    file=content_copy,
+                    filename=file.filename,
+                    size=file.size,
+                    headers=file.headers,
+                )
+            )
+
         event = Event(
             token=token,
             name=handler,
-            payload={handler_upload_param[0]: files},
+            payload={handler_upload_param[0]: file_copies},
         )
 
         async def _ndjson_updates():

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Type, Union
+from typing import Any, Dict, List, Type
 
 import pytest
 
@@ -363,7 +363,7 @@ def test_valid_props(component1, text: str, number: int):
 
 
 @pytest.mark.parametrize(
-    "text,number", [("", "bad_string"), (13, 1), (None, 1), ("test", [1, 2, 3])]
+    "text,number", [("", "bad_string"), (13, 1), ("test", [1, 2, 3])]
 )
 def test_invalid_prop_type(component1, text: str, number: int):
     """Test that an invalid prop type raises an error.
@@ -1347,42 +1347,33 @@ def test_custom_component_get_imports():
     assert "other" in imports_outer
 
 
-@pytest.mark.parametrize(
-    "tags",
-    (
-        ["Component"],
-        ["Component", "useState"],
-        [ImportVar(tag="Component")],
-        [ImportVar(tag="Component"), ImportVar(tag="useState")],
-        ["Component", ImportVar(tag="useState")],
-    ),
-)
-def test_custom_component_add_imports(tags):
-    def _list_to_import_vars(tags: List[str]) -> List[ImportVar]:
-        return [
-            ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
-            for tag in tags
-        ]
+def test_custom_component_declare_event_handlers_in_fields():
+    class ReferenceComponent(Component):
+        def get_event_triggers(self) -> Dict[str, Any]:
+            """Test controlled triggers.
 
-    class BaseComponent(Component):
-        def _get_imports(self) -> imports.ImportDict:
-            return {}
+            Returns:
+                Test controlled triggers.
+            """
+            return {
+                **super().get_event_triggers(),
+                "on_a": lambda e: [e],
+                "on_b": lambda e: [e.target.value],
+                "on_c": lambda e: [],
+                "on_d": lambda: [],
+                "on_e": lambda: [],
+            }
 
-    class Reference(Component):
-        def _get_imports(self) -> imports.ImportDict:
-            return imports.merge_imports(
-                super()._get_imports(),
-                {"react": _list_to_import_vars(tags)},
-            )
+    class TestComponent(Component):
+        on_a: EventHandler[lambda e0: [e0]]
+        on_b: EventHandler[lambda e0: [e0.target.value]]
+        on_c: EventHandler[lambda e0: []]
+        on_d: EventHandler[lambda: []]
+        on_e: EventHandler
 
-    class Test(Component):
-        def add_imports(
-            self,
-        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
-            return {"react": (tags[0] if len(tags) == 1 else tags)}
-
-    baseline = Reference.create()
-    test = Test.create()
-
-    assert baseline.get_imports() == {"react": _list_to_import_vars(tags)}
-    assert test.get_imports() == baseline.get_imports()
+    custom_component = ReferenceComponent.create()
+    test_component = TestComponent.create()
+    assert (
+        custom_component.get_event_triggers().keys()
+        == test_component.get_event_triggers().keys()
+    )

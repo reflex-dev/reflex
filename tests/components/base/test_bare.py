@@ -8,6 +8,7 @@ from reflex.components.base.bare import Bare
     [
         ("hello", "hello"),
         ("{}", "{}"),
+        (None, ""),
         ("${default_state.name}", "${default_state.name}"),
         ("{state.name}", "{state.name}"),
     ],
