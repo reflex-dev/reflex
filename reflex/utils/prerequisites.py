@@ -160,8 +160,6 @@ def get_install_package_manager() -> str | None:
     Returns:
         The path to the package manager.
     """
-    if constants.IS_WINDOWS:
-        return get_config().bun_path + constants.Ext.EXE
     return get_config().bun_path
 
 
@@ -680,12 +678,14 @@ def install_bun():
         FileNotFoundError: If required packages are not found.
     """
     # Skip if bun is already installed.
+    print(f"bun_path = {get_config().bun_path} | exists? {os.path.exists(get_config().bun_path)}\n\n bun_version: {get_bun_version()} | accepted version: {constants.Bun.VERSION}")
     if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
         constants.Bun.VERSION
     ):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
+    print(f"$$$$$$$$$$$$$$$$$$$$$$ GOT HEREEE")
     #  if unzip is installed
     if constants.IS_WINDOWS:
         processes.new_process(
