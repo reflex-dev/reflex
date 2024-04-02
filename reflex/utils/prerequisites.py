@@ -30,12 +30,20 @@ from redis import Redis as RedisSync
 from redis.asyncio import Redis
 
 import reflex
+from reflex.base import Base
 from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 
 CURRENTLY_INSTALLING_NODE = False
+
+
+class Template(Base):
+    name: str
+    description: str
+    code_url: str
+    deploy_url: str
 
 
 def check_latest_package_version(package_name: str):
@@ -1025,7 +1033,7 @@ def check_schema_up_to_date():
                 )
 
 
-def prompt_for_template(template_names: list[str]) -> str:
+def prompt_for_template(templates: list[Template]) -> Template:
     """Prompt the user to specify a template.
 
     Args:
@@ -1038,9 +1046,7 @@ def prompt_for_template(template_names: list[str]) -> str:
     console.print("\nGet started with a template:")
 
     # Prompt the user to select a template.
-    id_to_name = {str(idx): name for idx, name in enumerate(template_names, start=1)}
-    id_to_name["0"] = constants.Templates.Kind.BLANK.value
-
+    id_to_name = {str(idx): f"{template.name} ({template.deploy_url}) - {template.description}" for idx, template in enumerate(templates)}
     for id in range(len(id_to_name)):
         console.print(f"({id}) {id_to_name[str(id)]}")
 
@@ -1052,7 +1058,7 @@ def prompt_for_template(template_names: list[str]) -> str:
     )
 
     # Return the template.
-    return id_to_name[template]
+    return templates[int(template)]
 
 
 def should_show_rx_chakra_migration_instructions() -> bool:
@@ -1207,7 +1213,7 @@ def migrate_to_reflex():
                 print(line, end="")
 
 
-def fetch_app_templates() -> dict[str, str] | None:
+def fetch_app_templates() -> list[Template] | None:
     """Fetch the list of app templates from the Reflex backend server.
 
     Returns:
@@ -1224,7 +1230,18 @@ def fetch_app_templates() -> dict[str, str] | None:
             f"{config.cp_backend_url}{constants.Templates.APP_TEMPLATES_ROUTE}"
         )
         response.raise_for_status()
-        return {template["name"]: template["url"] for template in response.json()}
+        print(response.json())
+        # TODO: remove this logic.
+        response = [
+            {
+                "name": "blank",
+                "description": "A minimal template.",
+                "deploy_url": "https://blank-template.reflex.run",
+                "code_url": "https://github.com/reflex-dev/blank-template/archive/main.zip",
+            }
+        ]
+        return [Template.parse_obj(template) for template in response]
+        # return [Template.parse_obj(template) for template in response.json()]
     except httpx.HTTPError as ex:
         console.info(f"Failed to fetch app templates: {ex}")
         return None
@@ -1234,7 +1251,7 @@ def fetch_app_templates() -> dict[str, str] | None:
 
 
 def create_config_init_app_from_remote_template(
-    app_name: str, template: str, template_name_to_url: dict[str, str]
+    app_name: str, template: Template, template_name_to_url: dict[str, str]
 ):
     """Create new rxconfig and initialize app using a remote template.
 
@@ -1258,7 +1275,7 @@ def create_config_init_app_from_remote_template(
     zip_file_path = Path(temp_dir) / "template.zip"
     try:
         # Note: following redirects can be risky. We only allow this for reflex built templates at the moment.
-        response = httpx.get(template_name_to_url[template], follow_redirects=True)
+        response = httpx.get(template.code_url, follow_redirects=True)
         console.debug(f"Server responded download request: {response}")
         response.raise_for_status()
     except httpx.HTTPError as he:
@@ -1325,6 +1342,11 @@ def initialize_app(app_name: str, template: str | None = None):
     # Local imports to avoid circular imports.
     from reflex.utils import telemetry
 
+    # Get the available templates
+    templates = fetch_app_templates() or {}
+    if template is None:
+        template = prompt_for_template(templates)
+
     # Set up the app directory, only if the config doesn't exist.
     if not os.path.exists(constants.Config.FILE):
         # By default, use the blank template. User can also explicitly choose it.
@@ -1334,17 +1356,16 @@ def initialize_app(app_name: str, template: str | None = None):
             initialize_app_directory(app_name)
         else:
             # Fetch App templates from the backend server.
-            template_name_to_url = fetch_app_templates() or {}
-            console.debug(f"Available templates: {template_name_to_url}")
+            console.debug(f"Available templates: {templates}")
 
             # If user selects a template, it needs to exist.
-            if template not in template_name_to_url:
+            if template not in templates:
                 console.error(f"Template `{template}` not found.")
                 raise typer.Exit(1)
             create_config_init_app_from_remote_template(
                 app_name=app_name,
                 template=template,
-                template_name_to_url=template_name_to_url,
+                template_name_to_url=templates,
             )
 
         telemetry.send("init")

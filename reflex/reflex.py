@@ -79,19 +79,20 @@ def _init(
     app_name = prerequisites.validate_app_name(name)
     console.rule(f"[bold]Initializing {app_name}")
 
+    # Check prerequisites.
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
-
     prerequisites.initialize_reflex_user_directory()
-
     prerequisites.ensure_reflex_installation_id()
 
-    prerequisites.initialize_app(app_name, template)
+    # When upgrading to 0.4, show migration instructions.
+    if prerequisites.should_show_rx_chakra_migration_instructions():
+        prerequisites.show_rx_chakra_migration_instructions()
 
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
 
-    # Send the telemetry event after the .web folder is initialized.
-    # telemetry.send(telemetry_event)
+    # Initialize the app.
+    prerequisites.initialize_app(app_name, template)
 
     # Migrate Pynecone projects to Reflex.
     prerequisites.migrate_to_reflex()
