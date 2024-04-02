@@ -1235,7 +1235,6 @@ def fetch_app_templates() -> dict[str, Template]:
             f"{config.cp_backend_url}{constants.Templates.APP_TEMPLATES_ROUTE}"
         )
         response.raise_for_status()
-        print(response.json())
         # TODO: remove this logic.
         response = [
             {
@@ -1254,7 +1253,13 @@ def fetch_app_templates() -> dict[str, Template]:
                 "name": "chat",
                 "description": "A chat template.",
                 "deploy_url": "https://chat.reflex.run",
-                "code_url": "https://api.github.com/repos/reflex-dev/reflex-chat/zipball/ee5b472",
+                "code_url": "https://github.com/reflex-dev/reflex-chat/archive/main.zip",
+            },
+            {
+                "name": "sidebar",
+                "description": "A sidebar template.",
+                "deploy_url": "https://sidebar-template.reflex.run",
+                "code_url": "https://github.com/reflex-dev/sidebar-template/archive/main.zip",
             },
         ]
         return {template["name"]: Template.parse_obj(template) for template in response}
