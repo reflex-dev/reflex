@@ -90,7 +90,7 @@ def run_process_and_launch_url(run_command: list[str]):
         if process is None:
             kwargs = {}
             if constants.IS_WINDOWS:
-                kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+                kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
             process = processes.new_process(
                 run_command,
                 cwd=constants.Dirs.WEB,
