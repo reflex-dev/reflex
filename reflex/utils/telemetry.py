@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import multiprocessing
 import platform
-from datetime import datetime
+from datetime import UTC, datetime
 
 import httpx
 import psutil
@@ -98,7 +98,6 @@ def _prepare_event(event: str) -> dict:
             f"Could not get installation_id or project_hash: {installation_id}, {project_hash}"
         )
         return {}
-
     return {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
         "event": event,
@@ -111,7 +110,7 @@ def _prepare_event(event: str) -> dict:
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
         },
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 
