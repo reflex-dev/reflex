@@ -30,8 +30,8 @@ from redis import Redis as RedisSync
 from redis.asyncio import Redis
 
 import reflex
-from reflex.base import Base
 from reflex import constants, model
+from reflex.base import Base
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
@@ -40,6 +40,8 @@ CURRENTLY_INSTALLING_NODE = False
 
 
 class Template(Base):
+    """A template for a Reflex app."""
+
     name: str
     description: str
     code_url: str
@@ -1037,7 +1039,7 @@ def prompt_for_template(templates: list[Template]) -> Template:
     """Prompt the user to specify a template.
 
     Args:
-        template_names: The names of the templates to choose from.
+        templates: The templates to choose from.
 
     Returns:
         The template name the user selects.
@@ -1046,7 +1048,10 @@ def prompt_for_template(templates: list[Template]) -> Template:
     console.print("\nGet started with a template:")
 
     # Prompt the user to select a template.
-    id_to_name = {str(idx): f"{template.name} ({template.deploy_url}) - {template.description}" for idx, template in enumerate(templates)}
+    id_to_name = {
+        str(idx): f"{template.name} ({template.deploy_url}) - {template.description}"
+        for idx, template in enumerate(templates)
+    }
     for id in range(len(id_to_name)):
         console.print(f"({id}) {id_to_name[str(id)]}")
 
@@ -1238,7 +1243,19 @@ def fetch_app_templates() -> list[Template] | None:
                 "description": "A minimal template.",
                 "deploy_url": "https://blank-template.reflex.run",
                 "code_url": "https://github.com/reflex-dev/blank-template/archive/main.zip",
-            }
+            },
+            {
+                "name": "dashboard",
+                "description": "A dashboard template.",
+                "deploy_url": "https://dashboard.reflex.run",
+                "code_url": "https://github.com/reflex-dev/dashboard-template/archive/main.zip",
+            },
+            {
+                "name": "chat",
+                "description": "A chat template.",
+                "deploy_url": "https://chat.reflex.run",
+                "code_url": "https://api.github.com/repos/reflex-dev/reflex-chat/zipball/ee5b472",
+            },
         ]
         return [Template.parse_obj(template) for template in response]
         # return [Template.parse_obj(template) for template in response.json()]
@@ -1342,32 +1359,33 @@ def initialize_app(app_name: str, template: str | None = None):
     # Local imports to avoid circular imports.
     from reflex.utils import telemetry
 
+    # Check if the app is already initialized.
+    if os.path.exists(constants.Config.FILE):
+        telemetry.send("reinit")
+        return
+
     # Get the available templates
     templates = fetch_app_templates() or {}
     if template is None:
         template = prompt_for_template(templates)
 
-    # Set up the app directory, only if the config doesn't exist.
-    if not os.path.exists(constants.Config.FILE):
-        # By default, use the blank template. User can also explicitly choose it.
-        if template is None or template == constants.Templates.Kind.BLANK.value:
-            # Default app creation behavior: a blank app.
-            create_config(app_name)
-            initialize_app_directory(app_name)
-        else:
-            # Fetch App templates from the backend server.
-            console.debug(f"Available templates: {templates}")
-
-            # If user selects a template, it needs to exist.
-            if template not in templates:
-                console.error(f"Template `{template}` not found.")
-                raise typer.Exit(1)
-            create_config_init_app_from_remote_template(
-                app_name=app_name,
-                template=template,
-                template_name_to_url=templates,
-            )
-
-        telemetry.send("init")
+    # By default, use the blank template. User can also explicitly choose it.
+    if template is None or template == constants.Templates.Kind.BLANK.value:
+        # Default app creation behavior: a blank app.
+        create_config(app_name)
+        initialize_app_directory(app_name)
     else:
-        telemetry.send("reinit")
+        # Fetch App templates from the backend server.
+        console.debug(f"Available templates: {templates}")
+
+        # If user selects a template, it needs to exist.
+        if template not in templates:
+            console.error(f"Template `{template}` not found.")
+            raise typer.Exit(1)
+        create_config_init_app_from_remote_template(
+            app_name=app_name,
+            template=template,
+            template_name_to_url=templates,
+        )
+
+    telemetry.send("init")

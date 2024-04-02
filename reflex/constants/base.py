@@ -10,8 +10,6 @@ from types import SimpleNamespace
 
 from platformdirs import PlatformDirs
 
-from reflex.base import Base
-
 IS_WINDOWS = platform.system() == "Windows"
 
 
@@ -111,6 +109,7 @@ class Templates(SimpleNamespace):
         JINJA_TEMPLATE = os.path.join(BASE, "jinja")
         # Where the code for the templates is stored.
         CODE = "code"
+
 
 class Next(SimpleNamespace):
     """Constants related to NextJS."""
