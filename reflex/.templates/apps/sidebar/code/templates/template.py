@@ -86,7 +86,6 @@ def template(
     Args:
         route: The route to reach the page.
         title: The title of the page.
-        icon: The of the sidebar.
         description: The description of the page.
         meta: Additionnal meta to add to the page.
         on_load: The event handler(s) called when the page load.

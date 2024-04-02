@@ -63,7 +63,6 @@ def sidebar_item(text: str, url: str) -> rx.Component:
 
     Args:
         text: The text of the item.
-        icon: The icon of the item.
         url: The URL of the item.
 
     Returns:
