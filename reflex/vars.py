@@ -200,7 +200,7 @@ class VarData(Base):
                 lib: [import_var.dict() for import_var in import_vars]
                 for lib, import_vars in self.imports.items()
             },
-            "hooks": list(self.hooks.keys()),
+            "hooks": self.hooks,
         }
 
 
