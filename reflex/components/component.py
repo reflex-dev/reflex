@@ -100,7 +100,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_imports(self) -> imports.ImportDict:
+    def _get_all_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
 
         Returns:
@@ -1061,7 +1061,7 @@ class Component(BaseComponent, ABC):
             *var_imports,
         )
 
-    def get_imports(self, collapse: bool = False) -> imports.ImportDict:
+    def _get_all_imports(self, collapse: bool = False) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component and its children.
 
         Args:
@@ -1071,7 +1071,7 @@ class Component(BaseComponent, ABC):
             The import dict with the required imports.
         """
         _imports = imports.merge_imports(
-            self._get_imports(), *[child.get_imports() for child in self.children]
+            self._get_imports(), *[child._get_all_imports() for child in self.children]
         )
         return imports.collapse_imports(_imports) if collapse else _imports
 
@@ -1377,7 +1377,7 @@ class CustomComponent(Component):
                     self.component_props[key] = value
                     value = base_value._replace(
                         merge_var_data=VarData(  # type: ignore
-                            imports=value.get_imports(),
+                            imports=value._get_all_imports(),
                             hooks=value.get_hooks(),
                         )
                     )
@@ -1878,7 +1878,7 @@ class StatefulComponent(BaseComponent):
         """
         return set()
 
-    def get_imports(self) -> imports.ImportDict:
+    def _get_all_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
 
         Returns:
@@ -1890,7 +1890,7 @@ class StatefulComponent(BaseComponent):
                     ImportVar(tag=self.tag)
                 ]
             }
-        return self.component.get_imports()
+        return self.component._get_all_imports()
 
     def get_dynamic_imports(self) -> set[str]:
         """Get dynamic imports for the component.
