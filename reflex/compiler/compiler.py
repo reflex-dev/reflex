@@ -119,7 +119,7 @@ def _compile_page(
         imports=imports,
         dynamic_imports=component.get_dynamic_imports(),
         custom_codes=component.get_custom_code(),
-        hooks=component.get_hooks_internal() | component.get_hooks(),
+        hooks={**component.get_hooks_internal(), **component.get_hooks()},
         render=component.render(),
         **kwargs,
     )
