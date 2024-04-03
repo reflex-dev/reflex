@@ -596,7 +596,7 @@ def test_get_hooks_nested2(component3, component4):
         component3: component with hooks defined.
         component4: component with different hooks defined.
     """
-    exp_hooks = component3().get_hooks() | component4().get_hooks()
+    exp_hooks = {**component3().get_hooks(), **component4().get_hooks()}
     assert component3.create(component4.create()).get_hooks() == exp_hooks
     assert component4.create(component3.create()).get_hooks() == exp_hooks
     assert (
