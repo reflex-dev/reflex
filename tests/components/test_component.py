@@ -263,8 +263,8 @@ def test_add_style(component1, component2):
         component1: Style({"color": "white"}),
         component2: Style({"color": "black"}),
     }
-    c1 = component1().add_style(style)  # type: ignore
-    c2 = component2().add_style(style)  # type: ignore
+    c1 = component1().add_style_recursive(style)  # type: ignore
+    c2 = component2().add_style_recursive(style)  # type: ignore
     assert c1.style["color"] == "white"
     assert c2.style["color"] == "black"
 
@@ -280,8 +280,8 @@ def test_add_style_create(component1, component2):
         component1.create: Style({"color": "white"}),
         component2.create: Style({"color": "black"}),
     }
-    c1 = component1().add_style(style)  # type: ignore
-    c2 = component2().add_style(style)  # type: ignore
+    c1 = component1().add_style_recursive(style)  # type: ignore
+    c2 = component2().add_style_recursive(style)  # type: ignore
     assert c1.style["color"] == "white"
     assert c2.style["color"] == "black"
 
