@@ -502,7 +502,7 @@ def test_create_custom_component(my_component):
     component = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
     assert component.tag == "MyComponent"
     assert component.get_props() == set()
-    assert component.get_custom_components() == {component}
+    assert component._get_all_custom_components() == {component}
 
 
 def test_custom_component_hash(my_component):
@@ -1332,7 +1332,7 @@ def test_custom_component_get_imports():
     assert "inner" not in custom_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
-    _, _, imports_inner = compile_components(custom_comp.get_custom_components())
+    _, _, imports_inner = compile_components(custom_comp._get_all_custom_components())
     assert "inner" in imports_inner
 
     outer_comp = outer(c=wrapper())
@@ -1342,7 +1342,7 @@ def test_custom_component_get_imports():
     assert "other" not in outer_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
-    _, _, imports_outer = compile_components(outer_comp.get_custom_components())
+    _, _, imports_outer = compile_components(outer_comp._get_all_custom_components())
     assert "inner" in imports_outer
     assert "other" in imports_outer
 

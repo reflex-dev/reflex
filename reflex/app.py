@@ -810,7 +810,7 @@ class App(Base):
             app_wrappers.update(component.get_app_wrap_components())
 
             # Add the custom components from the page to the set.
-            custom_components |= component.get_custom_components()
+            custom_components |= component._get_all_custom_components()
 
         progress.advance(task)
 

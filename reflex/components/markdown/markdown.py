@@ -133,7 +133,7 @@ class Markdown(Component):
             **props,
         )
 
-    def get_custom_components(
+    def _get_all_custom_components(
         self, seen: set[str] | None = None
     ) -> set[CustomComponent]:
         """Get all the custom components used by the component.
@@ -144,11 +144,13 @@ class Markdown(Component):
         Returns:
             The set of custom components.
         """
-        custom_components = super().get_custom_components(seen=seen)
+        custom_components = super()._get_all_custom_components(seen=seen)
 
         # Get the custom components for each tag.
         for component in self.component_map.values():
-            custom_components |= component(_MOCK_ARG).get_custom_components(seen=seen)
+            custom_components |= component(_MOCK_ARG)._get_all_custom_components(
+                seen=seen
+            )
 
         return custom_components
 

@@ -1247,7 +1247,7 @@ class Component(BaseComponent, ABC):
             refs |= child.get_refs()
         return refs
 
-    def get_custom_components(
+    def _get_all_custom_components(
         self, seen: set[str] | None = None
     ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
@@ -1267,7 +1267,7 @@ class Component(BaseComponent, ABC):
             # Skip BaseComponent and StatefulComponent children.
             if not isinstance(child, Component):
                 continue
-            custom_components |= child.get_custom_components(seen=seen)
+            custom_components |= child._get_all_custom_components(seen=seen)
         return custom_components
 
     @property
@@ -1417,7 +1417,7 @@ class CustomComponent(Component):
         """
         return set()
 
-    def get_custom_components(
+    def _get_all_custom_components(
         self, seen: set[str] | None = None
     ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
@@ -1433,12 +1433,12 @@ class CustomComponent(Component):
         # Store the seen components in a set to avoid infinite recursion.
         if seen is None:
             seen = set()
-        custom_components = {self} | super().get_custom_components(seen=seen)
+        custom_components = {self} | super()._get_all_custom_components(seen=seen)
 
         # Avoid adding the same component twice.
         if self.tag not in seen:
             seen.add(self.tag)
-            custom_components |= self.get_component(self).get_custom_components(
+            custom_components |= self.get_component(self)._get_all_custom_components(
                 seen=seen
             )
 
@@ -1450,7 +1450,9 @@ class CustomComponent(Component):
                 seen.add(child_component.tag)
                 if isinstance(child_component, CustomComponent):
                     custom_components |= {child_component}
-                custom_components |= child_component.get_custom_components(seen=seen)
+                custom_components |= child_component._get_all_custom_components(
+                    seen=seen
+                )
         return custom_components
 
     def _render(self) -> Tag:
