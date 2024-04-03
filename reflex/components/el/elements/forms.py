@@ -210,7 +210,7 @@ class Form(BaseHTML):
     def _get_form_refs(self) -> Dict[str, Any]:
         # Send all the input refs to the handler.
         form_refs = {}
-        for ref in self.get_refs():
+        for ref in self._get_all_refs():
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):

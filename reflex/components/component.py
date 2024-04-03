@@ -124,7 +124,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_refs(self) -> set[str]:
+    def _get_all_refs(self) -> set[str]:
         """Get the refs for the children of the component.
 
         Returns:
@@ -1233,7 +1233,7 @@ class Component(BaseComponent, ABC):
             return None
         return format.format_ref(self.id)
 
-    def get_refs(self) -> Set[str]:
+    def _get_all_refs(self) -> Set[str]:
         """Get the refs for the children of the component.
 
         Returns:
@@ -1244,7 +1244,7 @@ class Component(BaseComponent, ABC):
         if ref is not None:
             refs.add(ref)
         for child in self.children:
-            refs |= child.get_refs()
+            refs |= child._get_all_refs()
         return refs
 
     def _get_all_custom_components(
@@ -1914,7 +1914,7 @@ class StatefulComponent(BaseComponent):
             return set()
         return self.component._get_all_custom_code().union({self.code})
 
-    def get_refs(self) -> set[str]:
+    def _get_all_refs(self) -> set[str]:
         """Get the refs for the children of the component.
 
         Returns:
@@ -1922,7 +1922,7 @@ class StatefulComponent(BaseComponent):
         """
         if self.rendered_as_shared:
             return set()
-        return self.component.get_refs()
+        return self.component._get_all_refs()
 
     def render(self) -> dict:
         """Define how to render the component in React.
