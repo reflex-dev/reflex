@@ -126,13 +126,13 @@ class PinInput(ChakraComponent):
                 )
             return super()._get_ref_hook()
 
-    def _render_tag(self) -> Tag:
-        """Override the base _render_tag to remove the fake get_ref.
+    def _render(self) -> Tag:
+        """Override the base _render to remove the fake get_ref.
 
         Returns:
             The rendered component.
         """
-        return super()._render_tag().remove_props("ref")
+        return super()._render().remove_props("ref")
 
     @classmethod
     def create(cls, *children, **props) -> Component:

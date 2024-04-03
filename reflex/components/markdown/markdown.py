@@ -309,10 +309,10 @@ class Markdown(Component):
         }}
         """
 
-    def _render_tag(self) -> Tag:
+    def _render(self) -> Tag:
         tag = (
             super()
-            ._render_tag()
+            ._render()
             .add_props(
                 remark_plugins=_REMARK_PLUGINS,
                 rehype_plugins=_REHYPE_PLUGINS,

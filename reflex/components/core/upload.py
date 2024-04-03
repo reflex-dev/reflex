@@ -1,5 +1,4 @@
 """A file upload component."""
-
 from __future__ import annotations
 
 import os
@@ -287,8 +286,8 @@ class Upload(MemoizationLeaf):
             return (arg_value[0], placeholder)
         return arg_value
 
-    def _render_tag(self):
-        out = super()._render_tag()
+    def _render(self):
+        out = super()._render()
         out.args = ("getRootProps", "getInputProps")
         return out
 

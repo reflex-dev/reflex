@@ -1,5 +1,4 @@
 """Wrapper around react-debounce-input."""
-
 from __future__ import annotations
 
 from typing import Any, Type
@@ -131,5 +130,5 @@ class DebounceInput(Component):
             EventTriggers.ON_CHANGE: lambda e0: [e0.value],
         }
 
-    def _render_tag(self):
-        return super()._render_tag().remove_props("ref")
+    def _render(self):
+        return super()._render().remove_props("ref")

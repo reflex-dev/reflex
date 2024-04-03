@@ -529,7 +529,7 @@ class Component(BaseComponent, ABC):
         """
         return []
 
-    def _render_tag(self, props: dict[str, Any] | None = None) -> Tag:
+    def _render(self, props: dict[str, Any] | None = None) -> Tag:
         """Define how to render the component in React.
 
         Args:
@@ -725,7 +725,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The dictionary for template of component.
         """
-        tag = self._render_tag()
+        tag = self._render()
         rendered_dict = dict(
             tag.set(
                 children=[child.render() for child in self.children],
@@ -1455,13 +1455,13 @@ class CustomComponent(Component):
                 )
         return custom_components
 
-    def _render_tag(self) -> Tag:
+    def _render(self) -> Tag:
         """Define how to render the component in React.
 
         Returns:
             The tag to render.
         """
-        return super()._render_tag(props=self.props)
+        return super()._render(props=self.props)
 
     def get_prop_vars(self) -> List[BaseVar]:
         """Get the prop vars.

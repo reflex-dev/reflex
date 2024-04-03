@@ -1,5 +1,4 @@
 """A code component."""
-
 import re
 from typing import Dict, Literal, Optional, Union
 
@@ -494,8 +493,8 @@ class CodeBlock(Component):
     def _add_style(self, style):
         self.custom_style.update(style)  # type: ignore
 
-    def _render_tag(self):
-        out = super()._render_tag()
+    def _render(self):
+        out = super()._render()
         predicate, qmark, value = self.theme._var_name.partition("?")
         out.add_props(
             style=Var.create(

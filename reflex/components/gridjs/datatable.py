@@ -108,7 +108,7 @@ class DataTable(Gridjs):
             {"": {imports.ImportVar(tag="gridjs/dist/theme/mermaid.css")}},
         )
 
-    def _render_tag(self) -> Tag:
+    def _render(self) -> Tag:
         if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
             self.columns = BaseVar(
                 _var_name=f"{self.data._var_name}.columns",
@@ -128,4 +128,4 @@ class DataTable(Gridjs):
             self.data = Var.create_safe(data["data"])
 
         # Render the table.
-        return super()._render_tag()
+        return super()._render()

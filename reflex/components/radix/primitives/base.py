@@ -1,5 +1,4 @@
 """The base component for Radix primitives."""
-
 from typing import List
 
 from reflex.components.component import Component
@@ -20,10 +19,10 @@ class RadixPrimitiveComponent(Component):
 class RadixPrimitiveComponentWithClassName(RadixPrimitiveComponent):
     """Basic component for radix Primitives with a class name prop."""
 
-    def _render_tag(self) -> Tag:
+    def _render(self) -> Tag:
         return (
             super()
-            ._render_tag()
+            ._render()
             .add_props(
                 **{
                     "class_name": format.to_title_case(self.tag or ""),

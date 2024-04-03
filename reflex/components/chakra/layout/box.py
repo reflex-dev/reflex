@@ -19,10 +19,10 @@ class Box(ChakraComponent):
     # The alt text of the content.
     alt: Var[str]
 
-    def _render_tag(self) -> Tag:
+    def _render(self) -> Tag:
         return (
             super()
-            ._render_tag()
+            ._render()
             .add_props(
                 **{
                     "as": self.element,

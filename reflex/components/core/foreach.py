@@ -1,5 +1,4 @@
 """Create a list of components from an iterable."""
-
 from __future__ import annotations
 
 import inspect
@@ -62,11 +61,11 @@ class Foreach(Component):
         )
         # Keep a ref to a rendered component to determine correct imports.
         component.children = [
-            component._render_tag(props=dict(index_var_name="i")).render_component()
+            component._render(props=dict(index_var_name="i")).render_component()
         ]
         return component
 
-    def _render_tag(self, props: dict[str, Any] | None = None) -> IterTag:
+    def _render(self, props: dict[str, Any] | None = None) -> IterTag:
         props = {} if props is None else props.copy()
 
         # Determine the arg var name based on the params accepted by render_fn.
@@ -95,7 +94,7 @@ class Foreach(Component):
         Returns:
             The dictionary for template of component.
         """
-        tag = self._render_tag()
+        tag = self._render()
         component = tag.render_component()
 
         # Apply the theme to the children.

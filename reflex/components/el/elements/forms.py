@@ -194,8 +194,8 @@ class Form(BaseHTML):
             reset_on_submit=self.reset_on_submit,
         )
 
-    def _render_tag(self) -> Tag:
-        render_tag = super()._render_tag()
+    def _render(self) -> Tag:
+        render_tag = super()._render()
         if EventTriggers.ON_SUBMIT in self.event_triggers:
             render_tag.add_props(
                 **{
@@ -608,8 +608,8 @@ class Textarea(BaseHTML):
             custom_code.add(ENTER_KEY_SUBMIT_JS)
         return custom_code
 
-    def _render_tag(self) -> Tag:
-        tag = super()._render_tag()
+    def _render(self) -> Tag:
+        tag = super()._render()
         if self.enter_key_submit is not None:
             if "on_key_down" in self.event_triggers:
                 raise ValueError(
