@@ -183,7 +183,9 @@ class Markdown(Component):
 
         # Get the imports for each component.
         for component in self.component_map.values():
-            imports = utils.merge_imports(imports, component(_MOCK_ARG).get_imports())
+            imports = utils.merge_imports(
+                imports, component(_MOCK_ARG)._get_all_imports()
+            )
 
         # Get the imports for the code components.
         imports = utils.merge_imports(
