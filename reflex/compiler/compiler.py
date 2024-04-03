@@ -50,7 +50,7 @@ def _compile_app(app_root: Component) -> str:
     return templates.APP_ROOT.render(
         imports=utils.compile_imports(app_root.get_imports()),
         custom_codes=app_root.get_custom_code(),
-        hooks=app_root.get_hooks_internal() | app_root.get_hooks(),
+        hooks={**app_root.get_hooks_internal(), **app_root.get_hooks()},
         render=app_root.render(),
     )
 
