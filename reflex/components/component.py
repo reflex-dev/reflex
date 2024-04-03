@@ -76,14 +76,6 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_ref_hooks(self) -> dict[str, None]:
-        """Get the hooks required by refs in this component.
-
-        Returns:
-            The hooks for the refs.
-        """
-
-    @abstractmethod
     def get_hooks_internal(self) -> dict[str, None]:
         """Get the reflex internal hooks for the component and its children.
 
@@ -1143,14 +1135,18 @@ class Component(BaseComponent, ABC):
         framework functionality.
 
         Returns:
-            Set of internally managed hooks.
+            The internally managed hooks.
         """
-        return (
-            self._get_vars_hooks()
-            | self._get_events_hooks()
-            | self._get_special_hooks()
-            | {hook: None for hook in [self._get_mount_lifecycle_hook()] if hook}
-        )
+        return {
+            **{
+                hook: None
+                for hook in [self._get_ref_hook(), self._get_mount_lifecycle_hook()]
+                if hook is not None
+            },
+            **self._get_vars_hooks(),
+            **self._get_events_hooks(),
+            **self._get_special_hooks(),
+        }
 
     def _get_hooks(self) -> str | None:
         """Get the React hooks for this component.
@@ -1161,19 +1157,6 @@ class Component(BaseComponent, ABC):
             The hooks for just this component.
         """
         return
-
-    def get_ref_hooks(self) -> dict[str, None]:
-        """Get the ref hooks for the component and its children.
-
-        Returns:
-            The ref hooks.
-        """
-        ref_hook = self._get_ref_hook()
-        hooks = {} if ref_hook is None else {ref_hook: None}
-
-        for child in self.children:
-            hooks |= child.get_ref_hooks()
-        return hooks
 
     def get_hooks_internal(self) -> dict[str, None]:
         """Get the reflex internal hooks for the component and its children.
@@ -1186,7 +1169,7 @@ class Component(BaseComponent, ABC):
 
         # Add the hook code for the children.
         for child in self.children:
-            code |= child.get_hooks_internal()
+            code = {**code, **child.get_hooks_internal()}
 
         return code
 
@@ -1205,7 +1188,7 @@ class Component(BaseComponent, ABC):
 
         # Add the hook code for the children.
         for child in self.children:
-            code |= child.get_hooks()
+            code = {**code, **child.get_hooks()}
 
         return code
 
@@ -1840,14 +1823,6 @@ class StatefulComponent(BaseComponent):
                 f"const {memo_name} = useCallback({rendered_chain}, [{', '.join(var_deps)}])",
             )
         return trigger_memo
-
-    def get_ref_hooks(self) -> dict[str, None]:
-        """Get the ref hooks for the component and its children.
-
-        Returns:
-            The ref hooks.
-        """
-        return {}
 
     def get_hooks_internal(self) -> dict[str, None]:
         """Get the reflex internal hooks for the component and its children.
