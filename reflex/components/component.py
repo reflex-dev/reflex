@@ -108,7 +108,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_dynamic_imports(self) -> set[str]:
+    def _get_all_dynamic_imports(self) -> set[str]:
         """Get dynamic imports for the component.
 
         Returns:
@@ -958,7 +958,7 @@ class Component(BaseComponent, ABC):
         """
         return None
 
-    def get_dynamic_imports(self) -> Set[str]:
+    def _get_all_dynamic_imports(self) -> Set[str]:
         """Get dynamic imports for the component and its children.
 
         Returns:
@@ -974,11 +974,11 @@ class Component(BaseComponent, ABC):
 
         # Get the dynamic imports from children
         for child in self.children:
-            dynamic_imports |= child.get_dynamic_imports()
+            dynamic_imports |= child._get_all_dynamic_imports()
 
         for prop in self.get_component_props():
             if getattr(self, prop) is not None:
-                dynamic_imports |= getattr(self, prop).get_dynamic_imports()
+                dynamic_imports |= getattr(self, prop)._get_all_dynamic_imports()
 
         # Return the dynamic imports
         return dynamic_imports
@@ -1892,7 +1892,7 @@ class StatefulComponent(BaseComponent):
             }
         return self.component._get_all_imports()
 
-    def get_dynamic_imports(self) -> set[str]:
+    def _get_all_dynamic_imports(self) -> set[str]:
         """Get dynamic imports for the component.
 
         Returns:
@@ -1900,7 +1900,7 @@ class StatefulComponent(BaseComponent):
         """
         if self.rendered_as_shared:
             return set()
-        return self.component.get_dynamic_imports()
+        return self.component._get_all_dynamic_imports()
 
     def _get_all_custom_code(self) -> set[str]:
         """Get custom code for the component.

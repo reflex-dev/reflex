@@ -117,7 +117,7 @@ def _compile_page(
 
     return templates.PAGE.render(
         imports=imports,
-        dynamic_imports=component.get_dynamic_imports(),
+        dynamic_imports=component._get_all_dynamic_imports(),
         custom_codes=component._get_all_custom_code(),
         ref_hooks=component.get_ref_hooks(),
         hooks=component._get_all_hooks_internal() | component._get_all_hooks(),
