@@ -1,4 +1,5 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+
 from __future__ import annotations
 
 from hashlib import md5
@@ -162,7 +163,7 @@ class Form(BaseHTML):
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
         form.handle_submit_unique_name = md5(
-            str(form.get_hooks_internal().union(form.get_hooks())).encode("utf-8")
+            str(form.get_hooks_internal() | form.get_hooks()).encode("utf-8")
         ).hexdigest()
         return form
 

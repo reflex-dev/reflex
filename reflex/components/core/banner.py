@@ -22,7 +22,7 @@ from reflex.vars import Var, VarData
 
 connect_error_var_data: VarData = VarData(  # type: ignore
     imports=Imports.EVENTS,
-    hooks={Hooks.EVENTS},
+    hooks={Hooks.EVENTS: None},
 )
 
 connection_error: Var = Var.create_safe(
