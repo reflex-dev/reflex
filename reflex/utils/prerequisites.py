@@ -1350,7 +1350,7 @@ def initialize_app(app_name: str, template: str | None = None):
     # Prompt for a template if not provided.
     if template is None and len(templates) > 0:
         template = prompt_for_template(list(templates.values()))
-    else:
+    elif template is None:
         template = constants.Templates.DEFAULT
     assert template is not None
 
