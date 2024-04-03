@@ -1291,7 +1291,7 @@ class Component(BaseComponent, ABC):
         """
         return {}
 
-    def get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    def _get_all_app_wrap_components(self) -> dict[tuple[int, str], Component]:
         """Get the app wrap components for the component and its children.
 
         Returns:
@@ -1301,14 +1301,14 @@ class Component(BaseComponent, ABC):
         components = self._get_app_wrap_components()
 
         for component in tuple(components.values()):
-            components.update(component.get_app_wrap_components())
+            components.update(component._get_all_app_wrap_components())
 
         # Add the app wrap components for the children.
         for child in self.children:
             # Skip BaseComponent and StatefulComponent children.
             if not isinstance(child, Component):
                 continue
-            components.update(child.get_app_wrap_components())
+            components.update(child._get_all_app_wrap_components())
 
         # Return the components.
         return components

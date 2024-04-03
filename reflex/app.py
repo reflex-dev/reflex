@@ -661,7 +661,7 @@ class App(Base):
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):
-            app_wrappers.update(component.get_app_wrap_components())
+            app_wrappers.update(component._get_all_app_wrap_components())
         order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
         root = parent = copy.deepcopy(app_wrappers[order[0]])
         for key in order[1:]:
@@ -807,7 +807,7 @@ class App(Base):
             all_imports.update(component._get_all_imports())
 
             # Add the app wrappers from this component.
-            app_wrappers.update(component.get_app_wrap_components())
+            app_wrappers.update(component._get_all_app_wrap_components())
 
             # Add the custom components from the page to the set.
             custom_components |= component._get_all_custom_components()
