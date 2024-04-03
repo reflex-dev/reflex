@@ -84,7 +84,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_hooks_internal(self) -> set[str]:
+    def _get_all_hooks_internal(self) -> set[str]:
         """Get the reflex internal hooks for the component and its children.
 
         Returns:
@@ -1188,7 +1188,7 @@ class Component(BaseComponent, ABC):
             hooks |= child.get_ref_hooks()
         return hooks
 
-    def get_hooks_internal(self) -> set[str]:
+    def _get_all_hooks_internal(self) -> set[str]:
         """Get the reflex internal hooks for the component and its children.
 
         Returns:
@@ -1199,7 +1199,7 @@ class Component(BaseComponent, ABC):
 
         # Add the hook code for the children.
         for child in self.children:
-            code |= child.get_hooks_internal()
+            code |= child._get_all_hooks_internal()
 
         return code
 
@@ -1862,7 +1862,7 @@ class StatefulComponent(BaseComponent):
         """
         return set()
 
-    def get_hooks_internal(self) -> set[str]:
+    def _get_all_hooks_internal(self) -> set[str]:
         """Get the reflex internal hooks for the component and its children.
 
         Returns:
@@ -1978,7 +1978,7 @@ class MemoizationLeaf(Component):
             The memoization leaf
         """
         comp = super().create(*children, **props)
-        if comp._get_all_hooks() or comp.get_hooks_internal():
+        if comp._get_all_hooks() or comp._get_all_hooks_internal():
             comp._memoization_mode = cls._memoization_mode.copy(
                 update={"disposition": MemoizationDisposition.ALWAYS}
             )

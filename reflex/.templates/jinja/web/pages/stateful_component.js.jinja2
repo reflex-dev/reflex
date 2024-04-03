@@ -5,7 +5,7 @@ export function {{tag_name}} () {
   {{ ref_hook }}
   {% endfor %}
 
-  {% for hook in component.get_hooks_internal() %}
+  {% for hook in component._get_all_hooks_internal() %}
   {{ hook }}
   {% endfor %}
 

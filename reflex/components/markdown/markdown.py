@@ -295,7 +295,7 @@ class Markdown(Component):
         hooks = set()
         for _component in self.component_map.values():
             comp = _component(_MOCK_ARG)
-            hooks |= comp.get_hooks_internal()
+            hooks |= comp._get_all_hooks_internal()
             hooks |= comp._get_all_hooks()
         formatted_hooks = "\n".join(hooks)
         return f"""
