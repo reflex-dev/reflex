@@ -92,7 +92,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_hooks(self) -> set[str]:
+    def _get_all_hooks(self) -> set[str]:
         """Get the React hooks for this component.
 
         Returns:
@@ -1203,7 +1203,7 @@ class Component(BaseComponent, ABC):
 
         return code
 
-    def get_hooks(self) -> Set[str]:
+    def _get_all_hooks(self) -> Set[str]:
         """Get the React hooks for this component and its children.
 
         Returns:
@@ -1218,7 +1218,7 @@ class Component(BaseComponent, ABC):
 
         # Add the hook code for the children.
         for child in self.children:
-            code |= child.get_hooks()
+            code |= child._get_all_hooks()
 
         return code
 
@@ -1378,7 +1378,7 @@ class CustomComponent(Component):
                     value = base_value._replace(
                         merge_var_data=VarData(  # type: ignore
                             imports=value._get_all_imports(),
-                            hooks=value.get_hooks(),
+                            hooks=value._get_all_hooks(),
                         )
                     )
                 else:
@@ -1870,7 +1870,7 @@ class StatefulComponent(BaseComponent):
         """
         return set()
 
-    def get_hooks(self) -> set[str]:
+    def _get_all_hooks(self) -> set[str]:
         """Get the React hooks for this component.
 
         Returns:
@@ -1978,7 +1978,7 @@ class MemoizationLeaf(Component):
             The memoization leaf
         """
         comp = super().create(*children, **props)
-        if comp.get_hooks() or comp.get_hooks_internal():
+        if comp._get_all_hooks() or comp.get_hooks_internal():
             comp._memoization_mode = cls._memoization_mode.copy(
                 update={"disposition": MemoizationDisposition.ALWAYS}
             )

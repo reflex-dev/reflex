@@ -586,7 +586,7 @@ def test_get_hooks_nested(component1, component2, component3):
         text="a",
         number=1,
     )
-    assert c.get_hooks() == component3().get_hooks()
+    assert c._get_all_hooks() == component3()._get_all_hooks()
 
 
 def test_get_hooks_nested2(component3, component4):
@@ -596,15 +596,15 @@ def test_get_hooks_nested2(component3, component4):
         component3: component with hooks defined.
         component4: component with different hooks defined.
     """
-    exp_hooks = component3().get_hooks().union(component4().get_hooks())
-    assert component3.create(component4.create()).get_hooks() == exp_hooks
-    assert component4.create(component3.create()).get_hooks() == exp_hooks
+    exp_hooks = component3()._get_all_hooks().union(component4()._get_all_hooks())
+    assert component3.create(component4.create())._get_all_hooks() == exp_hooks
+    assert component4.create(component3.create())._get_all_hooks() == exp_hooks
     assert (
         component4.create(
             component3.create(),
             component4.create(),
             component3.create(),
-        ).get_hooks()
+        )._get_all_hooks()
         == exp_hooks
     )
 
