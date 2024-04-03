@@ -49,7 +49,7 @@ def _compile_app(app_root: Component) -> str:
     """
     return templates.APP_ROOT.render(
         imports=utils.compile_imports(app_root._get_all_imports()),
-        custom_codes=app_root.get_custom_code(),
+        custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks_internal() | app_root._get_all_hooks(),
         render=app_root.render(),
     )
@@ -118,7 +118,7 @@ def _compile_page(
     return templates.PAGE.render(
         imports=imports,
         dynamic_imports=component.get_dynamic_imports(),
-        custom_codes=component.get_custom_code(),
+        custom_codes=component._get_all_custom_code(),
         ref_hooks=component.get_ref_hooks(),
         hooks=component._get_all_hooks_internal() | component._get_all_hooks(),
         render=component.render(),
@@ -265,7 +265,7 @@ def _compile_stateful_components(
             component.rendered_as_shared = False
 
             rendered_components.update(
-                {code: None for code in component.get_custom_code()},
+                {code: None for code in component._get_all_custom_code()},
             )
             all_import_dicts.append(component._get_all_imports())
 

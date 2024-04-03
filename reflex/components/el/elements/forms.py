@@ -595,13 +595,13 @@ class Textarea(BaseHTML):
             "enter_key_submit",
         ]
 
-    def get_custom_code(self) -> Set[str]:
+    def _get_all_custom_code(self) -> Set[str]:
         """Include the custom code for auto_height and enter_key_submit functionality.
 
         Returns:
             The custom code for the component.
         """
-        custom_code = super().get_custom_code()
+        custom_code = super()._get_all_custom_code()
         if self.auto_height is not None:
             custom_code.add(AUTO_HEIGHT_JS)
         if self.enter_key_submit is not None:

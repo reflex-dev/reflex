@@ -116,7 +116,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_custom_code(self) -> set[str]:
+    def _get_all_custom_code(self) -> set[str]:
         """Get custom code for the component.
 
         Returns:
@@ -929,7 +929,7 @@ class Component(BaseComponent, ABC):
         """
         return None
 
-    def get_custom_code(self) -> Set[str]:
+    def _get_all_custom_code(self) -> Set[str]:
         """Get custom code for the component and its children.
 
         Returns:
@@ -945,7 +945,7 @@ class Component(BaseComponent, ABC):
 
         # Add the custom code for the children.
         for child in self.children:
-            code |= child.get_custom_code()
+            code |= child._get_all_custom_code()
 
         # Return the code.
         return code
@@ -1902,7 +1902,7 @@ class StatefulComponent(BaseComponent):
             return set()
         return self.component.get_dynamic_imports()
 
-    def get_custom_code(self) -> set[str]:
+    def _get_all_custom_code(self) -> set[str]:
         """Get custom code for the component.
 
         Returns:
@@ -1910,7 +1910,7 @@ class StatefulComponent(BaseComponent):
         """
         if self.rendered_as_shared:
             return set()
-        return self.component.get_custom_code().union({self.code})
+        return self.component._get_all_custom_code().union({self.code})
 
     def get_refs(self) -> set[str]:
         """Get the refs for the children of the component.

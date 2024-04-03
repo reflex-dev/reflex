@@ -266,7 +266,7 @@ def compile_custom_component(
             "props": props,
             "render": render.render(),
             "hooks": render._get_all_hooks_internal() | render._get_all_hooks(),
-            "custom_code": render.get_custom_code(),
+            "custom_code": render._get_all_custom_code(),
         },
         imports,
     )
