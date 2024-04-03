@@ -22,9 +22,16 @@
 
 ---
 
-Reflex is a library to build web apps in pure Python. It handles both the frontend and backend, so you can focus on your app's logic. Once you build your app, you can [deploy it](https://reflex.dev/docs/hosting/deploy-quick-start/) with a single command.
+# Reflex
 
-Reflex apps compile down to a [React](https://reactjs.org/) frontend app and a [FastAPI](https://github.com/tiangolo/fastapi) backend app, that communicate over websockets. See our architecture [here](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture) for more details.
+Reflex is a library to build full-stack web apps in pure Python.
+
+Key features:
+* **Pure Python** - Write your app's frontend and backend all in Python, no need to learn Javascript.
+* **Full Flexibility** - Reflex is easy to get started with, but can also scale to complex apps.
+* **Deploy Instantly** - After building, deploy your app with a [single command](https://reflex.dev/docs/hosting/deploy-quick-start/) or host it on your own server.
+
+See our [architecture page](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture) to see how Reflex works under the hood.
 
 ## ⚙️ Installation
 
@@ -215,19 +222,11 @@ You can create a multi-page app by adding more pages.
 </div>
 
 
-
-
-
 ## ✅ Status
 
 Reflex launched in December 2022 with the name Pynecone.
 
-As of July 2023, we are in the **Public Beta** stage.
-
--   :white_check_mark: **Public Alpha**: Anyone can install and use Reflex. There may be issues, but we are working to resolve them actively.
--   :large_orange_diamond: **Public Beta**: Stable enough for non-enterprise use-cases.
--   **Public Hosting Beta**: _Optionally_, deploy and host your apps on Reflex!
--   **Public**: Reflex is production ready.
+As of February 2024, our hosting service is in alpha! During this time anyone can deploy their apps for free. See our [roadmap](https://github.com/reflex-dev/reflex/issues/2727) to see what's planned.
 
 Reflex has new releases and features coming every week! Make sure to :star: star and :eyes: watch this repository to stay up to date.
 
