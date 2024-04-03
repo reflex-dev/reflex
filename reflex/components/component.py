@@ -907,7 +907,7 @@ class Component(BaseComponent, ABC):
 
         return vars
 
-    def _has_event_triggers(self) -> bool:
+    def _has_any_event_triggers(self) -> bool:
         """Check if the component or children have any event triggers.
 
         Returns:
@@ -917,7 +917,7 @@ class Component(BaseComponent, ABC):
             return True
         else:
             for child in self.children:
-                if isinstance(child, Component) and child._has_event_triggers():
+                if isinstance(child, Component) and child._has_any_event_triggers():
                     return True
         return False
 
