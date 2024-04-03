@@ -56,7 +56,7 @@ def test_render_child_props():
             value="real",
             on_change=S.on_change,
         )
-    )._render()
+    )._render_tag()
     assert "css" in tag.props and isinstance(tag.props["css"], rx.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
@@ -76,7 +76,7 @@ def test_render_with_class_name():
             on_change=S.on_change,
             class_name="foo baz",
         )
-    )._render()
+    )._render_tag()
     assert isinstance(tag.props["className"], rx.Var)
     assert "foo baz" in str(tag.props["className"])
 
@@ -87,7 +87,7 @@ def test_render_with_ref():
             on_change=S.on_change,
             id="foo_bar",
         )
-    )._render()
+    )._render_tag()
     assert isinstance(tag.props["inputRef"], rx.Var)
     assert "foo_bar" in str(tag.props["inputRef"])
 
@@ -130,7 +130,7 @@ def test_render_child_props_recursive():
             value="outer",
         ),
         force_notify_by_enter=False,
-    )._render()
+    )._render_tag()
     assert "css" in tag.props and isinstance(tag.props["css"], rx.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
@@ -152,7 +152,7 @@ def test_full_control_implicit_debounce():
     tag = rx.input(
         value=S.value,
         on_change=S.on_change,
-    )._render()
+    )._render_tag()
     assert tag.props["debounceTimeout"]._var_name == str(DEFAULT_DEBOUNCE_TIMEOUT)
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
@@ -164,7 +164,7 @@ def test_full_control_implicit_debounce_text_area():
     tag = rx.text_area(
         value=S.value,
         on_change=S.on_change,
-    )._render()
+    )._render_tag()
     assert tag.props["debounceTimeout"]._var_name == str(DEFAULT_DEBOUNCE_TIMEOUT)
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change

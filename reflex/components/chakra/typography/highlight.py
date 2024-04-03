@@ -19,5 +19,5 @@ class Highlight(ChakraComponent):
     # Note: styles and style are different prop.
     styles: Var[Dict] = {"px": "2", "py": "1", "rounded": "full", "bg": "teal.100"}  # type: ignore
 
-    def _render(self) -> Tag:
-        return super()._render().add_props(styles=self.style)
+    def _render_tag(self) -> Tag:
+        return super()._render_tag().add_props(styles=self.style)

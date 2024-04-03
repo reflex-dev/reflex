@@ -1,4 +1,5 @@
 """Create a list of components from an iterable."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Optional, overload
@@ -68,7 +69,7 @@ class Cond(MemoizationLeaf):
         """
         return []
 
-    def _render(self) -> Tag:
+    def _render_tag(self) -> Tag:
         return CondTag(
             cond=self.cond,
             true_value=self.comp1.render(),
@@ -81,7 +82,7 @@ class Cond(MemoizationLeaf):
         Returns:
             The dictionary for template of component.
         """
-        tag = self._render()
+        tag = self._render_tag()
         return dict(
             tag.add_props(
                 **self.event_triggers,

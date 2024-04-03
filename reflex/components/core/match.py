@@ -253,7 +253,7 @@ class Match(MemoizationLeaf):
             merge_var_data=VarData.merge(*var_data),
         )
 
-    def _render(self) -> Tag:
+    def _render_tag(self) -> Tag:
         return MatchTag(
             cond=self.cond, match_cases=self.match_cases, default=self.default
         )
@@ -264,7 +264,7 @@ class Match(MemoizationLeaf):
         Returns:
             The dictionary for template of component.
         """
-        tag = self._render()
+        tag = self._render_tag()
         tag.name = "match"
         return dict(tag)
 

@@ -31,7 +31,7 @@ class Bare(Component):
             contents = str(contents) if contents is not None else ""
         return cls(contents=contents)  # type: ignore
 
-    def _render(self) -> Tag:
+    def _render_tag(self) -> Tag:
         return Tagless(contents=str(self.contents))
 
     def _get_all_vars(self, include_children: bool = False) -> Iterator[Var]:
