@@ -21,6 +21,11 @@
 [English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md)
 
 ---
+
+Reflex is a library to build web apps in pure Python. It handles both the frontend and backend, so you can focus on your app's logic. Once you build your app, you can [deploy it](https://reflex.dev/docs/hosting/deploy-quick-start/) with a single command.
+
+Reflex apps compile down to a [React](https://reactjs.org/) frontend app and a [FastAPI](https://github.com/tiangolo/fastapi) backend app, that communicate over websockets. See our architecture [here](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture) for more details.
+
 ## ⚙️ Installation
 
 Open a terminal and run (Requires Python 3.8+):
