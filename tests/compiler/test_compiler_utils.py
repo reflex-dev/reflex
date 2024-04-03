@@ -6,9 +6,7 @@ def TestState(State):
 
 
 def test_compile_state():
-    # compiled_state = compile_state()
-    # print(compiled_state)
-    # assert compiled_state == {}
+    # TODO: Implement test for compile_state function.
     pass
 
 
