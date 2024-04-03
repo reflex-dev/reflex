@@ -295,8 +295,8 @@ def test_get_imports(component1, component2):
     """
     c1 = component1.create()
     c2 = component2.create(c1)
-    assert c1.get_imports() == {"react": [ImportVar(tag="Component")]}
-    assert c2.get_imports() == {
+    assert c1._get_all_imports() == {"react": [ImportVar(tag="Component")]}
+    assert c2._get_all_imports() == {
         "react-redux": [ImportVar(tag="connect")],
         "react": [ImportVar(tag="Component")],
     }
@@ -1329,7 +1329,7 @@ def test_custom_component_get_imports():
     custom_comp = wrapper()
 
     # Inner is not imported directly, but it is imported by the custom component.
-    assert "inner" not in custom_comp.get_imports()
+    assert "inner" not in custom_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
     _, _, imports_inner = compile_components(custom_comp.get_custom_components())
@@ -1338,8 +1338,8 @@ def test_custom_component_get_imports():
     outer_comp = outer(c=wrapper())
 
     # Libraries are not imported directly, but are imported by the custom component.
-    assert "inner" not in outer_comp.get_imports()
-    assert "other" not in outer_comp.get_imports()
+    assert "inner" not in outer_comp._get_all_imports()
+    assert "other" not in outer_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
     _, _, imports_outer = compile_components(outer_comp.get_custom_components())

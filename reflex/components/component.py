@@ -990,7 +990,7 @@ class Component(BaseComponent, ABC):
             The  imports for the components props of the component.
         """
         return [
-            getattr(self, prop).get_imports()
+            getattr(self, prop)._get_all_imports()
             for prop in self.get_component_props()
             if getattr(self, prop) is not None
         ]

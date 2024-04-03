@@ -252,7 +252,7 @@ def compile_custom_component(
     # Get the imports.
     imports = {
         lib: fields
-        for lib, fields in render.get_imports().items()
+        for lib, fields in render._get_all_imports().items()
         if lib != component.library
     }
 

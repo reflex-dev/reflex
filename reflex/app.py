@@ -803,8 +803,8 @@ class App(Base):
 
             component.apply_theme(self.theme)
 
-            # Add component.get_imports() to all_imports.
-            all_imports.update(component.get_imports())
+            # Add component._get_all_imports() to all_imports.
+            all_imports.update(component._get_all_imports())
 
             # Add the app wrappers from this component.
             app_wrappers.update(component.get_app_wrap_components())
@@ -932,7 +932,7 @@ class App(Base):
             all_imports.update(custom_components_imports)
 
         # Get imports from AppWrap components.
-        all_imports.update(app_root.get_imports())
+        all_imports.update(app_root._get_all_imports())
 
         progress.advance(task)
 
