@@ -175,7 +175,7 @@ def run_backend(
         log_level=loglevel.value,
         reload=True,
         reload_dirs=[config.app_name],
-        reload_excludes=[constants.Dirs.WEB]
+        reload_excludes=[constants.Dirs.WEB],
     )
 
 
