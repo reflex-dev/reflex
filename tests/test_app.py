@@ -1369,18 +1369,18 @@ def test_add_page_component_returning_tuple():
     def page2():
         return (rx.text("third"),)
 
-    app.add_page(index)
-    app.add_page(page2)
+    app.add_page(index)  # type: ignore
+    app.add_page(page2)  # type: ignore
 
     assert isinstance((fragment_wrapper := app.pages["index"].children[0]), Fragment)
     assert isinstance((first_text := fragment_wrapper.children[0]), Text)
-    assert str(first_text.children[0].contents) == "{`first`}"
+    assert str(first_text.children[0].contents) == "{`first`}"  # type: ignore
     assert isinstance((second_text := fragment_wrapper.children[1]), Text)
-    assert str(second_text.children[0].contents) == "{`second`}"
+    assert str(second_text.children[0].contents) == "{`second`}"  # type: ignore
 
     # Test page with trailing comma.
     assert isinstance(
         (page2_fragment_wrapper := app.pages["page2"].children[0]), Fragment
     )
     assert isinstance((third_text := page2_fragment_wrapper.children[0]), Text)
-    assert str(third_text.children[0].contents) == "{`third`}"
+    assert str(third_text.children[0].contents) == "{`third`}"  # type: ignore
