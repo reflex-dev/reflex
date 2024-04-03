@@ -34,7 +34,7 @@ class Bare(Component):
     def _render(self) -> Tag:
         return Tagless(contents=str(self.contents))
 
-    def _get_vars(self, include_children: bool = False) -> Iterator[Var]:
+    def _get_all_vars(self, include_children: bool = False) -> Iterator[Var]:
         """Walk all Vars used in this component.
 
         Args:

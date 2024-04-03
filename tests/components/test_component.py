@@ -775,7 +775,7 @@ class ComponentNestedVar(Component):
 
 
 class EventState(rx.State):
-    """State for testing event handlers with _get_vars."""
+    """State for testing event handlers with _get_all_vars."""
 
     v: int = 42
 
@@ -952,7 +952,7 @@ class EventState(rx.State):
     ),
 )
 def test_get_vars(component, exp_vars):
-    comp_vars = sorted(component._get_vars(), key=lambda v: v._var_name)
+    comp_vars = sorted(component._get_all_vars(), key=lambda v: v._var_name)
     assert len(comp_vars) == len(exp_vars)
     for comp_var, exp_var in zip(
         comp_vars,

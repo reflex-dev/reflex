@@ -846,7 +846,7 @@ class Component(BaseComponent, ABC):
                         event_args.extend(args)
                 yield event_trigger, event_args
 
-    def _get_vars(self, include_children: bool = False) -> list[Var]:
+    def _get_all_vars(self, include_children: bool = False) -> list[Var]:
         """Walk all Vars used in this component.
 
         Args:
@@ -903,7 +903,7 @@ class Component(BaseComponent, ABC):
             for child in self.children:
                 if not isinstance(child, Component):
                     continue
-                vars.extend(child._get_vars(include_children=include_children))
+                vars.extend(child._get_all_vars(include_children=include_children))
 
         return vars
 
@@ -1049,7 +1049,7 @@ class Component(BaseComponent, ABC):
 
         # Collect imports from Vars used directly by this component.
         var_imports = [
-            var._var_data.imports for var in self._get_vars() if var._var_data
+            var._var_data.imports for var in self._get_all_vars() if var._var_data
         ]
 
         return imports.merge_imports(
@@ -1115,7 +1115,7 @@ class Component(BaseComponent, ABC):
             The hooks for the vars.
         """
         vars_hooks = set()
-        for var in self._get_vars():
+        for var in self._get_all_vars():
             if var._var_data:
                 vars_hooks.update(var._var_data.hooks)
         return vars_hooks
@@ -1477,7 +1477,7 @@ class CustomComponent(Component):
             for name, prop in self.props.items()
         ]
 
-    def _get_vars(self, include_children: bool = False) -> list[Var]:
+    def _get_all_vars(self, include_children: bool = False) -> list[Var]:
         """Walk all Vars used in this component.
 
         Args:
@@ -1486,7 +1486,7 @@ class CustomComponent(Component):
         Returns:
             Each var referenced by the component (props, styles, event handlers).
         """
-        return super()._get_vars(include_children=include_children) + [
+        return super()._get_all_vars(include_children=include_children) + [
             prop for prop in self.props.values() if isinstance(prop, Var)
         ]
 
@@ -1640,7 +1640,7 @@ class StatefulComponent(BaseComponent):
 
         if not should_memoize:
             # Determine if any Vars have associated data.
-            for prop_var in component._get_vars():
+            for prop_var in component._get_all_vars():
                 if prop_var._var_data:
                     should_memoize = True
                     break
