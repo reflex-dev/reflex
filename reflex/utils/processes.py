@@ -14,6 +14,7 @@ import psutil
 import typer
 from redis.exceptions import RedisError
 
+from reflex import constants
 from reflex.utils import console, path_ops, prerequisites
 
 
@@ -227,7 +228,11 @@ def stream_logs(message: str, process: subprocess.Popen, progress=None):
             yield line
 
     # Check if the process failed (not printing the logs for SIGINT).
-    if process.returncode not in [0, -2]:
+
+    # Windows uvicorn bug
+    # https://github.com/reflex-dev/reflex/issues/2335
+    accepted_return_codes = [0, -2, 15] if constants.IS_WINDOWS else [0, -2]
+    if process.returncode not in accepted_return_codes:
         console.error(f"{message} failed with exit code {process.returncode}")
         for line in logs:
             console.error(line, end="")
