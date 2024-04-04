@@ -30,7 +30,7 @@ def page(
         title: The title of the page.
         image: The favicon of the page.
         description: The description of the page.
-        meta: Additionnal meta to add to the page.
+        meta: Additional meta to add to the page.
         on_load: The event handler(s) called when the page load.
         script_tags: scripts to attach to the page
 
