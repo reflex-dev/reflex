@@ -5,13 +5,12 @@ import reflex as rx
 def logo(**props):
     """A Reflex logo.
 
-        Args:
-            **props: The props to pass to the component.
+    Args:
+        **props: The props to pass to the component.
 
-        Returns:
-            The logo component.
-        """
-    
+    Returns:
+        The logo component.
+    """
     light_mode_logo = """<svg width="56" height="12" viewBox="0 0 56 12" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M0 11.6V0.400024H8.96V4.88002H6.72V2.64002H2.24V4.88002H6.72V7.12002H2.24V11.6H0ZM6.72 11.6V7.12002H8.96V11.6H6.72Z" fill="#110F1F"/>
 <path d="M11.2 11.6V0.400024H17.92V2.64002H13.44V4.88002H17.92V7.12002H13.44V9.36002H17.92V11.6H11.2Z" fill="#110F1F"/>
