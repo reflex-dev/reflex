@@ -44,6 +44,6 @@ def logo(**props):
             href="https://reflex.dev",
             size="3",
         ),
+        width=props.pop("width", "100%"),
         **props,
-        width="100%",
     )
