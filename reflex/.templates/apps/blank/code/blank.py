@@ -23,6 +23,7 @@ def index() -> rx.Component:
                 on_click=lambda: rx.redirect(docs_url),
                 size="4",
             ),
+            rx.logo(),
             align="center",
             spacing="7",
             font_size="2em",
