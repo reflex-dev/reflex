@@ -541,13 +541,15 @@ def update_next_config(export=False):
         file.write("\n")
 
 
-def _update_next_config(config, export=False):
+def _update_next_config(config: Config, export: bool = False):
     next_config = {
         "basePath": config.frontend_path or "",
         "compress": config.next_compression,
         "reactStrictMode": True,
         "trailingSlash": True,
     }
+    if config.transpile_packages:
+        next_config["transpilePackages"] = config.transpile_packages
     if export:
         next_config["output"] = "export"
         next_config["distDir"] = constants.Dirs.STATIC

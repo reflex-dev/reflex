@@ -54,6 +54,14 @@ from reflex.utils.prerequisites import (
             True,
             'module.exports = {basePath: "", compress: true, reactStrictMode: true, trailingSlash: true, output: "export", distDir: "_static"};',
         ),
+        (
+            Config(
+                app_name="test",
+                transpile_packages=["foo", "@bar/baz"],
+            ),
+            False,
+            'module.exports = {basePath: "", compress: true, reactStrictMode: true, trailingSlash: true, transpilePackages: ["foo", "@bar/baz"]};',
+        )
     ],
 )
 def test_update_next_config(config, export, expected_output):
