@@ -466,7 +466,7 @@ class App(Base):
             if on_load or component._has_event_triggers():
                 self.enable_state()
             else:
-                for var in component._get_all_vars(include_children=True):
+                for var in component._get_vars(include_children=True):
                     if not var._var_data:
                         continue
                     if not var._var_data.state:

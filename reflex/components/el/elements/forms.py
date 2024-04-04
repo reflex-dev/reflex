@@ -225,8 +225,8 @@ class Form(BaseHTML):
                 )._replace(merge_var_data=ref_var._var_data)
         return form_refs
 
-    def _get_all_vars(self, include_children: bool = True) -> Iterator[Var]:
-        yield from super()._get_all_vars(include_children=include_children)
+    def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
+        yield from super()._get_vars(include_children=include_children)
         yield from self._get_form_refs().values()
 
     def _exclude_props(self) -> list[str]:
