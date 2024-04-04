@@ -1158,7 +1158,7 @@ class Component(BaseComponent, ABC):
         """
         return
 
-    def _get_all_hooks_internal(self) -> set[str]:
+    def _get_all_hooks_internal(self) -> dict[str, None]:
         """Get the reflex internal hooks for the component and its children.
 
         Returns:
