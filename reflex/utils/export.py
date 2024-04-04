@@ -46,9 +46,6 @@ def export(
     # Show system info
     exec.output_system_info()
 
-    # Check that the app is initialized.
-    prerequisites.check_initialized(frontend=frontend)
-
     # Compile the app in production mode and export it.
     console.rule("[bold]Compiling production app and preparing for export.")
 

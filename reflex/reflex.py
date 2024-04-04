@@ -165,7 +165,8 @@ def _run(
         _skip_compile()
 
     # Check that the app is initialized.
-    prerequisites.check_initialized(frontend=frontend)
+    if prerequisites.needs_reinit(frontend=frontend):
+        _init(name=config.app_name, loglevel=loglevel)
 
     # If something is running on the ports, ask the user if they want to kill or change it.
     if frontend and processes.is_process_on_port(frontend_port):
@@ -294,6 +295,10 @@ def export(
 ):
     """Export the app to a zip file."""
     from reflex.utils import export as export_utils
+    from reflex.utils import prerequisites
+
+    if prerequisites.needs_reinit(frontend=True):
+        _init(name=config.app_name, loglevel=loglevel)
 
     export_utils.export(
         zipping=zipping,
@@ -529,7 +534,8 @@ def deploy(
         dependency.check_requirements()
 
     # Check if we are set up.
-    prerequisites.check_initialized(frontend=True)
+    if prerequisites.needs_reinit(frontend=True):
+        _init(name=config.app_name, loglevel=loglevel)
     prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
 
     hosting_cli.deploy(
