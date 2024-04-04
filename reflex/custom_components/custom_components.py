@@ -715,7 +715,7 @@ def publish(
     _collect_details_for_gallery()
 
 
-def _process_entered_list(input: str) -> list | None:
+def _process_entered_list(input: str | None) -> list | None:
     """Process the user entered comma separated list into a list if applicable.
 
     Args:
@@ -724,7 +724,7 @@ def _process_entered_list(input: str) -> list | None:
     Returns:
         The list of items or None.
     """
-    return [t.strip() for t in input.split(",") if t if input] or None
+    return [t.strip() for t in (input or "").split(",") if t if input] or None
 
 
 def _validate_project_info():
@@ -773,6 +773,7 @@ def _validate_project_info():
             )
             or []
         )
+        project["keywords"] = new_keywords
     elif keyword_action == "a":
         new_keywords = (
             _process_entered_list(
@@ -780,7 +781,7 @@ def _validate_project_info():
             )
             or []
         )
-    project["keywords"] = project.get("keywords", []) + new_keywords
+        project["keywords"] = project.get("keywords", []) + new_keywords
 
     if not project.get("urls"):
         project["urls"] = {}
