@@ -145,7 +145,7 @@ def _populate_demo_app(name_variants: NameVariants):
 
     with set_directory(demo_app_dir):
         # We start with the blank template as basis.
-        _init(name=demo_app_name, template=constants.Templates.Kind.BLANK)
+        _init(name=demo_app_name, template=constants.Templates.DEFAULT)
         # Then overwrite the app source file with the one we want for testing custom components.
         # This source file is rendered using jinja template file.
         with open(f"{demo_app_name}/{demo_app_name}.py", "w") as f:

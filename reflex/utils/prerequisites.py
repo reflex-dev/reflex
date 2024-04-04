@@ -10,6 +10,7 @@ import os
 import platform
 import random
 import re
+import shutil
 import stat
 import sys
 import tempfile
@@ -30,11 +31,21 @@ from redis.asyncio import Redis
 
 import reflex
 from reflex import constants, model
+from reflex.base import Base
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 
 CURRENTLY_INSTALLING_NODE = False
+
+
+class Template(Base):
+    """A template for a Reflex app."""
+
+    name: str
+    description: str
+    code_url: str
+    demo_url: str
 
 
 def check_latest_package_version(package_name: str):
@@ -407,17 +418,42 @@ def initialize_requirements_txt():
         console.info(f"Unable to check {fp} for reflex dependency.")
 
 
-def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
+def initialize_app_directory(
+    app_name: str,
+    template_name: str = constants.Templates.DEFAULT,
+    template_code_dir_name: str | None = None,
+    template_dir: Path | None = None,
+):
     """Initialize the app directory on reflex init.
 
     Args:
         app_name: The name of the app.
-        template: The template to use.
+        template_name: The name of the template to use.
+        template_code_dir_name: The name of the code directory in the template.
+        template_dir: The directory of the template source files.
+
+    Raises:
+        Exit: If template_name, template_code_dir_name, template_dir combination is not supported.
     """
     console.log("Initializing the app directory.")
 
-    # Copy the template to the current directory.
-    template_dir = Path(constants.Templates.Dirs.BASE, "apps", template.value)
+    # By default, use the blank template from local assets.
+    if template_name == constants.Templates.DEFAULT:
+        if template_code_dir_name is not None or template_dir is not None:
+            console.error(
+                f"Only {template_name=} should be provided, got {template_code_dir_name=}, {template_dir=}."
+            )
+            raise typer.Exit(1)
+        template_code_dir_name = constants.Templates.Dirs.CODE
+        template_dir = Path(constants.Templates.Dirs.BASE, "apps", template_name)
+    else:
+        if template_code_dir_name is None or template_dir is None:
+            console.error(
+                f"For `{template_name}` template, `template_code_dir_name` and `template_dir` should both be provided."
+            )
+            raise typer.Exit(1)
+
+    console.debug(f"Using {template_name=} {template_dir=} {template_code_dir_name=}.")
 
     # Remove all pyc and __pycache__ dirs in template directory.
     for pyc_file in template_dir.glob("**/*.pyc"):
@@ -430,16 +466,16 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
         path_ops.cp(str(file), file.name)
 
     # Rename the template app to the app name.
-    path_ops.mv(constants.Templates.Dirs.CODE, app_name)
+    path_ops.mv(template_code_dir_name, app_name)
     path_ops.mv(
-        os.path.join(app_name, template_dir.name + constants.Ext.PY),
+        os.path.join(app_name, template_name + constants.Ext.PY),
         os.path.join(app_name, app_name + constants.Ext.PY),
     )
 
     # Fix up the imports.
     path_ops.find_replace(
         app_name,
-        f"from {constants.Templates.Dirs.CODE}",
+        f"from {template_name}",
         f"from {app_name}",
     )
 
@@ -999,33 +1035,35 @@ def check_schema_up_to_date():
                 )
 
 
-def prompt_for_template() -> constants.Templates.Kind:
+def prompt_for_template(templates: list[Template]) -> str:
     """Prompt the user to specify a template.
 
+    Args:
+        templates: The templates to choose from.
+
     Returns:
-        The template the user selected.
+        The template name the user selects.
     """
-    # Show the user the URLs of each temlate to preview.
+    # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
-    console.print("blank (https://blank-template.reflex.run) - A minimal template.")
-    console.print(
-        "sidebar (https://sidebar-template.reflex.run) - A template with a sidebar to navigate pages."
-    )
-    console.print("")
 
     # Prompt the user to select a template.
+    id_to_name = {
+        str(idx): f"{template.name} ({template.demo_url}) - {template.description}"
+        for idx, template in enumerate(templates)
+    }
+    for id in range(len(id_to_name)):
+        console.print(f"({id}) {id_to_name[str(id)]}")
+
     template = console.ask(
         "Which template would you like to use?",
-        choices=[
-            template.value
-            for template in constants.Templates.Kind
-            if template.value != "demo"
-        ],
-        default=constants.Templates.Kind.BLANK.value,
+        choices=[str(i) for i in range(len(id_to_name))],
+        show_choices=False,
+        default="0",
     )
 
     # Return the template.
-    return constants.Templates.Kind(template)
+    return templates[int(template)].name
 
 
 def should_show_rx_chakra_migration_instructions() -> bool:
@@ -1178,3 +1216,166 @@ def migrate_to_reflex():
                 for old, new in updates.items():
                     line = line.replace(old, new)
                 print(line, end="")
+
+
+def fetch_app_templates() -> dict[str, Template]:
+    """Fetch the list of app templates from the Reflex backend server.
+
+    Returns:
+        The name and download URL as a dictionary.
+    """
+    config = get_config()
+    if not config.cp_backend_url:
+        console.info(
+            "Skip fetching App templates. No backend URL is specified in the config."
+        )
+        return {}
+    try:
+        response = httpx.get(
+            f"{config.cp_backend_url}{constants.Templates.APP_TEMPLATES_ROUTE}"
+        )
+        response.raise_for_status()
+        return {
+            template["name"]: Template.parse_obj(template)
+            for template in response.json()
+        }
+    except httpx.HTTPError as ex:
+        console.info(f"Failed to fetch app templates: {ex}")
+        return {}
+    except (TypeError, KeyError, json.JSONDecodeError) as tkje:
+        console.info(f"Unable to process server response for app templates: {tkje}")
+        return {}
+
+
+def create_config_init_app_from_remote_template(
+    app_name: str,
+    template_url: str,
+):
+    """Create new rxconfig and initialize app using a remote template.
+
+    Args:
+        app_name: The name of the app.
+        template_url: The path to the template source code as a zip file.
+
+    Raises:
+        Exit: If any download, file operations fail or unexpected zip file format.
+
+    """
+    # Create a temp directory for the zip download.
+    try:
+        temp_dir = tempfile.mkdtemp()
+    except OSError as ose:
+        console.error(f"Failed to create temp directory for download: {ose}")
+        raise typer.Exit(1) from ose
+
+    # Use httpx GET with redirects to download the zip file.
+    zip_file_path = Path(temp_dir) / "template.zip"
+    try:
+        # Note: following redirects can be risky. We only allow this for reflex built templates at the moment.
+        response = httpx.get(template_url, follow_redirects=True)
+        console.debug(f"Server responded download request: {response}")
+        response.raise_for_status()
+    except httpx.HTTPError as he:
+        console.error(f"Failed to download the template: {he}")
+        raise typer.Exit(1) from he
+    try:
+        with open(zip_file_path, "wb") as f:
+            f.write(response.content)
+            console.debug(f"Downloaded the zip to {zip_file_path}")
+    except OSError as ose:
+        console.error(f"Unable to write the downloaded zip to disk {ose}")
+        raise typer.Exit(1) from ose
+
+    # Create a temp directory for the zip extraction.
+    try:
+        unzip_dir = Path(tempfile.mkdtemp())
+    except OSError as ose:
+        console.error(f"Failed to create temp directory for extracting zip: {ose}")
+        raise typer.Exit(1) from ose
+    try:
+        zipfile.ZipFile(zip_file_path).extractall(path=unzip_dir)
+        # The zip file downloaded from github looks like:
+        # repo-name-branch/**/*, so we need to remove the top level directory.
+        if len(subdirs := os.listdir(unzip_dir)) != 1:
+            console.error(f"Expected one directory in the zip, found {subdirs}")
+            raise typer.Exit(1)
+        template_dir = unzip_dir / subdirs[0]
+        console.debug(f"Template folder is located at {template_dir}")
+    except Exception as uze:
+        console.error(f"Failed to unzip the template: {uze}")
+        raise typer.Exit(1) from uze
+
+    # Move the rxconfig file here first.
+    path_ops.mv(str(template_dir / constants.Config.FILE), constants.Config.FILE)
+    new_config = get_config(reload=True)
+
+    # Get the template app's name from rxconfig in case it is different than
+    # the source code repo name on github.
+    template_name = new_config.app_name
+
+    create_config(app_name)
+    initialize_app_directory(
+        app_name,
+        template_name=template_name,
+        template_code_dir_name=template_name,
+        template_dir=template_dir,
+    )
+
+    #  Clean up the temp directories.
+    shutil.rmtree(temp_dir)
+    shutil.rmtree(unzip_dir)
+
+
+def initialize_app(app_name: str, template: str | None = None):
+    """Initialize the app either from a remote template or a blank app. If the config file exists, it is considered as reinit.
+
+    Args:
+        app_name: The name of the app.
+        template: The name of the template to use.
+
+    Raises:
+        Exit: If template is directly provided in the command flag and is invalid.
+    """
+    # Local imports to avoid circular imports.
+    from reflex.utils import telemetry
+
+    # Check if the app is already initialized.
+    if os.path.exists(constants.Config.FILE):
+        telemetry.send("reinit")
+        return
+
+    # Get the available templates
+    templates: dict[str, Template] = fetch_app_templates()
+
+    # Prompt for a template if not provided.
+    if template is None and len(templates) > 0:
+        template = prompt_for_template(list(templates.values()))
+    elif template is None:
+        template = constants.Templates.DEFAULT
+    assert template is not None
+
+    # If the blank template is selected, create a blank app.
+    if template == constants.Templates.DEFAULT:
+        # Default app creation behavior: a blank app.
+        create_config(app_name)
+        initialize_app_directory(app_name)
+    else:
+        # Fetch App templates from the backend server.
+        console.debug(f"Available templates: {templates}")
+
+        # If user selects a template, it needs to exist.
+        if template in templates:
+            template_url = templates[template].code_url
+        else:
+            # Check if the template is a github repo.
+            if template.startswith("https://github.com"):
+                template_url = f"{template.strip('/')}/archive/main.zip"
+            else:
+                console.error(f"Template `{template}` not found.")
+                raise typer.Exit(1)
+        create_config_init_app_from_remote_template(
+            app_name=app_name,
+            template_url=template_url,
+        )
+
+    telemetry.send("init")

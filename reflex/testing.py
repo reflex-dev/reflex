@@ -223,7 +223,7 @@ class AppHarness:
             with chdir(self.app_path):
                 reflex.reflex._init(
                     name=self.app_name,
-                    template=reflex.constants.Templates.Kind.BLANK,
+                    template=reflex.constants.Templates.DEFAULT,
                     loglevel=reflex.constants.LogLevel.INFO,
                 )
                 self.app_module_path.write_text(source_code)
