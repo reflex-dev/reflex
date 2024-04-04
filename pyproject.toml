@@ -38,7 +38,7 @@ python-socketio = ">=5.7.0,<6.0"
 redis = ">=4.3.5,<6.0"
 rich = ">=13.0.0,<14.0"
 sqlmodel = ">=0.0.14,<0.1"
-typer = ">=0.4.2,<1.0"
+typer = ">=0.4.2,<0.12.0"
 uvicorn = [
     {version = "^0.24.0", python = ">=3.12"},
     {version = "^0.20.0", python = "<3.12"},
