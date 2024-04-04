@@ -76,7 +76,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_hooks_internal(self) -> dict[str, None]:
+    def _get_all_hooks_internal(self) -> dict[str, None]:
         """Get the reflex internal hooks for the component and its children.
 
         Returns:
@@ -84,7 +84,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_hooks(self) -> dict[str, None]:
+    def _get_all_hooks(self) -> dict[str, None]:
         """Get the React hooks for this component.
 
         Returns:
@@ -92,7 +92,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_imports(self) -> imports.ImportDict:
+    def _get_all_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
 
         Returns:
@@ -100,7 +100,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_dynamic_imports(self) -> set[str]:
+    def _get_all_dynamic_imports(self) -> set[str]:
         """Get dynamic imports for the component.
 
         Returns:
@@ -108,7 +108,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_custom_code(self) -> set[str]:
+    def _get_all_custom_code(self) -> set[str]:
         """Get custom code for the component.
 
         Returns:
@@ -116,7 +116,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_refs(self) -> set[str]:
+    def _get_all_refs(self) -> set[str]:
         """Get the refs for the children of the component.
 
         Returns:
@@ -669,7 +669,7 @@ class Component(BaseComponent, ABC):
         """
         self.style.update(style)
 
-    def add_style(self, style: ComponentStyle) -> Component:
+    def _add_style_recursive(self, style: ComponentStyle) -> Component:
         """Add additional style to the component and its children.
 
         Args:
@@ -698,7 +698,7 @@ class Component(BaseComponent, ABC):
             # Skip BaseComponent and StatefulComponent children.
             if not isinstance(child, Component):
                 continue
-            child.add_style(style)
+            child._add_style_recursive(style)
         return self
 
     def _get_style(self) -> dict:
@@ -921,7 +921,7 @@ class Component(BaseComponent, ABC):
         """
         return None
 
-    def get_custom_code(self) -> set[str]:
+    def _get_all_custom_code(self) -> set[str]:
         """Get custom code for the component and its children.
 
         Returns:
@@ -937,7 +937,7 @@ class Component(BaseComponent, ABC):
 
         # Add the custom code for the children.
         for child in self.children:
-            code |= child.get_custom_code()
+            code |= child._get_all_custom_code()
 
         # Return the code.
         return code
@@ -950,7 +950,7 @@ class Component(BaseComponent, ABC):
         """
         return None
 
-    def get_dynamic_imports(self) -> Set[str]:
+    def _get_all_dynamic_imports(self) -> Set[str]:
         """Get dynamic imports for the component and its children.
 
         Returns:
@@ -966,11 +966,11 @@ class Component(BaseComponent, ABC):
 
         # Get the dynamic imports from children
         for child in self.children:
-            dynamic_imports |= child.get_dynamic_imports()
+            dynamic_imports |= child._get_all_dynamic_imports()
 
         for prop in self.get_component_props():
             if getattr(self, prop) is not None:
-                dynamic_imports |= getattr(self, prop).get_dynamic_imports()
+                dynamic_imports |= getattr(self, prop)._get_all_dynamic_imports()
 
         # Return the dynamic imports
         return dynamic_imports
@@ -982,7 +982,7 @@ class Component(BaseComponent, ABC):
             The  imports for the components props of the component.
         """
         return [
-            getattr(self, prop).get_imports()
+            getattr(self, prop)._get_all_imports()
             for prop in self.get_component_props()
             if getattr(self, prop) is not None
         ]
@@ -1053,7 +1053,7 @@ class Component(BaseComponent, ABC):
             *var_imports,
         )
 
-    def get_imports(self, collapse: bool = False) -> imports.ImportDict:
+    def _get_all_imports(self, collapse: bool = False) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component and its children.
 
         Args:
@@ -1063,7 +1063,7 @@ class Component(BaseComponent, ABC):
             The import dict with the required imports.
         """
         _imports = imports.merge_imports(
-            self._get_imports(), *[child.get_imports() for child in self.children]
+            self._get_imports(), *[child._get_all_imports() for child in self.children]
         )
         return imports.collapse_imports(_imports) if collapse else _imports
 
@@ -1158,7 +1158,7 @@ class Component(BaseComponent, ABC):
         """
         return
 
-    def get_hooks_internal(self) -> dict[str, None]:
+    def _get_all_hooks_internal(self) -> dict[str, None]:
         """Get the reflex internal hooks for the component and its children.
 
         Returns:
@@ -1169,11 +1169,11 @@ class Component(BaseComponent, ABC):
 
         # Add the hook code for the children.
         for child in self.children:
-            code = {**code, **child.get_hooks_internal()}
+            code = {**code, **child._get_all_hooks_internal()}
 
         return code
 
-    def get_hooks(self) -> dict[str, None]:
+    def _get_all_hooks(self) -> dict[str, None]:
         """Get the React hooks for this component and its children.
 
         Returns:
@@ -1188,7 +1188,7 @@ class Component(BaseComponent, ABC):
 
         # Add the hook code for the children.
         for child in self.children:
-            code = {**code, **child.get_hooks()}
+            code = {**code, **child._get_all_hooks()}
 
         return code
 
@@ -1203,7 +1203,7 @@ class Component(BaseComponent, ABC):
             return None
         return format.format_ref(self.id)
 
-    def get_refs(self) -> set[str]:
+    def _get_all_refs(self) -> set[str]:
         """Get the refs for the children of the component.
 
         Returns:
@@ -1214,10 +1214,10 @@ class Component(BaseComponent, ABC):
         if ref is not None:
             refs.add(ref)
         for child in self.children:
-            refs |= child.get_refs()
+            refs |= child._get_all_refs()
         return refs
 
-    def get_custom_components(
+    def _get_all_custom_components(
         self, seen: set[str] | None = None
     ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
@@ -1237,7 +1237,7 @@ class Component(BaseComponent, ABC):
             # Skip BaseComponent and StatefulComponent children.
             if not isinstance(child, Component):
                 continue
-            custom_components |= child.get_custom_components(seen=seen)
+            custom_components |= child._get_all_custom_components(seen=seen)
         return custom_components
 
     @property
@@ -1261,7 +1261,7 @@ class Component(BaseComponent, ABC):
         """
         return {}
 
-    def get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    def _get_all_app_wrap_components(self) -> dict[tuple[int, str], Component]:
         """Get the app wrap components for the component and its children.
 
         Returns:
@@ -1271,14 +1271,14 @@ class Component(BaseComponent, ABC):
         components = self._get_app_wrap_components()
 
         for component in tuple(components.values()):
-            components.update(component.get_app_wrap_components())
+            components.update(component._get_all_app_wrap_components())
 
         # Add the app wrap components for the children.
         for child in self.children:
             # Skip BaseComponent and StatefulComponent children.
             if not isinstance(child, Component):
                 continue
-            components.update(child.get_app_wrap_components())
+            components.update(child._get_all_app_wrap_components())
 
         # Return the components.
         return components
@@ -1347,8 +1347,8 @@ class CustomComponent(Component):
                     self.component_props[key] = value
                     value = base_value._replace(
                         merge_var_data=VarData(  # type: ignore
-                            imports=value.get_imports(),
-                            hooks=value.get_hooks(),
+                            imports=value._get_all_imports(),
+                            hooks=value._get_all_hooks(),
                         )
                     )
                 else:
@@ -1387,7 +1387,7 @@ class CustomComponent(Component):
         """
         return set()
 
-    def get_custom_components(
+    def _get_all_custom_components(
         self, seen: set[str] | None = None
     ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
@@ -1403,12 +1403,12 @@ class CustomComponent(Component):
         # Store the seen components in a set to avoid infinite recursion.
         if seen is None:
             seen = set()
-        custom_components = {self} | super().get_custom_components(seen=seen)
+        custom_components = {self} | super()._get_all_custom_components(seen=seen)
 
         # Avoid adding the same component twice.
         if self.tag not in seen:
             seen.add(self.tag)
-            custom_components |= self.get_component(self).get_custom_components(
+            custom_components |= self.get_component(self)._get_all_custom_components(
                 seen=seen
             )
 
@@ -1420,7 +1420,9 @@ class CustomComponent(Component):
                 seen.add(child_component.tag)
                 if isinstance(child_component, CustomComponent):
                     custom_components |= {child_component}
-                custom_components |= child_component.get_custom_components(seen=seen)
+                custom_components |= child_component._get_all_custom_components(
+                    seen=seen
+                )
         return custom_components
 
     def _render(self) -> Tag:
@@ -1824,7 +1826,7 @@ class StatefulComponent(BaseComponent):
             )
         return trigger_memo
 
-    def get_hooks_internal(self) -> dict[str, None]:
+    def _get_all_hooks_internal(self) -> dict[str, None]:
         """Get the reflex internal hooks for the component and its children.
 
         Returns:
@@ -1832,7 +1834,7 @@ class StatefulComponent(BaseComponent):
         """
         return {}
 
-    def get_hooks(self) -> dict[str, None]:
+    def _get_all_hooks(self) -> dict[str, None]:
         """Get the React hooks for this component.
 
         Returns:
@@ -1840,7 +1842,7 @@ class StatefulComponent(BaseComponent):
         """
         return {}
 
-    def get_imports(self) -> imports.ImportDict:
+    def _get_all_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
 
         Returns:
@@ -1852,9 +1854,9 @@ class StatefulComponent(BaseComponent):
                     ImportVar(tag=self.tag)
                 ]
             }
-        return self.component.get_imports()
+        return self.component._get_all_imports()
 
-    def get_dynamic_imports(self) -> set[str]:
+    def _get_all_dynamic_imports(self) -> set[str]:
         """Get dynamic imports for the component.
 
         Returns:
@@ -1862,9 +1864,9 @@ class StatefulComponent(BaseComponent):
         """
         if self.rendered_as_shared:
             return set()
-        return self.component.get_dynamic_imports()
+        return self.component._get_all_dynamic_imports()
 
-    def get_custom_code(self) -> set[str]:
+    def _get_all_custom_code(self) -> set[str]:
         """Get custom code for the component.
 
         Returns:
@@ -1872,9 +1874,9 @@ class StatefulComponent(BaseComponent):
         """
         if self.rendered_as_shared:
             return set()
-        return self.component.get_custom_code().union({self.code})
+        return self.component._get_all_custom_code().union({self.code})
 
-    def get_refs(self) -> set[str]:
+    def _get_all_refs(self) -> set[str]:
         """Get the refs for the children of the component.
 
         Returns:
@@ -1882,7 +1884,7 @@ class StatefulComponent(BaseComponent):
         """
         if self.rendered_as_shared:
             return set()
-        return self.component.get_refs()
+        return self.component._get_all_refs()
 
     def render(self) -> dict:
         """Define how to render the component in React.
@@ -1940,7 +1942,7 @@ class MemoizationLeaf(Component):
             The memoization leaf
         """
         comp = super().create(*children, **props)
-        if comp.get_hooks() or comp.get_hooks_internal():
+        if comp._get_all_hooks() or comp._get_all_hooks_internal():
             comp._memoization_mode = cls._memoization_mode.copy(
                 update={"disposition": MemoizationDisposition.ALWAYS}
             )

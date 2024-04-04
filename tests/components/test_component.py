@@ -263,8 +263,8 @@ def test_add_style(component1, component2):
         component1: Style({"color": "white"}),
         component2: Style({"color": "black"}),
     }
-    c1 = component1().add_style(style)  # type: ignore
-    c2 = component2().add_style(style)  # type: ignore
+    c1 = component1()._add_style_recursive(style)  # type: ignore
+    c2 = component2()._add_style_recursive(style)  # type: ignore
     assert c1.style["color"] == "white"
     assert c2.style["color"] == "black"
 
@@ -280,8 +280,8 @@ def test_add_style_create(component1, component2):
         component1.create: Style({"color": "white"}),
         component2.create: Style({"color": "black"}),
     }
-    c1 = component1().add_style(style)  # type: ignore
-    c2 = component2().add_style(style)  # type: ignore
+    c1 = component1()._add_style_recursive(style)  # type: ignore
+    c2 = component2()._add_style_recursive(style)  # type: ignore
     assert c1.style["color"] == "white"
     assert c2.style["color"] == "black"
 
@@ -295,8 +295,8 @@ def test_get_imports(component1, component2):
     """
     c1 = component1.create()
     c2 = component2.create(c1)
-    assert c1.get_imports() == {"react": [ImportVar(tag="Component")]}
-    assert c2.get_imports() == {
+    assert c1._get_all_imports() == {"react": [ImportVar(tag="Component")]}
+    assert c2._get_all_imports() == {
         "react-redux": [ImportVar(tag="connect")],
         "react": [ImportVar(tag="Component")],
     }
@@ -312,19 +312,19 @@ def test_get_custom_code(component1, component2):
     # Check that the code gets compiled correctly.
     c1 = component1.create()
     c2 = component2.create()
-    assert c1.get_custom_code() == {"console.log('component1')"}
-    assert c2.get_custom_code() == {"console.log('component2')"}
+    assert c1._get_all_custom_code() == {"console.log('component1')"}
+    assert c2._get_all_custom_code() == {"console.log('component2')"}
 
     # Check that nesting components compiles both codes.
     c1 = component1.create(c2)
-    assert c1.get_custom_code() == {
+    assert c1._get_all_custom_code() == {
         "console.log('component1')",
         "console.log('component2')",
     }
 
     # Check that code is not duplicated.
     c1 = component1.create(c2, c2, c1, c1)
-    assert c1.get_custom_code() == {
+    assert c1._get_all_custom_code() == {
         "console.log('component1')",
         "console.log('component2')",
     }
@@ -502,7 +502,7 @@ def test_create_custom_component(my_component):
     component = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
     assert component.tag == "MyComponent"
     assert component.get_props() == set()
-    assert component.get_custom_components() == {component}
+    assert component._get_all_custom_components() == {component}
 
 
 def test_custom_component_hash(my_component):
@@ -586,7 +586,7 @@ def test_get_hooks_nested(component1, component2, component3):
         text="a",
         number=1,
     )
-    assert c.get_hooks() == component3().get_hooks()
+    assert c._get_all_hooks() == component3()._get_all_hooks()
 
 
 def test_get_hooks_nested2(component3, component4):
@@ -596,15 +596,15 @@ def test_get_hooks_nested2(component3, component4):
         component3: component with hooks defined.
         component4: component with different hooks defined.
     """
-    exp_hooks = {**component3().get_hooks(), **component4().get_hooks()}
-    assert component3.create(component4.create()).get_hooks() == exp_hooks
-    assert component4.create(component3.create()).get_hooks() == exp_hooks
+    exp_hooks = {**component3()._get_all_hooks(), **component4()._get_all_hooks()}
+    assert component3.create(component4.create())._get_all_hooks() == exp_hooks
+    assert component4.create(component3.create())._get_all_hooks() == exp_hooks
     assert (
         component4.create(
             component3.create(),
             component4.create(),
             component3.create(),
-        ).get_hooks()
+        )._get_all_hooks()
         == exp_hooks
     )
 
@@ -1329,20 +1329,20 @@ def test_custom_component_get_imports():
     custom_comp = wrapper()
 
     # Inner is not imported directly, but it is imported by the custom component.
-    assert "inner" not in custom_comp.get_imports()
+    assert "inner" not in custom_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
-    _, _, imports_inner = compile_components(custom_comp.get_custom_components())
+    _, _, imports_inner = compile_components(custom_comp._get_all_custom_components())
     assert "inner" in imports_inner
 
     outer_comp = outer(c=wrapper())
 
     # Libraries are not imported directly, but are imported by the custom component.
-    assert "inner" not in outer_comp.get_imports()
-    assert "other" not in outer_comp.get_imports()
+    assert "inner" not in outer_comp._get_all_imports()
+    assert "other" not in outer_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
-    _, _, imports_outer = compile_components(outer_comp.get_custom_components())
+    _, _, imports_outer = compile_components(outer_comp._get_all_custom_components())
     assert "inner" in imports_outer
     assert "other" in imports_outer
 

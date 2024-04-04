@@ -653,7 +653,7 @@ class App(Base):
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):
-            app_wrappers.update(component.get_app_wrap_components())
+            app_wrappers.update(component._get_all_app_wrap_components())
         order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
         root = parent = copy.deepcopy(app_wrappers[order[0]])
         for key in order[1:]:
@@ -791,18 +791,18 @@ class App(Base):
 
         for _route, component in self.pages.items():
             # Merge the component style with the app style.
-            component.add_style(self.style)
+            component._add_style_recursive(self.style)
 
             component.apply_theme(self.theme)
 
-            # Add component.get_imports() to all_imports.
-            all_imports.update(component.get_imports())
+            # Add component._get_all_imports() to all_imports.
+            all_imports.update(component._get_all_imports())
 
             # Add the app wrappers from this component.
-            app_wrappers.update(component.get_app_wrap_components())
+            app_wrappers.update(component._get_all_app_wrap_components())
 
             # Add the custom components from the page to the set.
-            custom_components |= component.get_custom_components()
+            custom_components |= component._get_all_custom_components()
 
         progress.advance(task)
 
@@ -924,7 +924,7 @@ class App(Base):
             all_imports.update(custom_components_imports)
 
         # Get imports from AppWrap components.
-        all_imports.update(app_root.get_imports())
+        all_imports.update(app_root._get_all_imports())
 
         progress.advance(task)
 
