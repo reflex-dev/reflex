@@ -1,4 +1,5 @@
 """ Generated with stubgen from mypy, then manually edited, do not regen."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -35,7 +36,7 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]: ...
 class VarData(Base):
     state: str
     imports: dict[str, set[ImportVar]]
-    hooks: set[str]
+    hooks: Dict[str, None]
     interpolations: List[Tuple[int, int]]
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None: ...

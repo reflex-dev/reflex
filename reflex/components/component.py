@@ -76,15 +76,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def get_ref_hooks(self) -> set[str]:
-        """Get the hooks required by refs in this component.
-
-        Returns:
-            The hooks for the refs.
-        """
-
-    @abstractmethod
-    def _get_all_hooks_internal(self) -> set[str]:
+    def _get_all_hooks_internal(self) -> dict[str, None]:
         """Get the reflex internal hooks for the component and its children.
 
         Returns:
@@ -92,7 +84,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def _get_all_hooks(self) -> set[str]:
+    def _get_all_hooks(self) -> dict[str, None]:
         """Get the React hooks for this component.
 
         Returns:
@@ -929,7 +921,7 @@ class Component(BaseComponent, ABC):
         """
         return None
 
-    def _get_all_custom_code(self) -> Set[str]:
+    def _get_all_custom_code(self) -> set[str]:
         """Get custom code for the component and its children.
 
         Returns:
@@ -1108,62 +1100,53 @@ class Component(BaseComponent, ABC):
         if ref is not None:
             return f"const {ref} = useRef(null); {str(Var.create_safe(ref).as_ref())} = {ref};"
 
-    def _get_vars_hooks(self) -> set[str]:
+    def _get_vars_hooks(self) -> dict[str, None]:
         """Get the hooks required by vars referenced in this component.
 
         Returns:
             The hooks for the vars.
         """
-        vars_hooks = set()
+        vars_hooks = {}
         for var in self._get_all_vars():
             if var._var_data:
                 vars_hooks.update(var._var_data.hooks)
         return vars_hooks
 
-    def _get_events_hooks(self) -> set[str]:
+    def _get_events_hooks(self) -> dict[str, None]:
         """Get the hooks required by events referenced in this component.
 
         Returns:
             The hooks for the events.
         """
-        if self.event_triggers:
-            return {Hooks.EVENTS}
-        return set()
+        return {Hooks.EVENTS: None} if self.event_triggers else {}
 
-    def _get_special_hooks(self) -> set[str]:
+    def _get_special_hooks(self) -> dict[str, None]:
         """Get the hooks required by special actions referenced in this component.
 
         Returns:
             The hooks for special actions.
         """
-        if self.autofocus:
-            return {
-                """
-                // Set focus to the specified element.
-                const focusRef = useRef(null)
-                useEffect(() => {
-                  if (focusRef.current) {
-                    focusRef.current.focus();
-                  }
-                })""",
-            }
-        return set()
+        return {Hooks.AUTOFOCUS: None} if self.autofocus else {}
 
-    def _get_hooks_internal(self) -> Set[str]:
+    def _get_hooks_internal(self) -> dict[str, None]:
         """Get the React hooks for this component managed by the framework.
 
         Downstream components should NOT override this method to avoid breaking
         framework functionality.
 
         Returns:
-            Set of internally managed hooks.
+            The internally managed hooks.
         """
-        return (
-            self._get_vars_hooks()
-            | self._get_events_hooks()
-            | self._get_special_hooks()
-            | set(hook for hook in [self._get_mount_lifecycle_hook()] if hook)
-        )
+        return {
+            **{
+                hook: None
+                for hook in [self._get_ref_hook(), self._get_mount_lifecycle_hook()]
+                if hook is not None
+            },
+            **self._get_vars_hooks(),
+            **self._get_events_hooks(),
+            **self._get_special_hooks(),
+        }
 
     def _get_hooks(self) -> str | None:
         """Get the React hooks for this component.
@@ -1174,19 +1157,6 @@ class Component(BaseComponent, ABC):
             The hooks for just this component.
         """
         return
-
-    def get_ref_hooks(self) -> Set[str]:
-        """Get the ref hooks for the component and its children.
-
-        Returns:
-            The ref hooks.
-        """
-        ref_hook = self._get_ref_hook()
-        hooks = set() if ref_hook is None else {ref_hook}
-
-        for child in self.children:
-            hooks |= child.get_ref_hooks()
-        return hooks
 
     def _get_all_hooks_internal(self) -> set[str]:
         """Get the reflex internal hooks for the component and its children.
@@ -1199,26 +1169,26 @@ class Component(BaseComponent, ABC):
 
         # Add the hook code for the children.
         for child in self.children:
-            code |= child._get_all_hooks_internal()
+            code = {**code, **child._get_all_hooks_internal()}
 
         return code
 
-    def _get_all_hooks(self) -> Set[str]:
+    def _get_all_hooks(self) -> dict[str, None]:
         """Get the React hooks for this component and its children.
 
         Returns:
             The code that should appear just before returning the rendered component.
         """
-        code = set()
+        code = {}
 
         # Add the hook code for this component.
         hooks = self._get_hooks()
         if hooks is not None:
-            code.add(hooks)
+            code[hooks] = None
 
         # Add the hook code for the children.
         for child in self.children:
-            code |= child._get_all_hooks()
+            code = {**code, **child._get_all_hooks()}
 
         return code
 
@@ -1233,7 +1203,7 @@ class Component(BaseComponent, ABC):
             return None
         return format.format_ref(self.id)
 
-    def _get_all_refs(self) -> Set[str]:
+    def _get_all_refs(self) -> set[str]:
         """Get the refs for the children of the component.
 
         Returns:
@@ -1856,29 +1826,21 @@ class StatefulComponent(BaseComponent):
             )
         return trigger_memo
 
-    def get_ref_hooks(self) -> set[str]:
-        """Get the ref hooks for the component and its children.
-
-        Returns:
-            The ref hooks.
-        """
-        return set()
-
-    def _get_all_hooks_internal(self) -> set[str]:
+    def _get_all_hooks_internal(self) -> dict[str, None]:
         """Get the reflex internal hooks for the component and its children.
 
         Returns:
             The code that should appear just before user-defined hooks.
         """
-        return set()
+        return {}
 
-    def _get_all_hooks(self) -> set[str]:
+    def _get_all_hooks(self) -> dict[str, None]:
         """Get the React hooks for this component.
 
         Returns:
             The code that should appear just before returning the rendered component.
         """
-        return set()
+        return {}
 
     def _get_all_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.

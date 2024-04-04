@@ -596,7 +596,7 @@ def test_get_hooks_nested2(component3, component4):
         component3: component with hooks defined.
         component4: component with different hooks defined.
     """
-    exp_hooks = component3()._get_all_hooks().union(component4()._get_all_hooks())
+    exp_hooks = {**component3()._get_all_hooks(), **component4()._get_all_hooks()}
     assert component3.create(component4.create())._get_all_hooks() == exp_hooks
     assert component4.create(component3.create())._get_all_hooks() == exp_hooks
     assert (
@@ -725,7 +725,7 @@ def test_stateful_banner():
 
 TEST_VAR = Var.create_safe("test")._replace(
     merge_var_data=VarData(
-        hooks={"useTest"},
+        hooks={"useTest": None},
         imports={"test": {ImportVar(tag="test")}},
         state="Test",
         interpolations=[],

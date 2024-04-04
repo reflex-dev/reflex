@@ -163,7 +163,7 @@ class Form(BaseHTML):
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
         form.handle_submit_unique_name = md5(
-            str(form._get_all_hooks_internal().union(form._get_all_hooks())).encode(
+            str({**form._get_all_hooks_internal(), **form._get_all_hooks()}).encode(
                 "utf-8"
             )
         ).hexdigest()
