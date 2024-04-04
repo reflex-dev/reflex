@@ -1345,7 +1345,7 @@ def initialize_app(app_name: str, template: str | None = None):
         return
 
     # Get the available templates
-    templates: dict[str, Template] = fetch_app_templates() or {}
+    templates: dict[str, Template] = fetch_app_templates()
 
     # Prompt for a template if not provided.
     if template is None and len(templates) > 0:
@@ -1368,11 +1368,11 @@ def initialize_app(app_name: str, template: str | None = None):
             template_url = templates[template].code_url
         else:
             # Check if the template is a github repo.
-            if "github.com" not in template:
+            if template.startswith("https://github.com"):
+                template_url = f"{template.strip('/')}/archive/main.zip"
+            else:
                 console.error(f"Template `{template}` not found.")
                 raise typer.Exit(1)
-            repo = template.split("github.com/")[1].strip("/")
-            template_url = f"https://github.com/{repo}/archive/main.zip"
         create_config_init_app_from_remote_template(
             app_name=app_name,
             template_url=template_url,
