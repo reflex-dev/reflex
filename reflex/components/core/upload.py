@@ -1,4 +1,5 @@
 """A file upload component."""
+
 from __future__ import annotations
 
 import os
@@ -31,7 +32,7 @@ upload_files_context_var_data: VarData = VarData(  # type: ignore
         },
     },
     hooks={
-        "const [filesById, setFilesById] = useContext(UploadFilesContext);",
+        "const [filesById, setFilesById] = useContext(UploadFilesContext);": None,
     },
 )
 

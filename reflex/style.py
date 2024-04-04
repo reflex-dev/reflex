@@ -22,7 +22,7 @@ color_mode_var_data = VarData(  # type: ignore
         "react": {ImportVar(tag="useContext")},
     },
     hooks={
-        f"const [ {constants.ColorMode.NAME}, {constants.ColorMode.TOGGLE} ] = useContext(ColorModeContext)",
+        f"const [ {constants.ColorMode.NAME}, {constants.ColorMode.TOGGLE} ] = useContext(ColorModeContext)": None,
     },
 )
 # Var resolves to the current color mode for the app ("light" or "dark")
@@ -240,9 +240,9 @@ def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
         if isinstance(value, list):
             # Apply media queries from responsive value list.
             mbps = {
-                media_query(bp): bp_value
-                if isinstance(bp_value, dict)
-                else {key: bp_value}
+                media_query(bp): (
+                    bp_value if isinstance(bp_value, dict) else {key: bp_value}
+                )
                 for bp, bp_value in enumerate(value)
             }
             if key.startswith("&:"):

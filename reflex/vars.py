@@ -1,4 +1,5 @@
 """Define a state var."""
+
 from __future__ import annotations
 
 import contextlib
@@ -21,7 +22,6 @@ from typing import (
     List,
     Literal,
     Optional,
-    Set,
     Tuple,
     Type,
     Union,
@@ -119,7 +119,7 @@ class VarData(Base):
     imports: ImportDict = {}
 
     # Hooks that need to be present in the component to render this var
-    hooks: Set[str] = set()
+    hooks: Dict[str, None] = {}
 
     # Positions of interpolated strings. This is used by the decoder to figure
     # out where the interpolations are and only escape the non-interpolated
@@ -138,7 +138,7 @@ class VarData(Base):
         """
         state = ""
         _imports = {}
-        hooks = set()
+        hooks = {}
         interpolations = []
         for var_data in others:
             if var_data is None:
@@ -182,7 +182,7 @@ class VarData(Base):
         # not part of the vardata itself.
         return (
             self.state == other.state
-            and self.hooks == other.hooks
+            and self.hooks.keys() == other.hooks.keys()
             and imports.collapse_imports(self.imports)
             == imports.collapse_imports(other.imports)
         )
@@ -200,7 +200,7 @@ class VarData(Base):
                 lib: [import_var.dict() for import_var in import_vars]
                 for lib, import_vars in self.imports.items()
             },
-            "hooks": list(self.hooks),
+            "hooks": self.hooks,
         }
 
 
@@ -1659,7 +1659,7 @@ class Var:
             hooks={
                 "const {0} = useContext(StateContexts.{0})".format(
                     format.format_state_name(state_name)
-                )
+                ): None
             },
             imports={
                 f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
