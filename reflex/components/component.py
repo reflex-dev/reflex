@@ -677,7 +677,7 @@ class Component(BaseComponent, ABC):
         """
         self.style.update(style)
 
-    def add_style_recursive(self, style: ComponentStyle) -> Component:
+    def _add_style_recursive(self, style: ComponentStyle) -> Component:
         """Add additional style to the component and its children.
 
         Args:
@@ -706,7 +706,7 @@ class Component(BaseComponent, ABC):
             # Skip BaseComponent and StatefulComponent children.
             if not isinstance(child, Component):
                 continue
-            child.add_style_recursive(style)
+            child._add_style_recursive(style)
         return self
 
     def _get_style(self) -> dict:

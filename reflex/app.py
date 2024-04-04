@@ -799,7 +799,7 @@ class App(Base):
 
         for _route, component in self.pages.items():
             # Merge the component style with the app style.
-            component.add_style_recursive(self.style)
+            component._add_style_recursive(self.style)
 
             component.apply_theme(self.theme)
 
