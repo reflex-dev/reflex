@@ -214,12 +214,7 @@ class App(Base):
             self.setup_state()
 
     def setup_state(self) -> None:
-        """Set up the state for the app.
-
-        Raises:
-            ValueError: If the event namespace is not provided in the config.
-                        If the state has not been enabled.
-        """
+        """Set up the state for the app."""
         if not self.state:
             return
 
@@ -245,9 +240,6 @@ class App(Base):
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
         self.socket_app = ASGIApp(self.sio, socketio_path="")
         namespace = config.get_event_namespace()
-
-        if not namespace:
-            raise ValueError("event namespace must be provided in the config.")
 
         # Create the event namespace and attach the main app. Not related to any paths.
         self.event_namespace = EventNamespace(namespace, self)

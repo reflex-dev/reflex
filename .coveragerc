@@ -3,11 +3,14 @@ source = reflex
 branch = true
 omit =
     */pyi_generator.py
+    reflex/__main__.py
+    reflex/app_module_for_backend.py
+    reflex/components/chakra/*
 
 [report]
 show_missing = true
 # TODO bump back to 79
-fail_under = 68
+fail_under = 72
 precision = 2
 
 # Regexes for lines to exclude from consideration
