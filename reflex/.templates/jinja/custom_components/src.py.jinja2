@@ -43,9 +43,9 @@ class {{ component_class_name }}(rx.Component):
     # lib_dependencies: list[str] = []
 
     # Event triggers declaration if any.
-    # Below is equivalent to merging { "on_change": lambda e0: [e0] }
-    # onto the default event triggers of parent/based Component.
-    # The function defined for trigger `on_change` maps args for the javascript
+    # Below is equivalent to merging `{ "on_change": lambda e0: [e0] }`
+    # onto the default event triggers of parent/base Component.
+    # The function defined for the `on_change` trigger maps args for the javascript
     # trigger to args that will be passed to the backend event handler function.
     # on_change: rx.EventHandler[lambda e0: [e0]]
 
