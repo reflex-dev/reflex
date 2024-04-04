@@ -1249,13 +1249,13 @@ def fetch_app_templates() -> dict[str, Template]:
 
 def create_config_init_app_from_remote_template(
     app_name: str,
-    template: Template,
+    template_url: str,
 ):
     """Create new rxconfig and initialize app using a remote template.
 
     Args:
         app_name: The name of the app.
-        template: A valid template name.
+        template_url: The path to the template source code as a zip file.
 
     Raises:
         Exit: If any download, file operations fail or unexpected zip file format.
@@ -1272,7 +1272,7 @@ def create_config_init_app_from_remote_template(
     zip_file_path = Path(temp_dir) / "template.zip"
     try:
         # Note: following redirects can be risky. We only allow this for reflex built templates at the moment.
-        response = httpx.get(template.code_url, follow_redirects=True)
+        response = httpx.get(template_url, follow_redirects=True)
         console.debug(f"Server responded download request: {response}")
         response.raise_for_status()
     except httpx.HTTPError as he:
@@ -1364,12 +1364,18 @@ def initialize_app(app_name: str, template: str | None = None):
         console.debug(f"Available templates: {templates}")
 
         # If user selects a template, it needs to exist.
-        if template not in templates:
-            console.error(f"Template `{template}` not found.")
-            raise typer.Exit(1)
+        if template in templates:
+            template_url = templates[template].code_url
+        else:
+            # Check if the template is a github repo.
+            if "github.com" not in template:
+                console.error(f"Template `{template}` not found.")
+                raise typer.Exit(1)
+            repo = template.split("github.com/")[1].strip("/")
+            template_url = f"https://github.com/{repo}/archive/main.zip"
         create_config_init_app_from_remote_template(
             app_name=app_name,
-            template=templates[template],
+            template_url=template_url,
         )
 
     telemetry.send("init")
