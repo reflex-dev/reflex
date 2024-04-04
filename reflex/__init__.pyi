@@ -96,6 +96,7 @@ from reflex.components import list_item as list_item
 from reflex.components import unordered_list as unordered_list
 from reflex.components import ordered_list as ordered_list
 from reflex.components import moment as moment
+from reflex.components import logo as logo
 from reflex.components.component import Component as Component
 from reflex.components.component import NoSSRComponent as NoSSRComponent
 from reflex.components.component import memo as memo
