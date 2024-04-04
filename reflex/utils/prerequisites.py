@@ -802,38 +802,38 @@ def install_frontend_packages(packages: set[str], config: Config):
         )
 
 
-def check_initialized(frontend: bool = True):
-    """Check that the app is initialized.
+def needs_reinit(frontend: bool = True) -> bool:
+    """Check if an app needs to be reinitialized.
 
     Args:
         frontend: Whether to check if the frontend is initialized.
 
+    Returns:
+        Whether the app needs to be reinitialized.
+
     Raises:
         Exit: If the app is not initialized.
     """
-    has_config = os.path.exists(constants.Config.FILE)
-    has_reflex_dir = not frontend or os.path.exists(constants.Reflex.DIR)
-    has_web_dir = not frontend or os.path.exists(constants.Dirs.WEB)
-
-    # Check if the app is initialized.
-    if not (has_config and has_reflex_dir and has_web_dir):
+    if not os.path.exists(constants.Config.FILE):
         console.error(
-            f"The app is not initialized. Run [bold]{constants.Reflex.MODULE_NAME} init[/bold] first."
+            f"{constants.Config.FILE} not found. Run [bold]{constants.Reflex.MODULE_NAME} init[/bold] first."
         )
         raise typer.Exit(1)
 
-    # Check that the template is up to date.
-    if frontend and not is_latest_template():
-        console.error(
-            "The base app template has updated. Run [bold]reflex init[/bold] again."
-        )
-        raise typer.Exit(1)
+    # Make sure the .reflex directory exists.
+    if not os.path.exists(constants.Reflex.DIR):
+        return True
 
-    # Print a warning for Windows users.
+    # Make sure the .web directory exists in frontend mode.
+    if frontend and not os.path.exists(constants.Dirs.WEB):
+        return True
+
     if constants.IS_WINDOWS:
         console.warn(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
+    # No need to reinitialize if the app is already initialized.
+    return False
 
 
 def is_latest_template() -> bool:
