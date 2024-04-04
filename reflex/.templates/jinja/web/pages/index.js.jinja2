@@ -8,10 +8,6 @@
 
 {% block export %}
 export default function Component() {
-  {% for ref_hook in ref_hooks %}
-  {{ ref_hook }}
-  {% endfor %}
-  
   {% for hook in hooks %}
   {{ hook }}
   {% endfor %}

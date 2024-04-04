@@ -18,27 +18,19 @@ def sidebar_header() -> rx.Component:
             rx.image(src="/reflex_white.svg", height="2em"),
         ),
         rx.spacer(),
-        # Link to Reflex GitHub repo.
         rx.link(
-            rx.center(
-                rx.image(
-                    src="/github.svg",
-                    height="3em",
-                    padding="0.5em",
-                ),
-                box_shadow=styles.box_shadow,
-                bg="transparent",
-                border_radius=styles.border_radius,
-                _hover={
-                    "bg": styles.accent_color,
-                },
+            rx.button(
+                rx.icon("github"),
+                color_scheme="gray",
+                variant="soft",
             ),
             href="https://github.com/reflex-dev/reflex",
         ),
         align="center",
         width="100%",
         border_bottom=styles.border,
-        padding="1em",
+        padding_x="1em",
+        padding_y="2em",
     )
 
 
@@ -53,12 +45,12 @@ def sidebar_footer() -> rx.Component:
         rx.link(
             rx.text("Docs"),
             href="https://reflex.dev/docs/getting-started/introduction/",
-            style=styles.link_style,
+            color_scheme="gray",
         ),
         rx.link(
             rx.text("Blog"),
             href="https://reflex.dev/blog/",
-            style=styles.link_style,
+            color_scheme="gray",
         ),
         width="100%",
         border_top=styles.border,
@@ -66,12 +58,11 @@ def sidebar_footer() -> rx.Component:
     )
 
 
-def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
+def sidebar_item(text: str, url: str) -> rx.Component:
     """Sidebar item.
 
     Args:
         text: The text of the item.
-        icon: The icon of the item.
         url: The URL of the item.
 
     Returns:
@@ -84,18 +75,18 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
 
     return rx.link(
         rx.hstack(
-            rx.image(
-                src=icon,
-                height="2.5em",
-                padding="0.5em",
-            ),
             rx.text(
                 text,
             ),
             bg=rx.cond(
                 active,
-                styles.accent_color,
+                rx.color("accent", 2),
                 "transparent",
+            ),
+            border=rx.cond(
+                active,
+                f"1px solid {rx.color('accent', 6)}",
+                f"1px solid {rx.color('gray', 6)}",
             ),
             color=rx.cond(
                 active,
@@ -104,9 +95,8 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
             ),
             align="center",
             border_radius=styles.border_radius,
-            box_shadow=styles.box_shadow,
             width="100%",
-            padding_x="1em",
+            padding="1em",
         ),
         href=url,
         width="100%",
@@ -129,7 +119,6 @@ def sidebar() -> rx.Component:
                 *[
                     sidebar_item(
                         text=page.get("title", page["route"].strip("/").capitalize()),
-                        icon=page.get("image", "/github.svg"),
                         url=page["route"],
                     )
                     for page in get_decorated_pages()

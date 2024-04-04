@@ -1,7 +1,5 @@
 """Welcome to Reflex!."""
 
-from code import styles
-
 # Import all the pages.
 from code.pages import *
 
@@ -13,4 +11,4 @@ class State(rx.State):
 
 
 # Create the app.
-app = rx.App(style=styles.base_style)
+app = rx.App()
