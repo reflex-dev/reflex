@@ -216,11 +216,19 @@ class Upload(MemoizationLeaf):
         """
         # Mark the Upload component as used in the app.
         cls.is_used = True
-
+        # Default styling for rx.upload
+        default_styling = {
+            "id": "my_upload",
+            "border": "1px dotted rgb(107,99,246)",
+            "padding": "5em",
+        }
+        default_upload_styling = {**default_styling, **props}
         # get only upload component props
         supported_props = cls.get_props().union({"on_drop"})
         upload_props = {
-            key: value for key, value in props.items() if key in supported_props
+            key: value
+            for key, value in default_upload_styling.items()
+            if key in supported_props
         }
         # The file input to use.
         upload = Input.create(type_="file")
@@ -232,7 +240,11 @@ class Upload(MemoizationLeaf):
         zone = Box.create(
             upload,
             *children,
-            **{k: v for k, v in props.items() if k not in supported_props},
+            **{
+                k: v
+                for k, v in default_upload_styling.items()
+                if k not in supported_props
+            },
         )
         zone.special_props = {BaseVar(_var_name="{...getRootProps()}", _var_type=None)}
 
