@@ -852,7 +852,7 @@ def needs_reinit(frontend: bool = True) -> bool:
     """
     if not os.path.exists(constants.Config.FILE):
         console.error(
-            f"{constants.Config.FILE} not found. Run [bold]{constants.Reflex.MODULE_NAME} init[/bold] first."
+            f"[cyan]{constants.Config.FILE}[/cyan] not found. Move to the root folder of your project, or run [bold]{constants.Reflex.MODULE_NAME} init[/bold] to start a new project."
         )
         raise typer.Exit(1)
 
