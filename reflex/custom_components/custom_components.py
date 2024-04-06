@@ -850,13 +850,6 @@ def _collect_details_for_gallery():
         console.error(f"Unable to complete request due to {he}.")
         raise typer.Exit(code=1) from he
 
-    display_name = (
-        console.ask("[ Friendly display name for your component ] (enter to skip)")
-        or None
-    )
-    if display_name:
-        params["display_name"] = display_name
-
     files = []
     if (image_file_and_extension := _get_file_from_prompt_in_loop()) is not None:
         files.append(
