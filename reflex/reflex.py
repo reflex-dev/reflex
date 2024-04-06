@@ -188,7 +188,6 @@ def _run(
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
     if frontend:
-        prerequisites.update_next_config()
         # Get the app module.
         prerequisites.get_compiled_app()
 

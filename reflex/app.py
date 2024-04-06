@@ -729,8 +729,11 @@ class App(Base):
         for render, kwargs in DECORATED_PAGES:
             self.add_page(render, **kwargs)
 
-    def compile_(self):
+    def compile_(self, export: bool = False):
         """Compile the app and output it to the pages folder.
+
+        Args:
+            export: Whether to compile the app for export.
 
         Raises:
             RuntimeError: When any page uses state, but no rx.State subclass is defined.
@@ -936,6 +939,17 @@ class App(Base):
 
         # Install frontend packages.
         self.get_frontend_packages(all_imports)
+
+        # Setup the next.config.js
+        transpile_packages = [
+            package
+            for package, import_vars in all_imports.items()
+            if any(import_var.transpile for import_var in import_vars)
+        ]
+        prerequisites.update_next_config(
+            export=export,
+            transpile_packages=transpile_packages,
+        )
 
         for output_path, code in compile_results:
             compiler_utils.write_page(output_path, code)

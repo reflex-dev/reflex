@@ -204,10 +204,6 @@ class Config(Base):
     # The worker class used in production mode
     gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
 
-    # For npm packages that need to be transpiled for use with Next.js
-    # https://nextjs.org/docs/app/api-reference/next-config-js/transpilePackages
-    transpile_packages: List[str] = []
-
     # Attributes that were explicitly set by the user.
     _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
 

@@ -18,7 +18,7 @@ from datetime import datetime
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 import httpx
 import pkg_resources
@@ -33,6 +33,7 @@ from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
+from reflex.utils.format import format_library_name
 
 CURRENTLY_INSTALLING_NODE = False
 
@@ -216,11 +217,12 @@ def get_app(reload: bool = False) -> ModuleType:
     return app
 
 
-def get_compiled_app(reload: bool = False) -> ModuleType:
+def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
     Args:
         reload: Re-import the app module from disk
+        export: Compile the app for export
 
     Returns:
         The compiled app based on the default config.
@@ -230,7 +232,7 @@ def get_compiled_app(reload: bool = False) -> ModuleType:
     # For py3.8 and py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
-    app.compile_()
+    app.compile_(export=export)
     return app_module
 
 
@@ -526,30 +528,37 @@ def init_reflex_json(project_hash: int | None):
     path_ops.update_json_file(constants.Reflex.JSON, reflex_json)
 
 
-def update_next_config(export=False):
+def update_next_config(export=False, transpile_packages: Optional[List[str]] = None):
     """Update Next.js config from Reflex config.
 
     Args:
         export: if the method run during reflex export.
+        transpile_packages: list of packages to transpile via next.config.js.
     """
     next_config_file = os.path.join(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
 
-    next_config = _update_next_config(get_config(), export=export)
+    next_config = _update_next_config(
+        get_config(), export=export, transpile_packages=transpile_packages
+    )
 
     with open(next_config_file, "w") as file:
         file.write(next_config)
         file.write("\n")
 
 
-def _update_next_config(config: Config, export: bool = False):
+def _update_next_config(
+    config: Config, export: bool = False, transpile_packages: Optional[List[str]] = None
+):
     next_config = {
         "basePath": config.frontend_path or "",
         "compress": config.next_compression,
         "reactStrictMode": True,
         "trailingSlash": True,
     }
-    if config.transpile_packages:
-        next_config["transpilePackages"] = config.transpile_packages
+    if transpile_packages:
+        next_config["transpilePackages"] = list(
+            set((format_library_name(p) for p in transpile_packages))
+        )
     if export:
         next_config["output"] = "export"
         next_config["distDir"] = constants.Dirs.STATIC
