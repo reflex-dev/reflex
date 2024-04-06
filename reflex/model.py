@@ -16,12 +16,12 @@ import alembic.script
 import alembic.util
 import sqlalchemy
 import sqlalchemy.orm
-import sqlmodel
 
 from reflex import constants
 from reflex.base import Base
 from reflex.config import get_config
 from reflex.utils import console
+from reflex.utils.compat import sqlmodel
 
 
 def get_engine(url: str | None = None):
