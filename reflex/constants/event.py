@@ -1,4 +1,5 @@
 """Event-related constants."""
+
 from enum import Enum
 from types import SimpleNamespace
 
@@ -9,6 +10,7 @@ class Endpoint(Enum):
     PING = "ping"
     EVENT = "_event"
     UPLOAD = "_upload"
+    DOWNLOAD = "_download"
 
     def __str__(self) -> str:
         """Get the string representation of the endpoint.

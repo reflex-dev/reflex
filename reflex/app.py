@@ -77,6 +77,7 @@ from reflex.state import (
     _substate_key,
     code_uses_state_contexts,
 )
+from reflex.staticfiles import DownloadFiles
 from reflex.utils import console, exceptions, format, prerequisites, types
 from reflex.utils.exec import is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
@@ -271,16 +272,22 @@ class App(Base):
         self.api.get(str(constants.Endpoint.PING))(ping)
 
     def add_optional_endpoints(self):
-        """Add optional api endpoints (_upload)."""
+        """Add optional api endpoints (_upload and _download)."""
         # To upload files.
         if Upload.is_used:
             self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
-            # To access uploaded files.
+            # To access uploaded files as assets.
             self.api.mount(
                 str(constants.Endpoint.UPLOAD),
                 StaticFiles(directory=get_upload_dir()),
                 name="uploaded_files",
+            )
+            # To download uploaded files.
+            self.api.mount(
+                str(constants.Endpoint.DOWNLOAD),
+                DownloadFiles(directory=get_upload_dir()),
+                name="download_files",
             )
 
     def add_cors(self):

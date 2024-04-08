@@ -585,6 +585,10 @@ def download(
         if filename is None:
             filename = url.rpartition("/")[-1]
 
+    elif isinstance(url, Var):
+        # May need additional check here to only impact get_upload_url Vars ?
+        url._var_is_string = True
+
     if filename is None:
         filename = ""
 
