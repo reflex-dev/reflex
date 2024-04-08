@@ -166,6 +166,9 @@ export const applyEvent = async (event, socket) => {
       "${getBackendURL(env.UPLOAD)}",
       getBackendURL(env.UPLOAD)
     );
+    if (event.payload.filename) {
+      a.href = a.href + "?filename=" + event.payload.filename;
+    }
     a.download = event.payload.filename;
     a.click();
     a.remove();

@@ -271,12 +271,12 @@ class App(Base):
         self.api.get(str(constants.Endpoint.PING))(ping)
 
     def add_optional_endpoints(self):
-        """Add optional api endpoints (_upload and _download)."""
+        """Add optional api endpoints (_upload)."""
         # To upload files.
         if Upload.is_used:
             self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
-            # To access uploaded files as assets.
+            # To access uploaded files.
             self.api.mount(
                 str(constants.Endpoint.UPLOAD),
                 UploadedFiles(directory=get_upload_dir()),

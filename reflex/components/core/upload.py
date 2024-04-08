@@ -129,19 +129,20 @@ uploaded_files_url_prefix: Var = Var.create_safe(
 )
 
 
-def get_upload_url(file_path: str, download: bool = False) -> Var[str]:
+def get_upload_url(file_path: str) -> Var[str]:
     """Get the URL of an uploaded file.
 
     Args:
         file_path: The path of the uploaded file.
-        download: Whether to get the download URL instead of the upload URL.
 
     Returns:
         The URL of the uploaded file to be rendered from the frontend (as a str-encoded Var).
     """
     Upload.is_used = True
 
-    return Var.create_safe(f"{uploaded_files_url_prefix}/{file_path}")
+    return Var.create_safe(
+        f"{uploaded_files_url_prefix}/{file_path}", _var_is_string=True
+    )
 
 
 def _on_drop_spec(files: Var):
