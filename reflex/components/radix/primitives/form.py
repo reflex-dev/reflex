@@ -7,9 +7,11 @@ from typing import Any, Dict, Literal
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.el.elements.forms import Form as HTMLForm
 from reflex.components.radix.themes.components.text_field import TextFieldInput
+from reflex.components.radix.themes.components.button import Button
+from reflex.components.base.fragment import Fragment
 from reflex.constants.event import EventTriggers
 from reflex.vars import Var
-
+from reflex.state import ComponentState
 from .base import RadixPrimitiveComponentWithClassName
 
 
@@ -169,10 +171,49 @@ class FormSubmit(FormComponent):
 
 
 # This class is created mainly for reflex-web docs.
-class Form(FormRoot):
-    """The Form component."""
+# class Form(FormRoot):
+#     """The Form component."""
+#
+#     pass
 
-    pass
+class Form(ComponentState):
+    """The Form component."""
+    form_data: dict = {}
+
+    @classmethod
+    def has_submit_type(cls,component):
+        # Check if the component has 'type' attribute and its value is 'submit'
+        if hasattr(component, 'type') and component.type is not None and Var.create(component.type) ._var_name == 'submit':
+            return True
+
+        # Recursively check children
+        for child in component.children:
+            if cls.has_submit_type(child):
+                return True
+
+        return False
+
+    @classmethod
+    def get_component(cls,  *children, **props) -> Component:
+        submit_present = cls.has_submit_type(Fragment.create(*children))
+
+        extras = []
+        if not submit_present:
+            extras.append(Button.create("Submit", type="submit"))
+
+        return Fragment.create(
+            FormRoot.create(
+                Fragment.create(
+                    *children,
+                    *extras
+                ),
+                on_submit=cls.handle_submit if not "on_submit" in props else props.pop("on_submit"),
+                **props
+            ),
+        )
+
+    def handle_submit(self, form_data: dict):
+        self.form_data = form_data
 
 
 class FormNamespace(ComponentNamespace):
@@ -189,3 +230,5 @@ class FormNamespace(ComponentNamespace):
 
 
 form = FormNamespace()
+
+
