@@ -117,20 +117,16 @@ def get_upload_dir() -> Path:
     return uploaded_files_dir
 
 
-upload_var_data: VarData = VarData(  # type: ignore
-    imports={
-        f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="getBackendURL")},
-        "/env.json": {imports.ImportVar(tag="env", is_default=True)},
-    }
-)
-
 uploaded_files_url_prefix: Var = Var.create_safe(
     "${getBackendURL(env.UPLOAD)}"
-)._replace(merge_var_data=upload_var_data)
-
-download_files_url_prefix: Var = Var.create_safe(
-    "${getBackendURL(env.DOWNLOAD)}"
-)._replace(merge_var_data=upload_var_data)
+)._replace(
+    merge_var_data=VarData(  # type: ignore
+        imports={
+            f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="getBackendURL")},
+            "/env.json": {imports.ImportVar(tag="env", is_default=True)},
+        }
+    )
+)
 
 
 def get_upload_url(file_path: str, download: bool = False) -> Var[str]:
@@ -144,9 +140,6 @@ def get_upload_url(file_path: str, download: bool = False) -> Var[str]:
         The URL of the uploaded file to be rendered from the frontend (as a str-encoded Var).
     """
     Upload.is_used = True
-
-    if download:
-        return Var.create_safe(f"{download_files_url_prefix}/{file_path}")
 
     return Var.create_safe(f"{uploaded_files_url_prefix}/{file_path}")
 
