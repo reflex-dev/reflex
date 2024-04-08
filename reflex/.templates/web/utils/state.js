@@ -161,7 +161,7 @@ export const applyEvent = async (event, socket) => {
   if (event.name == "_download") {
     const a = document.createElement("a");
     a.hidden = true;
-    // Special case when linking to uploaded files
+    // Special case when linking to uploaded files (when rx.download is returned from upload_files handler())
     a.href = event.payload.url.replace(
       "${getBackendURL(env.UPLOAD)}",
       getBackendURL(env.UPLOAD)
