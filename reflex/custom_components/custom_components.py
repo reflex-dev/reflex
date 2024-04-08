@@ -416,9 +416,7 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
 
 def _make_pyi_files():
     """Create pyi files for the custom component."""
-    from glob import glob
-
-    package_name = glob("custom_components/*.egg-info")[0].replace(".egg-info", "")
+    package_name = tomlkit.load(open(CustomComponents.PYPROJECT_TOML))["project"]["name"]
 
     for dir, _, _ in os.walk(f"./{package_name}"):
         if "__pycache__" in dir:
