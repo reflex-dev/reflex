@@ -865,7 +865,7 @@ def needs_reinit(frontend: bool = True) -> bool:
         return True
 
     # Make sure the .web directory exists in frontend mode.
-    if os.path.exists(constants.Dirs.WEB):
+    if not os.path.exists(constants.Dirs.WEB):
         return True
 
     if constants.IS_WINDOWS:
