@@ -240,7 +240,13 @@ export const applyEvent = async (event, socket) => {
  */
 export const applyRestEvent = async (event, socket) => {
   let eventSent = false;
-  if (event.handler == "uploadFiles") {
+  if (event.handler === "uploadFiles") {
+
+    if (event.payload.files === undefined || event.payload.files.length === 0){
+      // Submit the event over the websocket to trigger the event handler.
+      return await applyEvent(Event(event.name, event.payload.files), socket)
+    }
+
     // Start upload, but do not wait for it, which would block other events.
     uploadFiles(
       event.name,
@@ -381,7 +387,7 @@ export const uploadFiles = async (
 ) => {
   // return if there's no file to upload
   if (files === undefined || files.length === 0) {
-    return false;
+    files = []
   }
 
   if (upload_controllers[upload_id]) {
