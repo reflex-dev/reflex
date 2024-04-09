@@ -232,6 +232,7 @@ def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
     """
     return str(dt)
 
+
 @serializer
 def serialize_enum(en: Enum) -> str:
     """Serialize a enum to a JSON string.
@@ -240,9 +241,10 @@ def serialize_enum(en: Enum) -> str:
         en: The enum to serialize.
 
     Return:
-         The serialized enum. 
+         The serialized enum.
     """
     return en.value
+
 
 @serializer
 def serialize_color(color: Color) -> str:

@@ -12,12 +12,7 @@ from reflex.vars import Var
 
 @pytest.mark.parametrize(
     "type_,expected",
-    [
-        (str, True),
-        (dict, True),
-        (Dict[int, int], True),
-        (Enum, True)
-    ],
+    [(str, True), (dict, True), (Dict[int, int], True), (Enum, True)],
 )
 def test_has_serializer(type_: Type, expected: bool):
     """Test that has_serializer returns the correct value.
@@ -47,7 +42,7 @@ def test_has_serializer(type_: Type, expected: bool):
         (int, serializers.serialize_primitive),
         (float, serializers.serialize_primitive),
         (bool, serializers.serialize_primitive),
-        (Enum, serializers.serialize_enum)
+        (Enum, serializers.serialize_enum),
     ],
 )
 def test_get_serializer(type_: Type, expected: serializers.Serializer):
@@ -104,11 +99,13 @@ class StrEnum(str, Enum):
     FOO = "foo"
     BAR = "bar"
 
+
 class TestEnum(Enum):
     """A lone enum class."""
-    
+
     FOO = "foo"
     BAR = "bar"
+
 
 class EnumWithPrefix(Enum):
     """An enum with a serializer adding a prefix."""
@@ -158,7 +155,6 @@ class BaseSubclass(Base):
             {"key1": TestEnum.FOO, "key2": TestEnum.BAR},
             '{"key1": "foo", "key2": "bar"}',
         ),
-
         (
             BaseSubclass(ts=datetime.timedelta(1, 1, 1)),
             '{"ts": "1 day, 0:00:01.000001"}',
