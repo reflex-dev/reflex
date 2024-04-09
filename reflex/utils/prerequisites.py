@@ -160,7 +160,7 @@ def get_install_package_manager() -> str | None:
     Returns:
         The path to the package manager.
     """
-    if not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
+    if constants.IS_WINDOWS and not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
         return get_package_manager()
     return get_config().bun_path
 
@@ -679,7 +679,7 @@ def install_bun():
     Raises:
         FileNotFoundError: If required packages are not found.
     """
-    if not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
+    if constants.IS_WINDOWS and not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
         console.warn(
             "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
         )
@@ -756,12 +756,12 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
     return _inner_decorator
 
 
-@cached_procedure(
-    cache_file=os.path.join(
-        constants.Dirs.WEB, "reflex.install_frontend_packages.cached"
-    ),
-    payload_fn=lambda p, c: f"{repr(sorted(list(p)))},{c.json()}",
-)
+# @cached_procedure(
+#     cache_file=os.path.join(
+#         constants.Dirs.WEB, "reflex.install_frontend_packages.cached"
+#     ),
+#     payload_fn=lambda p, c: f"{repr(sorted(list(p)))},{c.json()}",
+# )
 def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
 
@@ -772,9 +772,15 @@ def install_frontend_packages(packages: set[str], config: Config):
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
+    # unsupported archs will use npm anyway.
+    fallback_command = (
+        get_package_manager()
+        if constants.IS_WINDOWS and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
+        else None
+    )
     processes.run_process_with_fallback(
         [get_install_package_manager(), "install", "--loglevel", "silly"],
-        fallback=get_package_manager(),
+        fallback=fallback_command,
         show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
@@ -789,7 +795,7 @@ def install_frontend_packages(packages: set[str], config: Config):
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
             ],
-            fallback=get_package_manager(),
+            fallback=fallback_command,
             show_status_message="Installing tailwind",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
@@ -799,7 +805,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     if len(packages) > 0:
         processes.run_process_with_fallback(
             [get_install_package_manager(), "add", *packages],
-            fallback=get_package_manager(),
+            fallback=fallback_command,
             show_status_message="Installing frontend packages from config and components",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
