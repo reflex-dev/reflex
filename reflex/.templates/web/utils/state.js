@@ -387,7 +387,7 @@ export const uploadFiles = async (
 ) => {
   // return if there's no file to upload
   if (files === undefined || files.length === 0) {
-    files = []
+    return false;
   }
 
   if (upload_controllers[upload_id]) {
