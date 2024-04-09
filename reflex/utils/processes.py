@@ -295,6 +295,7 @@ def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwa
         kwargs: Kwargs to pass to new_process function.
     """
     process = new_process(args, **kwargs)
+    process.wait()
     if process.returncode != 0:
         error_output = process.stderr if process.stderr else process.stdout
         error_message = f"Error occurred during subprocess execution: {' '.join(args)}\n{error_output.read() if error_output else ''}"
