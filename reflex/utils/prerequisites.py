@@ -11,6 +11,7 @@ import platform
 import random
 import re
 import stat
+import subprocess
 import sys
 import tempfile
 import zipfile
@@ -160,6 +161,8 @@ def get_install_package_manager() -> str | None:
     Returns:
         The path to the package manager.
     """
+    if not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
+        return get_package_manager()
     return get_config().bun_path
 
 
@@ -677,15 +680,16 @@ def install_bun():
     Raises:
         FileNotFoundError: If required packages are not found.
     """
+    if constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
+        console.warn("Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm.")
+
     # Skip if bun is already installed.
-    print(f"bun_path = {get_config().bun_path} | exists? {os.path.exists(get_config().bun_path)}\n\n bun_version: {get_bun_version()} | accepted version: {constants.Bun.VERSION}")
     if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
         constants.Bun.VERSION
     ):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
-    print(f"$$$$$$$$$$$$$$$$$$$$$$ GOT HEREEE")
     #  if unzip is installed
     if constants.IS_WINDOWS:
         processes.new_process(
@@ -767,18 +771,16 @@ def install_frontend_packages(packages: set[str], config: Config):
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    # Install the base packages.
-    process = processes.new_process(
+    processes.run_process_with_fallback(
         [get_install_package_manager(), "install", "--loglevel", "silly"],
+        fallback=get_package_manager(),
+        show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
     )
 
-    processes.show_status("Installing base frontend packages", process)
-
     if config.tailwind is not None:
-        # install tailwind and tailwind plugins as dev dependencies.
-        process = processes.new_process(
+        processes.run_process_with_fallback(
             [
                 get_install_package_manager(),
                 "add",
@@ -786,20 +788,20 @@ def install_frontend_packages(packages: set[str], config: Config):
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
             ],
+            fallback=get_package_manager(),
+            show_status_message="Installing tailwind",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
         )
-        processes.show_status("Installing tailwind", process)
 
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
-        process = processes.new_process(
+        processes.run_process_with_fallback(
             [get_install_package_manager(), "add", *packages],
+            fallback=get_package_manager(),
+            show_status_message="Installing frontend packages from config and components",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
-        )
-        processes.show_status(
-            "Installing frontend packages from config and components", process
         )
 
 

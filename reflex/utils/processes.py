@@ -10,6 +10,7 @@ import subprocess
 from concurrent import futures
 from typing import Callable, Generator, List, Optional, Tuple, Union
 
+import click.exceptions
 import psutil
 import typer
 from redis.exceptions import RedisError
@@ -282,3 +283,24 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str
 def atexit_handler():
     """Display a custom message with the current time when exiting an app."""
     console.log("Reflex app stopped.")
+
+
+def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwargs):
+    """Run subprocess and re-run using fallback command if initial command fails.
+
+    Args:
+        args: A string, or a sequence of program arguments.
+        show_status_message: The status message to be displayed in the console.
+        fallback: The fallback command to run.
+        kwargs: Kwargs to pass to new_process function.
+    """
+    try:
+        process = new_process(args, **kwargs)
+        show_status(show_status_message, process)
+    except (click.exceptions.Exit, Exception):
+        fallback_args = [fallback, *args[1:]] if fallback else None
+        console.warn(f"There was an error running command: {args}. Falling back to: {fallback_args}.")
+        if fallback_args:
+            process = new_process(fallback_args, **kwargs)
+            show_status(show_status_message, process)
+
