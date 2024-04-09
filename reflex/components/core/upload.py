@@ -314,10 +314,9 @@ class StyledUpload(Upload):
             The styled upload component.
         """
         # Set default props.
-        props.setdefault("border", "1px dashed black")
-
-        # props.setdefault("padding", "5em")
-        # props.setdefault("textAlign", "center")
+        props.setdefault("border", "1px dashed var(--accent-12)")
+        props.setdefault("padding", "5em")
+        props.setdefault("textAlign", "center")
 
         return super().create(
             *children,
