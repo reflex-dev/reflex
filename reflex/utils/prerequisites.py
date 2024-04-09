@@ -856,12 +856,16 @@ def needs_reinit(frontend: bool = True) -> bool:
         )
         raise typer.Exit(1)
 
+    # Don't need to reinit if not running in frontend mode.
+    if not frontend:
+        return False
+
     # Make sure the .reflex directory exists.
     if not os.path.exists(constants.Reflex.DIR):
         return True
 
     # Make sure the .web directory exists in frontend mode.
-    if frontend and not os.path.exists(constants.Dirs.WEB):
+    if os.path.exists(constants.Dirs.WEB):
         return True
 
     if constants.IS_WINDOWS:

@@ -65,7 +65,6 @@ def _init(
     name: str,
     template: str | None = None,
     loglevel: constants.LogLevel = config.loglevel,
-    frontend: bool = True,
 ):
     """Initialize a new Reflex app in the given directory."""
     from reflex.utils import exec, prerequisites
@@ -90,8 +89,7 @@ def _init(
         prerequisites.show_rx_chakra_migration_instructions()
 
     # Set up the web project.
-    if frontend:
-        prerequisites.initialize_frontend_dependencies()
+    prerequisites.initialize_frontend_dependencies()
 
     # Initialize the app.
     prerequisites.initialize_app(app_name, template)
@@ -157,7 +155,7 @@ def _run(
 
     # Check that the app is initialized.
     if prerequisites.needs_reinit(frontend=frontend):
-        _init(name=config.app_name, frontend=frontend, loglevel=loglevel)
+        _init(name=config.app_name, loglevel=loglevel)
 
     # If something is running on the ports, ask the user if they want to kill or change it.
     if frontend and processes.is_process_on_port(frontend_port):
@@ -289,7 +287,7 @@ def export(
     from reflex.utils import prerequisites
 
     if prerequisites.needs_reinit(frontend=True):
-        _init(name=config.app_name, frontend=frontend, loglevel=loglevel)
+        _init(name=config.app_name, loglevel=loglevel)
 
     export_utils.export(
         zipping=zipping,
