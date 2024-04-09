@@ -11,7 +11,6 @@ import platform
 import random
 import re
 import stat
-import subprocess
 import sys
 import tempfile
 import zipfile
@@ -681,7 +680,9 @@ def install_bun():
         FileNotFoundError: If required packages are not found.
     """
     if constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
-        console.warn("Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm.")
+        console.warn(
+            "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
+        )
 
     # Skip if bun is already installed.
     if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(

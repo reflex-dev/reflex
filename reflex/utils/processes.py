@@ -299,8 +299,9 @@ def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwa
         show_status(show_status_message, process)
     except (click.exceptions.Exit, Exception):
         fallback_args = [fallback, *args[1:]] if fallback else None
-        console.warn(f"There was an error running command: {args}. Falling back to: {fallback_args}.")
+        console.warn(
+            f"There was an error running command: {args}. Falling back to: {fallback_args}."
+        )
         if fallback_args:
             process = new_process(fallback_args, **kwargs)
             show_status(show_status_message, process)
-
