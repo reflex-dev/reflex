@@ -1,8 +1,9 @@
 name: benchmarking
 
 on:
-  push:
-    branches: [main]
+  pull_request:
+    types:
+      - closed
     paths-ignore:
       - '**/*.md'
 
@@ -22,6 +23,7 @@ env:
 
 jobs:
   reflex-web:
+    if: github.event.pull_request.merged == true
     strategy:
       fail-fast: false
       matrix:
@@ -71,6 +73,7 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
 
   simple-apps-benchmarks:
+    if: github.event.pull_request.merged == true
     env:
       OUTPUT_FILE: benchmarks.json
     timeout-minutes: 50
@@ -132,6 +135,7 @@ jobs:
           --event-type "${{ github.event_name }}" --actor "${{ github.actor }}" --pr-id "${{ github.event.pull_request.id }}"
 
   reflex-build-size:
+    if: github.event.pull_request.merged == true
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
@@ -159,6 +163,7 @@ jobs:
           --measurement-type "reflex-build" --path ./dist
 
   reflex-plus-dependency-size:
+    if: github.event.pull_request.merged == true
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
