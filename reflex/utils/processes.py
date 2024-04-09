@@ -294,10 +294,15 @@ def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwa
         fallback: The fallback command to run.
         kwargs: Kwargs to pass to new_process function.
     """
-    try:
-        process = new_process(args, **kwargs)
-        show_status(show_status_message, process)
-    except (click.exceptions.Exit, Exception):
+    process = new_process(args, **kwargs)
+    if process.returncode != 0:
+        error_output = process.stderr if process.stderr else process.stdout
+        error_message = f"Error occurred during subprocess execution: {' '.join(args)}\n{error_output.read() if error_output else ''}"
+        # Only show error in debug mode.
+        if console.is_debug():
+            console.error(error_message)
+
+        # retry with fallback command.
         fallback_args = [fallback, *args[1:]] if fallback else None
         console.warn(
             f"There was an error running command: {args}. Falling back to: {fallback_args}."
@@ -305,3 +310,5 @@ def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwa
         if fallback_args:
             process = new_process(fallback_args, **kwargs)
             show_status(show_status_message, process)
+    else:
+        show_status(show_status_message, process)
