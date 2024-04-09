@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import Enum
 import json
 import types as builtin_types
 import warnings
@@ -231,6 +232,17 @@ def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
     """
     return str(dt)
 
+@serializer
+def serialize_enum(en: Enum) -> str:
+    """Serialize a enum to a JSON string.
+
+    Args:
+        en: The enum to serialize.
+
+    Return:
+         The serialized enum. 
+    """
+    return en.value
 
 @serializer
 def serialize_color(color: Color) -> str:
