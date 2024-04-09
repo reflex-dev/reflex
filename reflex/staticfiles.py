@@ -20,8 +20,8 @@ class UploadedFiles(StaticFiles):
             The response for the static file with download headers.
         """
         req = Request(scope)
-        if "filename" in req.query_params:
-            filename = req.query_params["filename"]
+        if "x-filename" in req.headers:
+            filename = req.headers["x-filename"]
             content_disposition = f'attachment; filename="{filename}"'
         else:
             content_disposition = "attachment"

@@ -159,19 +159,33 @@ export const applyEvent = async (event, socket) => {
   }
 
   if (event.name == "_download") {
-    const a = document.createElement("a");
-    a.hidden = true;
-    // Special case when linking to uploaded files (when rx.download is returned from upload_files handler.)
-    a.href = event.payload.url.replace(
+    const getFilenameFromUrl = (url) => url.split("/").pop().split("?")[0];
+
+    // if the URL come from an upload handler, replace the backend URL placeholder with the actual backend URL
+    const downloadUrl = event.payload.url.replace(
       "${getBackendURL(env.UPLOAD)}",
       getBackendURL(env.UPLOAD)
     );
-    if (event.payload.filename) {
-      a.href = a.href + "?filename=" + event.payload.filename;
-    }
-    a.download = event.payload.filename;
-    a.click();
-    a.remove();
+    const filename = event.payload.filename || getFilenameFromUrl(downloadUrl);
+    fetch(downloadUrl, {
+      method: "GET",
+      headers: { "X-Filename": filename },
+    })
+      .then((response) => {
+        if (!response.ok)
+          throw new Error(`Download of file at ${downloadUrl} failed`);
+        return response.blob();
+      })
+      .then((blob) => {
+        const blobURL = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        console.log("Downloading file from ", blobURL, " as ", filename);
+        a.href = blobURL;
+        a.download = filename;
+        a.click();
+        window.URL.revokeObjectURL(blobURL);
+      })
+      .catch((error) => console.log(error));
     return false;
   }
 
