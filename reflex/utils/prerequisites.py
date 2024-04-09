@@ -756,12 +756,12 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
     return _inner_decorator
 
 
-# @cached_procedure(
-#     cache_file=os.path.join(
-#         constants.Dirs.WEB, "reflex.install_frontend_packages.cached"
-#     ),
-#     payload_fn=lambda p, c: f"{repr(sorted(list(p)))},{c.json()}",
-# )
+@cached_procedure(
+    cache_file=os.path.join(
+        constants.Dirs.WEB, "reflex.install_frontend_packages.cached"
+    ),
+    payload_fn=lambda p, c: f"{repr(sorted(list(p)))},{c.json()}",
+)
 def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
 
@@ -772,7 +772,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    # unsupported archs will use npm anyway.
+    # unsupported archs will use npm anyway. so we dont have to run npm twice
     fallback_command = (
         get_package_manager()
         if constants.IS_WINDOWS and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
