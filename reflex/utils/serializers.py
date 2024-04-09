@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from enum import Enum
 import json
 import types as builtin_types
 import warnings
 from datetime import date, datetime, time, timedelta
+from enum import Enum
 from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_hints
 
 from reflex.base import Base
