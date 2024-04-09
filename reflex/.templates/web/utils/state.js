@@ -167,6 +167,7 @@ export const applyEvent = async (event, socket) => {
       getBackendURL(env.UPLOAD)
     );
     const filename = event.payload.filename || getFilenameFromUrl(downloadUrl);
+
     fetch(downloadUrl, {
       method: "GET",
       headers: { "X-Filename": filename },
@@ -179,7 +180,7 @@ export const applyEvent = async (event, socket) => {
       .then((blob) => {
         const blobURL = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
-        console.log("Downloading file from ", blobURL, " as ", filename);
+
         a.href = blobURL;
         a.download = filename;
         a.click();
