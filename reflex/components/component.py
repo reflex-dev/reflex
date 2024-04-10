@@ -622,10 +622,6 @@ class Component(BaseComponent, ABC):
         from reflex.components.base.bare import Bare
         from reflex.components.base.fragment import Fragment
 
-        # if children and isinstance(children, tuple):
-        #     pass
-        # children_ = Fragment.create(*children)
-
         # Translate deprecated props to new names.
         new_prop_names = [
             prop for prop in cls.get_props() if prop in ["type", "min", "max"]

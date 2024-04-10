@@ -6,6 +6,7 @@ import reflex as rx
 from reflex.base import Base
 from reflex.compiler.compiler import compile_components
 from reflex.components.base.bare import Bare
+from reflex.components.base.fragment import Fragment
 from reflex.components.chakra.layout.box import Box
 from reflex.components.component import (
     Component,
@@ -13,7 +14,6 @@ from reflex.components.component import (
     StatefulComponent,
     custom_component,
 )
-from reflex.components.base.fragment import Fragment
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler
 from reflex.state import BaseState
