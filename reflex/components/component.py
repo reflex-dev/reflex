@@ -614,6 +614,9 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed. # noqa: DAR402
         """
         # Import here to avoid circular imports.
         from reflex.components.base.bare import Bare
