@@ -240,7 +240,7 @@ def serialize_enum(en: Enum) -> str:
     Args:
         en: The enum to serialize.
 
-    Return:
+    Returns:
          The serialized enum.
     """
     return en.value
