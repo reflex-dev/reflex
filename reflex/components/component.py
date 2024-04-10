@@ -620,6 +620,11 @@ class Component(BaseComponent, ABC):
         """
         # Import here to avoid circular imports.
         from reflex.components.base.bare import Bare
+        from reflex.components.base.fragment import Fragment
+
+        # if children and isinstance(children, tuple):
+        #     pass
+        # children_ = Fragment.create(*children)
 
         # Translate deprecated props to new names.
         new_prop_names = [
@@ -640,20 +645,27 @@ class Component(BaseComponent, ABC):
         # Filter out None props
         props = {key: value for key, value in props.items() if value is not None}
 
+        def validate_children(children):
+            for child in children:
+                if isinstance(child, tuple):
+                    validate_children(child)
+                # Make sure the child is a valid type.
+                if not types._isinstance(child, ComponentChild):
+                    raise TypeError(
+                        "Children of Reflex components must be other components, "
+                        "state vars, or primitive Python types. "
+                        f"Got child {child} of type {type(child)}.",
+                    )
+
         # Validate all the children.
-        for child in children:
-            # Make sure the child is a valid type.
-            if not types._isinstance(child, ComponentChild):
-                raise TypeError(
-                    "Children of Reflex components must be other components, "
-                    "state vars, or primitive Python types. "
-                    f"Got child {child} of type {type(child)}.",
-                )
+        validate_children(children)
 
         children = [
             (
                 child
                 if isinstance(child, Component)
+                else Fragment.create(*child)
+                if isinstance(child, tuple)
                 else Bare.create(contents=Var.create(child, _var_is_string=True))
             )
             for child in children

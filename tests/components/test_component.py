@@ -13,6 +13,7 @@ from reflex.components.component import (
     StatefulComponent,
     custom_component,
 )
+from reflex.components.base.fragment import Fragment
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler
 from reflex.state import BaseState
@@ -455,6 +456,190 @@ def test_create_filters_none_props(test_component):
     # Assert that the style prop is present in the component's props
     assert component.style["color"] == "white"
     assert component.style["text-align"] == "center"
+
+
+@pytest.mark.parametrize("children", [((None,),), ("foo", ("bar", (None,)))])
+def test_component_create_unallowed_types(children, test_component):
+    with pytest.raises(TypeError) as err:
+        test_component.create(*children)
+    assert (
+        err.value.args[0]
+        == "Children of Reflex components must be other components, state vars, or primitive Python types. Got child None of type <class 'NoneType'>."
+    )
+
+
+@pytest.mark.parametrize(
+    "element, expected",
+    [
+        (
+            (rx.text("first_text"),),
+            {
+                "name": "Fragment",
+                "props": [],
+                "contents": "",
+                "args": None,
+                "special_props": set(),
+                "children": [
+                    {
+                        "name": "RadixThemesText",
+                        "props": ["as={`p`}"],
+                        "contents": "",
+                        "args": None,
+                        "special_props": set(),
+                        "children": [
+                            {
+                                "name": "",
+                                "props": [],
+                                "contents": "{`first_text`}",
+                                "args": None,
+                                "special_props": set(),
+                                "children": [],
+                                "autofocus": False,
+                            }
+                        ],
+                        "autofocus": False,
+                    }
+                ],
+                "autofocus": False,
+            },
+        ),
+        (
+            (rx.text("first_text"), rx.text("second_text")),
+            {
+                "args": None,
+                "autofocus": False,
+                "children": [
+                    {
+                        "args": None,
+                        "autofocus": False,
+                        "children": [
+                            {
+                                "args": None,
+                                "autofocus": False,
+                                "children": [],
+                                "contents": "{`first_text`}",
+                                "name": "",
+                                "props": [],
+                                "special_props": set(),
+                            }
+                        ],
+                        "contents": "",
+                        "name": "RadixThemesText",
+                        "props": ["as={`p`}"],
+                        "special_props": set(),
+                    },
+                    {
+                        "args": None,
+                        "autofocus": False,
+                        "children": [
+                            {
+                                "args": None,
+                                "autofocus": False,
+                                "children": [],
+                                "contents": "{`second_text`}",
+                                "name": "",
+                                "props": [],
+                                "special_props": set(),
+                            }
+                        ],
+                        "contents": "",
+                        "name": "RadixThemesText",
+                        "props": ["as={`p`}"],
+                        "special_props": set(),
+                    },
+                ],
+                "contents": "",
+                "name": "Fragment",
+                "props": [],
+                "special_props": set(),
+            },
+        ),
+        (
+            (rx.text("first_text"), rx.box((rx.text("second_text"),))),
+            {
+                "args": None,
+                "autofocus": False,
+                "children": [
+                    {
+                        "args": None,
+                        "autofocus": False,
+                        "children": [
+                            {
+                                "args": None,
+                                "autofocus": False,
+                                "children": [],
+                                "contents": "{`first_text`}",
+                                "name": "",
+                                "props": [],
+                                "special_props": set(),
+                            }
+                        ],
+                        "contents": "",
+                        "name": "RadixThemesText",
+                        "props": ["as={`p`}"],
+                        "special_props": set(),
+                    },
+                    {
+                        "args": None,
+                        "autofocus": False,
+                        "children": [
+                            {
+                                "args": None,
+                                "autofocus": False,
+                                "children": [
+                                    {
+                                        "args": None,
+                                        "autofocus": False,
+                                        "children": [
+                                            {
+                                                "args": None,
+                                                "autofocus": False,
+                                                "children": [],
+                                                "contents": "{`second_text`}",
+                                                "name": "",
+                                                "props": [],
+                                                "special_props": set(),
+                                            }
+                                        ],
+                                        "contents": "",
+                                        "name": "RadixThemesText",
+                                        "props": ["as={`p`}"],
+                                        "special_props": set(),
+                                    }
+                                ],
+                                "contents": "",
+                                "name": "Fragment",
+                                "props": [],
+                                "special_props": set(),
+                            }
+                        ],
+                        "contents": "",
+                        "name": "RadixThemesBox",
+                        "props": [],
+                        "special_props": set(),
+                    },
+                ],
+                "contents": "",
+                "name": "Fragment",
+                "props": [],
+                "special_props": set(),
+            },
+        ),
+    ],
+)
+def test_component_create_unpack_tuple_child(test_component, element, expected):
+    """Test that component in tuples are unwrapped into an rx.Fragment.
+
+    Args:
+        test_component: Component fixture.
+        element: The children to pass to the component.
+        expected: The expected render dict.
+    """
+    comp = test_component.create(element)
+
+    assert len(comp.children) == 1
+    assert isinstance((fragment_wrapper := comp.children[0]), Fragment)
+    assert fragment_wrapper.render() == expected
 
 
 class C1State(BaseState):
