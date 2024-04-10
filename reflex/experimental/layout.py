@@ -64,12 +64,16 @@ class SidebarTrigger(Component):
         )
 
 
-class Layout(ComponentState):
+class Layout(Component):
     """A component that renders the layout."""
 
     @classmethod
-    def get_component(
-        cls, *children, sidebar: Component | None = None, content: Component, **props
+    def create(
+        cls,
+        *children,
+        sidebar: Component | None = None,
+        content: Component,
+        **props,
     ):
         if sidebar is None:
             return rx.container(content, **props)
