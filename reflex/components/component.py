@@ -474,9 +474,11 @@ class Component(BaseComponent, ABC):
         # e.g. variable declared as EventHandler types.
         for field in self.get_fields().values():
             if types._issubclass(field.type_, EventHandler):
-                default_triggers[field.name] = getattr(
-                    field.type_, "args_spec", lambda: []
-                )
+                args_spec = None
+                annotation = field.annotation
+                if hasattr(annotation, "__metadata__"):
+                    args_spec = annotation.__metadata__[0]
+                default_triggers[field.name] = args_spec or (lambda: [])
         return default_triggers
 
     def __repr__(self) -> str:
