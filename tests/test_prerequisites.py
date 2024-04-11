@@ -1,3 +1,5 @@
+import json
+import re
 import tempfile
 from unittest.mock import Mock, mock_open
 
@@ -59,6 +61,30 @@ from reflex.utils.prerequisites import (
 def test_update_next_config(config, export, expected_output):
     output = _update_next_config(config, export=export)
     assert output == expected_output
+
+
+@pytest.mark.parametrize(
+    ("transpile_packages", "expected_transpile_packages"),
+    (
+        (
+            ["foo", "@bar/baz"],
+            ["@bar/baz", "foo"],
+        ),
+        (
+            ["foo", "@bar/baz", "foo", "@bar/baz@3.2.1"],
+            ["@bar/baz", "foo"],
+        ),
+    ),
+)
+def test_transpile_packages(transpile_packages, expected_transpile_packages):
+    output = _update_next_config(
+        Config(app_name="test"),
+        transpile_packages=transpile_packages,
+    )
+    transpile_packages_match = re.search(r"transpilePackages: (\[.*?\])", output)
+    transpile_packages_json = transpile_packages_match.group(1)  # type: ignore
+    actual_transpile_packages = sorted(json.loads(transpile_packages_json))
+    assert actual_transpile_packages == expected_transpile_packages
 
 
 def test_initialize_requirements_txt_no_op(mocker):
