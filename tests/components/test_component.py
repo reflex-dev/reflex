@@ -412,6 +412,7 @@ def test_get_event_triggers(component1, component2):
         EventTriggers.ON_SCROLL,
         EventTriggers.ON_MOUNT,
         EventTriggers.ON_UNMOUNT,
+        EventTriggers.ON_PASTE,
     }
     assert set(component1().get_event_triggers().keys()) == default_triggers
     assert (
