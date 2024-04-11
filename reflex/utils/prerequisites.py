@@ -167,16 +167,13 @@ def get_bun_version() -> version.Version | None:
 
 def get_install_package_manager() -> str | None:
     """Get the package manager executable for installation.
-      Currently on unix systems, bun is used for installation only.
+      Currently, bun is used for installation only.
 
     Returns:
         The path to the package manager.
     """
-    # On Windows, we use npm instead of bun.
-    if constants.IS_WINDOWS:
+    if constants.IS_WINDOWS and not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
         return get_package_manager()
-
-    # On other platforms, we use bun.
     return get_config().bun_path
 
 
@@ -729,10 +726,10 @@ def install_bun():
     Raises:
         FileNotFoundError: If required packages are not found.
     """
-    # Bun is not supported on Windows.
-    if constants.IS_WINDOWS:
-        console.debug("Skipping bun installation on Windows.")
-        return
+    if constants.IS_WINDOWS and not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
+        console.warn(
+            "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
+        )
 
     # Skip if bun is already installed.
     if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
@@ -742,16 +739,25 @@ def install_bun():
         return
 
     #  if unzip is installed
-    unzip_path = path_ops.which("unzip")
-    if unzip_path is None:
-        raise FileNotFoundError("Reflex requires unzip to be installed.")
+    if constants.IS_WINDOWS:
+        processes.new_process(
+            ["powershell", "-c", f"irm {constants.Bun.INSTALL_URL}.ps1|iex"],
+            env={"BUN_INSTALL": constants.Bun.ROOT_PATH},
+            shell=True,
+            run=True,
+            show_logs=console.is_debug(),
+        )
+    else:
+        unzip_path = path_ops.which("unzip")
+        if unzip_path is None:
+            raise FileNotFoundError("Reflex requires unzip to be installed.")
 
-    # Run the bun install script.
-    download_and_run(
-        constants.Bun.INSTALL_URL,
-        f"bun-v{constants.Bun.VERSION}",
-        BUN_INSTALL=constants.Bun.ROOT_PATH,
-    )
+        # Run the bun install script.
+        download_and_run(
+            constants.Bun.INSTALL_URL,
+            f"bun-v{constants.Bun.VERSION}",
+            BUN_INSTALL=constants.Bun.ROOT_PATH,
+        )
 
 
 def _write_cached_procedure_file(payload: str, cache_file: str):
@@ -813,18 +819,22 @@ def install_frontend_packages(packages: set[str], config: Config):
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    # Install the base packages.
-    process = processes.new_process(
+    # unsupported archs will use npm anyway. so we dont have to run npm twice
+    fallback_command = (
+        get_package_manager()
+        if constants.IS_WINDOWS and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
+        else None
+    )
+    processes.run_process_with_fallback(
         [get_install_package_manager(), "install", "--loglevel", "silly"],
+        fallback=fallback_command,
+        show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
     )
 
-    processes.show_status("Installing base frontend packages", process)
-
     if config.tailwind is not None:
-        # install tailwind and tailwind plugins as dev dependencies.
-        process = processes.new_process(
+        processes.run_process_with_fallback(
             [
                 get_install_package_manager(),
                 "add",
@@ -832,20 +842,20 @@ def install_frontend_packages(packages: set[str], config: Config):
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
             ],
+            fallback=fallback_command,
+            show_status_message="Installing tailwind",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
         )
-        processes.show_status("Installing tailwind", process)
 
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
-        process = processes.new_process(
+        processes.run_process_with_fallback(
             [get_install_package_manager(), "add", *packages],
+            fallback=fallback_command,
+            show_status_message="Installing frontend packages from config and components",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
-        )
-        processes.show_status(
-            "Installing frontend packages from config and components", process
         )
 
 
@@ -952,9 +962,6 @@ def validate_frontend_dependencies(init=True):
                 f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
             )
             raise typer.Exit(1)
-
-    if constants.IS_WINDOWS:
-        return
 
     if init:
         # we only need bun for package install on `reflex init`.

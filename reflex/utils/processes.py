@@ -287,3 +287,40 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str
 def atexit_handler():
     """Display a custom message with the current time when exiting an app."""
     console.log("Reflex app stopped.")
+
+
+def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwargs):
+    """Run subprocess and retry using fallback command if initial command fails.
+
+    Args:
+        args: A string, or a sequence of program arguments.
+        show_status_message: The status message to be displayed in the console.
+        fallback: The fallback command to run.
+        kwargs: Kwargs to pass to new_process function.
+    """
+
+    def execute_process(process):
+        if not constants.IS_WINDOWS:
+            show_status(show_status_message, process)
+        else:
+            process.wait()
+            if process.returncode != 0:
+                error_output = process.stderr if process.stderr else process.stdout
+                error_message = f"Error occurred during subprocess execution: {' '.join(args)}\n{error_output.read() if error_output else ''}"
+                # Only show error in debug mode.
+                if console.is_debug():
+                    console.error(error_message)
+
+                # retry with fallback command.
+                fallback_args = [fallback, *args[1:]] if fallback else None
+                console.warn(
+                    f"There was an error running command: {args}. Falling back to: {fallback_args}."
+                )
+                if fallback_args:
+                    process = new_process(fallback_args, **kwargs)
+                    execute_process(process)
+            else:
+                show_status(show_status_message, process)
+
+    process = new_process(args, **kwargs)
+    execute_process(process)
