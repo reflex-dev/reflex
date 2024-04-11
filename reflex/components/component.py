@@ -466,6 +466,7 @@ class Component(BaseComponent, ABC):
             EventTriggers.ON_SCROLL: lambda: [],
             EventTriggers.ON_MOUNT: lambda: [],
             EventTriggers.ON_UNMOUNT: lambda: [],
+            EventTriggers.ON_PASTE: lambda: [],
         }
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
