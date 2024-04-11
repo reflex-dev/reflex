@@ -14,7 +14,7 @@ from reflex.components.component import (
     custom_component,
 )
 from reflex.constants import EventTriggers
-from reflex.event import EventChain, EventHandler
+from reflex.event import EventChain, EventHandler, parse_args_spec
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
@@ -1357,11 +1357,12 @@ def test_custom_component_declare_event_handlers_in_fields():
             """
             return {
                 **super().get_event_triggers(),
-                "on_a": lambda e: [e],
-                "on_b": lambda e: [e.target.value],
-                "on_c": lambda e: [],
+                "on_a": lambda e0: [e0],
+                "on_b": lambda e0: [e0.target.value],
+                "on_c": lambda e0: [],
                 "on_d": lambda: [],
                 "on_e": lambda: [],
+                "on_f": lambda a, b, c: [c, b, a],
             }
 
     class TestComponent(Component):
@@ -1370,10 +1371,16 @@ def test_custom_component_declare_event_handlers_in_fields():
         on_c: EventHandler[lambda e0: []]
         on_d: EventHandler[lambda: []]
         on_e: EventHandler
+        on_f: EventHandler[lambda a, b, c: [c, b, a]]
 
     custom_component = ReferenceComponent.create()
     test_component = TestComponent.create()
-    assert (
-        custom_component.get_event_triggers().keys()
-        == test_component.get_event_triggers().keys()
-    )
+    custom_triggers = custom_component.get_event_triggers()
+    test_triggers = test_component.get_event_triggers()
+    assert custom_triggers.keys() == test_triggers.keys()
+    for trigger_name in custom_component.get_event_triggers():
+        for v1, v2 in zip(
+            parse_args_spec(test_triggers[trigger_name]),
+            parse_args_spec(custom_triggers[trigger_name]),
+        ):
+            assert v1.equals(v2)
