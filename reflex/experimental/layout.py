@@ -3,7 +3,7 @@
 import reflex as rx
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace
-from reflex.components.radix.primitives.drawer import drawer, DrawerRoot
+from reflex.components.radix.primitives.drawer import DrawerRoot, drawer
 from reflex.components.radix.themes.components.icon_button import IconButton
 from reflex.components.radix.themes.layout import Box
 from reflex.state import ComponentState
@@ -50,19 +50,15 @@ class DrawerSidebar(DrawerRoot):
     @classmethod
     def create(cls, *children, **props):
         """Create the sidebar component."""
-        # style = props.setdefault("style", {})
-        # style["background_color"] = rx.color("accent", 1)
-        # style["width"] = "20vw"
-        # style["height"] = "100vh"
-        # style["left"] = 0
-        # style["top"] = 0
         direction = props.pop("direction", "left")
         props.setdefault("border_right", f"1px solid {rx.color('accent', 12)}")
         props.setdefault("background_color", rx.color("accent", 1))
         props.setdefault("width", "20vw")
         props.setdefault("height", "100vh")
         return super().create(
-            drawer.trigger(SidebarTrigger.create()),
+            drawer.trigger(
+                SidebarTrigger.create(), position="absolute", top="15", left="15"
+            ),
             drawer.portal(
                 drawer.content(
                     *children,
@@ -107,9 +103,9 @@ class SidebarTrigger(Fragment):
         else:
             ...  # make stuff working with stateless sidebar
             trigger_props["left"] = "15"
-            trigger = IconButton.create("Placeholder", **trigger_props)
+            return IconButton.create("arrow-right-from-line", **trigger_props)
 
-        return super().create(trigger, **props)
+        return super().create(trigger)
 
 
 class Layout(Box):
