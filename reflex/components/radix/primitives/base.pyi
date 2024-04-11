@@ -88,9 +88,6 @@ class RadixPrimitiveComponent(Component):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -169,8 +166,5 @@ class RadixPrimitiveComponentWithClassName(RadixPrimitiveComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...

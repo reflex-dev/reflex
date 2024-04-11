@@ -232,9 +232,6 @@ class AlertDialogBody(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -311,9 +308,6 @@ class AlertDialogHeader(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -390,9 +384,6 @@ class AlertDialogFooter(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -469,9 +460,6 @@ class AlertDialogContent(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -548,9 +536,6 @@ class AlertDialogOverlay(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -627,8 +612,5 @@ class AlertDialogCloseButton(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...

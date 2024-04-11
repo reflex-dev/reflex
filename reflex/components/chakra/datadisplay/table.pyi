@@ -502,9 +502,6 @@ class Th(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -583,9 +580,6 @@ class Td(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -664,9 +658,6 @@ class TableCaption(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -743,8 +734,5 @@ class TableContainer(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
