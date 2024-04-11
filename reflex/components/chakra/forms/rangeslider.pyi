@@ -103,7 +103,7 @@ class RangeSlider(ChakraComponent):
 
         Args:
             *children: The children of the component.
-            value: State var to bind the the input.
+            value: State var to bind the input.
             default_value: The default values.
             direction: The writing mode ("ltr" | "rtl")
             focus_thumb_on_change: If false, the slider handle will not capture focus when value changes.

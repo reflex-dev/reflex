@@ -368,7 +368,7 @@ class Component(BaseComponent, ABC):
         """Create an event chain from a variety of input types.
 
         Args:
-            args_spec: The args_spec of the the event trigger being bound.
+            args_spec: The args_spec of the event trigger being bound.
             value: The value to create the event chain from.
 
         Returns:
