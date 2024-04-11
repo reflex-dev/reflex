@@ -6,6 +6,7 @@ omit =
     reflex/__main__.py
     reflex/app_module_for_backend.py
     reflex/components/chakra/*
+    reflex/experimental/*
 
 [report]
 show_missing = true
