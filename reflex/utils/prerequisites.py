@@ -1384,7 +1384,9 @@ def initialize_app(app_name: str, template: str | None = None):
         else:
             # Check if the template is a github repo.
             if template.startswith("https://github.com"):
-                template_url = f"{template.strip('/')}/archive/main.zip"
+                template_url = (
+                    f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+                )
             else:
                 console.error(f"Template `{template}` not found.")
                 raise typer.Exit(1)
