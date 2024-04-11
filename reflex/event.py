@@ -405,18 +405,27 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     )
 
 
-def redirect(path: str | Var[str], external: Optional[bool] = False) -> EventSpec:
+def redirect(
+    path: str | Var[str],
+    external: Optional[bool] = False,
+    replace: Optional[bool] = False,
+) -> EventSpec:
     """Redirect to a new path.
 
     Args:
         path: The path to redirect to.
         external: Whether to open in new tab or not.
+        replace: If True, the current page will not create a new history entry.
 
     Returns:
         An event to redirect to the path.
     """
     return server_side(
-        "_redirect", get_fn_signature(redirect), path=path, external=external
+        "_redirect",
+        get_fn_signature(redirect),
+        path=path,
+        external=external,
+        replace=replace,
     )
 
 
