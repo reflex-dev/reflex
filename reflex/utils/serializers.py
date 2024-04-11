@@ -6,6 +6,7 @@ import json
 import types as builtin_types
 import warnings
 from datetime import date, datetime, time, timedelta
+from enum import Enum
 from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_hints
 
 from reflex.base import Base
@@ -230,6 +231,19 @@ def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
         The serialized datetime.
     """
     return str(dt)
+
+
+@serializer
+def serialize_enum(en: Enum) -> str:
+    """Serialize a enum to a JSON string.
+
+    Args:
+        en: The enum to serialize.
+
+    Returns:
+         The serialized enum.
+    """
+    return en.value
 
 
 @serializer
