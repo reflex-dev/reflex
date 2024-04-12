@@ -19,7 +19,7 @@ from datetime import datetime
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 import httpx
 import pkg_resources
@@ -35,6 +35,7 @@ from reflex.base import Base
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
+from reflex.utils.format import format_library_name
 
 CURRENTLY_INSTALLING_NODE = False
 
@@ -166,16 +167,13 @@ def get_bun_version() -> version.Version | None:
 
 def get_install_package_manager() -> str | None:
     """Get the package manager executable for installation.
-      Currently on unix systems, bun is used for installation only.
+      Currently, bun is used for installation only.
 
     Returns:
         The path to the package manager.
     """
-    # On Windows, we use npm instead of bun.
-    if constants.IS_WINDOWS:
+    if constants.IS_WINDOWS and not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
         return get_package_manager()
-
-    # On other platforms, we use bun.
     return get_config().bun_path
 
 
@@ -227,11 +225,12 @@ def get_app(reload: bool = False) -> ModuleType:
     return app
 
 
-def get_compiled_app(reload: bool = False) -> ModuleType:
+def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
     Args:
         reload: Re-import the app module from disk
+        export: Compile the app for export
 
     Returns:
         The compiled app based on the default config.
@@ -241,7 +240,7 @@ def get_compiled_app(reload: bool = False) -> ModuleType:
     # For py3.8 and py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
-    app.compile_()
+    app.compile_(export=export)
     return app_module
 
 
@@ -562,28 +561,37 @@ def init_reflex_json(project_hash: int | None):
     path_ops.update_json_file(constants.Reflex.JSON, reflex_json)
 
 
-def update_next_config(export=False):
+def update_next_config(export=False, transpile_packages: Optional[List[str]] = None):
     """Update Next.js config from Reflex config.
 
     Args:
         export: if the method run during reflex export.
+        transpile_packages: list of packages to transpile via next.config.js.
     """
     next_config_file = os.path.join(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
 
-    next_config = _update_next_config(get_config(), export=export)
+    next_config = _update_next_config(
+        get_config(), export=export, transpile_packages=transpile_packages
+    )
 
     with open(next_config_file, "w") as file:
         file.write(next_config)
         file.write("\n")
 
 
-def _update_next_config(config, export=False):
+def _update_next_config(
+    config: Config, export: bool = False, transpile_packages: Optional[List[str]] = None
+):
     next_config = {
         "basePath": config.frontend_path or "",
         "compress": config.next_compression,
         "reactStrictMode": True,
         "trailingSlash": True,
     }
+    if transpile_packages:
+        next_config["transpilePackages"] = list(
+            set((format_library_name(p) for p in transpile_packages))
+        )
     if export:
         next_config["output"] = "export"
         next_config["distDir"] = constants.Dirs.STATIC
@@ -718,10 +726,10 @@ def install_bun():
     Raises:
         FileNotFoundError: If required packages are not found.
     """
-    # Bun is not supported on Windows.
-    if constants.IS_WINDOWS:
-        console.debug("Skipping bun installation on Windows.")
-        return
+    if constants.IS_WINDOWS and not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
+        console.warn(
+            "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
+        )
 
     # Skip if bun is already installed.
     if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
@@ -731,16 +739,25 @@ def install_bun():
         return
 
     #  if unzip is installed
-    unzip_path = path_ops.which("unzip")
-    if unzip_path is None:
-        raise FileNotFoundError("Reflex requires unzip to be installed.")
+    if constants.IS_WINDOWS:
+        processes.new_process(
+            ["powershell", "-c", f"irm {constants.Bun.INSTALL_URL}.ps1|iex"],
+            env={"BUN_INSTALL": constants.Bun.ROOT_PATH},
+            shell=True,
+            run=True,
+            show_logs=console.is_debug(),
+        )
+    else:
+        unzip_path = path_ops.which("unzip")
+        if unzip_path is None:
+            raise FileNotFoundError("Reflex requires unzip to be installed.")
 
-    # Run the bun install script.
-    download_and_run(
-        constants.Bun.INSTALL_URL,
-        f"bun-v{constants.Bun.VERSION}",
-        BUN_INSTALL=constants.Bun.ROOT_PATH,
-    )
+        # Run the bun install script.
+        download_and_run(
+            constants.Bun.INSTALL_URL,
+            f"bun-v{constants.Bun.VERSION}",
+            BUN_INSTALL=constants.Bun.ROOT_PATH,
+        )
 
 
 def _write_cached_procedure_file(payload: str, cache_file: str):
@@ -802,18 +819,22 @@ def install_frontend_packages(packages: set[str], config: Config):
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    # Install the base packages.
-    process = processes.new_process(
+    # unsupported archs will use npm anyway. so we dont have to run npm twice
+    fallback_command = (
+        get_package_manager()
+        if constants.IS_WINDOWS and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
+        else None
+    )
+    processes.run_process_with_fallback(
         [get_install_package_manager(), "install", "--loglevel", "silly"],
+        fallback=fallback_command,
+        show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
     )
 
-    processes.show_status("Installing base frontend packages", process)
-
     if config.tailwind is not None:
-        # install tailwind and tailwind plugins as dev dependencies.
-        process = processes.new_process(
+        processes.run_process_with_fallback(
             [
                 get_install_package_manager(),
                 "add",
@@ -821,20 +842,20 @@ def install_frontend_packages(packages: set[str], config: Config):
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
             ],
+            fallback=fallback_command,
+            show_status_message="Installing tailwind",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
         )
-        processes.show_status("Installing tailwind", process)
 
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
-        process = processes.new_process(
+        processes.run_process_with_fallback(
             [get_install_package_manager(), "add", *packages],
+            fallback=fallback_command,
+            show_status_message="Installing frontend packages from config and components",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
-        )
-        processes.show_status(
-            "Installing frontend packages from config and components", process
         )
 
 
@@ -941,9 +962,6 @@ def validate_frontend_dependencies(init=True):
                 f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
             )
             raise typer.Exit(1)
-
-    if constants.IS_WINDOWS:
-        return
 
     if init:
         # we only need bun for package install on `reflex init`.
@@ -1373,7 +1391,9 @@ def initialize_app(app_name: str, template: str | None = None):
         else:
             # Check if the template is a github repo.
             if template.startswith("https://github.com"):
-                template_url = f"{template.strip('/')}/archive/main.zip"
+                template_url = (
+                    f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+                )
             else:
                 console.error(f"Template `{template}` not found.")
                 raise typer.Exit(1)

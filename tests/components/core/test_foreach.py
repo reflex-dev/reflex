@@ -1,11 +1,16 @@
 from typing import Dict, List, Set, Tuple
 
 import pytest
-from pydantic import ValidationError
 
 from reflex.components import box, foreach, text, theme
 from reflex.components.core import Foreach
 from reflex.state import BaseState
+
+try:
+    # When pydantic v2 is installed
+    from pydantic.v1 import ValidationError  # type: ignore
+except ImportError:
+    from pydantic import ValidationError
 
 
 class ForEachState(BaseState):
