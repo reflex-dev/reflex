@@ -89,9 +89,6 @@ class PlotlyLib(NoSSRComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -180,8 +177,5 @@ class Plotly(PlotlyLib):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...

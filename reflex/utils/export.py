@@ -50,10 +50,8 @@ def export(
     console.rule("[bold]Compiling production app and preparing for export.")
 
     if frontend:
-        # Update some parameters for export
-        prerequisites.update_next_config(export=True)
         # Ensure module can be imported and app.compile() is called.
-        prerequisites.get_compiled_app()
+        prerequisites.get_compiled_app(export=True)
         # Set up .web directory and install frontend dependencies.
         build.setup_frontend(Path.cwd())
 
