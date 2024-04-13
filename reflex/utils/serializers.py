@@ -7,6 +7,7 @@ import types as builtin_types
 import warnings
 from datetime import date, datetime, time, timedelta
 from enum import Enum
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_hints
 
 from reflex.base import Base
@@ -231,6 +232,19 @@ def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
         The serialized datetime.
     """
     return str(dt)
+
+
+@serializer
+def serialize_path(path: Path):
+    """Serialize a pathlib.Path to a JSON string.
+
+    Args:
+        path: The path to serialize.
+
+    Returns:
+        The serialized path.
+    """
+    return str(path.as_posix())
 
 
 @serializer
