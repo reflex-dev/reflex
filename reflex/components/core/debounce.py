@@ -79,7 +79,9 @@ class DebounceInput(Component):
             for p in cls.get_props()
             if getattr(child, p, None) is not None
         }
-        props_from_child.update(child.event_triggers)
+        props[EventTriggers.ON_CHANGE] = child.event_triggers.pop(
+            EventTriggers.ON_CHANGE
+        )
         props = {**props_from_child, **props}
 
         # Carry all other child props directly via custom_attrs
@@ -117,6 +119,7 @@ class DebounceInput(Component):
 
         component = super().create(**props)
         component._get_style = child._get_style
+        component.event_triggers.update(child.event_triggers)
         return component
 
     def get_event_triggers(self) -> dict[str, Any]:
