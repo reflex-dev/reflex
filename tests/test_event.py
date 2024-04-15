@@ -283,19 +283,41 @@ def test_event_actions():
         "stopPropagation": True,
         "preventDefault": True,
     }
+
+    throttle_handler = handler.throttle(300)
+    assert handler is not throttle_handler
+    assert throttle_handler.event_actions == {"throttle": 300}
+
+    debounce_handler = handler.debounce(300)
+    assert handler is not debounce_handler
+    assert debounce_handler.event_actions == {"debounce": 300}
+
+    all_handler = handler.stop_propagation.prevent_default.throttle(200).debounce(100)
+    assert handler is not all_handler
+    assert all_handler.event_actions == {
+        "stopPropagation": True,
+        "preventDefault": True,
+        "throttle": 200,
+        "debounce": 100,
+    }
+
     assert not handler.event_actions
 
     # Convert to EventSpec should carry event actions
-    sp_handler2 = handler.stop_propagation
+    sp_handler2 = handler.stop_propagation.throttle(200)
     spec = sp_handler2()
-    assert spec.event_actions == {"stopPropagation": True}
+    assert spec.event_actions == {"stopPropagation": True, "throttle": 200}
     assert spec.event_actions == sp_handler2.event_actions
     assert spec.event_actions is not sp_handler2.event_actions
     # But it should be a copy!
     assert spec.event_actions is not sp_handler2.event_actions
     spec2 = spec.prevent_default
     assert spec is not spec2
-    assert spec2.event_actions == {"stopPropagation": True, "preventDefault": True}
+    assert spec2.event_actions == {
+        "stopPropagation": True,
+        "preventDefault": True,
+        "throttle": 200,
+    }
     assert spec2.event_actions != spec.event_actions
 
     # The original handler should still not be touched.
