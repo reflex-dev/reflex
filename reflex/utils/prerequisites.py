@@ -576,7 +576,7 @@ def update_next_config(export=False, transpile_packages: Optional[List[str]] = N
 
     # Overwriting the next.config.js triggers a full server reload, so make sure
     # there is actually a diff.
-    orig_next_config = next_config_file.read_text()
+    orig_next_config = next_config_file.read_text() if next_config_file.exists() else ""
     if orig_next_config != next_config:
         next_config_file.write_text(next_config)
 
