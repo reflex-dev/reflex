@@ -202,13 +202,19 @@ def run_concurrently(*fns: Union[Callable, Tuple]) -> None:
         pass
 
 
-def stream_logs(message: str, process: subprocess.Popen, progress=None):
+def stream_logs(
+    message: str,
+    process: subprocess.Popen,
+    progress=None,
+    suppress_errors: bool = False,
+):
     """Stream the logs for a process.
 
     Args:
         message: The message to display.
         process: The process.
         progress: The ongoing progress bar if one is being used.
+        suppress_errors: If True, do not exit if errors are encountered (for fallback).
 
     Yields:
         The lines of the process output.
@@ -232,7 +238,7 @@ def stream_logs(message: str, process: subprocess.Popen, progress=None):
     # Windows uvicorn bug
     # https://github.com/reflex-dev/reflex/issues/2335
     accepted_return_codes = [0, -2, 15] if constants.IS_WINDOWS else [0, -2]
-    if process.returncode not in accepted_return_codes:
+    if process.returncode not in accepted_return_codes and not suppress_errors:
         console.error(f"{message} failed with exit code {process.returncode}")
         for line in logs:
             console.error(line, end="")
@@ -251,15 +257,16 @@ def show_logs(message: str, process: subprocess.Popen):
         pass
 
 
-def show_status(message: str, process: subprocess.Popen):
+def show_status(message: str, process: subprocess.Popen, suppress_errors: bool = False):
     """Show the status of a process.
 
     Args:
         message: The initial message to display.
         process: The process.
+        suppress_errors: If True, do not exit if errors are encountered (for fallback).
     """
     with console.status(message) as status:
-        for line in stream_logs(message, process):
+        for line in stream_logs(message, process, suppress_errors=suppress_errors):
             status.update(f"{message} {line}")
 
 
@@ -298,29 +305,22 @@ def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwa
         fallback: The fallback command to run.
         kwargs: Kwargs to pass to new_process function.
     """
-
-    def execute_process(process):
-        if not constants.IS_WINDOWS:
-            show_status(show_status_message, process)
-        else:
-            process.wait()
-            if process.returncode != 0:
-                error_output = process.stderr if process.stderr else process.stdout
-                error_message = f"Error occurred during subprocess execution: {' '.join(args)}\n{error_output.read() if error_output else ''}"
-                # Only show error in debug mode.
-                if console.is_debug():
-                    console.error(error_message)
-
-                # retry with fallback command.
-                fallback_args = [fallback, *args[1:]] if fallback else None
-                console.warn(
-                    f"There was an error running command: {args}. Falling back to: {fallback_args}."
-                )
-                if fallback_args:
-                    process = new_process(fallback_args, **kwargs)
-                    execute_process(process)
-            else:
-                show_status(show_status_message, process)
-
     process = new_process(args, **kwargs)
-    execute_process(process)
+    if fallback is None:
+        # No fallback given, or this _is_ the fallback command.
+        show_status(show_status_message, process)
+    else:
+        # Suppress errors for initial command, because we will try to fallback
+        show_status(show_status_message, process, suppress_errors=True)
+        if process.returncode != 0:
+            # retry with fallback command.
+            fallback_args = [fallback, *args[1:]]
+            console.warn(
+                f"There was an error running command: {args}. Falling back to: {fallback_args}."
+            )
+            run_process_with_fallback(
+                fallback_args,
+                show_status_message=show_status_message,
+                fallback=None,
+                **kwargs,
+            )
