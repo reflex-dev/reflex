@@ -1,32 +1,46 @@
 """To experiment with layout component, move them to reflex/components later."""
 
-import reflex as rx
+from reflex import color, cond
 from reflex.components.base.fragment import Fragment
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.components.radix.primitives.drawer import DrawerRoot, drawer
 from reflex.components.radix.themes.components.icon_button import IconButton
-from reflex.components.radix.themes.layout import Box
+from reflex.components.radix.themes.layout import Box, Container, HStack
+from reflex.event import call_script
+from reflex.experimental import hooks
 from reflex.state import ComponentState
+from reflex.vars import Var
 
 
-class Sidebar(Box):
+class Sidebar(Box, MemoizationLeaf):
     """A component that renders the sidebar."""
 
     @classmethod
-    def create(cls, *children, standalone: bool = False, **props):
-        """Create the sidebar component."""
-        # if standalone:
-        #     props.setdefault("position", "fixed")
-        #     props.setdefault("z_index", 10)
-        props.setdefault("border_right", f"1px solid {rx.color('accent', 12)}")
-        props.setdefault("background_color", rx.color("accent", 1))
+    def create(cls, *children, **props):
+        """Create the sidebar component.
+
+        Args:
+            children: The children components.
+            props: The properties of the sidebar.
+
+        Returns:
+            The sidebar component.
+        """
+        props.setdefault("border_right", f"1px solid {color('accent', 12)}")
+        props.setdefault("background_color", color("accent", 1))
         props.setdefault("width", "20vw")
         props.setdefault("height", "100vh")
         props.setdefault("left", 0)
         props.setdefault("top", 0)
-        sidebar = super().create(*children, **props)
-        sidebar._standalone = standalone
-        return sidebar
+        return super().create(Box.create(*children, **props))
+
+    def _apply_theme(self, theme: Component | None):
+        sidebar: Component = self.children[-1]  # type: ignore
+        open = self.State.open if self.State else Var.create("open")  # type: ignore
+        sidebar.style["display"] = cond(open, "block", "none")
+
+    def _get_hooks(self) -> Var | None:
+        return hooks.useState("open", "false") if not self.State else None
 
 
 class StatefulSidebar(ComponentState):
@@ -40,7 +54,15 @@ class StatefulSidebar(ComponentState):
 
     @classmethod
     def get_component(cls, *children, **props):
-        """Get the stateful sidebar component."""
+        """Get the stateful sidebar component.
+
+        Args:
+            children: The children components.
+            props: The properties of the sidebar.
+
+        Returns:
+            The stateful sidebar component.
+        """
         return Sidebar.create(*children, **props)
 
 
@@ -49,15 +71,29 @@ class DrawerSidebar(DrawerRoot):
 
     @classmethod
     def create(cls, *children, **props):
-        """Create the sidebar component."""
+        """Create the sidebar component.
+
+        Args:
+            children: The children components.
+            props: The properties of the sidebar.
+
+        Returns:
+            The drawer sidebar component.
+        """
         direction = props.pop("direction", "left")
-        props.setdefault("border_right", f"1px solid {rx.color('accent', 12)}")
-        props.setdefault("background_color", rx.color("accent", 1))
+        props.setdefault("border_right", f"1px solid {color('accent', 12)}")
+        props.setdefault("background_color", color("accent", 1))
         props.setdefault("width", "20vw")
         props.setdefault("height", "100vh")
         return super().create(
             drawer.trigger(
-                SidebarTrigger.create(), position="absolute", top="15", left="15"
+                IconButton.create(
+                    "arrow-right-from-line",
+                    background_color="transparent",
+                ),
+                position="absolute",
+                top="15",
+                left="15",
             ),
             drawer.portal(
                 drawer.content(
@@ -73,8 +109,16 @@ class SidebarTrigger(Fragment):
     """A component that renders the sidebar trigger."""
 
     @classmethod
-    def create(cls, sidebar: Component | None = None, **props):
+    def create(cls, sidebar: Component, **props):
+        """Create the sidebar trigger component.
 
+        Args:
+            sidebar: The sidebar component.
+            props: The properties of the sidebar trigger.
+
+        Returns:
+            The sidebar trigger component.
+        """
         trigger_props = {
             **props,
             "position": "absolute",
@@ -82,29 +126,26 @@ class SidebarTrigger(Fragment):
             "top": "15",
             "background_color": "transparent",
         }
-        if sidebar:
-            ...  # make stuff working with stateful sidebar
-            trigger_props["left"] = rx.cond(
-                sidebar.State.open, "calc(20vw - 32px)", "15"
-            )
-            trigger = rx.cond(
-                sidebar.State.open,
-                rx.icon_button(
-                    "arrow-left-from-line",
-                    on_click=sidebar.State.toggle,
-                    **trigger_props,
-                ),
-                rx.icon_button(
-                    "arrow-right-from-line",
-                    on_click=sidebar.State.toggle,
-                    **trigger_props,
-                ),
-            )
-        else:
-            ...  # make stuff working with stateless sidebar
-            trigger_props["left"] = "15"
-            return IconButton.create("arrow-right-from-line", **trigger_props)
 
+        if sidebar.State:
+            open, toggle = sidebar.State.open, sidebar.State.toggle  # type: ignore
+        else:
+            open, toggle = Var.create("open"), call_script(Var.create("setOpen(!open)"))  # type: ignore
+        trigger_props["left"] = cond(open, "calc(20vw - 32px)", "15")
+
+        trigger = cond(
+            open,
+            IconButton.create(
+                "arrow-left-from-line",
+                on_click=toggle,
+                **trigger_props,
+            ),
+            IconButton.create(
+                "arrow-right-from-line",
+                on_click=toggle,
+                **trigger_props,
+            ),
+        )
         return super().create(trigger)
 
 
@@ -118,31 +159,44 @@ class Layout(Box):
         sidebar: Component | None = None,
         **props,
     ):
-        """Create the layout component."""
-        layout_root = rx.hstack
+        """Create the layout component.
+
+        Args:
+            content: The content component.
+            sidebar: The sidebar component.
+            props: The properties of the layout.
+
+        Returns:
+            The layout component.
+        """
+        layout_root = HStack.create
 
         if sidebar is None:
-            return rx.container(content, **props)
+            return Container.create(content, **props)
 
-        if isinstance(sidebar, Sidebar):
-            if sidebar.State:
-                ...  # make stuff working with stateful sidebar
-            else:
-                ...  # make stuff working with stateless sidebar
-        else:
+        if isinstance(sidebar, DrawerSidebar):
+            return super().create(
+                sidebar,
+                Container.create(content, height="100%"),
+                **props,
+                width="100vw",
+                height="100vh",
+            )
+
+        if not isinstance(sidebar, Sidebar):
             sidebar = Sidebar.create(sidebar)
-        return layout_root(
-            sidebar,
-            # SidebarTrigger.create(
-            #     sidebar=sidebar_comp,
-            # ),
-            rx.container(
-                content,
-                height="100%",
-            ),
-            **props,
-            width="100vw",
-            height="100vh",
+
+        # Add the sidebar trigger to the sidebar as first child to not mess up the rendering.
+        sidebar.children.insert(0, SidebarTrigger.create(sidebar))
+
+        return super().create(
+            layout_root(
+                sidebar,
+                Container.create(content, height="100%"),
+                **props,
+                width="100vw",
+                height="100vh",
+            )
         )
 
 

@@ -662,9 +662,11 @@ class Component(BaseComponent, ABC):
             (
                 child
                 if isinstance(child, Component)
-                else Fragment.create(*child)
-                if isinstance(child, tuple)
-                else Bare.create(contents=Var.create(child, _var_is_string=True))
+                else (
+                    Fragment.create(*child)
+                    if isinstance(child, tuple)
+                    else Bare.create(contents=Var.create(child, _var_is_string=True))
+                )
             )
             for child in children
         ]
@@ -1053,6 +1055,11 @@ class Component(BaseComponent, ABC):
                     ImportVar(tag="useEffect"),
                 },
             )
+
+        user_hooks = self._get_hooks()
+        if user_hooks is not None and isinstance(user_hooks, Var):
+            _imports = imports.merge_imports(_imports, user_hooks._var_data.imports)  # type: ignore
+
         return _imports
 
     def _get_imports(self) -> imports.ImportDict:
