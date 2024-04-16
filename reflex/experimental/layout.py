@@ -180,7 +180,7 @@ class Layout(Box):
                 Container.create(content, height="100%"),
                 **props,
                 width="100vw",
-                height="100vh",
+                min_height="100vh",
             )
 
         if not isinstance(sidebar, Sidebar):
