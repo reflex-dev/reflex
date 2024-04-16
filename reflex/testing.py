@@ -150,15 +150,21 @@ class AppHarness:
         """
         if app_name is None:
             if app_source is None:
-                app_name = root.name.lower()
+                app_name = root.name
             elif isinstance(app_source, functools.partial):
-                app_name = app_source.func.__name__.lower()
+                keywords = app_source.keywords
+                slug_suffix = "_".join([str(v) for v in keywords.values()])
+                func_name = app_source.func.__name__
+                app_name = f"{func_name}_{slug_suffix}"
+                app_name = re.sub(r"[^a-zA-Z0-9_]", "_", app_name)
             elif isinstance(app_source, str):
                 raise ValueError(
                     "app_name must be provided when app_source is a string."
                 )
             else:
-                app_name = app_source.__name__.lower()
+                app_name = app_source.__name__
+
+            app_name = app_name.lower()
         return cls(
             app_name=app_name,
             app_source=app_source,
