@@ -72,6 +72,9 @@ class ColorModeIcon(Cond):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_paste: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_scroll: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -201,6 +204,9 @@ class ColorModeSwitch(Switch):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_paste: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_scroll: Optional[
@@ -358,6 +364,9 @@ class ColorModeButton(Button):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_paste: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_scroll: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -444,6 +453,9 @@ class ColorModeScript(ChakraComponent):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_paste: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_scroll: Optional[

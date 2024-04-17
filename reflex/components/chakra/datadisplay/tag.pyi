@@ -68,6 +68,9 @@ class TagLabel(ChakraComponent):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_paste: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_scroll: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -142,6 +145,9 @@ class TagLeftIcon(ChakraComponent):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_paste: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_scroll: Optional[
@@ -220,6 +226,9 @@ class TagRightIcon(ChakraComponent):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_paste: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_scroll: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -294,6 +303,9 @@ class TagCloseButton(ChakraComponent):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_paste: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_scroll: Optional[
@@ -412,6 +424,9 @@ class Tag(ChakraComponent):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_paste: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_scroll: Optional[

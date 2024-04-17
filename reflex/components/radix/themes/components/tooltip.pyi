@@ -113,6 +113,9 @@ class Tooltip(RadixThemesComponent):
         on_open_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_paste: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_pointer_down_outside: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
