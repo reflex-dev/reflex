@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from collections import defaultdict
+from typing import Any, Dict, List
 
-DECORATED_PAGES = []
+from reflex.config import get_config
+
+DECORATED_PAGES: Dict[str, List] = defaultdict(list)
 
 
 def page(
@@ -55,7 +58,7 @@ def page(
         if on_load:
             kwargs["on_load"] = on_load
 
-        DECORATED_PAGES.append((render_fn, kwargs))
+        DECORATED_PAGES[get_config().app_name].append((render_fn, kwargs))
 
         return render_fn
 
@@ -69,6 +72,6 @@ def get_decorated_pages() -> list[dict]:
         The decorated pages.
     """
     return sorted(
-        [page_data for render_fn, page_data in DECORATED_PAGES],
+        [page_data for _, page_data in DECORATED_PAGES[get_config().app_name]],
         key=lambda x: x["route"],
     )

@@ -238,13 +238,15 @@ class AppHarness:
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
             # Save decorated pages before importing the test app module
-            before_decorated_pages = reflex.app.DECORATED_PAGES.copy()
+            before_decorated_pages = reflex.app.DECORATED_PAGES[self.app_name].copy()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
             # Save the pages that were added during testing
             self._decorated_pages = [
-                p for p in reflex.app.DECORATED_PAGES if p not in before_decorated_pages
+                p
+                for p in reflex.app.DECORATED_PAGES[self.app_name]
+                if p not in before_decorated_pages
             ]
         self.app_instance = self.app_module.app
         if isinstance(self.app_instance._state_manager, StateManagerRedis):
@@ -409,7 +411,7 @@ class AppHarness:
 
         # Cleanup decorated pages added during testing
         for page in self._decorated_pages:
-            reflex.app.DECORATED_PAGES.remove(page)
+            reflex.app.DECORATED_PAGES[self.app_name].remove(page)
 
     def __exit__(self, *excinfo) -> None:
         """Contextmanager protocol for `stop()`.
