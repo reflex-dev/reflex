@@ -30,17 +30,21 @@ class Sidebar(Box, MemoizationLeaf):
         props.setdefault("background_color", color("accent", 1))
         props.setdefault("width", "20vw")
         props.setdefault("height", "100vh")
-        props.setdefault("left", 0)
-        props.setdefault("top", 0)
-        return super().create(Box.create(*children, **props))
+        props.setdefault("position", "fixed")
+
+        return super().create(
+            Box.create(*children, **props),  # sidebar for content
+            Box.create(width=props.get("width")),  # spacer for layout
+        )
 
     def _apply_theme(self, theme: Component | None):
-        sidebar: Component = self.children[-1]  # type: ignore
+        sidebar: Component = self.children[-2]  # type: ignore
+        spacer: Component = self.children[-1]  # type: ignore
         open = self.State.open if self.State else Var.create("open")  # type: ignore
-        sidebar.style["display"] = cond(open, "block", "none")
+        sidebar.style["display"] = spacer.style["display"] = cond(open, "block", "none")
 
     def _get_hooks(self) -> Var | None:
-        return hooks.useState("open", "false") if not self.State else None
+        return hooks.useState("open", "true") if not self.State else None
 
 
 class StatefulSidebar(ComponentState):
@@ -105,6 +109,15 @@ class DrawerSidebar(DrawerRoot):
         )
 
 
+sidebar_trigger_style = {
+    "position": "fixed",
+    "z_index": "15",
+    "color": color("accent", 12),
+    "background_color": "transparent",
+    "padding": "0",
+}
+
+
 class SidebarTrigger(Fragment):
     """A component that renders the sidebar trigger."""
 
@@ -119,19 +132,17 @@ class SidebarTrigger(Fragment):
         Returns:
             The sidebar trigger component.
         """
-        trigger_props = {
-            **props,
-            "position": "absolute",
-            "z_index": "15",
-            "top": "15",
-            "background_color": "transparent",
-        }
+        trigger_props = {**props, **sidebar_trigger_style}
+
+        inner_sidebar: Component = sidebar.children[0]  # type: ignore
+        sidebar_width = inner_sidebar.style.get("width")
 
         if sidebar.State:
             open, toggle = sidebar.State.open, sidebar.State.toggle  # type: ignore
         else:
             open, toggle = Var.create("open"), call_script(Var.create("setOpen(!open)"))  # type: ignore
-        trigger_props["left"] = cond(open, "calc(20vw - 32px)", "15")
+
+        trigger_props["left"] = cond(open, f"calc({sidebar_width} - 32px)", "0")
 
         trigger = cond(
             open,
@@ -155,7 +166,7 @@ class Layout(Box):
     @classmethod
     def create(
         cls,
-        content: Component,
+        *content: Component,
         sidebar: Component | None = None,
         **props,
     ):
@@ -172,12 +183,12 @@ class Layout(Box):
         layout_root = HStack.create
 
         if sidebar is None:
-            return Container.create(content, **props)
+            return Container.create(*content, **props)
 
         if isinstance(sidebar, DrawerSidebar):
             return super().create(
                 sidebar,
-                Container.create(content, height="100%"),
+                Container.create(*content, height="100%"),
                 **props,
                 width="100vw",
                 min_height="100vh",
@@ -192,10 +203,10 @@ class Layout(Box):
         return super().create(
             layout_root(
                 sidebar,
-                Container.create(content, height="100%"),
+                Container.create(*content, height="100%"),
                 **props,
                 width="100vw",
-                height="100vh",
+                min_height="100vh",
             )
         )
 
