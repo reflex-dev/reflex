@@ -15,8 +15,8 @@ import typer
 from redis.exceptions import RedisError
 
 from reflex import constants
-from reflex.utils import console, path_ops, prerequisites
 from reflex.config import Config
+from reflex.utils import console, path_ops, prerequisites
 
 
 def kill(pid):
@@ -299,11 +299,14 @@ def atexit_handler():
 
 def get_command_with_loglevel(command: list[str], config: Config) -> list[str]:
     """Add the right loglevel flag to the designated command.
-    Bun runs with --verbose while npm uses --loglevel <level>
+    Bun runs with --verbose while npm uses --loglevel <level>.
 
-    command:
-         The command to add loglevel flag.
-         config: The config Object.
+    Args:
+        command:The command to add loglevel flag.
+        config: The config Object.
+
+    Returns:
+        The updated command list
     """
     if config.bun_path in command:
         return command + ["--verbose"]

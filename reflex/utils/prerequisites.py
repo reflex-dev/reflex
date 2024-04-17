@@ -831,7 +831,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     )
     processes.run_process_with_fallback(
         processes.get_command_with_loglevel(
-            [get_install_package_manager(), "install"], config
+            [get_install_package_manager(), "install"], config  # type: ignore
         ),
         fallback=fallback_command,
         show_status_message="Installing base frontend packages",
