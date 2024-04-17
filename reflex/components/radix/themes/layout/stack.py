@@ -16,8 +16,11 @@ class Stack(Flex):
     def create(
         cls,
         *children,
-        spacing: LiteralSpacing = "2",
+        spacing: LiteralSpacing = "3",
         align: LiteralAlign = "start",
+        width: str = "100%",
+        child_width: str = "100%",
+        child_flex_shrink: str = "1",
         **props,
     ) -> Component:
         """Create a new instance of the component.
@@ -26,15 +29,26 @@ class Stack(Flex):
             *children: The children of the stack.
             spacing: The spacing between each stack item.
             align: The alignment of the stack items.
+            width: The CSS width of the stack.
+            child_width: The CSS width of non-inline stack children.
+            child_flex_shrink: The flex shrink value of non-inline stack children.
             **props: The properties of the stack.
 
         Returns:
             The stack component.
         """
+        style = props.setdefault("style", {})
+        child_block_style = style.setdefault(
+            "> :where(div, button:not(.rt-IconButton), input, select, textarea, table)",
+            {},
+        )
+        child_block_style.setdefault("width", child_width)
+        child_block_style.setdefault("flex_shrink", child_flex_shrink)
         return super().create(
             *children,
             spacing=spacing,
             align=align,
+            width=width,
             **props,
         )
 
