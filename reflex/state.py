@@ -2124,6 +2124,7 @@ class StateUpdate(Base):
 
     # Whether this is the final state update for the event.
     final: bool = True
+from functools import lru_cache
 
 
 class StateManager(Base, ABC):
@@ -2201,6 +2202,7 @@ class StateManagerMemory(StateManager):
         fields = {
             "_states_locks": {"exclude": True},
         }
+    @lru_cache(maxsize=100)  # Unlimited cache size
 
     async def get_state(self, token: str) -> BaseState:
         """Get the state for a token.

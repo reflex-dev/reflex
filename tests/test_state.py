@@ -8,7 +8,7 @@ import json
 import os
 import sys
 from typing import Any, Dict, Generator, List, Optional, Union
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, MagicMock
 
 import pytest
 from plotly.graph_objects import Figure
@@ -1496,10 +1496,59 @@ def state_manager(request) -> Generator[StateManager, None, None]:
         state_manager = StateManagerMemory(state=TestState)
         assert not state_manager._states_locks
 
+
     yield state_manager
 
     if isinstance(state_manager, StateManagerRedis):
         asyncio.get_event_loop().run_until_complete(state_manager.close())
+
+
+
+@pytest.mark.asyncio
+async def test_lru_caching_memory():
+
+    state_manager = StateManagerMemory(state=TestState)
+
+    token1 = "token1"
+    token2 = "token2"
+
+    # Get state for token1 twice
+    state_1_1 = await state_manager.get_state(token1)
+    state_1_2 = await state_manager.get_state(token1)
+
+    # Get state for token2
+    state_2_1 = await state_manager.get_state(token2)
+
+    # Ensure state for token1 is cached
+    assert state_1_1 is state_1_2
+
+    # Get state for token1 again after getting state for token2
+    state_1_3 = await state_manager.get_state(token1)
+
+    # Ensure state for token1 is still cached after fetching state for token2
+    assert state_1_1 is state_1_3
+
+    # Ensure state for token1 is different from state for token2
+    assert state_1_1 is not state_2_1
+
+    # Ensure caching works with different tokens
+    state_2_2 = await state_manager.get_state(token2)
+    assert state_2_1 is state_2_2
+
+    # Ensure caching works when switching between tokens
+    state_1_4 = await state_manager.get_state(token1)
+    assert state_1_1 is state_1_4
+
+    # Ensure caching works with modifications to state
+    modified_state_1 = await state_manager.modify_state(token1)
+    state_1_5 = await state_manager.get_state(token1)
+    assert modified_state_1 is state_1_5
+
+    # Ensure caching is invalidated after setting new state
+    new_state = MagicMock()
+    await state_manager.set_state(token1, new_state)
+    state_1_6 = await state_manager.get_state(token1)
+    assert new_state is state_1_6
 
 
 @pytest.fixture()
