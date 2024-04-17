@@ -824,11 +824,15 @@ def install_frontend_packages(packages: set[str], config: Config):
     # unsupported archs will use npm anyway. so we dont have to run npm twice
     fallback_command = (
         get_package_manager()
-        if constants.IS_WINDOWS and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
+        if not constants.IS_WINDOWS
+        or constants.IS_WINDOWS
+        and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
         else None
     )
     processes.run_process_with_fallback(
-        [get_install_package_manager(), "install", "--loglevel", "silly"],
+        processes.get_command_with_loglevel(
+            [get_install_package_manager(), "install"], config
+        ),
         fallback=fallback_command,
         show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,

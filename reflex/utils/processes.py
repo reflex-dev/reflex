@@ -16,6 +16,7 @@ from redis.exceptions import RedisError
 
 from reflex import constants
 from reflex.utils import console, path_ops, prerequisites
+from reflex.config import Config
 
 
 def kill(pid):
@@ -294,6 +295,19 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str
 def atexit_handler():
     """Display a custom message with the current time when exiting an app."""
     console.log("Reflex app stopped.")
+
+
+def get_command_with_loglevel(command: list[str], config: Config) -> list[str]:
+    """Add the right loglevel flag to the designated command.
+    Bun runs with --verbose while npm uses --loglevel <level>
+
+    command:
+         The command to add loglevel flag.
+         config: The config Object.
+    """
+    if config.bun_path in command:
+        return command + ["--verbose"]
+    return command + ["--loglevel", "silly"]
 
 
 def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwargs):
