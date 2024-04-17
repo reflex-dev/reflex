@@ -145,6 +145,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
         "stdout": None if show_logs else subprocess.PIPE,
         "universal_newlines": True,
         "encoding": "UTF-8",
+        "errors": "replace",  # Avoid UnicodeDecodeError in unknown command output
         **kwargs,
     }
     console.debug(f"Running command: {args}")
