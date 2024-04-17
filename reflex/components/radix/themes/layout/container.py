@@ -19,5 +19,28 @@ class Container(el.Div, RadixThemesComponent):
 
     tag = "Container"
 
-    # The size of the container: "1" - "4" (default "4")
-    size: Var[LiteralContainerSize]
+    # The size of the container: "1" - "4" (default "3")
+    size: Var[LiteralContainerSize] = Var.create_safe("3")
+
+    @classmethod
+    def create(
+        cls,
+        *children,
+        padding: str = "16px",
+        **props,
+    ):
+        """Create the container component.
+
+        Args:
+            children: The children components.
+            padding: The padding of the container.
+            props: The properties of the container.
+
+        Returns:
+            The container component.
+        """
+        return super().create(
+            *children,
+            padding=padding,
+            **props,
+        )
