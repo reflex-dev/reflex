@@ -39,7 +39,11 @@ class Stack(Flex):
         """
         style = props.setdefault("style", {})
         child_block_style = style.setdefault(
-            "> :where(div:not(.rt-Box, .rx-Upload), button:not(.rt-IconButton), input, select, textarea, table)",
+            "> :where( "
+            "div:not(.rt-Box, .rx-Upload, .rx-Html),"
+            "button:not(.rt-IconButton),"
+            "input, select, textarea, table"
+            ")",
             {},
         )
         child_block_style.setdefault("width", child_width)

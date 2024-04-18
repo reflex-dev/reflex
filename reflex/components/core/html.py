@@ -35,5 +35,11 @@ class Html(Div):
         else:
             props["dangerouslySetInnerHTML"] = {"__html": children[0]}
 
+        # Apply the default classname
+        given_class_name = props.pop("class_name", [])
+        if isinstance(given_class_name, str):
+            given_class_name = [given_class_name]
+        props["class_name"] = ["rx-Html", *given_class_name]
+
         # Create the component.
         return super().create(**props)
