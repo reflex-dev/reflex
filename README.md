@@ -81,16 +81,6 @@ Let's go over an example: creating an image generation UI around [DALL·E](https
 Here is the complete code to create this. This is all done in one Python file!
 
 
-
-<div align="center">
-<img src="docs/images/dalle_colored_code_example.png" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="900" />
-</div>
-
-
-
-
-<details>
-  <summary>Code</summary>
   
 ```python
 import reflex as rx
@@ -149,12 +139,17 @@ def index():
 app = rx.App()
 app.add_page(index, title="Reflex:DALL-E")
 ```
-</details>
+
 
 
 
 
 ## Let's break this down.
+
+<div align="center">
+<img src="docs/images/dalle_colored_code_example.png" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="900" />
+</div>
+
 
 ### **Reflex UI**
 
