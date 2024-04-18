@@ -219,6 +219,12 @@ class Upload(MemoizationLeaf):
         # Mark the Upload component as used in the app.
         cls.is_used = True
 
+        # Apply the default classname
+        given_class_name = props.pop("class_name", [])
+        if isinstance(given_class_name, str):
+            given_class_name = [given_class_name]
+        props["class_name"] = ["rx-Upload", *given_class_name]
+
         # get only upload component props
         supported_props = cls.get_props().union({"on_drop"})
         upload_props = {
