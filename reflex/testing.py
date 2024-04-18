@@ -112,7 +112,9 @@ class AppHarness:
     """AppHarness executes a reflex app in-process for testing."""
 
     app_name: str
-    app_source: Optional[types.FunctionType | types.ModuleType] | str
+    app_source: Optional[
+        types.FunctionType | types.ModuleType | str | functools.partial
+    ]
     app_path: pathlib.Path
     app_module_path: pathlib.Path
     app_module: Optional[types.ModuleType] = None
