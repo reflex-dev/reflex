@@ -821,18 +821,16 @@ def install_frontend_packages(packages: set[str], config: Config):
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    # unsupported archs will use npm anyway. so we dont have to run npm twice
+    # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
     fallback_command = (
-        get_package_manager()
+        get_install_package_manager()
         if not constants.IS_WINDOWS
         or constants.IS_WINDOWS
         and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
         else None
     )
     processes.run_process_with_fallback(
-        processes.get_command_with_loglevel(
-            [get_install_package_manager(), "install"], config  # type: ignore
-        ),
+        [get_install_package_manager(), "install"],  # type: ignore
         fallback=fallback_command,
         show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,

@@ -8,6 +8,7 @@ import os
 import signal
 import subprocess
 from concurrent import futures
+from pathlib import Path
 from typing import Callable, Generator, List, Optional, Tuple, Union
 
 import psutil
@@ -15,7 +16,6 @@ import typer
 from redis.exceptions import RedisError
 
 from reflex import constants
-from reflex.config import Config
 from reflex.utils import console, path_ops, prerequisites
 
 
@@ -297,20 +297,23 @@ def atexit_handler():
     console.log("Reflex app stopped.")
 
 
-def get_command_with_loglevel(command: list[str], config: Config) -> list[str]:
+def get_command_with_loglevel(command: list[str]) -> list[str]:
     """Add the right loglevel flag to the designated command.
-    Bun runs with --verbose while npm uses --loglevel <level>.
+     npm uses --loglevel <level>, Bun doesnt use the --loglevel flag and
+     runs in debug mode by default.
 
     Args:
         command:The command to add loglevel flag.
-        config: The config Object.
 
     Returns:
         The updated command list
     """
-    if config.bun_path in command:
-        return command + ["--verbose"]
-    return command + ["--loglevel", "silly"]
+    npm_path = path_ops.get_npm_path()
+    npm_path = str(Path(npm_path).resolve()) if npm_path else npm_path
+
+    if command[0] == npm_path:
+        return command + ["--loglevel", "silly"]
+    return command
 
 
 def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwargs):
@@ -322,7 +325,7 @@ def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwa
         fallback: The fallback command to run.
         kwargs: Kwargs to pass to new_process function.
     """
-    process = new_process(args, **kwargs)
+    process = new_process(get_command_with_loglevel(args), **kwargs)
     if fallback is None:
         # No fallback given, or this _is_ the fallback command.
         show_status(show_status_message, process)
@@ -336,7 +339,7 @@ def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwa
                 f"There was an error running command: {args}. Falling back to: {fallback_args}."
             )
             run_process_with_fallback(
-                fallback_args,
+                get_command_with_loglevel(fallback_args),
                 show_status_message=show_status_message,
                 fallback=None,
                 **kwargs,
