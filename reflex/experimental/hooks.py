@@ -12,7 +12,7 @@ def _add_react_import(v: Var | None, tags: str | list):
         tags = [tags]
 
     v._var_data = VarData(  # type: ignore
-        imports={"react": [ImportVar(tag=tag) for tag in tags]},
+        imports={"react": [ImportVar(tag=tag, install=False) for tag in tags]},
     )
 
 
@@ -26,6 +26,8 @@ def const(name, value) -> Var | None:
     Returns:
         The constant Var.
     """
+    if isinstance(name, list):
+        return Var.create(f"const [{', '.join(name)}] = {value}")
     return Var.create(f"const {name} = {value}")
 
 
@@ -72,4 +74,20 @@ def useRef(default) -> Var | None:
     """
     v = Var.create(f"useRef({default})")
     _add_react_import(v, "useRef")
+    return v
+
+
+def useState(var_name, default=None) -> Var | None:
+    """Create a useState hook with a variable name and setter name.
+
+    Args:
+        var_name: The name of the variable.
+        default: The default value of the variable.
+
+    Returns:
+        A useState hook.
+    """
+    setter_name = f"set{var_name.capitalize()}"
+    v = const([var_name, setter_name], f"useState({default})")
+    _add_react_import(v, "useState")
     return v
