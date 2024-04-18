@@ -339,7 +339,7 @@ def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwa
                 f"There was an error running command: {args}. Falling back to: {fallback_args}."
             )
             run_process_with_fallback(
-                get_command_with_loglevel(fallback_args),
+                fallback_args,
                 show_status_message=show_status_message,
                 fallback=None,
                 **kwargs,
