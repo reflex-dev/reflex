@@ -83,7 +83,7 @@ Here is the complete code to create this. This is all done in one Python file!
 
 
 <div align="center">
-<img src="docs/images/dalle_colored_code_example.png" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="850" />
+<img src="docs/images/dalle_colored_code_example.png" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="900" />
 </div>
 
 
