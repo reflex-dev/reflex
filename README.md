@@ -147,7 +147,7 @@ app.add_page(index, title="Reflex:DALL-E")
 ## Let's break this down.
 
 <div align="center">
-<img src="docs/images/dalle_colored_code_example.png" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="900" />
+<img src="docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
 </div>
 
 
