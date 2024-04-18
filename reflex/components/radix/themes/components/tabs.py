@@ -1,11 +1,12 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, List, Literal
 
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
+    LiteralAccentColor,
     RadixThemesComponent,
 )
 
@@ -59,7 +60,17 @@ class TabsTrigger(RadixThemesComponent):
     # Whether the tab is disabled
     disabled: Var[bool]
 
+    # The color of the line under the tab when active.
+    color_scheme: Var[LiteralAccentColor]
+
     _valid_parents: List[str] = ["TabsList"]
+
+    def _apply_theme(self, theme: Component):
+        if self.color_scheme is not None:
+            self.custom_attrs["data-accent-color"] = self.color_scheme
+
+    def _exclude_props(self) -> list[str]:
+        return ["color_scheme"]
 
 
 class TabsContent(RadixThemesComponent):
