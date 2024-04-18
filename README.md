@@ -80,6 +80,18 @@ Let's go over an example: creating an image generation UI around [DALL·E](https
 
 Here is the complete code to create this. This is all done in one Python file!
 
+
+
+<div align="center">
+<img src="docs/images/dalle_colored_code_example.png" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="850" />
+</div>
+
+
+
+
+<details>
+  <summary>Code</summary>
+  
 ```python
 import reflex as rx
 import openai
@@ -108,6 +120,7 @@ class State(rx.State):
         self.image_url = response.data[0].url
         self.processing, self.complete = False, True
 
+
 def index():
     return rx.center(
         rx.vstack(
@@ -132,11 +145,14 @@ def index():
         height="100vh",
     )
 
-
 # Add state and page to the app.
 app = rx.App()
 app.add_page(index, title="Reflex:DALL-E")
 ```
+</details>
+
+
+
 
 ## Let's break this down.
 
