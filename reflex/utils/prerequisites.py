@@ -893,6 +893,10 @@ def needs_reinit(frontend: bool = True) -> bool:
     if not os.path.exists(constants.Dirs.WEB):
         return True
 
+    # If the template is out of date, then we need to re-init
+    if not is_latest_template():
+        return True
+
     if constants.IS_WINDOWS:
         console.warn(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
