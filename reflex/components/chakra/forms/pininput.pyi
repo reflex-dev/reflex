@@ -110,7 +110,7 @@ class PinInput(ChakraComponent):
 
         Args:
             *children: The children of the component.
-            value: State var to bind the the input.
+            value: State var to bind the input.
             auto_focus: If true, the pin input receives focus on mount
             default_value: The default value of the pin input
             error_border_color: The border color when the input is invalid.
@@ -218,8 +218,5 @@ class PinInputField(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...

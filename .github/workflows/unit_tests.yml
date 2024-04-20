@@ -76,4 +76,10 @@ jobs:
           export PYTHONUNBUFFERED=1
           export REDIS_URL=redis://localhost:6379
           poetry run pytest tests --cov --no-cov-on-fail --cov-report=
+      # Change to explicitly install v1 when reflex-hosting-cli is compatible with v2
+      - name: Run unit tests w/ pydantic v2
+        run: |
+          export PYTHONUNBUFFERED=1
+          poetry run pip install "pydantic>2"
+          poetry run pytest tests --cov --no-cov-on-fail --cov-report=
       - run: poetry run coverage html

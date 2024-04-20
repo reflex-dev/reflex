@@ -54,6 +54,10 @@ class ImportVar(Base):
     # whether this import should be rendered or not
     render: Optional[bool] = True
 
+    # whether this import package should be added to transpilePackages in next.config.js
+    # https://nextjs.org/docs/app/api-reference/next-config-js/transpilePackages
+    transpile: Optional[bool] = False
+
     @property
     def name(self) -> str:
         """The name of the import.
@@ -72,7 +76,16 @@ class ImportVar(Base):
         Returns:
             The hash of the var.
         """
-        return hash((self.tag, self.is_default, self.alias, self.install, self.render))
+        return hash(
+            (
+                self.tag,
+                self.is_default,
+                self.alias,
+                self.install,
+                self.render,
+                self.transpile,
+            )
+        )
 
 
 ImportDict = Dict[str, List[ImportVar]]

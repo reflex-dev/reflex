@@ -17,7 +17,7 @@ class RadioGroup(ChakraComponent):
 
     tag = "RadioGroup"
 
-    # State var to bind the the input.
+    # State var to bind the input.
     value: Var[Any]
 
     # The default value.

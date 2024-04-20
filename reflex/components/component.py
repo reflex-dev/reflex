@@ -64,6 +64,9 @@ class BaseComponent(Base, ABC):
     # List here the non-react dependency needed by `library`
     lib_dependencies: List[str] = []
 
+    # List here the dependencies that need to be transpiled by Next.js
+    transpile_packages: List[str] = []
+
     # The tag to use when rendering the component.
     tag: Optional[str] = None
 
@@ -368,7 +371,7 @@ class Component(BaseComponent, ABC):
         """Create an event chain from a variety of input types.
 
         Args:
-            args_spec: The args_spec of the the event trigger being bound.
+            args_spec: The args_spec of the event trigger being bound.
             value: The value to create the event chain from.
 
         Returns:
@@ -471,9 +474,11 @@ class Component(BaseComponent, ABC):
         # e.g. variable declared as EventHandler types.
         for field in self.get_fields().values():
             if types._issubclass(field.type_, EventHandler):
-                default_triggers[field.name] = getattr(
-                    field.type_, "args_spec", lambda: []
-                )
+                args_spec = None
+                annotation = field.annotation
+                if hasattr(annotation, "__metadata__"):
+                    args_spec = annotation.__metadata__[0]
+                default_triggers[field.name] = args_spec or (lambda: [])
         return default_triggers
 
     def __repr__(self) -> str:
@@ -614,12 +619,10 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         # Import here to avoid circular imports.
         from reflex.components.base.bare import Bare
+        from reflex.components.base.fragment import Fragment
 
         # Translate deprecated props to new names.
         new_prop_names = [
@@ -640,21 +643,30 @@ class Component(BaseComponent, ABC):
         # Filter out None props
         props = {key: value for key, value in props.items() if value is not None}
 
+        def validate_children(children):
+            for child in children:
+                if isinstance(child, tuple):
+                    validate_children(child)
+                # Make sure the child is a valid type.
+                if not types._isinstance(child, ComponentChild):
+                    raise TypeError(
+                        "Children of Reflex components must be other components, "
+                        "state vars, or primitive Python types. "
+                        f"Got child {child} of type {type(child)}.",
+                    )
+
         # Validate all the children.
-        for child in children:
-            # Make sure the child is a valid type.
-            if not types._isinstance(child, ComponentChild):
-                raise TypeError(
-                    "Children of Reflex components must be other components, "
-                    "state vars, or primitive Python types. "
-                    f"Got child {child} of type {type(child)}.",
-                )
+        validate_children(children)
 
         children = [
             (
                 child
                 if isinstance(child, Component)
-                else Bare.create(contents=Var.create(child, _var_is_string=True))
+                else (
+                    Fragment.create(*child)
+                    if isinstance(child, tuple)
+                    else Bare.create(contents=Var.create(child, _var_is_string=True))
+                )
             )
             for child in children
         ]
@@ -987,6 +999,20 @@ class Component(BaseComponent, ABC):
             if getattr(self, prop) is not None
         ]
 
+    def _should_transpile(self, dep: str | None) -> bool:
+        """Check if a dependency should be transpiled.
+
+        Args:
+            dep: The dependency to check.
+
+        Returns:
+            True if the dependency should be transpiled.
+        """
+        return (
+            dep in self.transpile_packages
+            or format.format_library_name(dep or "") in self.transpile_packages
+        )
+
     def _get_dependencies_imports(self) -> imports.ImportDict:
         """Get the imports from lib_dependencies for installing.
 
@@ -994,7 +1020,14 @@ class Component(BaseComponent, ABC):
             The dependencies imports of the component.
         """
         return {
-            dep: [ImportVar(tag=None, render=False)] for dep in self.lib_dependencies
+            dep: [
+                ImportVar(
+                    tag=None,
+                    render=False,
+                    transpile=self._should_transpile(dep),
+                )
+            ]
+            for dep in self.lib_dependencies
         }
 
     def _get_hooks_imports(self) -> imports.ImportDict:
@@ -1022,6 +1055,11 @@ class Component(BaseComponent, ABC):
                     ImportVar(tag="useEffect"),
                 },
             )
+
+        user_hooks = self._get_hooks()
+        if user_hooks is not None and isinstance(user_hooks, Var):
+            _imports = imports.merge_imports(_imports, user_hooks._var_data.imports)  # type: ignore
+
         return _imports
 
     def _get_imports(self) -> imports.ImportDict:
@@ -1250,7 +1288,12 @@ class Component(BaseComponent, ABC):
         # If the tag is dot-qualified, only import the left-most name.
         tag = self.tag.partition(".")[0] if self.tag else None
         alias = self.alias.partition(".")[0] if self.alias else None
-        return ImportVar(tag=tag, is_default=self.is_default, alias=alias)
+        return ImportVar(
+            tag=tag,
+            is_default=self.is_default,
+            alias=alias,
+            transpile=self._should_transpile(self.library),
+        )
 
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
@@ -1514,7 +1557,13 @@ class NoSSRComponent(Component):
 
         # Do NOT import the main library/tag statically.
         if self.library is not None:
-            _imports[self.library] = [imports.ImportVar(tag=None, render=False)]
+            _imports[self.library] = [
+                imports.ImportVar(
+                    tag=None,
+                    render=False,
+                    transpile=self._should_transpile(self.library),
+                ),
+            ]
 
         return imports.merge_imports(
             dynamic_import,
@@ -1529,10 +1578,7 @@ class NoSSRComponent(Component):
         if self.library is None:
             raise ValueError("Undefined library for NoSSRComponent")
 
-        import_name_parts = [p for p in self.library.rpartition("@") if p != ""]
-        import_name = (
-            import_name_parts[0] if import_name_parts[0] != "@" else self.library
-        )
+        import_name = format.format_library_name(self.library)
 
         library_import = f"const {self.alias if self.alias else self.tag} = dynamic(() => import('{import_name}')"
         mod_import = (

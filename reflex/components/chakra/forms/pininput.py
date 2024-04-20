@@ -18,7 +18,7 @@ class PinInput(ChakraComponent):
 
     tag = "PinInput"
 
-    # State var to bind the the input.
+    # State var to bind the input.
     value: Var[str]
 
     # If true, the pin input receives focus on mount

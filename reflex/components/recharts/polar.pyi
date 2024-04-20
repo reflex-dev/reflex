@@ -97,9 +97,6 @@ class Pie(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -203,9 +200,6 @@ class Radar(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -266,9 +260,6 @@ class RadialBar(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -345,9 +336,6 @@ class PolarAngleAxis(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -440,9 +428,6 @@ class PolarGrid(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -558,8 +543,5 @@ class PolarRadiusAxis(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...

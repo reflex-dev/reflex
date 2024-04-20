@@ -29,7 +29,7 @@ try:
     # reflex-hosting-cli tools are compatible with pydantic v2
 
     if not TYPE_CHECKING:
-        import pydantic.v1.fields as ModelField
+        from pydantic.v1.fields import ModelField
     else:
         raise ModuleNotFoundError
 except ModuleNotFoundError:

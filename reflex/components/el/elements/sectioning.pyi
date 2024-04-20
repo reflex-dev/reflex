@@ -139,9 +139,6 @@ class Body(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -274,9 +271,6 @@ class Address(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -409,9 +403,6 @@ class Article(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -544,9 +535,6 @@ class Aside(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -679,9 +667,6 @@ class Footer(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -814,9 +799,6 @@ class Header(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -949,9 +931,6 @@ class H1(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1084,9 +1063,6 @@ class H2(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1219,9 +1195,6 @@ class H3(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1354,9 +1327,6 @@ class H4(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1489,9 +1459,6 @@ class H5(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1624,9 +1591,6 @@ class H6(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1759,9 +1723,6 @@ class Main(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1894,9 +1855,6 @@ class Nav(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2029,8 +1987,5 @@ class Section(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
