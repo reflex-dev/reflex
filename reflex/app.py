@@ -726,7 +726,7 @@ class App(Base):
         This can move back into `compile_` when py39 support is dropped.
         """
         # Add the @rx.page decorated pages to collect on_load events.
-        for render, kwargs in DECORATED_PAGES:
+        for render, kwargs in DECORATED_PAGES[get_config().app_name]:
             self.add_page(render, **kwargs)
 
     def compile_(self, export: bool = False):
