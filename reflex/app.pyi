@@ -86,7 +86,6 @@ class App(Base):
     background_tasks: Set[asyncio.Task] = set()
     def __init__(
         self,
-        *args,
         stylesheets: Optional[List[str]] = None,
         style: Optional[ComponentStyle] = None,
         admin_dash: Optional[AdminDash] = None,
