@@ -160,11 +160,10 @@ class App(Base):
     # The radix theme for the entire app
     theme: Optional[Component] = themes.theme(accent_color="blue")
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         """Initialize the app.
 
         Args:
-            *args: Args to initialize the app with.
             **kwargs: Kwargs to initialize the app with.
 
         Raises:
@@ -176,7 +175,7 @@ class App(Base):
             raise ValueError(
                 "`connect_error_component` is deprecated, use `overlay_component` instead"
             )
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         base_state_subclasses = BaseState.__subclasses__()
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
