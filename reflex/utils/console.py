@@ -174,7 +174,9 @@ def ask(
     Returns:
         A string with the user input.
     """
-    return Prompt.ask(question, choices=choices, default=default, show_choices=show_choices)  # type: ignore
+    return Prompt.ask(
+        question, choices=choices, default=default, show_choices=show_choices
+    )  # type: ignore
 
 
 def progress():
