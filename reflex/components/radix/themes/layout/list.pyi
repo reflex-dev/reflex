@@ -136,7 +136,7 @@ class BaseList(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "BaseList":
         """Create a list component.
 
@@ -257,7 +257,7 @@ class UnorderedList(BaseList, Ul):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "UnorderedList":
         """Create a unordered list component.
 
@@ -418,7 +418,7 @@ class OrderedList(BaseList, Ol):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "OrderedList":
         """Create an ordered list component.
 
@@ -556,7 +556,7 @@ class ListItem(Li):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ListItem":
         """Create a list item component.
 

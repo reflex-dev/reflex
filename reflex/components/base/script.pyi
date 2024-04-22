@@ -79,7 +79,7 @@ class Script(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Script":
         """Create an inline or user-defined script.
 

@@ -224,7 +224,7 @@ class IconButton(el.Button, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "IconButton":
         """Create a IconButton component.
 

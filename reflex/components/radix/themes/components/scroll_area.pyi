@@ -81,7 +81,7 @@ class ScrollArea(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ScrollArea":
         """Create a new component instance.
 

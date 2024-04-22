@@ -107,7 +107,7 @@ class Slider(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Slider":
         """Create a slider component.
 
@@ -203,7 +203,7 @@ class SliderTrack(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "SliderTrack":
         """Create the component.
 
@@ -279,7 +279,7 @@ class SliderFilledTrack(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "SliderFilledTrack":
         """Create the component.
 
@@ -356,7 +356,7 @@ class SliderThumb(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "SliderThumb":
         """Create the component.
 
@@ -433,7 +433,7 @@ class SliderMark(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "SliderMark":
         """Create the component.
 

@@ -134,7 +134,7 @@ class Checkbox(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Checkbox":
         """Create the component.
 
@@ -226,7 +226,7 @@ class CheckboxGroup(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "CheckboxGroup":
         """Create the component.
 

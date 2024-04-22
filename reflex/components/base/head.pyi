@@ -66,7 +66,7 @@ class NextHeadLib(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "NextHeadLib":
         """Create the component.
 
@@ -142,7 +142,7 @@ class Head(NextHeadLib, MemoizationLeaf):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Head":
         """Create a new memoization leaf component.
 

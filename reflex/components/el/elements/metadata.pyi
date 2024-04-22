@@ -113,7 +113,7 @@ class Base(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Base":
         """Create the component.
 
@@ -245,7 +245,7 @@ class Head(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Head":
         """Create the component.
 
@@ -398,7 +398,7 @@ class Link(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Link":
         """Create the component.
 
@@ -540,7 +540,7 @@ class Meta(BaseHTML):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Meta":
         """Create the component.
 
@@ -632,7 +632,7 @@ class Title(Element):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Title":
         """Create the component.
 

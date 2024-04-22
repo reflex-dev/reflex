@@ -107,7 +107,7 @@ class Box(el.Div, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Box":
         """Create a new component instance.
 

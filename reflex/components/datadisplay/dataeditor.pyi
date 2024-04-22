@@ -183,7 +183,7 @@ class DataEditor(NoSSRComponent):
         on_selection_cleared: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DataEditor":
         """Create the DataEditor component.
 

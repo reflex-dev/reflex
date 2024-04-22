@@ -140,7 +140,7 @@ class Form(ChakraComponent, HTMLForm):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Form":
         """Create a form component.
 
@@ -252,7 +252,7 @@ class FormControl(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "FormControl":
         """Create a form control component.
 
@@ -339,7 +339,7 @@ class FormHelperText(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "FormHelperText":
         """Create the component.
 
@@ -416,7 +416,7 @@ class FormLabel(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "FormLabel":
         """Create the component.
 
@@ -493,7 +493,7 @@ class FormErrorMessage(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "FormErrorMessage":
         """Create the component.
 

@@ -72,7 +72,7 @@ class ClientSideRouting(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ClientSideRouting":
         """Create the component.
 
@@ -151,7 +151,7 @@ class Default404Page(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Default404Page":
         """Create the component.
 

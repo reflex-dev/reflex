@@ -75,7 +75,7 @@ class ContextMenuRoot(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ContextMenuRoot":
         """Create a new component instance.
 
@@ -156,7 +156,7 @@ class ContextMenuTrigger(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ContextMenuTrigger":
         """Create a new component instance.
 
@@ -321,7 +321,7 @@ class ContextMenuContent(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ContextMenuContent":
         """Create a new component instance.
 
@@ -406,7 +406,7 @@ class ContextMenuSub(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ContextMenuSub":
         """Create a new component instance.
 
@@ -486,7 +486,7 @@ class ContextMenuSubTrigger(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ContextMenuSubTrigger":
         """Create a new component instance.
 
@@ -580,7 +580,7 @@ class ContextMenuSubContent(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ContextMenuSubContent":
         """Create a new component instance.
 
@@ -723,7 +723,7 @@ class ContextMenuItem(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ContextMenuItem":
         """Create a new component instance.
 
@@ -804,7 +804,7 @@ class ContextMenuSeparator(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ContextMenuSeparator":
         """Create a new component instance.
 

@@ -156,7 +156,7 @@ class RadioGroupRoot(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "RadioGroupRoot":
         """Create a new component instance.
 
@@ -247,7 +247,7 @@ class RadioGroupItem(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "RadioGroupItem":
         """Create a new component instance.
 
@@ -419,7 +419,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "HighLevelRadioGroup":
         """Create a radio group component.
 
@@ -598,7 +598,7 @@ class RadioGroup(ComponentNamespace):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "HighLevelRadioGroup":
         """Create a radio group component.
 

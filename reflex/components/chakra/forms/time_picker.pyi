@@ -96,7 +96,7 @@ class TimePicker(Input):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "TimePicker":
         """Create an Input component.
 

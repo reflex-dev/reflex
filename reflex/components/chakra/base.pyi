@@ -70,7 +70,7 @@ class ChakraComponent(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ChakraComponent":
         """Create the component.
 
@@ -147,7 +147,7 @@ class ChakraProvider(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ChakraProvider":
         """Create a new ChakraProvider component.
 
@@ -215,7 +215,7 @@ class ChakraColorModeProvider(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ChakraColorModeProvider":
         """Create the component.
 

@@ -150,7 +150,7 @@ class CommonMarginProps(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "CommonMarginProps":
         """Create the component.
 
@@ -233,7 +233,7 @@ class RadixThemesComponent(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "RadixThemesComponent":
         """Create a new component instance.
 
@@ -312,7 +312,7 @@ class RadixThemesTriggerComponent(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "RadixThemesTriggerComponent":
         """Create a new RadixThemesTriggerComponent instance.
 
@@ -474,7 +474,7 @@ class Theme(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Theme":
         """Create a new Radix Theme specification.
 
@@ -560,7 +560,7 @@ class ThemePanel(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ThemePanel":
         """Create a new component instance.
 
@@ -640,7 +640,7 @@ class RadixThemesColorModeProvider(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "RadixThemesColorModeProvider":
         """Create the component.
 

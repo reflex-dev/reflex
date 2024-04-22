@@ -198,7 +198,7 @@ class Heading(el.H1, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Heading":
         """Create a new component instance.
 

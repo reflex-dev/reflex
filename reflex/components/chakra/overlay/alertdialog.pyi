@@ -120,7 +120,7 @@ class AlertDialog(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AlertDialog":
         """Create an alert dialog component.
 
@@ -216,7 +216,7 @@ class AlertDialogBody(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AlertDialogBody":
         """Create the component.
 
@@ -292,7 +292,7 @@ class AlertDialogHeader(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AlertDialogHeader":
         """Create the component.
 
@@ -368,7 +368,7 @@ class AlertDialogFooter(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AlertDialogFooter":
         """Create the component.
 
@@ -444,7 +444,7 @@ class AlertDialogContent(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AlertDialogContent":
         """Create the component.
 
@@ -520,7 +520,7 @@ class AlertDialogOverlay(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AlertDialogOverlay":
         """Create the component.
 
@@ -596,7 +596,7 @@ class AlertDialogCloseButton(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AlertDialogCloseButton":
         """Create the component.
 

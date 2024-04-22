@@ -76,7 +76,7 @@ class DialogRoot(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DialogRoot":
         """Create a new component instance.
 
@@ -156,7 +156,7 @@ class DialogTrigger(RadixThemesTriggerComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DialogTrigger":
         """Create a new RadixThemesTriggerComponent instance.
 
@@ -226,7 +226,7 @@ class DialogTitle(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DialogTitle":
         """Create a new component instance.
 
@@ -364,7 +364,7 @@ class DialogContent(el.Div, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DialogContent":
         """Create a new component instance.
 
@@ -460,7 +460,7 @@ class DialogDescription(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DialogDescription":
         """Create a new component instance.
 
@@ -539,7 +539,7 @@ class DialogClose(RadixThemesTriggerComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DialogClose":
         """Create a new RadixThemesTriggerComponent instance.
 
@@ -618,7 +618,7 @@ class Dialog(ComponentNamespace):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DialogRoot":
         """Create a new component instance.
 

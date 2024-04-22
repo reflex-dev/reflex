@@ -74,7 +74,7 @@ class SliderComponent(RadixPrimitiveComponentWithClassName):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "SliderComponent":
         """Create the component.
 
@@ -175,7 +175,7 @@ class SliderRoot(SliderComponent):
         on_value_commit: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "SliderRoot":
         """Create the component.
 
@@ -253,7 +253,7 @@ class SliderTrack(SliderComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "SliderTrack":
         """Create the component.
 
@@ -331,7 +331,7 @@ class SliderRange(SliderComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "SliderRange":
         """Create the component.
 
@@ -409,7 +409,7 @@ class SliderThumb(SliderComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "SliderThumb":
         """Create the component.
 

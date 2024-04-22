@@ -69,7 +69,7 @@ class Text(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Text":
         """Create the component.
 

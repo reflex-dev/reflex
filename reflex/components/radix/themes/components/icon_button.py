@@ -57,7 +57,7 @@ class IconButton(el.Button, RadixThemesComponent):
             The IconButton component.
         """
         if children:
-            if isinstance(children[0], str):
+            if type(children[0]) == str:
                 children = [
                     Icon.create(
                         children[0],
@@ -68,7 +68,7 @@ class IconButton(el.Button, RadixThemesComponent):
                 "IconButton requires a child icon. Pass a string as the first child or a rx.icon."
             )
         if "size" in props:
-            if isinstance(props["size"]):
+            if type(props["size"]) == str:
                 RADIX_TO_LUCIDE_SIZE = {
                     "1": "12px",
                     "2": "24px",

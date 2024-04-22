@@ -80,7 +80,7 @@ class RadioGroup(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "RadioGroup":
         """Create a radio group component.
 
@@ -170,7 +170,7 @@ class Radio(Text):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Radio":
         """Create a radio component.
 

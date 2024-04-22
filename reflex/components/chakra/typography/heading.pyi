@@ -74,7 +74,7 @@ class Heading(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Heading":
         """Create the component.
 

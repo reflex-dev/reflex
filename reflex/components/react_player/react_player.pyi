@@ -76,7 +76,7 @@ class ReactPlayer(NoSSRComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ReactPlayer":
         """Create the component.
 

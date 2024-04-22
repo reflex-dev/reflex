@@ -108,7 +108,7 @@ class BaseHTML(Element):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "BaseHTML":
         """Create the component.
 

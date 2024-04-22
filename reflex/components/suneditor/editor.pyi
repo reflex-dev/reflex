@@ -199,7 +199,7 @@ class Editor(NoSSRComponent):
         toggle_full_screen: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Editor":
         """Create an instance of Editor. No children allowed.
 

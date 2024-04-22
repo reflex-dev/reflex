@@ -69,7 +69,7 @@ class LinkOverlay(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "LinkOverlay":
         """Create the component.
 
@@ -147,7 +147,7 @@ class LinkBox(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "LinkBox":
         """Create the component.
 

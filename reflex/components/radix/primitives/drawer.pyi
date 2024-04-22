@@ -73,7 +73,7 @@ class DrawerComponent(RadixPrimitiveComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerComponent":
         """Create the component.
 
@@ -171,7 +171,7 @@ class DrawerRoot(DrawerComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerRoot":
         """Create the component.
 
@@ -258,7 +258,7 @@ class DrawerTrigger(DrawerComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerTrigger":
         """Create a new DrawerTrigger instance.
 
@@ -329,7 +329,7 @@ class DrawerPortal(DrawerComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerPortal":
         """Create the component.
 
@@ -423,7 +423,7 @@ class DrawerContent(DrawerComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerContent":
         """Create a Drawer Content.
          We wrap the Drawer content in an `rx.theme` to make radix themes definitions available to
@@ -505,7 +505,7 @@ class DrawerOverlay(DrawerComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerOverlay":
         """Create the component.
 
@@ -583,7 +583,7 @@ class DrawerClose(DrawerTrigger):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerClose":
         """Create a new DrawerTrigger instance.
 
@@ -654,7 +654,7 @@ class DrawerTitle(DrawerComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerTitle":
         """Create the component.
 
@@ -732,7 +732,7 @@ class DrawerDescription(DrawerComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerDescription":
         """Create the component.
 
@@ -834,7 +834,7 @@ class Drawer(ComponentNamespace):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerRoot":
         """Create the component.
 

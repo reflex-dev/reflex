@@ -68,7 +68,7 @@ class Container(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Container":
         """Create the component.
 

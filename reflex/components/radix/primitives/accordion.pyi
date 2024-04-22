@@ -96,7 +96,7 @@ class AccordionComponent(RadixPrimitiveComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AccordionComponent":
         """Create the component.
 
@@ -265,7 +265,7 @@ class AccordionRoot(AccordionComponent):
         on_value_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AccordionRoot":
         """Create the Accordion root component.
 
@@ -359,7 +359,7 @@ class AccordionItem(AccordionComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AccordionItem":
         """Create an accordion item.
 
@@ -441,7 +441,7 @@ class AccordionHeader(AccordionComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AccordionHeader":
         """Create the Accordion header component.
 
@@ -519,7 +519,7 @@ class AccordionTrigger(AccordionComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AccordionTrigger":
         """Create the Accordion trigger component.
 
@@ -597,7 +597,7 @@ class AccordionIcon(Icon):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AccordionIcon":
         """Create the Accordion icon component.
 
@@ -675,7 +675,7 @@ class AccordionContent(AccordionComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AccordionContent":
         """Create the Accordion content component.
 

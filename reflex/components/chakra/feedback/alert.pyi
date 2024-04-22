@@ -83,7 +83,7 @@ class Alert(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Alert":
         """Create an alert component.
 
@@ -164,7 +164,7 @@ class AlertIcon(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AlertIcon":
         """Create the component.
 
@@ -240,7 +240,7 @@ class AlertTitle(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AlertTitle":
         """Create the component.
 
@@ -316,7 +316,7 @@ class AlertDescription(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "AlertDescription":
         """Create the component.
 

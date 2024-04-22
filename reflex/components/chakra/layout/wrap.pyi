@@ -76,7 +76,7 @@ class Wrap(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Wrap":
         """Return a wrap component.
 
@@ -160,7 +160,7 @@ class WrapItem(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "WrapItem":
         """Create the component.
 

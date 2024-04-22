@@ -160,7 +160,7 @@ class Input(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Input":
         """Create an Input component.
 
@@ -249,7 +249,7 @@ class InputGroup(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "InputGroup":
         """Create the component.
 
@@ -325,7 +325,7 @@ class InputLeftAddon(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "InputLeftAddon":
         """Create the component.
 
@@ -401,7 +401,7 @@ class InputRightAddon(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "InputRightAddon":
         """Create the component.
 
@@ -477,7 +477,7 @@ class InputLeftElement(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "InputLeftElement":
         """Create the component.
 
@@ -553,7 +553,7 @@ class InputRightElement(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "InputRightElement":
         """Create the component.
 

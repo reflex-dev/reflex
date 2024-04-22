@@ -80,7 +80,7 @@ class CircularProgress(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "CircularProgress":
         """Create a circular progress component.
 
@@ -167,7 +167,7 @@ class CircularProgressLabel(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "CircularProgressLabel":
         """Create the component.
 

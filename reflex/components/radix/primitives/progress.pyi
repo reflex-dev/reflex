@@ -74,7 +74,7 @@ class ProgressComponent(RadixPrimitiveComponentWithClassName):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ProgressComponent":
         """Create the component.
 
@@ -158,7 +158,7 @@ class ProgressRoot(ProgressComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ProgressRoot":
         """Create the component.
 
@@ -301,7 +301,7 @@ class ProgressIndicator(ProgressComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ProgressIndicator":
         """Create the component.
 
@@ -452,7 +452,7 @@ class Progress(ProgressRoot):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Progress":
         """High-level API for progress bar.
 
@@ -604,7 +604,7 @@ class ProgressNamespace(ComponentNamespace):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Progress":
         """High-level API for progress bar.
 

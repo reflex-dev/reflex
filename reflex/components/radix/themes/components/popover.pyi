@@ -77,7 +77,7 @@ class PopoverRoot(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "PopoverRoot":
         """Create a new component instance.
 
@@ -158,7 +158,7 @@ class PopoverTrigger(RadixThemesTriggerComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "PopoverTrigger":
         """Create a new RadixThemesTriggerComponent instance.
 
@@ -305,7 +305,7 @@ class PopoverContent(el.Div, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "PopoverContent":
         """Create a new component instance.
 
@@ -406,7 +406,7 @@ class PopoverClose(RadixThemesTriggerComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "PopoverClose":
         """Create a new RadixThemesTriggerComponent instance.
 

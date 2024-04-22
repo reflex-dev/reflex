@@ -79,7 +79,7 @@ class HoverCardRoot(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "HoverCardRoot":
         """Create a new component instance.
 
@@ -162,7 +162,7 @@ class HoverCardTrigger(RadixThemesTriggerComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "HoverCardTrigger":
         """Create a new RadixThemesTriggerComponent instance.
 
@@ -286,7 +286,7 @@ class HoverCardContent(el.Div, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "HoverCardContent":
         """Create a new component instance.
 
@@ -394,7 +394,7 @@ class HoverCard(ComponentNamespace):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "HoverCardRoot":
         """Create a new component instance.
 

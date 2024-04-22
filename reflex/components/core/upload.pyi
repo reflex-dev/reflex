@@ -99,7 +99,7 @@ class UploadFilesProvider(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "UploadFilesProvider":
         """Create the component.
 
@@ -191,7 +191,7 @@ class Upload(MemoizationLeaf):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Upload":
         """Create an upload component.
 

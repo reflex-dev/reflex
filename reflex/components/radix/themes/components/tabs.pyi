@@ -82,7 +82,7 @@ class TabsRoot(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "TabsRoot":
         """Create a new component instance.
 
@@ -165,7 +165,7 @@ class TabsList(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "TabsList":
         """Create a new component instance.
 
@@ -247,7 +247,7 @@ class TabsTrigger(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "TabsTrigger":
         """Create a new component instance.
 
@@ -329,7 +329,7 @@ class TabsContent(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "TabsContent":
         """Create a new component instance.
 
@@ -423,7 +423,7 @@ class Tabs(ComponentNamespace):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "TabsRoot":
         """Create a new component instance.
 

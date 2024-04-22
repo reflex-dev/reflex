@@ -73,7 +73,7 @@ class Breadcrumb(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Breadcrumb":
         """Create a breadcrumb component.
 
@@ -160,7 +160,7 @@ class BreadcrumbItem(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "BreadcrumbItem":
         """Create a Breadcrumb Item component.
 
@@ -242,7 +242,7 @@ class BreadcrumbSeparator(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "BreadcrumbSeparator":
         """Create the component.
 
@@ -324,7 +324,7 @@ class BreadcrumbLink(Link):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "BreadcrumbLink":
         """Create a Link component.
 

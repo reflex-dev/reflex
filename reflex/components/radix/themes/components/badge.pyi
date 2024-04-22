@@ -185,7 +185,7 @@ class Badge(el.Span, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Badge":
         """Create a new component instance.
 

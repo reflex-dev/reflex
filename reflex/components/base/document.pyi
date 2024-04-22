@@ -67,7 +67,7 @@ class NextDocumentLib(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "NextDocumentLib":
         """Create the component.
 
@@ -144,7 +144,7 @@ class Html(NextDocumentLib):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Html":
         """Create the component.
 
@@ -220,7 +220,7 @@ class DocumentHead(NextDocumentLib):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DocumentHead":
         """Create the component.
 
@@ -296,7 +296,7 @@ class Main(NextDocumentLib):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Main":
         """Create the component.
 
@@ -372,7 +372,7 @@ class NextScript(NextDocumentLib):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "NextScript":
         """Create the component.
 

@@ -70,7 +70,7 @@ class Transition(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Transition":
         """Create the component.
 
@@ -150,7 +150,7 @@ class Fade(Transition):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Fade":
         """Create the component.
 
@@ -232,7 +232,7 @@ class ScaleFade(Transition):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ScaleFade":
         """Create the component.
 
@@ -315,7 +315,7 @@ class Slide(Transition):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Slide":
         """Create the component.
 
@@ -399,7 +399,7 @@ class SlideFade(Transition):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "SlideFade":
         """Create the component.
 
@@ -485,7 +485,7 @@ class Collapse(Transition):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Collapse":
         """Create the component.
 

@@ -150,7 +150,7 @@ class Grid(el.Div, RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Grid":
         """Create a new component instance.
 

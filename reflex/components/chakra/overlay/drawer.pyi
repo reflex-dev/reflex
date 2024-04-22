@@ -159,7 +159,7 @@ class Drawer(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Drawer":
         """Create a drawer component.
 
@@ -258,7 +258,7 @@ class DrawerBody(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerBody":
         """Create the component.
 
@@ -334,7 +334,7 @@ class DrawerHeader(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerHeader":
         """Create the component.
 
@@ -410,7 +410,7 @@ class DrawerFooter(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerFooter":
         """Create the component.
 
@@ -486,7 +486,7 @@ class DrawerOverlay(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerOverlay":
         """Create the component.
 
@@ -562,7 +562,7 @@ class DrawerContent(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerContent":
         """Create the component.
 
@@ -638,7 +638,7 @@ class DrawerCloseButton(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DrawerCloseButton":
         """Create the component.
 

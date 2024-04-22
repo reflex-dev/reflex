@@ -72,7 +72,7 @@ class Skeleton(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Skeleton":
         """Create the component.
 
@@ -158,7 +158,7 @@ class SkeletonCircle(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "SkeletonCircle":
         """Create the component.
 
@@ -245,7 +245,7 @@ class SkeletonText(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "SkeletonText":
         """Create the component.
 

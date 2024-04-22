@@ -94,7 +94,7 @@ class Tooltip(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Tooltip":
         """Create the component.
 

@@ -73,7 +73,7 @@ class FormComponent(RadixPrimitiveComponentWithClassName):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "FormComponent":
         """Create the component.
 
@@ -225,7 +225,7 @@ class FormRoot(FormComponent, HTMLForm):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "FormRoot":
         """Create a form component.
 
@@ -332,7 +332,7 @@ class FormField(FormComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "FormField":
         """Create the component.
 
@@ -412,7 +412,7 @@ class FormLabel(FormComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "FormLabel":
         """Create the component.
 
@@ -490,7 +490,7 @@ class FormControl(FormComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "FormControl":
         """Create a Form Control component.
 
@@ -617,7 +617,7 @@ class FormMessage(FormComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "FormMessage":
         """Create the component.
 
@@ -698,7 +698,7 @@ class FormValidityState(FormComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "FormValidityState":
         """Create the component.
 
@@ -776,7 +776,7 @@ class FormSubmit(FormComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "FormSubmit":
         """Create the component.
 
@@ -929,7 +929,7 @@ class Form(FormRoot):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Form":
         """Create a form component.
 
@@ -1113,7 +1113,7 @@ class FormNamespace(ComponentNamespace):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Form":
         """Create a form component.
 

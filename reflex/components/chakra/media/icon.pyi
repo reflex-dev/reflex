@@ -68,7 +68,7 @@ class ChakraIconComponent(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ChakraIconComponent":
         """Create the component.
 
@@ -144,7 +144,7 @@ class Icon(ChakraIconComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Icon":
         """Initialize the Icon component.
 

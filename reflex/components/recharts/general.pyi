@@ -83,7 +83,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ResponsiveContainer":
         """Create a new memoization leaf component.
 
@@ -193,7 +193,7 @@ class Legend(Recharts):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Legend":
         """Create the component.
 
@@ -287,7 +287,7 @@ class GraphingTooltip(Recharts):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "GraphingTooltip":
         """Create the component.
 
@@ -420,7 +420,7 @@ class Label(Recharts):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Label":
         """Create the component.
 
@@ -550,7 +550,7 @@ class LabelList(Recharts):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "LabelList":
         """Create the component.
 

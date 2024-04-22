@@ -81,7 +81,7 @@ class DebounceInput(Component):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "DebounceInput":
         """Create a DebounceInput component.
 

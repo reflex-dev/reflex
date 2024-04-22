@@ -107,7 +107,7 @@ class Modal(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Modal":
         """Create a modal component.
 
@@ -203,7 +203,7 @@ class ModalOverlay(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ModalOverlay":
         """Create the component.
 
@@ -279,7 +279,7 @@ class ModalHeader(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ModalHeader":
         """Create the component.
 
@@ -355,7 +355,7 @@ class ModalFooter(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ModalFooter":
         """Create the component.
 
@@ -431,7 +431,7 @@ class ModalContent(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ModalContent":
         """Create the component.
 
@@ -507,7 +507,7 @@ class ModalBody(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ModalBody":
         """Create the component.
 
@@ -583,7 +583,7 @@ class ModalCloseButton(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "ModalCloseButton":
         """Create the component.
 

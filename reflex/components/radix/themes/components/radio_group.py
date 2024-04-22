@@ -146,7 +146,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
         # convert only non-strings to json(JSON.stringify) so quotes are not rendered
         # for string literal types.
         if (
-            type(default_value) is str  # noqa: E721
+            type(default_value) is str
             or isinstance(default_value, Var)
             and default_value._var_type is str
         ):

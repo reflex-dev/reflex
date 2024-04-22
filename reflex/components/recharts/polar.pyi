@@ -65,7 +65,7 @@ class Pie(Recharts):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Pie":
         """Create the component.
 
@@ -173,7 +173,7 @@ class Radar(Recharts):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Radar":
         """Create the component.
 
@@ -239,7 +239,7 @@ class RadialBar(Recharts):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "RadialBar":
         """Create the component.
 
@@ -309,7 +309,7 @@ class PolarAngleAxis(Recharts):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "PolarAngleAxis":
         """Create the component.
 
@@ -405,7 +405,7 @@ class PolarGrid(Recharts):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "PolarGrid":
         """Create the component.
 
@@ -516,7 +516,7 @@ class PolarRadiusAxis(Recharts):
         on_mouse_over: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "PolarRadiusAxis":
         """Create the component.
 

@@ -79,7 +79,7 @@ class Table(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Table":
         """Create a table component.
 
@@ -164,7 +164,7 @@ class Thead(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Thead":
         """Create a table header component.
 
@@ -245,7 +245,7 @@ class Tbody(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Tbody":
         """Create a table body component.
 
@@ -325,7 +325,7 @@ class Tfoot(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Tfoot":
         """Create a table footer component.
 
@@ -406,7 +406,7 @@ class Tr(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Tr":
         """Create a table row component.
 
@@ -485,7 +485,7 @@ class Th(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Th":
         """Create the component.
 
@@ -563,7 +563,7 @@ class Td(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Td":
         """Create the component.
 
@@ -641,7 +641,7 @@ class TableCaption(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "TableCaption":
         """Create the component.
 
@@ -718,7 +718,7 @@ class TableContainer(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "TableContainer":
         """Create the component.
 

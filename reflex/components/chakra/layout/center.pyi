@@ -66,7 +66,7 @@ class Center(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Center":
         """Create the component.
 
@@ -142,7 +142,7 @@ class Square(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Square":
         """Create the component.
 
@@ -218,7 +218,7 @@ class Circle(ChakraComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        **props,
+        **props
     ) -> "Circle":
         """Create the component.
 
