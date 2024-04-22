@@ -568,15 +568,17 @@ def update_next_config(export=False, transpile_packages: Optional[List[str]] = N
         export: if the method run during reflex export.
         transpile_packages: list of packages to transpile via next.config.js.
     """
-    next_config_file = os.path.join(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
+    next_config_file = Path(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
 
     next_config = _update_next_config(
         get_config(), export=export, transpile_packages=transpile_packages
     )
 
-    with open(next_config_file, "w") as file:
-        file.write(next_config)
-        file.write("\n")
+    # Overwriting the next.config.js triggers a full server reload, so make sure
+    # there is actually a diff.
+    orig_next_config = next_config_file.read_text() if next_config_file.exists() else ""
+    if orig_next_config != next_config:
+        next_config_file.write_text(next_config)
 
 
 def _update_next_config(
@@ -819,14 +821,16 @@ def install_frontend_packages(packages: set[str], config: Config):
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    # unsupported archs will use npm anyway. so we dont have to run npm twice
+    # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
     fallback_command = (
-        get_package_manager()
-        if constants.IS_WINDOWS and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
+        get_install_package_manager()
+        if not constants.IS_WINDOWS
+        or constants.IS_WINDOWS
+        and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
         else None
     )
     processes.run_process_with_fallback(
-        [get_install_package_manager(), "install", "--loglevel", "silly"],
+        [get_install_package_manager(), "install"],  # type: ignore
         fallback=fallback_command,
         show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,

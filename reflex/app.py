@@ -839,6 +839,9 @@ class App(Base):
         compile_results.append(
             compiler.compile_contexts(self.state, self.theme),
         )
+        # Fix #2992 by removing the top-level appearance prop
+        if self.theme is not None:
+            self.theme.appearance = None
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 

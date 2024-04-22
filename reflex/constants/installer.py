@@ -112,6 +112,7 @@ class PackageJson(SimpleNamespace):
         "next-themes": "0.2.1",
         "react": "18.2.0",
         "react-dom": "18.2.0",
+        "react-focus-lock": "2.11.3",
         "socket.io-client": "4.6.1",
         "universal-cookie": "4.0.4",
     }

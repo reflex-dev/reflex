@@ -1340,7 +1340,7 @@ class Var:
         Returns:
             A var representing the contain check.
         """
-        if not (types._issubclass(self._var_type, Union[dict, list, tuple, str])):
+        if not (types._issubclass(self._var_type, Union[dict, list, tuple, str, set])):
             raise TypeError(
                 f"Var {self._var_full_name} of type {self._var_type} does not support contains check."
             )
