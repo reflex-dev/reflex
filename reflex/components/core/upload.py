@@ -320,6 +320,9 @@ class StyledUpload(Upload):
         props.setdefault("padding", "5em")
         props.setdefault("textAlign", "center")
 
+        # Mark the Upload component as used in the app.
+        Upload.is_used = True
+
         return super().create(
             *children,
             **props,
