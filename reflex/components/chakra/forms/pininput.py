@@ -1,4 +1,5 @@
 """A pin input component."""
+
 from __future__ import annotations
 
 from typing import Any, Optional, Union
@@ -17,7 +18,7 @@ class PinInput(ChakraComponent):
 
     tag = "PinInput"
 
-    # State var to bind the the input.
+    # State var to bind the input.
     value: Var[str]
 
     # If true, the pin input receives focus on mount
@@ -71,7 +72,7 @@ class PinInput(ChakraComponent):
         range_var = Var.range(0)
         return merge_imports(
             super()._get_imports(),
-            PinInputField().get_imports(),  # type: ignore
+            PinInputField()._get_all_imports(),  # type: ignore
             range_var._var_data.imports if range_var._var_data is not None else {},
         )
 

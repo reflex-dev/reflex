@@ -140,9 +140,6 @@ class Canvas(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -275,9 +272,6 @@ class Noscript(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -442,8 +436,5 @@ class Script(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...

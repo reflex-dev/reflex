@@ -176,9 +176,6 @@ class Area(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -339,9 +336,6 @@ class Audio(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -518,9 +512,6 @@ class Img(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -655,9 +646,6 @@ class Map(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -806,9 +794,6 @@ class Track(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -977,9 +962,6 @@ class Video(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1116,9 +1098,6 @@ class Embed(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1281,9 +1260,6 @@ class Iframe(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1428,9 +1404,6 @@ class Object(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1563,9 +1536,6 @@ class Picture(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1698,9 +1668,6 @@ class Portal(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1849,9 +1816,6 @@ class Source(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1984,9 +1948,6 @@ class Svg(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2121,8 +2082,5 @@ class Path(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...

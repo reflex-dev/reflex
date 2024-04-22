@@ -91,9 +91,6 @@ class SliderComponent(RadixPrimitiveComponentWithClassName):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -195,9 +192,6 @@ class SliderRoot(SliderComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -276,9 +270,6 @@ class SliderTrack(SliderComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -357,9 +348,6 @@ class SliderRange(SliderComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -438,9 +426,6 @@ class SliderThumb(SliderComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 

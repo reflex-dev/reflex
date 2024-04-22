@@ -82,8 +82,5 @@ class KeyboardKey(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...

@@ -11,6 +11,11 @@ from types import SimpleNamespace
 from platformdirs import PlatformDirs
 
 IS_WINDOWS = platform.system() == "Windows"
+# https://github.com/oven-sh/bun/blob/main/src/cli/install.ps1
+IS_WINDOWS_BUN_SUPPORTED_MACHINE = IS_WINDOWS and platform.machine() in [
+    "AMD64",
+    "x86_64",
+]  # filter out 32 bit + ARM
 
 
 class Dirs(SimpleNamespace):
@@ -88,12 +93,11 @@ class ReflexHostingCLI(SimpleNamespace):
 class Templates(SimpleNamespace):
     """Constants related to Templates."""
 
-    # Dynamically get the enum values from the .templates folder
-    template_dir = os.path.join(Reflex.ROOT_DIR, Reflex.MODULE_NAME, ".templates/apps")
-    template_dirs = next(os.walk(template_dir))[1]
+    # The route on Reflex backend to query which templates are available and their URLs.
+    APP_TEMPLATES_ROUTE = "/app-templates"
 
-    # Create an enum value for each directory in the .templates folder
-    Kind = Enum("Kind", {template.upper(): template for template in template_dirs})
+    # The default template
+    DEFAULT = "blank"
 
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""

@@ -71,6 +71,28 @@ def _create_package_config(module_name: str, package_name: str):
         )
 
 
+def _get_package_config(exit_on_fail: bool = True) -> dict:
+    """Get the package configuration from the pyproject.toml file.
+
+    Args:
+        exit_on_fail: Whether to exit if the pyproject.toml file is not found.
+
+    Returns:
+        The package configuration.
+
+    Raises:
+        Exit: If the pyproject.toml file is not found.
+    """
+    try:
+        with open(CustomComponents.PYPROJECT_TOML, "rb") as f:
+            return dict(tomlkit.load(f))
+    except (OSError, TOMLKitError) as ex:
+        console.error(f"Unable to read from pyproject.toml due to {ex}")
+        if exit_on_fail:
+            raise typer.Exit(code=1) from ex
+        raise
+
+
 def _create_readme(module_name: str, package_name: str):
     """Create a package README file.
 
@@ -145,7 +167,7 @@ def _populate_demo_app(name_variants: NameVariants):
 
     with set_directory(demo_app_dir):
         # We start with the blank template as basis.
-        _init(name=demo_app_name, template=constants.Templates.Kind.BLANK)
+        _init(name=demo_app_name, template=constants.Templates.DEFAULT)
         # Then overwrite the app source file with the one we want for testing custom components.
         # This source file is rendered using jinja template file.
         with open(f"{demo_app_name}/{demo_app_name}.py", "w") as f:
@@ -416,9 +438,7 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
 
 def _make_pyi_files():
     """Create pyi files for the custom component."""
-    from glob import glob
-
-    package_name = glob("custom_components/*.egg-info")[0].replace(".egg-info", "")
+    package_name = _get_package_config()["project"]["name"]
 
     for dir, _, _ in os.walk(f"./{package_name}"):
         if "__pycache__" in dir:
@@ -514,22 +534,10 @@ def _validate_credentials(
 def _get_version_to_publish() -> str:
     """Get the version to publish from the pyproject.toml.
 
-    Raises:
-        Exit: If the version is not found in the pyproject.toml.
-
     Returns:
         The version to publish.
     """
-    # Get the version from the pyproject.toml.
-    try:
-        with open(CustomComponents.PYPROJECT_TOML, "rb") as f:
-            project_toml = tomlkit.parse(f.read())
-            return project_toml.get("project", {})["version"]
-    except (OSError, KeyError, TOMLKitError) as ex:
-        console.error(
-            f"Cannot find the version in {CustomComponents.PYPROJECT_TOML} due to {ex}"
-        )
-        raise typer.Exit(code=1) from ex
+    return _get_package_config()["project"]["version"]
 
 
 def _ensure_dist_dir(version_to_publish: str, build: bool):
@@ -547,6 +555,7 @@ def _ensure_dist_dir(version_to_publish: str, build: bool):
     if build:
         # Need to check if the files here are for the version to be published.
         if dist_dir.exists():
+
             # Check if the distribution files are for the version to be published.
             needs_rebuild = False
             for suffix in CustomComponents.DISTRIBUTION_FILE_SUFFIXES:
@@ -563,7 +572,7 @@ def _ensure_dist_dir(version_to_publish: str, build: bool):
             needs_rebuild = (
                 console.ask(
                     "Distribution files for the version to be published already exist. Do you want to rebuild?",
-                    choices=["n", "y"],
+                    choices=["y", "n"],
                     default="n",
                 )
                 == "y"
@@ -667,10 +676,10 @@ def publish(
     if validate_project_info and (
         console.ask(
             "Would you like to interactively review the package information?",
-            choices=["Y", "n"],
-            default="Y",
+            choices=["y", "n"],
+            default="y",
         )
-        == "Y"
+        == "y"
     ):
         _validate_project_info()
 
@@ -701,7 +710,7 @@ def publish(
     if (
         console.ask(
             "Would you like to include your published component on our gallery?",
-            choices=["n", "y"],
+            choices=["y", "n"],
             default="y",
         )
         == "n"
@@ -714,7 +723,7 @@ def publish(
     _collect_details_for_gallery()
 
 
-def _process_entered_list(input: str) -> list | None:
+def _process_entered_list(input: str | None) -> list | None:
     """Process the user entered comma separated list into a list if applicable.
 
     Args:
@@ -723,7 +732,7 @@ def _process_entered_list(input: str) -> list | None:
     Returns:
         The list of items or None.
     """
-    return [t.strip() for t in input.split(",") if t if input] or None
+    return [t.strip() for t in (input or "").split(",") if t if input] or None
 
 
 def _validate_project_info():
@@ -732,12 +741,7 @@ def _validate_project_info():
     Raises:
         Exit: If the pyproject.toml file is ill-formed.
     """
-    try:
-        with open(CustomComponents.PYPROJECT_TOML, "rb") as f:
-            pyproject_toml = tomlkit.parse(f.read())
-    except TOMLKitError as ex:
-        console.error(f"Unable to read from pyproject.toml due to {ex}")
-        raise typer.Exit(code=1) from ex
+    pyproject_toml = _get_package_config()
 
     try:
         project = pyproject_toml.get("project", {})
@@ -765,14 +769,22 @@ def _validate_project_info():
         "Keep, replace or append?", choices=["k", "r", "a"], default="k"
     )
     new_keywords = []
-    if keyword_action in ("r", "a"):
+    if keyword_action == "r":
         new_keywords = (
             _process_entered_list(
                 console.ask("Enter new set of keywords separated by commas")
             )
             or []
         )
-    project["keywords"] = project.get("keywords", []) + new_keywords
+        project["keywords"] = new_keywords
+    elif keyword_action == "a":
+        new_keywords = (
+            _process_entered_list(
+                console.ask("Enter new set of keywords separated by commas")
+            )
+            or []
+        )
+        project["keywords"] = project.get("keywords", []) + new_keywords
 
     if not project.get("urls"):
         project["urls"] = {}
@@ -787,7 +799,7 @@ def _validate_project_info():
         with open(CustomComponents.PYPROJECT_TOML, "w") as f:
             tomlkit.dump(pyproject_toml, f)
     except (OSError, TOMLKitError) as ex:
-        console.error(f"Unable to read from pyproject.toml due to {ex}")
+        console.error(f"Unable to write to pyproject.toml due to {ex}")
         raise typer.Exit(code=1) from ex
 
 
@@ -799,11 +811,6 @@ def _collect_details_for_gallery():
     """
     from reflex.reflex import _login
 
-    console.print("We recommend that you deploy a demo app showcasing the component.")
-    console.print("If not already, please deploy it first.")
-    if console.ask("Continue?", choices=["y", "n"], default="y") != "y":
-        return
-
     console.rule("[bold]Authentication with Reflex Services")
     console.print("First let's log in to Reflex backend services.")
     access_token = _login()
@@ -812,43 +819,43 @@ def _collect_details_for_gallery():
     params = {}
     package_name = None
     try:
-        with open(CustomComponents.PYPROJECT_TOML, "rb") as f:
-            project_toml = tomlkit.parse(f.read())
-        package_name = project_toml.get("project", {})["name"]
-    except (OSError, TOMLKitError, KeyError) as ex:
+        package_name = _get_package_config(exit_on_fail=False)["project"]["name"]
+    except (TOMLKitError, KeyError) as ex:
         console.debug(
             f"Unable to read from pyproject.toml in current directory due to {ex}"
         )
         package_name = console.ask("[ Published python package name ]")
     console.print(f"[ Custom component package name ] : {package_name}")
+    params["package_name"] = package_name
 
     # Check the backend services if the user is allowed to update information of this package is already shared.
-    expected_status_code = False
     try:
         console.debug(
-            f"Checking if user has permission to modify information for {package_name} if already exists."
+            f"Checking if user has permission to upsert information for {package_name} by POST."
         )
-        response = httpx.get(
-            f"{GET_CUSTOM_COMPONENTS_GALLERY_BY_NAME_ENDPOINT}/{package_name}",
+        # Send a POST request to achieve two things at once:
+        # 1. Check if the package is already shared by the user. If not, the backend will return 403.
+        # 2. If this package is not shared before, this request records the package name in the backend.
+        response = httpx.post(
+            POST_CUSTOM_COMPONENTS_GALLERY_ENDPOINT,
             headers={"Authorization": f"Bearer {access_token}"},
+            data=params,
         )
         if response.status_code == httpx.codes.FORBIDDEN:
             console.error(
                 f"{package_name} is owned by another user. Unable to update the information for it."
             )
             raise typer.Exit(code=1)
-        elif response.status_code == httpx.codes.NOT_FOUND:
-            console.debug(f"{package_name} is not found. This is a new share.")
-            expected_status_code = True
-
         response.raise_for_status()
-        console.debug(f"{package_name} is found. This is an update.")
     except httpx.HTTPError as he:
-        if not expected_status_code:
-            console.error(f"Unable to complete request due to {he}.")
-            raise typer.Exit(code=1) from he
+        console.error(f"Unable to complete request due to {he}.")
+        raise typer.Exit(code=1) from he
 
-    params["package_name"] = package_name
+    files = []
+    if (image_file_and_extension := _get_file_from_prompt_in_loop()) is not None:
+        files.append(
+            ("files", (image_file_and_extension[1], image_file_and_extension[0]))
+        )
 
     demo_url = None
     while True:
@@ -862,19 +869,6 @@ def _collect_details_for_gallery():
             break
     if demo_url:
         params["demo_url"] = demo_url
-
-    display_name = (
-        console.ask("[ Friendly display name for your component ] (enter to skip)")
-        or None
-    )
-    if display_name:
-        params["display_name"] = display_name
-
-    files = []
-    if (image_file_and_extension := _get_file_from_prompt_in_loop()) is not None:
-        files.append(
-            ("files", (image_file_and_extension[1], image_file_and_extension[0]))
-        )
 
     # Now send the post request to Reflex backend services.
     try:
@@ -911,7 +905,7 @@ def _get_file_from_prompt_in_loop() -> Tuple[bytes, str] | None:
     image_file = file_extension = None
     while image_file is None:
         image_filepath = console.ask(
-            f"Local path to a preview gif or image (enter to skip)"
+            f"Upload a preview image of your demo app (enter to skip)"
         )
         if not image_filepath:
             break

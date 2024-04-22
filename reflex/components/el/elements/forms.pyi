@@ -189,9 +189,6 @@ class Button(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -324,9 +321,6 @@ class Datalist(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -411,9 +405,6 @@ class Fieldset(Element):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -838,9 +829,6 @@ class Input(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -979,9 +967,6 @@ class Label(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1114,9 +1099,6 @@ class Legend(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1267,9 +1249,6 @@ class Meter(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1410,9 +1389,6 @@ class Optgroup(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1561,9 +1537,6 @@ class Option(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1704,9 +1677,6 @@ class Output(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1847,9 +1817,6 @@ class Progress(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2012,9 +1979,6 @@ class Select(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2022,7 +1986,6 @@ AUTO_HEIGHT_JS = '\nconst autoHeightOnInput = (e, is_enabled) => {\n    if (is_e
 ENTER_KEY_SUBMIT_JS = "\nconst enterKeySubmitOnKeyDown = (e, is_enabled) => {\n    if (is_enabled && e.which === 13 && !e.shiftKey) {\n        e.preventDefault();\n        if (!e.repeat) {\n            if (e.target.form) {\n                e.target.form.requestSubmit();\n            }\n        }\n    }\n}\n"
 
 class Textarea(BaseHTML):
-    def get_custom_code(self) -> Set[str]: ...
     def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
@@ -2215,8 +2178,5 @@ class Textarea(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...

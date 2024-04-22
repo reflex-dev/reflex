@@ -33,7 +33,7 @@ def _compile_document_root(root: Component) -> str:
         The compiled document root.
     """
     return templates.DOCUMENT_ROOT.render(
-        imports=utils.compile_imports(root.get_imports()),
+        imports=utils.compile_imports(root._get_all_imports()),
         document=root.render(),
     )
 
@@ -48,9 +48,9 @@ def _compile_app(app_root: Component) -> str:
         The compiled app.
     """
     return templates.APP_ROOT.render(
-        imports=utils.compile_imports(app_root.get_imports()),
-        custom_codes=app_root.get_custom_code(),
-        hooks=app_root.get_hooks_internal() | app_root.get_hooks(),
+        imports=utils.compile_imports(app_root._get_all_imports()),
+        custom_codes=app_root._get_all_custom_code(),
+        hooks={**app_root._get_all_hooks_internal(), **app_root._get_all_hooks()},
         render=app_root.render(),
     )
 
@@ -109,7 +109,7 @@ def _compile_page(
     Returns:
         The compiled component.
     """
-    imports = component.get_imports()
+    imports = component._get_all_imports()
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
@@ -117,10 +117,9 @@ def _compile_page(
 
     return templates.PAGE.render(
         imports=imports,
-        dynamic_imports=component.get_dynamic_imports(),
-        custom_codes=component.get_custom_code(),
-        ref_hooks=component.get_ref_hooks(),
-        hooks=component.get_hooks_internal() | component.get_hooks(),
+        dynamic_imports=component._get_all_dynamic_imports(),
+        custom_codes=component._get_all_custom_code(),
+        hooks={**component._get_all_hooks_internal(), **component._get_all_hooks()},
         render=component.render(),
         **kwargs,
     )
@@ -265,9 +264,9 @@ def _compile_stateful_components(
             component.rendered_as_shared = False
 
             rendered_components.update(
-                {code: None for code in component.get_custom_code()},
+                {code: None for code in component._get_all_custom_code()},
             )
-            all_import_dicts.append(component.get_imports())
+            all_import_dicts.append(component._get_all_imports())
 
             # Indicate that this component now imports from the shared file.
             component.rendered_as_shared = True

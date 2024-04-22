@@ -173,9 +173,6 @@ class CommonMarginProps(Component):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -659,9 +656,6 @@ class RadixThemesColorModeProvider(Component):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 

@@ -83,9 +83,6 @@ class NextDocumentLib(Component):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -163,9 +160,6 @@ class Html(NextDocumentLib):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -242,9 +236,6 @@ class DocumentHead(NextDocumentLib):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -321,9 +312,6 @@ class Main(NextDocumentLib):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -400,8 +388,5 @@ class NextScript(NextDocumentLib):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...

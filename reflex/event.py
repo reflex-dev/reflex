@@ -13,7 +13,6 @@ from typing import (
     Optional,
     Tuple,
     Union,
-    _GenericAlias,  # type: ignore
     get_type_hints,
 )
 
@@ -22,6 +21,11 @@ from reflex.base import Base
 from reflex.utils import console, format
 from reflex.utils.types import ArgsSpec
 from reflex.vars import BaseVar, Var
+
+try:
+    from typing import Annotated
+except ImportError:
+    from typing_extensions import Annotated
 
 
 class Event(Base):
@@ -118,7 +122,7 @@ class EventHandler(EventActionsMixin):
         frozen = True
 
     @classmethod
-    def __class_getitem__(cls, args_spec: str) -> _GenericAlias:
+    def __class_getitem__(cls, args_spec: str) -> Annotated:
         """Get a typed EventHandler.
 
         Args:
@@ -127,10 +131,7 @@ class EventHandler(EventActionsMixin):
         Returns:
             The EventHandler class item.
         """
-        gen = _GenericAlias(cls, Any)
-        # Cannot subclass special typing classes, so we need to set the args_spec dynamically as an attribute.
-        gen.args_spec = args_spec
-        return gen
+        return Annotated[cls, args_spec]
 
     @property
     def is_background(self) -> bool:

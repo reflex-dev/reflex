@@ -86,7 +86,7 @@ class RadioGroup(ChakraComponent):
 
         Args:
             *children: The children of the component.
-            value: State var to bind the the input.
+            value: State var to bind the input.
             default_value: The default value.
             name: The name of the form field
             style: The style of the component.

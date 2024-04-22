@@ -1,11 +1,7 @@
 {% import 'web/pages/utils.js.jinja2' as utils %}
 
 export function {{tag_name}} () {
-  {% for ref_hook in component.get_ref_hooks() %}
-  {{ ref_hook }}
-  {% endfor %}
-
-  {% for hook in component.get_hooks_internal() %}
+  {% for hook in component._get_all_hooks_internal() %}
   {{ hook }}
   {% endfor %}
 
@@ -13,7 +9,7 @@ export function {{tag_name}} () {
   {{ hook }}
   {% endfor %}
 
-  {% for hook in component.get_hooks() %}
+  {% for hook in component._get_all_hooks() %}
   {{ hook }}
   {% endfor %}
 

@@ -10,6 +10,7 @@ import os
 import platform
 import random
 import re
+import shutil
 import stat
 import sys
 import tempfile
@@ -18,7 +19,7 @@ from datetime import datetime
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 import httpx
 import pkg_resources
@@ -30,11 +31,22 @@ from redis.asyncio import Redis
 
 import reflex
 from reflex import constants, model
+from reflex.base import Base
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
+from reflex.utils.format import format_library_name
 
 CURRENTLY_INSTALLING_NODE = False
+
+
+class Template(Base):
+    """A template for a Reflex app."""
+
+    name: str
+    description: str
+    code_url: str
+    demo_url: str
 
 
 def check_latest_package_version(package_name: str):
@@ -155,16 +167,13 @@ def get_bun_version() -> version.Version | None:
 
 def get_install_package_manager() -> str | None:
     """Get the package manager executable for installation.
-      Currently on unix systems, bun is used for installation only.
+      Currently, bun is used for installation only.
 
     Returns:
         The path to the package manager.
     """
-    # On Windows, we use npm instead of bun.
-    if constants.IS_WINDOWS:
+    if constants.IS_WINDOWS and not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
         return get_package_manager()
-
-    # On other platforms, we use bun.
     return get_config().bun_path
 
 
@@ -216,11 +225,12 @@ def get_app(reload: bool = False) -> ModuleType:
     return app
 
 
-def get_compiled_app(reload: bool = False) -> ModuleType:
+def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
     Args:
         reload: Re-import the app module from disk
+        export: Compile the app for export
 
     Returns:
         The compiled app based on the default config.
@@ -230,7 +240,7 @@ def get_compiled_app(reload: bool = False) -> ModuleType:
     # For py3.8 and py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
-    app.compile_()
+    app.compile_(export=export)
     return app_module
 
 
@@ -407,17 +417,42 @@ def initialize_requirements_txt():
         console.info(f"Unable to check {fp} for reflex dependency.")
 
 
-def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
+def initialize_app_directory(
+    app_name: str,
+    template_name: str = constants.Templates.DEFAULT,
+    template_code_dir_name: str | None = None,
+    template_dir: Path | None = None,
+):
     """Initialize the app directory on reflex init.
 
     Args:
         app_name: The name of the app.
-        template: The template to use.
+        template_name: The name of the template to use.
+        template_code_dir_name: The name of the code directory in the template.
+        template_dir: The directory of the template source files.
+
+    Raises:
+        Exit: If template_name, template_code_dir_name, template_dir combination is not supported.
     """
     console.log("Initializing the app directory.")
 
-    # Copy the template to the current directory.
-    template_dir = Path(constants.Templates.Dirs.BASE, "apps", template.value)
+    # By default, use the blank template from local assets.
+    if template_name == constants.Templates.DEFAULT:
+        if template_code_dir_name is not None or template_dir is not None:
+            console.error(
+                f"Only {template_name=} should be provided, got {template_code_dir_name=}, {template_dir=}."
+            )
+            raise typer.Exit(1)
+        template_code_dir_name = constants.Templates.Dirs.CODE
+        template_dir = Path(constants.Templates.Dirs.BASE, "apps", template_name)
+    else:
+        if template_code_dir_name is None or template_dir is None:
+            console.error(
+                f"For `{template_name}` template, `template_code_dir_name` and `template_dir` should both be provided."
+            )
+            raise typer.Exit(1)
+
+    console.debug(f"Using {template_name=} {template_dir=} {template_code_dir_name=}.")
 
     # Remove all pyc and __pycache__ dirs in template directory.
     for pyc_file in template_dir.glob("**/*.pyc"):
@@ -430,16 +465,16 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
         path_ops.cp(str(file), file.name)
 
     # Rename the template app to the app name.
-    path_ops.mv(constants.Templates.Dirs.CODE, app_name)
+    path_ops.mv(template_code_dir_name, app_name)
     path_ops.mv(
-        os.path.join(app_name, template_dir.name + constants.Ext.PY),
+        os.path.join(app_name, template_name + constants.Ext.PY),
         os.path.join(app_name, app_name + constants.Ext.PY),
     )
 
     # Fix up the imports.
     path_ops.find_replace(
         app_name,
-        f"from {constants.Templates.Dirs.CODE}",
+        f"from {template_name}",
         f"from {app_name}",
     )
 
@@ -526,28 +561,39 @@ def init_reflex_json(project_hash: int | None):
     path_ops.update_json_file(constants.Reflex.JSON, reflex_json)
 
 
-def update_next_config(export=False):
+def update_next_config(export=False, transpile_packages: Optional[List[str]] = None):
     """Update Next.js config from Reflex config.
 
     Args:
         export: if the method run during reflex export.
+        transpile_packages: list of packages to transpile via next.config.js.
     """
-    next_config_file = os.path.join(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
+    next_config_file = Path(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
 
-    next_config = _update_next_config(get_config(), export=export)
+    next_config = _update_next_config(
+        get_config(), export=export, transpile_packages=transpile_packages
+    )
 
-    with open(next_config_file, "w") as file:
-        file.write(next_config)
-        file.write("\n")
+    # Overwriting the next.config.js triggers a full server reload, so make sure
+    # there is actually a diff.
+    orig_next_config = next_config_file.read_text() if next_config_file.exists() else ""
+    if orig_next_config != next_config:
+        next_config_file.write_text(next_config)
 
 
-def _update_next_config(config, export=False):
+def _update_next_config(
+    config: Config, export: bool = False, transpile_packages: Optional[List[str]] = None
+):
     next_config = {
         "basePath": config.frontend_path or "",
         "compress": config.next_compression,
         "reactStrictMode": True,
         "trailingSlash": True,
     }
+    if transpile_packages:
+        next_config["transpilePackages"] = list(
+            set((format_library_name(p) for p in transpile_packages))
+        )
     if export:
         next_config["output"] = "export"
         next_config["distDir"] = constants.Dirs.STATIC
@@ -682,10 +728,10 @@ def install_bun():
     Raises:
         FileNotFoundError: If required packages are not found.
     """
-    # Bun is not supported on Windows.
-    if constants.IS_WINDOWS:
-        console.debug("Skipping bun installation on Windows.")
-        return
+    if constants.IS_WINDOWS and not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
+        console.warn(
+            "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
+        )
 
     # Skip if bun is already installed.
     if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
@@ -695,16 +741,25 @@ def install_bun():
         return
 
     #  if unzip is installed
-    unzip_path = path_ops.which("unzip")
-    if unzip_path is None:
-        raise FileNotFoundError("Reflex requires unzip to be installed.")
+    if constants.IS_WINDOWS:
+        processes.new_process(
+            ["powershell", "-c", f"irm {constants.Bun.INSTALL_URL}.ps1|iex"],
+            env={"BUN_INSTALL": constants.Bun.ROOT_PATH},
+            shell=True,
+            run=True,
+            show_logs=console.is_debug(),
+        )
+    else:
+        unzip_path = path_ops.which("unzip")
+        if unzip_path is None:
+            raise FileNotFoundError("Reflex requires unzip to be installed.")
 
-    # Run the bun install script.
-    download_and_run(
-        constants.Bun.INSTALL_URL,
-        f"bun-v{constants.Bun.VERSION}",
-        BUN_INSTALL=constants.Bun.ROOT_PATH,
-    )
+        # Run the bun install script.
+        download_and_run(
+            constants.Bun.INSTALL_URL,
+            f"bun-v{constants.Bun.VERSION}",
+            BUN_INSTALL=constants.Bun.ROOT_PATH,
+        )
 
 
 def _write_cached_procedure_file(payload: str, cache_file: str):
@@ -766,18 +821,24 @@ def install_frontend_packages(packages: set[str], config: Config):
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    # Install the base packages.
-    process = processes.new_process(
-        [get_install_package_manager(), "install", "--loglevel", "silly"],
+    # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
+    fallback_command = (
+        get_install_package_manager()
+        if not constants.IS_WINDOWS
+        or constants.IS_WINDOWS
+        and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
+        else None
+    )
+    processes.run_process_with_fallback(
+        [get_install_package_manager(), "install"],  # type: ignore
+        fallback=fallback_command,
+        show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
     )
 
-    processes.show_status("Installing base frontend packages", process)
-
     if config.tailwind is not None:
-        # install tailwind and tailwind plugins as dev dependencies.
-        process = processes.new_process(
+        processes.run_process_with_fallback(
             [
                 get_install_package_manager(),
                 "add",
@@ -785,60 +846,59 @@ def install_frontend_packages(packages: set[str], config: Config):
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
             ],
+            fallback=fallback_command,
+            show_status_message="Installing tailwind",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
         )
-        processes.show_status("Installing tailwind", process)
 
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
-        process = processes.new_process(
+        processes.run_process_with_fallback(
             [get_install_package_manager(), "add", *packages],
+            fallback=fallback_command,
+            show_status_message="Installing frontend packages from config and components",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
         )
-        processes.show_status(
-            "Installing frontend packages from config and components", process
-        )
 
 
-def check_initialized(frontend: bool = True):
-    """Check that the app is initialized.
+def needs_reinit(frontend: bool = True) -> bool:
+    """Check if an app needs to be reinitialized.
 
     Args:
         frontend: Whether to check if the frontend is initialized.
 
+    Returns:
+        Whether the app needs to be reinitialized.
+
     Raises:
         Exit: If the app is not initialized.
     """
-    has_config = os.path.exists(constants.Config.FILE)
-    has_reflex_dir = not frontend or os.path.exists(constants.Reflex.DIR)
-    has_web_dir = not frontend or os.path.exists(constants.Dirs.WEB)
-
-    # Check if the app is initialized.
-    if not (has_config and has_reflex_dir and has_web_dir):
+    if not os.path.exists(constants.Config.FILE):
         console.error(
-            f"The app is not initialized. Run [bold]{constants.Reflex.MODULE_NAME} init[/bold] first."
+            f"[cyan]{constants.Config.FILE}[/cyan] not found. Move to the root folder of your project, or run [bold]{constants.Reflex.MODULE_NAME} init[/bold] to start a new project."
         )
         raise typer.Exit(1)
 
-    # Check that the template is up to date.
-    if frontend and not is_latest_template():
-        console.error(
-            "The base app template has updated. Run [bold]reflex init[/bold] again."
-        )
-        raise typer.Exit(1)
+    # Don't need to reinit if not running in frontend mode.
+    if not frontend:
+        return False
 
-    # Print a warning for Windows users.
+    # Make sure the .reflex directory exists.
+    if not os.path.exists(constants.Reflex.DIR):
+        return True
+
+    # Make sure the .web directory exists in frontend mode.
+    if not os.path.exists(constants.Dirs.WEB):
+        return True
+
     if constants.IS_WINDOWS:
         console.warn(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
-        if sys.version_info >= (3, 12):
-            console.warn(
-                "Python 3.12 on Windows has known issues with hot reload (reflex-dev/reflex#2335). "
-                "Python 3.11 is recommended with this release of Reflex."
-            )
+    # No need to reinitialize if the app is already initialized.
+    return False
 
 
 def is_latest_template() -> bool:
@@ -906,9 +966,6 @@ def validate_frontend_dependencies(init=True):
                 f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
             )
             raise typer.Exit(1)
-
-    if constants.IS_WINDOWS:
-        return
 
     if init:
         # we only need bun for package install on `reflex init`.
@@ -1004,33 +1061,35 @@ def check_schema_up_to_date():
                 )
 
 
-def prompt_for_template() -> constants.Templates.Kind:
+def prompt_for_template(templates: list[Template]) -> str:
     """Prompt the user to specify a template.
 
+    Args:
+        templates: The templates to choose from.
+
     Returns:
-        The template the user selected.
+        The template name the user selects.
     """
-    # Show the user the URLs of each temlate to preview.
+    # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
-    console.print("blank (https://blank-template.reflex.run) - A minimal template.")
-    console.print(
-        "sidebar (https://sidebar-template.reflex.run) - A template with a sidebar to navigate pages."
-    )
-    console.print("")
 
     # Prompt the user to select a template.
+    id_to_name = {
+        str(idx): f"{template.name} ({template.demo_url}) - {template.description}"
+        for idx, template in enumerate(templates)
+    }
+    for id in range(len(id_to_name)):
+        console.print(f"({id}) {id_to_name[str(id)]}")
+
     template = console.ask(
         "Which template would you like to use?",
-        choices=[
-            template.value
-            for template in constants.Templates.Kind
-            if template.value != "demo"
-        ],
-        default=constants.Templates.Kind.BLANK.value,
+        choices=[str(i) for i in range(len(id_to_name))],
+        show_choices=False,
+        default="0",
     )
 
     # Return the template.
-    return constants.Templates.Kind(template)
+    return templates[int(template)].name
 
 
 def should_show_rx_chakra_migration_instructions() -> bool:
@@ -1183,3 +1242,168 @@ def migrate_to_reflex():
                 for old, new in updates.items():
                     line = line.replace(old, new)
                 print(line, end="")
+
+
+def fetch_app_templates() -> dict[str, Template]:
+    """Fetch the list of app templates from the Reflex backend server.
+
+    Returns:
+        The name and download URL as a dictionary.
+    """
+    config = get_config()
+    if not config.cp_backend_url:
+        console.info(
+            "Skip fetching App templates. No backend URL is specified in the config."
+        )
+        return {}
+    try:
+        response = httpx.get(
+            f"{config.cp_backend_url}{constants.Templates.APP_TEMPLATES_ROUTE}"
+        )
+        response.raise_for_status()
+        return {
+            template["name"]: Template.parse_obj(template)
+            for template in response.json()
+        }
+    except httpx.HTTPError as ex:
+        console.info(f"Failed to fetch app templates: {ex}")
+        return {}
+    except (TypeError, KeyError, json.JSONDecodeError) as tkje:
+        console.info(f"Unable to process server response for app templates: {tkje}")
+        return {}
+
+
+def create_config_init_app_from_remote_template(
+    app_name: str,
+    template_url: str,
+):
+    """Create new rxconfig and initialize app using a remote template.
+
+    Args:
+        app_name: The name of the app.
+        template_url: The path to the template source code as a zip file.
+
+    Raises:
+        Exit: If any download, file operations fail or unexpected zip file format.
+
+    """
+    # Create a temp directory for the zip download.
+    try:
+        temp_dir = tempfile.mkdtemp()
+    except OSError as ose:
+        console.error(f"Failed to create temp directory for download: {ose}")
+        raise typer.Exit(1) from ose
+
+    # Use httpx GET with redirects to download the zip file.
+    zip_file_path = Path(temp_dir) / "template.zip"
+    try:
+        # Note: following redirects can be risky. We only allow this for reflex built templates at the moment.
+        response = httpx.get(template_url, follow_redirects=True)
+        console.debug(f"Server responded download request: {response}")
+        response.raise_for_status()
+    except httpx.HTTPError as he:
+        console.error(f"Failed to download the template: {he}")
+        raise typer.Exit(1) from he
+    try:
+        with open(zip_file_path, "wb") as f:
+            f.write(response.content)
+            console.debug(f"Downloaded the zip to {zip_file_path}")
+    except OSError as ose:
+        console.error(f"Unable to write the downloaded zip to disk {ose}")
+        raise typer.Exit(1) from ose
+
+    # Create a temp directory for the zip extraction.
+    try:
+        unzip_dir = Path(tempfile.mkdtemp())
+    except OSError as ose:
+        console.error(f"Failed to create temp directory for extracting zip: {ose}")
+        raise typer.Exit(1) from ose
+    try:
+        zipfile.ZipFile(zip_file_path).extractall(path=unzip_dir)
+        # The zip file downloaded from github looks like:
+        # repo-name-branch/**/*, so we need to remove the top level directory.
+        if len(subdirs := os.listdir(unzip_dir)) != 1:
+            console.error(f"Expected one directory in the zip, found {subdirs}")
+            raise typer.Exit(1)
+        template_dir = unzip_dir / subdirs[0]
+        console.debug(f"Template folder is located at {template_dir}")
+    except Exception as uze:
+        console.error(f"Failed to unzip the template: {uze}")
+        raise typer.Exit(1) from uze
+
+    # Move the rxconfig file here first.
+    path_ops.mv(str(template_dir / constants.Config.FILE), constants.Config.FILE)
+    new_config = get_config(reload=True)
+
+    # Get the template app's name from rxconfig in case it is different than
+    # the source code repo name on github.
+    template_name = new_config.app_name
+
+    create_config(app_name)
+    initialize_app_directory(
+        app_name,
+        template_name=template_name,
+        template_code_dir_name=template_name,
+        template_dir=template_dir,
+    )
+
+    #  Clean up the temp directories.
+    shutil.rmtree(temp_dir)
+    shutil.rmtree(unzip_dir)
+
+
+def initialize_app(app_name: str, template: str | None = None):
+    """Initialize the app either from a remote template or a blank app. If the config file exists, it is considered as reinit.
+
+    Args:
+        app_name: The name of the app.
+        template: The name of the template to use.
+
+    Raises:
+        Exit: If template is directly provided in the command flag and is invalid.
+    """
+    # Local imports to avoid circular imports.
+    from reflex.utils import telemetry
+
+    # Check if the app is already initialized.
+    if os.path.exists(constants.Config.FILE):
+        telemetry.send("reinit")
+        return
+
+    # Get the available templates
+    templates: dict[str, Template] = fetch_app_templates()
+
+    # Prompt for a template if not provided.
+    if template is None and len(templates) > 0:
+        template = prompt_for_template(list(templates.values()))
+    elif template is None:
+        template = constants.Templates.DEFAULT
+    assert template is not None
+
+    # If the blank template is selected, create a blank app.
+    if template == constants.Templates.DEFAULT:
+        # Default app creation behavior: a blank app.
+        create_config(app_name)
+        initialize_app_directory(app_name)
+    else:
+        # Fetch App templates from the backend server.
+        console.debug(f"Available templates: {templates}")
+
+        # If user selects a template, it needs to exist.
+        if template in templates:
+            template_url = templates[template].code_url
+        else:
+            # Check if the template is a github repo.
+            if template.startswith("https://github.com"):
+                template_url = (
+                    f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+                )
+            else:
+                console.error(f"Template `{template}` not found.")
+                raise typer.Exit(1)
+        create_config_init_app_from_remote_template(
+            app_name=app_name,
+            template_url=template_url,
+        )
+
+    telemetry.send("init")

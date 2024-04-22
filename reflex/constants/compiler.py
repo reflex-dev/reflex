@@ -26,6 +26,8 @@ class Ext(SimpleNamespace):
     CSS = ".css"
     # The extension for zip files.
     ZIP = ".zip"
+    # The extension for executable files on Windows.
+    EXE = ".exe"
 
 
 class CompileVars(SimpleNamespace):
@@ -111,6 +113,14 @@ class Hooks(SimpleNamespace):
     """Common sets of hook declarations."""
 
     EVENTS = f"const [{CompileVars.ADD_EVENTS}, {CompileVars.CONNECT_ERROR}] = useContext(EventLoopContext);"
+    AUTOFOCUS = """
+                // Set focus to the specified element.
+                const focusRef = useRef(null)
+                useEffect(() => {
+                  if (focusRef.current) {
+                    focusRef.current.focus();
+                  }
+                })"""
 
 
 class MemoizationDisposition(enum.Enum):

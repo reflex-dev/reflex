@@ -29,7 +29,7 @@ try:
     # reflex-hosting-cli tools are compatible with pydantic v2
 
     if not TYPE_CHECKING:
-        import pydantic.v1.fields as ModelField
+        from pydantic.v1.fields import ModelField
     else:
         raise ModuleNotFoundError
 except ModuleNotFoundError:
@@ -416,11 +416,12 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
     ):
         allowed_values = expected_type.__args__
         if value not in allowed_values:
-            value_str = ",".join(
+            allowed_value_str = ",".join(
                 [str(v) if not isinstance(v, str) else f"'{v}'" for v in allowed_values]
             )
+            value_str = f"'{value}'" if isinstance(value, str) else value
             raise ValueError(
-                f"prop value for {str(key)} of the `{comp_name}` component should be one of the following: {value_str}. Got '{value}' instead"
+                f"prop value for {str(key)} of the `{comp_name}` component should be one of the following: {allowed_value_str}. Got {value_str} instead"
             )
 
 

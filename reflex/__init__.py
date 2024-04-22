@@ -109,9 +109,11 @@ _ALL_COMPONENTS = [
     "unordered_list",
     "ordered_list",
     "moment",
+    "logo",
 ]
 
 _MAPPING = {
+    "reflex.experimental": ["_x"],
     "reflex.admin": ["admin", "AdminDash"],
     "reflex.app": ["app", "App", "UploadFile"],
     "reflex.base": ["base", "Base"],

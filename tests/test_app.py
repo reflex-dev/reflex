@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import io
+import json
 import os.path
+import re
 import unittest.mock
 import uuid
 from pathlib import Path
@@ -10,7 +12,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 import sqlmodel
-from fastapi import UploadFile
+from fastapi import FastAPI, UploadFile
 from starlette_admin.auth import AuthProvider
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
@@ -35,12 +37,13 @@ from reflex.state import (
     OnLoadInternalState,
     RouterData,
     State,
+    StateManagerMemory,
     StateManagerRedis,
     StateUpdate,
     _substate_key,
 )
 from reflex.style import Style
-from reflex.utils import format
+from reflex.utils import exceptions, format
 from reflex.vars import ComputedVar
 
 from .conftest import chdir
@@ -1355,3 +1358,143 @@ def test_app_state_determination():
     # Referencing an event handler enables state.
     a4.add_page(rx.box(rx.button("Click", on_click=rx.console_log(""))), route="/")
     assert a4.state is not None
+
+
+# for coverage
+def test_raise_on_connect_error():
+    """Test that the connect_error function is called."""
+    with pytest.raises(ValueError):
+        App(connect_error_component="Foo")
+
+
+def test_raise_on_state():
+    """Test that the state is set."""
+    # state kwargs is deprecated, we just make sure the app is created anyway.
+    _app = App(state=State)
+    print(_app.state)
+    assert issubclass(_app.state, State)
+
+
+def test_call_app():
+    """Test that the app can be called."""
+    app = App()
+    api = app()
+    assert isinstance(api, FastAPI)
+
+
+def test_app_with_optional_endpoints():
+    from reflex.components.core.upload import Upload
+
+    app = App()
+    Upload.is_used = True
+    app.add_optional_endpoints()
+    # TODO: verify the availability of the endpoints in app.api
+
+
+def test_app_state_manager():
+    app = App()
+    with pytest.raises(ValueError):
+        app.state_manager
+    app.enable_state()
+    assert app.state_manager is not None
+    assert isinstance(app.state_manager, (StateManagerMemory, StateManagerRedis))
+
+
+def test_generate_component():
+    def index():
+        return rx.box("Index")
+
+    def index_mismatch():
+        return rx.match(
+            1,
+            (1, rx.box("Index")),
+            (2, "About"),
+            "Bar",
+        )
+
+    comp = App._generate_component(index)  # type: ignore
+    assert isinstance(comp, Component)
+
+    with pytest.raises(exceptions.MatchTypeError):
+        App._generate_component(index_mismatch)  # type: ignore
+
+
+def test_add_page_component_returning_tuple():
+    """Test that a component or render method returning a
+    tuple is unpacked in a Fragment.
+    """
+    app = App()
+
+    def index():
+        return rx.text("first"), rx.text("second")
+
+    def page2():
+        return (rx.text("third"),)
+
+    app.add_page(index)  # type: ignore
+    app.add_page(page2)  # type: ignore
+
+    assert isinstance((fragment_wrapper := app.pages["index"].children[0]), Fragment)
+    assert isinstance((first_text := fragment_wrapper.children[0]), Text)
+    assert str(first_text.children[0].contents) == "{`first`}"  # type: ignore
+    assert isinstance((second_text := fragment_wrapper.children[1]), Text)
+    assert str(second_text.children[0].contents) == "{`second`}"  # type: ignore
+
+    # Test page with trailing comma.
+    assert isinstance(
+        (page2_fragment_wrapper := app.pages["page2"].children[0]), Fragment
+    )
+    assert isinstance((third_text := page2_fragment_wrapper.children[0]), Text)
+    assert str(third_text.children[0].contents) == "{`third`}"  # type: ignore
+
+
+@pytest.mark.parametrize("export", (True, False))
+def test_app_with_transpile_packages(compilable_app, export):
+    class C1(rx.Component):
+        library = "foo@1.2.3"
+        tag = "Foo"
+        transpile_packages: List[str] = ["foo"]
+
+    class C2(rx.Component):
+        library = "bar@4.5.6"
+        tag = "Bar"
+        transpile_packages: List[str] = ["bar@4.5.6"]
+
+    class C3(rx.NoSSRComponent):
+        library = "baz@7.8.10"
+        tag = "Baz"
+        transpile_packages: List[str] = ["baz@7.8.9"]
+
+    class C4(rx.NoSSRComponent):
+        library = "quuc@2.3.4"
+        tag = "Quuc"
+        transpile_packages: List[str] = ["quuc"]
+
+    class C5(rx.Component):
+        library = "quuc"
+        tag = "Quuc"
+
+    app, web_dir = compilable_app
+    page = Fragment.create(
+        C1.create(), C2.create(), C3.create(), C4.create(), C5.create()
+    )
+    app.add_page(page, route="/")
+    app.compile_(export=export)
+
+    next_config = (web_dir / "next.config.js").read_text()
+    transpile_packages_match = re.search(r"transpilePackages: (\[.*?\])", next_config)
+    transpile_packages_json = transpile_packages_match.group(1)  # type: ignore
+    transpile_packages = sorted(json.loads(transpile_packages_json))
+
+    assert transpile_packages == [
+        "bar",
+        "foo",
+        "quuc",
+    ]
+
+    if export:
+        assert 'output: "export"' in next_config
+        assert f'distDir: "{constants.Dirs.STATIC}"' in next_config
+    else:
+        assert 'output: "export"' not in next_config
+        assert f'distDir: "{constants.Dirs.STATIC}"' not in next_config

@@ -214,12 +214,7 @@ class App(Base):
             self.setup_state()
 
     def setup_state(self) -> None:
-        """Set up the state for the app.
-
-        Raises:
-            ValueError: If the event namespace is not provided in the config.
-                        If the state has not been enabled.
-        """
+        """Set up the state for the app."""
         if not self.state:
             return
 
@@ -245,9 +240,6 @@ class App(Base):
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
         self.socket_app = ASGIApp(self.sio, socketio_path="")
         namespace = config.get_event_namespace()
-
-        if not namespace:
-            raise ValueError("event namespace must be provided in the config.")
 
         # Create the event namespace and attach the main app. Not related to any paths.
         self.event_namespace = EventNamespace(namespace, self)
@@ -463,6 +455,10 @@ class App(Base):
         # Generate the component if it is a callable.
         component = self._generate_component(component)
 
+        # unpack components that return tuples in an rx.fragment.
+        if isinstance(component, tuple):
+            component = Fragment.create(*component)
+
         # Ensure state is enabled if this page uses state.
         if self.state is None:
             if on_load or component._has_event_triggers():
@@ -663,7 +659,7 @@ class App(Base):
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):
-            app_wrappers.update(component.get_app_wrap_components())
+            app_wrappers.update(component._get_all_app_wrap_components())
         order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
         root = parent = copy.deepcopy(app_wrappers[order[0]])
         for key in order[1:]:
@@ -739,8 +735,11 @@ class App(Base):
         for render, kwargs in DECORATED_PAGES:
             self.add_page(render, **kwargs)
 
-    def compile_(self):
+    def compile_(self, export: bool = False):
         """Compile the app and output it to the pages folder.
+
+        Args:
+            export: Whether to compile the app for export.
 
         Raises:
             RuntimeError: When any page uses state, but no rx.State subclass is defined.
@@ -801,18 +800,18 @@ class App(Base):
 
         for _route, component in self.pages.items():
             # Merge the component style with the app style.
-            component.add_style(self.style)
+            component._add_style_recursive(self.style)
 
             component.apply_theme(self.theme)
 
-            # Add component.get_imports() to all_imports.
-            all_imports.update(component.get_imports())
+            # Add component._get_all_imports() to all_imports.
+            all_imports.update(component._get_all_imports())
 
             # Add the app wrappers from this component.
-            app_wrappers.update(component.get_app_wrap_components())
+            app_wrappers.update(component._get_all_app_wrap_components())
 
             # Add the custom components from the page to the set.
-            custom_components |= component.get_custom_components()
+            custom_components |= component._get_all_custom_components()
 
         progress.advance(task)
 
@@ -846,6 +845,9 @@ class App(Base):
         compile_results.append(
             compiler.compile_contexts(self.state, self.theme),
         )
+        # Fix #2992 by removing the top-level appearance prop
+        if self.theme is not None:
+            self.theme.appearance = None
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 
@@ -934,7 +936,7 @@ class App(Base):
             all_imports.update(custom_components_imports)
 
         # Get imports from AppWrap components.
-        all_imports.update(app_root.get_imports())
+        all_imports.update(app_root._get_all_imports())
 
         progress.advance(task)
 
@@ -946,6 +948,17 @@ class App(Base):
 
         # Install frontend packages.
         self.get_frontend_packages(all_imports)
+
+        # Setup the next.config.js
+        transpile_packages = [
+            package
+            for package, import_vars in all_imports.items()
+            if any(import_var.transpile for import_var in import_vars)
+        ]
+        prerequisites.update_next_config(
+            export=export,
+            transpile_packages=transpile_packages,
+        )
 
         for output_path, code in compile_results:
             compiler_utils.write_page(output_path, code)

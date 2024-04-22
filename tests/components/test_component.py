@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Type, Union
+from typing import Any, Dict, List, Type
 
 import pytest
 
@@ -6,6 +6,7 @@ import reflex as rx
 from reflex.base import Base
 from reflex.compiler.compiler import compile_components
 from reflex.components.base.bare import Bare
+from reflex.components.base.fragment import Fragment
 from reflex.components.chakra.layout.box import Box
 from reflex.components.component import (
     Component,
@@ -14,7 +15,7 @@ from reflex.components.component import (
     custom_component,
 )
 from reflex.constants import EventTriggers
-from reflex.event import EventChain, EventHandler
+from reflex.event import EventChain, EventHandler, parse_args_spec
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
@@ -263,8 +264,8 @@ def test_add_style(component1, component2):
         component1: Style({"color": "white"}),
         component2: Style({"color": "black"}),
     }
-    c1 = component1().add_style(style)  # type: ignore
-    c2 = component2().add_style(style)  # type: ignore
+    c1 = component1()._add_style_recursive(style)  # type: ignore
+    c2 = component2()._add_style_recursive(style)  # type: ignore
     assert c1.style["color"] == "white"
     assert c2.style["color"] == "black"
 
@@ -280,8 +281,8 @@ def test_add_style_create(component1, component2):
         component1.create: Style({"color": "white"}),
         component2.create: Style({"color": "black"}),
     }
-    c1 = component1().add_style(style)  # type: ignore
-    c2 = component2().add_style(style)  # type: ignore
+    c1 = component1()._add_style_recursive(style)  # type: ignore
+    c2 = component2()._add_style_recursive(style)  # type: ignore
     assert c1.style["color"] == "white"
     assert c2.style["color"] == "black"
 
@@ -295,8 +296,8 @@ def test_get_imports(component1, component2):
     """
     c1 = component1.create()
     c2 = component2.create(c1)
-    assert c1.get_imports() == {"react": [ImportVar(tag="Component")]}
-    assert c2.get_imports() == {
+    assert c1._get_all_imports() == {"react": [ImportVar(tag="Component")]}
+    assert c2._get_all_imports() == {
         "react-redux": [ImportVar(tag="connect")],
         "react": [ImportVar(tag="Component")],
     }
@@ -312,19 +313,19 @@ def test_get_custom_code(component1, component2):
     # Check that the code gets compiled correctly.
     c1 = component1.create()
     c2 = component2.create()
-    assert c1.get_custom_code() == {"console.log('component1')"}
-    assert c2.get_custom_code() == {"console.log('component2')"}
+    assert c1._get_all_custom_code() == {"console.log('component1')"}
+    assert c2._get_all_custom_code() == {"console.log('component2')"}
 
     # Check that nesting components compiles both codes.
     c1 = component1.create(c2)
-    assert c1.get_custom_code() == {
+    assert c1._get_all_custom_code() == {
         "console.log('component1')",
         "console.log('component2')",
     }
 
     # Check that code is not duplicated.
     c1 = component1.create(c2, c2, c1, c1)
-    assert c1.get_custom_code() == {
+    assert c1._get_all_custom_code() == {
         "console.log('component1')",
         "console.log('component2')",
     }
@@ -363,7 +364,7 @@ def test_valid_props(component1, text: str, number: int):
 
 
 @pytest.mark.parametrize(
-    "text,number", [("", "bad_string"), (13, 1), (None, 1), ("test", [1, 2, 3])]
+    "text,number", [("", "bad_string"), (13, 1), ("test", [1, 2, 3])]
 )
 def test_invalid_prop_type(component1, text: str, number: int):
     """Test that an invalid prop type raises an error.
@@ -420,6 +421,227 @@ def test_get_event_triggers(component1, component2):
     )
 
 
+@pytest.fixture
+def test_component() -> Type[Component]:
+    """A test component.
+
+    Returns:
+        A test component.
+    """
+
+    class TestComponent(Component):
+        pass
+
+    return TestComponent
+
+
+# Write a test case to check if the create method filters out None props
+def test_create_filters_none_props(test_component):
+    child1 = test_component()
+    child2 = test_component()
+    props = {
+        "prop1": "value1",
+        "prop2": None,
+        "prop3": "value3",
+        "prop4": None,
+        "style": {"color": "white", "text-align": "center"},  # Adding a style prop
+    }
+
+    component = test_component.create(child1, child2, **props)
+
+    # Assert that None props are not present in the component's props
+    assert "prop2" not in component.get_props()
+    assert "prop4" not in component.get_props()
+
+    # Assert that the style prop is present in the component's props
+    assert component.style["color"] == "white"
+    assert component.style["text-align"] == "center"
+
+
+@pytest.mark.parametrize("children", [((None,),), ("foo", ("bar", (None,)))])
+def test_component_create_unallowed_types(children, test_component):
+    with pytest.raises(TypeError) as err:
+        test_component.create(*children)
+    assert (
+        err.value.args[0]
+        == "Children of Reflex components must be other components, state vars, or primitive Python types. Got child None of type <class 'NoneType'>."
+    )
+
+
+@pytest.mark.parametrize(
+    "element, expected",
+    [
+        (
+            (rx.text("first_text"),),
+            {
+                "name": "Fragment",
+                "props": [],
+                "contents": "",
+                "args": None,
+                "special_props": set(),
+                "children": [
+                    {
+                        "name": "RadixThemesText",
+                        "props": ["as={`p`}"],
+                        "contents": "",
+                        "args": None,
+                        "special_props": set(),
+                        "children": [
+                            {
+                                "name": "",
+                                "props": [],
+                                "contents": "{`first_text`}",
+                                "args": None,
+                                "special_props": set(),
+                                "children": [],
+                                "autofocus": False,
+                            }
+                        ],
+                        "autofocus": False,
+                    }
+                ],
+                "autofocus": False,
+            },
+        ),
+        (
+            (rx.text("first_text"), rx.text("second_text")),
+            {
+                "args": None,
+                "autofocus": False,
+                "children": [
+                    {
+                        "args": None,
+                        "autofocus": False,
+                        "children": [
+                            {
+                                "args": None,
+                                "autofocus": False,
+                                "children": [],
+                                "contents": "{`first_text`}",
+                                "name": "",
+                                "props": [],
+                                "special_props": set(),
+                            }
+                        ],
+                        "contents": "",
+                        "name": "RadixThemesText",
+                        "props": ["as={`p`}"],
+                        "special_props": set(),
+                    },
+                    {
+                        "args": None,
+                        "autofocus": False,
+                        "children": [
+                            {
+                                "args": None,
+                                "autofocus": False,
+                                "children": [],
+                                "contents": "{`second_text`}",
+                                "name": "",
+                                "props": [],
+                                "special_props": set(),
+                            }
+                        ],
+                        "contents": "",
+                        "name": "RadixThemesText",
+                        "props": ["as={`p`}"],
+                        "special_props": set(),
+                    },
+                ],
+                "contents": "",
+                "name": "Fragment",
+                "props": [],
+                "special_props": set(),
+            },
+        ),
+        (
+            (rx.text("first_text"), rx.box((rx.text("second_text"),))),
+            {
+                "args": None,
+                "autofocus": False,
+                "children": [
+                    {
+                        "args": None,
+                        "autofocus": False,
+                        "children": [
+                            {
+                                "args": None,
+                                "autofocus": False,
+                                "children": [],
+                                "contents": "{`first_text`}",
+                                "name": "",
+                                "props": [],
+                                "special_props": set(),
+                            }
+                        ],
+                        "contents": "",
+                        "name": "RadixThemesText",
+                        "props": ["as={`p`}"],
+                        "special_props": set(),
+                    },
+                    {
+                        "args": None,
+                        "autofocus": False,
+                        "children": [
+                            {
+                                "args": None,
+                                "autofocus": False,
+                                "children": [
+                                    {
+                                        "args": None,
+                                        "autofocus": False,
+                                        "children": [
+                                            {
+                                                "args": None,
+                                                "autofocus": False,
+                                                "children": [],
+                                                "contents": "{`second_text`}",
+                                                "name": "",
+                                                "props": [],
+                                                "special_props": set(),
+                                            }
+                                        ],
+                                        "contents": "",
+                                        "name": "RadixThemesText",
+                                        "props": ["as={`p`}"],
+                                        "special_props": set(),
+                                    }
+                                ],
+                                "contents": "",
+                                "name": "Fragment",
+                                "props": [],
+                                "special_props": set(),
+                            }
+                        ],
+                        "contents": "",
+                        "name": "RadixThemesBox",
+                        "props": [],
+                        "special_props": set(),
+                    },
+                ],
+                "contents": "",
+                "name": "Fragment",
+                "props": [],
+                "special_props": set(),
+            },
+        ),
+    ],
+)
+def test_component_create_unpack_tuple_child(test_component, element, expected):
+    """Test that component in tuples are unwrapped into an rx.Fragment.
+
+    Args:
+        test_component: Component fixture.
+        element: The children to pass to the component.
+        expected: The expected render dict.
+    """
+    comp = test_component.create(element)
+
+    assert len(comp.children) == 1
+    assert isinstance((fragment_wrapper := comp.children[0]), Fragment)
+    assert fragment_wrapper.render() == expected
+
+
 class C1State(BaseState):
     """State for testing C1 component."""
 
@@ -465,7 +687,7 @@ def test_create_custom_component(my_component):
     component = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
     assert component.tag == "MyComponent"
     assert component.get_props() == set()
-    assert component.get_custom_components() == {component}
+    assert component._get_all_custom_components() == {component}
 
 
 def test_custom_component_hash(my_component):
@@ -549,7 +771,7 @@ def test_get_hooks_nested(component1, component2, component3):
         text="a",
         number=1,
     )
-    assert c.get_hooks() == component3().get_hooks()
+    assert c._get_all_hooks() == component3()._get_all_hooks()
 
 
 def test_get_hooks_nested2(component3, component4):
@@ -559,15 +781,15 @@ def test_get_hooks_nested2(component3, component4):
         component3: component with hooks defined.
         component4: component with different hooks defined.
     """
-    exp_hooks = component3().get_hooks().union(component4().get_hooks())
-    assert component3.create(component4.create()).get_hooks() == exp_hooks
-    assert component4.create(component3.create()).get_hooks() == exp_hooks
+    exp_hooks = {**component3()._get_all_hooks(), **component4()._get_all_hooks()}
+    assert component3.create(component4.create())._get_all_hooks() == exp_hooks
+    assert component4.create(component3.create())._get_all_hooks() == exp_hooks
     assert (
         component4.create(
             component3.create(),
             component4.create(),
             component3.create(),
-        ).get_hooks()
+        )._get_all_hooks()
         == exp_hooks
     )
 
@@ -688,7 +910,7 @@ def test_stateful_banner():
 
 TEST_VAR = Var.create_safe("test")._replace(
     merge_var_data=VarData(
-        hooks={"useTest"},
+        hooks={"useTest": None},
         imports={"test": {ImportVar(tag="test")}},
         state="Test",
         interpolations=[],
@@ -1292,63 +1514,22 @@ def test_custom_component_get_imports():
     custom_comp = wrapper()
 
     # Inner is not imported directly, but it is imported by the custom component.
-    assert "inner" not in custom_comp.get_imports()
+    assert "inner" not in custom_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
-    _, _, imports_inner = compile_components(custom_comp.get_custom_components())
+    _, _, imports_inner = compile_components(custom_comp._get_all_custom_components())
     assert "inner" in imports_inner
 
     outer_comp = outer(c=wrapper())
 
     # Libraries are not imported directly, but are imported by the custom component.
-    assert "inner" not in outer_comp.get_imports()
-    assert "other" not in outer_comp.get_imports()
+    assert "inner" not in outer_comp._get_all_imports()
+    assert "other" not in outer_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
-    _, _, imports_outer = compile_components(outer_comp.get_custom_components())
+    _, _, imports_outer = compile_components(outer_comp._get_all_custom_components())
     assert "inner" in imports_outer
     assert "other" in imports_outer
-
-
-@pytest.mark.parametrize(
-    "tags",
-    (
-        ["Component"],
-        ["Component", "useState"],
-        [ImportVar(tag="Component")],
-        [ImportVar(tag="Component"), ImportVar(tag="useState")],
-        ["Component", ImportVar(tag="useState")],
-    ),
-)
-def test_custom_component_add_imports(tags):
-    def _list_to_import_vars(tags: List[str]) -> List[ImportVar]:
-        return [
-            ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
-            for tag in tags
-        ]
-
-    class BaseComponent(Component):
-        def _get_imports(self) -> imports.ImportDict:
-            return {}
-
-    class Reference(Component):
-        def _get_imports(self) -> imports.ImportDict:
-            return imports.merge_imports(
-                super()._get_imports(),
-                {"react": _list_to_import_vars(tags)},
-            )
-
-    class Test(Component):
-        def add_imports(
-            self,
-        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
-            return {"react": (tags[0] if len(tags) == 1 else tags)}
-
-    baseline = Reference.create()
-    test = Test.create()
-
-    assert baseline.get_imports() == {"react": _list_to_import_vars(tags)}
-    assert test.get_imports() == baseline.get_imports()
 
 
 def test_custom_component_declare_event_handlers_in_fields():
@@ -1361,11 +1542,12 @@ def test_custom_component_declare_event_handlers_in_fields():
             """
             return {
                 **super().get_event_triggers(),
-                "on_a": lambda e: [e],
-                "on_b": lambda e: [e.target.value],
-                "on_c": lambda e: [],
+                "on_a": lambda e0: [e0],
+                "on_b": lambda e0: [e0.target.value],
+                "on_c": lambda e0: [],
                 "on_d": lambda: [],
                 "on_e": lambda: [],
+                "on_f": lambda a, b, c: [c, b, a],
             }
 
     class TestComponent(Component):
@@ -1374,10 +1556,16 @@ def test_custom_component_declare_event_handlers_in_fields():
         on_c: EventHandler[lambda e0: []]
         on_d: EventHandler[lambda: []]
         on_e: EventHandler
+        on_f: EventHandler[lambda a, b, c: [c, b, a]]
 
     custom_component = ReferenceComponent.create()
     test_component = TestComponent.create()
-    assert (
-        custom_component.get_event_triggers().keys()
-        == test_component.get_event_triggers().keys()
-    )
+    custom_triggers = custom_component.get_event_triggers()
+    test_triggers = test_component.get_event_triggers()
+    assert custom_triggers.keys() == test_triggers.keys()
+    for trigger_name in custom_component.get_event_triggers():
+        for v1, v2 in zip(
+            parse_args_spec(test_triggers[trigger_name]),
+            parse_args_spec(custom_triggers[trigger_name]),
+        ):
+            assert v1.equals(v2)

@@ -142,9 +142,6 @@ class Blockquote(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -277,9 +274,6 @@ class Dd(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -412,9 +406,6 @@ class Div(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -547,9 +538,6 @@ class Dl(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -682,9 +670,6 @@ class Dt(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -817,9 +802,6 @@ class Figcaption(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -956,9 +938,6 @@ class Hr(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1091,9 +1070,6 @@ class Li(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1228,9 +1204,6 @@ class Menu(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1373,9 +1346,6 @@ class Ol(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1508,9 +1478,6 @@ class P(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1643,9 +1610,6 @@ class Pre(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1778,9 +1742,6 @@ class Ul(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1919,9 +1880,6 @@ class Ins(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2060,8 +2018,5 @@ class Del(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...

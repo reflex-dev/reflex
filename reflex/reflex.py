@@ -63,7 +63,7 @@ def main(
 
 def _init(
     name: str,
-    template: constants.Templates.Kind | None = constants.Templates.Kind.BLANK,
+    template: str | None = None,
     loglevel: constants.LogLevel = config.loglevel,
 ):
     """Initialize a new Reflex app in the given directory."""
@@ -79,31 +79,20 @@ def _init(
     app_name = prerequisites.validate_app_name(name)
     console.rule(f"[bold]Initializing {app_name}")
 
+    # Check prerequisites.
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
-
     prerequisites.initialize_reflex_user_directory()
-
     prerequisites.ensure_reflex_installation_id()
 
     # When upgrading to 0.4, show migration instructions.
     if prerequisites.should_show_rx_chakra_migration_instructions():
         prerequisites.show_rx_chakra_migration_instructions()
 
-    # Set up the app directory, only if the config doesn't exist.
-    if not os.path.exists(constants.Config.FILE):
-        if template is None:
-            template = prerequisites.prompt_for_template()
-        prerequisites.create_config(app_name)
-        prerequisites.initialize_app_directory(app_name, template)
-        telemetry_event = "init"
-    else:
-        telemetry_event = "reinit"
-
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
 
-    # Send the telemetry event after the .web folder is initialized.
-    telemetry.send(telemetry_event)
+    # Initialize the app.
+    prerequisites.initialize_app(app_name, template)
 
     # Migrate Pynecone projects to Reflex.
     prerequisites.migrate_to_reflex()
@@ -123,7 +112,7 @@ def init(
     name: str = typer.Option(
         None, metavar="APP_NAME", help="The name of the app to initialize."
     ),
-    template: constants.Templates.Kind = typer.Option(
+    template: str = typer.Option(
         None,
         help="The template to initialize the app with.",
     ),
@@ -165,7 +154,8 @@ def _run(
         _skip_compile()
 
     # Check that the app is initialized.
-    prerequisites.check_initialized(frontend=frontend)
+    if prerequisites.needs_reinit(frontend=frontend):
+        _init(name=config.app_name, loglevel=loglevel)
 
     # If something is running on the ports, ask the user if they want to kill or change it.
     if frontend and processes.is_process_on_port(frontend_port):
@@ -188,7 +178,6 @@ def _run(
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
     if frontend:
-        prerequisites.update_next_config()
         # Get the app module.
         prerequisites.get_compiled_app()
 
@@ -234,6 +223,11 @@ def _run(
         # In dev mode, run the backend on the main thread.
         if backend and env == constants.Env.DEV:
             backend_cmd(backend_host, int(backend_port))
+            # The windows uvicorn bug workaround
+            # https://github.com/reflex-dev/reflex/issues/2335
+            if constants.IS_WINDOWS and exec.frontend_process:
+                # Sends SIGTERM in windows
+                exec.kill(exec.frontend_process.pid)
 
 
 @cli.command()
@@ -289,6 +283,10 @@ def export(
 ):
     """Export the app to a zip file."""
     from reflex.utils import export as export_utils
+    from reflex.utils import prerequisites
+
+    if prerequisites.needs_reinit(frontend=True):
+        _init(name=config.app_name, loglevel=loglevel)
 
     export_utils.export(
         zipping=zipping,
@@ -524,7 +522,8 @@ def deploy(
         dependency.check_requirements()
 
     # Check if we are set up.
-    prerequisites.check_initialized(frontend=True)
+    if prerequisites.needs_reinit(frontend=True):
+        _init(name=config.app_name, loglevel=loglevel)
     prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
 
     hosting_cli.deploy(
@@ -569,20 +568,6 @@ def demo(
     """Run the demo app."""
     # Open the demo app in a terminal.
     webbrowser.open("https://demo.reflex.run")
-
-    # Later: open the demo app locally.
-    # with tempfile.TemporaryDirectory() as tmp_dir:
-    #     os.chdir(tmp_dir)
-    #     _init(
-    #         name="reflex_demo",
-    #         template=constants.Templates.Kind.DEMO,
-    #         loglevel=constants.LogLevel.DEBUG,
-    #     )
-    #     _run(
-    #         frontend_port=frontend_port,
-    #         backend_port=backend_port,
-    #         loglevel=constants.LogLevel.DEBUG,
-    #     )
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")

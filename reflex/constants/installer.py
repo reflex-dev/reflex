@@ -35,13 +35,15 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.0.13"
+    VERSION = "1.1.3"
     # Min Bun Version
     MIN_VERSION = "0.7.0"
     # The directory to store the bun.
     ROOT_PATH = os.path.join(Reflex.DIR, "bun")
     # Default bun path.
-    DEFAULT_PATH = os.path.join(ROOT_PATH, "bin", "bun")
+    DEFAULT_PATH = os.path.join(
+        ROOT_PATH, "bin", "bun" if not IS_WINDOWS else "bun.exe"
+    )
     # URL to bun install script.
     INSTALL_URL = "https://bun.sh/install"
 
@@ -110,6 +112,7 @@ class PackageJson(SimpleNamespace):
         "next-themes": "0.2.1",
         "react": "18.2.0",
         "react-dom": "18.2.0",
+        "react-focus-lock": "2.11.3",
         "socket.io-client": "4.6.1",
         "universal-cookie": "4.0.4",
     }

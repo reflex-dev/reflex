@@ -85,9 +85,6 @@ class LucideIconComponent(Component):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -221,7 +218,7 @@ RENAMED_ICONS_05 = {
     "dot_square": "square_dot",
     "download_cloud": "cloud_download",
     "equal_square": "square_equal",
-    "form_input": "rectangle_elipsis",
+    "form_input": "rectangle_ellipsis",
     "function_square": "square_function",
     "gantt_chart_square": "square_gantt_chart",
     "gauge_circle": "circle_gauge",
@@ -232,7 +229,7 @@ RENAMED_ICONS_05 = {
     "ice_cream_2": "ice_cream_bowl",
     "indent": "indent_increase",
     "kanban_square": "square_kanban",
-    "kanban_square_dashed": "square_kanban_dashed",
+    "kanban_square_dashed": "square_dashed_kanban",
     "laptop_2": "laptop_minimal",
     "library_square": "square_library",
     "loader_2": "loader_circle",

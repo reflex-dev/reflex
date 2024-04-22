@@ -4,9 +4,9 @@
 
 import reflex as rx
 
-# Some libraries you may want to wrap may require dynamic imports.
+# Some libraries you want to wrap may require dynamic imports.
 # This is because they they may not be compatible with Server-Side Rendering (SSR).
-# To handle this in Reflex all you need to do is subclass NoSSRComponent instead.
+# To handle this in Reflex, all you need to do is subclass `NoSSRComponent` instead.
 # For example:
 # from reflex.components.component import NoSSRComponent
 # class {{ component_class_name }}(NoSSRComponent):
@@ -42,12 +42,12 @@ class {{ component_class_name }}(rx.Component):
     # In this case you can use the lib_dependencies property to specify other libraries to install.
     # lib_dependencies: list[str] = []
 
-    # Event triggers, I did not understand the wording of the doc.
-    # def get_event_triggers(self) -> dict[str, Any]:
-    #     return {
-    #         **super().get_event_triggers(),
-    #         "on_change": lambda e0: [e0],
-    #     }
+    # Event triggers declaration if any.
+    # Below is equivalent to merging `{ "on_change": lambda e: [e] }`
+    # onto the default event triggers of parent/base Component.
+    # The function defined for the `on_change` trigger maps event for the javascript
+    # trigger to what will be passed to the backend event handler function.
+    # on_change: rx.EventHandler[lambda e: [e]]
 
     # To add custom code to your component
     # def _get_custom_code(self) -> str:

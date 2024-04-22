@@ -1,4 +1,5 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+
 from __future__ import annotations
 
 from hashlib import md5
@@ -162,7 +163,9 @@ class Form(BaseHTML):
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
         form.handle_submit_unique_name = md5(
-            str(form.get_hooks_internal().union(form.get_hooks())).encode("utf-8")
+            str({**form._get_all_hooks_internal(), **form._get_all_hooks()}).encode(
+                "utf-8"
+            )
         ).hexdigest()
         return form
 
@@ -207,7 +210,7 @@ class Form(BaseHTML):
     def _get_form_refs(self) -> Dict[str, Any]:
         # Send all the input refs to the handler.
         form_refs = {}
-        for ref in self.get_refs():
+        for ref in self._get_all_refs():
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
@@ -592,13 +595,13 @@ class Textarea(BaseHTML):
             "enter_key_submit",
         ]
 
-    def get_custom_code(self) -> Set[str]:
+    def _get_all_custom_code(self) -> Set[str]:
         """Include the custom code for auto_height and enter_key_submit functionality.
 
         Returns:
             The custom code for the component.
         """
-        custom_code = super().get_custom_code()
+        custom_code = super()._get_all_custom_code()
         if self.auto_height is not None:
             custom_code.add(AUTO_HEIGHT_JS)
         if self.enter_key_submit is not None:

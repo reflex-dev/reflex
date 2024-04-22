@@ -1,4 +1,5 @@
 """A file upload component."""
+
 from __future__ import annotations
 
 import os
@@ -31,7 +32,7 @@ upload_files_context_var_data: VarData = VarData(  # type: ignore
         },
     },
     hooks={
-        "const [filesById, setFilesById] = useContext(UploadFilesContext);",
+        "const [filesById, setFilesById] = useContext(UploadFilesContext);": None,
     },
 )
 
@@ -139,7 +140,9 @@ def get_upload_url(file_path: str) -> Var[str]:
     """
     Upload.is_used = True
 
-    return Var.create_safe(f"{uploaded_files_url_prefix}/{file_path}")
+    return Var.create_safe(
+        f"{uploaded_files_url_prefix}/{file_path}", _var_is_string=True
+    )
 
 
 def _on_drop_spec(files: Var):

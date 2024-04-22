@@ -299,7 +299,7 @@ class Config(Base):
 
         return updated_values
 
-    def get_event_namespace(self) -> str | None:
+    def get_event_namespace(self) -> str:
         """Get the websocket event namespace.
 
         Returns:

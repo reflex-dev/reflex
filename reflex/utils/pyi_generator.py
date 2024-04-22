@@ -34,6 +34,7 @@ PWD = Path(".").resolve()
 
 EXCLUDED_FILES = [
     "__init__.py",
+    "app.py",
     "component.py",
     "bare.py",
     "foreach.py",
@@ -793,7 +794,11 @@ class PyiGenerator:
         file_targets = []
         for target in targets:
             target_path = Path(target)
-            if target_path.is_file() and target_path.suffix == ".py":
+            if (
+                target_path.is_file()
+                and target_path.suffix == ".py"
+                and target_path.name not in EXCLUDED_FILES
+            ):
                 file_targets.append(target_path)
                 continue
             if not target_path.is_dir():

@@ -86,9 +86,6 @@ class ChakraComponent(Component):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -234,9 +231,6 @@ class ChakraColorModeProvider(Component):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 

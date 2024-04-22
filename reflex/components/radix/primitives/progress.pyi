@@ -91,9 +91,6 @@ class ProgressComponent(RadixPrimitiveComponentWithClassName):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -179,9 +176,6 @@ class ProgressRoot(ProgressComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -327,9 +321,6 @@ class ProgressIndicator(ProgressComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 

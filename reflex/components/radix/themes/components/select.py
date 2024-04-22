@@ -198,6 +198,15 @@ class HighLevelSelect(SelectRoot):
         Returns:
             The select component.
         """
+        trigger_prop_list = [
+            "placeholder",
+            "variant",
+            "radius",
+            "width",
+            "flex_shrink",
+            "custom_attrs",
+        ]
+
         content_props = {
             prop: props.pop(prop)
             for prop in ["high_contrast", "position"]
@@ -205,9 +214,7 @@ class HighLevelSelect(SelectRoot):
         }
 
         trigger_props = {
-            prop: props.pop(prop)
-            for prop in ["placeholder", "variant", "radius", "width", "flex_shrink"]
-            if prop in props
+            prop: props.pop(prop) for prop in trigger_prop_list if prop in props
         }
 
         color_scheme = props.pop("color_scheme", None)

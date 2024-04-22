@@ -7,6 +7,7 @@ import json
 import os
 import platform
 import re
+import subprocess
 import sys
 from pathlib import Path
 from urllib.parse import urljoin
@@ -17,6 +18,9 @@ from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, path_ops
 from reflex.utils.watch import AssetFolderWatch
+
+# For uvicorn windows bug fix (#2335)
+frontend_process = None
 
 
 def start_watching_assets_folder(root):
@@ -66,6 +70,9 @@ def kill(proc_pid: int):
     process.kill()
 
 
+# run_process_and_launch_url is assumed to be used
+# only to launch the frontend
+# If this is not the case, might have to change the logic
 def run_process_and_launch_url(run_command: list[str]):
     """Run the process and launch the URL.
 
@@ -81,9 +88,17 @@ def run_process_and_launch_url(run_command: list[str]):
 
     while True:
         if process is None:
+            kwargs = {}
+            if constants.IS_WINDOWS:
+                kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
             process = processes.new_process(
-                run_command, cwd=constants.Dirs.WEB, shell=constants.IS_WINDOWS
+                run_command,
+                cwd=constants.Dirs.WEB,
+                shell=constants.IS_WINDOWS,
+                **kwargs,
             )
+            global frontend_process
+            frontend_process = process
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
                 match = re.search(constants.Next.FRONTEND_LISTENING_REGEX, line)
@@ -175,6 +190,7 @@ def run_backend(
         log_level=loglevel.value,
         reload=True,
         reload_dirs=[config.app_name],
+        reload_excludes=[constants.Dirs.WEB],
     )
 
 

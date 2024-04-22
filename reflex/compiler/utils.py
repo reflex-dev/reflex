@@ -11,7 +11,7 @@ try:
     # reflex-hosting-cli tools are compatible with pydantic v2
 
     if not TYPE_CHECKING:
-        import pydantic.v1.fields as ModelField
+        from pydantic.v1.fields import ModelField
     else:
         raise ModuleNotFoundError
 except ModuleNotFoundError:
@@ -252,7 +252,7 @@ def compile_custom_component(
     # Get the imports.
     imports = {
         lib: fields
-        for lib, fields in render.get_imports().items()
+        for lib, fields in render._get_all_imports().items()
         if lib != component.library
     }
 
@@ -265,8 +265,8 @@ def compile_custom_component(
             "name": component.tag,
             "props": props,
             "render": render.render(),
-            "hooks": render.get_hooks_internal() | render.get_hooks(),
-            "custom_code": render.get_custom_code(),
+            "hooks": {**render._get_all_hooks_internal(), **render._get_all_hooks()},
+            "custom_code": render._get_all_custom_code(),
         },
         imports,
     )

@@ -112,7 +112,9 @@ class AppHarness:
     """AppHarness executes a reflex app in-process for testing."""
 
     app_name: str
-    app_source: Optional[types.FunctionType | types.ModuleType] | str
+    app_source: Optional[
+        types.FunctionType | types.ModuleType | str | functools.partial
+    ]
     app_path: pathlib.Path
     app_module_path: pathlib.Path
     app_module: Optional[types.ModuleType] = None
@@ -124,6 +126,7 @@ class AppHarness:
     backend: Optional[uvicorn.Server] = None
     state_manager: Optional[StateManagerMemory | StateManagerRedis] = None
     _frontends: list["WebDriver"] = dataclasses.field(default_factory=list)
+    _decorated_pages: list = dataclasses.field(default_factory=list)
 
     @classmethod
     def create(
@@ -149,15 +152,21 @@ class AppHarness:
         """
         if app_name is None:
             if app_source is None:
-                app_name = root.name.lower()
+                app_name = root.name
             elif isinstance(app_source, functools.partial):
-                app_name = app_source.func.__name__.lower()
+                keywords = app_source.keywords
+                slug_suffix = "_".join([str(v) for v in keywords.values()])
+                func_name = app_source.func.__name__
+                app_name = f"{func_name}_{slug_suffix}"
+                app_name = re.sub(r"[^a-zA-Z0-9_]", "_", app_name)
             elif isinstance(app_source, str):
                 raise ValueError(
                     "app_name must be provided when app_source is a string."
                 )
             else:
-                app_name = app_source.__name__.lower()
+                app_name = app_source.__name__
+
+            app_name = app_name.lower()
         return cls(
             app_name=app_name,
             app_source=app_source,
@@ -223,18 +232,22 @@ class AppHarness:
             with chdir(self.app_path):
                 reflex.reflex._init(
                     name=self.app_name,
-                    template=reflex.constants.Templates.Kind.BLANK,
+                    template=reflex.constants.Templates.DEFAULT,
                     loglevel=reflex.constants.LogLevel.INFO,
                 )
                 self.app_module_path.write_text(source_code)
         with chdir(self.app_path):
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
-            # Clean out any `rx.page` decorators from other tests.
-            reflex.app.DECORATED_PAGES.clear()
+            # Save decorated pages before importing the test app module
+            before_decorated_pages = reflex.app.DECORATED_PAGES.copy()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
+            # Save the pages that were added during testing
+            self._decorated_pages = [
+                p for p in reflex.app.DECORATED_PAGES if p not in before_decorated_pages
+            ]
         self.app_instance = self.app_module.app
         if isinstance(self.app_instance._state_manager, StateManagerRedis):
             # Create our own redis connection for testing.
@@ -395,6 +408,10 @@ class AppHarness:
             self.frontend_output_thread.join()
         for driver in self._frontends:
             driver.quit()
+
+        # Cleanup decorated pages added during testing
+        for page in self._decorated_pages:
+            reflex.app.DECORATED_PAGES.remove(page)
 
     def __exit__(self, *excinfo) -> None:
         """Contextmanager protocol for `stop()`.

@@ -133,7 +133,7 @@ class Markdown(Component):
             **props,
         )
 
-    def get_custom_components(
+    def _get_all_custom_components(
         self, seen: set[str] | None = None
     ) -> set[CustomComponent]:
         """Get all the custom components used by the component.
@@ -144,11 +144,13 @@ class Markdown(Component):
         Returns:
             The set of custom components.
         """
-        custom_components = super().get_custom_components(seen=seen)
+        custom_components = super()._get_all_custom_components(seen=seen)
 
         # Get the custom components for each tag.
         for component in self.component_map.values():
-            custom_components |= component(_MOCK_ARG).get_custom_components(seen=seen)
+            custom_components |= component(_MOCK_ARG)._get_all_custom_components(
+                seen=seen
+            )
 
         return custom_components
 
@@ -183,7 +185,9 @@ class Markdown(Component):
 
         # Get the imports for each component.
         for component in self.component_map.values():
-            imports = utils.merge_imports(imports, component(_MOCK_ARG).get_imports())
+            imports = utils.merge_imports(
+                imports, component(_MOCK_ARG)._get_all_imports()
+            )
 
         # Get the imports for the code components.
         imports = utils.merge_imports(
@@ -289,8 +293,8 @@ class Markdown(Component):
         hooks = set()
         for _component in self.component_map.values():
             comp = _component(_MOCK_ARG)
-            hooks |= comp.get_hooks_internal()
-            hooks |= comp.get_hooks()
+            hooks.update(comp._get_all_hooks_internal())
+            hooks.update(comp._get_all_hooks())
         formatted_hooks = "\n".join(hooks)
         return f"""
         function {self._get_component_map_name()} () {{
