@@ -249,7 +249,7 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
                     "overflow": "hidden",
                     "font_size": "10px",
                     "color": f"var(--{color_scheme}-11)",
-                    "padding": "15px 20px",
+                    "padding": "0 15px",
                     "&[data-state='open']": {
                         "animation": Var.create(
                             f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
@@ -279,7 +279,7 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
                     ("classic", f"var(--{color_scheme}-9)"),
                     f"var(--{color_scheme}-3)",
                 ),
-                "padding": "15px 20px",
+                "padding": "0 15px",
                 "&[data-state='open']": {
                     "animation": Var.create(
                         f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
