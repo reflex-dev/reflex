@@ -2,6 +2,7 @@
 
 https://www.radix-ui.com/themes/docs/theme/typography
 """
+
 from __future__ import annotations
 
 from typing import Literal
@@ -75,11 +76,16 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
             Component: The link component
         """
         is_external = props.pop("is_external", None)
+
+        props.setdefault("text_decoration", "underline")
+
         if is_external is not None:
             props["target"] = cond(is_external, "_blank", "")
+
         if props.get("href") is not None:
             if not len(children):
                 raise ValueError("Link without a child will not display")
+
             if "as_child" not in props:
                 # Extract props for the NextLink, the rest go to the Link/A element.
                 known_next_link_props = NextLink.get_props()
@@ -87,6 +93,7 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
                 for prop in props.copy():
                     if prop in known_next_link_props:
                         next_link_props[prop] = props.pop(prop)
+
                 # If user does not use `as_child`, by default we render using next_link to avoid page refresh during internal navigation
                 return super().create(
                     NextLink.create(*children, **next_link_props),
