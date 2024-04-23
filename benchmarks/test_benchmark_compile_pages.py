@@ -228,7 +228,8 @@ def app_with_ten_pages(
     yield AppHarness.create(
         root=root,
         app_source=functools.partial(
-            AppWithTenPages, render_comp=render_multiple_pages  # type: ignore
+            AppWithTenPages, 
+            render_comp=render_multiple_pages,  # type: ignore
         ),
     )
 
