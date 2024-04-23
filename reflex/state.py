@@ -806,7 +806,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls.vars.update({name: var})
 
         # let substates know about the new variable
-        for substate_class in cls.__subclasses__():
+        for substate_class in cls.class_subclasses:
             substate_class.vars.setdefault(name, var)
 
         # Reinitialize dependency tracking dicts.
