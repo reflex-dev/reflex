@@ -357,10 +357,10 @@ class App(Base):
                 )
             else:
                 out = middleware.postprocess(
-                    app=self,
+                    app=self,  # type: ignore
                     state=state,
                     event=event,
-                    update=update,  # type: ignore
+                    update=update,
                 )
             if out is not None:
                 return out  # type: ignore
