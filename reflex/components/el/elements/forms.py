@@ -338,7 +338,7 @@ class Input(BaseHTML):
     use_map: Var[Union[str, int, bool]]
 
     # Value of the input
-    value: Var[Union[str, int, bool]]
+    value: Var[Union[str, int, bool, float]]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.

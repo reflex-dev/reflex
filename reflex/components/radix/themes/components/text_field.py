@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Union
 
 from reflex.components import el
 from reflex.components.component import Component, ComponentNamespace
@@ -128,7 +128,7 @@ class Input(RadixThemesComponent):
     type: Var[str]
 
     # Value of the input
-    value: Var[str]
+    value: Var[Union[str, int, bool, float]]
 
     @classmethod
     def create(cls, **props):
