@@ -13,7 +13,6 @@ from reflex.utils import types
     ],
 )
 def test_validate_literal_error_msg(params, allowed_value_str, value_str):
-
     with pytest.raises(ValueError) as err:
         types.validate_literal(*params)
 

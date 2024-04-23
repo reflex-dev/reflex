@@ -1404,7 +1404,7 @@ class CustomComponent(Component):
                 else:
                     value = base_value
             else:
-                value = Var.create(value, _var_is_string=type(value) is str)
+                value = Var.create(value, _var_is_string=isinstance(value, str))
 
             # Set the prop.
             self.props[format.to_camel_case(key)] = value
@@ -1590,9 +1590,7 @@ class NoSSRComponent(Component):
         library_import = f"const {self.alias if self.alias else self.tag} = dynamic(() => import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
-            f".then((mod) => mod.{self.tag})"
-            if not self.is_default
-            else ""
+            f".then((mod) => mod.{self.tag})" if not self.is_default else ""
         )
         return "".join((library_import, mod_import, opts_fragment))
 

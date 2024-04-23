@@ -97,16 +97,12 @@ build-backend = "poetry.core.masonry.api"
 [tool.pyright]
 
 [tool.ruff]
-
-select = ["B", "D", "E", "F", "I", "SIM", "W"]
-
-ignore = ["B008", "D203", "D205", "D213", "D401", "D406", "D407", "E501", "F403", "F405", "F541"]
-
+exclude = ["*.pyi"]
 target-version = "py37"
-
-[tool.ruff.per-file-ignores]
-
+lint.select = ["B", "D", "E", "F", "I", "SIM", "W"]
+lint.ignore = ["B008", "D203", "D205", "D213", "D401", "D406", "D407", "E501", "F403", "F405", "F541"]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*.py" = ["D100", "D103", "D104"]
+"tests/*.py" = ["D100", "D103", "D104", "B018"]
 "reflex/.templates/*.py" = ["D100", "D103", "D104"]
 "*.pyi" = ["ALL"]
