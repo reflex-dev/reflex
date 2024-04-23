@@ -62,8 +62,9 @@ def DynamicRoute():
             rx.link("missing", href="/missing", id="link_missing"),
             rx.chakra.list(
                 rx.foreach(
-                    DynamicState.order, lambda i: rx.chakra.list_item(rx.text(i))
-                ),  # type: ignore
+                    DynamicState.order,  # type: ignore
+                    lambda i: rx.chakra.list_item(rx.text(i)),
+                ),
             ),
         )
 
