@@ -823,7 +823,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     """
     # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
     fallback_command = (
-        get_install_package_manager()
+        get_package_manager()
         if not constants.IS_WINDOWS
         or constants.IS_WINDOWS
         and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
