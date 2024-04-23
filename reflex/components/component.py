@@ -255,6 +255,7 @@ class Component(BaseComponent, ABC):
 
         Raises:
             TypeError: If an invalid prop is passed.
+            ValueError: If an event trigger passed is not valid.
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
@@ -284,6 +285,12 @@ class Component(BaseComponent, ABC):
 
         # Iterate through the kwargs and set the props.
         for key, value in kwargs.items():
+            if key.startswith("on_") and key not in triggers and key not in props:
+                raise ValueError(
+                    f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. If {comp_name}"
+                    f" is a third party component make sure to add `{key}` to the component's event triggers. "
+                    f"visit https://reflex.dev/docs/wrapping-react/logic/#event-triggers for more info."
+                )
             if key in triggers:
                 # Event triggers are bound to event chains.
                 field_type = EventChain
@@ -1397,7 +1404,7 @@ class CustomComponent(Component):
                 else:
                     value = base_value
             else:
-                value = Var.create(value, _var_is_string=type(value) is str)
+                value = Var.create(value, _var_is_string=isinstance(value, str))
 
             # Set the prop.
             self.props[format.to_camel_case(key)] = value
@@ -1583,9 +1590,7 @@ class NoSSRComponent(Component):
         library_import = f"const {self.alias if self.alias else self.tag} = dynamic(() => import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
-            f".then((mod) => mod.{self.tag})"
-            if not self.is_default
-            else ""
+            f".then((mod) => mod.{self.tag})" if not self.is_default else ""
         )
         return "".join((library_import, mod_import, opts_fragment))
 

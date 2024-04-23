@@ -169,7 +169,7 @@ class EventHandler(EventActionsMixin):
 
             # Otherwise, convert to JSON.
             try:
-                values.append(Var.create(arg, _var_is_string=type(arg) is str))
+                values.append(Var.create(arg, _var_is_string=isinstance(arg, str)))
             except TypeError as e:
                 raise TypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
@@ -350,7 +350,9 @@ class FileUpload(Base):
                 ]
             elif isinstance(on_upload_progress, Callable):
                 # Call the lambda to get the event chain.
-                events = call_event_fn(on_upload_progress, self.on_upload_progress_args_spec)  # type: ignore
+                events = call_event_fn(
+                    on_upload_progress, self.on_upload_progress_args_spec
+                )  # type: ignore
             else:
                 raise ValueError(f"{on_upload_progress} is not a valid event handler.")
             on_upload_progress_chain = EventChain(
@@ -400,7 +402,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     return EventSpec(
         handler=EventHandler(fn=fn),
         args=tuple(
-            (Var.create_safe(k), Var.create_safe(v, _var_is_string=type(v) is str))
+            (Var.create_safe(k), Var.create_safe(v, _var_is_string=isinstance(v, str)))
             for k, v in kwargs.items()
         ),
     )

@@ -55,11 +55,16 @@ def DynamicRoute():
             rx.link("index", href="/", id="link_index"),
             rx.link("page_X", href="/static/x", id="link_page_x"),
             rx.link(
-                "next", href="/page/" + DynamicState.next_page, id="link_page_next"  # type: ignore
+                "next",
+                href="/page/" + DynamicState.next_page,
+                id="link_page_next",  # type: ignore
             ),
             rx.link("missing", href="/missing", id="link_missing"),
             rx.chakra.list(
-                rx.foreach(DynamicState.order, lambda i: rx.chakra.list_item(rx.text(i))),  # type: ignore
+                rx.foreach(
+                    DynamicState.order,  # type: ignore
+                    lambda i: rx.chakra.list_item(rx.text(i)),
+                ),
             ),
         )
 

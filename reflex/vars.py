@@ -818,14 +818,20 @@ class Var:
             if fn is not None:
                 if invoke_fn:
                     # invoke the function on left operand.
-                    operation_name = f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
+                    operation_name = (
+                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"
+                    )  # type: ignore
                 else:
                     # pass the operands as arguments to the function.
-                    operation_name = f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                    operation_name = (
+                        f"{left_operand_full_name} {op} {right_operand_full_name}"
+                    )  # type: ignore
                     operation_name = f"{fn}({operation_name})"
             else:
                 # apply operator to operands (left operand <operator> right_operand)
-                operation_name = f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                operation_name = (
+                    f"{left_operand_full_name} {op} {right_operand_full_name}"
+                )  # type: ignore
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)

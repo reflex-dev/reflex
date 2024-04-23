@@ -193,7 +193,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
         insp = sqlalchemy.inspect(cls)
         if name in insp.columns:
             return insp.columns[name].type.python_type
-        if name not in insp.all_orm_descriptors.keys():
+        if name not in insp.all_orm_descriptors:
             return None
         descriptor = insp.all_orm_descriptors[name]
         if hint := get_property_hint(descriptor):
