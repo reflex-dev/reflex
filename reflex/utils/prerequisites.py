@@ -823,7 +823,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     """
     # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
     fallback_command = (
-        get_install_package_manager()
+        get_package_manager()
         if not constants.IS_WINDOWS
         or constants.IS_WINDOWS
         and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
@@ -891,6 +891,10 @@ def needs_reinit(frontend: bool = True) -> bool:
 
     # Make sure the .web directory exists in frontend mode.
     if not os.path.exists(constants.Dirs.WEB):
+        return True
+
+    # If the template is out of date, then we need to re-init
+    if not is_latest_template():
         return True
 
     if constants.IS_WINDOWS:
