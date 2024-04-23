@@ -1569,3 +1569,28 @@ def test_custom_component_declare_event_handlers_in_fields():
             parse_args_spec(custom_triggers[trigger_name]),
         ):
             assert v1.equals(v2)
+
+
+def test_invalid_event_trigger():
+    class TriggerComponent(Component):
+        on_push: Var[bool]
+
+        def get_event_triggers(self) -> Dict[str, Any]:
+            """Test controlled triggers.
+
+            Returns:
+                Test controlled triggers.
+            """
+            return {
+                **super().get_event_triggers(),
+                "on_a": lambda: [],
+            }
+
+    trigger_comp = TriggerComponent.create
+
+    # test that these do not throw errors.
+    trigger_comp(on_push=True)
+    trigger_comp(on_a=rx.console_log("log"))
+
+    with pytest.raises(ValueError):
+        trigger_comp(on_b=rx.console_log("log"))

@@ -255,6 +255,7 @@ class Component(BaseComponent, ABC):
 
         Raises:
             TypeError: If an invalid prop is passed.
+            ValueError: If an event trigger is passed is not valid.
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
