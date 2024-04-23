@@ -209,8 +209,10 @@ def test_create_document_root():
         utils.NextScript.create(src="bar.js"),
     ]
     root = utils.create_document_root(
-        head_components=comps, html_lang="rx", html_custom_attrs={"project": "reflex"}
-    )  # type: ignore
+        head_components=comps,  # type: ignore
+        html_lang="rx",
+        html_custom_attrs={"project": "reflex"},
+    )
     # Two children in head.
     assert isinstance(root, utils.Html)
     assert len(root.children[0].children) == 2

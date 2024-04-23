@@ -32,8 +32,8 @@ def create_color_var(color):
         ),
         (
             create_color_var(
-                rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}")
-            ),  # type: ignore
+                rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}")  # type: ignore
+            ),
             "var(--${state__color_state.color_part}ato-${state__color_state.shade})",
         ),
         (
@@ -42,8 +42,8 @@ def create_color_var(color):
         ),
         (
             create_color_var(
-                f'{rx.color(f"{ColorState.color}", f"{ColorState.shade}")}'
-            ),  # type: ignore
+                f'{rx.color(f"{ColorState.color}", f"{ColorState.shade}")}'  # type: ignore
+            ),
             "var(--${state__color_state.color}-${state__color_state.shade})",
         ),
     ],
