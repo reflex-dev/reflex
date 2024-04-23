@@ -284,6 +284,12 @@ class Component(BaseComponent, ABC):
 
         # Iterate through the kwargs and set the props.
         for key, value in kwargs.items():
+            if key.startswith("on_") and key not in triggers:
+                raise ValueError(
+                    f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. If {comp_name}"
+                    f" is a third party component make sure to define `{key}` as an event trigger. "
+                    f"visit https://reflex.dev/docs/wrapping-react/logic#event-triggers for more info."
+                )
             if key in triggers:
                 # Event triggers are bound to event chains.
                 field_type = EventChain
