@@ -82,7 +82,7 @@ jobs:
       fail-fast: false
       matrix:
         # Show OS combos first in GUI
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos12]
         python-version: ['3.8.18', '3.9.18', '3.10.13', '3.11.5', '3.12.0']
         exclude:
           - os: windows-latest
