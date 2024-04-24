@@ -1825,8 +1825,8 @@ class BaseVar(Var):
                     value = self._var_type(value)
                     setattr(state, self._var_name, value)
                 except ValueError:
-                    console.warn(
-                        f"{self._var_name}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
+                    console.debug(
+                        f"{type(state).__name__}.{self._var_name}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
                     )
             else:
                 setattr(state, self._var_name, value)

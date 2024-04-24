@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Union
 from reflex.components import el
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.debounce import DebounceInput
@@ -313,7 +313,7 @@ class TextFieldInput(el.Input, TextFieldRoot):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         value: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[Var[Union[str, int, float]], Union[str, int, float]]
         ] = None,
         variant: Optional[
             Union[
@@ -796,7 +796,9 @@ class Input(RadixThemesComponent):
         read_only: Optional[Union[Var[bool], bool]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
         type: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        value: Optional[
+            Union[Var[Union[str, int, float]], Union[str, int, float]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -986,7 +988,9 @@ class TextField(ComponentNamespace):
         read_only: Optional[Union[Var[bool], bool]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
         type: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        value: Optional[
+            Union[Var[Union[str, int, float]], Union[str, int, float]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
