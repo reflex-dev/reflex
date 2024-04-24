@@ -11,16 +11,22 @@ from reflex.utils.types import GenericType, get_attribute_access_type
 
 
 class SQLABase(DeclarativeBase):
+    """Base class for bare SQLAlchemy models."""
+
     pass
 
 
 class SQLATag(SQLABase):
+    """Tag sqlalchemy model."""
+
     __tablename__: str = "tag"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column()
 
 
 class SQLALabel(SQLABase):
+    """Label sqlalchemy model."""
+
     __tablename__: str = "label"
     id: Mapped[int] = mapped_column(primary_key=True)
     test_id: Mapped[int] = mapped_column(sqlalchemy.ForeignKey("test.id"))
@@ -28,6 +34,8 @@ class SQLALabel(SQLABase):
 
 
 class SQLAClass(SQLABase):
+    """Test sqlalchemy model."""
+
     __tablename__: str = "test"
     id: Mapped[int] = mapped_column(primary_key=True)
     count: Mapped[int] = mapped_column()
@@ -45,10 +53,17 @@ class SQLAClass(SQLABase):
 
     @property
     def str_property(self) -> str:
+        """String property.
+
+        Returns:
+            Name attribute
+        """
         return self.name
 
 
 class ModelClass(rx.Model):
+    """Test reflex model."""
+
     count: int = 0
     name: str = "test"
     int_list: List[int] = []
@@ -59,10 +74,17 @@ class ModelClass(rx.Model):
 
     @property
     def str_property(self) -> str:
+        """String property.
+
+        Returns:
+            Name attribute
+        """
         return self.name
 
 
 class BaseClass(rx.Base):
+    """Test rx.Base class."""
+
     count: int = 0
     name: str = "test"
     int_list: List[int] = []
@@ -73,10 +95,17 @@ class BaseClass(rx.Base):
 
     @property
     def str_property(self) -> str:
+        """String property.
+
+        Returns:
+            Name attribute
+        """
         return self.name
 
 
 class BareClass:
+    """Bare python class."""
+
     count: int = 0
     name: str = "test"
     int_list: List[int] = []
@@ -87,11 +116,24 @@ class BareClass:
 
     @property
     def str_property(self) -> str:
+        """String property.
+
+        Returns:
+            Name attribute
+        """
         return self.name
 
 
 @pytest.fixture(params=[SQLAClass, BaseClass, BareClass, ModelClass])
 def cls(request: pytest.FixtureRequest) -> type:
+    """Fixture for the class to test.
+
+    Args:
+        request: pytest request object.
+
+    Returns:
+        Class to test.
+    """
     return request.param
 
 
@@ -108,5 +150,12 @@ def cls(request: pytest.FixtureRequest) -> type:
         pytest.param("str_property", str, id="str_property"),
     ],
 )
-def test_get_attribute_access_type(cls: type, attr: str, expected: GenericType):
+def test_get_attribute_access_type(cls: type, attr: str, expected: GenericType) -> None:
+    """Test get_attribute_access_type returns the correct type.
+
+    Args:
+        cls: Class to test.
+        attr: Attribute to test.
+        expected: Expected type.
+    """
     assert get_attribute_access_type(cls, attr) == expected
