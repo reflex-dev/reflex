@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Literal
 
 from reflex.components.component import Component, MemoizationLeaf
+from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.next.link import NextLink
@@ -24,7 +25,7 @@ from .base import (
     LiteralTextWeight,
 )
 
-LiteralLinkUnderline = Literal["auto", "hover", "always"]
+LiteralLinkUnderline = Literal["auto", "hover", "always", "none"]
 
 next_link = NextLink.create()
 
@@ -46,7 +47,7 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
     # Removes the leading trim space: "normal" | "start" | "end" | "both"
     trim: Var[LiteralTextTrim]
 
-    # Sets the visibility of the underline affordance: "auto" | "hover" | "always"
+    # Sets the visibility of the underline affordance: "auto" | "hover" | "always" | "none"
     underline: Var[LiteralLinkUnderline]
 
     # Overrides the accent color inherited from the Theme.
@@ -77,7 +78,8 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
         """
         is_external = props.pop("is_external", None)
 
-        props.setdefault("text_decoration", "underline")
+        props.setdefault("underline", "always")
+        props.setdefault(":hover", {"color": color("accent", 8)})
 
         if is_external is not None:
             props["target"] = cond(is_external, "_blank", "")
