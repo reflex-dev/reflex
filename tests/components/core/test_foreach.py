@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Union
 
 import pytest
 
@@ -40,6 +40,7 @@ class ForEachState(BaseState):
     )
     colors_set: Set[str] = {"red", "green"}
     bad_annotation_list: list = [["red", "orange"], ["yellow", "blue"]]
+    color_index_tuple: Tuple[int, str] = (0, "red")
 
 
 def display_color(color):
@@ -95,6 +96,11 @@ def display_nested_list_element(element: Var[str], index: Var[int]):
     assert element._var_type == List[str]
     assert index._var_type == int
     return box(text(element[index]))
+
+
+def display_color_index_tuple(color):
+    assert color._var_type == Union[int, str]
+    return box(text(color, "index_tuple"))
 
 
 seen_index_vars = set()
@@ -181,6 +187,14 @@ seen_index_vars = set()
             {
                 "iterable_state": "for_each_state.nested_colors_list",
                 "iterable_type": "list",
+            },
+        ),
+        (
+            ForEachState.color_index_tuple,
+            display_color_index_tuple,
+            {
+                "iterable_state": "for_each_state.color_index_tuple",
+                "iterable_type": "tuple",
             },
         ),
     ],
