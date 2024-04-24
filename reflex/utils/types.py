@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import inspect
+import sys
 import types
 from functools import wraps
 from typing import (
@@ -259,11 +260,15 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                 return type_
     elif isinstance(cls, type):
         # Bare class
+        if sys.version_info >= (3, 10):
+            exceptions = NameError
+        else:
+            exceptions = (NameError, TypeError)
         try:
             hints = get_type_hints(cls)
             if name in hints:
                 return hints[name]
-        except NameError as e:
+        except exceptions as e:
             console.warn(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
             pass
     return None  # Attribute is not accessible.
