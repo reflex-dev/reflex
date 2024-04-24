@@ -446,6 +446,17 @@ class App(Base):
         # Check if the route given is valid
         verify_route_validity(route)
 
+        if route in self.pages:
+            route_name = (
+                f"`{route}` or `/`"
+                if route == constants.PageNames.INDEX_ROUTE
+                else f"`{route}`"
+            )
+            raise ValueError(
+                f"Duplicate page route {route_name} already exists. Make sure you do not have two"
+                f" pages with the same route"
+            )
+
         # Setup dynamic args for the route.
         # this state assignment is only required for tests using the deprecated state kwarg for App
         state = self.state if self.state else State
