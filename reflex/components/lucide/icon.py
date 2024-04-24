@@ -51,18 +51,18 @@ class Icon(LucideIconComponent):
             return tag
 
         if children:
-            if len(children) == 1 and type(children[0]) == str:
+            if len(children) == 1 and isinstance(children[0], str):
                 props["tag"] = children[0]
                 children = []
             else:
                 raise AttributeError(
                     f"Passing multiple children to Icon component is not allowed: remove positional arguments {children[1:]} to fix"
                 )
-        if "tag" not in props.keys():
+        if "tag" not in props:
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
 
         if (
-            type(props["tag"]) != str
+            not isinstance(props["tag"], str)
             or map_deprecated_icon_names_05(format.to_snake_case(props["tag"]))
             not in LUCIDE_ICON_LIST
         ):

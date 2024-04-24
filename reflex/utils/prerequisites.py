@@ -1186,17 +1186,17 @@ def _get_rx_chakra_component_to_migrate() -> set[str]:
         rx_chakra_object = getattr(reflex.chakra, rx_chakra_name)
         try:
             if (
-                inspect.ismethod(rx_chakra_object)
-                and inspect.isclass(rx_chakra_object.__self__)
-                and issubclass(rx_chakra_object.__self__, ChakraComponent)
+                (
+                    inspect.ismethod(rx_chakra_object)
+                    and inspect.isclass(rx_chakra_object.__self__)
+                    and issubclass(rx_chakra_object.__self__, ChakraComponent)
+                )
+                or (
+                    inspect.isclass(rx_chakra_object)
+                    and issubclass(rx_chakra_object, ChakraComponent)
+                )
+                or rx_chakra_name in whitelist
             ):
-                names_to_migrate.add(rx_chakra_name)
-
-            elif inspect.isclass(rx_chakra_object) and issubclass(
-                rx_chakra_object, ChakraComponent
-            ):
-                names_to_migrate.add(rx_chakra_name)
-            elif rx_chakra_name in whitelist:
                 names_to_migrate.add(rx_chakra_name)
 
         except Exception:
