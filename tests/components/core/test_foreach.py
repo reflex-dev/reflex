@@ -5,6 +5,7 @@ import pytest
 from reflex.components import box, foreach, text, theme
 from reflex.components.core import Foreach
 from reflex.state import BaseState
+from reflex.vars import Var
 
 try:
     # When pydantic v2 is installed
@@ -42,26 +43,32 @@ class ForEachState(BaseState):
 
 
 def display_color(color):
+    assert color._var_type == str
     return box(text(color))
 
 
 def display_color_name(color):
+    assert color._var_type == Dict[str, str]
     return box(text(color["name"]))
 
 
 def display_shade(color):
+    assert color._var_type == Dict[str, List[str]]
     return box(text(color["shades"][0]))
 
 
 def display_primary_colors(color):
+    assert color._var_type == Tuple[str, str]
     return box(text(color[0]), text(color[1]))
 
 
 def display_color_with_shades(color):
+    assert color._var_type == Tuple[str, List[str]]
     return box(text(color[0]), text(color[1][0]))
 
 
 def display_nested_color_with_shades(color):
+    assert color._var_type == Tuple[str, Dict[str, List[Dict[str, str]]]]
     return box(text(color[0]), text(color[1]["red"][0]["shade"]))
 
 
@@ -70,18 +77,23 @@ def show_shade(item):
 
 
 def display_nested_color_with_shades_v2(color):
+    assert color._var_type == Tuple[str, Dict[str, List[Dict[str, str]]]]
     return box(text(foreach(color[1], show_shade)))
 
 
 def display_color_tuple(color):
+    assert color._var_type == str
     return box(text(color, "tuple"))
 
 
 def display_colors_set(color):
+    assert color._var_type == str
     return box(text(color, "set"))
 
 
-def display_nested_list_element(element: str, index: int):
+def display_nested_list_element(element: Var[str], index: Var[int]):
+    assert element._var_type == List[str]
+    assert index._var_type == int
     return box(text(element[index]))
 
 
