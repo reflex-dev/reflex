@@ -48,6 +48,19 @@ class SQLAClass(SQLABase):
         return self.name
 
 
+class ModelClass(rx.Model):
+    count: int = 0
+    name: str = "test"
+    int_list: List[int] = []
+    str_list: List[str] = []
+    optional_int: Optional[int] = None
+    sqla_tag: Optional[SQLATag] = None
+    labels: List[SQLALabel] = []
+
+    @property
+    def str_property(self) -> str:
+        return self.name
+
 class BaseClass(rx.Base):
     count: int = 0
     name: str = "test"
@@ -76,7 +89,7 @@ class BareClass:
         return self.name
 
 
-@pytest.fixture(params=[SQLAClass, BaseClass, BareClass])
+@pytest.fixture(params=[SQLAClass, BaseClass, BareClass, ModelClass])
 def cls(request: pytest.FixtureRequest) -> type:
     return request.param
 
