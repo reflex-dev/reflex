@@ -48,7 +48,7 @@ from sqlalchemy.orm import (
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import serializers
+from reflex.utils import console, serializers
 
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = [_GenericAlias]
@@ -211,8 +211,8 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             column_type = column.type
             type_ = insp.columns[name].type.python_type
             if hasattr(column_type, "item_type") and (
-                item_type := column_type.item_type.python_type
-            ):  # type: ignore
+                item_type := column_type.item_type.python_type  # type: ignore
+            ):
                 if type_ in PrimitiveToAnnotation:
                     type_ = PrimitiveToAnnotation[type_]  # type: ignore
                 type_ = type_[item_type]  # type: ignore
@@ -259,9 +259,13 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                 return type_
     elif isinstance(cls, type):
         # Bare class
-        hints = get_type_hints(cls)
-        if name in hints:
-            return hints[name]
+        try:
+            hints = get_type_hints(cls)
+            if name in hints:
+                return hints[name]
+        except NameError as e:
+            console.warn(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
+            pass
     return None  # Attribute is not accessible.
 
 
