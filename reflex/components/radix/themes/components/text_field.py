@@ -128,7 +128,7 @@ class Input(RadixThemesComponent):
     type: Var[str]
 
     # Value of the input
-    value: Var[Union[str, int, bool, float]]
+    value: Var[Union[str, int, float]]
 
     @classmethod
     def create(cls, **props):

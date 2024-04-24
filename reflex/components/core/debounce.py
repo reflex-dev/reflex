@@ -35,7 +35,7 @@ class DebounceInput(Component):
     force_notify_on_blur: Var[bool]
 
     # If provided, create a fully-controlled input
-    value: Var[Union[str, int, bool, float]]
+    value: Var[Union[str, int, float]]
 
     # The ref to attach to the created input
     input_ref: Var[str]

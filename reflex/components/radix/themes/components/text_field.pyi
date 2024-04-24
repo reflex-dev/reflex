@@ -313,7 +313,7 @@ class TextFieldInput(el.Input, TextFieldRoot):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         value: Optional[
-            Union[Var[Union[str, int, bool, float]], Union[str, int, bool, float]]
+            Union[Var[Union[str, int, float]], Union[str, int, float]]
         ] = None,
         variant: Optional[
             Union[
@@ -797,7 +797,7 @@ class Input(RadixThemesComponent):
         required: Optional[Union[Var[bool], bool]] = None,
         type: Optional[Union[Var[str], str]] = None,
         value: Optional[
-            Union[Var[Union[str, int, bool, float]], Union[str, int, bool, float]]
+            Union[Var[Union[str, int, float]], Union[str, int, float]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -989,7 +989,7 @@ class TextField(ComponentNamespace):
         required: Optional[Union[Var[bool], bool]] = None,
         type: Optional[Union[Var[str], str]] = None,
         value: Optional[
-            Union[Var[Union[str, int, bool, float]], Union[str, int, bool, float]]
+            Union[Var[Union[str, int, float]], Union[str, int, float]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
