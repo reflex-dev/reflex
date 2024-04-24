@@ -13,7 +13,7 @@ class Progress(RadixThemesComponent):
     tag = "Progress"
 
     # The value of the progress bar: "0" to "100"
-    value: Var[str]
+    value: Var[int]
 
     # The size of the progress bar: "1" | "2" | "3"
     size: Var[Literal["1", "2", "3"]]
