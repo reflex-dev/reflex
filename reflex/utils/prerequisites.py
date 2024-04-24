@@ -325,7 +325,7 @@ def validate_app_name(app_name: str | None = None) -> str:
         app_name if app_name else os.getcwd().split(os.path.sep)[-1].replace("-", "_")
     )
     # Make sure the app is not named "reflex".
-    if app_name == constants.Reflex.MODULE_NAME:
+    if app_name.lower() == constants.Reflex.MODULE_NAME:
         console.error(
             f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
         )
