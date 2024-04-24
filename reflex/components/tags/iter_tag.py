@@ -34,8 +34,10 @@ class IterTag(Tag):
         """
         try:
             if self.iterable._var_type.mro()[0] == dict:
+                # Arg is a tuple of (key, value).
                 return Tuple[get_args(self.iterable._var_type)]  # type: ignore
             elif self.iterable._var_type.mro()[0] == tuple:
+                # Arg is a union of any possible values in the tuple.
                 return Union[get_args(self.iterable._var_type)]  # type: ignore
             else:
                 return get_args(self.iterable._var_type)[0]
