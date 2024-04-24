@@ -81,6 +81,7 @@ def test_upload_root_component_render(upload_root_component):
     [box] = upload["children"]
     assert box["name"] == "Box"
     assert box["props"] == [
+        "className={`rx-Upload`}",
         'sx={{"border": "1px dotted black"}}',
         "{...getRootProps()}",
     ]
@@ -122,6 +123,7 @@ def test_upload_component_render(upload_component):
     [box] = upload["children"]
     assert box["name"] == "Box"
     assert box["props"] == [
+        "className={`rx-Upload`}",
         'sx={{"border": "1px dotted black", "padding": "5em", "textAlign": "center"}}',
         "{...getRootProps()}",
     ]
