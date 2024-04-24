@@ -43,6 +43,10 @@ class SQLAClass(SQLABase):
     sqla_tag: Mapped[Optional[SQLATag]] = relationship()
     labels: Mapped[List[SQLALabel]] = relationship(back_populates="test")
 
+    @property
+    def str_property(self) -> str:
+        return self.name
+
 
 class BaseClass(rx.Base):
     count: int = 0
@@ -53,6 +57,10 @@ class BaseClass(rx.Base):
     sqla_tag: Optional[SQLATag] = None
     labels: List[SQLALabel] = []
 
+    @property
+    def str_property(self) -> str:
+        return self.name
+
 
 class BareClass:
     count: int = 0
@@ -62,6 +70,10 @@ class BareClass:
     optional_int: Optional[int] = None
     sqla_tag: Optional[SQLATag] = None
     labels: List[SQLALabel] = []
+
+    @property
+    def str_property(self) -> str:
+        return self.name
 
 
 @pytest.fixture(params=[SQLAClass, BaseClass, BareClass])
@@ -79,6 +91,7 @@ def cls(request: pytest.FixtureRequest) -> type:
         pytest.param("optional_int", Optional[int], id="Optional[int]"),
         pytest.param("sqla_tag", Optional[SQLATag], id="Optional[SQLATag]"),
         pytest.param("labels", List[SQLALabel], id="List[SQLALabel]"),
+        pytest.param("str_property", str, id="str_property"),
     ],
 )
 def test_get_attribute_access_type(cls: type, attr: str, expected: GenericType):
