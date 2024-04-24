@@ -61,6 +61,7 @@ class ModelClass(rx.Model):
     def str_property(self) -> str:
         return self.name
 
+
 class BaseClass(rx.Base):
     count: int = 0
     name: str = "test"

@@ -210,14 +210,16 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             column = insp.columns[name]
             column_type = column.type
             type_ = insp.columns[name].type.python_type
-            if hasattr(column_type, "item_type") and (item_type := column_type.item_type.python_type):  # type: ignore
+            if hasattr(column_type, "item_type") and (
+                item_type := column_type.item_type.python_type
+            ):  # type: ignore
                 if type_ in PrimitiveToAnnotation:
                     type_ = PrimitiveToAnnotation[type_]  # type: ignore
                 type_ = type_[item_type]  # type: ignore
             if column.nullable:
                 type_ = Optional[type_]
             return type_
-        if name not in insp.all_orm_descriptors.keys():
+        if name not in insp.all_orm_descriptors:
             return None
         descriptor = insp.all_orm_descriptors[name]
         if hint := get_property_hint(descriptor):
