@@ -1410,4 +1410,4 @@ def initialize_app(app_name: str, template: str | None = None):
             template_url=template_url,
         )
 
-    telemetry.send("init")
+    telemetry.send("init", template=template)
