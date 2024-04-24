@@ -160,11 +160,10 @@ class App(Base):
     # The radix theme for the entire app
     theme: Optional[Component] = themes.theme(accent_color="blue")
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         """Initialize the app.
 
         Args:
-            *args: Args to initialize the app with.
             **kwargs: Kwargs to initialize the app with.
 
         Raises:
@@ -176,7 +175,7 @@ class App(Base):
             raise ValueError(
                 "`connect_error_component` is deprecated, use `overlay_component` instead"
             )
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         base_state_subclasses = BaseState.__subclasses__()
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
@@ -350,11 +349,17 @@ class App(Base):
         for middleware in self.middleware:
             if asyncio.iscoroutinefunction(middleware.postprocess):
                 out = await middleware.postprocess(
-                    app=self, state=state, event=event, update=update  # type: ignore
+                    app=self,  # type: ignore
+                    state=state,
+                    event=event,
+                    update=update,
                 )
             else:
                 out = middleware.postprocess(
-                    app=self, state=state, event=event, update=update  # type: ignore
+                    app=self,  # type: ignore
+                    state=state,
+                    event=event,
+                    update=update,
                 )
             if out is not None:
                 return out  # type: ignore
@@ -726,7 +731,7 @@ class App(Base):
         This can move back into `compile_` when py39 support is dropped.
         """
         # Add the @rx.page decorated pages to collect on_load events.
-        for render, kwargs in DECORATED_PAGES:
+        for render, kwargs in DECORATED_PAGES[get_config().app_name]:
             self.add_page(render, **kwargs)
 
     def compile_(self, export: bool = False):
@@ -839,6 +844,9 @@ class App(Base):
         compile_results.append(
             compiler.compile_contexts(self.state, self.theme),
         )
+        # Fix #2992 by removing the top-level appearance prop
+        if self.theme is not None:
+            self.theme.appearance = None
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 

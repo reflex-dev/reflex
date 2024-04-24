@@ -415,6 +415,7 @@ def test_basic_operations(TestObj):
     "var, expected",
     [
         (v([1, 2, 3]), "[1, 2, 3]"),
+        (v(set([1, 2, 3])), "[1, 2, 3]"),
         (v(["1", "2", "3"]), '["1", "2", "3"]'),
         (BaseVar(_var_name="foo", _var_type=list)._var_set_state("state"), "state.foo"),
         (BaseVar(_var_name="foo", _var_type=list), "foo"),
@@ -918,7 +919,6 @@ def test_unsupported_types_for_reverse(var):
         BaseVar(_var_name="var", _var_type=int),
         BaseVar(_var_name="var", _var_type=float),
         BaseVar(_var_name="var", _var_type=bool),
-        BaseVar(_var_name="var", _var_type=set),
         BaseVar(_var_name="var", _var_type=None),
     ],
 )

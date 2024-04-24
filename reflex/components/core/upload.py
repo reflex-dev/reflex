@@ -9,7 +9,7 @@ from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 from reflex import constants
 from reflex.components.chakra.forms.input import Input
 from reflex.components.chakra.layout.box import Box
-from reflex.components.component import Component, MemoizationLeaf
+from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.constants import Dirs
 from reflex.event import (
     CallableEventSpec,
@@ -305,3 +305,38 @@ class Upload(MemoizationLeaf):
         return {
             (5, "UploadFilesProvider"): UploadFilesProvider.create(),
         }
+
+
+class StyledUpload(Upload):
+    """The styled Upload Component."""
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the styled upload component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The styled upload component.
+        """
+        # Set default props.
+        props.setdefault("border", "1px dashed var(--accent-12)")
+        props.setdefault("padding", "5em")
+        props.setdefault("textAlign", "center")
+
+        # Mark the Upload component as used in the app.
+        Upload.is_used = True
+
+        return super().create(
+            *children,
+            **props,
+        )
+
+
+class UploadNamespace(ComponentNamespace):
+    """Upload component namespace."""
+
+    root = Upload.create
+    __call__ = StyledUpload.create

@@ -8,6 +8,7 @@ import os
 import signal
 import subprocess
 from concurrent import futures
+from pathlib import Path
 from typing import Callable, Generator, List, Optional, Tuple, Union
 
 import psutil
@@ -136,7 +137,9 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     # Add the node bin path to the PATH environment variable.
     env = {
         **os.environ,
-        "PATH": os.pathsep.join([node_bin_path if node_bin_path else "", os.environ["PATH"]]),  # type: ignore
+        "PATH": os.pathsep.join(
+            [node_bin_path if node_bin_path else "", os.environ["PATH"]]
+        ),  # type: ignore
         **kwargs.pop("env", {}),
     }
     kwargs = {
@@ -145,6 +148,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
         "stdout": None if show_logs else subprocess.PIPE,
         "universal_newlines": True,
         "encoding": "UTF-8",
+        "errors": "replace",  # Avoid UnicodeDecodeError in unknown command output
         **kwargs,
     }
     console.debug(f"Running command: {args}")
@@ -296,6 +300,25 @@ def atexit_handler():
     console.log("Reflex app stopped.")
 
 
+def get_command_with_loglevel(command: list[str]) -> list[str]:
+    """Add the right loglevel flag to the designated command.
+     npm uses --loglevel <level>, Bun doesnt use the --loglevel flag and
+     runs in debug mode by default.
+
+    Args:
+        command:The command to add loglevel flag.
+
+    Returns:
+        The updated command list
+    """
+    npm_path = path_ops.get_npm_path()
+    npm_path = str(Path(npm_path).resolve()) if npm_path else npm_path
+
+    if command[0] == npm_path:
+        return command + ["--loglevel", "silly"]
+    return command
+
+
 def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwargs):
     """Run subprocess and retry using fallback command if initial command fails.
 
@@ -305,7 +328,7 @@ def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwa
         fallback: The fallback command to run.
         kwargs: Kwargs to pass to new_process function.
     """
-    process = new_process(args, **kwargs)
+    process = new_process(get_command_with_loglevel(args), **kwargs)
     if fallback is None:
         # No fallback given, or this _is_ the fallback command.
         show_status(show_status_message, process)

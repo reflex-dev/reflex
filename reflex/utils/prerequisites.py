@@ -325,7 +325,7 @@ def validate_app_name(app_name: str | None = None) -> str:
         app_name if app_name else os.getcwd().split(os.path.sep)[-1].replace("-", "_")
     )
     # Make sure the app is not named "reflex".
-    if app_name == constants.Reflex.MODULE_NAME:
+    if app_name.lower() == constants.Reflex.MODULE_NAME:
         console.error(
             f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
         )
@@ -821,14 +821,16 @@ def install_frontend_packages(packages: set[str], config: Config):
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    # unsupported archs will use npm anyway. so we dont have to run npm twice
+    # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
     fallback_command = (
         get_package_manager()
-        if constants.IS_WINDOWS and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
+        if not constants.IS_WINDOWS
+        or constants.IS_WINDOWS
+        and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
         else None
     )
     processes.run_process_with_fallback(
-        [get_install_package_manager(), "install", "--loglevel", "silly"],
+        [get_install_package_manager(), "install"],  # type: ignore
         fallback=fallback_command,
         show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,
@@ -889,6 +891,10 @@ def needs_reinit(frontend: bool = True) -> bool:
 
     # Make sure the .web directory exists in frontend mode.
     if not os.path.exists(constants.Dirs.WEB):
+        return True
+
+    # If the template is out of date, then we need to re-init
+    if not is_latest_template():
         return True
 
     if constants.IS_WINDOWS:
@@ -1180,17 +1186,17 @@ def _get_rx_chakra_component_to_migrate() -> set[str]:
         rx_chakra_object = getattr(reflex.chakra, rx_chakra_name)
         try:
             if (
-                inspect.ismethod(rx_chakra_object)
-                and inspect.isclass(rx_chakra_object.__self__)
-                and issubclass(rx_chakra_object.__self__, ChakraComponent)
+                (
+                    inspect.ismethod(rx_chakra_object)
+                    and inspect.isclass(rx_chakra_object.__self__)
+                    and issubclass(rx_chakra_object.__self__, ChakraComponent)
+                )
+                or (
+                    inspect.isclass(rx_chakra_object)
+                    and issubclass(rx_chakra_object, ChakraComponent)
+                )
+                or rx_chakra_name in whitelist
             ):
-                names_to_migrate.add(rx_chakra_name)
-
-            elif inspect.isclass(rx_chakra_object) and issubclass(
-                rx_chakra_object, ChakraComponent
-            ):
-                names_to_migrate.add(rx_chakra_name)
-            elif rx_chakra_name in whitelist:
                 names_to_migrate.add(rx_chakra_name)
 
         except Exception:
@@ -1404,4 +1410,4 @@ def initialize_app(app_name: str, template: str | None = None):
             template_url=template_url,
         )
 
-    telemetry.send("init")
+    telemetry.send("init", template=template)
