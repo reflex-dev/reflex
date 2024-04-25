@@ -1,7 +1,6 @@
 """Lucide Icon component."""
 
 from reflex.components.component import Component
-from reflex.style import Style
 from reflex.utils import console, format
 from reflex.vars import Var
 
@@ -73,15 +72,8 @@ class Icon(LucideIconComponent):
 
         props["tag"] = format.to_title_case(format.to_snake_case(props["tag"])) + "Icon"
         props["alias"] = f"Lucide{props['tag']}"
+        props.setdefault("color", f"var(--current-color)")
         return super().create(*children, **props)
-
-    def _apply_theme(self, theme: Component):
-        self.style = Style(
-            {
-                "color": f"var(--current-color)",
-                **self.style,
-            }
-        )
 
 
 RENAMED_ICONS_05 = {

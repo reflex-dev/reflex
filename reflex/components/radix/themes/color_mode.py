@@ -132,8 +132,6 @@ class ColorModeIconButton(IconButton):
             return Var.create_safe(const).contains(var)
 
         if isinstance(position, Var):
-            props.setdefault("position", position)
-
             props.setdefault(
                 "position",
                 cond(find(pos_values, position), "fixed", ""),
