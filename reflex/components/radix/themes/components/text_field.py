@@ -45,10 +45,10 @@ class TextFieldRoot(el.Div, RadixThemesComponent):
     disabled: Var[bool]
 
     # Specifies the maximum number of characters allowed in the input
-    max_length: Var[str]
+    max_length: Var[int]
 
     # Specifies the minimum number of characters required in the input
-    min_length: Var[str]
+    min_length: Var[int]
 
     # Name of the input, used when sending form data
     name: Var[str]
