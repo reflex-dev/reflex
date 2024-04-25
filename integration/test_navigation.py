@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness
 
-from .utils import poll_for_navigation
+from .utils import SessionStorage, poll_for_navigation
 
 
 def NavigationApp():
@@ -65,6 +65,10 @@ async def test_navigation_app(navigation_app: AppHarness):
     """
     assert navigation_app.app_instance is not None, "app is not running"
     driver = navigation_app.frontend()
+
+    ss = SessionStorage(driver)
+    token = AppHarness._poll_for(lambda: ss.get("token") is not None)
+    assert token is not None
 
     internal_link = driver.find_element(By.ID, "internal")
 
