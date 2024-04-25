@@ -76,10 +76,9 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
         Returns:
             Component: The link component
         """
-        is_external = props.pop("is_external", None)
-
-        props.setdefault("underline", "always")
         props.setdefault(":hover", {"color": color("accent", 8)})
+
+        is_external = props.pop("is_external", None)
 
         if is_external is not None:
             props["target"] = cond(is_external, "_blank", "")
