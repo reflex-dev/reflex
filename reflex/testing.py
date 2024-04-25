@@ -538,7 +538,7 @@ class AppHarness:
         if driver_clz is None:
             requested_driver = os.environ.get("APP_HARNESS_DRIVER", "Chrome")
             driver_clz = getattr(webdriver, requested_driver)
-            options = webdriver.ChromeOptions()
+            options = webdriver.FirefoxOptions()
         if driver_clz is webdriver.Chrome and want_headless:
             options = webdriver.ChromeOptions()
             options.add_argument("--headless=new")
