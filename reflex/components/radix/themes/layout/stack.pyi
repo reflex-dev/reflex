@@ -20,9 +20,6 @@ class Stack(Flex):
         *children,
         spacing: Optional[LiteralSpacing] = "3",
         align: Optional[LiteralAlign] = "start",
-        width: Optional[str] = "100%",
-        child_width: Optional[str] = "100%",
-        child_flex_shrink: Optional[str] = "1",
         as_child: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
@@ -141,9 +138,6 @@ class Stack(Flex):
             *children: The children of the stack.
             spacing: The spacing between each stack item.
             align: The alignment of the stack items.
-            width: The CSS width of the stack.
-            child_width: The CSS width of non-inline stack children.
-            child_flex_shrink: The flex shrink value of non-inline stack children.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
@@ -185,9 +179,6 @@ class VStack(Stack):
         *children,
         spacing: Optional[LiteralSpacing] = "3",
         align: Optional[LiteralAlign] = "start",
-        width: Optional[str] = "100%",
-        child_width: Optional[str] = "100%",
-        child_flex_shrink: Optional[str] = "1",
         direction: Optional[
             Union[
                 Var[Literal["row", "column", "row-reverse", "column-reverse"]],
@@ -306,9 +297,6 @@ class VStack(Stack):
             *children: The children of the stack.
             spacing: The spacing between each stack item.
             align: The alignment of the stack items.
-            width: The CSS width of the stack.
-            child_width: The CSS width of non-inline stack children.
-            child_flex_shrink: The flex shrink value of non-inline stack children.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
@@ -350,9 +338,6 @@ class HStack(Stack):
         *children,
         spacing: Optional[LiteralSpacing] = "3",
         align: Optional[LiteralAlign] = "start",
-        width: Optional[str] = "100%",
-        child_width: Optional[str] = "100%",
-        child_flex_shrink: Optional[str] = "1",
         direction: Optional[
             Union[
                 Var[Literal["row", "column", "row-reverse", "column-reverse"]],
@@ -471,9 +456,6 @@ class HStack(Stack):
             *children: The children of the stack.
             spacing: The spacing between each stack item.
             align: The alignment of the stack items.
-            width: The CSS width of the stack.
-            child_width: The CSS width of non-inline stack children.
-            child_flex_shrink: The flex shrink value of non-inline stack children.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
