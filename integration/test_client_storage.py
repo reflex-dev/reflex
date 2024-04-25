@@ -377,8 +377,9 @@ async def test_client_side_state(
     time.sleep(2)  # wait for c3 to expire
     if not isinstance(driver, Firefox):
         # Note: Firefox does not remove expired cookies Bug 576347
-        assert "state.client_side_state.client_side_sub_state.c3" not in cookie_info_map(
-            driver
+        assert (
+            "state.client_side_state.client_side_sub_state.c3"
+            not in cookie_info_map(driver)
         )
 
     local_storage_items = local_storage.items()
