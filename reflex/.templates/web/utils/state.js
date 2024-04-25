@@ -691,8 +691,8 @@ export const getRefValue = (ref) => {
   if (ref.current.type == "checkbox") {
     return ref.current.checked; // chakra
   } else if (
-    ref.current.className?.includes("rt-CheckboxButton") ||
-    ref.current.className?.includes("rt-SwitchButton")
+    ref.current.className?.includes("rt-CheckboxRoot") ||
+    ref.current.className?.includes("rt-SwitchRoot")
   ) {
     return ref.current.ariaChecked == "true"; // radix
   } else if (ref.current.className?.includes("rt-SliderRoot")) {
