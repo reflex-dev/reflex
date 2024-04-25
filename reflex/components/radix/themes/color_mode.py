@@ -24,9 +24,9 @@ from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
 from reflex.components.lucide.icon import Icon
 from reflex.style import LIGHT_COLOR_MODE, color_mode, toggle_color_mode
+from reflex.utils import console
 from reflex.vars import BaseVar, Var
 
-from .components.button import Button
 from .components.icon_button import IconButton
 from .components.switch import Switch
 
@@ -80,27 +80,6 @@ class ColorModeSwitch(Switch):
         )
 
 
-class ColorModeButton(Button):
-    """Button for toggling light / dark mode via toggle_color_mode."""
-
-    @classmethod
-    def create(cls, *children, **props):
-        """Create a button component that calls toggle_color_mode on click.
-
-        Args:
-            *children: The children of the component.
-            **props: The props to pass to the component.
-
-        Returns:
-            The button component.
-        """
-        return Button.create(
-            *children,
-            on_click=toggle_color_mode,
-            **props,
-        )
-
-
 LiteralPosition = Literal["top-left", "top-right", "bottom-left", "bottom-right"]
 
 
@@ -110,69 +89,74 @@ class ColorModeIconButton(IconButton):
     @classmethod
     def create(
         cls,
-        light_component: BaseComponent | None = None,
-        dark_component: BaseComponent | None = None,
+        *children,
         position: LiteralPosition | None = None,
         **props,
     ):
         """Create a icon button component that calls toggle_color_mode on click.
 
         Args:
-            light_component: The component to display when color mode is light.
-            dark_component: The component to display when color mode is dark.
+            *children: The children of the component.
             position: The position of the icon button. Follow document flow if None.
             **props: The props to pass to the component.
 
         Returns:
             The button component.
         """
-        pos_values = get_args(LiteralPosition)
+        if children:
+            console.deprecate(
+                feature_name="passing children to color_mode.button",
+                reason=", use color_mode_cond and toggle_color_mode instead to build a custom color_mode component",
+                deprecation_version="0.5.0",
+                removal_version="0.6.0",
+            )
+
+        position_values = get_args(LiteralPosition)
 
         def find(const, var):
             return Var.create_safe(const).contains(var)
 
-        if isinstance(position, Var):
+        def set_var_default(prop, default1, default2=""):
             props.setdefault(
-                "position",
-                cond(find(pos_values, position), "fixed", ""),
+                prop, cond(find(position_map[prop], position), default1, default2)
             )
-            props.setdefault(
-                "bottom",
-                cond(find(["bottom-left", "bottom-right"], position), "2rem", ""),
-            )
-            props.setdefault(
-                "top", cond(find(["top-left", "top-right"], position), "2rem", "")
-            )
-            props.setdefault(
-                "left",
-                cond(find(["top-left", "bottom-left"], position), "2rem", ""),
-            )
-            props.setdefault(
-                "right",
-                cond(find(["top-right", "bottom-right"], position), "2rem", ""),
-            )
-        elif position is not None:
-            if position in pos_values:
-                # position only set nice defaults for positioning, it will not enforce them
-                props.setdefault("position", "fixed")
 
-                if "bottom" in position:
-                    props.setdefault("bottom", "2rem")
-                if "top" in position:
-                    props.setdefault("top", "2rem")
-                if "left" in position:
-                    props.setdefault("left", "2rem")
-                if "right" in position:
-                    props.setdefault("right", "2rem")
+        def set_static_default(prop, default):
+            if prop in position:
+                props.setdefault(prop, default)
+
+        position_map = {
+            "position": position_values,
+            "left": ["top-left", "bottom-left"],
+            "right": ["top-right", "bottom-right"],
+            "top": ["top-left", "top-right"],
+            "bottom": ["bottom-left", "bottom-right"],
+        }
+
+        # position is used to set nice defaults for positioning the icon button
+        if isinstance(position, Var):
+            (set_var_default("position", "fixed", position),)
+            set_var_default("bottom", "2rem")
+            set_var_default("top", "2rem")
+            set_var_default("left", "2rem")
+            set_var_default("right", "2rem")
+        elif position is not None:
+            if position in position_values:
+                props.setdefault("position", "fixed")
+                set_static_default("bottom", "2rem")
+                set_static_default("top", "2rem")
+                set_static_default("left", "2rem")
+                set_static_default("right", "2rem")
+            else:
+                props["position"] = position
 
         props.setdefault("background", "transparent")
         props.setdefault("color", "inherit")
         props.setdefault("z_index", "20")
+        props.setdefault(":hover", {"cursor": "pointer"})
 
         return super().create(
-            ColorModeIcon.create(
-                light_component=light_component, dark_component=dark_component
-            ),
+            ColorModeIcon.create(),
             on_click=toggle_color_mode,
             **props,
         )
@@ -182,9 +166,7 @@ class ColorModeNamespace(BaseVar):
     """Namespace for color mode components."""
 
     icon = staticmethod(ColorModeIcon.create)
-    switch = staticmethod(ColorModeSwitch.create)
-    button = staticmethod(ColorModeButton.create)
-    icon_button = staticmethod(ColorModeIconButton.create)
+    button = staticmethod(ColorModeIconButton.create)
 
 
 color_mode_var_and_namespace = ColorModeNamespace(**dataclasses.asdict(color_mode))
