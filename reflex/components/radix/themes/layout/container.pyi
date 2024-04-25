@@ -9,6 +9,7 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
 from reflex import el
+from reflex.style import STACK_CHILDREN_FULL_WIDTH
 from reflex.vars import Var
 from ..base import RadixThemesComponent
 
@@ -21,6 +22,7 @@ class Container(el.Div, RadixThemesComponent):
         cls,
         *children,
         padding: Optional[str] = "16px",
+        stack_children_full_width: Optional[bool] = False,
         size: Optional[
             Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
         ] = None,
@@ -122,6 +124,7 @@ class Container(el.Div, RadixThemesComponent):
         Args:
             children: The children components.
             padding: The padding of the container.
+            stack_children_full_width: If True, any vstack/hstack children will have 100% width.
             props: The properties of the container.
 
         Returns:
