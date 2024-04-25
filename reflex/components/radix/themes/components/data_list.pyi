@@ -203,7 +203,7 @@ class DataListLabel(RadixThemesComponent):
         width: Optional[Union[Var[str], str]] = None,
         min_width: Optional[Union[Var[str], str]] = None,
         max_width: Optional[Union[Var[str], str]] = None,
-        color: Optional[
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[

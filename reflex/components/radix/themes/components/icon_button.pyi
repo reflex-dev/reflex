@@ -109,7 +109,6 @@ class IconButton(el.Button, RadixLoadingProp, RadixThemesComponent):
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        loading: Optional[Union[Var[bool], bool]] = None,
         auto_focus: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -175,6 +174,7 @@ class IconButton(el.Button, RadixLoadingProp, RadixThemesComponent):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
+        loading: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -238,7 +238,6 @@ class IconButton(el.Button, RadixLoadingProp, RadixThemesComponent):
             color_scheme: Override theme color for button
             high_contrast: Whether to render the button with higher contrast color against background
             radius: Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
-            loading: If set, show an rx.spinner instead of the component children.
             auto_focus: Automatically focuses the button when the page loads
             disabled: Disables the button
             form: Associates the button with a form (by id)
@@ -266,6 +265,7 @@ class IconButton(el.Button, RadixLoadingProp, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
+            loading: If set, show an rx.spinner instead of the component children.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
