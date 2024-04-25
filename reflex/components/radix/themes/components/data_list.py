@@ -42,7 +42,7 @@ class DataListLabel(RadixThemesComponent):
 
     max_width: Var[str]
 
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
 
 class DataListValue(RadixThemesComponent):
