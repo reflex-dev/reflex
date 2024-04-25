@@ -1,5 +1,7 @@
 from reflex.components.core.upload import (
+    StyledUpload,
     Upload,
+    UploadNamespace,
     _on_drop_spec,  # type: ignore
     cancel_upload,
     get_upload_url,
@@ -77,3 +79,47 @@ def test_upload_create():
     )
     assert isinstance(up_comp_4, Upload)
     assert up_comp_4.is_used
+
+
+def test_styled_upload_create():
+    styled_up_comp_1 = StyledUpload.create()
+    assert isinstance(styled_up_comp_1, StyledUpload)
+    assert styled_up_comp_1.is_used
+
+    # reset is_used
+    StyledUpload.is_used = False
+
+    styled_up_comp_2 = StyledUpload.create(
+        id="foo_id",
+        on_drop=TestUploadState.drop_handler([]),  # type: ignore
+    )
+    assert isinstance(styled_up_comp_2, StyledUpload)
+    assert styled_up_comp_2.is_used
+
+    # reset is_used
+    StyledUpload.is_used = False
+
+    styled_up_comp_3 = StyledUpload.create(
+        id="foo_id",
+        on_drop=TestUploadState.drop_handler,
+    )
+    assert isinstance(styled_up_comp_3, StyledUpload)
+    assert styled_up_comp_3.is_used
+
+    # reset is_used
+    StyledUpload.is_used = False
+
+    styled_up_comp_4 = StyledUpload.create(
+        id="foo_id",
+        on_drop=TestUploadState.not_drop_handler([]),  # type: ignore
+    )
+    assert isinstance(styled_up_comp_4, StyledUpload)
+    assert styled_up_comp_4.is_used
+
+
+def test_upload_namespace():
+    up_ns = UploadNamespace()
+    assert isinstance(up_ns, UploadNamespace)
+
+    assert isinstance(up_ns(id="foo_id"), StyledUpload)
+    assert isinstance(up_ns.root(id="foo_id"), Upload)

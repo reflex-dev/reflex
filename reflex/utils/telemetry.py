@@ -87,11 +87,12 @@ def _raise_on_missing_project_hash() -> bool:
     return True
 
 
-def _prepare_event(event: str) -> dict:
+def _prepare_event(event: str, **kwargs) -> dict:
     """Prepare the event to be sent to the PostHog server.
 
     Args:
         event: The event name.
+        kwargs: Additional data to send with the event.
 
     Returns:
         The event data.
@@ -122,6 +123,11 @@ def _prepare_event(event: str) -> dict:
             "python_version": get_python_version(),
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
+            **(
+                {"template": template}
+                if (template := kwargs.get("template")) is not None
+                else {}
+            ),
         },
         "timestamp": stamp,
     }
@@ -135,12 +141,13 @@ def _send_event(event_data: dict) -> bool:
         return False
 
 
-def send(event: str, telemetry_enabled: bool | None = None) -> bool:
+def send(event: str, telemetry_enabled: bool | None = None, **kwargs) -> bool:
     """Send anonymous telemetry for Reflex.
 
     Args:
         event: The event name.
         telemetry_enabled: Whether to send the telemetry (If None, get from config).
+        kwargs: Additional data to send with the event.
 
     Returns:
         Whether the telemetry was sent successfully.
@@ -155,7 +162,7 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
     if not telemetry_enabled:
         return False
 
-    event_data = _prepare_event(event)
+    event_data = _prepare_event(event, **kwargs)
     if not event_data:
         return False
 
