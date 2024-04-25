@@ -404,7 +404,7 @@ class Component(BaseComponent, ABC):
         if isinstance(value, List):
             events: list[EventSpec] = []
             for v in value:
-                if isinstance(v, EventHandler):
+                if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
                     try:
                         event = call_event_handler(v, args_spec)
@@ -415,9 +415,6 @@ class Component(BaseComponent, ABC):
 
                     # Add the event to the chain.
                     events.append(event)
-                elif isinstance(v, EventSpec):
-                    # Add the event to the chain.
-                    events.append(v)
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
                     events.extend(call_event_fn(v, args_spec))

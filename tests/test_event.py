@@ -1,9 +1,10 @@
 import json
+from typing import List
 
 import pytest
 
 from reflex import event
-from reflex.event import Event, EventHandler, EventSpec, fix_events
+from reflex.event import Event, EventHandler, EventSpec, call_event_handler, fix_events
 from reflex.state import BaseState
 from reflex.utils import format
 from reflex.vars import Var
@@ -89,6 +90,40 @@ def test_call_event_handler():
     handler = EventHandler(fn=test_fn_with_args)
     with pytest.raises(TypeError):
         handler(test_fn)  # type: ignore
+
+
+def test_call_event_handler_partial():
+    """Calling an EventHandler with incomplete args returns an EventSpec that can be extended."""
+
+    def test_fn_with_args(_, arg1, arg2):
+        pass
+
+    test_fn_with_args.__qualname__ = "test_fn_with_args"
+
+    def spec(a2: str) -> List[str]:
+        return [a2]
+
+    handler = EventHandler(fn=test_fn_with_args)
+    event_spec = handler(make_var("first"))
+    event_spec2 = call_event_handler(event_spec, spec)
+
+    assert event_spec.handler == handler
+    assert len(event_spec.args) == 1
+    assert event_spec.args[0][0].equals(Var.create_safe("arg1"))
+    assert event_spec.args[0][1].equals(Var.create_safe("first"))
+    assert format.format_event(event_spec) == 'Event("test_fn_with_args", {arg1:first})'
+
+    assert event_spec2 is not event_spec
+    assert event_spec2.handler == handler
+    assert len(event_spec2.args) == 2
+    assert event_spec2.args[0][0].equals(Var.create_safe("arg1"))
+    assert event_spec2.args[0][1].equals(Var.create_safe("first"))
+    assert event_spec2.args[1][0].equals(Var.create_safe("arg2"))
+    assert event_spec2.args[1][1].equals(Var.create_safe("_a2"))
+    assert (
+        format.format_event(event_spec2)
+        == 'Event("test_fn_with_args", {arg1:first,arg2:_a2})'
+    )
 
 
 @pytest.mark.parametrize(
