@@ -43,9 +43,6 @@ class IconButton(el.Button, RadixLoadingProp, RadixThemesComponent):
     # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
 
-    # Whether the button is loading, show an rx.spinner
-    loading: Var[bool]
-
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create a IconButton component.
