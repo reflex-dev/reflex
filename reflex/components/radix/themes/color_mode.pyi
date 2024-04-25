@@ -676,6 +676,7 @@ class ColorModeIconButton(IconButton):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
+        loading: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -768,6 +769,7 @@ class ColorModeIconButton(IconButton):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
+            loading: If set, show an rx.spinner instead of the component children.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
