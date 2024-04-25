@@ -310,6 +310,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # Whether the state has ever been touched since instantiation.
     _was_touched: bool = False
 
+    # A special event handler for setting base vars.
+    setvar: ClassVar[EventHandler]
+
     def __init__(
         self,
         *args,
@@ -499,6 +502,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 value = cls._copy_fn(value)
                 value.__qualname__ = f"{cls.__name__}.{name}"
                 events[name] = value
+
+        # Create the setvar event handler for this state
+        cls._create_setvar()
 
         for name, fn in events.items():
             handler = cls._create_event_handler(fn)
@@ -832,6 +838,33 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The event handler.
         """
         return EventHandler(fn=fn, state_full_name=cls.get_full_name())
+
+    @classmethod
+    def _create_setvar(cls):
+        """Create the setvar method for the state."""
+        # Ensure the resulting event handler gets the correct handler name.
+        _setvar = BaseState._template_setvar
+        _setvar.__qualname__ = _setvar.__qualname__.replace(
+            "._template_setvar", ".setvar"
+        )
+        cls.event_handlers["setvar"] = cls._create_event_handler(_setvar)
+        cls.setvar = cls.event_handlers["setvar"]
+
+    def _template_setvar(self, var_name: str, value: Any):
+        """Set a variable in the state.
+
+        Args:
+            var_name: The name of the variable to set.
+            value: The value to set the variable to.
+
+        Raises:
+            NameError: If the variable is not found in the state.
+        """
+        if var_name not in self.vars:
+            raise NameError(
+                f"Variable {var_name} not found in state {self.get_full_name()}"
+            )
+        setattr(self, var_name, value)
 
     @classmethod
     def _create_setter(cls, prop: BaseVar):
