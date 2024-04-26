@@ -2,6 +2,7 @@
 import re
 from typing import Dict, Literal, Optional, Union
 
+from reflex.constants.colors import Color
 from reflex.components.chakra.forms import Button
 from reflex.components.chakra.layout import Box
 from reflex.components.chakra.media import Icon
@@ -373,7 +374,7 @@ class CodeBlock(Component):
     wrap_long_lines: Var[bool]
 
     # A custom style for the code block.
-    custom_style: Dict[str, str] = {}
+    custom_style: Dict[str, Union[str, Var, Color]] = {}
 
     # Props passed down to the code tag.
     code_tag_props: Var[Dict[str, str]]
