@@ -23,12 +23,11 @@ from typing import Literal, get_args
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
 from reflex.components.lucide.icon import Icon
-from reflex.style import LIGHT_COLOR_MODE, color_mode, toggle_color_mode
+from reflex.style import color_mode, toggle_color_mode
 from reflex.utils import console
 from reflex.vars import BaseVar, Var
 
 from .components.icon_button import IconButton
-from .components.switch import Switch
 
 DEFAULT_LIGHT_ICON: Icon = Icon.create(tag="sun")
 DEFAULT_DARK_ICON: Icon = Icon.create(tag="moon")
@@ -58,29 +57,33 @@ class ColorModeIcon(Cond):
         )
 
 
-class ColorModeSwitch(Switch):
-    """Switch for toggling light / dark mode via toggle_color_mode."""
-
-    @classmethod
-    def create(cls, *children, **props):
-        """Create a switch component bound to color_mode.
-
-        Args:
-            *children: The children of the component.
-            **props: The props to pass to the component.
-
-        Returns:
-            The switch component.
-        """
-        return Switch.create(
-            *children,
-            checked=color_mode != LIGHT_COLOR_MODE,
-            on_change=toggle_color_mode,
-            **props,
-        )
-
-
 LiteralPosition = Literal["top-left", "top-right", "bottom-left", "bottom-right"]
+
+position_values = get_args(LiteralPosition)
+
+position_map = {
+    "position": position_values,
+    "left": ["top-left", "bottom-left"],
+    "right": ["top-right", "bottom-right"],
+    "top": ["top-left", "top-right"],
+    "bottom": ["bottom-left", "bottom-right"],
+}
+
+
+# needed to inverse contains for find
+def _find(const, var):
+    return Var.create_safe(const).contains(var)
+
+
+def _set_var_default(props, position, prop, default1, default2=""):
+    props.setdefault(
+        prop, cond(_find(position_map[prop], position), default1, default2)
+    )
+
+
+def _set_static_default(props, position, prop, default):
+    if prop in position:
+        props.setdefault(prop, default)
 
 
 class ColorModeIconButton(IconButton):
@@ -111,42 +114,20 @@ class ColorModeIconButton(IconButton):
                 removal_version="0.6.0",
             )
 
-        position_values = get_args(LiteralPosition)
-
-        def find(const, var):
-            return Var.create_safe(const).contains(var)
-
-        def set_var_default(prop, default1, default2=""):
-            props.setdefault(
-                prop, cond(find(position_map[prop], position), default1, default2)
-            )
-
-        def set_static_default(prop, default):
-            if prop in position:
-                props.setdefault(prop, default)
-
-        position_map = {
-            "position": position_values,
-            "left": ["top-left", "bottom-left"],
-            "right": ["top-right", "bottom-right"],
-            "top": ["top-left", "top-right"],
-            "bottom": ["bottom-left", "bottom-right"],
-        }
-
         # position is used to set nice defaults for positioning the icon button
         if isinstance(position, Var):
-            (set_var_default("position", "fixed", position),)
-            set_var_default("bottom", "2rem")
-            set_var_default("top", "2rem")
-            set_var_default("left", "2rem")
-            set_var_default("right", "2rem")
+            _set_var_default(props, position, "position", "fixed", position)
+            _set_var_default(props, position, "bottom", "2rem")
+            _set_var_default(props, position, "top", "2rem")
+            _set_var_default(props, position, "left", "2rem")
+            _set_var_default(props, position, "right", "2rem")
         elif position is not None:
             if position in position_values:
                 props.setdefault("position", "fixed")
-                set_static_default("bottom", "2rem")
-                set_static_default("top", "2rem")
-                set_static_default("left", "2rem")
-                set_static_default("right", "2rem")
+                _set_static_default(props, position, "bottom", "2rem")
+                _set_static_default(props, position, "top", "2rem")
+                _set_static_default(props, position, "left", "2rem")
+                _set_static_default(props, position, "right", "2rem")
             else:
                 props["position"] = position
 
