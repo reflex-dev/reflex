@@ -247,6 +247,60 @@ def _split_substate_key(substate_key: str) -> tuple[str, str]:
     return token, state_name
 
 
+class EventHandlerSetVar(EventHandler):
+    """A special event handler to wrap setvar functionality."""
+
+    state_cls: Type[BaseState]
+
+    def __init__(self, state_cls: Type[BaseState]):
+        """Initialize the EventHandlerSetVar.
+
+        Args:
+            state_cls: The state class that vars will be set on.
+        """
+        super().__init__(
+            fn=type(self).setvar,
+            state_full_name=state_cls.get_full_name(),
+            state_cls=state_cls,  # type: ignore
+        )
+
+    def setvar(self, var_name: str, value: Any):
+        """Set the state variable to the value of the event.
+
+        Note: `self` here will be an instance of the state, not EventHandlerSetVar.
+
+        Args:
+            var_name: The name of the variable to set.
+            value: The value to set the variable to.
+        """
+        getattr(self, constants.SETTER_PREFIX + var_name)(value)
+
+    def __call__(self, *args: Any) -> EventSpec:
+        """Performs pre-checks and munging on the provided args that will become an EventSpec.
+
+        Args:
+            *args: The event args.
+
+        Returns:
+            The (partial) EventSpec that will be used to create the event to setvar.
+
+        Raises:
+            AttributeError: If the given Var name does not exist on the state.
+            ValueError: If the given Var name is not a str
+        """
+        if args:
+            if not isinstance(args[0], str):
+                raise ValueError(
+                    f"Var name must be passed as a string, got {args[0]!r}"
+                )
+            # Check that the requested Var setter exists on the State at compile time.
+            if getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None) is None:
+                raise AttributeError(
+                    f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
+                )
+        return super().__call__(*args)
+
+
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -842,29 +896,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     @classmethod
     def _create_setvar(cls):
         """Create the setvar method for the state."""
-        # Ensure the resulting event handler gets the correct handler name.
-        _setvar = BaseState._template_setvar
-        _setvar.__qualname__ = _setvar.__qualname__.replace(
-            "._template_setvar", ".setvar"
-        )
-        cls.event_handlers["setvar"] = cls._create_event_handler(_setvar)
-        cls.setvar = cls.event_handlers["setvar"]
-
-    def _template_setvar(self, var_name: str, value: Any):
-        """Set a variable in the state.
-
-        Args:
-            var_name: The name of the variable to set.
-            value: The value to set the variable to.
-
-        Raises:
-            NameError: If the variable is not found in the state.
-        """
-        if var_name not in self.vars:
-            raise NameError(
-                f"Variable {var_name} not found in state {self.get_full_name()}"
-            )
-        setattr(self, var_name, value)
+        cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
 
     @classmethod
     def _create_setter(cls, prop: BaseVar):
@@ -1831,6 +1863,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         state["__dict__"]["substates"] = {}
         state["__dict__"].pop("_was_touched", None)
         return state
+
+
+EventHandlerSetVar.update_forward_refs()
 
 
 class State(BaseState):
