@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, List, Type
+from typing import TYPE_CHECKING, Any, Callable, List, Tuple, Type, Union, get_args
 
 from reflex.components.tags.tag import Tag
 from reflex.vars import BaseVar, Var
@@ -33,11 +33,14 @@ class IterTag(Tag):
             The type of the iterable var.
         """
         try:
-            return (
-                self.iterable._var_type
-                if self.iterable._var_type.mro()[0] == dict
-                else self.iterable._var_type.__args__[0]
-            )
+            if self.iterable._var_type.mro()[0] == dict:
+                # Arg is a tuple of (key, value).
+                return Tuple[get_args(self.iterable._var_type)]  # type: ignore
+            elif self.iterable._var_type.mro()[0] == tuple:
+                # Arg is a union of any possible values in the tuple.
+                return Union[get_args(self.iterable._var_type)]  # type: ignore
+            else:
+                return get_args(self.iterable._var_type)[0]
         except Exception:
             return Any
 

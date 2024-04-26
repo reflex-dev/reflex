@@ -13,13 +13,14 @@ from ..base import (
     LiteralAccentColor,
     LiteralRadius,
     LiteralVariant,
+    RadixLoadingProp,
     RadixThemesComponent,
 )
 
 LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 
-class IconButton(el.Button, RadixThemesComponent):
+class IconButton(el.Button, RadixLoadingProp, RadixThemesComponent):
     """A button designed specifically for usage with a single icon."""
 
     tag = "IconButton"
