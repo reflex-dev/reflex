@@ -2855,7 +2855,7 @@ async def test_setvar(mock_app: rx.App, token: str):
         mock_app: An app that will be returned by `get_app()`
         token: A token.
     """
-    state = await mock_app.state_manager.get_state(token)
+    state = await mock_app.state_manager.get_state(_substate_key(token, TestState))
 
     # Set Var in same state (with Var type casting)
     for event in rx.event.fix_events(
