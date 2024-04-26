@@ -1,6 +1,7 @@
 import pytest
 
 import reflex as rx
+from reflex.components.datadisplay.code import CodeBlock
 from reflex.vars import Var
 from reflex.components.datadisplay.code import CodeBlock
 
@@ -105,14 +106,12 @@ def test_color_with_conditionals(cond_var, expected):
     ],
 )
 def test_radix_color(color, expected):
-    """
-    Test that custom_style can accept both string
+    """Test that custom_style can accept both string
     literals and rx.color inputs.
 
     Args:
         color (Color): A Color made with rx.color
         expected (str): The expected custom_style string, radix or literal
     """
-
     code_block = CodeBlock.create("Hello World", background_color=color)
     assert code_block.custom_style["backgroundColor"].__format__("") == expected  # type: ignore
