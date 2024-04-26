@@ -223,21 +223,24 @@ class App(Base):
         self._state_manager = StateManager.create(state=self.state)
 
         # Set up the Socket.IO AsyncServer.
-        self.sio = AsyncServer(
-            async_mode="asgi",
-            cors_allowed_origins=(
-                "*"
-                if config.cors_allowed_origins == ["*"]
-                else config.cors_allowed_origins
-            ),
-            cors_credentials=True,
-            max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
-            ping_interval=constants.Ping.INTERVAL,
-            ping_timeout=constants.Ping.TIMEOUT,
-        )
+        if not self.sio:
+            self.sio = AsyncServer(
+                async_mode="asgi",
+                cors_allowed_origins=(
+                    "*"
+                    if config.cors_allowed_origins == ["*"]
+                    else config.cors_allowed_origins
+                ),
+                cors_credentials=True,
+                max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
+                ping_interval=constants.Ping.INTERVAL,
+                ping_timeout=constants.Ping.TIMEOUT,
+            )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
-        self.socket_app = ASGIApp(self.sio, socketio_path="")
+        if not self.socket_app:
+            self.socket_app = ASGIApp(self.sio, socketio_path="")
+
         namespace = config.get_event_namespace()
 
         # Create the event namespace and attach the main app. Not related to any paths.
