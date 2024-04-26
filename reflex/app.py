@@ -11,6 +11,7 @@ import io
 import multiprocessing
 import os
 import platform
+import re
 from typing import (
     Any,
     AsyncIterator,
@@ -63,8 +64,6 @@ from reflex.page import (
     DECORATED_PAGES,
 )
 from reflex.route import (
-    catchall_in_route,
-    catchall_prefix,
     get_route_args,
     verify_route_validity,
 )
@@ -548,27 +547,67 @@ class App(Base):
         Args:
             new_route: the route being newly added.
         """
-        newroute_catchall = catchall_in_route(new_route)
-        if not newroute_catchall:
+
+        def replace_brackets_with_keywords(input_string):
+            # /posts -> /post
+            # /posts/[slug] -> /posts/__SINGLE_SEGMENT__
+            # /posts/[slug]/comments -> /posts/__SINGLE_SEGMENT__/comments
+            # /posts/[[slug]] -> /posts/__DOUBLE_SEGMENT__
+            # / posts/[[...slug2]]-> /posts/__DOUBLE_CATCHALL_SEGMENT__
+            # /posts/[...slug3]-> /posts/__SINGLE_CATCHALL_SEGMENT__
+
+            # Replace [[...<slug>]] with __DOUBLE_CATCHALL_SEGMENT__
+            output_string = re.sub(
+                r"\[\[\.\.\..+?\]\]",
+                constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
+                input_string,
+            )
+            # Replace [...<slug>] with __SINGLE_CATCHALL_SEGMENT__
+            output_string = re.sub(
+                r"\[\.\.\..+?\]",
+                constants.RouteRegex.SINGLE_CATCHALL_SEGMENT,
+                output_string,
+            )
+            # Replace [[<slug>]] with __DOUBLE_SEGMENT__
+            output_string = re.sub(
+                r"\[\[.+?\]\]", constants.RouteRegex.DOUBLE_SEGMENT, output_string
+            )
+            # Replace [<slug>] with __SINGLE_SEGMENT__
+            output_string = re.sub(
+                r"\[.+?\]", constants.RouteRegex.SINGLE_SEGMENT, output_string
+            )
+            return output_string
+
+        new_replaced_route = replace_brackets_with_keywords(new_route)
+        if (
+            constants.RouteRegex.SINGLE_SEGMENT not in new_replaced_route
+            and constants.RouteRegex.DOUBLE_SEGMENT not in new_replaced_route
+            and constants.RouteRegex.SINGLE_CATCHALL_SEGMENT not in new_replaced_route
+            and constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT not in new_replaced_route
+        ):
             return
-
+        segments = (
+            constants.RouteRegex.SINGLE_SEGMENT,
+            constants.RouteRegex.DOUBLE_SEGMENT,
+            constants.RouteRegex.SINGLE_CATCHALL_SEGMENT,
+            constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
+        )
         for route in self.pages:
-            route = "" if route == "index" else route
-
-            if new_route.startswith(f"{route}/[[..."):
-                raise ValueError(
-                    f"You cannot define a route with the same specificity as a optional catch-all route ('{route}' and '{new_route}')"
-                )
-
-            route_catchall = catchall_in_route(route)
-            if (
-                route_catchall
-                and newroute_catchall
-                and catchall_prefix(route) == catchall_prefix(new_route)
+            replaced_route = replace_brackets_with_keywords(route)
+            for rw, r, nr in zip(
+                replaced_route.split("/"), route.split("/"), new_route.split("/")
             ):
-                raise ValueError(
-                    f"You cannot use multiple catchall for the same dynamic route ({route} !== {new_route})"
-                )
+                if rw in segments and r != nr:
+                    # If the slugs in the segments of both routes are not the same, then the route is invalid
+                    raise ValueError(
+                        f"You cannot use different slug names for the same dynamic path in  {route} and {new_route} ('{r}' != '{nr}')"
+                    )
+                elif rw not in segments and r != nr:
+                    # if the section being compared in both routes is not a dynamic segment(i.e not wrapped in brackets)
+                    # then we are guaranteed that the route is valid and there's no need checking the rest.
+                    # eg. /posts/[id]/info/[slug1] and /posts/[id]/info1/[slug1] is always going to be valid since
+                    # info1 will break away into its own tree.
+                    break
 
     def add_custom_404_page(
         self,
