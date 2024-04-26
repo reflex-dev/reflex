@@ -12,7 +12,6 @@ from reflex import el
 from reflex.components.component import Component
 from reflex.components.core.match import Match
 from reflex.components.lucide import Icon
-from reflex.style import Style
 from reflex.vars import Var
 from ..base import (
     LiteralAccentColor,

@@ -6,7 +6,6 @@ from reflex import el
 from reflex.components.component import Component
 from reflex.components.core.match import Match
 from reflex.components.lucide import Icon
-from reflex.style import Style
 from reflex.vars import Var
 
 from ..base import (
@@ -86,10 +85,8 @@ class IconButton(el.Button, RadixLoadingProp, RadixThemesComponent):
                     ("4", "48px"),
                     "12px",
                 )
+        props.setdefault("padding", "6px")
         return super().create(*children, **props)
-
-    def _apply_theme(self, theme: Component):
-        self.style = Style({"padding": "6px", **self.style})
 
 
 icon_button = IconButton.create
