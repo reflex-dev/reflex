@@ -81,6 +81,7 @@ _ALL_COMPONENTS = [
     "select",
     "slider",
     "spacer",
+    "spinner",
     "stack",
     "switch",
     "table",
