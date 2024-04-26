@@ -10,7 +10,7 @@ from reflex.testing import AppHarness
 
 PARAGRAPH_TEXT = "Tailwind Is Cool"
 PARAGRAPH_CLASS_NAME = "text-red-500"
-TEXT_RED_500_COLOR = "rgba(239, 68, 68, 1)"
+TEXT_RED_500_COLOR = ["rgba(239, 68, 68, 1)", "rgb(239, 68, 68)"]
 
 
 def TailwindApp(
@@ -104,7 +104,7 @@ def test_tailwind_app(tailwind_app: AppHarness, tailwind_disabled: bool):
         assert p.value_of_css_property("font-family") == "monospace"
         if tailwind_disabled:
             # expect default color, not "text-red-500" from tailwind utility class
-            assert p.value_of_css_property("color") != TEXT_RED_500_COLOR
+            assert p.value_of_css_property("color") not in TEXT_RED_500_COLOR
         else:
             # expect "text-red-500" from tailwind utility class
-            assert p.value_of_css_property("color") == TEXT_RED_500_COLOR
+            assert p.value_of_css_property("color") in TEXT_RED_500_COLOR
