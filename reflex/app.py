@@ -116,9 +116,6 @@ class App(Base):
     # The Socket.IO AsyncServer.
     sio: Optional[AsyncServer] = None
 
-    # The socket app.
-    socket_app: Optional[ASGIApp] = None
-
     # The state class to use for the app.
     state: Optional[Type[BaseState]] = None
 
@@ -213,7 +210,11 @@ class App(Base):
             self.setup_state()
 
     def setup_state(self) -> None:
-        """Set up the state for the app."""
+        """Set up the state for the app.
+
+        Raises:
+            RuntimeError: If custom `sio` does not use `async_mode='asgi'`.
+        """
         if not self.state:
             return
 
@@ -236,10 +237,13 @@ class App(Base):
                 ping_interval=constants.Ping.INTERVAL,
                 ping_timeout=constants.Ping.TIMEOUT,
             )
+        elif getattr(self.sio, "async_mode", "") != "asgi":
+            raise RuntimeError(
+                f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
+            )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
-        if not self.socket_app:
-            self.socket_app = ASGIApp(self.sio, socketio_path="")
+        socket_app = ASGIApp(self.sio, socketio_path="")
 
         namespace = config.get_event_namespace()
 
@@ -249,7 +253,7 @@ class App(Base):
         # Register the event namespace with the socket.
         self.sio.register_namespace(self.event_namespace)
         # Mount the socket app with the API.
-        self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
+        self.api.mount(str(constants.Endpoint.EVENT), socket_app)
 
     def __repr__(self) -> str:
         """Get the string representation of the app.
