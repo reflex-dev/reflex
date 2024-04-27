@@ -4,16 +4,19 @@ from __future__ import annotations
 
 import contextlib
 import inspect
+import sys
 import types
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Iterable,
     List,
     Literal,
     Optional,
+    Tuple,
     Type,
     Union,
     _GenericAlias,  # type: ignore
@@ -37,11 +40,16 @@ except ModuleNotFoundError:
 
 from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    QueryableAttribute,
+    Relationship,
+)
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import serializers
+from reflex.utils import console, serializers
 
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = [_GenericAlias]
@@ -74,6 +82,13 @@ StateIterVar = Union[list, set, tuple]
 
 # ArgsSpec = Callable[[Var], list[Var]]
 ArgsSpec = Callable
+
+
+PrimitiveToAnnotation = {
+    list: List,
+    tuple: Tuple,
+    dict: Dict,
+}
 
 
 class Unset:
@@ -192,7 +207,19 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     elif isinstance(cls, type) and issubclass(cls, DeclarativeBase):
         insp = sqlalchemy.inspect(cls)
         if name in insp.columns:
-            return insp.columns[name].type.python_type
+            # check for list types
+            column = insp.columns[name]
+            column_type = column.type
+            type_ = insp.columns[name].type.python_type
+            if hasattr(column_type, "item_type") and (
+                item_type := column_type.item_type.python_type  # type: ignore
+            ):
+                if type_ in PrimitiveToAnnotation:
+                    type_ = PrimitiveToAnnotation[type_]  # type: ignore
+                type_ = type_[item_type]  # type: ignore
+            if column.nullable:
+                type_ = Optional[type_]
+            return type_
         if name not in insp.all_orm_descriptors:
             return None
         descriptor = insp.all_orm_descriptors[name]
@@ -202,11 +229,10 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             prop = descriptor.property
             if not isinstance(prop, Relationship):
                 return None
-            class_ = prop.mapper.class_
-            if prop.uselist:
-                return List[class_]
-            else:
-                return class_
+            type_ = prop.mapper.class_
+            # TODO: check for nullable?
+            type_ = List[type_] if prop.uselist else Optional[type_]
+            return type_
         if isinstance(attr, AssociationProxyInstance):
             return List[
                 get_attribute_access_type(
@@ -232,6 +258,19 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             if type_ is not None:
                 # Return the first attribute type that is accessible.
                 return type_
+    elif isinstance(cls, type):
+        # Bare class
+        if sys.version_info >= (3, 10):
+            exceptions = NameError
+        else:
+            exceptions = (NameError, TypeError)
+        try:
+            hints = get_type_hints(cls)
+            if name in hints:
+                return hints[name]
+        except exceptions as e:
+            console.warn(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
+            pass
     return None  # Attribute is not accessible.
 
 
