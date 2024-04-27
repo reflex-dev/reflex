@@ -80,7 +80,7 @@ class EventActionsMixin(Base):
     """Mixin for DOM event actions."""
 
     # Whether to `preventDefault` or `stopPropagation` on the event.
-    event_actions: Dict[str, bool] = {}
+    event_actions: Dict[str, Union[bool, int]] = {}
 
     @property
     def stop_propagation(self):
@@ -102,6 +102,32 @@ class EventActionsMixin(Base):
         """
         return self.copy(
             update={"event_actions": {"preventDefault": True, **self.event_actions}},
+        )
+
+    def throttle(self, limit_ms: int):
+        """Throttle the event handler.
+
+        Args:
+            limit_ms: The time in milliseconds to throttle the event handler.
+
+        Returns:
+            New EventHandler-like with throttle set to limit_ms.
+        """
+        return self.copy(
+            update={"event_actions": {"throttle": limit_ms, **self.event_actions}},
+        )
+
+    def debounce(self, delay_ms: int):
+        """Debounce the event handler.
+
+        Args:
+            delay_ms: The time in milliseconds to debounce the event handler.
+
+        Returns:
+            New EventHandler-like with debounce set to delay_ms.
+        """
+        return self.copy(
+            update={"event_actions": {"debounce": delay_ms, **self.event_actions}},
         )
 
 
