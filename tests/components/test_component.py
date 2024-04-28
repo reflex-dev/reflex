@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Optional, Type
 
 import pytest
 
@@ -20,7 +20,7 @@ from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import BaseVar, Var, VarData
 
 
 @pytest.fixture
@@ -251,6 +251,21 @@ def test_create_component(component1):
     assert isinstance(c, component1)
     assert c.children == children
     assert c.style == {"color": "white", "textAlign": "center"}
+
+
+def test_create_component_optional_props(component1: Type[Component]):
+    """Test that the component is created correctly with optional props.
+
+    Args:
+        component1: A test component.
+    """
+    optional_text = BaseVar(
+        _var_name="optional_text", _var_type=Optional[str], _var_is_string=True
+    )
+    c = component1.create(text=optional_text)
+    assert isinstance(c, component1)
+    assert c.children == []
+    assert c.style == {}
 
 
 def test_add_style(component1, component2):
