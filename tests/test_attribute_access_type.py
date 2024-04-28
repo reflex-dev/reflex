@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
+import attrs
 import pytest
 import sqlalchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -124,7 +125,29 @@ class BareClass:
         return self.name
 
 
-@pytest.fixture(params=[SQLAClass, BaseClass, BareClass, ModelClass])
+@attrs.define
+class AttrClass:
+    """Test attrs class."""
+
+    count: int = 0
+    name: str = "test"
+    int_list: List[int] = []
+    str_list: List[str] = []
+    optional_int: Optional[int] = None
+    sqla_tag: Optional[SQLATag] = None
+    labels: List[SQLALabel] = []
+
+    @property
+    def str_property(self) -> str:
+        """String property.
+
+        Returns:
+            Name attribute
+        """
+        return self.name
+
+
+@pytest.fixture(params=[SQLAClass, BaseClass, BareClass, ModelClass, AttrClass])
 def cls(request: pytest.FixtureRequest) -> type:
     """Fixture for the class to test.
 
