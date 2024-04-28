@@ -431,6 +431,9 @@ class App(Base):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
             script_tags: List of script tags to be added to component
+
+        Raises:
+            ValueError: When the specified route name already exists.
         """
         # If the route is not set, get it from the callable.
         if route is None:
@@ -444,6 +447,12 @@ class App(Base):
 
         # Check if the route given is valid
         verify_route_validity(route)
+
+        if route in self.pages and os.getenv(constants.RELOAD_CONFIG):
+            # when the app is reloaded(typically for app harness tests), we should maintain
+            # the latest render function of a route.This applies typically to decorated pages
+            # since they are only added when app._compile is called.
+            self.pages.pop(route)
 
         if route in self.pages:
             route_name = (
