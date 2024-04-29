@@ -142,8 +142,8 @@ def run_frontend(root: Path, port: str, backend_present=True):
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "dev"],
-        backend_present,  # type: ignore
+        [prerequisites.get_package_manager(), "run", "dev"],  # type: ignore
+        backend_present,
     )
 
 
@@ -164,8 +164,8 @@ def run_frontend_prod(root: Path, port: str, backend_present=True):
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "prod"],
-        backend_present,  # type: ignore
+        [prerequisites.get_package_manager(), "run", "prod"],  # type: ignore
+        backend_present,
     )
 
 
