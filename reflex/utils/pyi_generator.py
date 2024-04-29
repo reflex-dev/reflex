@@ -14,8 +14,8 @@ import typing
 from inspect import getfullargspec
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
-from typing import Any, Callable, Iterable, Type, get_args
+from types import ModuleType, SimpleNamespace, UnionType
+from typing import Any, Callable, Iterable, Optional, Type, get_args
 
 try:
     import black
@@ -117,6 +117,11 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     """
     res = ""
     args = get_args(value)
+
+    if isinstance(value, UnionType):
+        print("UnionType", args)
+        return str(value)
+
     if args:
         inner_container_type_args = (
             [repr(arg) for arg in args]
@@ -424,7 +429,60 @@ def _generate_component_create_functiondef(
     return definition
 
 
+def _generate_staticmethod_call_functiondef(
+    node: ast.FunctionDef | None,
+    clz: type[Component] | type[SimpleNamespace],
+    type_hint_globals: dict[str, Any],
+) -> ast.FunctionDef | None:
+    ...
+
+    fullspec = getfullargspec(clz.__call__)
+
+    call_args = ast.arguments(
+        args=[
+            ast.arg(
+                name,
+                annotation=ast.Name(
+                    id=_get_type_hint(
+                        anno := fullspec.annotations[name],
+                        type_hint_globals,
+                        is_optional=isinstance(Optional, anno),
+                    )
+                ),
+            )
+            for name in fullspec.args
+        ],
+        posonlyargs=[],
+        kwonlyargs=[],
+        kw_defaults=[],
+        kwarg=ast.arg(arg="props"),
+        defaults=[],
+    )
+    definition = ast.FunctionDef(
+        name="__call__",
+        args=call_args,
+        body=[
+            ast.Expr(value=ast.Constant(value=clz.__call__.__doc__)),
+            ast.Expr(
+                value=ast.Constant(...),
+            ),
+        ],
+        decorator_list=[ast.Name(id="staticmethod")],
+        lineno=node.lineno if node is not None else None,
+        returns=ast.Constant(
+            value=_get_type_hint(
+                typing.get_type_hints(clz.__call__).get("return", None),
+                type_hint_globals,
+            )
+        ),
+    )
+    print(ast.unparse(definition))
+    # definition = None
+    return definition
+
+
 def _generate_namespace_call_functiondef(
+    node: ast.ClassDef | None,
     clz_name: str,
     classes: dict[str, type[Component] | type[SimpleNamespace]],
     type_hint_globals: dict[str, Any],
@@ -432,6 +490,7 @@ def _generate_namespace_call_functiondef(
     """Generate the __call__ function definition for a SimpleNamespace.
 
     Args:
+        node: The existing __call__ classdef parent node from the ast
         clz_name: The name of the SimpleNamespace class to generate the __call__ functiondef for.
         classes: Map name to actual class definition.
         type_hint_globals: The globals to use to resolving a type hint str.
@@ -446,10 +505,12 @@ def _generate_namespace_call_functiondef(
 
     clz = classes[clz_name]
 
+    if not hasattr(clz.__call__, "__self__"):
+        return _generate_staticmethod_call_functiondef(node, clz, type_hint_globals)  # type: ignore
+
     # Determine which class is wrapped by the namespace __call__ method
     component_clz = clz.__call__.__self__
 
-    # Only generate for create functions
     if clz.__call__.__func__.__name__ != "create":
         return None
 
@@ -603,6 +664,7 @@ class StubGenerator(ast.NodeTransformer):
                 if not child.targets[:]:
                     node.body.remove(child)
                 call_definition = _generate_namespace_call_functiondef(
+                    node,
                     self.current_class,
                     self.classes,
                     type_hint_globals=self.type_hint_globals,

@@ -110,6 +110,7 @@ _ALL_COMPONENTS = [
     "ordered_list",
     "moment",
     "logo",
+    "toast",
 ]
 
 _MAPPING = {
