@@ -80,7 +80,7 @@ class EventActionsMixin(Base):
     """Mixin for DOM event actions."""
 
     # Whether to `preventDefault` or `stopPropagation` on the event.
-    event_actions: Dict[str, bool] = {}
+    event_actions: Dict[str, Union[bool, int]] = {}
 
     @property
     def stop_propagation(self):
@@ -102,6 +102,32 @@ class EventActionsMixin(Base):
         """
         return self.copy(
             update={"event_actions": {"preventDefault": True, **self.event_actions}},
+        )
+
+    def throttle(self, limit_ms: int):
+        """Throttle the event handler.
+
+        Args:
+            limit_ms: The time in milliseconds to throttle the event handler.
+
+        Returns:
+            New EventHandler-like with throttle set to limit_ms.
+        """
+        return self.copy(
+            update={"event_actions": {"throttle": limit_ms, **self.event_actions}},
+        )
+
+    def debounce(self, delay_ms: int):
+        """Debounce the event handler.
+
+        Args:
+            delay_ms: The time in milliseconds to debounce the event handler.
+
+        Returns:
+            New EventHandler-like with debounce set to delay_ms.
+        """
+        return self.copy(
+            update={"event_actions": {"debounce": delay_ms, **self.event_actions}},
         )
 
 
@@ -169,7 +195,7 @@ class EventHandler(EventActionsMixin):
 
             # Otherwise, convert to JSON.
             try:
-                values.append(Var.create(arg, _var_is_string=type(arg) is str))
+                values.append(Var.create(arg, _var_is_string=isinstance(arg, str)))
             except TypeError as e:
                 raise TypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
@@ -350,7 +376,9 @@ class FileUpload(Base):
                 ]
             elif isinstance(on_upload_progress, Callable):
                 # Call the lambda to get the event chain.
-                events = call_event_fn(on_upload_progress, self.on_upload_progress_args_spec)  # type: ignore
+                events = call_event_fn(
+                    on_upload_progress, self.on_upload_progress_args_spec
+                )  # type: ignore
             else:
                 raise ValueError(f"{on_upload_progress} is not a valid event handler.")
             on_upload_progress_chain = EventChain(
@@ -400,7 +428,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     return EventSpec(
         handler=EventHandler(fn=fn),
         args=tuple(
-            (Var.create_safe(k), Var.create_safe(v, _var_is_string=type(v) is str))
+            (Var.create_safe(k), Var.create_safe(v, _var_is_string=isinstance(v, str)))
             for k, v in kwargs.items()
         ),
     )

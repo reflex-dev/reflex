@@ -325,7 +325,7 @@ def validate_app_name(app_name: str | None = None) -> str:
         app_name if app_name else os.getcwd().split(os.path.sep)[-1].replace("-", "_")
     )
     # Make sure the app is not named "reflex".
-    if app_name == constants.Reflex.MODULE_NAME:
+    if app_name.lower() == constants.Reflex.MODULE_NAME:
         console.error(
             f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
         )
@@ -1186,17 +1186,17 @@ def _get_rx_chakra_component_to_migrate() -> set[str]:
         rx_chakra_object = getattr(reflex.chakra, rx_chakra_name)
         try:
             if (
-                inspect.ismethod(rx_chakra_object)
-                and inspect.isclass(rx_chakra_object.__self__)
-                and issubclass(rx_chakra_object.__self__, ChakraComponent)
+                (
+                    inspect.ismethod(rx_chakra_object)
+                    and inspect.isclass(rx_chakra_object.__self__)
+                    and issubclass(rx_chakra_object.__self__, ChakraComponent)
+                )
+                or (
+                    inspect.isclass(rx_chakra_object)
+                    and issubclass(rx_chakra_object, ChakraComponent)
+                )
+                or rx_chakra_name in whitelist
             ):
-                names_to_migrate.add(rx_chakra_name)
-
-            elif inspect.isclass(rx_chakra_object) and issubclass(
-                rx_chakra_object, ChakraComponent
-            ):
-                names_to_migrate.add(rx_chakra_name)
-            elif rx_chakra_name in whitelist:
                 names_to_migrate.add(rx_chakra_name)
 
         except Exception:
@@ -1410,4 +1410,4 @@ def initialize_app(app_name: str, template: str | None = None):
             template_url=template_url,
         )
 
-    telemetry.send("init")
+    telemetry.send("init", template=template)

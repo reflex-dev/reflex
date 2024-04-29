@@ -359,7 +359,7 @@ try:
                 mime_type = MIME[image_format]
             except KeyError:
                 # Unknown mime_type: warn and return image/png and hope the browser can sort it out.
-                warnings.warn(
+                warnings.warn(  # noqa: B028
                     f"Unknown mime type for {image} {image_format}. Defaulting to image/png"
                 )
                 mime_type = "image/png"
