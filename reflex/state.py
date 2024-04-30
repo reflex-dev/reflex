@@ -1841,7 +1841,7 @@ class OnLoadInternalState(State):
         Returns:
             The list of events to queue for on load handling.
         """
-        # Do not app.compile_()!  It should be already compiled by now.
+        # Do not app._compile()!  It should be already compiled by now.
         app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
         load_events = app.get_load_events(self.router.page.path)
         if not load_events:

@@ -326,7 +326,7 @@ def test_app_1_compile_time_cold(benchmark, app_with_one_page):
 
     def benchmark_fn():
         with chdir(app_with_one_page.app_path):
-            app_with_one_page.app_instance.compile_()
+            app_with_one_page.app_instance._compile()
 
     benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
     app_with_one_page._reload_state_module()
@@ -352,7 +352,7 @@ def test_app_1_compile_time_warm(benchmark, app_with_one_page):
 
     def benchmark_fn():
         with chdir(app_with_one_page.app_path):
-            app_with_one_page.app_instance.compile_()
+            app_with_one_page.app_instance._compile()
 
     benchmark(benchmark_fn)
     app_with_one_page._reload_state_module()
@@ -381,7 +381,7 @@ def test_app_10_compile_time_cold(benchmark, app_with_ten_pages):
 
     def benchmark_fn():
         with chdir(app_with_ten_pages.app_path):
-            app_with_ten_pages.app_instance.compile_()
+            app_with_ten_pages.app_instance._compile()
 
     benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
     app_with_ten_pages._reload_state_module()
@@ -407,7 +407,7 @@ def test_app_10_compile_time_warm(benchmark, app_with_ten_pages):
 
     def benchmark_fn():
         with chdir(app_with_ten_pages.app_path):
-            app_with_ten_pages.app_instance.compile_()
+            app_with_ten_pages.app_instance._compile()
 
     benchmark(benchmark_fn)
     app_with_ten_pages._reload_state_module()
@@ -436,7 +436,7 @@ def test_app_100_compile_time_cold(benchmark, app_with_hundred_pages):
 
     def benchmark_fn():
         with chdir(app_with_hundred_pages.app_path):
-            app_with_hundred_pages.app_instance.compile_()
+            app_with_hundred_pages.app_instance._compile()
 
     benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
     app_with_hundred_pages._reload_state_module()
@@ -462,7 +462,7 @@ def test_app_100_compile_time_warm(benchmark, app_with_hundred_pages):
 
     def benchmark_fn():
         with chdir(app_with_hundred_pages.app_path):
-            app_with_hundred_pages.app_instance.compile_()
+            app_with_hundred_pages.app_instance._compile()
 
     benchmark(benchmark_fn)
     app_with_hundred_pages._reload_state_module()
@@ -491,7 +491,7 @@ def test_app_1000_compile_time_cold(benchmark, app_with_thousand_pages):
 
     def benchmark_fn():
         with chdir(app_with_thousand_pages.app_path):
-            app_with_thousand_pages.app_instance.compile_()
+            app_with_thousand_pages.app_instance._compile()
 
     benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
     app_with_thousand_pages._reload_state_module()
@@ -517,7 +517,7 @@ def test_app_1000_compile_time_warm(benchmark, app_with_thousand_pages):
 
     def benchmark_fn():
         with chdir(app_with_thousand_pages.app_path):
-            app_with_thousand_pages.app_instance.compile_()
+            app_with_thousand_pages.app_instance._compile()
 
     benchmark(benchmark_fn)
     app_with_thousand_pages._reload_state_module()
@@ -546,7 +546,7 @@ def test_app_10000_compile_time_cold(benchmark, app_with_ten_thousand_pages):
 
     def benchmark_fn():
         with chdir(app_with_ten_thousand_pages.app_path):
-            app_with_ten_thousand_pages.app_instance.compile_()
+            app_with_ten_thousand_pages.app_instance._compile()
 
     benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
     app_with_ten_thousand_pages._reload_state_module()
@@ -570,7 +570,7 @@ def test_app_10000_compile_time_warm(benchmark, app_with_ten_thousand_pages):
 
     def benchmark_fn():
         with chdir(app_with_ten_thousand_pages.app_path):
-            app_with_ten_thousand_pages.app_instance.compile_()
+            app_with_ten_thousand_pages.app_instance._compile()
 
     benchmark(benchmark_fn)
     app_with_ten_thousand_pages._reload_state_module()
