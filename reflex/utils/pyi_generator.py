@@ -14,7 +14,7 @@ import typing
 from inspect import getfullargspec
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-from types import ModuleType, NoneType, SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from typing import Any, Callable, Iterable, Type, get_args
 
 try:
@@ -118,7 +118,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     res = ""
     args = get_args(value)
 
-    if value is NoneType:
+    if rx_types.is_none(value):
         return "None"
 
     if rx_types.is_union(value):
