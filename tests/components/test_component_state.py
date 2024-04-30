@@ -7,7 +7,7 @@ from reflex.components.base.bare import Bare
 def test_component_state():
     """Create two components with independent state classes."""
 
-    class CS(rx.ComponentState):
+    class CS(rx.ComponentState, mixin=True):
         count: int = 0
 
         def increment(self):

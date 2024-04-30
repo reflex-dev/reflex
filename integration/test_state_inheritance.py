@@ -45,7 +45,7 @@ def StateInheritance():
     """Test that state inheritance works as expected."""
     import reflex as rx
 
-    class ChildMixin:
+    class ChildMixin(rx.State, mixin=True):
         # mixin basevars only work with pydantic/rx.Base models
         #  child_mixin: str = "child_mixin"
 
@@ -53,7 +53,7 @@ def StateInheritance():
         def computed_child_mixin(self) -> str:
             return "computed_child_mixin"
 
-    class Mixin(ChildMixin):
+    class Mixin(ChildMixin, mixin=True):
         # mixin basevars only work with pydantic/rx.Base models
         #  mixin: str = "mixin"
 
@@ -64,7 +64,7 @@ def StateInheritance():
         def on_click_mixin(self):
             return rx.call_script("alert('clicked')")
 
-    class OtherMixin(rx.Base):
+    class OtherMixin(rx.State, mixin=True):
         other_mixin: str = "other_mixin"
         other_mixin_clicks: int = 0
 
@@ -78,7 +78,7 @@ def StateInheritance():
                 f"{self.__class__.__name__}.clicked.{self.other_mixin_clicks}"
             )
 
-    class Base1(rx.State, Mixin):
+    class Base1(Mixin, rx.State):
         _base1: str = "_base1"
         base1: str = "base1"
 

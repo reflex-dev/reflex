@@ -1,4 +1,5 @@
 """Test that per-component state scaffold works and operates independently."""
+
 from typing import Generator
 
 import pytest
@@ -13,7 +14,7 @@ def ComponentStateApp():
     """App using per component state."""
     import reflex as rx
 
-    class MultiCounter(rx.ComponentState):
+    class MultiCounter(rx.ComponentState, mixin=True):
         count: int = 0
 
         def increment(self):
