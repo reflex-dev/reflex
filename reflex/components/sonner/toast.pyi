@@ -185,9 +185,7 @@ class ToastNamespace(ComponentNamespace):
     success = staticmethod(Toaster.toast_success)
 
     @staticmethod
-    def __call__(
-        message: str, level: Union[str, None], **props
-    ) -> "Optional[EventSpec]":
+    def __call__(message: str, level: Optional[str], **props) -> "Optional[EventSpec]":
         """Send a toast message.
 
         Args:
