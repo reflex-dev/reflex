@@ -14,7 +14,7 @@ import typing
 from inspect import getfullargspec
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
+from types import ModuleType, NoneType, SimpleNamespace
 from typing import Any, Callable, Iterable, Type, get_args
 
 try:
@@ -24,7 +24,7 @@ except ImportError:
     black = None
 
 from reflex.components.component import Component
-from reflex.utils.types import is_literal, is_optional, is_union
+from reflex.utils import types as rx_types
 from reflex.vars import Var
 
 logger = logging.getLogger("pyi_generator")
@@ -118,13 +118,22 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     res = ""
     args = get_args(value)
 
-    if is_union(value):
-        return str(value)
+    if value is NoneType:
+        return "None"
+
+    if rx_types.is_union(value):
+        res_args = [
+            _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg)).replace(
+                "NoneType", "None"
+            )
+            for arg in value.__args__
+        ]
+        return f"Union[{', '.join(res_args)}]"
 
     if args:
         inner_container_type_args = (
             [repr(arg) for arg in args]
-            if is_literal(value)
+            if rx_types.is_literal(value)
             else [
                 _get_type_hint(arg, type_hint_globals, is_optional=False)
                 for arg in args
@@ -145,8 +154,12 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 res = f"Union[{res}]"
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
-        if is_union(ev):
-            return str(ev)
+        if rx_types.is_union(ev):
+            res = [
+                _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
+                for arg in ev.__args__
+            ]
+            return f"Union[{', '.join(res)}]"
         res = (
             _get_type_hint(ev, type_hint_globals, is_optional=False)
             if ev.__name__ == "Var"
@@ -447,7 +460,7 @@ def _generate_staticmethod_call_functiondef(
                     id=_get_type_hint(
                         anno := fullspec.annotations[name],
                         type_hint_globals,
-                        is_optional=is_optional(anno),
+                        is_optional=rx_types.is_optional(anno),
                     )
                 ),
             )
@@ -477,8 +490,6 @@ def _generate_staticmethod_call_functiondef(
             )
         ),
     )
-    print(ast.unparse(definition))
-    # definition = None
     return definition
 
 
