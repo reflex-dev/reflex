@@ -247,7 +247,7 @@ def compile_custom_component(
     render = component.get_component(component)
 
     # Get the imports.
-    component_library_name = format.format_library_name(component.library)
+    component_library_name = format.format_library_name(component.library or "")
     _imports = imports.ImportList(
         imp
         for imp in render._get_all_imports()

@@ -102,11 +102,13 @@ class ComponentName(Enum):
 class Imports(SimpleNamespace):
     """Common sets of import vars."""
 
-    EVENTS: ImportList = [
-        ImportVar(package="react", tag="useContext"),
-        ImportVar(package=f"/{Dirs.CONTEXTS_PATH}", tag="EventLoopContext"),
-        ImportVar(package=f"/{Dirs.STATE_PATH}", tag=CompileVars.TO_EVENT),
-    ]
+    EVENTS: ImportList = ImportList(
+        [
+            ImportVar(package="react", tag="useContext"),
+            ImportVar(package=f"/{Dirs.CONTEXTS_PATH}", tag="EventLoopContext"),
+            ImportVar(package=f"/{Dirs.STATE_PATH}", tag=CompileVars.TO_EVENT),
+        ]
+    )
 
 
 class Hooks(SimpleNamespace):

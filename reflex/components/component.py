@@ -1026,7 +1026,7 @@ class Component(BaseComponent, ABC):
             or format.format_library_name(dep or "") in self.transpile_packages
         )
 
-    def _get_dependencies_imports(self) -> imports.ImportList:
+    def _get_dependencies_imports(self) -> List[ImportVar]:
         """Get the imports from lib_dependencies for installing.
 
         Returns:
@@ -1073,7 +1073,11 @@ class Component(BaseComponent, ABC):
             )
 
         user_hooks = self._get_hooks()
-        if user_hooks is not None and isinstance(user_hooks, Var):
+        if (
+            user_hooks is not None
+            and isinstance(user_hooks, Var)
+            and user_hooks._var_data is not None
+        ):
             _imports.extend(user_hooks._var_data.imports)
 
         return _imports
@@ -1086,7 +1090,7 @@ class Component(BaseComponent, ABC):
         """
         return {}
 
-    def _get_imports_list(self) -> imports.ImportList:
+    def _get_imports_list(self) -> List[ImportVar]:
         """Internal method to get the imports as a list.
 
         Returns:
@@ -1117,7 +1121,7 @@ class Component(BaseComponent, ABC):
 
         # Get static imports required for event processing.
         if self.event_triggers:
-            _imports.append(Imports.EVENTS)
+            _imports.extend(Imports.EVENTS)
 
         # Collect imports from Vars used directly by this component.
         for var in self._get_vars():

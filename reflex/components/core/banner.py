@@ -51,11 +51,14 @@ has_too_many_connection_errors: Var = Var.create_safe(
 class WebsocketTargetURL(Bare):
     """A component that renders the websocket target URL."""
 
-    def _get_imports(self) -> imports.ImportDict:
-        return {
-            f"/{Dirs.STATE_PATH}": [imports.ImportVar(tag="getBackendURL")],
-            "/env.json": [imports.ImportVar(tag="env", is_default=True)],
-        }
+    def _get_imports_list(self) -> list[imports.ImportVar]:
+        return [
+            imports.ImportVar(
+                library=f"/{Dirs.STATE_PATH}",
+                tag="getBackendURL",
+            ),
+            imports.ImportVar(library="/env.json", tag="env", is_default=True),
+        ]
 
     @classmethod
     def create(cls) -> Component:

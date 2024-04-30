@@ -243,13 +243,11 @@ class ThemePanel(RadixThemesComponent):
     # Whether the panel is open. Defaults to False.
     default_open: Var[bool]
 
-    def _get_imports(self) -> dict[str, list[imports.ImportVar]]:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
-                "react": [imports.ImportVar(tag="useEffect")],
-            },
-        )
+    def _get_imports_list(self) -> list[imports.ImportVar]:
+        return [
+            *super()._get_imports_list(),
+            imports.ImportVar(package="react", tag="useEffect"),
+        ]
 
     def _get_hooks(self) -> str | None:
         # The panel freezes the tab if the user color preference differs from the

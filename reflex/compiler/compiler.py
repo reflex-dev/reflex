@@ -188,7 +188,7 @@ def _compile_component(component: Component) -> str:
 
 def _compile_components(
     components: set[CustomComponent],
-) -> tuple[str, Dict[str, list[ImportVar]]]:
+) -> tuple[str, ImportList]:
     """Compile the components.
 
     Args:

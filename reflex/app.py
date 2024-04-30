@@ -627,7 +627,7 @@ class App(Base):
         Example:
             >>> get_frontend_packages({"react": "16.14.0", "react-dom": "16.14.0"})
         """
-        page_imports = [i.package for i in imports.collapse().values() if i.install]
+        page_imports = [i.package for i in imports if i.install and i.package]
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
@@ -643,7 +643,7 @@ class App(Base):
                 continue
             _frontend_packages.append(package)
         page_imports.extend(_frontend_packages)
-        prerequisites.install_frontend_packages(page_imports, get_config())
+        prerequisites.install_frontend_packages(set(page_imports), get_config())
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):

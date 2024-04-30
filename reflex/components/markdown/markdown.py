@@ -7,7 +7,6 @@ from functools import lru_cache
 from hashlib import md5
 from typing import Any, Callable, Dict, Union
 
-from reflex.compiler import utils
 from reflex.components.component import Component, CustomComponent
 from reflex.components.radix.themes.layout.list import (
     ListItem,
@@ -154,47 +153,53 @@ class Markdown(Component):
 
         return custom_components
 
-    def _get_imports(self) -> imports.ImportDict:
+    def _get_imports_list(self) -> list[imports.ImportVar]:
         # Import here to avoid circular imports.
         from reflex.components.datadisplay.code import CodeBlock
         from reflex.components.radix.themes.typography.code import Code
 
-        imports = super()._get_imports()
+        _imports = super()._get_imports_list()
 
         # Special markdown imports.
-        imports.update(
-            {
-                "": [ImportVar(tag="katex/dist/katex.min.css")],
-                "remark-math@5.1.1": [
-                    ImportVar(tag=_REMARK_MATH._var_name, is_default=True)
-                ],
-                "remark-gfm@3.0.1": [
-                    ImportVar(tag=_REMARK_GFM._var_name, is_default=True)
-                ],
-                "remark-unwrap-images@4.0.0": [
-                    ImportVar(tag=_REMARK_UNWRAP_IMAGES._var_name, is_default=True)
-                ],
-                "rehype-katex@6.0.3": [
-                    ImportVar(tag=_REHYPE_KATEX._var_name, is_default=True)
-                ],
-                "rehype-raw@6.1.1": [
-                    ImportVar(tag=_REHYPE_RAW._var_name, is_default=True)
-                ],
-            }
+        _imports.extend(
+            [
+                ImportVar(library="", tag="katex/dist/katex.min.css"),
+                ImportVar(
+                    package="remark-math@5.1.1",
+                    tag=_REMARK_MATH._var_name,
+                    is_default=True,
+                ),
+                ImportVar(
+                    package="remark-gfm@3.0.1",
+                    tag=_REMARK_GFM._var_name,
+                    is_default=True,
+                ),
+                ImportVar(
+                    package="remark-unwrap-images@4.0.0",
+                    tag=_REMARK_UNWRAP_IMAGES._var_name,
+                    is_default=True,
+                ),
+                ImportVar(
+                    package="remark-katex@6.0.3",
+                    tag=_REHYPE_KATEX._var_name,
+                    is_default=True,
+                ),
+                ImportVar(
+                    package="rehype-raw@6.1.1",
+                    tag=_REHYPE_RAW._var_name,
+                    is_default=True,
+                ),
+            ]
         )
 
         # Get the imports for each component.
         for component in self.component_map.values():
-            imports = utils.merge_imports(
-                imports, component(_MOCK_ARG)._get_all_imports()
-            )
+            _imports.extend(component(_MOCK_ARG)._get_all_imports())
 
         # Get the imports for the code components.
-        imports = utils.merge_imports(
-            imports, CodeBlock.create(theme="light")._get_imports()
-        )
-        imports = utils.merge_imports(imports, Code.create()._get_imports())
-        return imports
+        _imports.extend(CodeBlock.create(theme="light")._get_all_imports())
+        _imports.extend(Code.create()._get_all_imports())
+        return _imports
 
     def get_component(self, tag: str, **props) -> Component:
         """Get the component for a tag and props.

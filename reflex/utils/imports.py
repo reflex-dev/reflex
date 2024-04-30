@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 
 from reflex.base import Base
 from reflex.constants.installer import PackageJson
@@ -91,6 +91,15 @@ class ImportVar(Base):
         package: Optional[str] = None,
         **kwargs,
     ):
+        """Create a new ImportVar.
+
+        Args:
+            package: The package to install for this import.
+            **kwargs: The import var fields.
+
+        Raises:
+            ValueError: If the package is provided with library or version.
+        """
         if package is not None:
             if (
                 kwargs.get("library", None) is not None
@@ -128,8 +137,8 @@ class ImportVar(Base):
             return self.tag or ""
 
     @property
-    def package(self) -> str:
-        """The package to install for this import
+    def package(self) -> str | None:
+        """The package to install for this import.
 
         Returns:
             The library name and (optional) version to be installed by npm/bun.
@@ -150,10 +159,6 @@ class ImportVar(Base):
                 self.tag,
                 self.is_default,
                 self.alias,
-                # These do not fundamentally change the import in any way
-                # self.install,
-                # self.render,
-                # self.transpile,
             )
         )
 
@@ -183,16 +188,22 @@ class ImportVar(Base):
 
         Returns:
             The collapsed import var with sticky props perserved.
+
+        Raises:
+            ValueError: If the two import vars have conflicting properties.
         """
         if self != other_import_var:
             raise ValueError("Cannot collapse two import vars with different hashes")
 
-        if self.version is not None and other_import_var.version is not None:
-            if self.version != other_import_var.version:
-                raise ValueError(
-                    "Cannot collapse two import vars with conflicting version specifiers: "
-                    f"{self} {other_import_var}"
-                )
+        if (
+            self.version is not None
+            and other_import_var.version is not None
+            and self.version != other_import_var.version
+        ):
+            raise ValueError(
+                "Cannot collapse two import vars with conflicting version specifiers: "
+                f"{self} {other_import_var}"
+            )
 
         return type(self)(
             library=self.library,
@@ -210,6 +221,15 @@ class ImportList(List[ImportVar]):
     """A list of import vars."""
 
     def __init__(self, *args, **kwargs):
+        """Create a new ImportList (wrapper over `list`).
+
+        Any items that are not already `ImportVar` will be assumed as dicts to convert
+        into an ImportVar.
+
+        Args:
+            *args: The args to pass to list.__init__
+            **kwargs: The kwargs to pass to list.__init__
+        """
         super().__init__(*args, **kwargs)
         for ix, value in enumerate(self):
             if not isinstance(value, ImportVar):
@@ -217,26 +237,41 @@ class ImportList(List[ImportVar]):
                 self[ix] = ImportVar(**value)
 
     @classmethod
-    def from_import_dict(cls, import_dict: ImportDict) -> ImportList:
-        return [
+    def from_import_dict(
+        cls, import_dict: ImportDict | Dict[str, set[ImportVar]]
+    ) -> ImportList:
+        """Create an import list from an import dict.
+
+        Args:
+            import_dict: The import dict to convert.
+
+        Returns:
+            The import list.
+        """
+        return cls(
             ImportVar(package=lib, **imp.dict())
             for lib, imps in import_dict.items()
             for imp in imps
-        ]
+        )
 
     def collapse(self) -> ImportDict:
-        """When collapsing an import list, prefer packages with version specifiers."""
-        collapsed = {}
+        """When collapsing an import list, prefer packages with version specifiers.
+
+        Returns:
+            The collapsed import dict ({library_name: [import_var1, ...]}).
+        """
+        collapsed: dict[str, dict[ImportVar, ImportVar]] = {}
         for imp in self:
-            collapsed.setdefault(imp.library, {})
-            if imp in collapsed[imp.library]:
+            lib = imp.library or ""
+            collapsed.setdefault(lib, {})
+            if imp in collapsed[lib]:
                 # Need to check if the current import has any special properties that need to
                 # be preserved, like the version specifier, install, or transpile.
-                existing_imp = collapsed[imp.library][imp]
-                collapsed[imp.library][imp] = existing_imp.collapse(imp)
+                existing_imp = collapsed[lib][imp]
+                collapsed[lib][imp] = existing_imp.collapse(imp)
             else:
-                collapsed[imp.library][imp] = imp
-        return {lib: set(imps) for lib, imps in collapsed.items()}
+                collapsed[lib][imp] = imp
+        return {lib: list(set(imps)) for lib, imps in collapsed.items()}
 
 
-ImportDict = Dict[str, Set[ImportVar]]
+ImportDict = Dict[str, List[ImportVar]]
