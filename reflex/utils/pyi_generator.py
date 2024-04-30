@@ -159,6 +159,9 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 res = f"Union[{res}]"
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
+        if rx_types.is_optional(ev):
+            return _get_type_hint(ev, type_hint_globals, is_optional=True)
+
         if rx_types.is_union(ev):
             res = [
                 _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
