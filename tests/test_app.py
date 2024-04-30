@@ -1479,7 +1479,7 @@ def test_app_with_transpile_packages(compilable_app, export):
         C1.create(), C2.create(), C3.create(), C4.create(), C5.create()
     )
     app.add_page(page, route="/")
-    app.compile_(export=export)
+    app._compile(export=export)
 
     next_config = (web_dir / "next.config.js").read_text()
     transpile_packages_match = re.search(r"transpilePackages: (\[.*?\])", next_config)
