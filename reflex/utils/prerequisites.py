@@ -743,8 +743,15 @@ def install_bun():
     #  if unzip is installed
     if constants.IS_WINDOWS:
         processes.new_process(
-            ["powershell", "-c", f"irm {constants.Bun.INSTALL_URL}.ps1|iex"], #TODO: change install url to constants.BUN.WINDOWS_INSTALL_URL
-            env={"BUN_INSTALL": constants.Bun.ROOT_PATH, "BUN_VERSION": constants.Bun.VERSION},
+            [
+                "powershell",
+                "-c",
+                f"irm {constants.Bun.INSTALL_URL}.ps1|iex",
+            ],  # TODO: change install url to constants.BUN.WINDOWS_INSTALL_URL
+            env={
+                "BUN_INSTALL": constants.Bun.ROOT_PATH,
+                "BUN_VERSION": constants.Bun.VERSION,
+            },
             shell=True,
             run=True,
             show_logs=console.is_debug(),

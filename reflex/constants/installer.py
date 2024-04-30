@@ -47,7 +47,9 @@ class Bun(SimpleNamespace):
     # URL to bun install script.
     INSTALL_URL = "https://bun.sh/install"
     # URL to windows install script.
-    WINDOWS_INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/install.ps1"
+    WINDOWS_INSTALL_URL = (
+        "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/install.ps1"
+    )
 
 
 # FNM config.
