@@ -18,7 +18,7 @@ class List(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[list | Var[list] | None] = None,
+        items: Optional[Union[Var[list], list]] = None,
         spacing: Optional[Union[Var[str], str]] = None,
         style_position: Optional[Union[Var[str], str]] = None,
         style_type: Optional[Union[Var[str], str]] = None,
@@ -178,7 +178,7 @@ class OrderedList(List):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[list | Var[list] | None] = None,
+        items: Optional[Union[Var[list], list]] = None,
         spacing: Optional[Union[Var[str], str]] = None,
         style_position: Optional[Union[Var[str], str]] = None,
         style_type: Optional[Union[Var[str], str]] = None,
@@ -262,7 +262,7 @@ class UnorderedList(List):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[list | Var[list] | None] = None,
+        items: Optional[Union[Var[list], list]] = None,
         spacing: Optional[Union[Var[str], str]] = None,
         style_position: Optional[Union[Var[str], str]] = None,
         style_type: Optional[Union[Var[str], str]] = None,

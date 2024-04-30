@@ -118,17 +118,23 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     res = ""
     args = get_args(value)
 
-    if rx_types.is_none(value):
+    if value is type(None):
         return "None"
 
     if rx_types.is_union(value):
-        if len(value.__args__) == 2 and type(None) in value.__args__:
+        if type(None) in value.__args__:
             res_args = [
                 _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
                 for arg in value.__args__
                 if arg is not type(None)
             ]
-            return f"Optional[{res_args[0]}]"
+            if len(res_args) == 1:
+                return f"Optional[{res_args[0]}]"
+            else:
+                print("found union with None")
+                res = f"Union[{', '.join(res_args)}]"
+                return f"Optional[{res}]"
+
         res_args = [
             _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
             for arg in value.__args__
@@ -160,7 +166,12 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
         if rx_types.is_optional(ev):
-            return _get_type_hint(ev, type_hint_globals, is_optional=True)
+            # hints = {
+            #     _get_type_hint(arg, type_hint_globals, is_optional=False)
+            #     for arg in ev.__args__
+            # }
+            return _get_type_hint(ev, type_hint_globals, is_optional=False)
+            # return f"Optional[{', '.join(hints)}]"
 
         if rx_types.is_union(ev):
             res = [
