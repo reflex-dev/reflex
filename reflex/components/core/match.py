@@ -1,5 +1,7 @@
 """rx.match."""
 
+from __future__ import annotations
+
 import textwrap
 from typing import Any, Dict, List, Optional, Tuple, Union
 
