@@ -303,6 +303,7 @@ class Component(BaseComponent, ABC):
 
             # Check whether the key is a component prop.
             if types._issubclass(field_type, Var):
+                passed_types = None
                 try:
                     # Try to create a var from the value.
                     kwargs[key] = Var.create(value)
@@ -327,12 +328,22 @@ class Component(BaseComponent, ABC):
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
                     expected_type = fields[key].outer_type_
-                if types.is_optional(passed_type):
-                    passed_type = passed_type.__args__[0]
-                if not types._issubclass(passed_type, expected_type):
+                if types.is_union(passed_type):
+                    passed_types = (
+                        arg for arg in passed_type.__args__ if arg is not type(None)
+                    )
+                if (
+                    passed_types
+                    and not all(
+                        types._issubclass(pt, expected_type) for pt in passed_types
+                    )
+                ) or (
+                    not passed_types
+                    and not types._issubclass(passed_type, expected_type)
+                ):
                     value_name = value._var_name if isinstance(value, Var) else value
                     raise TypeError(
-                        f"Invalid var passed for prop {type(self).__name__}.{key}, expected type {expected_type}, got value {value_name} of type {passed_type}."
+                        f"Invalid var passed for prop {type(self).__name__}.{key}, expected type {expected_type}, got value {value_name} of type {passed_types or passed_type}."
                     )
 
             # Check if the key is an event trigger.
