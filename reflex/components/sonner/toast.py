@@ -1,6 +1,8 @@
 """Sonner toast component."""
 
-from typing import Literal, Optional
+from __future__ import annotations
+
+from typing import Dict, Literal, Optional
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
@@ -57,8 +59,8 @@ class ToastProps(PropsBase):
     cancel: str = ""
     id: str = ""
     unstyled: bool = False
-    action_button_styles: dict[str, str] = {}
-    cancel_button_styles: dict[str, str] = {}
+    action_button_styles: Dict[str, str] = {}
+    cancel_button_styles: Dict[str, str] = {}
 
 
 class Toaster(Component):

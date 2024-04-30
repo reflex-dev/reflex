@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Literal, Optional
+from typing import Dict, Literal, Optional
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
@@ -44,8 +44,8 @@ class ToastProps(PropsBase):
     cancel: str
     id: str
     unstyled: bool
-    action_button_styles: dict[str, str]
-    cancel_button_styles: dict[str, str]
+    action_button_styles: Dict[str, str]
+    cancel_button_styles: Dict[str, str]
 
 class Toaster(Component):
     @staticmethod

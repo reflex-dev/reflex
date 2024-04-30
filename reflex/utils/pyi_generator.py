@@ -14,9 +14,13 @@ import typing
 from inspect import getfullargspec
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-from types import ModuleType, SimpleNamespace, UnionType
+from types import ModuleType, SimpleNamespace
 from typing import Any, Callable, Iterable, Optional, Type, get_args
 
+try:
+    from types import UnionType
+except ImportError:
+    UnionType = None
 try:
     import black
     import black.mode
@@ -118,8 +122,12 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     res = ""
     args = get_args(value)
 
-    if isinstance(value, UnionType):
-        print("UnionType", args)
+    def check_union(value):
+        return typing.get_origin(value) is typing.Union or (
+            UnionType and typing.get_origin(value) is UnionType
+        )
+
+    if check_union(value):
         return str(value)
 
     if args:
@@ -146,6 +154,8 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 res = f"Union[{res}]"
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
+        if check_union(ev):
+            return str(ev)
         res = (
             _get_type_hint(ev, type_hint_globals, is_optional=False)
             if ev.__name__ == "Var"
@@ -446,7 +456,7 @@ def _generate_staticmethod_call_functiondef(
                     id=_get_type_hint(
                         anno := fullspec.annotations[name],
                         type_hint_globals,
-                        is_optional=isinstance(Optional, anno),
+                        is_optional=typing.get_origin(anno) is Optional,
                     )
                 ),
             )
