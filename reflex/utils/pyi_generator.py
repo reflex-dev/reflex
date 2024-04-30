@@ -122,10 +122,15 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
         return "None"
 
     if rx_types.is_union(value):
+        if len(value.__args__) == 2 and type(None) in value.__args__:
+            res_args = [
+                _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
+                for arg in value.__args__
+                if arg is not type(None)
+            ]
+            return f"Optional[{res_args[0]}]"
         res_args = [
-            _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg)).replace(
-                "NoneType", "None"
-            )
+            _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
             for arg in value.__args__
         ]
         return f"Union[{', '.join(res_args)}]"

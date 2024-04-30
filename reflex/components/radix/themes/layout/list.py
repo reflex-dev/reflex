@@ -49,7 +49,7 @@ class BaseList(Component):
     def create(
         cls,
         *children,
-        items: Optional[Union[Var[Iterable], Iterable]] = None,
+        items: Optional[Var[Iterable]] = None,
         **props,
     ):
         """Create a list component.
@@ -68,7 +68,7 @@ class BaseList(Component):
             if isinstance(items, Var):
                 children = [Foreach.create(items, ListItem.create)]
             else:
-                children = [ListItem.create(item) for item in items]
+                children = [ListItem.create(item) for item in items]  # type: ignore
         props["list_style_position"] = "outside"
         props["direction"] = "column"
         style = props.setdefault("style", {})
