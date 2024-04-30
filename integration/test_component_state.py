@@ -14,7 +14,7 @@ def ComponentStateApp():
     """App using per component state."""
     import reflex as rx
 
-    class MultiCounter(rx.ComponentState, mixin=True):
+    class MultiCounter(rx.ComponentState):
         count: int = 0
 
         def increment(self):

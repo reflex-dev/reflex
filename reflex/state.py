@@ -1887,6 +1887,18 @@ class ComponentState(State, mixin=True):
     _per_component_state_instance_count: ClassVar[int] = 0
 
     @classmethod
+    def __init_subclass__(cls, mixin: bool = False, **kwargs):
+        """Overwrite mixin default to True.
+
+        Args:
+            mixin: Whether the subclass is a mixin and should not be initialized.
+            **kwargs: The kwargs to pass to the pydantic init_subclass method.
+        """
+        if ComponentState in cls.__bases__:
+            mixin = True
+        super().__init_subclass__(mixin=mixin, **kwargs)
+
+    @classmethod
     def get_component(cls, *children, **props) -> "Component":
         """Get the component instance.
 
