@@ -449,11 +449,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         from reflex.utils.exceptions import StateValueError
 
+        super().__init_subclass__(**kwargs)
+
         cls._mixin = mixin
         if mixin:
             return
-
-        super().__init_subclass__(**kwargs)
 
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
