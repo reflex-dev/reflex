@@ -35,7 +35,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.1.5"
+    VERSION = "1.1.6"
     # Min Bun Version
     MIN_VERSION = "0.7.0"
     # The directory to store the bun.
@@ -46,6 +46,8 @@ class Bun(SimpleNamespace):
     )
     # URL to bun install script.
     INSTALL_URL = "https://bun.sh/install"
+    # URL to windows install script.
+    WINDOWS_INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/install.ps1"
 
 
 # FNM config.
