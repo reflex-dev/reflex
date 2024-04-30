@@ -103,7 +103,7 @@ class OverlayFragment(Fragment):
 
 class App(Base):
     """The main Reflex app that encapsulates the backend and frontend.
-    
+
     Every Reflex app needs an app defined in its main module.
 
     ```python
@@ -228,7 +228,11 @@ class App(Base):
             self._setup_state()
 
     def _setup_state(self) -> None:
-        """Set up the state for the app."""
+        """Set up the state for the app.
+
+        Raises:
+            RuntimeError: If the socket server is invalid.
+        """
         if not self.state:
             return
 
@@ -1028,7 +1032,7 @@ class App(Base):
                 handler=handler, state=substate, payload=event.payload
             ):
                 # Postprocess the event.
-                update = await self.postprocess(state, event, update)
+                update = await self._postprocess(state, event, update)
 
                 # Send the update to the client.
                 await self.event_namespace.emit_update(

@@ -260,6 +260,7 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
         windows_platform: Whether the system is windows.
     """
     app = App(state=EmptyState)
+    assert app.state is not None
     route = "/test/[dynamic]"
     if windows_platform:
         route.lstrip("/").replace("/", "\\")
@@ -953,6 +954,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     if windows_platform:
         route.lstrip("/").replace("/", "\\")
     app = app_module_mock.app = App(state=DynamicState)
+    assert app.state is not None
     assert arg_name not in app.state.vars
     app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
     assert arg_name in app.state.vars
@@ -1147,7 +1149,7 @@ async def test_process_events(mocker, token: str):
         "ip": "127.0.0.1",
     }
     app = App(state=GenState)
-    mocker.patch.object(app, "postprocess", AsyncMock())
+    mocker.patch.object(app, "_postprocess", AsyncMock())
     event = Event(
         token=token, name="gen_state.go", payload={"c": 5}, router_data=router_data
     )
@@ -1156,7 +1158,7 @@ async def test_process_events(mocker, token: str):
         pass
 
     assert (await app.state_manager.get_state(event.substate_token)).value == 5
-    assert app.postprocess.call_count == 6
+    assert app._postprocess.call_count == 6
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -1371,7 +1373,7 @@ def test_raise_on_state():
     """Test that the state is set."""
     # state kwargs is deprecated, we just make sure the app is created anyway.
     _app = App(state=State)
-    print(_app.state)
+    assert _app.state is not None
     assert issubclass(_app.state, State)
 
 

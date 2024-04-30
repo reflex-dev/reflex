@@ -34,7 +34,7 @@ PWD = Path(".").resolve()
 
 EXCLUDED_FILES = [
     "__init__.py",
-    "app.py",
+    # "app.py",
     "component.py",
     "bare.py",
     "foreach.py",
