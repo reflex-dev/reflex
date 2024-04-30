@@ -79,7 +79,7 @@ from reflex.state import (
 )
 from reflex.utils import console, exceptions, format, prerequisites, types
 from reflex.utils.exec import is_testing_env, should_skip_compile
-from reflex.utils.imports import ImportList
+from reflex.utils.imports import ImportList, split_library_name_version
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -627,7 +627,8 @@ class App(Base):
         Example:
             >>> get_frontend_packages({"react": "16.14.0", "react-dom": "16.14.0"})
         """
-        page_imports = [i.package for i in imports if i.install and i.package]
+        page_imports = ImportList(i for i in imports if i.install and i.package)
+        inferred_libraries = [i.library for i in page_imports]
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
@@ -636,14 +637,21 @@ class App(Base):
                     f"Tailwind packages are inferred from 'plugins', remove `{package}` from `frontend_packages`"
                 )
                 continue
-            if package in page_imports:
+            lib, version = split_library_name_version(package)
+            if (
+                lib in inferred_libraries
+                and version is None
+                or version == page_imports[inferred_libraries.index(lib)].version
+            ):
                 console.warn(
                     f"React packages and their dependencies are inferred from Component.library and Component.lib_dependencies, remove `{package}` from `frontend_packages`"
                 )
                 continue
             _frontend_packages.append(package)
         page_imports.extend(_frontend_packages)
-        prerequisites.install_frontend_packages(set(page_imports), get_config())
+        prerequisites.install_frontend_packages(
+            set(page_imports.collapse()), get_config()
+        )
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):

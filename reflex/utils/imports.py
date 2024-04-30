@@ -258,7 +258,10 @@ class ImportList(List[ImportVar]):
         """When collapsing an import list, prefer packages with version specifiers.
 
         Returns:
-            The collapsed import dict ({library_name: [import_var1, ...]}).
+            The collapsed import dict ({package_spec: [import_var1, ...]}).
+
+        Raises:
+            ValueError: If two imports have conflicting version specifiers.
         """
         collapsed: dict[str, dict[ImportVar, ImportVar]] = {}
         for imp in self:
@@ -271,7 +274,18 @@ class ImportList(List[ImportVar]):
                 collapsed[lib][imp] = existing_imp.collapse(imp)
             else:
                 collapsed[lib][imp] = imp
-        return {lib: list(set(imps)) for lib, imps in collapsed.items()}
+
+        # Check that all tags in the given library have the same version.
+        deduped: ImportDict = {}
+        for lib, imps in collapsed.items():
+            packages = {imp.package for imp in imps if imp.version is not None}
+            if len(packages) > 1:
+                raise ValueError(
+                    f"Imports from {lib} have conflicting version specifiers: "
+                    f"{packages} {imps}"
+                )
+            deduped[list(packages)[0] or ""] = list(imps.values())
+        return deduped
 
 
 ImportDict = Dict[str, List[ImportVar]]
