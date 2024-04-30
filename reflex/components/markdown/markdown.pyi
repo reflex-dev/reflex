@@ -11,7 +11,6 @@ import textwrap
 from functools import lru_cache
 from hashlib import md5
 from typing import Any, Callable, Dict, Union
-from reflex.compiler import utils
 from reflex.components.component import Component, CustomComponent
 from reflex.components.radix.themes.layout.list import (
     ListItem,
