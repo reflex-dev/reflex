@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import attrs
 import pytest
 import sqlalchemy
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 import reflex as rx
@@ -61,6 +62,15 @@ class SQLAClass(SQLABase):
         """
         return self.name
 
+    @hybrid_property
+    def str_or_int_property(self) -> Union[str, int]:
+        """String or int property.
+
+        Returns:
+            Name attribute
+        """
+        return self.name
+
 
 class ModelClass(rx.Model):
     """Test reflex model."""
@@ -76,6 +86,15 @@ class ModelClass(rx.Model):
     @property
     def str_property(self) -> str:
         """String property.
+
+        Returns:
+            Name attribute
+        """
+        return self.name
+
+    @property
+    def str_or_int_property(self) -> Union[str, int]:
+        """String or int property.
 
         Returns:
             Name attribute
@@ -103,6 +122,15 @@ class BaseClass(rx.Base):
         """
         return self.name
 
+    @property
+    def str_or_int_property(self) -> Union[str, int]:
+        """String or int property.
+
+        Returns:
+            Name attribute
+        """
+        return self.name
+
 
 class BareClass:
     """Bare python class."""
@@ -118,6 +146,15 @@ class BareClass:
     @property
     def str_property(self) -> str:
         """String property.
+
+        Returns:
+            Name attribute
+        """
+        return self.name
+
+    @property
+    def str_or_int_property(self) -> Union[str, int]:
+        """String or int property.
 
         Returns:
             Name attribute
@@ -140,6 +177,15 @@ class AttrClass:
     @property
     def str_property(self) -> str:
         """String property.
+
+        Returns:
+            Name attribute
+        """
+        return self.name
+
+    @property
+    def str_or_int_property(self) -> Union[str, int]:
+        """String or int property.
 
         Returns:
             Name attribute
@@ -171,6 +217,7 @@ def cls(request: pytest.FixtureRequest) -> type:
         pytest.param("sqla_tag", Optional[SQLATag], id="Optional[SQLATag]"),
         pytest.param("labels", List[SQLALabel], id="List[SQLALabel]"),
         pytest.param("str_property", str, id="str_property"),
+        pytest.param("str_or_int_property", Union[str, int], id="str_or_int_property"),
     ],
 )
 def test_get_attribute_access_type(cls: type, attr: str, expected: GenericType) -> None:
