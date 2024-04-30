@@ -15,12 +15,12 @@ def test_websocket_target_url():
 
 def test_connection_banner():
     banner = ConnectionBanner.create()
-    _imports = banner._get_all_imports()
-    assert [i.library for i in _imports] == [
+    _imports = banner._get_all_imports().collapse()
+    assert list(_imports) == [
         "react",
         "/utils/context",
         "/utils/state",
-        "@radix-ui/themes",
+        "@radix-ui/themes@^3.0.0",
         "/env.json",
     ]
 
@@ -31,12 +31,12 @@ def test_connection_banner():
 
 def test_connection_modal():
     modal = ConnectionModal.create()
-    _imports = modal._get_all_imports()
-    assert [i.library for i in _imports] == [
+    _imports = modal._get_all_imports().collapse()
+    assert list(_imports) == [
         "react",
         "/utils/context",
         "/utils/state",
-        "@radix-ui/themes",
+        "@radix-ui/themes@^3.0.0",
         "/env.json",
     ]
 

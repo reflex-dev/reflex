@@ -284,7 +284,10 @@ class ImportList(List[ImportVar]):
                     f"Imports from {lib} have conflicting version specifiers: "
                     f"{packages} {imps}"
                 )
-            deduped[list(packages)[0] or ""] = list(imps.values())
+            package = lib
+            if packages:
+                package = packages.pop() or ""
+            deduped[package] = list(imps.values())
         return deduped
 
 
