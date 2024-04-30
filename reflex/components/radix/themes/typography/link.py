@@ -59,8 +59,8 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
     # If True, the link will open in a new tab
     is_external: Var[bool]
 
-    def _get_imports(self) -> imports.ImportDict:
-        return {**super()._get_imports(), **next_link._get_imports()}
+    def _get_imports_list(self) -> list[imports.ImportVar]:
+        return [*super()._get_imports_list(), *next_link._get_imports_list()]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

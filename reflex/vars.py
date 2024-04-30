@@ -22,6 +22,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -129,7 +130,7 @@ class VarData(Base):
     def __init__(
         self,
         imports: ImportList
-        | List[ImportVar | Dict[str, Optional[Union[str, bool]]]]
+        | Sequence[ImportVar | Dict[str, Optional[Union[str, bool]]]]
         | ImportDict
         | Dict[str, set[ImportVar]]
         | None = None,

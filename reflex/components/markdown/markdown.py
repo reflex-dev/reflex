@@ -180,7 +180,7 @@ class Markdown(Component):
                     is_default=True,
                 ),
                 ImportVar(
-                    package="remark-katex@6.0.3",
+                    package="rehype-katex@6.0.3",
                     tag=_REHYPE_KATEX._var_name,
                     is_default=True,
                 ),

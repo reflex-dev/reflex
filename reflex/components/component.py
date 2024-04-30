@@ -1593,32 +1593,29 @@ memo = custom_component
 class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
-    def _get_imports(self) -> imports.ImportDict:
+    def _get_imports_list(self) -> list[ImportVar]:
         """Get the imports for the component.
 
         Returns:
             The imports for dynamically importing the component at module load time.
         """
-        # Next.js dynamic import mechanism.
-        dynamic_import = {"next/dynamic": [ImportVar(tag="dynamic", is_default=True)]}
+        return [
+            *super()._get_imports_list(),
+            # Next.js dynamic import mechanism.
+            ImportVar(package="next/dynamic", tag="dynamic", is_default=True),
+        ]
 
-        # The normal imports for this component.
-        _imports = super()._get_imports()
+    @property
+    def import_var(self) -> ImportVar:
+        """Will not actually render the tag to import, get it dynamically instead.
 
-        # Do NOT import the main library/tag statically.
-        if self.library is not None:
-            _imports[self.library] = [
-                imports.ImportVar(
-                    tag=None,
-                    render=False,
-                    transpile=self._should_transpile(self.library),
-                ),
-            ]
-
-        return imports.merge_imports(
-            dynamic_import,
-            _imports,
-        )
+        Returns:
+            An import var.
+        """
+        imp = super().import_var
+        imp.tag = None
+        imp.render = False
+        return imp
 
     def _get_dynamic_imports(self) -> str:
         opts_fragment = ", { ssr: false });"

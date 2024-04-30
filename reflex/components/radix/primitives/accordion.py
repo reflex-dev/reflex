@@ -425,12 +425,12 @@ class AccordionRoot(AccordionComponent):
             accordion_theme_root
         )
 
-    def _get_imports(self):
-        return imports.merge_imports(
-            super()._get_imports(),
-            self._var_data.imports if self._var_data else {},
-            {"@emotion/react": [imports.ImportVar(tag="keyframes")]},
-        )
+    def _get_imports_list(self) -> list[imports.ImportVar]:
+        return [
+            *super()._get_imports_list(),
+            *(self._var_data.imports if self._var_data else {}),
+            imports.ImportVar(package="@emotion/react", tag="keyframes"),
+        ]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -643,12 +643,6 @@ class AccordionContent(AccordionComponent):
 
     def _apply_theme(self, theme: Component):
         self.style = Style({**self.style})
-
-    # def _get_imports(self):
-    #     return {
-    #         **super()._get_imports(),
-    #         "@emotion/react": [imports.ImportVar(tag="keyframes")],
-    #     }
 
 
 class Accordion(ComponentNamespace):

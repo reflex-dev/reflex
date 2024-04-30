@@ -268,11 +268,11 @@ class Match(MemoizationLeaf):
         tag.name = "match"
         return dict(tag)
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            getattr(self.cond._var_data, "imports", {}),
-        )
+    def _get_imports_list(self) -> list[imports.ImportVar]:
+        return [
+            *super()._get_imports_list(),
+            *getattr(self.cond._var_data, "imports", []),
+        ]
 
     def _apply_theme(self, theme: Component):
         """Apply the theme to this component.
