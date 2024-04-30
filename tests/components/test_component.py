@@ -385,8 +385,8 @@ def test_create_component(component1):
 def test_create_component_prop_validation(
     component1: Type[Component],
     prop_name: str,
-    var: Var | str | int,
-    expected: type[Exception],
+    var: Union[Var, str, int],
+    expected: Type[Exception],
 ):
     """Test that component props are validated correctly.
 
