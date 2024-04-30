@@ -12,9 +12,9 @@ from reflex.style import LIGHT_COLOR_MODE, color_mode
 from reflex.utils import format, imports
 from reflex.vars import BaseVar, Var, VarData
 
-_IS_TRUE_IMPORT = {
-    f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="isTrue")},
-}
+_IS_TRUE_IMPORT = imports.ImportList(
+    [imports.ImportVar(library=f"/{Dirs.STATE_PATH}", tag="isTrue")]
+)
 
 
 class Cond(MemoizationLeaf):
@@ -95,11 +95,13 @@ class Cond(MemoizationLeaf):
             cond_state=f"isTrue({self.cond._var_full_name})",
         )
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            getattr(self.cond._var_data, "imports", {}),
-            _IS_TRUE_IMPORT,
+    def _get_imports_list(self) -> imports.ImportList:
+        return imports.ImportList(
+            [
+                *super()._get_imports_list(),
+                *getattr(self.cond._var_data, "imports", []),
+                *_IS_TRUE_IMPORT,
+            ]
         )
 
     def _apply_theme(self, theme: Component):

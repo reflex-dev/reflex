@@ -296,11 +296,11 @@ def test_get_imports(component1, component2):
     """
     c1 = component1.create()
     c2 = component2.create(c1)
-    assert c1._get_all_imports() == {"react": [ImportVar(tag="Component")]}
-    assert c2._get_all_imports() == {
-        "react-redux": [ImportVar(tag="connect")],
-        "react": [ImportVar(tag="Component")],
-    }
+    assert c1._get_all_imports() == [ImportVar(library="react", tag="Component")]
+    assert c2._get_all_imports() == [
+        ImportVar(library="react-redux", tag="connect"),
+        ImportVar(library="react", tag="Component"),
+    ]
 
 
 def test_get_custom_code(component1, component2):
@@ -1514,22 +1514,24 @@ def test_custom_component_get_imports():
     custom_comp = wrapper()
 
     # Inner is not imported directly, but it is imported by the custom component.
-    assert "inner" not in custom_comp._get_all_imports()
+    inner_import = ImportVar(library="inner", tag="Inner")
+    assert inner_import not in custom_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
     _, _, imports_inner = compile_components(custom_comp._get_all_custom_components())
-    assert "inner" in imports_inner
+    assert inner_import in imports_inner
 
     outer_comp = outer(c=wrapper())
 
     # Libraries are not imported directly, but are imported by the custom component.
-    assert "inner" not in outer_comp._get_all_imports()
-    assert "other" not in outer_comp._get_all_imports()
+    other_import = ImportVar(library="other", tag="Other")
+    assert inner_import not in outer_comp._get_all_imports()
+    assert other_import not in outer_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
     _, _, imports_outer = compile_components(outer_comp._get_all_custom_components())
-    assert "inner" in imports_outer
-    assert "other" in imports_outer
+    assert inner_import in imports_outer
+    assert other_import in imports_outer
 
 
 def test_custom_component_declare_event_handlers_in_fields():

@@ -20,7 +20,7 @@ def test_connection_banner():
         "react",
         "/utils/context",
         "/utils/state",
-        "@radix-ui/themes@^3.0.0",
+        "@radix-ui/themes",
         "/env.json",
     ]
 
@@ -36,7 +36,7 @@ def test_connection_modal():
         "react",
         "/utils/context",
         "/utils/state",
-        "@radix-ui/themes@^3.0.0",
+        "@radix-ui/themes",
         "/env.json",
     ]
 

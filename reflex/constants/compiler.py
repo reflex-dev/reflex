@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 from reflex.base import Base
 from reflex.constants import Dirs
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportList, ImportVar
 
 # The prefix used to create setters for state vars.
 SETTER_PREFIX = "set_"
@@ -102,11 +102,11 @@ class ComponentName(Enum):
 class Imports(SimpleNamespace):
     """Common sets of import vars."""
 
-    EVENTS = {
-        "react": {ImportVar(tag="useContext")},
-        f"/{Dirs.CONTEXTS_PATH}": {ImportVar(tag="EventLoopContext")},
-        f"/{Dirs.STATE_PATH}": {ImportVar(tag=CompileVars.TO_EVENT)},
-    }
+    EVENTS: ImportList = [
+        ImportVar(package="react", tag="useContext"),
+        ImportVar(package=f"/{Dirs.CONTEXTS_PATH}", tag="EventLoopContext"),
+        ImportVar(package=f"/{Dirs.STATE_PATH}", tag=CompileVars.TO_EVENT),
+    ]
 
 
 class Hooks(SimpleNamespace):

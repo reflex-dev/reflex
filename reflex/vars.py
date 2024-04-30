@@ -37,7 +37,7 @@ from reflex.base import Base
 from reflex.utils import console, format, imports, serializers, types
 
 # This module used to export ImportVar itself, so we still import it for export here
-from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.imports import ImportDict, ImportList, ImportVar
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -116,7 +116,7 @@ class VarData(Base):
     state: str = ""
 
     # Imports needed to render this var
-    imports: ImportDict = {}
+    imports: ImportList = []
 
     # Hooks that need to be present in the component to render this var
     hooks: Dict[str, None] = {}
@@ -125,6 +125,19 @@ class VarData(Base):
     # out where the interpolations are and only escape the non-interpolated
     # segments.
     interpolations: List[Tuple[int, int]] = []
+
+    def __init__(self, imports: ImportDict | ImportList = None, **kwargs):
+        if isinstance(imports, dict):
+            imports = ImportList.from_import_dict(imports)
+            console.deprecate(
+                feature_name="Passing ImportDict for VarData",
+                reason="use ImportList instead",
+                deprecation_version="0.5.0",
+                removal_version="0.6.0",
+            )
+        elif imports is None:
+            imports = []
+        super().__init__(imports=imports, **kwargs)
 
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None:
@@ -137,14 +150,14 @@ class VarData(Base):
             The merged var data object.
         """
         state = ""
-        _imports = {}
+        _imports = []
         hooks = {}
         interpolations = []
         for var_data in others:
             if var_data is None:
                 continue
             state = state or var_data.state
-            _imports = imports.merge_imports(_imports, var_data.imports)
+            _imports.extend(var_data.imports)
             hooks.update(var_data.hooks)
             interpolations += var_data.interpolations
 
@@ -180,11 +193,18 @@ class VarData(Base):
 
         # Don't compare interpolations - that's added in by the decoder, and
         # not part of the vardata itself.
+        if not isinstance(self.imports, ImportList):
+            self_imports = ImportList(self.imports).collapse()
+        else:
+            self_imports = self.imports.collapse()
+        if not isinstance(other.imports, ImportList):
+            other_imports = ImportList(other.imports).collapse()
+        else:
+            other_imports = other.imports.collapse()
         return (
             self.state == other.state
             and self.hooks.keys() == other.hooks.keys()
-            and imports.collapse_imports(self.imports)
-            == imports.collapse_imports(other.imports)
+            and self_imports == other_imports
         )
 
     def dict(self) -> dict:
@@ -196,10 +216,7 @@ class VarData(Base):
         return {
             "state": self.state,
             "interpolations": list(self.interpolations),
-            "imports": {
-                lib: [import_var.dict() for import_var in import_vars]
-                for lib, import_vars in self.imports.items()
-            },
+            "imports": [import_var.dict() for import_var in self.imports],
             "hooks": self.hooks,
         }
 

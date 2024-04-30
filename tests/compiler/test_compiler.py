@@ -4,8 +4,7 @@ from typing import List
 import pytest
 
 from reflex.compiler import compiler, utils
-from reflex.utils import imports
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportList, ImportVar
 
 
 @pytest.mark.parametrize(
@@ -48,43 +47,56 @@ def test_compile_import_statement(
 
 
 @pytest.mark.parametrize(
-    "import_dict,test_dicts",
+    "import_list,test_dicts",
     [
-        ({}, []),
+        (ImportList(), []),
         (
-            {"axios": [ImportVar(tag="axios", is_default=True)]},
+            ImportList([ImportVar(library="axios", tag="axios", is_default=True)]),
             [{"lib": "axios", "default": "axios", "rest": []}],
         ),
         (
-            {"axios": [ImportVar(tag="foo"), ImportVar(tag="bar")]},
+            ImportList(
+                [
+                    ImportVar(library="axios", tag="foo"),
+                    ImportVar(library="axios", tag="bar"),
+                ]
+            ),
             [{"lib": "axios", "default": "", "rest": ["bar", "foo"]}],
         ),
         (
-            {
-                "axios": [
-                    ImportVar(tag="axios", is_default=True),
-                    ImportVar(tag="foo"),
-                    ImportVar(tag="bar"),
-                ],
-                "react": [ImportVar(tag="react", is_default=True)],
-            },
+            ImportList(
+                [
+                    ImportVar(library="axios", tag="axios", is_default=True),
+                    ImportVar(library="axios", tag="foo"),
+                    ImportVar(library="axios", tag="bar"),
+                    ImportVar(library="react", tag="react", is_default=True),
+                ]
+            ),
             [
                 {"lib": "axios", "default": "axios", "rest": ["bar", "foo"]},
                 {"lib": "react", "default": "react", "rest": []},
             ],
         ),
         (
-            {"": [ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")]},
+            ImportList(
+                [
+                    ImportVar(library="", tag="lib1.js"),
+                    ImportVar(library="", tag="lib2.js"),
+                ]
+            ),
             [
                 {"lib": "lib1.js", "default": "", "rest": []},
                 {"lib": "lib2.js", "default": "", "rest": []},
             ],
         ),
         (
-            {
-                "": [ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")],
-                "axios": [ImportVar(tag="axios", is_default=True)],
-            },
+            ImportList(
+                [
+                    ImportVar(library="", tag="lib1.js"),
+                    ImportVar(library="", tag="lib2.js"),
+                    ImportVar(library="axios", tag="axios", is_default=True),
+                ]
+            ),
             [
                 {"lib": "lib1.js", "default": "", "rest": []},
                 {"lib": "lib2.js", "default": "", "rest": []},
@@ -93,14 +105,14 @@ def test_compile_import_statement(
         ),
     ],
 )
-def test_compile_imports(import_dict: imports.ImportDict, test_dicts: List[dict]):
+def test_compile_imports(import_list: ImportList, test_dicts: List[dict]):
     """Test the compile_imports function.
 
     Args:
-        import_dict: The import dictionary.
+        import_list: The list of ImportVar.
         test_dicts: The expected output.
     """
-    imports = utils.compile_imports(import_dict)
+    imports = utils.compile_imports(import_list)
     for import_dict, test_dict in zip(imports, test_dicts):
         assert import_dict["lib"] == test_dict["lib"]
         assert import_dict["default"] == test_dict["default"]

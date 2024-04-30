@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
+from reflex.utils.imports import split_library_name_version
 from reflex.utils.serializers import serialize
 from reflex.vars import BaseVar, Var
 
@@ -716,11 +717,7 @@ def format_library_name(library_fullname: str):
     Returns:
         The name without the @version if it was part of the name
     """
-    lib, at, version = library_fullname.rpartition("@")
-    if not lib:
-        lib = at + version
-
-    return lib
+    return split_library_name_version(library_fullname)[0]
 
 
 def json_dumps(obj: Any) -> str:

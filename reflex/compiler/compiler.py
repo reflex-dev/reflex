@@ -19,7 +19,7 @@ from reflex.config import get_config
 from reflex.state import BaseState
 from reflex.style import LIGHT_COLOR_MODE
 from reflex.utils.exec import is_prod_mode
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportList, ImportVar
 from reflex.vars import Var
 
 
@@ -197,25 +197,34 @@ def _compile_components(
     Returns:
         The compiled components.
     """
-    imports = {
-        "react": [ImportVar(tag="memo")],
-        f"/{constants.Dirs.STATE_PATH}": [ImportVar(tag="E"), ImportVar(tag="isTrue")],
-    }
+    _imports = ImportList(
+        [
+            ImportVar(package="react", tag="memo"),
+            ImportVar(
+                package=f"/{constants.Dirs.STATE_PATH}",
+                tag="E",
+            ),
+            ImportVar(
+                package=f"/{constants.Dirs.STATE_PATH}",
+                tag="isTrue",
+            ),
+        ]
+    )
     component_renders = []
 
     # Compile each component.
     for component in components:
         component_render, component_imports = utils.compile_custom_component(component)
         component_renders.append(component_render)
-        imports = utils.merge_imports(imports, component_imports)
+        _imports.extend(component_imports)
 
     # Compile the components page.
     return (
         templates.COMPONENTS.render(
-            imports=utils.compile_imports(imports),
+            imports=utils.compile_imports(_imports),
             components=component_renders,
         ),
-        imports,
+        _imports,
     )
 
 
@@ -235,7 +244,7 @@ def _compile_stateful_components(
     Returns:
         The rendered stateful components code.
     """
-    all_import_dicts = []
+    all_imports = []
     rendered_components = {}
 
     def get_shared_components_recursive(component: BaseComponent):
@@ -266,7 +275,7 @@ def _compile_stateful_components(
             rendered_components.update(
                 {code: None for code in component._get_all_custom_code()},
             )
-            all_import_dicts.append(component._get_all_imports())
+            all_imports.extend(component._get_all_imports())
 
             # Indicate that this component now imports from the shared file.
             component.rendered_as_shared = True
@@ -275,9 +284,11 @@ def _compile_stateful_components(
         get_shared_components_recursive(page_component)
 
     # Don't import from the file that we're about to create.
-    all_imports = utils.merge_imports(*all_import_dicts)
-    all_imports.pop(
-        f"/{constants.Dirs.UTILS}/{constants.PageNames.STATEFUL_COMPONENTS}", None
+    all_imports = ImportList(
+        imp
+        for imp in all_imports
+        if imp.library
+        != f"/{constants.Dirs.UTILS}/{constants.PageNames.STATEFUL_COMPONENTS}"
     )
 
     return templates.STATEFUL_COMPONENTS.render(
@@ -408,7 +419,7 @@ def compile_page(
 
 def compile_components(
     components: set[CustomComponent],
-) -> tuple[str, str, Dict[str, list[ImportVar]]]:
+) -> tuple[str, str, ImportList]:
     """Compile the custom components.
 
     Args:

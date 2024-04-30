@@ -88,16 +88,16 @@ def validate_imports(import_dict: imports.ImportDict):
                 used_tags[import_name] = lib
 
 
-def compile_imports(import_dict: imports.ImportDict) -> list[dict]:
-    """Compile an import dict.
+def compile_imports(import_list: imports.ImportList) -> list[dict]:
+    """Compile an import list.
 
     Args:
-        import_dict: The import dict to compile.
+        import_list: The import list to compile.
 
     Returns:
-        The list of import dict.
+        The list of template import dict.
     """
-    collapsed_import_dict = imports.collapse_imports(import_dict)
+    collapsed_import_dict = import_list.collapse()
     validate_imports(collapsed_import_dict)
     import_dicts = []
     for lib, fields in collapsed_import_dict.items():
@@ -113,9 +113,6 @@ def compile_imports(import_dict: imports.ImportDict) -> list[dict]:
             for module in sorted(rest):
                 import_dicts.append(get_import_dict(module))
             continue
-
-        # remove the version before rendering the package imports
-        lib = format.format_library_name(lib)
 
         import_dicts.append(get_import_dict(lib, default, rest))
     return import_dicts
@@ -237,7 +234,7 @@ def compile_client_storage(state: Type[BaseState]) -> dict[str, dict]:
 
 def compile_custom_component(
     component: CustomComponent,
-) -> tuple[dict, imports.ImportDict]:
+) -> tuple[dict, imports.ImportList]:
     """Compile a custom component.
 
     Args:
@@ -250,11 +247,12 @@ def compile_custom_component(
     render = component.get_component(component)
 
     # Get the imports.
-    imports = {
-        lib: fields
-        for lib, fields in render._get_all_imports().items()
-        if lib != component.library
-    }
+    component_library_name = format.format_library_name(component.library)
+    _imports = imports.ImportList(
+        imp
+        for imp in render._get_all_imports()
+        if imp.library != component_library_name
+    )
 
     # Concatenate the props.
     props = [prop._var_name for prop in component.get_prop_vars()]
@@ -268,7 +266,7 @@ def compile_custom_component(
             "hooks": {**render._get_all_hooks_internal(), **render._get_all_hooks()},
             "custom_code": render._get_all_custom_code(),
         },
-        imports,
+        _imports,
     )
 
 

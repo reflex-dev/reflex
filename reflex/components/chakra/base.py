@@ -35,19 +35,18 @@ class ChakraComponent(Component):
 
     @classmethod
     @lru_cache(maxsize=None)
-    def _get_dependencies_imports(cls) -> imports.ImportDict:
+    def _get_dependencies_imports(cls) -> imports.ImportList:
         """Get the imports from lib_dependencies for installing.
 
         Returns:
             The dependencies imports of the component.
         """
-        return {
-            dep: [imports.ImportVar(tag=None, render=False)]
-            for dep in [
-                "@chakra-ui/system@2.5.7",
-                "framer-motion@10.16.4",
-            ]
-        }
+        return [
+            imports.ImportVar(
+                package="@chakra-ui/system@2.5.7", tag=None, render=False
+            ),
+            imports.ImportVar(package="framer-motion@10.16.4", tag=None, render=False),
+        ]
 
 
 class ChakraProvider(ChakraComponent):
