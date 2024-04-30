@@ -13,7 +13,7 @@ from reflex.components.component import Component
 from reflex.components.tags.tag import Tag
 from reflex.constants import EventTriggers
 from reflex.utils import format
-from reflex.utils.imports import ImportDict, merge_imports
+from reflex.utils.imports import ImportVar
 from reflex.vars import Var
 
 class PinInput(ChakraComponent):

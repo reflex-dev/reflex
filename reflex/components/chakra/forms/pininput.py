@@ -9,7 +9,7 @@ from reflex.components.component import Component
 from reflex.components.tags.tag import Tag
 from reflex.constants import EventTriggers
 from reflex.utils import format
-from reflex.utils.imports import ImportDict, merge_imports
+from reflex.utils.imports import ImportVar
 from reflex.vars import Var
 
 
@@ -63,18 +63,18 @@ class PinInput(ChakraComponent):
     # The name of the form field
     name: Var[str]
 
-    def _get_imports(self) -> ImportDict:
+    def _get_imports_list(self) -> list[ImportVar]:
         """Include PinInputField explicitly because it may not be a child component at compile time.
 
         Returns:
             The merged import dict.
         """
         range_var = Var.range(0)
-        return merge_imports(
-            super()._get_imports(),
-            PinInputField()._get_all_imports(),  # type: ignore
-            range_var._var_data.imports if range_var._var_data is not None else {},
-        )
+        return [
+            *super()._get_imports_list(),
+            *PinInputField()._get_all_imports(),  # type: ignore
+            *(range_var._var_data.imports if range_var._var_data is not None else []),
+        ]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
