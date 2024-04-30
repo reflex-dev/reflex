@@ -17,8 +17,6 @@ from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import Any, Callable, Iterable, Type, get_args
 
-from reflex.utils.types import is_optional, is_union
-
 try:
     import black
     import black.mode
@@ -26,7 +24,7 @@ except ImportError:
     black = None
 
 from reflex.components.component import Component
-from reflex.utils import types as rx_types
+from reflex.utils.types import is_literal, is_optional, is_union
 from reflex.vars import Var
 
 logger = logging.getLogger("pyi_generator")
@@ -126,7 +124,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     if args:
         inner_container_type_args = (
             [repr(arg) for arg in args]
-            if rx_types.is_literal(value)
+            if is_literal(value)
             else [
                 _get_type_hint(arg, type_hint_globals, is_optional=False)
                 for arg in args
