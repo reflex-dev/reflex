@@ -1746,3 +1746,208 @@ def test_invalid_event_trigger():
 
     with pytest.raises(ValueError):
         trigger_comp(on_b=rx.console_log("log"))
+
+
+@pytest.mark.parametrize(
+    "tags",
+    (
+        ["Component"],
+        ["Component", "useState"],
+        [ImportVar(tag="Component")],
+        [ImportVar(tag="Component"), ImportVar(tag="useState")],
+        ["Component", ImportVar(tag="useState")],
+    ),
+)
+def test_component_add_imports(tags):
+    def _list_to_import_vars(tags: List[str]) -> List[ImportVar]:
+        return [
+            ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
+            for tag in tags
+        ]
+
+    class BaseComponent(Component):
+        def _get_imports(self) -> imports.ImportDict:
+            return {}
+
+    class Reference(Component):
+        def _get_imports(self) -> imports.ImportDict:
+            return imports.merge_imports(
+                super()._get_imports(),
+                {"react": _list_to_import_vars(tags)},
+                {"foo": [ImportVar(tag="bar")]},
+            )
+
+    class TestBase(Component):
+        def add_imports(
+            self,
+        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
+            return {"foo": "bar"}
+
+    class Test(TestBase):
+        def add_imports(
+            self,
+        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
+            return {"react": (tags[0] if len(tags) == 1 else tags)}
+
+    baseline = Reference.create()
+    test = Test.create()
+
+    assert baseline._get_all_imports() == {
+        "react": _list_to_import_vars(tags),
+        "foo": [ImportVar(tag="bar")],
+    }
+    assert test._get_all_imports() == baseline._get_all_imports()
+
+
+def test_component_add_hooks():
+    class BaseComponent(Component):
+        def _get_hooks(self):
+            return "const hook1 = 42"
+
+    class ChildComponent1(BaseComponent):
+        pass
+
+    class GrandchildComponent1(ChildComponent1):
+        def add_hooks(self):
+            return [
+                "const hook2 = 43",
+                "const hook3 = 44",
+            ]
+
+    class GreatGrandchildComponent1(GrandchildComponent1):
+        def add_hooks(self):
+            return [
+                "const hook4 = 45",
+            ]
+
+    class GrandchildComponent2(ChildComponent1):
+        def _get_hooks(self):
+            return "const hook5 = 46"
+
+    class GreatGrandchildComponent2(GrandchildComponent2):
+        def add_hooks(self):
+            return [
+                "const hook2 = 43",
+                "const hook6 = 47",
+            ]
+
+    assert list(BaseComponent()._get_all_hooks()) == ["const hook1 = 42"]
+    assert list(ChildComponent1()._get_all_hooks()) == ["const hook1 = 42"]
+    assert list(GrandchildComponent1()._get_all_hooks()) == [
+        "const hook1 = 42",
+        "const hook2 = 43",
+        "const hook3 = 44",
+    ]
+    assert list(GreatGrandchildComponent1()._get_all_hooks()) == [
+        "const hook1 = 42",
+        "const hook2 = 43",
+        "const hook3 = 44",
+        "const hook4 = 45",
+    ]
+    assert list(GrandchildComponent2()._get_all_hooks()) == ["const hook5 = 46"]
+    assert list(GreatGrandchildComponent2()._get_all_hooks()) == [
+        "const hook5 = 46",
+        "const hook2 = 43",
+        "const hook6 = 47",
+    ]
+    assert list(
+        BaseComponent.create(
+            GrandchildComponent1.create(GreatGrandchildComponent2()),
+            GreatGrandchildComponent1(),
+        )._get_all_hooks(),
+    ) == [
+        "const hook1 = 42",
+        "const hook2 = 43",
+        "const hook3 = 44",
+        "const hook5 = 46",
+        "const hook6 = 47",
+        "const hook4 = 45",
+    ]
+    assert list(
+        Fragment.create(
+            GreatGrandchildComponent2(),
+            GreatGrandchildComponent1(),
+        )._get_all_hooks()
+    ) == [
+        "const hook5 = 46",
+        "const hook2 = 43",
+        "const hook6 = 47",
+        "const hook1 = 42",
+        "const hook3 = 44",
+        "const hook4 = 45",
+    ]
+
+
+def test_component_add_custom_code():
+    class BaseComponent(Component):
+        def _get_custom_code(self):
+            return "const custom_code1 = 42"
+
+    class ChildComponent1(BaseComponent):
+        pass
+
+    class GrandchildComponent1(ChildComponent1):
+        def add_custom_code(self):
+            return [
+                "const custom_code2 = 43",
+                "const custom_code3 = 44",
+            ]
+
+    class GreatGrandchildComponent1(GrandchildComponent1):
+        def add_custom_code(self):
+            return [
+                "const custom_code4 = 45",
+            ]
+
+    class GrandchildComponent2(ChildComponent1):
+        def _get_custom_code(self):
+            return "const custom_code5 = 46"
+
+    class GreatGrandchildComponent2(GrandchildComponent2):
+        def add_custom_code(self):
+            return [
+                "const custom_code2 = 43",
+                "const custom_code6 = 47",
+            ]
+
+    assert BaseComponent()._get_all_custom_code() == {"const custom_code1 = 42"}
+    assert ChildComponent1()._get_all_custom_code() == {"const custom_code1 = 42"}
+    assert GrandchildComponent1()._get_all_custom_code() == {
+        "const custom_code1 = 42",
+        "const custom_code2 = 43",
+        "const custom_code3 = 44",
+    }
+    assert GreatGrandchildComponent1()._get_all_custom_code() == {
+        "const custom_code1 = 42",
+        "const custom_code2 = 43",
+        "const custom_code3 = 44",
+        "const custom_code4 = 45",
+    }
+    assert GrandchildComponent2()._get_all_custom_code() == {"const custom_code5 = 46"}
+    assert GreatGrandchildComponent2()._get_all_custom_code() == {
+        "const custom_code2 = 43",
+        "const custom_code5 = 46",
+        "const custom_code6 = 47",
+    }
+    assert BaseComponent.create(
+        GrandchildComponent1.create(GreatGrandchildComponent2()),
+        GreatGrandchildComponent1(),
+    )._get_all_custom_code() == {
+        "const custom_code1 = 42",
+        "const custom_code2 = 43",
+        "const custom_code3 = 44",
+        "const custom_code4 = 45",
+        "const custom_code5 = 46",
+        "const custom_code6 = 47",
+    }
+    assert Fragment.create(
+        GreatGrandchildComponent2(),
+        GreatGrandchildComponent1(),
+    )._get_all_custom_code() == {
+        "const custom_code1 = 42",
+        "const custom_code2 = 43",
+        "const custom_code3 = 44",
+        "const custom_code4 = 45",
+        "const custom_code5 = 46",
+        "const custom_code6 = 47",
+    }
