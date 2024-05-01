@@ -1338,7 +1338,8 @@ class Component(BaseComponent, ABC):
         if hooks is not None:
             code[hooks] = None
 
-        # Add the hook code from add_hooks for each parent class
+        # Add the hook code from add_hooks for each parent class (this is reversed to preserve
+        # the order of the hooks in the final output)
         for clz in reversed(tuple(self._iter_parent_classes_with_method("add_hooks"))):
             for hook in clz.add_hooks(self):
                 code[hook] = None
