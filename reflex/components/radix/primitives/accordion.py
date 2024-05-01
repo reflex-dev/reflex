@@ -176,7 +176,7 @@ to {
                 },
                 "&[data-variant='outline']": {
                     "border": f"1px solid {color('accent', 6)})",
-                    # "box_shadow": "0 2px 10px var(--black-a1)",
+                    "box_shadow": "0 2px 10px var(--black-a1)",
                 },
                 "&[data-variant='surface']": {
                     "border": f"1px solid {color('accent', 6)})",
