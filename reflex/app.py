@@ -121,42 +121,25 @@ class App(Base):
     )
     ```
     """
+    # The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app.
+    theme: Optional[Component] = themes.theme(accent_color="blue")
 
-    # A map from a page route to the component to render.
-    pages: Dict[str, Component] = {}
-
-    # A list of URLs to stylesheets to include in the app.
-    stylesheets: List[str] = []
-
-    # The backend API object.
-    api: FastAPI = None  # type: ignore
-
-    # The Socket.IO AsyncServer.
-    sio: Optional[AsyncServer] = None
-
-    # The state class to use for the app.
-    state: Optional[Type[BaseState]] = None
-
-    # Class to manage many client states.
-    _state_manager: Optional[StateManager] = None
-
-    # The styling to apply to each component.
+    # The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
     style: ComponentStyle = {}
 
-    # Middleware to add to the app.
-    middleware: List[Middleware] = []
+    # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets) to include in the app.
+    stylesheets: List[str] = []
 
-    # List of event handlers to trigger when a page loads.
-    load_events: Dict[str, List[Union[EventHandler, EventSpec]]] = {}
-
-    # Admin dashboard
-    admin_dash: Optional[AdminDash] = None
-
-    # The async server name space
-    event_namespace: Optional[EventNamespace] = None
+    # A component that is present on every page.
+    overlay_component: Optional[
+        Union[Component, ComponentCallable]
+    ] = default_overlay_component
 
     # Components to add to the head of every page.
     head_components: List[Component] = []
+
+    # The Socket.IO AsyncServer instance.
+    sio: Optional[AsyncServer] = None
 
     # The language to add to the html root tag of every page.
     html_lang: Optional[str] = None
@@ -164,16 +147,32 @@ class App(Base):
     # Attributes to add to the html root tag of every page.
     html_custom_attrs: Optional[Dict[str, str]] = None
 
-    # A component that is present on every page.
-    overlay_component: Optional[
-        Union[Component, ComponentCallable]
-    ] = default_overlay_component
+    # A map from a page route to the component to render. Users should use `add_page`. PRIVATE.
+    pages: Dict[str, Component] = {}
 
-    # Background tasks that are currently running
+    # The backend API object. PRIVATE.
+    api: FastAPI = None  # type: ignore
+
+    # The state class to use for the app. PRIVATE.
+    state: Optional[Type[BaseState]] = None
+
+    # Class to manage many client states.
+    _state_manager: Optional[StateManager] = None
+
+    # Middleware to add to the app. Users should use `add_middleware`. PRIVATE.
+    middleware: List[Middleware] = []
+
+    # Mapping from a route to event handlers to trigger when the page loads. PRIVATE.
+    load_events: Dict[str, List[Union[EventHandler, EventSpec]]] = {}
+
+    # Admin dashboard to view and manage the database. PRIVATE.
+    admin_dash: Optional[AdminDash] = None
+
+    # The async server name space. PRIVATE.
+    event_namespace: Optional[EventNamespace] = None
+
+    # Background tasks that are currently running. PRIVATE.
     background_tasks: Set[asyncio.Task] = set()
-
-    # The radix theme for the entire app
-    theme: Optional[Component] = themes.theme(accent_color="blue")
 
     def __init__(self, **kwargs):
         """Initialize the app.
@@ -597,7 +596,7 @@ class App(Base):
         """Define a custom 404 page for any url having no match.
 
         If there is no page defined on 'index' route, add the 404 page to it.
-        If there is no global catchall defined, add the 404 page with a catchall
+        If there is no global catchall defined, add the 404 page with a catchall.
 
         Args:
             component: The component to display at the page.
