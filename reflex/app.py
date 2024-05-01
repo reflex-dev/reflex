@@ -121,6 +121,7 @@ class App(Base):
     )
     ```
     """
+
     # The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app.
     theme: Optional[Component] = themes.theme(accent_color="blue")
 
