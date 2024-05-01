@@ -223,6 +223,21 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The additional imports for this component subclass.
+
+        The format of the return value is a dictionary where the keys are the
+        library names (with optional npm-style version specifications) mapping
+        to a single name to be imported, or a list names to be imported.
+
+        For advanced use cases, the values can be ImportVar instances (for
+        example, to provide an alias or mark that an import is the default
+        export from the given library).
+
+        ```python
+        return {
+            "react": "useEffect",
+            "react-draggable": ["DraggableCore", ImportVar(tag="Draggable", is_default=True)],
+        }
+        ```
         """
         return {}
 
@@ -247,6 +262,13 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The additional hooks for this component subclass.
+
+        ```python
+        return [
+            "const [count, setCount] = useState(0);",
+            "useEffect(() => { setCount((prev) => prev + 1); console.log(`mounted ${count} times`); }, []);",
+        ]
+        ```
         """
         return []
 
@@ -267,6 +289,12 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The additional custom code for this component subclass.
+
+        ```python
+        return [
+            "const translatePoints = (event) => { return { x: event.clientX, y: event.clientY }; };",
+        ]
+        ```
         """
         return []
 
