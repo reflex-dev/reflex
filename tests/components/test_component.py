@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Type, Union
+from contextlib import nullcontext
+from typing import Any, Dict, List, Optional, Type, Union
 
 import pytest
 
@@ -20,7 +21,7 @@ from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import BaseVar, Var, VarData
 
 
 @pytest.fixture
@@ -51,6 +52,9 @@ def component1() -> Type[Component]:
 
         # A test number prop.
         number: Var[int]
+
+        # A test string/number prop.
+        text_or_number: Var[Union[int, str]]
 
         def _get_imports(self) -> imports.ImportDict:
             return {"react": [ImportVar(tag="Component")]}
@@ -253,6 +257,154 @@ def test_create_component(component1):
     assert c.style == {"color": "white", "textAlign": "center"}
 
 
+@pytest.mark.parametrize(
+    "prop_name,var,expected",
+    [
+        pytest.param(
+            "text",
+            Var.create("hello"),
+            None,
+            id="text",
+        ),
+        pytest.param(
+            "text",
+            BaseVar(_var_name="hello", _var_type=Optional[str]),
+            None,
+            id="text-optional",
+        ),
+        pytest.param(
+            "text",
+            BaseVar(_var_name="hello", _var_type=Union[str, None]),
+            None,
+            id="text-union-str-none",
+        ),
+        pytest.param(
+            "text",
+            BaseVar(_var_name="hello", _var_type=Union[None, str]),
+            None,
+            id="text-union-none-str",
+        ),
+        pytest.param(
+            "text",
+            Var.create(1),
+            TypeError,
+            id="text-int",
+        ),
+        pytest.param(
+            "number",
+            Var.create(1),
+            None,
+            id="number",
+        ),
+        pytest.param(
+            "number",
+            BaseVar(_var_name="1", _var_type=Optional[int]),
+            None,
+            id="number-optional",
+        ),
+        pytest.param(
+            "number",
+            BaseVar(_var_name="1", _var_type=Union[int, None]),
+            None,
+            id="number-union-int-none",
+        ),
+        pytest.param(
+            "number",
+            BaseVar(_var_name="1", _var_type=Union[None, int]),
+            None,
+            id="number-union-none-int",
+        ),
+        pytest.param(
+            "number",
+            Var.create("1"),
+            TypeError,
+            id="number-str",
+        ),
+        pytest.param(
+            "text_or_number",
+            Var.create("hello"),
+            None,
+            id="text_or_number-str",
+        ),
+        pytest.param(
+            "text_or_number",
+            Var.create(1),
+            None,
+            id="text_or_number-int",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="hello", _var_type=Optional[str]),
+            None,
+            id="text_or_number-optional-str",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="hello", _var_type=Union[str, None]),
+            None,
+            id="text_or_number-union-str-none",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="hello", _var_type=Union[None, str]),
+            None,
+            id="text_or_number-union-none-str",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="1", _var_type=Optional[int]),
+            None,
+            id="text_or_number-optional-int",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="1", _var_type=Union[int, None]),
+            None,
+            id="text_or_number-union-int-none",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="1", _var_type=Union[None, int]),
+            None,
+            id="text_or_number-union-none-int",
+        ),
+        pytest.param(
+            "text_or_number",
+            Var.create(1.0),
+            TypeError,
+            id="text_or_number-float",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="hello", _var_type=Optional[Union[str, int]]),
+            None,
+            id="text_or_number-optional-union-str-int",
+        ),
+    ],
+)
+def test_create_component_prop_validation(
+    component1: Type[Component],
+    prop_name: str,
+    var: Union[Var, str, int],
+    expected: Type[Exception],
+):
+    """Test that component props are validated correctly.
+
+    Args:
+        component1: A test component.
+        prop_name: The name of the prop.
+        var: The value of the prop.
+        expected: The expected exception.
+    """
+    ctx = pytest.raises(expected) if expected else nullcontext()
+    kwargs = {prop_name: var}
+    with ctx:
+        c = component1.create(**kwargs)
+        assert isinstance(c, component1)
+        assert c.children == []
+        assert c.style == {}
+
+
 def test_add_style(component1, component2):
     """Test adding a style to a component.
 
@@ -338,7 +490,7 @@ def test_get_props(component1, component2):
         component1: A test component.
         component2: A test component.
     """
-    assert component1.get_props() == {"text", "number"}
+    assert component1.get_props() == {"text", "number", "text_or_number"}
     assert component2.get_props() == {"arr"}
 
 

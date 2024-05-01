@@ -935,3 +935,25 @@ def share_more_detail(
     console.set_log_level(loglevel)
 
     _collect_details_for_gallery()
+
+
+@custom_components_cli.command()
+def install(
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Install package from this local custom component in editable mode.
+
+    Args:
+        loglevel: The log level to use.
+
+    Raises:
+        Exit: If unable to install the current directory in editable mode.
+    """
+    console.set_log_level(loglevel)
+
+    if _pip_install_on_demand(package_name=".", install_args=["-e"]):
+        console.info(f"Package installed successfully!")
+    else:
+        raise typer.Exit(code=1)
