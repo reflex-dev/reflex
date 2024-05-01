@@ -1620,6 +1620,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Recursively find the substate deltas.
         substates = self.substates
         for substate in self.dirty_substates.union(self._always_dirty_substates):
+            if not substates[substate]._get_was_touched():
+                continue
             delta.update(substates[substate].get_delta())
 
         # Format the delta.
