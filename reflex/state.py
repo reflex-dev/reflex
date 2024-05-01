@@ -1592,6 +1592,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     def get_delta(self, include_substates: bool = True) -> Delta:
         """Get the delta for the state.
 
+        Args:
+            include_substates: Whether to include substates in the delta.
+
         Returns:
             The delta for the state.
         """
