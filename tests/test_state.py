@@ -741,7 +741,6 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     assert update.delta == {
         "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state": {"value": "HI", "count": 24},
-        "test_state.child_state3.grandchild_state3": {"computed": ""},
     }
     test_state._clean()
 
@@ -757,7 +756,6 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     assert update.delta == {
         "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state.grandchild_state": {"value2": "new"},
-        "test_state.child_state3.grandchild_state3": {"computed": ""},
     }
 
 

@@ -1464,18 +1464,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The valid StateUpdate containing the events and final flag.
         """
-        # get the delta from the root of the state tree
+        # Get the delta after processing the event.
+        delta = self.get_delta(include_substates=True)
         state = self
         while state.parent_state is not None:
             state = state.parent_state
+            delta.update(state.get_delta(include_substates=False))
 
         token = self.router.session.client_token
 
         # Convert valid EventHandler and EventSpec into Event
         fixed_events = fix_events(self._check_valid(handler, events), token)
 
-        # Get the delta after processing the event.
-        delta = state.get_delta()
         state._clean()
 
         return StateUpdate(
@@ -1589,7 +1589,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
         return fetch_substates
 
-    def get_delta(self) -> Delta:
+    def get_delta(self, include_substates: bool = True) -> Delta:
         """Get the delta for the state.
 
         Returns:
@@ -1618,11 +1618,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             delta[self.get_full_name()] = subdelta
 
         # Recursively find the substate deltas.
-        substates = self.substates
-        for substate in self.dirty_substates.union(self._always_dirty_substates):
-            if not substates[substate]._get_was_touched():
-                continue
-            delta.update(substates[substate].get_delta())
+        if include_substates:
+            substates = self.substates
+            for substate_name in self.dirty_substates.union(
+                self._always_dirty_substates
+            ):
+                delta.update(substates[substate_name].get_delta())
 
         # Format the delta.
         delta = format.format_state(delta)
