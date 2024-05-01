@@ -1,8 +1,8 @@
 import pytest
 
 import reflex as rx
-from reflex.vars import Var
 from reflex.components.datadisplay.code import CodeBlock
+from reflex.vars import Var
 
 
 class ColorState(rx.State):
