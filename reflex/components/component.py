@@ -235,7 +235,7 @@ class Component(BaseComponent, ABC):
         ```python
         return {
             "react": "useEffect",
-            "react-draggable": ["DraggableCore", ImportVar(tag="Draggable", is_default=True)],
+            "react-draggable": ["DraggableCore", rx.ImportVar(tag="Draggable", is_default=True)],
         }
         ```
         """
