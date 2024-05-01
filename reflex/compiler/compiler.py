@@ -174,7 +174,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
     return templates.STYLE.render(stylesheets=sheets)
 
 
-def _compile_component(component: Component) -> str:
+def _compile_component(component: Component | StatefulComponent) -> str:
     """Compile a single component.
 
     Args:

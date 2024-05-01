@@ -2103,6 +2103,16 @@ class StatefulComponent(BaseComponent):
         """
         return dict(Tag(name=self.tag))
 
+    def __str__(self) -> str:
+        """Represent the component in React.
+
+        Returns:
+            The code to render the component.
+        """
+        from reflex.compiler.compiler import _compile_component
+
+        return _compile_component(self)
+
     @classmethod
     def compile_from(cls, component: BaseComponent) -> BaseComponent:
         """Walk through the component tree and memoize all stateful components.
