@@ -213,6 +213,63 @@ class Component(BaseComponent, ABC):
     # State class associated with this component instance
     State: Optional[Type[reflex.state.State]] = None
 
+    def add_imports(self) -> dict[str, str | ImportVar | list[str | ImportVar]]:
+        """Add imports for the component.
+
+        This method should be implemented by subclasses to add new imports for the component.
+
+        Implementations do NOT need to call super(). The result of calling
+        add_imports in each parent class will be merged internally.
+
+        Returns:
+            The additional imports for this component subclass.
+        """
+        return {}
+
+    def add_hooks(self) -> list[str]:
+        """Add hooks inside the component function.
+
+        Hooks are pieces of literal Javascript code that is inserted inside the
+        React component function.
+
+        Each logical hook should be a separate string in the list.
+
+        Common strings will be deduplicated and inserted into the component
+        function only once, so define const variables and other identical code
+        in their own strings to avoid defining the same const or hook multiple
+        times.
+
+        If a hook depends on specific data from the component instance, be sure
+        to use unique values inside the string to _avoid_ deduplication.
+
+        Implementations do NOT need to call super(). The result of calling
+        add_hooks in each parent class will be merged and deduplicated internally.
+
+        Returns:
+            The additional hooks for this component subclass.
+        """
+        return []
+
+    def add_custom_code(self) -> list[str]:
+        """Add custom Javascript code into the page that contains this component.
+
+        Custom code is inserted at module level, after any imports.
+
+        Each string of custom code is deduplicated per-page, so take care to
+        avoid defining the same const or function differently from different
+        component instances.
+
+        Custom code is useful for defining global functions or constants which
+        can then be referenced inside hooks or used by component vars.
+
+        Implementations do NOT need to call super(). The result of calling
+        add_custom_code in each parent class will be merged and deduplicated internally.
+
+        Returns:
+            The additional custom code for this component subclass.
+        """
+        return []
+
     @classmethod
     def __init_subclass__(cls, **kwargs):
         """Set default properties.
@@ -932,6 +989,30 @@ class Component(BaseComponent, ABC):
                     return True
         return False
 
+    @classmethod
+    def _iter_parent_classes_with_method(cls, method: str) -> Iterator[Type[Component]]:
+        """Iterate through parent classes that define a given method.
+
+        Used for handling the `add_*` API functions that internally simulate a super() call chain.
+
+        Args:
+            method: The method to look for.
+
+        Yields:
+            The parent classes that define the method (differently than the base).
+        """
+        seen_methods = set([getattr(Component, method)])
+        for clz in cls.mro():
+            if clz is Component:
+                break
+            if not issubclass(clz, Component):
+                continue
+            method_func = getattr(clz, method, None)
+            if not callable(method_func) or method_func in seen_methods:
+                continue
+            seen_methods.add(method_func)
+            yield clz
+
     def _get_custom_code(self) -> str | None:
         """Get custom code for the component.
 
@@ -953,6 +1034,11 @@ class Component(BaseComponent, ABC):
         custom_code = self._get_custom_code()
         if custom_code is not None:
             code.add(custom_code)
+
+        # Add the custom code from add_custom_code method.
+        for clz in self._iter_parent_classes_with_method("add_custom_code"):
+            for item in clz.add_custom_code(self):
+                code.add(item)
 
         # Add the custom code for the children.
         for child in self.children:
@@ -1089,6 +1175,26 @@ class Component(BaseComponent, ABC):
             var._var_data.imports for var in self._get_vars() if var._var_data
         ]
 
+        # If any subclass implements add_imports, merge the imports.
+        def _make_list(
+            value: str | ImportVar | list[str | ImportVar],
+        ) -> list[str | ImportVar]:
+            if isinstance(value, (str, ImportVar)):
+                return [value]
+            return value
+
+        _added_import_dicts = []
+        for clz in self._iter_parent_classes_with_method("add_imports"):
+            _added_import_dicts.append(
+                {
+                    package: [
+                        ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
+                        for tag in _make_list(maybe_tags)
+                    ]
+                    for package, maybe_tags in clz.add_imports(self).items()
+                }
+            )
+
         return imports.merge_imports(
             *self._get_props_imports(),
             self._get_dependencies_imports(),
@@ -1096,6 +1202,7 @@ class Component(BaseComponent, ABC):
             _imports,
             event_imports,
             *var_imports,
+            *_added_import_dicts,
         )
 
     def _get_all_imports(self, collapse: bool = False) -> imports.ImportDict:
@@ -1230,6 +1337,11 @@ class Component(BaseComponent, ABC):
         hooks = self._get_hooks()
         if hooks is not None:
             code[hooks] = None
+
+        # Add the hook code from add_hooks for each parent class
+        for clz in reversed(tuple(self._iter_parent_classes_with_method("add_hooks"))):
+            for hook in clz.add_hooks(self):
+                code[hook] = None
 
         # Add the hook code for the children.
         for child in self.children:

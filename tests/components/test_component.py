@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Type, Union
 
 import pytest
 
@@ -1594,3 +1594,54 @@ def test_invalid_event_trigger():
 
     with pytest.raises(ValueError):
         trigger_comp(on_b=rx.console_log("log"))
+
+
+@pytest.mark.parametrize(
+    "tags",
+    (
+        ["Component"],
+        ["Component", "useState"],
+        [ImportVar(tag="Component")],
+        [ImportVar(tag="Component"), ImportVar(tag="useState")],
+        ["Component", ImportVar(tag="useState")],
+    ),
+)
+def test_custom_component_add_imports(tags):
+    def _list_to_import_vars(tags: List[str]) -> List[ImportVar]:
+        return [
+            ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
+            for tag in tags
+        ]
+
+    class BaseComponent(Component):
+        def _get_imports(self) -> imports.ImportDict:
+            return {}
+
+    class Reference(Component):
+        def _get_imports(self) -> imports.ImportDict:
+            return imports.merge_imports(
+                super()._get_imports(),
+                {"react": _list_to_import_vars(tags)},
+                {"foo": [ImportVar(tag="bar")]},
+            )
+
+    class TestBase(Component):
+        def add_imports(
+            self,
+        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
+            return {"foo": "bar"}
+
+    class Test(TestBase):
+        def add_imports(
+            self,
+        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
+            return {"react": (tags[0] if len(tags) == 1 else tags)}
+
+    baseline = Reference.create()
+    test = Test.create()
+
+    assert baseline._get_all_imports() == {
+        "react": _list_to_import_vars(tags),
+        "foo": [ImportVar(tag="bar")],
+    }
+    assert test._get_all_imports() == baseline._get_all_imports()
