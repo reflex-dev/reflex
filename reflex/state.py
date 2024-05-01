@@ -2651,7 +2651,7 @@ class StateManagerRedis(StateManager):
 
         Note: Connections will be automatically reopened when needed.
         """
-        await self.redis.close(close_connection_pool=True)
+        await self.redis.aclose(close_connection_pool=True)
 
 
 def get_state_manager() -> StateManager:
