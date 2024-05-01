@@ -65,22 +65,26 @@ class ProgressIndicator(ProgressComponent):
     # The color scheme of the progress indicator.
     color_scheme: Var[LiteralAccentColor]
 
-    def _apply_theme(self, theme: Component):
+    def add_style(self) -> Style | None:
+        """Add style to the component.
+
+        Returns:
+            The style of the component.
+        """
         if self.color_scheme is not None:
             self.custom_attrs["data-accent-color"] = self.color_scheme
 
-        self.style = Style(
+        return Style(
             {
                 "background_color": color("accent", 9),
                 "width": "100%",
                 "height": "100%",
-                f"transition": f"transform {DEFAULT_ANIMATION_DURATION}ms linear",
+                "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms linear",
                 "&[data_state='loading']": {
                     "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms linear",
                 },
                 "transform": f"translateX(calc(-100% + ({self.value} / {self.max} * 100%)))",  # type: ignore
                 "boxShadow": "inset 0 0 0 1px var(--gray-a5)",
-                **self.style,
             }
         )
 

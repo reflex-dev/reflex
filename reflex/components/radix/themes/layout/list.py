@@ -77,12 +77,16 @@ class BaseList(Component):
             style["gap"] = props["gap"]
         return super().create(*children, **props)
 
-    def _apply_theme(self, theme: Component):
-        self.style = Style(
+    def add_style(self) -> Style | None:
+        """Add style to the component.
+
+        Returns:
+            The style of the component.
+        """
+        return Style(
             {
                 "direction": "column",
                 "list_style_position": "inside",
-                **self.style,
             }
         )
 

@@ -26,14 +26,6 @@ class Foreach(Component):
     # The theme if set.
     theme: Optional[Component] = None
 
-    def _apply_theme(self, theme: Component):
-        """Apply the theme to this component.
-
-        Args:
-            theme: The theme to apply.
-        """
-        self.theme = theme
-
     @classmethod
     def create(cls, iterable: Var[Iterable], render_fn: Callable, **props) -> Foreach:
         """Create a foreach component.

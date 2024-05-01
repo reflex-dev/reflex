@@ -688,11 +688,14 @@ class Component(BaseComponent, ABC):
         """
         self.style.update(style)
 
-    def _add_style_recursive(self, style: ComponentStyle) -> Component:
+    def _add_style_recursive(
+        self, style: ComponentStyle, theme: Optional[Component] = None
+    ) -> Component:
         """Add additional style to the component and its children.
 
         Args:
             style: A dict from component to styling.
+            theme: The theme to apply. (for retro-compatibility with deprecated _apply_theme API)
 
         Returns:
             The component with the additional style.
@@ -712,13 +715,49 @@ class Component(BaseComponent, ABC):
             # Add the style to the component.
             self._add_style(component_style)
 
+        merged_styles = [self.style]
+
+        if type(self)._apply_theme != Component._apply_theme:
+            style_copy = copy.deepcopy(self.style)
+            console.deprecate(
+                f"{self.__class__.__name__}._apply_theme",
+                reason="use add_style instead",
+                deprecation_version="0.5.0",
+                removal_version="0.6.0",
+            )
+            self._apply_theme(theme)
+            merged_styles.append(style_copy)
+
+        if default_style := self.add_style():
+            # self.style contains user-defined style, so we merge it on top of the default style
+            default_style.update(self.style)
+            self.style = default_style
+            # mark default_style for merging its _var_data
+            merged_styles.append(default_style)
+
+        # make sure no var_data are lost during style merging
+        self.style._var_data = VarData.merge(
+            *[style._var_data for style in merged_styles if isinstance(style, Style)]
+        )
+
         # Recursively add style to the children.
         for child in self.children:
             # Skip BaseComponent and StatefulComponent children.
             if not isinstance(child, Component):
                 continue
-            child._add_style_recursive(style)
+            child._add_style_recursive(style, theme)
         return self
+
+    def add_style(self) -> Style | None:
+        """Add style to the component.
+
+        Downstream components can override this method to return a style dict
+        that will be applied to the component.
+
+        Returns:
+            The style to add.
+        """
+        return None
 
     def _get_style(self) -> dict:
         """Get the style for the component.
