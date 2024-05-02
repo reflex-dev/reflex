@@ -128,7 +128,7 @@ class App(Base):
     # The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
     style: ComponentStyle = {}
 
-    # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets) to include in the app.
+    # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
     stylesheets: List[str] = []
 
     # A component that is present on every page (defaults to the Connection Error banner).
