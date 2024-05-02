@@ -781,7 +781,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The name of the state.
         """
-        return format.to_snake_case(cls.__name__)
+        module = cls.__module__.replace(".", "___")
+        return format.to_snake_case(f"{module}___{cls.__name__}")
 
     @classmethod
     @functools.lru_cache()
