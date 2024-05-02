@@ -737,7 +737,6 @@ def install_bun():
     Raises:
         FileNotFoundError: If required packages are not found.
     """
-    print(get_cpu_info())
     if constants.IS_WINDOWS and not is_windows_bun_supported():
         console.warn(
             "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
