@@ -11,7 +11,6 @@ import io
 import multiprocessing
 import os
 import platform
-import re
 from typing import (
     Any,
     AsyncIterator,
@@ -65,6 +64,7 @@ from reflex.page import (
 )
 from reflex.route import (
     get_route_args,
+    replace_brackets_with_keywords,
     verify_route_validity,
 )
 from reflex.state import (
@@ -556,45 +556,9 @@ class App(Base):
         Args:
             new_route: the route being newly added.
         """
-
-        def replace_brackets_with_keywords(input_string):
-            # /posts -> /post
-            # /posts/[slug] -> /posts/__SINGLE_SEGMENT__
-            # /posts/[slug]/comments -> /posts/__SINGLE_SEGMENT__/comments
-            # /posts/[[slug]] -> /posts/__DOUBLE_SEGMENT__
-            # / posts/[[...slug2]]-> /posts/__DOUBLE_CATCHALL_SEGMENT__
-            # /posts/[...slug3]-> /posts/__SINGLE_CATCHALL_SEGMENT__
-
-            # Replace [[...<slug>]] with __DOUBLE_CATCHALL_SEGMENT__
-            output_string = re.sub(
-                r"\[\[\.\.\..+?\]\]",
-                constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
-                input_string,
-            )
-            # Replace [...<slug>] with __SINGLE_CATCHALL_SEGMENT__
-            output_string = re.sub(
-                r"\[\.\.\..+?\]",
-                constants.RouteRegex.SINGLE_CATCHALL_SEGMENT,
-                output_string,
-            )
-            # Replace [[<slug>]] with __DOUBLE_SEGMENT__
-            output_string = re.sub(
-                r"\[\[.+?\]\]", constants.RouteRegex.DOUBLE_SEGMENT, output_string
-            )
-            # Replace [<slug>] with __SINGLE_SEGMENT__
-            output_string = re.sub(
-                r"\[.+?\]", constants.RouteRegex.SINGLE_SEGMENT, output_string
-            )
-            return output_string
-
-        new_replaced_route = replace_brackets_with_keywords(new_route)
-        if (
-            constants.RouteRegex.SINGLE_SEGMENT not in new_replaced_route
-            and constants.RouteRegex.DOUBLE_SEGMENT not in new_replaced_route
-            and constants.RouteRegex.SINGLE_CATCHALL_SEGMENT not in new_replaced_route
-            and constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT not in new_replaced_route
-        ):
+        if "[" not in new_route:
             return
+
         segments = (
             constants.RouteRegex.SINGLE_SEGMENT,
             constants.RouteRegex.DOUBLE_SEGMENT,
