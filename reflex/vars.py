@@ -535,11 +535,10 @@ class Var:
             return self._replace()
         if not isinstance(other, Var):
             other = Var.create(other)
+        other = cast(Var, other)
         self._var_is_used = True
-        other._var_is_used = True  # type: ignore
-        return self._replace(
-            _var_name=f"{{...{self._var_name}, ...{other._var_name}}}"  # type: ignore
-        )
+        other._var_is_used = True
+        return self._replace(_var_name=f"{{...{self._var_name}, ...{other._var_name}}}")
 
     def to_string(self, json: bool = True) -> Var:
         """Convert a var to a string.
