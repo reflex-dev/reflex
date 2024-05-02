@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal, Optional
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
-from reflex.event import EventSpec, call_script
+from reflex.event import (
+    EventHandler,
+    EventSpec,
+    call_event_fn,
+    call_event_handler,
+    call_script,
+)
 from reflex.style import Style, color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
-from reflex.utils.serializers import serialize
+from reflex.utils.serializers import serialize, serializer
 from reflex.vars import Var, VarData
 
 LiteralPosition = Literal[
@@ -27,6 +33,50 @@ LiteralPosition = Literal[
 toast_ref = Var.create_safe("refs['__toast']")
 
 
+class ToastAction(Base):
+    """A toast action; rendered a button in the toast."""
+
+    label: str
+    on_click: Any
+
+
+@serializer
+def serialize_action(action: ToastAction) -> dict:
+    """Serialize a toast action.
+
+    Args:
+        action: The toast action to serialize.
+
+    Returns:
+        The serialized toast action with on_click formatted to queue the given event.
+    """
+    if action.on_click is not None:
+        events = []
+        on_click_specs = action.on_click
+        if not isinstance(on_click_specs, list):
+            on_click_specs = [on_click_specs]
+        for spec in on_click_specs:
+            if isinstance(spec, EventHandler):
+                specs = [call_event_handler(spec, lambda: [])]
+            elif isinstance(spec, type(lambda: None)):
+                specs = call_event_fn(spec, lambda: [])
+            else:
+                specs = [spec]
+            events.extend(format.format_event(s) for s in specs)
+        on_click = Var.create(
+            f"() => {{queueEvents([{','.join(events)}], socket); processEvent(socket)}}",
+            _var_is_string=False,
+            _var_is_local=False,
+        )
+    else:
+        on_click = Var.create("() => null", _var_is_string=False, _var_is_local=False)
+
+    return {
+        "label": action.label,
+        "onClick": on_click,
+    }
+
+
 class PropsBase(Base):
     """Base class for all props classes."""
 
@@ -38,9 +88,14 @@ class PropsBase(Base):
         """
         from reflex.utils.serializers import serialize
 
-        return self.__config__.json_dumps(
-            {format.to_camel_case(key): value for key, value in self.dict().items()},
-            default=serialize,
+        return format.unwrap_vars(
+            self.__config__.json_dumps(
+                {
+                    format.to_camel_case(key): value
+                    for key, value in self.dict().items()
+                },
+                default=serialize,
+            )
         )
 
 
@@ -48,25 +103,25 @@ class ToastProps(PropsBase):
     """Props for the toast component."""
 
     # Toast's description, renders underneath the title.
-    description: str = ""
+    description: Optional[str]
 
     # Whether to show the close button.
-    close_button: bool = False
+    close_button: Optional[bool]
 
     # Dark toast in light mode and vice versa.
-    invert: bool = False
+    invert: Optional[bool]
 
     # Control the sensitivity of the toast for screen readers
-    important: bool = False
+    important: Optional[bool]
 
     # Time in milliseconds that should elapse before automatically closing the toast.
-    duration: int = 4000
+    duration: Optional[int]
 
     # Position of the toast.
-    position: LiteralPosition = "bottom-right"
+    position: Optional[LiteralPosition]
 
     # If false, it'll prevent the user from dismissing the toast.
-    dismissible: bool = True
+    dismissible: Optional[bool]
 
     # TODO: fix serialization of icons for toast? (might not be possible yet)
     # Icon displayed in front of toast's text, aligned vertically.
@@ -74,25 +129,49 @@ class ToastProps(PropsBase):
 
     # TODO: fix implementation for action / cancel buttons
     # Renders a primary button, clicking it will close the toast.
-    # action: str = ""
+    action: Optional[ToastAction]
 
     # Renders a secondary button, clicking it will close the toast.
-    # cancel: str = ""
+    cancel: Optional[ToastAction]
 
     # Custom id for the toast.
-    id: str = ""
+    id: Optional[str]
 
     # Removes the default styling, which allows for easier customization.
-    unstyled: bool = False
+    unstyled: Optional[bool]
 
     # Custom style for the toast.
-    style: Style = Style()
+    style: Optional[Style]
 
+    # XXX: These still do not seem to work
     # Custom style for the toast primary button.
-    # action_button_styles: Style = Style()
+    action_button_styles: Optional[Style]
 
     # Custom style for the toast secondary button.
-    # cancel_button_styles: Style = Style()
+    cancel_button_styles: Optional[Style]
+
+    def dict(self, *args, **kwargs) -> dict:
+        """Convert the object to a dictionary.
+
+        Args:
+            *args: The arguments to pass to the base class.
+            **kwargs: The keyword arguments to pass to the base
+
+        Returns:
+            The object as a dictionary with ToastAction fields intact.
+        """
+        kwargs.setdefault("exclude_none", True)
+        d = super().dict(*args, **kwargs)
+        # Keep these fields as ToastAction so they can be serialized specially
+        if d.get("action") is not None:
+            d["action"] = self.action
+            if isinstance(self.action, dict):
+                d["action"] = ToastAction(**self.action)
+        if d.get("cancel") is not None:
+            d["cancel"] = self.cancel
+            if isinstance(self.cancel, dict):
+                d["cancel"] = ToastAction(**self.cancel)
+        return d
 
 
 class Toaster(Component):
