@@ -40,7 +40,7 @@ class BaseList(Component):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Union[Var[Iterable], Iterable], Iterable]] = None,
+        items: Optional[Union[Var[Iterable], Iterable]] = None,
         list_style_type: Optional[
             Union[
                 Var[
@@ -165,8 +165,8 @@ class UnorderedList(BaseList, Ul):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Var[Iterable], Iterable]] = None,
-        list_style_type: Optional[Literal["none", "disc", "circle", "square"]] = "disc",
+        items: Optional[Var[Iterable]] = None,
+        list_style_type: Optional[LiteralListStyleTypeUnordered] = "disc",
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -302,25 +302,8 @@ class OrderedList(BaseList, Ol):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Var[Iterable], Iterable]] = None,
-        list_style_type: Optional[
-            Literal[
-                "none",
-                "decimal",
-                "decimal-leading-zero",
-                "lower-roman",
-                "upper-roman",
-                "lower-greek",
-                "lower-latin",
-                "upper-latin",
-                "armenian",
-                "georgian",
-                "lower-alpha",
-                "upper-alpha",
-                "hiragana",
-                "katakana",
-            ]
-        ] = "decimal",
+        items: Optional[Var[Iterable]] = None,
+        list_style_type: Optional[LiteralListStyleTypeOrdered] = "decimal",
         reversed: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -601,7 +584,7 @@ class List(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        items: Optional[Union[Union[Var[Iterable], Iterable], Iterable]] = None,
+        items: Optional[Union[Var[Iterable], Iterable]] = None,
         list_style_type: Optional[
             Union[
                 Var[
