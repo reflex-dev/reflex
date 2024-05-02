@@ -271,7 +271,11 @@ def output_system_info():
 
     system = platform.system()
 
-    if system != "Windows":
+    if (
+        system != "Windows"
+        or system == "Windows"
+        and prerequisites.is_windows_bun_supported()
+    ):
         dependencies.extend(
             [
                 f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
