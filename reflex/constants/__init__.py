@@ -4,7 +4,6 @@ from .base import (
     COOKIES,
     ENV_MODE_ENV_VAR,
     IS_WINDOWS,
-    IS_WINDOWS_BUN_SUPPORTED_MACHINE,  # type: ignore
     LOCAL_STORAGE,
     POLLING_MAX_HTTP_BUFFER_SIZE,
     PYTEST_CURRENT_TEST,
@@ -87,7 +86,6 @@ __ALL__ = [
     Hooks,
     Imports,
     IS_WINDOWS,
-    IS_WINDOWS_BUN_SUPPORTED_MACHINE,
     LOCAL_STORAGE,
     LogLevel,
     MemoizationDisposition,

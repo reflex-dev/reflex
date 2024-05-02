@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import glob
 import importlib
 import inspect
@@ -12,6 +13,7 @@ import random
 import re
 import shutil
 import stat
+import subprocess
 import sys
 import tempfile
 import zipfile
@@ -172,7 +174,7 @@ def get_install_package_manager() -> str | None:
     Returns:
         The path to the package manager.
     """
-    if constants.IS_WINDOWS and not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
+    if constants.IS_WINDOWS and not is_windows_bun_supported():
         return get_package_manager()
     return get_config().bun_path
 
@@ -728,7 +730,8 @@ def install_bun():
     Raises:
         FileNotFoundError: If required packages are not found.
     """
-    if constants.IS_WINDOWS and not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
+    print(get_cpu_info())
+    if constants.IS_WINDOWS and not is_windows_bun_supported():
         console.warn(
             "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
         )
@@ -826,7 +829,7 @@ def install_frontend_packages(packages: set[str], config: Config):
         get_package_manager()
         if not constants.IS_WINDOWS
         or constants.IS_WINDOWS
-        and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
+        and is_windows_bun_supported()
         else None
     )
     processes.run_process_with_fallback(
@@ -1411,3 +1414,48 @@ def initialize_app(app_name: str, template: str | None = None):
         )
 
     telemetry.send("init", template=template)
+
+
+def execute_command(command):
+    return subprocess.check_output(command, shell=True).decode()
+
+
+@functools.lru_cache(maxsize=None)
+def get_cpu_info():
+    platform_os = platform.system()
+    if platform_os == "Windows":
+
+        cmd = 'wmic cpu get caption,addresswidth, manufacturer'
+        output = subprocess.check_output(cmd, shell=True).decode()
+        return [y for y in output.splitlines() if y][1]
+        # return [x for x in [y for y in output.splitlines() if y][1].split("  ") if x]
+    elif platform_os == "Linux":
+        cpu_list = []
+        output = subprocess.check_output(["lscpu"], shell=True).decode()
+        lines = output.split('\n')
+        for line in lines:
+            if "Architecture" in line:
+                cpu_list.append(line.split(':')[1].strip())
+            if "Vendor ID:" in line:
+                cpu_list.append(line.split(':')[1].strip())
+        cpu_list.append(platform.uname().release)
+        return "  ".join(cpu_list)
+    elif platform_os == "Darwin":
+        cpu_bit = execute_command("getconf LONG_BIT")
+        manufacturer_id = execute_command("sysctl -n machdep.cpu.brand_string")
+        architecture = execute_command("uname -m")
+
+        return f"{cpu_bit}  {architecture}  {manufacturer_id}"
+
+
+
+
+    return platform.platform()
+
+
+@functools.lru_cache(maxsize=None)
+def is_windows_bun_supported():
+    cpu_info_list = [x for x in get_cpu_info().split("  ") if x]
+    return constants.IS_WINDOWS and cpu_info_list[0] == 64 and not "ARM" in cpu_info_list[1]
+
+
