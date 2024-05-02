@@ -7,12 +7,12 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Dict, Literal, Optional
+from typing import Literal
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.event import EventSpec, call_script
-from reflex.style import color_mode
+from reflex.style import Style, color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serialize
@@ -39,13 +39,9 @@ class ToastProps(PropsBase):
     duration: int
     position: LiteralPosition
     dismissible: bool
-    icon: Optional[Icon]
-    action: str
-    cancel: str
     id: str
     unstyled: bool
-    action_button_styles: Dict[str, str]
-    cancel_button_styles: Dict[str, str]
+    style: Style
 
 class Toaster(Component):
     @staticmethod
@@ -58,6 +54,7 @@ class Toaster(Component):
     def toast_error(message: str, **kwargs): ...
     @staticmethod
     def toast_success(message: str, **kwargs): ...
+    def toast_dismiss(self, id: str | None): ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -66,7 +63,7 @@ class Toaster(Component):
         theme: Optional[Union[Var[str], str]] = None,
         rich_colors: Optional[Union[Var[bool], bool]] = None,
         expand: Optional[Union[Var[bool], bool]] = None,
-        visibleToasts: Optional[Union[Var[int], int]] = None,
+        visible_toasts: Optional[Union[Var[int], int]] = None,
         position: Optional[
             Union[
                 Var[
@@ -96,7 +93,7 @@ class Toaster(Component):
         invert: Optional[Union[Var[bool], bool]] = None,
         toast_options: Optional[Union[Var[ToastProps], ToastProps]] = None,
         gap: Optional[Union[Var[int], int]] = None,
-        loadingIcon: Optional[Union[Var[Icon], Icon]] = None,
+        loading_icon: Optional[Union[Var[Icon], Icon]] = None,
         pause_when_page_is_hidden: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -158,11 +155,17 @@ class Toaster(Component):
             theme: the theme of the toast
             rich_colors: whether to show rich colors
             expand: whether to expand the toast
-            visibleToasts: the number of toasts that are currently visible
+            visible_toasts: the number of toasts that are currently visible
             position: the position of the toast
             close_button: whether to show the close button
             offset: offset of the toast
             dir: directionality of the toast (default: ltr)
+            hotkey: Keyboard shortcut that will move focus to the toaster area.
+            invert: Dark toasts in light mode and vice versa.
+            toast_options: These will act as default options for all toasts. See toast() for all available options.
+            gap: Gap between toasts when expanded
+            loading_icon: Changes the default loading icon
+            pause_when_page_is_hidden: Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -183,6 +186,7 @@ class ToastNamespace(ComponentNamespace):
     warning = staticmethod(Toaster.toast_warning)
     error = staticmethod(Toaster.toast_error)
     success = staticmethod(Toaster.toast_success)
+    dismiss = staticmethod(Toaster.toast_dismiss)
 
     @staticmethod
     def __call__(message: str, level: Optional[str], **props) -> "Optional[EventSpec]":

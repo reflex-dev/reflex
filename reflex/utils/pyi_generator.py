@@ -131,7 +131,6 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
             if len(res_args) == 1:
                 return f"Optional[{res_args[0]}]"
             else:
-                print("found union with None")
                 res = f"Union[{', '.join(res_args)}]"
                 return f"Optional[{res}]"
 

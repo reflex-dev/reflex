@@ -1371,7 +1371,6 @@ def test_raise_on_state():
     """Test that the state is set."""
     # state kwargs is deprecated, we just make sure the app is created anyway.
     _app = App(state=State)
-    print(_app.state)
     assert issubclass(_app.state, State)
 
 

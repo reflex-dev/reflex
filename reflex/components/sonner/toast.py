@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Dict, Literal, Optional
+from typing import Literal
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.event import EventSpec, call_script
-from reflex.style import color_mode
+from reflex.style import Style, color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serialize
@@ -47,20 +47,52 @@ class PropsBase(Base):
 class ToastProps(PropsBase):
     """Props for the toast component."""
 
+    # Toast's description, renders underneath the title.
     description: str = ""
+
+    # Whether to show the close button.
     close_button: bool = False
+
+    # Dark toast in light mode and vice versa.
     invert: bool = False
+
+    # Control the sensitivity of the toast for screen readers
     important: bool = False
+
+    # Time in milliseconds that should elapse before automatically closing the toast.
     duration: int = 4000
+
+    # Position of the toast.
     position: LiteralPosition = "bottom-right"
+
+    # If false, it'll prevent the user from dismissing the toast.
     dismissible: bool = True
-    icon: Optional[Icon] = None
-    action: str = ""
-    cancel: str = ""
+
+    # TODO: fix serialization of icons for toast? (might not be possible yet)
+    # Icon displayed in front of toast's text, aligned vertically.
+    # icon: Optional[Icon] = None
+
+    # TODO: fix implementation for action / cancel buttons
+    # Renders a primary button, clicking it will close the toast.
+    # action: str = ""
+
+    # Renders a secondary button, clicking it will close the toast.
+    # cancel: str = ""
+
+    # Custom id for the toast.
     id: str = ""
+
+    # Removes the default styling, which allows for easier customization.
     unstyled: bool = False
-    action_button_styles: Dict[str, str] = {}
-    cancel_button_styles: Dict[str, str] = {}
+
+    # Custom style for the toast.
+    style: Style = Style()
+
+    # Custom style for the toast primary button.
+    # action_button_styles: Style = Style()
+
+    # Custom style for the toast secondary button.
+    # cancel_button_styles: Style = Style()
 
 
 class Toaster(Component):
@@ -80,7 +112,7 @@ class Toaster(Component):
     expand: Var[bool] = Var.create_safe(True)
 
     # the number of toasts that are currently visible
-    visibleToasts: Var[int]
+    visible_toasts: Var[int]
 
     # the position of the toast
     position: Var[LiteralPosition] = Var.create_safe("bottom-right")
@@ -94,16 +126,22 @@ class Toaster(Component):
     # directionality of the toast (default: ltr)
     dir: Var[str]
 
+    # Keyboard shortcut that will move focus to the toaster area.
     hotkey: Var[str]
 
+    # Dark toasts in light mode and vice versa.
     invert: Var[bool]
 
+    # These will act as default options for all toasts. See toast() for all available options.
     toast_options: Var[ToastProps]
 
+    # Gap between toasts when expanded
     gap: Var[int]
 
-    loadingIcon: Var[Icon]
+    # Changes the default loading icon
+    loading_icon: Var[Icon]
 
+    # Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
     pause_when_page_is_hidden: Var[bool]
 
     def _get_hooks(self) -> Var[str]:
@@ -190,22 +228,26 @@ class Toaster(Component):
         """
         return Toaster.send_toast(message, level="success", **kwargs)
 
+    def toast_dismiss(self, id: str | None):
+        """Dismiss a toast.
+
+        Args:
+            id: The id of the toast to dismiss.
+
+        Returns:
+            The toast dismiss event.
+        """
+        if id is None:
+            dismiss = f"{toast_ref}.dismiss()"
+        else:
+            dismiss = f"{toast_ref}.dismiss({id})"
+        dismiss_action = Var.create(dismiss, _var_is_string=False, _var_is_local=True)
+        return call_script(dismiss_action)  # type: ignore
+
 
 # TODO: figure out why loading toast stay open forever
 # def toast_loading(message: str, **kwargs):
 #     return _toast(message, level="loading", **kwargs)
-
-
-# def _toast(message: str, level: str | None = None, **toast_args):
-#     toast_command = f"{toast_ref}.{level}" if level is not None else toast_ref
-#     if toast_args:
-#         args = serialize(ToastProps(**toast_args))
-#         toast = f"{toast_command}(`{message}`, {args})"
-#     else:
-#         toast = f"{toast_command}(`{message}`)"
-
-#     toast_action = Var.create(toast, _var_is_string=False, _var_is_local=True)
-#     return call_script(toast_action)  # type: ignore
 
 
 class ToastNamespace(ComponentNamespace):
@@ -217,6 +259,7 @@ class ToastNamespace(ComponentNamespace):
     warning = staticmethod(Toaster.toast_warning)
     error = staticmethod(Toaster.toast_error)
     success = staticmethod(Toaster.toast_success)
+    dismiss = staticmethod(Toaster.toast_dismiss)
     # loading = staticmethod(toast_loading)
     __call__ = staticmethod(Toaster.send_toast)
 
