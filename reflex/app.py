@@ -117,7 +117,7 @@ class App(Base):
         # Set global level style.
         style={...},
         # Set the top level theme.
-        theme=rx.themes.theme(accent_color="blue"),
+        theme=rx.theme(accent_color="blue"),
     )
     ```
     """
