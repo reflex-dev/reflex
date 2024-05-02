@@ -1,4 +1,6 @@
 """A code component."""
+from __future__ import annotations
+
 import re
 from typing import Dict, Literal, Optional, Union
 

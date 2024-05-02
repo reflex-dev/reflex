@@ -1,5 +1,7 @@
 """To experiment with layout component, move them to reflex/components later."""
 
+from __future__ import annotations
+
 from reflex import color, cond
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
