@@ -688,7 +688,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The name of the state.
         """
-        return format.to_snake_case(cls.__name__)
+        module = cls.__module__.replace(".", "__")
+        return format.to_snake_case(f"{module}__{cls.__name__}")
 
     @classmethod
     @functools.lru_cache()
@@ -1856,7 +1857,6 @@ class OnLoadInternalState(State):
             ),
             State.set_is_hydrated(True),  # type: ignore
         ]
-
 
 class ComponentState(Base):
     """The base class for a State that is copied for each Component associated with it."""

@@ -62,9 +62,11 @@ class CompileVars(SimpleNamespace):
     # The name of the function for converting a dict to an event.
     TO_EVENT = "Event"
     # The name of the internal on_load event.
-    ON_LOAD_INTERNAL = "on_load_internal_state.on_load_internal"
+    ON_LOAD_INTERNAL = "reflex__state___on_load_internal_state.on_load_internal"
     # The name of the internal event to update generic state vars.
-    UPDATE_VARS_INTERNAL = "update_vars_internal_state.update_vars_internal"
+    UPDATE_VARS_INTERNAL = (
+        "reflex__state___update_vars_internal_state.update_vars_internal"
+    )
 
 
 class PageNames(SimpleNamespace):
