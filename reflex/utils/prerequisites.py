@@ -13,7 +13,6 @@ import random
 import re
 import shutil
 import stat
-import subprocess
 import sys
 import tempfile
 import zipfile
@@ -49,6 +48,14 @@ class Template(Base):
     description: str
     code_url: str
     demo_url: str
+
+
+class CpuInfo(Base):
+    """Model to save cpu info."""
+
+    manufacturer_id: str
+    model_name: str
+    address_width: int
 
 
 def check_latest_package_version(package_name: str):
@@ -1416,46 +1423,66 @@ def initialize_app(app_name: str, template: str | None = None):
     telemetry.send("init", template=template)
 
 
-def execute_command(command):
-    return subprocess.check_output(command, shell=True).decode()
-
-
 @functools.lru_cache(maxsize=None)
-def get_cpu_info():
-    platform_os = platform.system()
-    if platform_os == "Windows":
+def get_cpu_info() -> CpuInfo | None:
+    """Get the CPU info of the underlining host.
 
-        cmd = 'wmic cpu get caption,addresswidth, manufacturer'
-        output = subprocess.check_output(cmd, shell=True).decode()
-        return [y for y in output.splitlines() if y][1]
-        # return [x for x in [y for y in output.splitlines() if y][1].split("  ") if x]
+    Returns:
+         The CPU info.
+    """
+    platform_os = platform.system()
+    cpuinfo= {}
+    if platform_os == "Windows":
+        cmd = "wmic cpu get caption,addresswidth, manufacturer"
+        output = processes.execute_command_and_return_output(cmd)
+        val = [x for x in [y for y in output.splitlines() if y][1].split("  ") if x]
+        cpuinfo["manufacturer_id"] = val[2]
+        cpuinfo["model_name"] = val[1]
+        cpuinfo["address_width"] = int(val[0])
     elif platform_os == "Linux":
-        cpu_list = []
-        output = subprocess.check_output(["lscpu"], shell=True).decode()
-        lines = output.split('\n')
+        output = processes.execute_command_and_return_output("lscpu")
+        lines = output.split("\n")
         for line in lines:
             if "Architecture" in line:
-                cpu_list.append(line.split(':')[1].strip())
+                cpuinfo["address_width"] = (
+                    64 if line.split(":")[1].strip() == "x86_64" else 32
+                )
             if "Vendor ID:" in line:
-                cpu_list.append(line.split(':')[1].strip())
-        cpu_list.append(platform.uname().release)
-        return "  ".join(cpu_list)
+                cpuinfo["manufacturer_id"] = line.split(":")[1].strip()
+            if "Model name" in line:
+                cpuinfo["model_name"] = line.split(":")[1].strip()
     elif platform_os == "Darwin":
-        cpu_bit = execute_command("getconf LONG_BIT")
-        manufacturer_id = execute_command("sysctl -n machdep.cpu.brand_string")
-        architecture = execute_command("uname -m")
+        cpuinfo["address_width"] = int(
+            processes.execute_command_and_return_output("getconf LONG_BIT")
+        )
+        cpuinfo["manufacturer_id"] = processes.execute_command_and_return_output(
+            "sysctl -n machdep.cpu.brand_string"
+        )
+        cpuinfo["model_name"] = processes.execute_command_and_return_output("uname -m")
 
-        return f"{cpu_bit}  {architecture}  {manufacturer_id}"
-
-
-
-
-    return platform.platform()
+    return (
+        CpuInfo(
+            manufacturer_id=cpuinfo.get("manufacturer_id"),  # type: ignore
+            model_name=cpuinfo.get("model_name"),  # type: ignore
+            address_width=cpuinfo.get("address_width"),  # type: ignore
+        )
+        if cpuinfo
+        else None
+    )
 
 
 @functools.lru_cache(maxsize=None)
-def is_windows_bun_supported():
-    cpu_info_list = [x for x in get_cpu_info().split("  ") if x]
-    return constants.IS_WINDOWS and cpu_info_list[0] == 64 and not "ARM" in cpu_info_list[1]
+def is_windows_bun_supported() -> bool:
+    """Check whether the underlining host running windows qualifies to run bun.
+    We typically do not run bun on ARM or 32 bit devices that use windows.
 
-
+    Returns:
+        Whether the host is qualified to use bun.
+    """
+    cpu_info = get_cpu_info()
+    return (
+        constants.IS_WINDOWS
+        and cpu_info is not None
+        and cpu_info.address_width == 64
+        and "ARM" not in cpu_info.model_name
+    )

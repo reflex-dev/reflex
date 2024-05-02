@@ -98,6 +98,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
         The event data.
     """
     from reflex.utils.prerequisites import get_cpu_info
+
     installation_id = ensure_reflex_installation_id()
     project_hash = get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
 
@@ -124,7 +125,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "python_version": get_python_version(),
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
-            "cpu_architecture": get_cpu_info(),
+            "cpu_info": dict(get_cpu_info()) if get_cpu_info() else {},
             **(
                 {"template": template}
                 if (template := kwargs.get("template")) is not None
@@ -168,5 +169,5 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs) -> bool:
     print(f"Event data: {event_data}")
     if not event_data:
         return False
-
-    return _send_event(event_data)
+    return True
+    # return _send_event(event_data)
