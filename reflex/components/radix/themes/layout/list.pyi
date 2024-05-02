@@ -157,6 +157,7 @@ class BaseList(Component):
 
         """
         ...
+    def add_style(self) -> Style | None: ...
 
 class UnorderedList(BaseList, Ul):
     @overload
