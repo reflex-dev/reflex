@@ -131,7 +131,7 @@ class App(Base):
     # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets) to include in the app.
     stylesheets: List[str] = []
 
-    # A component that is present on every page.
+    # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Optional[
         Union[Component, ComponentCallable]
     ] = default_overlay_component
