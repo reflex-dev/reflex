@@ -9,18 +9,14 @@ from reflex.components.core.colors import color
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor
-from reflex.style import (
-    Style,
-    format_as_emotion,
-)
+from reflex.style import Style
 from reflex.utils import imports
-from reflex.vars import Var, VarData, get_uuid_string_var
+from reflex.vars import Var, get_uuid_string_var
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
 LiteralAccordionOrientation = Literal["vertical", "horizontal"]
-LiteralAccordionRootVariant = Literal["classic", "soft", "surface", "outline", "ghost"]
-LiteralAccordionRootColorScheme = Literal["primary", "accent"]
+LiteralAccordionVariant = Literal["classic", "soft", "surface", "outline", "ghost"]
 
 DEFAULT_ANIMATION_DURATION = 250
 
@@ -34,7 +30,7 @@ class AccordionComponent(RadixPrimitiveComponent):
     color_scheme: Var[LiteralAccentColor]
 
     # The variant of the component.
-    variant: Var[LiteralAccordionRootVariant] = Var.create_safe("classic")
+    variant: Var[LiteralAccordionVariant] = Var.create_safe("classic")
 
     def add_style(self) -> Style | None:
         """Add style to the component."""
@@ -76,13 +72,7 @@ class AccordionRoot(AccordionComponent):
     orientation: Var[LiteralAccordionOrientation]
 
     # The variant of the accordion.
-    variant: Var[LiteralAccordionRootVariant] = "classic"  # type: ignore
-
-    # dynamic themes of the accordion generated at compile time.
-    _dynamic_themes: Var[dict] = Var.create({})  # type: ignore
-
-    # The var_data associated with the component.
-    _var_data: VarData = VarData()  # type: ignore
+    variant: Var[LiteralAccordionVariant] = Var.create_safe("classic")
 
     _valid_children: List[str] = ["AccordionItem"]
 
@@ -98,29 +88,15 @@ class AccordionRoot(AccordionComponent):
             The Accordion root Component.
         """
         for child in children:
-            if isinstance(child, (AccordionItem, AccordionTrigger, AccordionHeader)):
+            if isinstance(child, AccordionItem):
                 child.color_scheme = props.get("color_scheme")  # type: ignore
+                child.variant = props.get("variant")  # type: ignore
 
-        comp = super().create(*children, **props)
-
-        if comp.variant is not None and not comp.variant._var_state:  # type: ignore
-            # mark the vars of variant string literals as strings so they are formatted properly in the match condition.
-            comp.variant._var_is_string = True  # type: ignore
-
-        return comp
-
-    def _get_style(self) -> dict:
-        """Get the style for the component.
-
-        Returns:
-            The dictionary of the component style as value and the style notation as key.
-        """
-        return {"css": self._dynamic_themes._merge(format_as_emotion(self.style))}  # type: ignore
+        return super().create(*children, **props)
 
     def _get_imports(self):
         return imports.merge_imports(
             super()._get_imports(),
-            self._var_data.imports if self._var_data else {},
             {"@emotion/react": [imports.ImportVar(tag="keyframes")]},
         )
 
@@ -161,27 +137,23 @@ to {
         Returns:
             The style of the component.
         """
-        super().add_style()
-
         return Style(
             {
                 "border_radius": "6px",
+                "box_shadow": f"0 2px 10px {color('black', 1, alpha=True)}",
                 "&[data-variant='classic']": {
                     "background_color": color("accent", 9),
-                    "box_shadow": "0 2px 10px var(--black-a4)",
+                    "box_shadow": f"0 2px 10px {color('black', 4, alpha=True)}",
                 },
                 "&[data-variant='soft']": {
                     "background_color": color("accent", 3),
-                    "box_shadow": "0 2px 10px var(--black-a1)",
                 },
                 "&[data-variant='outline']": {
-                    "border": f"1px solid {color('accent', 6)})",
-                    "box_shadow": "0 2px 10px var(--black-a1)",
+                    "border": f"1px solid {color('accent', 6)}",
                 },
                 "&[data-variant='surface']": {
-                    "border": f"1px solid {color('accent', 6)})",
+                    "border": f"1px solid {color('accent', 6)}",
                     "background_color": color("accent", 3),
-                    "box_shadow": "0 2px 10px var(--black-a1)",
                 },
                 "&[data-variant='ghost']": {
                     "background_color": "none",
@@ -244,10 +216,15 @@ class AccordionItem(AccordionComponent):
                 AccordionHeader.create(
                     AccordionTrigger.create(
                         header,
-                        AccordionIcon.create(),
+                        AccordionIcon.create(
+                            color_scheme=props.get("color_scheme"),
+                            variant=props.get("variant"),
+                        ),
                         color_scheme=props.get("color_scheme"),
+                        variant=props.get("variant"),
                     ),
                     color_scheme=props.get("color_scheme"),
+                    variant=props.get("variant"),
                 ),
                 AccordionContent.create(
                     content, color_scheme=props.get("color_scheme")
@@ -262,7 +239,10 @@ class AccordionItem(AccordionComponent):
         Returns:
             The style of the component.
         """
-        super().add_style()
+        for child in self.children:
+            if isinstance(child, (AccordionHeader, AccordionContent)):
+                child.color_scheme = self.color_scheme
+                child.variant = self.variant
 
         return Style(
             {
@@ -317,9 +297,15 @@ class AccordionHeader(AccordionComponent):
         Returns:
             The style of the component.
         """
-        super().add_style()
+        for child in self.children:
+            if isinstance(child, AccordionTrigger):
+                child.color_scheme = self.color_scheme
+                child.variant = self.variant
 
         return Style({"display": "flex"})
+
+
+cubic_bezier = "cubic-bezier(0.87, 0, 0.13, 1)"
 
 
 class AccordionTrigger(AccordionComponent):
@@ -353,7 +339,11 @@ class AccordionTrigger(AccordionComponent):
         Returns:
             The style of the component.
         """
-        super().add_style()
+        for child in self.children:
+            if isinstance(child, AccordionIcon):
+                child.color_scheme = self.color_scheme
+                child.variant = self.variant
+
         return Style(
             {
                 "color": color("accent", 11),
@@ -374,18 +364,17 @@ class AccordionTrigger(AccordionComponent):
                     "background_color": color("accent", 4),
                 },
                 "& > .AccordionChevron": {
-                    "color": color("accent", 11),
-                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms {cubic_bezier}",
                 },
                 "&[data-variant='classic']": {
-                    "color": color("accent", 9),
+                    "color": color("accent", 12),
                     "box_shadow": color("accent", 11),
                     "&:hover": {
                         "background_color": color("accent", 10),
                     },
                     "& > .AccordionChevron": {
-                        "color": color("accent", 9),
-                        "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                        "color": color("accent", 12),
+                        "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms {cubic_bezier}",
                     },
                 },
             }
@@ -445,23 +434,15 @@ class AccordionContent(AccordionComponent):
         Returns:
             The style of the component.
         """
-        super().add_style()
-
         slideDown = Var.create(
-            f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+            f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms {cubic_bezier}",
             _var_is_string=True,
         )
 
         slideUp = Var.create(
-            f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+            f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms {cubic_bezier}",
             _var_is_string=True,
         )
-
-        outline_ghost_props = {
-            "background_color": "none",
-            "&[data-state='open']": {"animation": slideDown},
-            "&[data-state='closed']": {"animation": slideUp},
-        }
 
         return Style(
             {
@@ -473,11 +454,11 @@ class AccordionContent(AccordionComponent):
                 "&[data-state='open']": {"animation": slideDown},
                 "&[data-state='closed']": {"animation": slideUp},
                 "&[data-variant='classic']": {
-                    "color": color("accent", 9),
+                    "color": color("accent", 12),
                     "background_color": color("accent", 9),
                 },
-                "&[data-variant='outline']": outline_ghost_props,
-                "&[data-variant='ghost']": outline_ghost_props,
+                "&[data-variant='outline']": {"background_color": "transparent"},
+                "&[data-variant='ghost']": {"background_color": "transparent"},
             }
         )
 

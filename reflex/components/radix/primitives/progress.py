@@ -28,20 +28,24 @@ class ProgressRoot(ProgressComponent):
     # Override theme radius for progress bar: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
 
-    def _apply_theme(self, theme: Component):
+    def add_style(self) -> Style | None:
+        """Add style to the component.
+
+        Returns:
+            The style of the component.
+        """
         if self.radius is not None:
             self.custom_attrs["data-radius"] = self.radius
 
-        self.style = Style(
+        return Style(
             {
                 "position": "relative",
                 "overflow": "hidden",
-                "background": "var(--gray-a3)",
+                "background": color("gray", 3, alpha=True),
                 "border_radius": "max(var(--radius-2), var(--radius-full))",
                 "width": "100%",
                 "height": "20px",
-                "boxShadow": "inset 0 0 0 1px var(--gray-a5)",
-                **self.style,
+                "boxShadow": f"inset 0 0 0 1px {color('gray', 5, alpha=True)}",
             }
         )
 

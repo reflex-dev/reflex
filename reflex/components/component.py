@@ -509,6 +509,8 @@ class Component(BaseComponent, ABC):
     def _apply_theme(self, theme: Optional[Component]):
         """Apply the theme to this component.
 
+        Deprecated. Use add_style instead.
+
         Args:
             theme: The theme to apply.
         """
@@ -680,74 +682,6 @@ class Component(BaseComponent, ABC):
 
         return cls(children=children, **props)
 
-    def _add_style(self, style: dict):
-        """Add additional style to the component.
-
-        Args:
-            style: A style dict to apply.
-        """
-        self.style.update(style)
-
-    def _add_style_recursive(
-        self, style: ComponentStyle, theme: Optional[Component] = None
-    ) -> Component:
-        """Add additional style to the component and its children.
-
-        Args:
-            style: A dict from component to styling.
-            theme: The theme to apply. (for retro-compatibility with deprecated _apply_theme API)
-
-        Returns:
-            The component with the additional style.
-        """
-        component_style = None
-        if type(self) in style:
-            # Extract the style for this component.
-            component_style = Style(style[type(self)])
-        if self.create in style:
-            component_style = Style(style[self.create])
-        if component_style is not None:
-            # Only add style props that are not overridden.
-            component_style = {
-                k: v for k, v in component_style.items() if k not in self.style
-            }
-
-            # Add the style to the component.
-            self._add_style(component_style)
-
-        merged_styles = [self.style]
-
-        if type(self)._apply_theme != Component._apply_theme:
-            style_copy = copy.deepcopy(self.style)
-            console.deprecate(
-                f"{self.__class__.__name__}._apply_theme",
-                reason="use add_style instead",
-                deprecation_version="0.5.0",
-                removal_version="0.6.0",
-            )
-            self._apply_theme(theme)
-            merged_styles.append(style_copy)
-
-        if default_style := self.add_style():
-            # self.style contains user-defined style, so we merge it on top of the default style
-            default_style.update(self.style)
-            self.style = default_style
-            # mark default_style for merging its _var_data
-            merged_styles.append(default_style)
-
-        # make sure no var_data are lost during style merging
-        self.style._var_data = VarData.merge(
-            *[style._var_data for style in merged_styles if isinstance(style, Style)]
-        )
-
-        # Recursively add style to the children.
-        for child in self.children:
-            # Skip BaseComponent and StatefulComponent children.
-            if not isinstance(child, Component):
-                continue
-            child._add_style_recursive(style, theme)
-        return self
-
     def add_style(self) -> Style | None:
         """Add style to the component.
 
@@ -758,6 +692,108 @@ class Component(BaseComponent, ABC):
             The style to add.
         """
         return None
+
+    def _add_style(self) -> Style:
+        """Call add_style for all bases in the MRO.
+
+        Downstream components should NOT override. Use add_style instead.
+
+        Returns:
+            The style to add.
+        """
+        _styles = []
+        _vars = []
+        # Walk the MRO to call all `add_style` methods.
+        for base in self.__class__.mro():
+            if hasattr(base, "add_style"):
+                _s = base.add_style(self)  # type: ignore
+                if _s is not None:
+                    _styles.append(_s)
+                    _vars.append(_s._var_data)
+
+        _style = Style()
+        for _s in reversed(_styles):
+            _style.update(_s)
+
+        _style._var_data = VarData.merge(*_vars)
+        return _style
+
+    def _get_component_style(self, styles: ComponentStyle) -> Style | None:
+        """Get the style to the component from `App.style`.
+
+        Args:
+            styles: The style to apply.
+
+        Returns:
+            The style of the component.
+        """
+        component_style = None
+        if type(self) in styles:
+            component_style = Style(styles[type(self)])
+        if self.create in styles:
+            component_style = Style(styles[self.create])
+        return component_style
+
+    def _add_style_recursive(
+        self, style: ComponentStyle, theme: Optional[Component] = None
+    ) -> Component:
+        """Add additional style to the component and its children.
+
+        Apply order is as follows (with the latest overriding the earliest):
+        1. Default style from `_add_style`/`add_style`.
+        2. User-defined style from `App.style`.
+        3. User-defined style from `Component.style`.
+
+        Args:
+            style: A dict from component to styling.
+            theme: The theme to apply. (for retro-compatibility with deprecated _apply_theme API)
+
+        Raises:
+            UserWarning: If `_add_style` has been overridden.
+
+        Returns:
+            The component with the additional style.
+        """
+        # 1. Default style from `_add_style`/`add_style`.
+        if type(self)._add_style != Component._add_style:
+            raise UserWarning(
+                "Do not override _add_style directly. Use add_style instead."
+            )
+        _new_style = self._add_style()
+        _style_vars = [_new_style._var_data]
+
+        # 2. User-defined style from `App.style`.
+        component_style = self._get_component_style(style)
+        if component_style:
+            _new_style.update(component_style)
+            _style_vars.append(component_style._var_data)
+
+        # 3. User-defined style from `Component.style`.
+        # Apply theme for retro-compatibility with deprecated _apply_theme API
+        if type(self)._apply_theme != Component._apply_theme:
+            console.deprecate(
+                f"{self.__class__.__name__}._apply_theme",
+                reason="use add_style instead",
+                deprecation_version="0.5.0",
+                removal_version="0.6.0",
+            )
+            self._apply_theme(theme)
+
+        _new_style.update(self.style)
+        _style_vars.append(self.style._var_data)
+
+        _new_style._var_data = VarData.merge(*_style_vars)
+
+        # Assign the new style
+        self.style = _new_style
+
+        # Recursively add style to the children.
+        for child in self.children:
+            # Skip BaseComponent and StatefulComponent children.
+            if not isinstance(child, Component):
+                continue
+            child._add_style_recursive(style, theme)
+        return self
 
     def _get_style(self) -> dict:
         """Get the style for the component.

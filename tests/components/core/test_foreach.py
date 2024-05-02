@@ -2,7 +2,7 @@ from typing import Dict, List, Set, Tuple, Union
 
 import pytest
 
-from reflex.components import box, foreach, text, theme
+from reflex.components import box, foreach, text
 from reflex.components.core import Foreach
 from reflex.state import BaseState
 from reflex.vars import Var
@@ -218,15 +218,6 @@ def test_foreach_render(state_var, render_fn, render_dict):
     assert arg_index._var_name not in seen_index_vars
     assert arg_index._var_type == int
     seen_index_vars.add(arg_index._var_name)
-
-
-def test_foreach_apply_theme():
-    """Test that the foreach component applies the theme."""
-    tag = Foreach.create(ForEachState.colors_list, display_color)  # type: ignore
-    _theme = theme()
-    tag.apply_theme(_theme)
-    assert tag.theme == _theme
-    tag.render()
 
 
 def test_foreach_bad_annotations():

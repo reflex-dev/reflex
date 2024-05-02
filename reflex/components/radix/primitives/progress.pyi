@@ -95,6 +95,7 @@ class ProgressComponent(RadixPrimitiveComponentWithClassName):
         ...
 
 class ProgressRoot(ProgressComponent):
+    def add_style(self) -> Style | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -180,6 +181,7 @@ class ProgressRoot(ProgressComponent):
         ...
 
 class ProgressIndicator(ProgressComponent):
+    def add_style(self) -> Style | None: ...
     @overload
     @classmethod
     def create(  # type: ignore

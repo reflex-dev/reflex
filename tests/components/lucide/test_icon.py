@@ -1,7 +1,6 @@
 import pytest
 
 from reflex.components.lucide.icon import LUCIDE_ICON_LIST, RENAMED_ICONS_05, Icon
-from reflex.style import Style
 from reflex.utils import format
 
 
@@ -38,4 +37,4 @@ def test_icon_multiple_children():
 
 def test_icon_add_style():
     ic = Icon.create("activity")
-    assert isinstance(ic.add_style(), Style)
+    assert ic.add_style() is None
