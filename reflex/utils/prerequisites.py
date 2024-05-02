@@ -1433,11 +1433,11 @@ def get_cpu_info() -> CpuInfo | None:
     platform_os = platform.system()
     cpuinfo= {}
     if platform_os == "Windows":
-        cmd = "wmic cpu get caption,addresswidth, manufacturer"
+        cmd = "wmic cpu get addresswidth,caption,manufacturer /FORMAT:csv"
         output = processes.execute_command_and_return_output(cmd)
-        val = [x for x in [y for y in output.splitlines() if y][1].split("  ") if x]
+        val = output.splitlines()[-1].split(",")[1:]
         cpuinfo["manufacturer_id"] = val[2]
-        cpuinfo["model_name"] = val[1]
+        cpuinfo["model_name"] = val[1].split("Family")[0].strip()
         cpuinfo["address_width"] = int(val[0])
     elif platform_os == "Linux":
         output = processes.execute_command_and_return_output("lscpu")
