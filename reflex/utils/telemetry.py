@@ -29,6 +29,15 @@ def get_os() -> str:
     Returns:
         The operating system.
     """
+    return platform.system()
+
+
+def get_detailed_platform_str() -> str:
+    """Get the detailed os/platform string.
+
+    Returns:
+        The platform string
+    """
     return platform.platform()
 
 
@@ -121,6 +130,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "distinct_id": installation_id,
             "distinct_app_id": project_hash,
             "user_os": get_os(),
+            "user_os_detail": get_detailed_platform_str(),
             "reflex_version": get_reflex_version(),
             "python_version": get_python_version(),
             "cpu_count": get_cpu_count(),
@@ -166,8 +176,6 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs) -> bool:
         return False
 
     event_data = _prepare_event(event, **kwargs)
-    print(f"Event data: {event_data}")
     if not event_data:
         return False
-    return True
-    # return _send_event(event_data)
+    return _send_event(event_data)

@@ -1431,7 +1431,7 @@ def get_cpu_info() -> CpuInfo | None:
          The CPU info.
     """
     platform_os = platform.system()
-    cpuinfo= {}
+    cpuinfo = {}
     if platform_os == "Windows":
         cmd = "wmic cpu get addresswidth,caption,manufacturer /FORMAT:csv"
         output = processes.execute_command_and_return_output(cmd)
