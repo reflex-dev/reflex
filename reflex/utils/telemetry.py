@@ -135,7 +135,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "python_version": get_python_version(),
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
-            "cpu_info": dict(get_cpu_info()) if get_cpu_info() else {},
+            "cpu_info": dict(get_cpu_info()) if get_cpu_info() else {},  # type: ignore
             **(
                 {"template": template}
                 if (template := kwargs.get("template")) is not None
