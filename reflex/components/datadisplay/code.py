@@ -9,6 +9,7 @@ from reflex.components.chakra.layout import Box
 from reflex.components.chakra.media import Icon
 from reflex.components.component import Component
 from reflex.components.core.cond import color_mode_cond
+from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils import format, imports
@@ -375,7 +376,7 @@ class CodeBlock(Component):
     wrap_long_lines: Var[bool]
 
     # A custom style for the code block.
-    custom_style: Dict[str, str] = {}
+    custom_style: Dict[str, Union[str, Var, Color]] = {}
 
     # Props passed down to the code tag.
     code_tag_props: Var[Dict[str, str]]

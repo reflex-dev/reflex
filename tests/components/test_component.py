@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Type
+from contextlib import nullcontext
+from typing import Any, Dict, List, Optional, Type, Union
 
 import pytest
 
@@ -20,7 +21,7 @@ from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import BaseVar, Var, VarData
 
 
 @pytest.fixture
@@ -51,6 +52,9 @@ def component1() -> Type[Component]:
 
         # A test number prop.
         number: Var[int]
+
+        # A test string/number prop.
+        text_or_number: Var[Union[int, str]]
 
         def _get_imports(self) -> imports.ImportDict:
             return {"react": [ImportVar(tag="Component")]}
@@ -253,6 +257,154 @@ def test_create_component(component1):
     assert c.style == {"color": "white", "textAlign": "center"}
 
 
+@pytest.mark.parametrize(
+    "prop_name,var,expected",
+    [
+        pytest.param(
+            "text",
+            Var.create("hello"),
+            None,
+            id="text",
+        ),
+        pytest.param(
+            "text",
+            BaseVar(_var_name="hello", _var_type=Optional[str]),
+            None,
+            id="text-optional",
+        ),
+        pytest.param(
+            "text",
+            BaseVar(_var_name="hello", _var_type=Union[str, None]),
+            None,
+            id="text-union-str-none",
+        ),
+        pytest.param(
+            "text",
+            BaseVar(_var_name="hello", _var_type=Union[None, str]),
+            None,
+            id="text-union-none-str",
+        ),
+        pytest.param(
+            "text",
+            Var.create(1),
+            TypeError,
+            id="text-int",
+        ),
+        pytest.param(
+            "number",
+            Var.create(1),
+            None,
+            id="number",
+        ),
+        pytest.param(
+            "number",
+            BaseVar(_var_name="1", _var_type=Optional[int]),
+            None,
+            id="number-optional",
+        ),
+        pytest.param(
+            "number",
+            BaseVar(_var_name="1", _var_type=Union[int, None]),
+            None,
+            id="number-union-int-none",
+        ),
+        pytest.param(
+            "number",
+            BaseVar(_var_name="1", _var_type=Union[None, int]),
+            None,
+            id="number-union-none-int",
+        ),
+        pytest.param(
+            "number",
+            Var.create("1"),
+            TypeError,
+            id="number-str",
+        ),
+        pytest.param(
+            "text_or_number",
+            Var.create("hello"),
+            None,
+            id="text_or_number-str",
+        ),
+        pytest.param(
+            "text_or_number",
+            Var.create(1),
+            None,
+            id="text_or_number-int",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="hello", _var_type=Optional[str]),
+            None,
+            id="text_or_number-optional-str",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="hello", _var_type=Union[str, None]),
+            None,
+            id="text_or_number-union-str-none",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="hello", _var_type=Union[None, str]),
+            None,
+            id="text_or_number-union-none-str",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="1", _var_type=Optional[int]),
+            None,
+            id="text_or_number-optional-int",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="1", _var_type=Union[int, None]),
+            None,
+            id="text_or_number-union-int-none",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="1", _var_type=Union[None, int]),
+            None,
+            id="text_or_number-union-none-int",
+        ),
+        pytest.param(
+            "text_or_number",
+            Var.create(1.0),
+            TypeError,
+            id="text_or_number-float",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="hello", _var_type=Optional[Union[str, int]]),
+            None,
+            id="text_or_number-optional-union-str-int",
+        ),
+    ],
+)
+def test_create_component_prop_validation(
+    component1: Type[Component],
+    prop_name: str,
+    var: Union[Var, str, int],
+    expected: Type[Exception],
+):
+    """Test that component props are validated correctly.
+
+    Args:
+        component1: A test component.
+        prop_name: The name of the prop.
+        var: The value of the prop.
+        expected: The expected exception.
+    """
+    ctx = pytest.raises(expected) if expected else nullcontext()
+    kwargs = {prop_name: var}
+    with ctx:
+        c = component1.create(**kwargs)
+        assert isinstance(c, component1)
+        assert c.children == []
+        assert c.style == {}
+
+
 def test_add_style(component1, component2):
     """Test adding a style to a component.
 
@@ -338,7 +490,7 @@ def test_get_props(component1, component2):
         component1: A test component.
         component2: A test component.
     """
-    assert component1.get_props() == {"text", "number"}
+    assert component1.get_props() == {"text", "number", "text_or_number"}
     assert component2.get_props() == {"arr"}
 
 
@@ -1594,3 +1746,208 @@ def test_invalid_event_trigger():
 
     with pytest.raises(ValueError):
         trigger_comp(on_b=rx.console_log("log"))
+
+
+@pytest.mark.parametrize(
+    "tags",
+    (
+        ["Component"],
+        ["Component", "useState"],
+        [ImportVar(tag="Component")],
+        [ImportVar(tag="Component"), ImportVar(tag="useState")],
+        ["Component", ImportVar(tag="useState")],
+    ),
+)
+def test_component_add_imports(tags):
+    def _list_to_import_vars(tags: List[str]) -> List[ImportVar]:
+        return [
+            ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
+            for tag in tags
+        ]
+
+    class BaseComponent(Component):
+        def _get_imports(self) -> imports.ImportDict:
+            return {}
+
+    class Reference(Component):
+        def _get_imports(self) -> imports.ImportDict:
+            return imports.merge_imports(
+                super()._get_imports(),
+                {"react": _list_to_import_vars(tags)},
+                {"foo": [ImportVar(tag="bar")]},
+            )
+
+    class TestBase(Component):
+        def add_imports(
+            self,
+        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
+            return {"foo": "bar"}
+
+    class Test(TestBase):
+        def add_imports(
+            self,
+        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
+            return {"react": (tags[0] if len(tags) == 1 else tags)}
+
+    baseline = Reference.create()
+    test = Test.create()
+
+    assert baseline._get_all_imports() == {
+        "react": _list_to_import_vars(tags),
+        "foo": [ImportVar(tag="bar")],
+    }
+    assert test._get_all_imports() == baseline._get_all_imports()
+
+
+def test_component_add_hooks():
+    class BaseComponent(Component):
+        def _get_hooks(self):
+            return "const hook1 = 42"
+
+    class ChildComponent1(BaseComponent):
+        pass
+
+    class GrandchildComponent1(ChildComponent1):
+        def add_hooks(self):
+            return [
+                "const hook2 = 43",
+                "const hook3 = 44",
+            ]
+
+    class GreatGrandchildComponent1(GrandchildComponent1):
+        def add_hooks(self):
+            return [
+                "const hook4 = 45",
+            ]
+
+    class GrandchildComponent2(ChildComponent1):
+        def _get_hooks(self):
+            return "const hook5 = 46"
+
+    class GreatGrandchildComponent2(GrandchildComponent2):
+        def add_hooks(self):
+            return [
+                "const hook2 = 43",
+                "const hook6 = 47",
+            ]
+
+    assert list(BaseComponent()._get_all_hooks()) == ["const hook1 = 42"]
+    assert list(ChildComponent1()._get_all_hooks()) == ["const hook1 = 42"]
+    assert list(GrandchildComponent1()._get_all_hooks()) == [
+        "const hook1 = 42",
+        "const hook2 = 43",
+        "const hook3 = 44",
+    ]
+    assert list(GreatGrandchildComponent1()._get_all_hooks()) == [
+        "const hook1 = 42",
+        "const hook2 = 43",
+        "const hook3 = 44",
+        "const hook4 = 45",
+    ]
+    assert list(GrandchildComponent2()._get_all_hooks()) == ["const hook5 = 46"]
+    assert list(GreatGrandchildComponent2()._get_all_hooks()) == [
+        "const hook5 = 46",
+        "const hook2 = 43",
+        "const hook6 = 47",
+    ]
+    assert list(
+        BaseComponent.create(
+            GrandchildComponent1.create(GreatGrandchildComponent2()),
+            GreatGrandchildComponent1(),
+        )._get_all_hooks(),
+    ) == [
+        "const hook1 = 42",
+        "const hook2 = 43",
+        "const hook3 = 44",
+        "const hook5 = 46",
+        "const hook6 = 47",
+        "const hook4 = 45",
+    ]
+    assert list(
+        Fragment.create(
+            GreatGrandchildComponent2(),
+            GreatGrandchildComponent1(),
+        )._get_all_hooks()
+    ) == [
+        "const hook5 = 46",
+        "const hook2 = 43",
+        "const hook6 = 47",
+        "const hook1 = 42",
+        "const hook3 = 44",
+        "const hook4 = 45",
+    ]
+
+
+def test_component_add_custom_code():
+    class BaseComponent(Component):
+        def _get_custom_code(self):
+            return "const custom_code1 = 42"
+
+    class ChildComponent1(BaseComponent):
+        pass
+
+    class GrandchildComponent1(ChildComponent1):
+        def add_custom_code(self):
+            return [
+                "const custom_code2 = 43",
+                "const custom_code3 = 44",
+            ]
+
+    class GreatGrandchildComponent1(GrandchildComponent1):
+        def add_custom_code(self):
+            return [
+                "const custom_code4 = 45",
+            ]
+
+    class GrandchildComponent2(ChildComponent1):
+        def _get_custom_code(self):
+            return "const custom_code5 = 46"
+
+    class GreatGrandchildComponent2(GrandchildComponent2):
+        def add_custom_code(self):
+            return [
+                "const custom_code2 = 43",
+                "const custom_code6 = 47",
+            ]
+
+    assert BaseComponent()._get_all_custom_code() == {"const custom_code1 = 42"}
+    assert ChildComponent1()._get_all_custom_code() == {"const custom_code1 = 42"}
+    assert GrandchildComponent1()._get_all_custom_code() == {
+        "const custom_code1 = 42",
+        "const custom_code2 = 43",
+        "const custom_code3 = 44",
+    }
+    assert GreatGrandchildComponent1()._get_all_custom_code() == {
+        "const custom_code1 = 42",
+        "const custom_code2 = 43",
+        "const custom_code3 = 44",
+        "const custom_code4 = 45",
+    }
+    assert GrandchildComponent2()._get_all_custom_code() == {"const custom_code5 = 46"}
+    assert GreatGrandchildComponent2()._get_all_custom_code() == {
+        "const custom_code2 = 43",
+        "const custom_code5 = 46",
+        "const custom_code6 = 47",
+    }
+    assert BaseComponent.create(
+        GrandchildComponent1.create(GreatGrandchildComponent2()),
+        GreatGrandchildComponent1(),
+    )._get_all_custom_code() == {
+        "const custom_code1 = 42",
+        "const custom_code2 = 43",
+        "const custom_code3 = 44",
+        "const custom_code4 = 45",
+        "const custom_code5 = 46",
+        "const custom_code6 = 47",
+    }
+    assert Fragment.create(
+        GreatGrandchildComponent2(),
+        GreatGrandchildComponent1(),
+    )._get_all_custom_code() == {
+        "const custom_code1 = 42",
+        "const custom_code2 = 43",
+        "const custom_code3 = 44",
+        "const custom_code4 = 45",
+        "const custom_code5 = 46",
+        "const custom_code6 = 47",
+    }
