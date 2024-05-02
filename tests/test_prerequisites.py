@@ -8,8 +8,10 @@ import pytest
 from reflex import constants
 from reflex.config import Config
 from reflex.utils.prerequisites import (
+    CpuInfo,
     _update_next_config,
     cached_procedure,
+    get_cpu_info,
     initialize_requirements_txt,
 )
 
@@ -203,3 +205,14 @@ def test_cached_procedure():
     assert call_count == 2
     _function_with_some_args(100, y=300)
     assert call_count == 2
+
+
+def test_get_cpu_info():
+    cpu_info = get_cpu_info()
+    assert cpu_info is not None
+    assert isinstance(cpu_info, CpuInfo)
+    assert cpu_info.model_name is not None
+
+    for attr in ("manufacturer_id", "model_name", "address_width"):
+        value = getattr(cpu_info, attr)
+        assert value.strip() if attr != "address_width" else value
