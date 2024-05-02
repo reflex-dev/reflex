@@ -73,11 +73,12 @@ def kill(proc_pid: int):
 # run_process_and_launch_url is assumed to be used
 # only to launch the frontend
 # If this is not the case, might have to change the logic
-def run_process_and_launch_url(run_command: list[str]):
+def run_process_and_launch_url(run_command: list[str], backend_present=True):
     """Run the process and launch the URL.
 
     Args:
         run_command: The command to run.
+        backend_present: Whether the backend is present.
     """
     from reflex.utils import processes
 
@@ -89,7 +90,7 @@ def run_process_and_launch_url(run_command: list[str]):
     while True:
         if process is None:
             kwargs = {}
-            if constants.IS_WINDOWS:
+            if constants.IS_WINDOWS and backend_present:
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
             process = processes.new_process(
                 run_command,
@@ -122,12 +123,13 @@ def run_process_and_launch_url(run_command: list[str]):
             break  # while True
 
 
-def run_frontend(root: Path, port: str):
+def run_frontend(root: Path, port: str, backend_present=True):
     """Run the frontend.
 
     Args:
         root: The root path of the project.
         port: The port to run the frontend on.
+        backend_present: Whether the backend is present.
     """
     from reflex.utils import prerequisites
 
@@ -139,15 +141,19 @@ def run_frontend(root: Path, port: str):
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])  # type: ignore
+    run_process_and_launch_url(
+        [prerequisites.get_package_manager(), "run", "dev"],  # type: ignore
+        backend_present,
+    )
 
 
-def run_frontend_prod(root: Path, port: str):
+def run_frontend_prod(root: Path, port: str, backend_present=True):
     """Run the frontend.
 
     Args:
         root: The root path of the project (to keep same API as run_frontend).
         port: The port to run the frontend on.
+        backend_present: Whether the backend is present.
     """
     from reflex.utils import prerequisites
 
@@ -157,7 +163,10 @@ def run_frontend_prod(root: Path, port: str):
     prerequisites.validate_frontend_dependencies(init=False)
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
-    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "prod"])  # type: ignore
+    run_process_and_launch_url(
+        [prerequisites.get_package_manager(), "run", "prod"],  # type: ignore
+        backend_present,
+    )
 
 
 def run_backend(
