@@ -1858,6 +1858,7 @@ class OnLoadInternalState(State):
             State.set_is_hydrated(True),  # type: ignore
         ]
 
+
 class ComponentState(Base):
     """The base class for a State that is copied for each Component associated with it."""
 
