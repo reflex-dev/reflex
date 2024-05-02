@@ -2845,3 +2845,41 @@ def test_potentially_dirty_substates():
     assert RxState._potentially_dirty_substates() == {State}
     assert State._potentially_dirty_substates() == {C1}
     assert C1._potentially_dirty_substates() == set()
+
+
+@pytest.mark.asyncio
+async def test_setvar(mock_app: rx.App, token: str):
+    """Test that setvar works correctly.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+    state = await mock_app.state_manager.get_state(_substate_key(token, TestState))
+
+    # Set Var in same state (with Var type casting)
+    for event in rx.event.fix_events(
+        [TestState.setvar("num1", 42), TestState.setvar("num2", "4.2")], token
+    ):
+        async for update in state._process(event):
+            print(update)
+    assert state.num1 == 42
+    assert state.num2 == 4.2
+
+    # Set Var in parent state
+    for event in rx.event.fix_events([GrandchildState.setvar("array", [43])], token):
+        async for update in state._process(event):
+            print(update)
+    assert state.array == [43]
+
+    # Cannot setvar for non-existant var
+    with pytest.raises(AttributeError):
+        TestState.setvar("non_existant_var")
+
+    # Cannot setvar for computed vars
+    with pytest.raises(AttributeError):
+        TestState.setvar("sum")
+
+    # Cannot setvar with non-string
+    with pytest.raises(ValueError):
+        TestState.setvar(42, 42)
