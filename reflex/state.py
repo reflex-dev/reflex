@@ -381,6 +381,21 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ]
 
     @classmethod
+    def _validate_module_name(cls) -> None:
+        """Check if the module name is valid.
+
+        Reflex uses ___ as state name module separator.
+
+        Raises:
+            NameError: If the module name is invalid.
+        """
+        if "___" in cls.__module__:
+            raise NameError(
+                "The module name of a State class cannot contain '___'. "
+                "Please rename the module."
+            )
+
+    @classmethod
     def __init_subclass__(cls, **kwargs):
         """Do some magic for the subclass initialization.
 
@@ -391,6 +406,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             ValueError: If a substate class shadows another.
         """
         super().__init_subclass__(**kwargs)
+
+        # Validate the module name.
+        cls._validate_module_name()
+
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
 
