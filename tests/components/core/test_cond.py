@@ -34,7 +34,7 @@ def test_f_string_cond_interpolation():
     ],
     indirect=True,
 )
-def test_validate_cond(cond_state: Var):
+def test_validate_cond(cond_state: BaseState):
     """Test if cond can be a rx.Var with any values.
 
     Args:
