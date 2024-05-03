@@ -20,7 +20,7 @@ def test_script_inline_escaping_string_interpolation():
     assert render_dict["name"] == "Script"
     assert not render_dict["contents"]
     assert len(render_dict["children"]) == 1
-    assert render_dict["children"][0]["contents"] == "{`let world = 'reflex'; console.log(\`hello $\{world\}\`);`}"
+    assert render_dict["children"][0]["contents"] == "{`let world = 'reflex'; console.log(\\`hello $\\{world\\}\\`);`}"
 
 
 def test_script_src():
