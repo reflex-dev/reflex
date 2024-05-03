@@ -31,26 +31,22 @@ def create_color_var(color):
         ),
         (
             create_color_var(rx.color(f"{ColorState.color}", f"{ColorState.shade}")),  # type: ignore
-            # "var(--${state__color_state.color}-${state__color_state.shade})",
             f"var(--${{{color_state_name}.color}}-${{{color_state_name}.shade}})",
         ),
         (
             create_color_var(
                 rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}")  # type: ignore
             ),
-            # "var(--${state__color_state.color_part}ato-${state__color_state.shade})",
             f"var(--${{{color_state_name}.color_part}}ato-${{{color_state_name}.shade}})",
         ),
         (
             create_color_var(f'{rx.color(ColorState.color, f"{ColorState.shade}")}'),  # type: ignore
-            # "var(--${state__color_state.color}-${state__color_state.shade})",
             f"var(--${{{color_state_name}.color}}-${{{color_state_name}.shade}})",
         ),
         (
             create_color_var(
                 f'{rx.color(f"{ColorState.color}", f"{ColorState.shade}")}'  # type: ignore
             ),
-            # "var(--${state__color_state.color}-${state__color_state.shade})",
             f"var(--${{{color_state_name}.color}}-${{{color_state_name}.shade}})",
         ),
     ],
