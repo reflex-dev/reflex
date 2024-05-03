@@ -11,24 +11,31 @@ filename = f"{config.app_name}/{config.app_name}.py"
 class State(rx.State):
     """The app state."""
 
+    ...
+
 
 def index() -> rx.Component:
-    return rx.center(
-        rx.theme_panel(),
+    # Welcome Page (Index)
+    return rx.container(
+        rx.color_mode.button(position="top-right"),
         rx.vstack(
             rx.heading("Welcome to Reflex!", size="9"),
-            rx.text("Get started by editing ", rx.code(filename)),
-            rx.button(
+            rx.text("Get started by editing ", rx.code(filename), size="5"),
+            rx.link(
                 "Check out our docs!",
-                on_click=lambda: rx.redirect(docs_url),
-                size="4",
+                href=docs_url,
+                is_external=True,
+                style={
+                    "border": "0.1em solid",
+                    "padding": "0.5em",
+                    "border_radius": "0.5em",
+                },
             ),
-            rx.logo(),
-            align="center",
-            spacing="7",
-            font_size="2em",
+            spacing="5",
+            justify="center",
+            min_height="90vh",
         ),
-        height="100vh",
+        rx.logo(),
     )
 
 
