@@ -101,3 +101,42 @@ def catchall_prefix(route: str) -> str:
     """
     pattern = catchall_in_route(route)
     return route.replace(pattern, "") if pattern else ""
+
+
+def replace_brackets_with_keywords(input_string):
+    """Replace brackets and everything inside it in a string with a keyword.
+
+    Args:
+        input_string: String to replace.
+
+    Returns:
+        new string containing keywords.
+    """
+    # /posts -> /post
+    # /posts/[slug] -> /posts/__SINGLE_SEGMENT__
+    # /posts/[slug]/comments -> /posts/__SINGLE_SEGMENT__/comments
+    # /posts/[[slug]] -> /posts/__DOUBLE_SEGMENT__
+    # / posts/[[...slug2]]-> /posts/__DOUBLE_CATCHALL_SEGMENT__
+    # /posts/[...slug3]-> /posts/__SINGLE_CATCHALL_SEGMENT__
+
+    # Replace [[...<slug>]] with __DOUBLE_CATCHALL_SEGMENT__
+    output_string = re.sub(
+        r"\[\[\.\.\..+?\]\]",
+        constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
+        input_string,
+    )
+    # Replace [...<slug>] with __SINGLE_CATCHALL_SEGMENT__
+    output_string = re.sub(
+        r"\[\.\.\..+?\]",
+        constants.RouteRegex.SINGLE_CATCHALL_SEGMENT,
+        output_string,
+    )
+    # Replace [[<slug>]] with __DOUBLE_SEGMENT__
+    output_string = re.sub(
+        r"\[\[.+?\]\]", constants.RouteRegex.DOUBLE_SEGMENT, output_string
+    )
+    # Replace [<slug>] with __SINGLE_SEGMENT__
+    output_string = re.sub(
+        r"\[.+?\]", constants.RouteRegex.SINGLE_SEGMENT, output_string
+    )
+    return output_string

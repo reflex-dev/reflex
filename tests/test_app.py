@@ -310,6 +310,39 @@ def test_add_page_invalid_api_route(app: App, index_page):
     app.add_page(index_page, route="/foo/api")
 
 
+def page1():
+    return rx.fragment()
+
+
+def page2():
+    return rx.fragment()
+
+
+def index():
+    return rx.fragment()
+
+
+@pytest.mark.parametrize(
+    "first_page,second_page, route",
+    [
+        (lambda: rx.fragment(), lambda: rx.fragment(rx.text("second")), "/"),
+        (rx.fragment(rx.text("first")), rx.fragment(rx.text("second")), "/page1"),
+        (
+            lambda: rx.fragment(rx.text("first")),
+            rx.fragment(rx.text("second")),
+            "page3",
+        ),
+        (page1, page2, "page1"),
+        (index, index, None),
+        (page1, page1, None),
+    ],
+)
+def test_add_duplicate_page_route_error(app, first_page, second_page, route):
+    app.add_page(first_page, route=route)
+    with pytest.raises(ValueError):
+        app.add_page(second_page, route="/" + route.strip("/") if route else None)
+
+
 def test_initialize_with_admin_dashboard(test_model):
     """Test setting the admin dashboard of an app.
 
