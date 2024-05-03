@@ -752,7 +752,6 @@ def test_computed_var_with_annotation_error(request, fixture):
     Args:
         request: Fixture Request.
         fixture: The state fixture.
-        full_name: The full name of the state var.
     """
     with pytest.raises(AttributeError) as err:
         state = request.getfixturevalue(fixture)
