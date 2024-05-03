@@ -8,10 +8,7 @@ from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.event import (
-    EventHandler,
     EventSpec,
-    call_event_fn,
-    call_event_handler,
     call_script,
 )
 from reflex.style import Style, color_mode
@@ -50,30 +47,9 @@ def serialize_action(action: ToastAction) -> dict:
     Returns:
         The serialized toast action with on_click formatted to queue the given event.
     """
-    if action.on_click is not None:
-        events = []
-        on_click_specs = action.on_click
-        if not isinstance(on_click_specs, list):
-            on_click_specs = [on_click_specs]
-        for spec in on_click_specs:
-            if isinstance(spec, EventHandler):
-                specs = [call_event_handler(spec, lambda: [])]
-            elif isinstance(spec, type(lambda: None)):
-                specs = call_event_fn(spec, lambda: [])
-            else:
-                specs = [spec]
-            events.extend(format.format_event(s) for s in specs)
-        on_click = Var.create(
-            f"() => {{queueEvents([{','.join(events)}], socket); processEvent(socket)}}",
-            _var_is_string=False,
-            _var_is_local=False,
-        )
-    else:
-        on_click = Var.create("() => null", _var_is_string=False, _var_is_local=False)
-
     return {
         "label": action.label,
-        "onClick": on_click,
+        "onClick": format.format_queue_events(action.on_click),
     }
 
 
@@ -97,6 +73,22 @@ class PropsBase(Base):
                 default=serialize,
             )
         )
+
+
+def _toast_callback_signature(toast: Var) -> list[Var]:
+    """The signature for the toast callback, stripping out unserializable keys.
+
+    Args:
+        toast: The toast variable.
+
+    Returns:
+        A function call stripping non-serializable members of the toast object.
+    """
+    return [
+        Var.create_safe(
+            f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {toast}; return rest}})()"
+        )
+    ]
 
 
 class ToastProps(PropsBase):
@@ -150,6 +142,12 @@ class ToastProps(PropsBase):
     # Custom style for the toast secondary button.
     cancel_button_styles: Optional[Style]
 
+    # The function gets called when either the close button is clicked, or the toast is swiped.
+    on_dismiss: Optional[Any]
+
+    # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
+    on_auto_close: Optional[Any]
+
     def dict(self, *args, **kwargs) -> dict:
         """Convert the object to a dictionary.
 
@@ -163,14 +161,22 @@ class ToastProps(PropsBase):
         kwargs.setdefault("exclude_none", True)
         d = super().dict(*args, **kwargs)
         # Keep these fields as ToastAction so they can be serialized specially
-        if d.get("action") is not None:
+        if "action" in d:
             d["action"] = self.action
             if isinstance(self.action, dict):
                 d["action"] = ToastAction(**self.action)
-        if d.get("cancel") is not None:
+        if "cancel" in d:
             d["cancel"] = self.cancel
             if isinstance(self.cancel, dict):
                 d["cancel"] = ToastAction(**self.cancel)
+        if "on_dismiss" in d:
+            d["on_dismiss"] = format.format_queue_events(
+                self.on_dismiss, _toast_callback_signature
+            )
+        if "on_auto_close" in d:
+            d["on_auto_close"] = format.format_queue_events(
+                self.on_auto_close, _toast_callback_signature
+            )
         return d
 
 
