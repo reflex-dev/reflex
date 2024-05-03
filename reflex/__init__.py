@@ -168,6 +168,7 @@ _MAPPING = {
     "reflex.style": ["style", "toggle_color_mode"],
     "reflex.testing": ["testing"],
     "reflex.utils": ["utils"],
+    "reflex.utils.imports": ["ImportVar"],
     "reflex.vars": ["vars", "cached_var", "Var"],
 }
 

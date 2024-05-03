@@ -151,6 +151,7 @@ from reflex import style as style
 from reflex.style import toggle_color_mode as toggle_color_mode
 from reflex import testing as testing
 from reflex import utils as utils
+from reflex.utils.imports import ImportVar as ImportVar
 from reflex import vars as vars
 from reflex.vars import cached_var as cached_var
 from reflex.vars import Var as Var

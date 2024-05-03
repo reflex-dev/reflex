@@ -18,7 +18,7 @@ from typing import (
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import console, format
+from reflex.utils import format
 from reflex.utils.types import ArgsSpec
 from reflex.vars import BaseVar, Var
 
@@ -168,7 +168,7 @@ class EventHandler(EventActionsMixin):
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
 
-    def __call__(self, *args: Var) -> EventSpec:
+    def __call__(self, *args: Any) -> EventSpec:
         """Pass arguments to the handler to get an event spec.
 
         This method configures event handlers that take in arguments.
@@ -245,6 +245,34 @@ class EventSpec(EventActionsMixin):
             args=args,
             event_actions=self.event_actions.copy(),
         )
+
+    def add_args(self, *args: Var) -> EventSpec:
+        """Add arguments to the event spec.
+
+        Args:
+            *args: The arguments to add positionally.
+
+        Returns:
+            The event spec with the new arguments.
+
+        Raises:
+            TypeError: If the arguments are invalid.
+        """
+        # Get the remaining unfilled function args.
+        fn_args = inspect.getfullargspec(self.handler.fn).args[1 + len(self.args) :]
+        fn_args = (Var.create_safe(arg) for arg in fn_args)
+
+        # Construct the payload.
+        values = []
+        for arg in args:
+            try:
+                values.append(Var.create(arg, _var_is_string=isinstance(arg, str)))
+            except TypeError as e:
+                raise TypeError(
+                    f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+                ) from e
+        new_payload = tuple(zip(fn_args, values))
+        return self.with_args(self.args + new_payload)
 
 
 class CallableEventSpec(EventSpec):
@@ -732,7 +760,8 @@ def get_hydrate_event(state) -> str:
 
 
 def call_event_handler(
-    event_handler: EventHandler, arg_spec: Union[Var, ArgsSpec]
+    event_handler: EventHandler | EventSpec,
+    arg_spec: ArgsSpec,
 ) -> EventSpec:
     """Call an event handler to get the event spec.
 
@@ -750,33 +779,21 @@ def call_event_handler(
     Returns:
         The event spec from calling the event handler.
     """
+    parsed_args = parse_args_spec(arg_spec)  # type: ignore
+
+    if isinstance(event_handler, EventSpec):
+        # Handle partial application of EventSpec args
+        return event_handler.add_args(*parsed_args)
+
     args = inspect.getfullargspec(event_handler.fn).args
-
-    # handle new API using lambda to define triggers
-    if isinstance(arg_spec, ArgsSpec):
-        parsed_args = parse_args_spec(arg_spec)  # type: ignore
-
-        if len(args) == len(["self", *parsed_args]):
-            return event_handler(*parsed_args)  # type: ignore
-        else:
-            source = inspect.getsource(arg_spec)  # type: ignore
-            raise ValueError(
-                f"number of arguments in {event_handler.fn.__qualname__} "
-                f"doesn't match the definition of the event trigger '{source.strip().strip(',')}'"
-            )
+    if len(args) == len(["self", *parsed_args]):
+        return event_handler(*parsed_args)  # type: ignore
     else:
-        console.deprecate(
-            feature_name="EVENT_ARG API for triggers",
-            reason="Replaced by new API using lambda allow arbitrary number of args",
-            deprecation_version="0.2.8",
-            removal_version="0.5.0",
+        source = inspect.getsource(arg_spec)  # type: ignore
+        raise ValueError(
+            f"number of arguments in {event_handler.fn.__qualname__} "
+            f"doesn't match the definition of the event trigger '{source.strip().strip(',')}'"
         )
-        if len(args) == 1:
-            return event_handler()
-        assert (
-            len(args) == 2
-        ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
-        return event_handler(arg_spec)  # type: ignore
 
 
 def parse_args_spec(arg_spec: ArgsSpec):

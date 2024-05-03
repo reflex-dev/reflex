@@ -247,6 +247,60 @@ def _split_substate_key(substate_key: str) -> tuple[str, str]:
     return token, state_name
 
 
+class EventHandlerSetVar(EventHandler):
+    """A special event handler to wrap setvar functionality."""
+
+    state_cls: Type[BaseState]
+
+    def __init__(self, state_cls: Type[BaseState]):
+        """Initialize the EventHandlerSetVar.
+
+        Args:
+            state_cls: The state class that vars will be set on.
+        """
+        super().__init__(
+            fn=type(self).setvar,
+            state_full_name=state_cls.get_full_name(),
+            state_cls=state_cls,  # type: ignore
+        )
+
+    def setvar(self, var_name: str, value: Any):
+        """Set the state variable to the value of the event.
+
+        Note: `self` here will be an instance of the state, not EventHandlerSetVar.
+
+        Args:
+            var_name: The name of the variable to set.
+            value: The value to set the variable to.
+        """
+        getattr(self, constants.SETTER_PREFIX + var_name)(value)
+
+    def __call__(self, *args: Any) -> EventSpec:
+        """Performs pre-checks and munging on the provided args that will become an EventSpec.
+
+        Args:
+            *args: The event args.
+
+        Returns:
+            The (partial) EventSpec that will be used to create the event to setvar.
+
+        Raises:
+            AttributeError: If the given Var name does not exist on the state.
+            ValueError: If the given Var name is not a str
+        """
+        if args:
+            if not isinstance(args[0], str):
+                raise ValueError(
+                    f"Var name must be passed as a string, got {args[0]!r}"
+                )
+            # Check that the requested Var setter exists on the State at compile time.
+            if getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None) is None:
+                raise AttributeError(
+                    f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
+                )
+        return super().__call__(*args)
+
+
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -309,6 +363,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
     # Whether the state has ever been touched since instantiation.
     _was_touched: bool = False
+
+    # A special event handler for setting base vars.
+    setvar: ClassVar[EventHandler]
 
     def __init__(
         self,
@@ -499,6 +556,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 value = cls._copy_fn(value)
                 value.__qualname__ = f"{cls.__name__}.{name}"
                 events[name] = value
+
+        # Create the setvar event handler for this state
+        cls._create_setvar()
 
         for name, fn in events.items():
             handler = cls._create_event_handler(fn)
@@ -832,6 +892,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The event handler.
         """
         return EventHandler(fn=fn, state_full_name=cls.get_full_name())
+
+    @classmethod
+    def _create_setvar(cls):
+        """Create the setvar method for the state."""
+        cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
 
     @classmethod
     def _create_setter(cls, prop: BaseVar):
@@ -1800,6 +1865,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return state
 
 
+EventHandlerSetVar.update_forward_refs()
+
+
 class State(BaseState):
     """The app Base State."""
 
@@ -1841,7 +1909,7 @@ class OnLoadInternalState(State):
         Returns:
             The list of events to queue for on load handling.
         """
-        # Do not app.compile_()!  It should be already compiled by now.
+        # Do not app._compile()!  It should be already compiled by now.
         app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
         load_events = app.get_load_events(self.router.page.path)
         if not load_events:
@@ -1859,8 +1927,45 @@ class OnLoadInternalState(State):
 
 
 class ComponentState(Base):
-    """The base class for a State that is copied for each Component associated with it."""
+    """Base class to allow for the creation of a state instance per component.
 
+    This allows for the bundling of UI and state logic into a single class,
+    where each instance has a separate instance of the state.
+
+    Subclass this class and define vars and event handlers in the traditional way.
+    Then define a `get_component` method that returns the UI for the component instance.
+
+    See the full [docs](https://reflex.dev/docs/substates/component-state/) for more.
+
+    Basic example:
+    ```python
+    # Subclass ComponentState and define vars and event handlers.
+    class Counter(rx.ComponentState):
+        # Define vars that change.
+        count: int = 0
+
+        # Define event handlers.
+        def increment(self):
+            self.count += 1
+
+        def decrement(self):
+            self.count -= 1
+
+        @classmethod
+        def get_component(cls, **props):
+            # Access the state vars and event handlers using `cls`.
+            return rx.hstack(
+                rx.button("Decrement", on_click=cls.decrement),
+                rx.text(cls.count),
+                rx.button("Increment", on_click=cls.increment),
+                **props,
+            )
+
+    counter = Counter.create()
+    ```
+    """
+
+    # The number of components created from this class.
     _per_component_state_instance_count: ClassVar[int] = 0
 
     @classmethod
@@ -2651,7 +2756,7 @@ class StateManagerRedis(StateManager):
 
         Note: Connections will be automatically reopened when needed.
         """
-        await self.redis.close(close_connection_pool=True)
+        await self.redis.aclose(close_connection_pool=True)
 
 
 def get_state_manager() -> StateManager:

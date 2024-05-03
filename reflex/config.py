@@ -135,29 +135,47 @@ class DBConfig(Base):
 
 
 class Config(Base):
-    """A Reflex config."""
+    """The config defines runtime settings for the app.
+
+    By default, the config is defined in an `rxconfig.py` file in the root of the app.
+
+    ```python
+    # rxconfig.py
+    import reflex as rx
+
+    config = rx.Config(
+        app_name="myapp",
+        api_url="http://localhost:8000",
+    )
+    ```
+
+    Every config value can be overridden by an environment variable with the same name in uppercase.
+    For example, `db_url` can be overridden by setting the `DB_URL` environment variable.
+
+    See the [configuration](https://reflex.dev/docs/getting-started/configuration/) docs for more info.
+    """
 
     class Config:
         """Pydantic config for the config."""
 
         validate_assignment = True
 
-    # The name of the app.
+    # The name of the app (should match the name of the app directory).
     app_name: str
 
     # The log level to use.
     loglevel: constants.LogLevel = constants.LogLevel.INFO
 
-    # The port to run the frontend on.
+    # The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
     frontend_port: int = 3000
 
-    # The path to run the frontend on.
+    # The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
     frontend_path: str = ""
 
-    # The port to run the backend on.
+    # The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
     backend_port: int = 8000
 
-    # The backend url the frontend will connect to.
+    # The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
     api_url: str = f"http://localhost:{backend_port}"
 
     # The url the frontend will be hosted on.
@@ -166,10 +184,10 @@ class Config(Base):
     # The url the backend will be hosted on.
     backend_host: str = "0.0.0.0"
 
-    # The database url.
+    # The database url used by rx.Model.
     db_url: Optional[str] = "sqlite:///reflex.db"
 
-    # The redis url.
+    # The redis url
     redis_url: Optional[str] = None
 
     # Telemetry opt-in.
@@ -189,9 +207,6 @@ class Config(Base):
 
     # Whether to enable or disable nextJS gzip compression.
     next_compression: bool = True
-
-    # The event namespace for ws connection
-    event_namespace: Optional[str] = None
 
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
@@ -216,9 +231,6 @@ class Config(Base):
         """
         super().__init__(*args, **kwargs)
 
-        # Check for deprecated values.
-        self.check_deprecated_values(**kwargs)
-
         # Update the config from environment variables.
         env_kwargs = self.update_from_env()
         for key, env_value in env_kwargs.items():
@@ -238,29 +250,8 @@ class Config(Base):
         """
         return ".".join([self.app_name, self.app_name])
 
-    @staticmethod
-    def check_deprecated_values(**kwargs):
-        """Check for deprecated config values.
-
-        Args:
-            **kwargs: The kwargs passed to the config.
-
-        Raises:
-            ValueError: If a deprecated config value is found.
-        """
-        if "db_config" in kwargs:
-            raise ValueError("db_config is deprecated - use db_url instead")
-        if "admin_dash" in kwargs:
-            raise ValueError(
-                "admin_dash is deprecated in the config - pass it as a param to rx.App instead"
-            )
-        if "env_path" in kwargs:
-            raise ValueError(
-                "env_path is deprecated - use environment variables instead"
-            )
-
     def update_from_env(self) -> dict[str, Any]:
-        """Update the config from environment variables.
+        """Update the config values based on set environment variables.
 
         Returns:
             The updated config values.
@@ -300,20 +291,11 @@ class Config(Base):
         return updated_values
 
     def get_event_namespace(self) -> str:
-        """Get the websocket event namespace.
+        """Get the path that the backend Websocket server lists on.
 
         Returns:
             The namespace for websocket.
         """
-        if self.event_namespace:
-            console.deprecate(
-                feature_name="Passing event_namespace in the config",
-                reason="",
-                deprecation_version="0.3.5",
-                removal_version="0.5.0",
-            )
-            return f'/{self.event_namespace.strip("/")}'
-
         event_url = constants.Endpoint.EVENT.get_url()
         return urllib.parse.urlsplit(event_url).path
 

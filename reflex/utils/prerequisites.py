@@ -240,7 +240,7 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     # For py3.8 and py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
-    app.compile_(export=export)
+    app._compile(export=export)
     return app_module
 
 
@@ -743,8 +743,15 @@ def install_bun():
     #  if unzip is installed
     if constants.IS_WINDOWS:
         processes.new_process(
-            ["powershell", "-c", f"irm {constants.Bun.INSTALL_URL}.ps1|iex"],
-            env={"BUN_INSTALL": constants.Bun.ROOT_PATH},
+            [
+                "powershell",
+                "-c",
+                f"irm {constants.Bun.INSTALL_URL}.ps1|iex",
+            ],  # TODO: change install url to constants.BUN.WINDOWS_INSTALL_URL
+            env={
+                "BUN_INSTALL": constants.Bun.ROOT_PATH,
+                "BUN_VERSION": constants.Bun.VERSION,
+            },
             shell=True,
             run=True,
             show_logs=console.is_debug(),
