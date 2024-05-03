@@ -450,6 +450,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         super().__init_subclass__(**kwargs)
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
+        # Computed vars should not shadow builtin state props.
+        cls._check_overriden_basevars()
 
         # Reset subclass tracking for this class.
         cls.class_subclasses = set()
@@ -695,6 +697,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             raise NameError(
                 f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
             )
+
+    @classmethod
+    def _check_overriden_basevars(cls):
+        """Check for shadow base vars and raise error if any.
+
+        Raises:
+            NameError: When a computed var shadows a base var.
+        """
+        for name, value in cls.__dict__.items():
+            if isinstance(value, ComputedVar) and name in cls.__annotations__:
+                raise NameError(
+                    f"The computed var name `{name}` shadows a base var; use a different name instead"
+                )
 
     @classmethod
     def get_skip_vars(cls) -> set[str]:
