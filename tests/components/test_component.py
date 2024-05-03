@@ -673,7 +673,7 @@ def test_component_event_trigger_arbitrary_args():
 
     assert comp.render()["props"][0] == (
         "onFoo={(__e,_alpha,_bravo,_charlie) => addEvents("
-        '[Event("c1_state.mock_handler", {_e:__e.target.value,_bravo:_bravo["nested"],_charlie:((_charlie.custom) + (42))})], '
+        f'[Event("{C1State.get_full_name()}.mock_handler", {{_e:__e.target.value,_bravo:_bravo["nested"],_charlie:((_charlie.custom) + (42))}})], '
         "(__e,_alpha,_bravo,_charlie), {})}"
     )
 
