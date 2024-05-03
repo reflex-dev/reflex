@@ -1,4 +1,5 @@
 """Integration tests for dynamic route page behavior."""
+
 from __future__ import annotations
 
 from typing import Callable, Coroutine, Generator, Type
@@ -7,6 +8,7 @@ from urllib.parse import urlsplit
 import pytest
 from selenium.webdriver.common.by import By
 
+from reflex.state import State
 from reflex.testing import AppHarness, AppHarnessProd, WebDriver
 
 from .utils import poll_for_navigation
@@ -154,17 +156,20 @@ def poll_for_order(
         An async function that polls for the order list to match the expected order.
     """
 
+    dynamic_state_name = dynamic_route.get_state_name("_dynamic_state")
+    dynamic_state_full_name = dynamic_route.get_full_state_name(["_dynamic_state"])
+
     async def _poll_for_order(exp_order: list[str]):
         async def _backend_state():
-            return await dynamic_route.get_state(f"{token}_state.dynamic_state")
+            return await dynamic_route.get_state(f"{token}_{dynamic_state_full_name}")
 
         async def _check():
             return (await _backend_state()).substates[
-                "dynamic_state"
+                dynamic_state_name
             ].order == exp_order
 
         await AppHarness._poll_for_async(_check)
-        assert (await _backend_state()).substates["dynamic_state"].order == exp_order
+        assert (await _backend_state()).substates[dynamic_state_name].order == exp_order
 
     return _poll_for_order
 
@@ -184,6 +189,8 @@ async def test_on_load_navigate(
         token: The token visible in the driver browser.
         poll_for_order: function that polls for the order list to match the expected order.
     """
+    dynamic_state_name = dynamic_route.get_state_name("_dynamic_state")
+    dynamic_state_full_name = dynamic_route.get_full_state_name(["_dynamic_state"])
     assert dynamic_route.app_instance is not None
     is_prod = isinstance(dynamic_route, AppHarnessProd)
     link = driver.find_element(By.ID, "link_page_next")
@@ -233,7 +240,7 @@ async def test_on_load_navigate(
         driver.get(f"{driver.current_url}?foo=bar")
     await poll_for_order(exp_order)
     assert (
-        await dynamic_route.get_state(f"{token}_state.dynamic_state")
+        await dynamic_route.get_state(f"{token}_{dynamic_state_full_name}")
     ).router.page.params["foo"] == "bar"
 
     # hit a 404 and ensure we still hydrate
