@@ -22,7 +22,7 @@ from reflex.components.radix.themes.typography.heading import Heading
 from reflex.components.radix.themes.typography.link import Link
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.tags.tag import Tag
-from reflex.utils import console, imports, types
+from reflex.utils import imports, types
 from reflex.utils.imports import ImportVar
 from reflex.vars import Var
 
