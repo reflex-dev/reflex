@@ -4,7 +4,6 @@ import pytest
 from reflex.components.base.script import Script
 from reflex.state import BaseState
 
-
 def test_script_inline():
     """Test inline scripts are rendered as children."""
     component = Script.create("let x = 42")
@@ -13,6 +12,15 @@ def test_script_inline():
     assert not render_dict["contents"]
     assert len(render_dict["children"]) == 1
     assert render_dict["children"][0]["contents"] == "{`let x = 42`}"
+
+def test_script_inline_escaping_string_interpolation():
+    """Test inline scripts are rendered as children."""
+    component = Script.create("let world = 'reflex'; console.log(`hello ${world}`);")
+    render_dict = component.render()
+    assert render_dict["name"] == "Script"
+    assert not render_dict["contents"]
+    assert len(render_dict["children"]) == 1
+    assert render_dict["children"][0]["contents"] == "{`let world = 'reflex'; console.log(\`hello $\{world\}\`);`}"
 
 
 def test_script_src():
