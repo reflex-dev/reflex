@@ -1,4 +1,5 @@
 """Integration tests for client side storage."""
+
 from __future__ import annotations
 
 import time
@@ -199,7 +200,8 @@ async def test_client_side_state(
         driver: WebDriver instance.
         local_storage: Local storage helper.
     """
-    assert client_side.app_instance is not None
+    app = client_side.app_instance
+    assert app is not None
     assert client_side.frontend_url is not None
 
     def poll_for_token():
@@ -291,28 +293,28 @@ async def test_client_side_state(
     set_sub_sub("l1s", "l1s value")
 
     exp_cookies = {
-        "state.client_side_state.client_side_sub_state.c1": {
+        "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c1": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "state.client_side_state.client_side_sub_state.c1",
+            "name": "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c1",
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
             "value": "c1%20value",
         },
-        "state.client_side_state.client_side_sub_state.c2": {
+        "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c2": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "state.client_side_state.client_side_sub_state.c2",
+            "name": "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c2",
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
             "value": "c2%20value",
         },
-        "state.client_side_state.client_side_sub_state.c4": {
+        "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c4": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "state.client_side_state.client_side_sub_state.c4",
+            "name": "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c4",
             "path": "/",
             "sameSite": "Strict",
             "secure": False,
@@ -327,19 +329,19 @@ async def test_client_side_state(
             "secure": False,
             "value": "c6%20value",
         },
-        "state.client_side_state.client_side_sub_state.c7": {
+        "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c7": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "state.client_side_state.client_side_sub_state.c7",
+            "name": "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c7",
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
             "value": "c7%20value",
         },
-        "state.client_side_state.client_side_sub_state.client_side_sub_sub_state.c1s": {
+        "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.clientside___clientside____client_side_sub_sub_state.c1s": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "state.client_side_state.client_side_sub_state.client_side_sub_sub_state.c1s",
+            "name": "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.clientside___clientside____client_side_sub_sub_state.c1s",
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
@@ -358,17 +360,17 @@ async def test_client_side_state(
     # Test cookie with expiry by itself to avoid timing flakiness
     set_sub("c3", "c3 value")
     AppHarness._poll_for(
-        lambda: "state.client_side_state.client_side_sub_state.c3"
+        lambda: "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c3"
         in cookie_info_map(driver)
     )
     c3_cookie = cookie_info_map(driver)[
-        "state.client_side_state.client_side_sub_state.c3"
+        "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c3"
     ]
     assert c3_cookie.pop("expiry") is not None
     assert c3_cookie == {
         "domain": "localhost",
         "httpOnly": False,
-        "name": "state.client_side_state.client_side_sub_state.c3",
+        "name": "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c3",
         "path": "/",
         "sameSite": "Lax",
         "secure": False,
@@ -378,28 +380,34 @@ async def test_client_side_state(
     if not isinstance(driver, Firefox):
         # Note: Firefox does not remove expired cookies Bug 576347
         assert (
-            "state.client_side_state.client_side_sub_state.c3"
+            "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c3"
             not in cookie_info_map(driver)
         )
 
     local_storage_items = local_storage.items()
     local_storage_items.pop("chakra-ui-color-mode", None)
     assert (
-        local_storage_items.pop("state.client_side_state.client_side_sub_state.l1")
+        local_storage_items.pop(
+            "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.l1"
+        )
         == "l1 value"
     )
     assert (
-        local_storage_items.pop("state.client_side_state.client_side_sub_state.l2")
+        local_storage_items.pop(
+            "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.l2"
+        )
         == "l2 value"
     )
     assert local_storage_items.pop("l3") == "l3 value"
     assert (
-        local_storage_items.pop("state.client_side_state.client_side_sub_state.l4")
+        local_storage_items.pop(
+            "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.l4"
+        )
         == "l4 value"
     )
     assert (
         local_storage_items.pop(
-            "state.client_side_state.client_side_sub_state.client_side_sub_sub_state.l1s"
+            "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.clientside___clientside____client_side_sub_sub_state.l1s"
         )
         == "l1s value"
     )
@@ -453,7 +461,9 @@ async def test_client_side_state(
     assert l1s.text == "l1s value"
 
     # reset the backend state to force refresh from client storage
-    async with client_side.modify_state(f"{token}_state.client_side_state") as state:
+    async with client_side.modify_state(
+        f"{token}_reflex___state____state.clientside___clientside____client_side_state"
+    ) as state:
         state.reset()
     driver.refresh()
 
@@ -494,15 +504,15 @@ async def test_client_side_state(
 
     # make sure c5 cookie shows up on the `/foo` route
     AppHarness._poll_for(
-        lambda: "state.client_side_state.client_side_sub_state.c5"
+        lambda: "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c5"
         in cookie_info_map(driver)
     )
     assert cookie_info_map(driver)[
-        "state.client_side_state.client_side_sub_state.c5"
+        "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c5"
     ] == {
         "domain": "localhost",
         "httpOnly": False,
-        "name": "state.client_side_state.client_side_sub_state.c5",
+        "name": "reflex___state____state.clientside___clientside____client_side_state.clientside___clientside____client_side_sub_state.c5",
         "path": "/foo/",
         "sameSite": "Lax",
         "secure": False,
