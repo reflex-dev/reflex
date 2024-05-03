@@ -229,7 +229,6 @@ def poll_for_order(
     Returns:
         An async function that polls for the order list to match the expected order.
     """
-
     state_name = event_action.get_state_name("_event_action_state")
     state_full_name = event_action.get_full_state_name(["_event_action_state"])
 
