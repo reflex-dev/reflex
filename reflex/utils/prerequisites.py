@@ -746,8 +746,8 @@ def install_bun():
             [
                 "powershell",
                 "-c",
-                f"irm {constants.Bun.INSTALL_URL}.ps1|iex",
-            ],  # TODO: change install url to constants.BUN.WINDOWS_INSTALL_URL
+                f"irm {constants.Bun.WINDOWS_INSTALL_URL}|iex",
+            ],
             env={
                 "BUN_INSTALL": constants.Bun.ROOT_PATH,
                 "BUN_VERSION": constants.Bun.VERSION,
