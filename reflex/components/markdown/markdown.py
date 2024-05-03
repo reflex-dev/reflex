@@ -217,8 +217,6 @@ class Markdown(Component):
         component = self.component_map[tag](*children, **props).set(
             special_props=special_props
         )
-        component.style.update(self.custom_styles.get(tag, {}))
-
         return component
 
     def format_component(self, tag: str, **props) -> str:
