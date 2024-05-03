@@ -705,10 +705,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             NameError: When a computed var shadows a base var.
         """
-        for name, value in cls.__dict__.items():
-            if isinstance(value, ComputedVar) and name in cls.__annotations__:
+        for computed_var_ in cls._get_computed_vars():
+            if computed_var_._var_name in cls.__annotations__:
                 raise NameError(
-                    f"The computed var name `{name}` shadows a base var; use a different name instead"
+                    f"The computed var name `{computed_var_._var_name}` shadows a base var in {cls.__name__}; use a different name instead"
                 )
 
     @classmethod
