@@ -34,7 +34,7 @@ toast_ref = Var.create_safe("refs['__toast']")
 
 
 class ToastAction(Base):
-    """A toast action; rendered a button in the toast."""
+    """A toast action that render a button in the toast."""
 
     label: str
     on_click: Any
