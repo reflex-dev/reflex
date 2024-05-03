@@ -2848,8 +2848,8 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
 
     if isinstance(mock_app.state_manager, StateManagerRedis):
         # When redis is used, only states with computed vars are pre-fetched.
-        assert "child2" not in root.substates
-        assert "child3" in root.substates  # (due to @rx.var)
+        assert Child2.get_name() not in root.substates
+        assert Child3.get_name() in root.substates  # (due to @rx.var)
 
     # Get the unconnected sibling state, which will be used to `get_state` other instances.
     child = root.get_substate(Child.get_full_name().split("."))
