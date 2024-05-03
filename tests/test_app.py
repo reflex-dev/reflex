@@ -447,20 +447,12 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
         pytest.param(
             [
                 (
-                    "list_mutation_test_state.make_friend",
-                    {
-                        "list_mutation_test_state": {
-                            "plain_friends": ["Tommy", "another-fd"]
-                        }
-                    },
+                    "make_friend",
+                    {"plain_friends": ["Tommy", "another-fd"]},
                 ),
                 (
-                    "list_mutation_test_state.change_first_friend",
-                    {
-                        "list_mutation_test_state": {
-                            "plain_friends": ["Jenny", "another-fd"]
-                        }
-                    },
+                    "change_first_friend",
+                    {"plain_friends": ["Jenny", "another-fd"]},
                 ),
             ],
             id="append then __setitem__",
@@ -468,12 +460,12 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
         pytest.param(
             [
                 (
-                    "list_mutation_test_state.unfriend_first_friend",
-                    {"list_mutation_test_state": {"plain_friends": []}},
+                    "unfriend_first_friend",
+                    {"plain_friends": []},
                 ),
                 (
-                    "list_mutation_test_state.make_friend",
-                    {"list_mutation_test_state": {"plain_friends": ["another-fd"]}},
+                    "make_friend",
+                    {"plain_friends": ["another-fd"]},
                 ),
             ],
             id="delitem then append",
@@ -481,24 +473,20 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
         pytest.param(
             [
                 (
-                    "list_mutation_test_state.make_friends_with_colleagues",
-                    {
-                        "list_mutation_test_state": {
-                            "plain_friends": ["Tommy", "Peter", "Jimmy"]
-                        }
-                    },
+                    "make_friends_with_colleagues",
+                    {"plain_friends": ["Tommy", "Peter", "Jimmy"]},
                 ),
                 (
-                    "list_mutation_test_state.remove_tommy",
-                    {"list_mutation_test_state": {"plain_friends": ["Peter", "Jimmy"]}},
+                    "remove_tommy",
+                    {"plain_friends": ["Peter", "Jimmy"]},
                 ),
                 (
-                    "list_mutation_test_state.remove_last_friend",
-                    {"list_mutation_test_state": {"plain_friends": ["Peter"]}},
+                    "remove_last_friend",
+                    {"plain_friends": ["Peter"]},
                 ),
                 (
-                    "list_mutation_test_state.unfriend_all_friends",
-                    {"list_mutation_test_state": {"plain_friends": []}},
+                    "unfriend_all_friends",
+                    {"plain_friends": []},
                 ),
             ],
             id="extend, remove, pop, clear",
@@ -506,28 +494,16 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
         pytest.param(
             [
                 (
-                    "list_mutation_test_state.add_jimmy_to_second_group",
-                    {
-                        "list_mutation_test_state": {
-                            "friends_in_nested_list": [["Tommy"], ["Jenny", "Jimmy"]]
-                        }
-                    },
+                    "add_jimmy_to_second_group",
+                    {"friends_in_nested_list": [["Tommy"], ["Jenny", "Jimmy"]]},
                 ),
                 (
-                    "list_mutation_test_state.remove_first_person_from_first_group",
-                    {
-                        "list_mutation_test_state": {
-                            "friends_in_nested_list": [[], ["Jenny", "Jimmy"]]
-                        }
-                    },
+                    "remove_first_person_from_first_group",
+                    {"friends_in_nested_list": [[], ["Jenny", "Jimmy"]]},
                 ),
                 (
-                    "list_mutation_test_state.remove_first_group",
-                    {
-                        "list_mutation_test_state": {
-                            "friends_in_nested_list": [["Jenny", "Jimmy"]]
-                        }
-                    },
+                    "remove_first_group",
+                    {"friends_in_nested_list": [["Jenny", "Jimmy"]]},
                 ),
             ],
             id="nested list",
@@ -535,24 +511,16 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
         pytest.param(
             [
                 (
-                    "list_mutation_test_state.add_jimmy_to_tommy_friends",
-                    {
-                        "list_mutation_test_state": {
-                            "friends_in_dict": {"Tommy": ["Jenny", "Jimmy"]}
-                        }
-                    },
+                    "add_jimmy_to_tommy_friends",
+                    {"friends_in_dict": {"Tommy": ["Jenny", "Jimmy"]}},
                 ),
                 (
-                    "list_mutation_test_state.remove_jenny_from_tommy",
-                    {
-                        "list_mutation_test_state": {
-                            "friends_in_dict": {"Tommy": ["Jimmy"]}
-                        }
-                    },
+                    "remove_jenny_from_tommy",
+                    {"friends_in_dict": {"Tommy": ["Jimmy"]}},
                 ),
                 (
-                    "list_mutation_test_state.tommy_has_no_fds",
-                    {"list_mutation_test_state": {"friends_in_dict": {"Tommy": []}}},
+                    "tommy_has_no_fds",
+                    {"friends_in_dict": {"Tommy": []}},
                 ),
             ],
             id="list in dict",
@@ -576,12 +544,14 @@ async def test_list_mutation_detection__plain_list(
         result = await list_mutation_state._process(
             Event(
                 token=token,
-                name=event_name,
+                name=f"{list_mutation_state.get_name()}.{event_name}",
                 router_data={"pathname": "/", "query": {}},
                 payload={},
             )
         ).__anext__()
 
+        # prefix keys in expected_delta with the state name
+        expected_delta = {list_mutation_state.get_name(): expected_delta}
         assert result.delta == expected_delta
 
 
@@ -592,24 +562,16 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "dict_mutation_test_state.add_age",
-                    {
-                        "dict_mutation_test_state": {
-                            "details": {"name": "Tommy", "age": 20}
-                        }
-                    },
+                    "add_age",
+                    {"details": {"name": "Tommy", "age": 20}},
                 ),
                 (
-                    "dict_mutation_test_state.change_name",
-                    {
-                        "dict_mutation_test_state": {
-                            "details": {"name": "Jenny", "age": 20}
-                        }
-                    },
+                    "change_name",
+                    {"details": {"name": "Jenny", "age": 20}},
                 ),
                 (
-                    "dict_mutation_test_state.remove_last_detail",
-                    {"dict_mutation_test_state": {"details": {"name": "Jenny"}}},
+                    "remove_last_detail",
+                    {"details": {"name": "Jenny"}},
                 ),
             ],
             id="update then __setitem__",
@@ -617,12 +579,12 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "dict_mutation_test_state.clear_details",
-                    {"dict_mutation_test_state": {"details": {}}},
+                    "clear_details",
+                    {"details": {}},
                 ),
                 (
-                    "dict_mutation_test_state.add_age",
-                    {"dict_mutation_test_state": {"details": {"age": 20}}},
+                    "add_age",
+                    {"details": {"age": 20}},
                 ),
             ],
             id="delitem then update",
@@ -630,20 +592,16 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "dict_mutation_test_state.add_age",
-                    {
-                        "dict_mutation_test_state": {
-                            "details": {"name": "Tommy", "age": 20}
-                        }
-                    },
+                    "add_age",
+                    {"details": {"name": "Tommy", "age": 20}},
                 ),
                 (
-                    "dict_mutation_test_state.remove_name",
-                    {"dict_mutation_test_state": {"details": {"age": 20}}},
+                    "remove_name",
+                    {"details": {"age": 20}},
                 ),
                 (
-                    "dict_mutation_test_state.pop_out_age",
-                    {"dict_mutation_test_state": {"details": {}}},
+                    "pop_out_age",
+                    {"details": {}},
                 ),
             ],
             id="add, remove, pop",
@@ -651,22 +609,16 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "dict_mutation_test_state.remove_home_address",
-                    {
-                        "dict_mutation_test_state": {
-                            "address": [{}, {"work": "work address"}]
-                        }
-                    },
+                    "remove_home_address",
+                    {"address": [{}, {"work": "work address"}]},
                 ),
                 (
-                    "dict_mutation_test_state.add_street_to_home_address",
+                    "add_street_to_home_address",
                     {
-                        "dict_mutation_test_state": {
-                            "address": [
-                                {"street": "street address"},
-                                {"work": "work address"},
-                            ]
-                        }
+                        "address": [
+                            {"street": "street address"},
+                            {"work": "work address"},
+                        ]
                     },
                 ),
             ],
@@ -675,34 +627,26 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "dict_mutation_test_state.change_friend_name",
+                    "change_friend_name",
                     {
-                        "dict_mutation_test_state": {
-                            "friend_in_nested_dict": {
-                                "name": "Nikhil",
-                                "friend": {"name": "Tommy"},
-                            }
+                        "friend_in_nested_dict": {
+                            "name": "Nikhil",
+                            "friend": {"name": "Tommy"},
                         }
                     },
                 ),
                 (
-                    "dict_mutation_test_state.add_friend_age",
+                    "add_friend_age",
                     {
-                        "dict_mutation_test_state": {
-                            "friend_in_nested_dict": {
-                                "name": "Nikhil",
-                                "friend": {"name": "Tommy", "age": 30},
-                            }
+                        "friend_in_nested_dict": {
+                            "name": "Nikhil",
+                            "friend": {"name": "Tommy", "age": 30},
                         }
                     },
                 ),
                 (
-                    "dict_mutation_test_state.remove_friend",
-                    {
-                        "dict_mutation_test_state": {
-                            "friend_in_nested_dict": {"name": "Nikhil"}
-                        }
-                    },
+                    "remove_friend",
+                    {"friend_in_nested_dict": {"name": "Nikhil"}},
                 ),
             ],
             id="nested dict",
@@ -726,11 +670,14 @@ async def test_dict_mutation_detection__plain_list(
         result = await dict_mutation_state._process(
             Event(
                 token=token,
-                name=event_name,
+                name=f"{dict_mutation_state.get_name()}.{event_name}",
                 router_data={"pathname": "/", "query": {}},
                 payload={},
             )
         ).__anext__()
+
+        # prefix keys in expected_delta with the state name
+        expected_delta = {dict_mutation_state.get_name(): expected_delta}
 
         assert result.delta == expected_delta
 
@@ -741,12 +688,16 @@ async def test_dict_mutation_detection__plain_list(
     [
         (
             FileUploadState,
-            {"state.file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}},
+            {
+                FileUploadState.get_full_name(): {
+                    "img_list": ["image1.jpg", "image2.jpg"]
+                }
+            },
         ),
         (
             ChildFileUploadState,
             {
-                "state.file_state_base1.child_file_upload_state": {
+                ChildFileUploadState.get_full_name(): {
                     "img_list": ["image1.jpg", "image2.jpg"]
                 }
             },
@@ -754,7 +705,7 @@ async def test_dict_mutation_detection__plain_list(
         (
             GrandChildFileUploadState,
             {
-                "state.file_state_base1.file_state_base2.grand_child_file_upload_state": {
+                GrandChildFileUploadState.get_full_name(): {
                     "img_list": ["image1.jpg", "image2.jpg"]
                 }
             },
@@ -1026,7 +977,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     val=exp_val,
                 ),
                 _event(
-                    name="state.set_is_hydrated",
+                    name=f"{State.get_name()}.set_is_hydrated",
                     payload={"value": True},
                     val=exp_val,
                     router_data={},
@@ -1149,7 +1100,10 @@ async def test_process_events(mocker, token: str):
     app = App(state=GenState)
     mocker.patch.object(app, "postprocess", AsyncMock())
     event = Event(
-        token=token, name="gen_state.go", payload={"c": 5}, router_data=router_data
+        token=token,
+        name=f"{GenState.get_name()}.go",
+        payload={"c": 5},
+        router_data=router_data,
     )
 
     async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
