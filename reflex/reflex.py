@@ -157,7 +157,7 @@ def _run(
     if prerequisites.needs_reinit(frontend=frontend):
         _init(name=config.app_name, loglevel=loglevel)
 
-    # If something is running on the ports, ask the user if they want to kill or change it.
+    # Find the next available open port.
     if frontend and processes.is_process_on_port(frontend_port):
         frontend_port = processes.change_port(frontend_port, "frontend")
 

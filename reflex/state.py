@@ -1909,7 +1909,7 @@ class OnLoadInternalState(State):
         Returns:
             The list of events to queue for on load handling.
         """
-        # Do not app.compile_()!  It should be already compiled by now.
+        # Do not app._compile()!  It should be already compiled by now.
         app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
         load_events = app.get_load_events(self.router.page.path)
         if not load_events:
@@ -1927,8 +1927,45 @@ class OnLoadInternalState(State):
 
 
 class ComponentState(Base):
-    """The base class for a State that is copied for each Component associated with it."""
+    """Base class to allow for the creation of a state instance per component.
 
+    This allows for the bundling of UI and state logic into a single class,
+    where each instance has a separate instance of the state.
+
+    Subclass this class and define vars and event handlers in the traditional way.
+    Then define a `get_component` method that returns the UI for the component instance.
+
+    See the full [docs](https://reflex.dev/docs/substates/component-state/) for more.
+
+    Basic example:
+    ```python
+    # Subclass ComponentState and define vars and event handlers.
+    class Counter(rx.ComponentState):
+        # Define vars that change.
+        count: int = 0
+
+        # Define event handlers.
+        def increment(self):
+            self.count += 1
+
+        def decrement(self):
+            self.count -= 1
+
+        @classmethod
+        def get_component(cls, **props):
+            # Access the state vars and event handlers using `cls`.
+            return rx.hstack(
+                rx.button("Decrement", on_click=cls.decrement),
+                rx.text(cls.count),
+                rx.button("Increment", on_click=cls.increment),
+                **props,
+            )
+
+    counter = Counter.create()
+    ```
+    """
+
+    # The number of components created from this class.
     _per_component_state_instance_count: ClassVar[int] = 0
 
     @classmethod

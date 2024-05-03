@@ -42,7 +42,6 @@ import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.state import (
     BaseState,
-    State,
     StateManagerMemory,
     StateManagerRedis,
     reload_state_module,
@@ -598,7 +597,7 @@ class AppHarness:
                 await self.state_manager.close()
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[State]:
+    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
         """Modify the state associated with the given token and send update to frontend.
 
         Args:
