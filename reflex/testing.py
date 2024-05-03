@@ -200,7 +200,9 @@ class AppHarness:
         Returns:
             The full state name
         """
-        path = [State.get_name()] + [self.get_state_name(p) for p in path]
+        # NOTE: using State.get_name() somehow causes trouble here
+        # path = [State.get_name()] + [self.get_state_name(p) for p in path]
+        path = ["reflex___state____state"] + [self.get_state_name(p) for p in path]
         return ".".join(path)
 
     def _get_globals_from_signature(self, func: Any) -> dict[str, Any]:
