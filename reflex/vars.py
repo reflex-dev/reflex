@@ -535,7 +535,7 @@ class Var:
             else format.wrap(self._var_full_name, "{")
         )
         if self._var_is_string:
-            out = format.format_string(out)
+            out = format.format_string_prop(out)
         return out
 
     def __bool__(self) -> bool:

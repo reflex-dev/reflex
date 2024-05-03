@@ -216,6 +216,26 @@ def _escape_js_string(string: str) -> str:
     string = string.replace("`", r"\`")
     return string
 
+def _escape_js_string_prop(string: str) -> str:
+    """Escape the string for use as a JS string literal.
+
+    Args:
+        string: The string to escape.
+
+    Returns:
+        The escaped string.
+    """
+
+    str_ = str(string)
+
+    # Escape backticks.
+    string = string.replace(r"\`", "`")
+    string = string.replace("\\", "\\\\")
+    string = string.replace('{', '\\{')
+    string = string.replace('}', '\\}')    
+    string = string.replace("`", r"\`")
+
+    return string
 
 def _wrap_js_string(string: str) -> str:
     """Wrap string so it looks like {`string`}.
@@ -242,6 +262,16 @@ def format_string(string: str) -> str:
     """
     return _wrap_js_string(_escape_js_string(string))
 
+def format_string_prop(string: str) -> str:
+    """Format the given string as a JS string literal..
+
+    Args:
+        string: The string to format.
+
+    Returns:
+        The formatted string.
+    """
+    return _wrap_js_string(_escape_js_string_prop(string))
 
 def format_f_string_prop(prop: BaseVar) -> str:
     """Format the string in a given prop as an f-string.
