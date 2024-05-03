@@ -141,7 +141,9 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     assert fully_controlled_input.poll_for_value(plain_value_input) == "ifoonitial"
 
     # clear the input on the backend
-    async with fully_controlled_input.modify_state(f"{token}_state.state") as state:
+    async with fully_controlled_input.modify_state(
+        f"{token}_{full_state_name}"
+    ) as state:
         state.substates[state_name].text = ""
     assert await get_state_text() == ""
     assert (
