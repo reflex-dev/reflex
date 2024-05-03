@@ -1,4 +1,5 @@
 """Test that Script from next/script renders correctly."""
+
 import pytest
 
 from reflex.components.base.script import Script
@@ -57,14 +58,14 @@ def test_script_event_handler():
     )
     render_dict = component.render()
     assert (
-        'onReady={(_e) => addEvents([Event("ev_state.on_ready", {})], (_e), {})}'
+        f'onReady={{(_e) => addEvents([Event("{EvState.get_full_name()}.on_ready", {{}})], (_e), {{}})}}'
         in render_dict["props"]
     )
     assert (
-        'onLoad={(_e) => addEvents([Event("ev_state.on_load", {})], (_e), {})}'
+        f'onLoad={{(_e) => addEvents([Event("{EvState.get_full_name()}.on_load", {{}})], (_e), {{}})}}'
         in render_dict["props"]
     )
     assert (
-        'onError={(_e) => addEvents([Event("ev_state.on_error", {})], (_e), {})}'
+        f'onError={{(_e) => addEvents([Event("{EvState.get_full_name()}.on_error", {{}})], (_e), {{}})}}'
         in render_dict["props"]
     )
