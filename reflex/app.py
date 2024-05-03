@@ -1,15 +1,19 @@
 """The main Reflex app."""
 
 from __future__ import annotations
+
 import asyncio
 import concurrent.futures
 import contextlib
 import copy
 import functools
+import inspect
 import io
 import multiprocessing
 import os
 import platform
+import shutil
+from pathlib import Path
 from typing import (
     Any,
     AsyncIterator,
@@ -79,10 +83,6 @@ from reflex.state import (
 from reflex.utils import console, exceptions, format, prerequisites, types
 from reflex.utils.exec import is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
-from pathlib import Path
-import shutil
-import inspect
-
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -1323,8 +1323,7 @@ class EventNamespace(AsyncNamespace):
 
 
 def asset(relative_filename: str, dir: str = ".") -> str:
-    """
-    Add an asset to the app.
+    """Add an asset to the app.
     Place the file next to your including python file.
     Copies the file to the app's external assets directory.
 
@@ -1333,16 +1332,28 @@ def asset(relative_filename: str, dir: str = ".") -> str:
     rx.script(src=rx.asset("my_custom_javascript.js"))
     rx.image(src=rx.asset("test_image.png","subfolder"))
     ```
+
+    Args:
+        relative_filename: The relative filename of the asset.
+        dir: The directory to place the asset in.
+
+    Returns:
+        The relative URL to the copied asset.
+
     """
-    file = inspect.stack()[1].filename
+    calling_file = inspect.stack()[1].filename
     cwd = Path.cwd()
-    caller_module = inspect.getmodule(inspect.stack()[1][0]).__name__.replace(".", "/")
-    dir = caller_module if dir == "." else caller_module + "/" + dir
+
+    module = inspect.getmodule(inspect.stack()[1][0])
+    assert module is not None
+
+    caller_module_path = module.__name__.replace(".", "/")
+    dir = caller_module_path if dir == "." else caller_module_path + "/" + dir
     assets = constants.Dirs.APP_ASSETS
     external = constants.Dirs.EXTERNAL_APP_ASSETS
     Path(Path(cwd) / assets / external / dir).mkdir(parents=True, exist_ok=True)
     shutil.copy2(
-        Path(file).parent / relative_filename,
+        Path(calling_file).parent / relative_filename,
         Path(cwd) / assets / external / dir / relative_filename,
     )
     return "/" + external + "/" + dir + "/" + relative_filename
