@@ -731,11 +731,11 @@ def test_computed_var_without_annotation_error(request, fixture):
     with pytest.raises(TypeError) as err:
         state = request.getfixturevalue(fixture)
         state.var_without_annotation.foo
-    full_name = state.var_without_annotation._var_full_name
-    assert (
-        err.value.args[0]
-        == f"You must provide an annotation for the state var `{full_name}`. Annotation cannot be `typing.Any`"
-    )
+        full_name = state.var_without_annotation._var_full_name
+        assert (
+            err.value.args[0]
+            == f"You must provide an annotation for the state var `{full_name}`. Annotation cannot be `typing.Any`"
+        )
 
 
 @pytest.mark.parametrize(
@@ -757,11 +757,11 @@ def test_computed_var_with_annotation_error(request, fixture):
     with pytest.raises(AttributeError) as err:
         state = request.getfixturevalue(fixture)
         state.var_with_annotation.foo
-    full_name = state.var_with_annotation._var_full_name
-    assert (
-        err.value.args[0]
-        == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly."
-    )
+        full_name = state.var_with_annotation._var_full_name
+        assert (
+            err.value.args[0]
+            == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly."
+        )
 
 
 @pytest.mark.parametrize(
