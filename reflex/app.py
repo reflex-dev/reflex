@@ -80,6 +80,10 @@ from reflex.state import (
 from reflex.utils import console, exceptions, format, prerequisites, types
 from reflex.utils.exec import is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
+from pathlib import Path
+import shutil
+import os
+
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -1317,3 +1321,26 @@ class EventNamespace(AsyncNamespace):
         """
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
+
+def asset(file: str, name: str, dir: str = ".") -> str:
+    """
+    Add an asset to the app. 
+    Place the file next to your including python file.
+    Copies the file to the app's external assets directory.
+
+    Example:
+    ```python
+    rx.script(
+        src=rx.asset(__file__, "my_custom_javascript.js")
+    )
+    ```
+    """
+    raise Exception(file)
+    cwd = os.getcwd()
+    assets = constants.Dirs.APP_ASSETS
+    external = constants.Dirs.EXTERNAL_APP_ASSETS
+    Path(Path(cwd)/ assets / external).mkdir(parents=True, exist_ok=True)
+    shutil.copy2(
+        Path(file).parent / name, Path(cwd) / assets / external / name
+    )
+    return "/" + external + "/" + name

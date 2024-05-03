@@ -116,7 +116,7 @@ _ALL_COMPONENTS = [
 _MAPPING = {
     "reflex.experimental": ["_x"],
     "reflex.admin": ["admin", "AdminDash"],
-    "reflex.app": ["app", "App", "UploadFile"],
+    "reflex.app": ["app", "App", "UploadFile", "asset"],
     "reflex.base": ["base", "Base"],
     "reflex.compiler": ["compiler"],
     "reflex.compiler.utils": ["get_asset_path"],

@@ -26,6 +26,8 @@ class Dirs(SimpleNamespace):
     WEB = ".web"
     # The name of the assets directory.
     APP_ASSETS = "assets"
+    # The name of the assets directory.
+    EXTERNAL_APP_ASSETS = "external"
     # The name of the utils file.
     UTILS = "utils"
     # The name of the output static directory.
