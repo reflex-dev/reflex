@@ -1,7 +1,6 @@
 """The main Reflex app."""
 
 from __future__ import annotations
-
 import asyncio
 import concurrent.futures
 import contextlib
@@ -82,7 +81,7 @@ from reflex.utils.exec import is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
 from pathlib import Path
 import shutil
-import os
+import inspect
 
 
 # Define custom types.
@@ -1322,9 +1321,10 @@ class EventNamespace(AsyncNamespace):
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
 
-def asset(file: str, name: str, dir: str = ".") -> str:
+
+def asset(relative_filename: str, dir: str = ".") -> str:
     """
-    Add an asset to the app. 
+    Add an asset to the app.
     Place the file next to your including python file.
     Copies the file to the app's external assets directory.
 
@@ -1335,11 +1335,15 @@ def asset(file: str, name: str, dir: str = ".") -> str:
     )
     ```
     """
+    file = inspect.stack()[1].filename
     cwd = Path.cwd()
+    caller_module = inspect.getmodule(inspect.stack()[1][0]).__name__.replace(".", "/")
+    dir = caller_module if dir == "." else caller_module + "/" + dir
     assets = constants.Dirs.APP_ASSETS
     external = constants.Dirs.EXTERNAL_APP_ASSETS
-    Path(Path(cwd)/ assets / external).mkdir(parents=True, exist_ok=True)
+    Path(Path(cwd) / assets / external / dir).mkdir(parents=True, exist_ok=True)
     shutil.copy2(
-        Path(file).parent / name, Path(cwd) / assets / external / name
+        Path(file).parent / relative_filename,
+        Path(cwd) / assets / external / dir / relative_filename,
     )
-    return "/" + external + "/" + name
+    return "/" + external + "/" + dir + "/" + relative_filename
