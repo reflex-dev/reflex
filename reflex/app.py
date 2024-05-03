@@ -1330,9 +1330,8 @@ def asset(relative_filename: str, dir: str = ".") -> str:
 
     Example:
     ```python
-    rx.script(
-        src=rx.asset(__file__, "my_custom_javascript.js")
-    )
+    rx.script(src=rx.asset("my_custom_javascript.js"))
+    rx.image(src=rx.asset("test_image.png","subfolder"))
     ```
     """
     file = inspect.stack()[1].filename
