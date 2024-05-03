@@ -53,9 +53,9 @@ class Template(Base):
 class CpuInfo(Base):
     """Model to save cpu info."""
 
-    manufacturer_id: str
-    model_name: str
-    address_width: int
+    manufacturer_id: Optional[str]
+    model_name: Optional[str]
+    address_width: Optional[int]
 
 
 def check_latest_package_version(package_name: str):
@@ -1422,6 +1422,21 @@ def initialize_app(app_name: str, template: str | None = None):
     telemetry.send("init", template=template)
 
 
+def format_address_width(address_width) -> int | None:
+    """Cast address width to an int.
+
+    Args:
+        address_width: The address width.
+
+    Returns:
+        Address width int
+    """
+    try:
+        return int(address_width) if address_width else None
+    except ValueError:
+        return None
+
+
 @functools.lru_cache(maxsize=None)
 def get_cpu_info() -> CpuInfo | None:
     """Get the CPU info of the underlining host.
@@ -1431,39 +1446,47 @@ def get_cpu_info() -> CpuInfo | None:
     """
     platform_os = platform.system()
     cpuinfo = {}
-    if platform_os == "Windows":
-        cmd = "wmic cpu get addresswidth,caption,manufacturer /FORMAT:csv"
-        output = processes.execute_command_and_return_output(cmd)
-        val = output.splitlines()[-1].split(",")[1:]
-        cpuinfo["manufacturer_id"] = val[2]
-        cpuinfo["model_name"] = val[1].split("Family")[0].strip()
-        cpuinfo["address_width"] = int(val[0])
-    elif platform_os == "Linux":
-        output = processes.execute_command_and_return_output("lscpu")
-        lines = output.split("\n")
-        for line in lines:
-            if "Architecture" in line:
-                cpuinfo["address_width"] = (
-                    64 if line.split(":")[1].strip() == "x86_64" else 32
-                )
-            if "Vendor ID:" in line:
-                cpuinfo["manufacturer_id"] = line.split(":")[1].strip()
-            if "Model name" in line:
-                cpuinfo["model_name"] = line.split(":")[1].strip()
-    elif platform_os == "Darwin":
-        cpuinfo["address_width"] = int(
-            processes.execute_command_and_return_output("getconf LONG_BIT")
-        )
-        cpuinfo["manufacturer_id"] = processes.execute_command_and_return_output(
-            "sysctl -n machdep.cpu.brand_string"
-        )
-        cpuinfo["model_name"] = processes.execute_command_and_return_output("uname -m")
+    try:
+        if platform_os == "Windows":
+            cmd = "wmic cpu get addresswidth,caption,manufacturer /FORMAT:csv"
+            output = processes.execute_command_and_return_output(cmd)
+            if output:
+                val = output.splitlines()[-1].split(",")[1:]
+                cpuinfo["manufacturer_id"] = val[2]
+                cpuinfo["model_name"] = val[1].split("Family")[0].strip()
+                cpuinfo["address_width"] = format_address_width(val[0])
+        elif platform_os == "Linux":
+            output = processes.execute_command_and_return_output("lscpu")
+            if output:
+                lines = output.split("\n")
+                for line in lines:
+                    if "Architecture" in line:
+                        cpuinfo["address_width"] = (
+                            64 if line.split(":")[1].strip() == "x86_64" else 32
+                        )
+                    if "Vendor ID:" in line:
+                        cpuinfo["manufacturer_id"] = line.split(":")[1].strip()
+                    if "Model name" in line:
+                        cpuinfo["model_name"] = line.split(":")[1].strip()
+        elif platform_os == "Darwin":
+            cpuinfo["address_width"] = format_address_width(
+                processes.execute_command_and_return_output("getconf LONG_BIT")
+            )
+            cpuinfo["manufacturer_id"] = processes.execute_command_and_return_output(
+                "sysctl -n machdep.cpu.brand_string"
+            )
+            cpuinfo["model_name"] = processes.execute_command_and_return_output(
+                "uname -m"
+            )
+    except Exception as err:
+        console.error(f"Failed to retrieve CPU info. {err}")
+        return None
 
     return (
         CpuInfo(
-            manufacturer_id=cpuinfo.get("manufacturer_id"),  # type: ignore
-            model_name=cpuinfo.get("model_name"),  # type: ignore
-            address_width=cpuinfo.get("address_width"),  # type: ignore
+            manufacturer_id=cpuinfo.get("manufacturer_id"),
+            model_name=cpuinfo.get("model_name"),
+            address_width=cpuinfo.get("address_width"),
         )
         if cpuinfo
         else None
@@ -1483,5 +1506,6 @@ def is_windows_bun_supported() -> bool:
         constants.IS_WINDOWS
         and cpu_info is not None
         and cpu_info.address_width == 64
+        and cpu_info.model_name is not None
         and "ARM" not in cpu_info.model_name
     )

@@ -123,6 +123,9 @@ def _prepare_event(event: str, **kwargs) -> dict:
     else:
         # for python 3.11 & 3.12
         stamp = datetime.now(UTC).isoformat()
+
+    cpuinfo = get_cpu_info()
+
     return {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
         "event": event,
@@ -135,7 +138,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "python_version": get_python_version(),
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
-            "cpu_info": dict(get_cpu_info()) if get_cpu_info() else {},  # type: ignore
+            "cpu_info": dict(cpuinfo) if cpuinfo else {},
             **(
                 {"template": template}
                 if (template := kwargs.get("template")) is not None
