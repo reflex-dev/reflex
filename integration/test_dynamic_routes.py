@@ -8,7 +8,6 @@ from urllib.parse import urlsplit
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.state import State
 from reflex.testing import AppHarness, AppHarnessProd, WebDriver
 
 from .utils import poll_for_navigation
@@ -155,7 +154,6 @@ def poll_for_order(
     Returns:
         An async function that polls for the order list to match the expected order.
     """
-
     dynamic_state_name = dynamic_route.get_state_name("_dynamic_state")
     dynamic_state_full_name = dynamic_route.get_full_state_name(["_dynamic_state"])
 
@@ -189,7 +187,6 @@ async def test_on_load_navigate(
         token: The token visible in the driver browser.
         poll_for_order: function that polls for the order list to match the expected order.
     """
-    dynamic_state_name = dynamic_route.get_state_name("_dynamic_state")
     dynamic_state_full_name = dynamic_route.get_full_state_name(["_dynamic_state"])
     assert dynamic_route.app_instance is not None
     is_prod = isinstance(dynamic_route, AppHarnessProd)
