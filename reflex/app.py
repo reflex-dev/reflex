@@ -1335,8 +1335,7 @@ def asset(file: str, name: str, dir: str = ".") -> str:
     )
     ```
     """
-    raise Exception(file)
-    cwd = os.getcwd()
+    cwd = Path.cwd()
     assets = constants.Dirs.APP_ASSETS
     external = constants.Dirs.EXTERNAL_APP_ASSETS
     Path(Path(cwd)/ assets / external).mkdir(parents=True, exist_ok=True)
