@@ -1,4 +1,5 @@
 """Integration tests for client side storage."""
+
 from __future__ import annotations
 
 from typing import Generator
@@ -136,6 +137,9 @@ def test_login_flow(
     logout_button = driver.find_element(By.ID, "logout")
     logout_button.click()
 
-    assert login_sample._poll_for(lambda: local_storage["state.state.auth_token"] == "")
+    state_name = login_sample.get_full_state_name(["_state"])
+    assert login_sample._poll_for(
+        lambda: local_storage[f"{state_name}.auth_token"] == ""
+    )
     with pytest.raises(NoSuchElementException):
         driver.find_element(By.ID, "auth-token")
