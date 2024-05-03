@@ -193,20 +193,12 @@ class App(Base):
         base_state_subclasses = BaseState.__subclasses__()
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
-        if not is_testing_env():
+        if not is_testing_env() and len(base_state_subclasses) > 1:
             # Only one Base State class is allowed.
-            if len(base_state_subclasses) > 1:
-                raise ValueError(
-                    "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
-                )
+            raise ValueError(
+                "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
+            )
 
-            if "state" in kwargs:
-                console.deprecate(
-                    feature_name="`state` argument for App()",
-                    reason="due to all `rx.State` subclasses being inferred.",
-                    deprecation_version="0.3.5",
-                    removal_version="0.5.0",
-                )
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
 
@@ -439,7 +431,6 @@ class App(Base):
             EventHandler | EventSpec | list[EventHandler | EventSpec] | None
         ) = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
-        script_tags: list[Component] | None = None,
     ):
         """Add a page to the app.
 
@@ -454,7 +445,6 @@ class App(Base):
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
-            script_tags: List of script tags to be added to component
 
         Raises:
             ValueError: When the specified route name already exists.
@@ -534,16 +524,6 @@ class App(Base):
             component,
             **meta_args,
         )
-
-        # Add script tags if given
-        if script_tags:
-            console.deprecate(
-                feature_name="Passing script tags to add_page",
-                reason="Add script components as children to the page component instead",
-                deprecation_version="0.2.9",
-                removal_version="0.5.0",
-            )
-            component.children.extend(script_tags)
 
         # Add the page.
         self._check_routes_conflict(route)
