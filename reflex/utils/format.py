@@ -654,7 +654,8 @@ def format_queue_events(
     # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
     # Typically this snippet will _only_ run from within an rx.call_script eval context.
     return Var.create_safe(
-        f"{arg_def} => {{queueEvents([{','.join(payloads)}], socket); processEvent(socket)}}",
+        f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}); "
+        f"processEvent({constants.CompileVars.SOCKET})}}",
         _var_is_string=False,
         _var_is_local=False,
     ).to(EventChain)

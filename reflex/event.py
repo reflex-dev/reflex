@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import inspect
 from base64 import b64encode
-from types import FunctionType
 from typing import (
     Any,
     Callable,
@@ -700,7 +699,11 @@ def _callback_arg_spec(eval_result):
 
 def call_script(
     javascript_code: str,
-    callback: EventHandler | Callable | None = None,
+    callback: EventSpec
+    | EventHandler
+    | Callable
+    | List[EventSpec | EventHandler | Callable]
+    | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -710,21 +713,14 @@ def call_script(
 
     Returns:
         EventSpec: An event that will execute the client side javascript.
-
-    Raises:
-        ValueError: If the callback is not a valid event handler.
     """
     callback_kwargs = {}
     if callback is not None:
-        arg_name = parse_args_spec(_callback_arg_spec)[0]._var_name
-        if isinstance(callback, EventHandler):
-            event_spec = call_event_handler(callback, _callback_arg_spec)
-        elif isinstance(callback, FunctionType):
-            event_spec = call_event_fn(callback, _callback_arg_spec)[0]
-        else:
-            raise ValueError("Cannot use {callback!r} as a call_script callback.")
         callback_kwargs = {
-            "callback": f"({arg_name}) => queueEvents([{format.format_event(event_spec)}], {constants.CompileVars.SOCKET})"
+            "callback": format.format_queue_events(
+                callback,
+                args_spec=lambda result: [result],
+            )
         }
     return server_side(
         "_call_script",
