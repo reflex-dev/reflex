@@ -113,7 +113,7 @@ seen_index_vars = set()
             ForEachState.colors_list,
             display_color,
             {
-                "iterable_state": "for_each_state.colors_list",
+                "iterable_state": f"{ForEachState.get_full_name()}.colors_list",
                 "iterable_type": "list",
             },
         ),
@@ -121,7 +121,7 @@ seen_index_vars = set()
             ForEachState.colors_dict_list,
             display_color_name,
             {
-                "iterable_state": "for_each_state.colors_dict_list",
+                "iterable_state": f"{ForEachState.get_full_name()}.colors_dict_list",
                 "iterable_type": "list",
             },
         ),
@@ -129,7 +129,7 @@ seen_index_vars = set()
             ForEachState.colors_nested_dict_list,
             display_shade,
             {
-                "iterable_state": "for_each_state.colors_nested_dict_list",
+                "iterable_state": f"{ForEachState.get_full_name()}.colors_nested_dict_list",
                 "iterable_type": "list",
             },
         ),
@@ -137,7 +137,7 @@ seen_index_vars = set()
             ForEachState.primary_color,
             display_primary_colors,
             {
-                "iterable_state": "for_each_state.primary_color",
+                "iterable_state": f"{ForEachState.get_full_name()}.primary_color",
                 "iterable_type": "dict",
             },
         ),
@@ -145,7 +145,7 @@ seen_index_vars = set()
             ForEachState.color_with_shades,
             display_color_with_shades,
             {
-                "iterable_state": "for_each_state.color_with_shades",
+                "iterable_state": f"{ForEachState.get_full_name()}.color_with_shades",
                 "iterable_type": "dict",
             },
         ),
@@ -153,7 +153,7 @@ seen_index_vars = set()
             ForEachState.nested_colors_with_shades,
             display_nested_color_with_shades,
             {
-                "iterable_state": "for_each_state.nested_colors_with_shades",
+                "iterable_state": f"{ForEachState.get_full_name()}.nested_colors_with_shades",
                 "iterable_type": "dict",
             },
         ),
@@ -161,7 +161,7 @@ seen_index_vars = set()
             ForEachState.nested_colors_with_shades,
             display_nested_color_with_shades_v2,
             {
-                "iterable_state": "for_each_state.nested_colors_with_shades",
+                "iterable_state": f"{ForEachState.get_full_name()}.nested_colors_with_shades",
                 "iterable_type": "dict",
             },
         ),
@@ -169,7 +169,7 @@ seen_index_vars = set()
             ForEachState.color_tuple,
             display_color_tuple,
             {
-                "iterable_state": "for_each_state.color_tuple",
+                "iterable_state": f"{ForEachState.get_full_name()}.color_tuple",
                 "iterable_type": "tuple",
             },
         ),
@@ -177,7 +177,7 @@ seen_index_vars = set()
             ForEachState.colors_set,
             display_colors_set,
             {
-                "iterable_state": "for_each_state.colors_set",
+                "iterable_state": f"{ForEachState.get_full_name()}.colors_set",
                 "iterable_type": "set",
             },
         ),
@@ -185,7 +185,7 @@ seen_index_vars = set()
             ForEachState.nested_colors_list,
             lambda el, i: display_nested_list_element(el, i),
             {
-                "iterable_state": "for_each_state.nested_colors_list",
+                "iterable_state": f"{ForEachState.get_full_name()}.nested_colors_list",
                 "iterable_type": "list",
             },
         ),
@@ -193,7 +193,7 @@ seen_index_vars = set()
             ForEachState.color_index_tuple,
             display_color_index_tuple,
             {
-                "iterable_state": "for_each_state.color_index_tuple",
+                "iterable_state": f"{ForEachState.get_full_name()}.color_index_tuple",
                 "iterable_type": "tuple",
             },
         ),
