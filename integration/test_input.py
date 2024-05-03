@@ -1,4 +1,5 @@
 """Integration tests for text input and related components."""
+
 from typing import Generator
 
 import pytest
@@ -85,9 +86,12 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     token = fully_controlled_input.poll_for_value(token_input)
     assert token
 
+    state_name = fully_controlled_input.get_state_name("_state")
+    full_state_name = fully_controlled_input.get_full_state_name(["_state"])
+
     async def get_state_text():
-        state = await fully_controlled_input.get_state(f"{token}_state.state")
-        return state.substates["state"].text
+        state = await fully_controlled_input.get_state(f"{token}_{full_state_name}")
+        return state.substates[state_name].text
 
     # ensure defaults are set correctly
     assert (
@@ -137,8 +141,10 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     assert fully_controlled_input.poll_for_value(plain_value_input) == "ifoonitial"
 
     # clear the input on the backend
-    async with fully_controlled_input.modify_state(f"{token}_state.state") as state:
-        state.substates["state"].text = ""
+    async with fully_controlled_input.modify_state(
+        f"{token}_{full_state_name}"
+    ) as state:
+        state.substates[state_name].text = ""
     assert await get_state_text() == ""
     assert (
         fully_controlled_input.poll_for_value(
