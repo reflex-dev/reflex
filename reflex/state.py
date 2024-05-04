@@ -247,6 +247,44 @@ def _split_substate_key(substate_key: str) -> tuple[str, str]:
     return token, state_name
 
 
+# Keep track of all state instances to calculate minified state names
+state_count = 0
+
+all_state_names: Set[str] = set()
+
+
+def next_minified_state_name() -> str:
+    global state_count
+    num = state_count
+
+    # All possible chars for minified state name
+    chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
+    base = len(chars)
+    state_name = ""
+
+    if num == 0:
+        state_name = chars[0]
+
+    while num > 0:
+        state_name = chars[num % base] + state_name
+        num = num // base
+
+    state_count += 1
+
+    if state_name in all_state_names:
+        raise ValueError(f"Minified state name {state_name} already exists")
+    all_state_names.add(state_name)
+
+    return state_name
+
+
+def generate_state_name() -> str:
+    while name := next_minified_state_name():
+        if name not in constants.CompileVars.RESERVED_STATE_NAMES:
+            return name
+    raise ValueError("No more minified state names available")
+
+
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -309,6 +347,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
     # Whether the state has ever been touched since instantiation.
     _was_touched: bool = False
+
+    # Minified state name
+    _state_name: Optional[str] = None
 
     def __init__(
         self,
@@ -406,6 +447,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             ValueError: If a substate class shadows another.
         """
         super().__init_subclass__(**kwargs)
+
+        # Generate a minified state name by converting state count to string
+        if not cls._state_name:
+            cls._state_name = generate_state_name()
 
         # Validate the module name.
         cls._validate_module_name()
@@ -707,6 +752,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The name of the state.
         """
+        if constants.CompileVars.MINIFY_STATES:
+            return cls._state_name
         module = cls.__module__.replace(".", "___")
         return format.to_snake_case(f"{module}___{cls.__name__}")
 
@@ -1830,6 +1877,8 @@ class State(BaseState):
 class UpdateVarsInternalState(State):
     """Substate for handling internal state var updates."""
 
+    _state_name: Optional[str] = constants.CompileVars.UPDATE_VARS_INTERNAL
+
     async def update_vars_internal(self, vars: dict[str, Any]) -> None:
         """Apply updates to fully qualified state vars.
 
@@ -1854,6 +1903,8 @@ class OnLoadInternalState(State):
 
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
+
+    _state_name: Optional[str] = constants.CompileVars.ON_LOAD_INTERNAL
 
     def on_load_internal(self) -> list[Event | EventSpec] | None:
         """Queue on_load handlers for the current page.
