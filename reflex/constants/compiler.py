@@ -1,6 +1,7 @@
 """Compiler variables."""
 
 import enum
+import os
 from enum import Enum
 from types import SimpleNamespace
 
@@ -61,18 +62,35 @@ class CompileVars(SimpleNamespace):
     CONNECT_ERROR = "connectErrors"
     # The name of the function for converting a dict to an event.
     TO_EVENT = "Event"
+    # The env var to toggle minification of states.
+    ENV_MINIFY_STATES = "REFLEX_MINIFY_STATES"
+    # Whether to minify states.
+    MINIFY_STATES = os.environ.get(ENV_MINIFY_STATES, False)
     # The name of the internal on_load event.
-    ON_LOAD_INTERNAL = "reflex___state____on_load_internal_state.on_load_internal"
+    ON_LOAD_INTERNAL = (
+        "l"
+        if MINIFY_STATES
+        else "reflex___state____on_load_internal_state.on_load_internal"
+    )
     # The name of the internal event to update generic state vars.
     UPDATE_VARS_INTERNAL = (
-        "reflex___state____update_vars_internal_state.update_vars_internal"
+        "u"
+        if MINIFY_STATES
+        else ("reflex___state____update_vars_internal_state.update_vars_internal")
     )
     # The name of the frontend event exception state
-    FRONTEND_EXCEPTION_STATE = "reflex___state____frontend_event_exception_state"
+    FRONTEND_EXCEPTION_STATE = (
+        "e" if MINIFY_STATES else "reflex___state____frontend_event_exception_state"
+    )
     # The full name of the frontend exception state
     FRONTEND_EXCEPTION_STATE_FULL = (
         f"reflex___state____state.{FRONTEND_EXCEPTION_STATE}"
     )
+    INTERNAL_STATE_NAMES = {
+        ON_LOAD_INTERNAL,
+        UPDATE_VARS_INTERNAL,
+        FRONTEND_EXCEPTION_STATE_FULL,
+    }
 
 
 class PageNames(SimpleNamespace):
