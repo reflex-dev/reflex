@@ -30,7 +30,13 @@ from reflex.utils import exceptions, format, types
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
 SerializedType = Union[str, bool, int, float, list, dict]
-Serializer = Callable[[Type], SerializedType]
+
+
+Serializer = Callable[
+    [Type], Union[SerializedType, Tuple[SerializedType, types.GenericType]]
+]
+
+
 SERIALIZERS: dict[Type, Serializer] = {}
 
 
@@ -131,7 +137,7 @@ def serialize(
         return serialized
 
 
-def get_serializer(type_: Type) -> Serializer | None:
+def get_serializer(type_: Type) -> Optional[Serializer]:
     """Get the serializer for the type.
 
     Args:
@@ -272,7 +278,7 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
 
 
 @serializer
-def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str | Type:
+def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> Tuple[str, Type]:
     """Serialize a datetime to a JSON string.
 
     Args:
