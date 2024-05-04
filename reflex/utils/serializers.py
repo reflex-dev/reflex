@@ -14,6 +14,7 @@ from typing import (
     Dict,
     List,
     Literal,
+    Optional,
     Set,
     Tuple,
     Type,
@@ -76,24 +77,25 @@ def serializer(fn: Serializer) -> Serializer:
 @overload
 def serialize(
     value: Any, get_type: Literal[True]
-) -> Tuple[SerializedType | None, types.GenericType | None]:
+) -> Tuple[Optional[SerializedType], Optional[types.GenericType]]:
     ...
 
 
 @overload
-def serialize(value: Any, get_type: Literal[False]) -> SerializedType | None:
+def serialize(value: Any, get_type: Literal[False]) -> Optional[SerializedType]:
     ...
 
 
 @overload
-def serialize(value: Any) -> SerializedType | None:
+def serialize(value: Any) -> Optional[SerializedType]:
     ...
 
 
 def serialize(
     value: Any, get_type: bool = False
 ) -> Union[
-    SerializedType | None, Tuple[SerializedType | None, types.GenericType | None]
+    Optional[SerializedType],
+    Tuple[Optional[SerializedType], Optional[types.GenericType]],
 ]:
     """Serialize the value to a JSON string.
 
