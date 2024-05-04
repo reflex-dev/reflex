@@ -1860,13 +1860,18 @@ class ComputedVar(Var, property):
     # Whether to track dependencies and cache computed values
     _cache: bool = dataclasses.field(default=False)
 
-    _initial_value: Any | types.Unset = dataclasses.field(default_factory=types.Unset)
+    # The initial value of the computed var
+    _initial_value: Any | types.Unset = dataclasses.field(default=types.Unset)
+
+    # Explicit var dependencies to track
+    _static_deps: set[str] = dataclasses.field(default_factory=set)
 
     def __init__(
         self,
         fget: Callable[[BaseState], Any],
         initial_value: Any | types.Unset = types.Unset(),
         cache: bool = False,
+        deps: Optional[set[Union[str, Var]]] = None,
         **kwargs,
     ):
         """Initialize a ComputedVar.
@@ -1875,10 +1880,16 @@ class ComputedVar(Var, property):
             fget: The getter function.
             initial_value: The initial value of the computed var.
             cache: Whether to cache the computed value.
+            deps: Explicit var dependencies to track.
             **kwargs: additional attributes to set on the instance
         """
         self._initial_value = initial_value
         self._cache = cache
+        if deps is None:
+            deps = set()
+        self._static_deps = {
+            dep._var_name if isinstance(dep, Var) else dep for dep in deps
+        }
         property.__init__(self, fget)
         kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", self._determine_var_type())
@@ -1965,7 +1976,7 @@ class ComputedVar(Var, property):
             VarValueError: if the function references the get_state, parent_state, or substates attributes
                 (cannot track deps in a related state, only implicitly via parent state).
         """
-        d = set()
+        d = self._static_deps.copy()
         if obj is None:
             fget = property.__getattribute__(self, "fget")
             if fget is not None:
@@ -2063,6 +2074,7 @@ def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
     initial_value: Any | None = None,
     cache: bool = False,
+    deps: Optional[set[Union[str, Var]]] = None,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
     """A ComputedVar decorator with or without kwargs.
@@ -2071,6 +2083,7 @@ def computed_var(
         fget: The getter function.
         initial_value: The initial value of the computed var.
         cache: Whether to cache the computed value.
+        deps: Explicit var dependencies to track.
         **kwargs: additional attributes to set on the instance
 
     Returns:
@@ -2084,6 +2097,7 @@ def computed_var(
             fget=fget,
             initial_value=initial_value,
             cache=cache,
+            deps=deps,
             **kwargs,
         )
 
