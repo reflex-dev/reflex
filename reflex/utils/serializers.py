@@ -8,7 +8,19 @@ import warnings
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_hints
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    get_type_hints,
+    overload,
+)
 
 from reflex.base import Base
 from reflex.constants.colors import Color, format_color
@@ -61,11 +73,33 @@ def serializer(fn: Serializer) -> Serializer:
     return fn
 
 
+@overload
+def serialize(
+    value: Any, get_type: Literal[True]
+) -> Tuple[SerializedType | None, types.GenericType | None]:
+    ...
+
+
+@overload
+def serialize(value: Any, get_type: Literal[False]) -> SerializedType | None:
+    ...
+
+
+@overload
 def serialize(value: Any) -> SerializedType | None:
+    ...
+
+
+def serialize(
+    value: Any, get_type: bool = False
+) -> Union[
+    SerializedType | None, Tuple[SerializedType | None, types.GenericType | None]
+]:
     """Serialize the value to a JSON string.
 
     Args:
         value: The value to serialize.
+        get_type: Whether to return the type of the serialized value.
 
     Returns:
         The serialized value, or None if a serializer is not found.
@@ -75,10 +109,24 @@ def serialize(value: Any) -> SerializedType | None:
 
     # If there is no serializer, return None.
     if serializer is None:
+        if get_type:
+            return None, None
         return None
 
     # Serialize the value.
-    return serializer(value)
+    serialized = serializer(value)
+
+    # If the serializer returns a tuple, return the type as well.
+    # return_type_annotation = get_type_hints(serializer).get("return", None)
+    return_type = None
+    if isinstance(serialized, tuple):
+        serialized, return_type = serialized
+
+    # Return the serialized value and the type.
+    if get_type:
+        return serialized, return_type
+    else:
+        return serialized
 
 
 def get_serializer(type_: Type) -> Serializer | None:
@@ -222,7 +270,7 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
 
 
 @serializer
-def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
+def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str | Type:
     """Serialize a datetime to a JSON string.
 
     Args:
@@ -231,7 +279,7 @@ def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
     Returns:
         The serialized datetime.
     """
-    return str(dt)
+    return str(dt), str
 
 
 @serializer

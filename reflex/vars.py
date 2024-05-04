@@ -370,7 +370,10 @@ class Var:
 
         # Try to serialize the value.
         type_ = type(value)
-        name = value if type_ in types.JSONType else serializers.serialize(value)
+        if type_ in types.JSONType:
+            name = value
+        else:
+            name, _ = serializers.serialize(value, get_type=True)
         if name is None:
             raise TypeError(
                 f"No JSON serializer found for var {value} of type {type_}."
@@ -819,19 +822,19 @@ class Var:
                 if invoke_fn:
                     # invoke the function on left operand.
                     operation_name = (
-                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"
-                    )  # type: ignore
+                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
+                    )
                 else:
                     # pass the operands as arguments to the function.
                     operation_name = (
-                        f"{left_operand_full_name} {op} {right_operand_full_name}"
-                    )  # type: ignore
+                        f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                    )
                     operation_name = f"{fn}({operation_name})"
             else:
                 # apply operator to operands (left operand <operator> right_operand)
                 operation_name = (
-                    f"{left_operand_full_name} {op} {right_operand_full_name}"
-                )  # type: ignore
+                    f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                )
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
