@@ -1878,7 +1878,7 @@ class ComputedVar(Var, property):
         fget: Callable[[BaseState], Any],
         initial_value: Any | types.Unset = types.Unset(),
         cache: bool = False,
-        deps: Optional[set[Union[str, Var]]] = None,
+        deps: Optional[List[Union[str, Var]]] = None,
         auto_deps: bool = True,
         interval: Optional[Union[int, datetime.timedelta]] = None,
         **kwargs,
@@ -1900,7 +1900,7 @@ class ComputedVar(Var, property):
             interval = datetime.timedelta(seconds=interval)
         self._update_interval = interval
         if deps is None:
-            deps = set()
+            deps = []
         self._static_deps = {
             dep._var_name if isinstance(dep, Var) else dep for dep in deps
         }
@@ -2128,7 +2128,7 @@ def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
     initial_value: Any | None = None,
     cache: bool = False,
-    deps: Optional[set[Union[str, Var]]] = None,
+    deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
     **kwargs,
