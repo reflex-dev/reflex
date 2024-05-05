@@ -674,7 +674,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._always_dirty_computed_vars = set(
             cvar_name
             for cvar_name, cvar in cls.computed_vars.items()
-            if not cvar._cache
+            if cvar.always_dirty
         )
 
         # Any substate containing a ComputedVar with cache=False always needs to be recomputed

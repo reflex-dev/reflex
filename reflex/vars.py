@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import datetime
 import dis
 import functools
 import inspect
@@ -1861,10 +1862,16 @@ class ComputedVar(Var, property):
     _cache: bool = dataclasses.field(default=False)
 
     # The initial value of the computed var
-    _initial_value: Any | types.Unset = dataclasses.field(default=types.Unset)
+    _initial_value: Any | types.Unset = dataclasses.field(default=types.Unset())
 
     # Explicit var dependencies to track
     _static_deps: set[str] = dataclasses.field(default_factory=set)
+
+    # Whether var dependencies should be auto-determined
+    _auto_deps: bool = dataclasses.field(default=True)
+
+    # Interval at which the computed var should be updated
+    _update_interval: Optional[datetime.timedelta] = dataclasses.field(default=None)
 
     def __init__(
         self,
@@ -1872,6 +1879,8 @@ class ComputedVar(Var, property):
         initial_value: Any | types.Unset = types.Unset(),
         cache: bool = False,
         deps: Optional[set[Union[str, Var]]] = None,
+        auto_deps: bool = True,
+        interval: Optional[Union[int, datetime.timedelta]] = None,
         **kwargs,
     ):
         """Initialize a ComputedVar.
@@ -1881,15 +1890,21 @@ class ComputedVar(Var, property):
             initial_value: The initial value of the computed var.
             cache: Whether to cache the computed value.
             deps: Explicit var dependencies to track.
+            auto_deps: Whether var dependencies should be auto-determined.
+            interval: Interval at which the computed var should be updated.
             **kwargs: additional attributes to set on the instance
         """
         self._initial_value = initial_value
         self._cache = cache
+        if isinstance(interval, int):
+            interval = datetime.timedelta(seconds=interval)
+        self._update_interval = interval
         if deps is None:
             deps = set()
         self._static_deps = {
             dep._var_name if isinstance(dep, Var) else dep for dep in deps
         }
+        self._auto_deps = auto_deps
         property.__init__(self, fget)
         kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", self._determine_var_type())
@@ -1930,6 +1945,40 @@ class ComputedVar(Var, property):
         """
         return f"__cached_{self._var_name}"
 
+    @property
+    def _last_updated_attr(self) -> str:
+        """Get the attribute used to store the last updated timestamp.
+
+        Returns:
+            An attribute name.
+        """
+        return f"__last_updated_{self._var_name}"
+
+    @property
+    def always_dirty(self) -> bool:
+        """Whether the computed var should always be marked as dirty.
+
+        Returns:
+            True if the computed var should always be marked as dirty, False otherwise.
+        """
+        return not self._cache or self._update_interval
+
+    def _needs_update(self, instance) -> bool:
+        """Check if the computed var needs to be updated.
+
+        Args:
+            instance: The state instance that the computed var is attached to.
+
+        Returns:
+            True if the computed var needs to be updated, False otherwise.
+        """
+        if self._update_interval is None:
+            return False
+        last_updated = getattr(instance, self._last_updated_attr, None)
+        if last_updated is None:
+            return True
+        return datetime.datetime.now() - last_updated > self._update_interval
+
     def __get__(self, instance, owner):
         """Get the ComputedVar value.
 
@@ -1946,10 +1995,13 @@ class ComputedVar(Var, property):
             return super().__get__(instance, owner)
 
         # handle caching
-        if not hasattr(instance, self._cache_attr):
+        if not hasattr(instance, self._cache_attr) or self._needs_update(instance):
+            # Set cache attr on state instance.
             setattr(instance, self._cache_attr, super().__get__(instance, owner))
             # Ensure the computed var gets serialized to redis.
             instance._was_touched = True
+            # Set the last updated timestamp on the state instance.
+            setattr(instance, self._last_updated_attr, datetime.datetime.now())
         return getattr(instance, self._cache_attr)
 
     def _deps(
@@ -1976,6 +2028,8 @@ class ComputedVar(Var, property):
             VarValueError: if the function references the get_state, parent_state, or substates attributes
                 (cannot track deps in a related state, only implicitly via parent state).
         """
+        if not self._auto_deps:
+            return self._static_deps
         d = self._static_deps.copy()
         if obj is None:
             fget = property.__getattribute__(self, "fget")
@@ -2075,6 +2129,8 @@ def computed_var(
     initial_value: Any | None = None,
     cache: bool = False,
     deps: Optional[set[Union[str, Var]]] = None,
+    auto_deps: bool = True,
+    interval: Optional[Union[datetime.timedelta, int]] = None,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
     """A ComputedVar decorator with or without kwargs.
@@ -2084,11 +2140,19 @@ def computed_var(
         initial_value: The initial value of the computed var.
         cache: Whether to cache the computed value.
         deps: Explicit var dependencies to track.
+        auto_deps: Whether var dependencies should be auto-determined.
+        interval: Interval at which the computed var should be updated.
         **kwargs: additional attributes to set on the instance
 
     Returns:
         A ComputedVar instance.
+
+    Raises:
+        ValueError: If caching is disabled and an update interval is set.
     """
+    if cache is False and interval is not None:
+        raise ValueError("Cannot set update interval without caching.")
+
     if fget is not None:
         return ComputedVar(fget=fget, cache=cache)
 
@@ -2098,6 +2162,8 @@ def computed_var(
             initial_value=initial_value,
             cache=cache,
             deps=deps,
+            auto_deps=auto_deps,
+            interval=interval,
             **kwargs,
         )
 
