@@ -1961,7 +1961,7 @@ class ComputedVar(Var, property):
         Returns:
             True if the computed var should always be marked as dirty, False otherwise.
         """
-        return not self._cache or self._update_interval
+        return not self._cache or self._update_interval is not None
 
     def _needs_update(self, instance) -> bool:
         """Check if the computed var needs to be updated.
