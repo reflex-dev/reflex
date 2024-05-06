@@ -126,6 +126,18 @@ def is_generic_alias(cls: GenericType) -> bool:
     return isinstance(cls, GenericAliasTypes)
 
 
+def is_none(cls: GenericType) -> bool:
+    """Check if a class is None.
+
+    Args:
+        cls: The class to check.
+
+    Returns:
+        Whether the class is None.
+    """
+    return cls is type(None) or cls is None
+
+
 def is_union(cls: GenericType) -> bool:
     """Check if a class is a Union.
 

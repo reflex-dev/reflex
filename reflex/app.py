@@ -66,9 +66,8 @@ from reflex.page import (
     DECORATED_PAGES,
 )
 from reflex.route import (
-    catchall_in_route,
-    catchall_prefix,
     get_route_args,
+    replace_brackets_with_keywords,
     verify_route_validity,
 )
 from reflex.state import (
@@ -459,6 +458,9 @@ class App(Base):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
             script_tags: List of script tags to be added to component
+
+        Raises:
+            ValueError: When the specified route name already exists.
         """
         # If the route is not set, get it from the callable.
         if route is None:
@@ -472,6 +474,23 @@ class App(Base):
 
         # Check if the route given is valid
         verify_route_validity(route)
+
+        if route in self.pages and os.getenv(constants.RELOAD_CONFIG):
+            # when the app is reloaded(typically for app harness tests), we should maintain
+            # the latest render function of a route.This applies typically to decorated pages
+            # since they are only added when app._compile is called.
+            self.pages.pop(route)
+
+        if route in self.pages:
+            route_name = (
+                f"`{route}` or `/`"
+                if route == constants.PageNames.INDEX_ROUTE
+                else f"`{route}`"
+            )
+            raise ValueError(
+                f"Duplicate page route {route_name} already exists. Make sure you do not have two"
+                f" pages with the same route"
+            )
 
         # Setup dynamic args for the route.
         # this state assignment is only required for tests using the deprecated state kwarg for App
@@ -564,27 +583,31 @@ class App(Base):
         Args:
             new_route: the route being newly added.
         """
-        newroute_catchall = catchall_in_route(new_route)
-        if not newroute_catchall:
+        if "[" not in new_route:
             return
 
+        segments = (
+            constants.RouteRegex.SINGLE_SEGMENT,
+            constants.RouteRegex.DOUBLE_SEGMENT,
+            constants.RouteRegex.SINGLE_CATCHALL_SEGMENT,
+            constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
+        )
         for route in self.pages:
-            route = "" if route == "index" else route
-
-            if new_route.startswith(f"{route}/[[..."):
-                raise ValueError(
-                    f"You cannot define a route with the same specificity as a optional catch-all route ('{route}' and '{new_route}')"
-                )
-
-            route_catchall = catchall_in_route(route)
-            if (
-                route_catchall
-                and newroute_catchall
-                and catchall_prefix(route) == catchall_prefix(new_route)
+            replaced_route = replace_brackets_with_keywords(route)
+            for rw, r, nr in zip(
+                replaced_route.split("/"), route.split("/"), new_route.split("/")
             ):
-                raise ValueError(
-                    f"You cannot use multiple catchall for the same dynamic route ({route} !== {new_route})"
-                )
+                if rw in segments and r != nr:
+                    # If the slugs in the segments of both routes are not the same, then the route is invalid
+                    raise ValueError(
+                        f"You cannot use different slug names for the same dynamic path in  {route} and {new_route} ('{r}' != '{nr}')"
+                    )
+                elif rw not in segments and r != nr:
+                    # if the section being compared in both routes is not a dynamic segment(i.e not wrapped in brackets)
+                    # then we are guaranteed that the route is valid and there's no need checking the rest.
+                    # eg. /posts/[id]/info/[slug1] and /posts/[id]/info1/[slug1] is always going to be valid since
+                    # info1 will break away into its own tree.
+                    break
 
     def add_custom_404_page(
         self,
