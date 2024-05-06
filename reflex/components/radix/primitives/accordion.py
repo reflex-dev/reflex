@@ -94,12 +94,6 @@ class AccordionRoot(AccordionComponent):
 
         return super().create(*children, **props)
 
-    def _get_imports(self):
-        return imports.merge_imports(
-            super()._get_imports(),
-            {"@emotion/react": [imports.ImportVar(tag="keyframes")]},
-        )
-
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -110,26 +104,6 @@ class AccordionRoot(AccordionComponent):
             **super().get_event_triggers(),
             "on_value_change": lambda e0: [e0],
         }
-
-    def _get_custom_code(self) -> str:
-        return """
-const slideDown = keyframes`
-from {
-  height: 0;
-}
-to {
-  height: var(--radix-accordion-content-height);
-}
-`
-const slideUp = keyframes`
-from {
-  height: var(--radix-accordion-content-height);
-}
-to {
-  height: 0;
-}
-`
-"""
 
     def add_style(self):
         """Add style to the component.
@@ -410,6 +384,14 @@ class AccordionContent(AccordionComponent):
 
     alias = "RadixAccordionContent"
 
+    def add_imports(self) -> imports.ImportDict:
+        """Add imports to the component.
+
+        Returns:
+            The imports of the component.
+        """
+        return {"@emotion/react": [imports.ImportVar(tag="keyframes")]}
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create the Accordion content component.
@@ -427,6 +409,33 @@ class AccordionContent(AccordionComponent):
             cls_name = f"{cls_name} AccordionContent"
 
         return super().create(*children, class_name=cls_name, **props)
+
+    def add_custom_code(self) -> list[str]:
+        """Add custom code to the component.
+
+        Returns:
+            The custom code of the component.
+        """
+        return [
+            """
+const slideDown = keyframes`
+from {
+  height: 0;
+}
+to {
+  height: var(--radix-accordion-content-height);
+}
+`
+const slideUp = keyframes`
+from {
+  height: var(--radix-accordion-content-height);
+}
+to {
+  height: 0;
+}
+`
+"""
+        ]
 
     def add_style(self) -> Style | None:
         """Add style to the component.
