@@ -67,9 +67,21 @@ class TabsTrigger(RadixThemesComponent):
 
     _valid_parents: List[str] = ["TabsList"]
 
-    def _apply_theme(self, theme: Component):
-        if self.color_scheme is not None:
-            self.custom_attrs["data-accent-color"] = self.color_scheme
+    @classmethod
+    def create(self, *children, **props) -> Component:
+        """Create a TabsTrigger component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The TabsTrigger Component.
+        """
+        if "color_scheme" in props:
+            custom_attrs = props.setdefault("custom_attrs", {})
+            custom_attrs["data-accent-color"] = props["color_scheme"]
+        return super().create(*children, **props)
 
     def _exclude_props(self) -> list[str]:
         return ["color_scheme"]

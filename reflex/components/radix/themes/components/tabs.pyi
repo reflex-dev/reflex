@@ -311,13 +311,10 @@ class TabsTrigger(RadixThemesComponent):
         ] = None,
         **props
     ) -> "TabsTrigger":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a TabsTrigger component.
 
         Args:
-            *children: Child components.
+            *children: The children of the component.
             value: The value of the tab. Must be unique for each tab.
             disabled: Whether the tab is disabled
             color_scheme: The color of the line under the tab when active.
@@ -327,10 +324,10 @@ class TabsTrigger(RadixThemesComponent):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: Component properties.
+            **props: The properties of the component.
 
         Returns:
-            A new component instance.
+            The TabsTrigger Component.
         """
         ...
 
