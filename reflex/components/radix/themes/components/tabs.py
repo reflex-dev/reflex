@@ -1,4 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
+from __future__ import annotations
+
 from typing import Any, Dict, List, Literal
 
 from reflex.components.component import Component, ComponentNamespace
