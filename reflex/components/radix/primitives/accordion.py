@@ -459,7 +459,7 @@ to {
                 "font_size": "10px",
                 "color": color("accent", 11),
                 "background_color": color("accent", 3),
-                "padding": "15px 20px",
+                "padding": "0 15px",
                 "&[data-state='open']": {"animation": slideDown},
                 "&[data-state='closed']": {"animation": slideUp},
                 "&[data-variant='classic']": {

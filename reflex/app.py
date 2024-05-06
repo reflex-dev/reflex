@@ -835,8 +835,6 @@ class App(Base):
             # Merge the component style with the app style.
             component._add_style_recursive(self.style, self.theme)
 
-            # component.apply_theme(self.theme)
-
             # Add component._get_all_imports() to all_imports.
             all_imports.update(component._get_all_imports())
 

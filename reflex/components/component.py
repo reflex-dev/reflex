@@ -800,21 +800,21 @@ class Component(BaseComponent, ABC):
         Returns:
             The style to add.
         """
-        _styles = []
-        _vars = []
+        styles = []
+        vars = []
+
         # Walk the MRO to call all `add_style` methods.
-        for base in self.__class__.mro():
-            if hasattr(base, "add_style"):
-                _s = base.add_style(self)  # type: ignore
-                if _s is not None:
-                    _styles.append(_s)
-                    _vars.append(_s._var_data)
+        for base in self._iter_parent_classes_with_method("add_style"):
+            s = base.add_style(self)  # type: ignore
+            if s is not None:
+                styles.append(s)
+                vars.append(s._var_data)
 
         _style = Style()
-        for _s in reversed(_styles):
-            _style.update(_s)
+        for s in reversed(styles):
+            _style.update(s)
 
-        _style._var_data = VarData.merge(*_vars)
+        _style._var_data = VarData.merge(*vars)
         return _style
 
     def _get_component_style(self, styles: ComponentStyle) -> Style | None:
@@ -842,6 +842,7 @@ class Component(BaseComponent, ABC):
         1. Default style from `_add_style`/`add_style`.
         2. User-defined style from `App.style`.
         3. User-defined style from `Component.style`.
+        4. style dict and css props passed to the component instance.
 
         Args:
             style: A dict from component to styling.
@@ -858,14 +859,14 @@ class Component(BaseComponent, ABC):
             raise UserWarning(
                 "Do not override _add_style directly. Use add_style instead."
             )
-        _new_style = self._add_style()
-        _style_vars = [_new_style._var_data]
+        new_style = self._add_style()
+        style_vars = [new_style._var_data]
 
         # 2. User-defined style from `App.style`.
         component_style = self._get_component_style(style)
         if component_style:
-            _new_style.update(component_style)
-            _style_vars.append(component_style._var_data)
+            new_style.update(component_style)
+            style_vars.append(component_style._var_data)
 
         # 3. User-defined style from `Component.style`.
         # Apply theme for retro-compatibility with deprecated _apply_theme API
@@ -878,13 +879,14 @@ class Component(BaseComponent, ABC):
             )
             self._apply_theme(theme)
 
-        _new_style.update(self.style)
-        _style_vars.append(self.style._var_data)
+        # 4. style dict and css props passed to the component instance.
+        new_style.update(self.style)
+        style_vars.append(self.style._var_data)
 
-        _new_style._var_data = VarData.merge(*_style_vars)
+        new_style._var_data = VarData.merge(*style_vars)
 
         # Assign the new style
-        self.style = _new_style
+        self.style = new_style
 
         # Recursively add style to the children.
         for child in self.children:
