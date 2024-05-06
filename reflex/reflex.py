@@ -157,7 +157,7 @@ def _run(
     if prerequisites.needs_reinit(frontend=frontend):
         _init(name=config.app_name, loglevel=loglevel)
 
-    # If something is running on the ports, ask the user if they want to kill or change it.
+    # Find the next available open port.
     if frontend and processes.is_process_on_port(frontend_port):
         frontend_port = processes.change_port(frontend_port, "frontend")
 
@@ -212,7 +212,7 @@ def _run(
     # Run the frontend on a separate thread.
     if frontend:
         setup_frontend(Path.cwd())
-        commands.append((frontend_cmd, Path.cwd(), frontend_port))
+        commands.append((frontend_cmd, Path.cwd(), frontend_port, backend))
 
     # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:
@@ -528,7 +528,12 @@ def deploy(
 
     hosting_cli.deploy(
         app_name=app_name,
-        export_fn=lambda zip_dest_dir, api_url, deploy_url, frontend, backend, zipping: export_utils.export(
+        export_fn=lambda zip_dest_dir,
+        api_url,
+        deploy_url,
+        frontend,
+        backend,
+        zipping: export_utils.export(
             zip_dest_dir=zip_dest_dir,
             api_url=api_url,
             deploy_url=deploy_url,

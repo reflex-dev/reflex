@@ -41,6 +41,7 @@ def test_send(mocker, event):
             read_data='{"project_hash": "78285505863498957834586115958872998605"}'
         ),
     )
+    mocker.patch("platform.platform", return_value="Mocked Platform")
 
     telemetry.send(event, telemetry_enabled=True)
     httpx.post.assert_called_once()

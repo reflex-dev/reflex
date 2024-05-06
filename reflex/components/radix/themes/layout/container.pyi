@@ -9,6 +9,7 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
 from reflex import el
+from reflex.style import STACK_CHILDREN_FULL_WIDTH
 from reflex.vars import Var
 from ..base import RadixThemesComponent
 
@@ -20,6 +21,8 @@ class Container(el.Div, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        padding: Optional[str] = "16px",
+        stack_children_full_width: Optional[bool] = False,
         size: Optional[
             Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
         ] = None,
@@ -116,39 +119,15 @@ class Container(el.Div, RadixThemesComponent):
         ] = None,
         **props
     ) -> "Container":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create the container component.
 
         Args:
-            *children: Child components.
-            size: The size of the container: "1" - "4" (default "4")
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
-            auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
-            content_editable: Indicates whether the element's content is editable.
-            context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
-            dir: Defines the text direction. Allowed values are ltr (Left-To-Right) or rtl (Right-To-Left)
-            draggable: Defines whether the element can be dragged.
-            enter_key_hint: Hints what media types the media element is able to play.
-            hidden: Defines whether the element is hidden.
-            input_mode: Defines the type of the element.
-            item_prop: Defines the name of the element for metadata purposes.
-            lang: Defines the language used in the element.
-            role: Defines the role of the element.
-            slot: Assigns a slot in a shadow DOM shadow tree to an element.
-            spell_check: Defines whether the element may be checked for spelling errors.
-            tab_index: Defines the position of the current element in the tabbing order.
-            title: Defines a tooltip for the element.
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: Component properties.
+            children: The children components.
+            padding: The padding of the container.
+            stack_children_full_width: If True, any vstack/hstack children will have 100% width.
+            props: The properties of the container.
 
         Returns:
-            A new component instance.
+            The container component.
         """
         ...

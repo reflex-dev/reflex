@@ -1,6 +1,5 @@
 import multiprocessing
 import os
-from typing import Any, Dict
 
 import pytest
 
@@ -23,25 +22,6 @@ def test_set_app_name(base_config_values):
     """
     config = rx.Config(**base_config_values)
     assert config.app_name == base_config_values["app_name"]
-
-
-@pytest.mark.parametrize(
-    "param",
-    [
-        "db_config",
-        "admin_dash",
-        "env_path",
-    ],
-)
-def test_deprecated_params(base_config_values: Dict[str, Any], param):
-    """Test that deprecated params are removed from the config.
-
-    Args:
-        base_config_values: Config values.
-        param: The deprecated param.
-    """
-    with pytest.raises(ValueError):
-        rx.Config(**base_config_values, **{param: "test"})  # type: ignore
 
 
 @pytest.mark.parametrize(
@@ -87,12 +67,6 @@ def test_update_from_env(base_config_values, monkeypatch, env_var, value):
             {"app_name": "test_app", "api_url": "http://example.com/api"},
             f"/api{Endpoint.EVENT}",
         ),
-        ({"app_name": "test_app", "event_namespace": "/event"}, f"/event"),
-        ({"app_name": "test_app", "event_namespace": "event"}, f"/event"),
-        ({"app_name": "test_app", "event_namespace": "event/"}, f"/event"),
-        ({"app_name": "test_app", "event_namespace": "/_event"}, f"{Endpoint.EVENT}"),
-        ({"app_name": "test_app", "event_namespace": "_event"}, f"{Endpoint.EVENT}"),
-        ({"app_name": "test_app", "event_namespace": "_event/"}, f"{Endpoint.EVENT}"),
     ],
 )
 def test_event_namespace(mocker, kwargs, expected):

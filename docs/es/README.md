@@ -123,7 +123,7 @@ app = rx.App()
 app.add_page(index, title="reflex:DALL·E")
 ```
 
-## Vamos a desglosarlo.
+## Vamos a analizarlo.
 
 ### **Reflex UI**
 

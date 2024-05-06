@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 from ..utils.console import warn
 from . import hooks as hooks
+from .layout import layout as layout
 from .misc import run_in_thread as run_in_thread
 
 warn(
@@ -12,5 +13,6 @@ warn(
 
 _x = SimpleNamespace(
     hooks=hooks,
+    layout=layout,
     run_in_thread=run_in_thread,
 )

@@ -13,7 +13,7 @@ from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 from reflex import constants
 from reflex.components.chakra.forms.input import Input
 from reflex.components.chakra.layout.box import Box
-from reflex.components.component import Component, MemoizationLeaf
+from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.constants import Dirs
 from reflex.event import (
     CallableEventSpec,
@@ -219,3 +219,201 @@ class Upload(MemoizationLeaf):
         """
         ...
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
+
+class StyledUpload(Upload):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        accept: Optional[
+            Union[Var[Optional[Dict[str, List]]], Optional[Dict[str, List]]]
+        ] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
+        max_files: Optional[Union[Var[int], int]] = None,
+        max_size: Optional[Union[Var[int], int]] = None,
+        min_size: Optional[Union[Var[int], int]] = None,
+        multiple: Optional[Union[Var[bool], bool]] = None,
+        no_click: Optional[Union[Var[bool], bool]] = None,
+        no_drag: Optional[Union[Var[bool], bool]] = None,
+        no_keyboard: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_drop: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        **props
+    ) -> "StyledUpload":
+        """Create the styled upload component.
+
+        Args:
+            *children: The children of the component.
+            accept: The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as  values.  supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+            disabled: Whether the dropzone is disabled.
+            max_files: The maximum number of files that can be uploaded.
+            max_size: The maximum file size (bytes) that can be uploaded.
+            min_size: The minimum file size (bytes) that can be uploaded.
+            multiple: Whether to allow multiple files to be uploaded.
+            no_click: Whether to disable click to upload.
+            no_drag: Whether to disable drag and drop.
+            no_keyboard: Whether to disable using the space/enter keys to upload.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
+
+        Returns:
+            The styled upload component.
+        """
+        ...
+
+class UploadNamespace(ComponentNamespace):
+    root = Upload.create
+
+    @staticmethod
+    def __call__(
+        *children,
+        accept: Optional[
+            Union[Var[Optional[Dict[str, List]]], Optional[Dict[str, List]]]
+        ] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
+        max_files: Optional[Union[Var[int], int]] = None,
+        max_size: Optional[Union[Var[int], int]] = None,
+        min_size: Optional[Union[Var[int], int]] = None,
+        multiple: Optional[Union[Var[bool], bool]] = None,
+        no_click: Optional[Union[Var[bool], bool]] = None,
+        no_drag: Optional[Union[Var[bool], bool]] = None,
+        no_keyboard: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_drop: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        **props
+    ) -> "StyledUpload":
+        """Create the styled upload component.
+
+        Args:
+            *children: The children of the component.
+            accept: The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as  values.  supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+            disabled: Whether the dropzone is disabled.
+            max_files: The maximum number of files that can be uploaded.
+            max_size: The maximum file size (bytes) that can be uploaded.
+            min_size: The minimum file size (bytes) that can be uploaded.
+            multiple: Whether to allow multiple files to be uploaded.
+            no_click: Whether to disable click to upload.
+            no_drag: Whether to disable drag and drop.
+            no_keyboard: Whether to disable using the space/enter keys to upload.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
+
+        Returns:
+            The styled upload component.
+        """
+        ...

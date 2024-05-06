@@ -44,6 +44,10 @@ class RouteRegex(SimpleNamespace):
     STRICT_CATCHALL = re.compile(r"\[\.{3}([a-zA-Z_][\w]*)\]")
     # group return the arg name (i.e. "slug") (optional arg can be empty)
     OPT_CATCHALL = re.compile(r"\[\[\.{3}([a-zA-Z_][\w]*)\]\]")
+    SINGLE_SEGMENT = "__SINGLE_SEGMENT__"
+    DOUBLE_SEGMENT = "__DOUBLE_SEGMENT__"
+    SINGLE_CATCHALL_SEGMENT = "__SINGLE_CATCHALL_SEGMENT__"
+    DOUBLE_CATCHALL_SEGMENT = "__DOUBLE_CATCHALL_SEGMENT__"
 
 
 class DefaultPage(SimpleNamespace):

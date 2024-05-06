@@ -818,14 +818,20 @@ class Var:
             if fn is not None:
                 if invoke_fn:
                     # invoke the function on left operand.
-                    operation_name = f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
+                    operation_name = (
+                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"
+                    )  # type: ignore
                 else:
                     # pass the operands as arguments to the function.
-                    operation_name = f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                    operation_name = (
+                        f"{left_operand_full_name} {op} {right_operand_full_name}"
+                    )  # type: ignore
                     operation_name = f"{fn}({operation_name})"
             else:
                 # apply operator to operands (left operand <operator> right_operand)
-                operation_name = f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                operation_name = (
+                    f"{left_operand_full_name} {op} {right_operand_full_name}"
+                )  # type: ignore
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
@@ -1340,7 +1346,7 @@ class Var:
         Returns:
             A var representing the contain check.
         """
-        if not (types._issubclass(self._var_type, Union[dict, list, tuple, str])):
+        if not (types._issubclass(self._var_type, Union[dict, list, tuple, str, set])):
             raise TypeError(
                 f"Var {self._var_full_name} of type {self._var_type} does not support contains check."
             )
@@ -1819,8 +1825,8 @@ class BaseVar(Var):
                     value = self._var_type(value)
                     setattr(state, self._var_name, value)
                 except ValueError:
-                    console.warn(
-                        f"{self._var_name}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
+                    console.debug(
+                        f"{type(state).__name__}.{self._var_name}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
                     )
             else:
                 setattr(state, self._var_name, value)

@@ -42,7 +42,6 @@ import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.state import (
     BaseState,
-    State,
     StateManagerMemory,
     StateManagerRedis,
     reload_state_module,
@@ -112,7 +111,9 @@ class AppHarness:
     """AppHarness executes a reflex app in-process for testing."""
 
     app_name: str
-    app_source: Optional[types.FunctionType | types.ModuleType] | str
+    app_source: Optional[
+        types.FunctionType | types.ModuleType | str | functools.partial
+    ]
     app_path: pathlib.Path
     app_module_path: pathlib.Path
     app_module: Optional[types.ModuleType] = None
@@ -238,13 +239,15 @@ class AppHarness:
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
             # Save decorated pages before importing the test app module
-            before_decorated_pages = reflex.app.DECORATED_PAGES.copy()
+            before_decorated_pages = reflex.app.DECORATED_PAGES[self.app_name].copy()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
             # Save the pages that were added during testing
             self._decorated_pages = [
-                p for p in reflex.app.DECORATED_PAGES if p not in before_decorated_pages
+                p
+                for p in reflex.app.DECORATED_PAGES[self.app_name]
+                if p not in before_decorated_pages
             ]
         self.app_instance = self.app_module.app
         if isinstance(self.app_instance._state_manager, StateManagerRedis):
@@ -409,7 +412,7 @@ class AppHarness:
 
         # Cleanup decorated pages added during testing
         for page in self._decorated_pages:
-            reflex.app.DECORATED_PAGES.remove(page)
+            reflex.app.DECORATED_PAGES[self.app_name].remove(page)
 
     def __exit__(self, *excinfo) -> None:
         """Contextmanager protocol for `stop()`.
@@ -534,7 +537,7 @@ class AppHarness:
         if driver_clz is None:
             requested_driver = os.environ.get("APP_HARNESS_DRIVER", "Chrome")
             driver_clz = getattr(webdriver, requested_driver)
-            options = webdriver.ChromeOptions()
+            options = getattr(webdriver, f"{requested_driver}Options")()
         if driver_clz is webdriver.Chrome and want_headless:
             options = webdriver.ChromeOptions()
             options.add_argument("--headless=new")
@@ -594,7 +597,7 @@ class AppHarness:
                 await self.state_manager.close()
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[State]:
+    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
         """Modify the state associated with the given token and send update to frontend.
 
         Args:

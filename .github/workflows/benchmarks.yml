@@ -82,7 +82,7 @@ jobs:
       fail-fast: false
       matrix:
         # Show OS combos first in GUI
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-12]
         python-version: ['3.8.18', '3.9.18', '3.10.13', '3.11.5', '3.12.0']
         exclude:
           - os: windows-latest
@@ -98,7 +98,7 @@ jobs:
             python-version: '3.9.18'
           - os: macos-latest
             python-version: '3.10.13'
-          - os: macos-latest
+          - os: macos-12
             python-version: '3.12.0'
         include:
           - os: windows-latest
@@ -170,7 +170,7 @@ jobs:
       fail-fast: false
       matrix:
         # Show OS combos first in GUI
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-12]
         python-version: ['3.11.5']
 
     runs-on: ${{ matrix.os }}
