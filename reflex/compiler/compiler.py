@@ -263,9 +263,15 @@ def _compile_stateful_components(
             # Reset this flag to render the actual component.
             component.rendered_as_shared = False
 
+            if dynamic_imports := component._get_all_dynamic_imports():
+                rendered_components.update(
+                    {dynamic_import: None for dynamic_import in dynamic_imports}
+                )
+
             rendered_components.update(
                 {code: None for code in component._get_all_custom_code()},
             )
+
             all_import_dicts.append(component._get_all_imports())
 
             # Indicate that this component now imports from the shared file.
