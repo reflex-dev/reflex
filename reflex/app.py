@@ -1345,7 +1345,7 @@ class EventNamespace(AsyncNamespace):
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
 
 
-def asset(relative_filename: str, dir: str = ".") -> str:
+def asset(relative_filename: str, subfolder: Optional[str] = None) -> str:
     """Add an asset to the app.
     Place the file next to your including python file.
     Copies the file to the app's external assets directory.
@@ -1358,25 +1358,36 @@ def asset(relative_filename: str, dir: str = ".") -> str:
 
     Args:
         relative_filename: The relative filename of the asset.
-        dir: The directory to place the asset in.
+        subfolder: The directory to place the asset in.
 
     Returns:
         The relative URL to the copied asset.
-
     """
-    calling_file = inspect.stack()[1].filename
-    cwd = Path.cwd()
 
+    def copy_or_symlink(src, dst):
+        if os.name == "nt":  # Windows
+            shutil.copy2(src, dst)
+        elif not dst.exists():
+            os.symlink(src, dst)
+
+    # Determine the file by which the asset is exposed.
+    calling_file = inspect.stack()[1].filename
     module = inspect.getmodule(inspect.stack()[1][0])
     assert module is not None
-
     caller_module_path = module.__name__.replace(".", "/")
-    dir = caller_module_path if dir == "." else caller_module_path + "/" + dir
+
+    subfolder = f"{caller_module_path}/{subfolder}" if subfolder else caller_module_path
+
     assets = constants.Dirs.APP_ASSETS
     external = constants.Dirs.EXTERNAL_APP_ASSETS
-    Path(Path(cwd) / assets / external / dir).mkdir(parents=True, exist_ok=True)
-    shutil.copy2(
-        Path(calling_file).parent / relative_filename,
-        Path(cwd) / assets / external / dir / relative_filename,
+
+    # Create the asset folder in the currently compiling app.
+    cwd = Path.cwd()
+    asset_folder = Path(Path(cwd) / assets / external / subfolder)
+    asset_folder.mkdir(parents=True, exist_ok=True)
+
+    copy_or_symlink(
+        Path(calling_file).parent / relative_filename, asset_folder / relative_filename
     )
-    return "/" + external + "/" + dir + "/" + relative_filename
+    asset_url = f"/{external}/{subfolder}/{relative_filename}"
+    return asset_url
