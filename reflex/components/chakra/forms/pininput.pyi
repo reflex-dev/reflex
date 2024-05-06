@@ -147,7 +147,7 @@ class PinInputField(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        index: Optional[Var[int]] = None,
+        index: Optional[Union[Var[int], int]] = None,
         name: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

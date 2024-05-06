@@ -356,8 +356,8 @@ class AccordionItem(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
-        header: Optional[Component | Var] = None,
-        content: Optional[Component | Var] = None,
+        header: Optional[Union[Component, Var]] = None,
+        content: Optional[Union[Component, Var]] = None,
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         color_scheme: Optional[

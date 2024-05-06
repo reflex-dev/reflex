@@ -237,7 +237,7 @@ def test_app_10_compile_time_cold(benchmark, app_with_10_components):
 
     def benchmark_fn():
         with chdir(app_with_10_components.app_path):
-            app_with_10_components.app_instance.compile_()
+            app_with_10_components.app_instance._compile()
 
     benchmark.pedantic(benchmark_fn, setup=setup, rounds=10)
 
@@ -262,7 +262,7 @@ def test_app_10_compile_time_warm(benchmark, app_with_10_components):
 
     def benchmark_fn():
         with chdir(app_with_10_components.app_path):
-            app_with_10_components.app_instance.compile_()
+            app_with_10_components.app_instance._compile()
 
     benchmark(benchmark_fn)
 
@@ -290,7 +290,7 @@ def test_app_100_compile_time_cold(benchmark, app_with_100_components):
 
     def benchmark_fn():
         with chdir(app_with_100_components.app_path):
-            app_with_100_components.app_instance.compile_()
+            app_with_100_components.app_instance._compile()
 
     benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
 
@@ -315,7 +315,7 @@ def test_app_100_compile_time_warm(benchmark, app_with_100_components):
 
     def benchmark_fn():
         with chdir(app_with_100_components.app_path):
-            app_with_100_components.app_instance.compile_()
+            app_with_100_components.app_instance._compile()
 
     benchmark(benchmark_fn)
 
@@ -343,7 +343,7 @@ def test_app_1000_compile_time_cold(benchmark, app_with_1000_components):
 
     def benchmark_fn():
         with chdir(app_with_1000_components.app_path):
-            app_with_1000_components.app_instance.compile_()
+            app_with_1000_components.app_instance._compile()
 
     benchmark.pedantic(benchmark_fn, setup=setup, rounds=5)
 
@@ -368,6 +368,6 @@ def test_app_1000_compile_time_warm(benchmark, app_with_1000_components):
 
     def benchmark_fn():
         with chdir(app_with_1000_components.app_path):
-            app_with_1000_components.app_instance.compile_()
+            app_with_1000_components.app_instance._compile()
 
     benchmark(benchmark_fn)

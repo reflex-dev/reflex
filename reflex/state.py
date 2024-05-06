@@ -450,6 +450,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         super().__init_subclass__(**kwargs)
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
+        # Computed vars should not shadow builtin state props.
+        cls._check_overriden_basevars()
 
         # Reset subclass tracking for this class.
         cls.class_subclasses = set()
@@ -695,6 +697,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             raise NameError(
                 f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
             )
+
+    @classmethod
+    def _check_overriden_basevars(cls):
+        """Check for shadow base vars and raise error if any.
+
+        Raises:
+            NameError: When a computed var shadows a base var.
+        """
+        for computed_var_ in cls._get_computed_vars():
+            if computed_var_._var_name in cls.__annotations__:
+                raise NameError(
+                    f"The computed var name `{computed_var_._var_name}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
+                )
 
     @classmethod
     def get_skip_vars(cls) -> set[str]:
@@ -1909,7 +1924,7 @@ class OnLoadInternalState(State):
         Returns:
             The list of events to queue for on load handling.
         """
-        # Do not app.compile_()!  It should be already compiled by now.
+        # Do not app._compile()!  It should be already compiled by now.
         app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
         load_events = app.get_load_events(self.router.page.path)
         if not load_events:
@@ -1927,8 +1942,45 @@ class OnLoadInternalState(State):
 
 
 class ComponentState(Base):
-    """The base class for a State that is copied for each Component associated with it."""
+    """Base class to allow for the creation of a state instance per component.
 
+    This allows for the bundling of UI and state logic into a single class,
+    where each instance has a separate instance of the state.
+
+    Subclass this class and define vars and event handlers in the traditional way.
+    Then define a `get_component` method that returns the UI for the component instance.
+
+    See the full [docs](https://reflex.dev/docs/substates/component-state/) for more.
+
+    Basic example:
+    ```python
+    # Subclass ComponentState and define vars and event handlers.
+    class Counter(rx.ComponentState):
+        # Define vars that change.
+        count: int = 0
+
+        # Define event handlers.
+        def increment(self):
+            self.count += 1
+
+        def decrement(self):
+            self.count -= 1
+
+        @classmethod
+        def get_component(cls, **props):
+            # Access the state vars and event handlers using `cls`.
+            return rx.hstack(
+                rx.button("Decrement", on_click=cls.decrement),
+                rx.text(cls.count),
+                rx.button("Increment", on_click=cls.increment),
+                **props,
+            )
+
+    counter = Counter.create()
+    ```
+    """
+
+    # The number of components created from this class.
     _per_component_state_instance_count: ClassVar[int] = 0
 
     @classmethod
