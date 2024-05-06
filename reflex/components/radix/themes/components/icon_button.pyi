@@ -12,6 +12,7 @@ from reflex import el
 from reflex.components.component import Component
 from reflex.components.core.match import Match
 from reflex.components.lucide import Icon
+from reflex.style import Style
 from reflex.vars import Var
 from ..base import (
     LiteralAccentColor,
@@ -280,5 +281,6 @@ class IconButton(el.Button, RadixLoadingProp, RadixThemesComponent):
             The IconButton component.
         """
         ...
+    def add_style(self): ...
 
 icon_button = IconButton.create
