@@ -1,5 +1,5 @@
 ```diff
-+ PyneconeはReflexに名前を変えました。リポジトリ名も同様に変更したため、Pyneconeのリポジトリを探している方は、今、ご覧のReflexのリポジトリを参照ください。 +
++ PyneconeはReflexに名前を変えました。Pyneconeを探している方は、今、ご覧のページがPyneconeのリポジトリになります。 +
 ```
 
 <div align="center">
@@ -31,7 +31,7 @@ ReflexはPythonのみでフルスタックWebアプリケーションを作成�
 * **高い柔軟性** - Reflexは簡単に始められて、複雑なアプリケーションまで作成できます。
 * **即時デプロイ** - ビルド後、すぐにデプロイが可能です。[単純なCLIコマンド](https://reflex.dev/docs/hosting/deploy-quick-start/)を使ったアプリケーションのデプロイや、自身のサーバーへのホストができます。
 
-Reflexがどのように動作しているかを知るために、[アーキテクチャページ](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture)をご覧ください。
+Reflexがどのように動作しているかを知るには、[アーキテクチャページ](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture)をご覧ください。
 
 ## ⚙️ インストール
 
@@ -63,7 +63,7 @@ reflex run
 
 http://localhost:3000 にアクセスしてアプリの動作を見ることができます。
 
-`my_app_name/my_app_name.py`のソースコードを編集してみましょう！Reflexはfast refreshなので、ソースの編集を保存するとすぐにWebページに変更が反映されます。
+`my_app_name/my_app_name.py`のソースコードを編集してみましょう！Reflexはfast refreshなので、ソースを保存した直後に変更がWebページに反映されます。
 
 ## 🫧 実装例
 
@@ -77,7 +77,7 @@ http://localhost:3000 にアクセスしてアプリの動作を見ることが�
 
 &nbsp;
 
-画像生成UIを作る全てのコードを見てみましょう。下記のように、単一のPythonファイルで作れます！
+画像生成UIのソースコードの全貌を見てみましょう。下記のように、単一のPythonファイルで作れます！
 
 ```python
 import reflex as rx
@@ -141,7 +141,7 @@ app.add_page(index, title="Reflex:DALL-E")
 ## それぞれの実装を見てみましょう
 
 <div align="center">
-<img src="docs/images/dalle_colored_code_example.png" alt="DALL-E appのフロントエンドとバックエンドのパーツの違いを説明しています。" width="900" />
+<img src="../../docs/images/dalle_colored_code_example.png" alt="DALL-E appのフロントエンドとバックエンドのパーツの違いを説明しています。" width="900" />
 </div>
 
 
@@ -158,9 +158,9 @@ def index():
 
 `index`関数において、アプリのフロントエンドを定義しています。
 
-フロントエンドを作成するために、`center`、`vstack`、`input`、`button`など異なるコンポーネントを使用しています。コンポーネントはお互いにネストが可能であり、複雑なレイアウトを作成できます。また、keyword argsを使うことで、CSSの機能をすべて使ったスタイルが可能です。
+フロントエンドを実装するにあたり、`center`、`vstack`、`input`、`button`など異なるコンポーネントを使用しています。コンポーネントはお互いにネストが可能であり、複雑なレイアウトを作成できます。また、keyword argsを使うことで、CSSの機能をすべて使ったスタイルが可能です。
 
-Reflexは[60を超える内臓コンポーネント](https://reflex.dev/docs/library)があるため、すぐに始められます。随時、コンポーネントを追加していますが、簡単に[自身のコンポーネントを追加](https://reflex.dev/docs/wrapping-react/overview/)することも可能です。
+Reflexは[60を超える内臓コンポーネント](https://reflex.dev/docs/library)があるため、すぐに始められます。私たちは、積極的にコンポーネントを追加していますが、簡単に[自身のコンポーネントを追加](https://reflex.dev/docs/wrapping-react/overview/)することも可能です。
 
 ### **ステート**
 
@@ -239,10 +239,10 @@ Reflexは毎週、新しいリリースや機能追加を行っています！�
 様々なサイズのコントリビュートを歓迎しています！Reflexコミュニティに入るための方法を、いくつかリストアップします。
 
 -   **Discordに参加**: [Discord](https://discord.gg/T5WSbC2YtQ)は、Reflexプロジェクトの相談や、コントリビュートについての話し合いをするための、最適な場所です。
--   **GitHub Discussions**: GitHub Discussionsは、追加したい機能や、複雑で解明が必要な事柄について話す良い方法です。
--   **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues)はバグを報告するに良い方法です。Issuesを修正したPRのサブミットにチャレンジしていただくことも、可能です。
+-   **GitHub Discussions**: GitHub Discussionsでは、追加したい機能や、複雑で解明が必要な事柄についての議論に適している場所です。
+-   **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues)はバグの報告に適している場所です。また、課題を解決したPRのサブミットにチャレンジしていただくことも、可能です。
 
-スキルや経験に関わらず、私たちはコントリビュータを活動的に探しています。コントリビュートするために、[CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)をご覧ください。
+スキルや経験に関わらず、私たちはコントリビュータを積極的に探しています。コントリビュートするために、[CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)をご覧ください。
 
 
 ## 私たちのコントリビュータに感謝！:
