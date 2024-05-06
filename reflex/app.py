@@ -12,7 +12,6 @@ import io
 import multiprocessing
 import os
 import platform
-import shutil
 from pathlib import Path
 from typing import (
     Any,
@@ -1363,13 +1362,6 @@ def asset(relative_filename: str, subfolder: Optional[str] = None) -> str:
     Returns:
         The relative URL to the copied asset.
     """
-
-    def copy_or_symlink(src, dst):
-        if os.name == "nt":  # Windows
-            shutil.copy2(src, dst)
-        elif not dst.exists():
-            os.symlink(src, dst)
-
     # Determine the file by which the asset is exposed.
     calling_file = inspect.stack()[1].filename
     module = inspect.getmodule(inspect.stack()[1][0])
@@ -1386,8 +1378,11 @@ def asset(relative_filename: str, subfolder: Optional[str] = None) -> str:
     asset_folder = Path(Path(cwd) / assets / external / subfolder)
     asset_folder.mkdir(parents=True, exist_ok=True)
 
-    copy_or_symlink(
-        Path(calling_file).parent / relative_filename, asset_folder / relative_filename
-    )
+    src_file = Path(calling_file).parent / relative_filename
+    dst_file = asset_folder / relative_filename
+
+    if not dst_file.exists():
+        dst_file.symlink_to(src_file)
+
     asset_url = f"/{external}/{subfolder}/{relative_filename}"
     return asset_url
