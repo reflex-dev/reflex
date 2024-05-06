@@ -165,7 +165,7 @@ class UnorderedList(BaseList, Ul):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Var[Iterable]] = None,
+        items: Optional[Union[Var[Iterable], Iterable]] = None,
         list_style_type: Optional[LiteralListStyleTypeUnordered] = "disc",
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
@@ -302,7 +302,7 @@ class OrderedList(BaseList, Ol):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Var[Iterable]] = None,
+        items: Optional[Union[Var[Iterable], Iterable]] = None,
         list_style_type: Optional[LiteralListStyleTypeOrdered] = "decimal",
         reversed: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
