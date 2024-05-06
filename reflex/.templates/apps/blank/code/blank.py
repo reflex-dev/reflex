@@ -4,9 +4,6 @@ from rxconfig import config
 
 import reflex as rx
 
-docs_url = "https://reflex.dev/docs/getting-started/introduction/"
-filename = f"{config.app_name}/{config.app_name}.py"
-
 
 class State(rx.State):
     """The app state."""
@@ -20,16 +17,15 @@ def index() -> rx.Component:
         rx.color_mode.button(position="top-right"),
         rx.vstack(
             rx.heading("Welcome to Reflex!", size="9"),
-            rx.text("Get started by editing ", rx.code(filename), size="5"),
+            rx.text(
+                "Get started by editing ",
+                rx.code(f"{config.app_name}/{config.app_name}.py"),
+                size="5",
+            ),
             rx.link(
-                "Check out our docs!",
-                href=docs_url,
+                rx.button("Check out our docs!"),
+                href="https://reflex.dev/docs/getting-started/introduction/",
                 is_external=True,
-                style={
-                    "border": "0.1em solid",
-                    "padding": "0.5em",
-                    "border_radius": "0.5em",
-                },
             ),
             spacing="5",
             justify="center",
