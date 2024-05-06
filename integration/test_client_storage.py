@@ -5,6 +5,7 @@ import time
 from typing import Generator
 
 import pytest
+from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
@@ -374,9 +375,12 @@ async def test_client_side_state(
         "value": "c3%20value",
     }
     time.sleep(2)  # wait for c3 to expire
-    assert "state.client_side_state.client_side_sub_state.c3" not in cookie_info_map(
-        driver
-    )
+    if not isinstance(driver, Firefox):
+        # Note: Firefox does not remove expired cookies Bug 576347
+        assert (
+            "state.client_side_state.client_side_sub_state.c3"
+            not in cookie_info_map(driver)
+        )
 
     local_storage_items = local_storage.items()
     local_storage_items.pop("chakra-ui-color-mode", None)

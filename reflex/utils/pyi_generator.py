@@ -34,7 +34,7 @@ PWD = Path(".").resolve()
 
 EXCLUDED_FILES = [
     "__init__.py",
-    "app.py",
+    # "app.py",
     "component.py",
     "bare.py",
     "foreach.py",
@@ -117,6 +117,29 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     """
     res = ""
     args = get_args(value)
+
+    if value is type(None):
+        return "None"
+
+    if rx_types.is_union(value):
+        if type(None) in value.__args__:
+            res_args = [
+                _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
+                for arg in value.__args__
+                if arg is not type(None)
+            ]
+            if len(res_args) == 1:
+                return f"Optional[{res_args[0]}]"
+            else:
+                res = f"Union[{', '.join(res_args)}]"
+                return f"Optional[{res}]"
+
+        res_args = [
+            _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
+            for arg in value.__args__
+        ]
+        return f"Union[{', '.join(res_args)}]"
+
     if args:
         inner_container_type_args = (
             [repr(arg) for arg in args]
@@ -141,6 +164,20 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 res = f"Union[{res}]"
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
+        if rx_types.is_optional(ev):
+            # hints = {
+            #     _get_type_hint(arg, type_hint_globals, is_optional=False)
+            #     for arg in ev.__args__
+            # }
+            return _get_type_hint(ev, type_hint_globals, is_optional=False)
+            # return f"Optional[{', '.join(hints)}]"
+
+        if rx_types.is_union(ev):
+            res = [
+                _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
+                for arg in ev.__args__
+            ]
+            return f"Union[{', '.join(res)}]"
         res = (
             _get_type_hint(ev, type_hint_globals, is_optional=False)
             if ev.__name__ == "Var"
@@ -424,7 +461,58 @@ def _generate_component_create_functiondef(
     return definition
 
 
+def _generate_staticmethod_call_functiondef(
+    node: ast.FunctionDef | None,
+    clz: type[Component] | type[SimpleNamespace],
+    type_hint_globals: dict[str, Any],
+) -> ast.FunctionDef | None:
+    ...
+
+    fullspec = getfullargspec(clz.__call__)
+
+    call_args = ast.arguments(
+        args=[
+            ast.arg(
+                name,
+                annotation=ast.Name(
+                    id=_get_type_hint(
+                        anno := fullspec.annotations[name],
+                        type_hint_globals,
+                        is_optional=rx_types.is_optional(anno),
+                    )
+                ),
+            )
+            for name in fullspec.args
+        ],
+        posonlyargs=[],
+        kwonlyargs=[],
+        kw_defaults=[],
+        kwarg=ast.arg(arg="props"),
+        defaults=[],
+    )
+    definition = ast.FunctionDef(
+        name="__call__",
+        args=call_args,
+        body=[
+            ast.Expr(value=ast.Constant(value=clz.__call__.__doc__)),
+            ast.Expr(
+                value=ast.Constant(...),
+            ),
+        ],
+        decorator_list=[ast.Name(id="staticmethod")],
+        lineno=node.lineno if node is not None else None,
+        returns=ast.Constant(
+            value=_get_type_hint(
+                typing.get_type_hints(clz.__call__).get("return", None),
+                type_hint_globals,
+            )
+        ),
+    )
+    return definition
+
+
 def _generate_namespace_call_functiondef(
+    node: ast.ClassDef | None,
     clz_name: str,
     classes: dict[str, type[Component] | type[SimpleNamespace]],
     type_hint_globals: dict[str, Any],
@@ -432,6 +520,7 @@ def _generate_namespace_call_functiondef(
     """Generate the __call__ function definition for a SimpleNamespace.
 
     Args:
+        node: The existing __call__ classdef parent node from the ast
         clz_name: The name of the SimpleNamespace class to generate the __call__ functiondef for.
         classes: Map name to actual class definition.
         type_hint_globals: The globals to use to resolving a type hint str.
@@ -446,10 +535,12 @@ def _generate_namespace_call_functiondef(
 
     clz = classes[clz_name]
 
+    if not hasattr(clz.__call__, "__self__"):
+        return _generate_staticmethod_call_functiondef(node, clz, type_hint_globals)  # type: ignore
+
     # Determine which class is wrapped by the namespace __call__ method
     component_clz = clz.__call__.__self__
 
-    # Only generate for create functions
     if clz.__call__.__func__.__name__ != "create":
         return None
 
@@ -603,6 +694,7 @@ class StubGenerator(ast.NodeTransformer):
                 if not child.targets[:]:
                     node.body.remove(child)
                 call_definition = _generate_namespace_call_functiondef(
+                    node,
                     self.current_class,
                     self.classes,
                     type_hint_globals=self.type_hint_globals,
@@ -738,9 +830,7 @@ class PyiGenerator:
                 mode=black.mode.Mode(is_pyi=True),
             ).splitlines():
                 # Bit of a hack here, since the AST cannot represent comments.
-                if "def create(" in formatted_line:
-                    pyi_content.append(formatted_line + "  # type: ignore")
-                elif "Figure" in formatted_line:
+                if "def create(" in formatted_line or "Figure" in formatted_line:
                     pyi_content.append(formatted_line + "  # type: ignore")
                 else:
                     pyi_content.append(formatted_line)

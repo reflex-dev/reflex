@@ -137,7 +137,9 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     # Add the node bin path to the PATH environment variable.
     env = {
         **os.environ,
-        "PATH": os.pathsep.join([node_bin_path if node_bin_path else "", os.environ["PATH"]]),  # type: ignore
+        "PATH": os.pathsep.join(
+            [node_bin_path if node_bin_path else "", os.environ["PATH"]]
+        ),  # type: ignore
         **kwargs.pop("env", {}),
     }
     kwargs = {
@@ -345,3 +347,21 @@ def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwa
                 fallback=None,
                 **kwargs,
             )
+
+
+def execute_command_and_return_output(command) -> str | None:
+    """Execute a command and return the output.
+
+    Args:
+        command: The command to run.
+
+    Returns:
+        The output of the command.
+    """
+    try:
+        return subprocess.check_output(command, shell=True).decode().strip()
+    except subprocess.SubprocessError as err:
+        console.error(
+            f"The command `{command}` failed with error: {err}. This will return None."
+        )
+        return None

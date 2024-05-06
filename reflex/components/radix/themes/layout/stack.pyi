@@ -18,7 +18,7 @@ class Stack(Flex):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSpacing] = "2",
+        spacing: Optional[LiteralSpacing] = "3",
         align: Optional[LiteralAlign] = "start",
         as_child: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
@@ -177,7 +177,7 @@ class VStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSpacing] = "2",
+        spacing: Optional[LiteralSpacing] = "3",
         align: Optional[LiteralAlign] = "start",
         direction: Optional[
             Union[
@@ -336,7 +336,7 @@ class HStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSpacing] = "2",
+        spacing: Optional[LiteralSpacing] = "3",
         align: Optional[LiteralAlign] = "start",
         direction: Optional[
             Union[

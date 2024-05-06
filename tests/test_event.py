@@ -1,9 +1,10 @@
 import json
+from typing import List
 
 import pytest
 
 from reflex import event
-from reflex.event import Event, EventHandler, EventSpec, fix_events
+from reflex.event import Event, EventHandler, EventSpec, call_event_handler, fix_events
 from reflex.state import BaseState
 from reflex.utils import format
 from reflex.vars import Var
@@ -89,6 +90,40 @@ def test_call_event_handler():
     handler = EventHandler(fn=test_fn_with_args)
     with pytest.raises(TypeError):
         handler(test_fn)  # type: ignore
+
+
+def test_call_event_handler_partial():
+    """Calling an EventHandler with incomplete args returns an EventSpec that can be extended."""
+
+    def test_fn_with_args(_, arg1, arg2):
+        pass
+
+    test_fn_with_args.__qualname__ = "test_fn_with_args"
+
+    def spec(a2: str) -> List[str]:
+        return [a2]
+
+    handler = EventHandler(fn=test_fn_with_args)
+    event_spec = handler(make_var("first"))
+    event_spec2 = call_event_handler(event_spec, spec)
+
+    assert event_spec.handler == handler
+    assert len(event_spec.args) == 1
+    assert event_spec.args[0][0].equals(Var.create_safe("arg1"))
+    assert event_spec.args[0][1].equals(Var.create_safe("first"))
+    assert format.format_event(event_spec) == 'Event("test_fn_with_args", {arg1:first})'
+
+    assert event_spec2 is not event_spec
+    assert event_spec2.handler == handler
+    assert len(event_spec2.args) == 2
+    assert event_spec2.args[0][0].equals(Var.create_safe("arg1"))
+    assert event_spec2.args[0][1].equals(Var.create_safe("first"))
+    assert event_spec2.args[1][0].equals(Var.create_safe("arg2"))
+    assert event_spec2.args[1][1].equals(Var.create_safe("_a2"))
+    assert (
+        format.format_event(event_spec2)
+        == 'Event("test_fn_with_args", {arg1:first,arg2:_a2})'
+    )
 
 
 @pytest.mark.parametrize(
@@ -283,19 +318,41 @@ def test_event_actions():
         "stopPropagation": True,
         "preventDefault": True,
     }
+
+    throttle_handler = handler.throttle(300)
+    assert handler is not throttle_handler
+    assert throttle_handler.event_actions == {"throttle": 300}
+
+    debounce_handler = handler.debounce(300)
+    assert handler is not debounce_handler
+    assert debounce_handler.event_actions == {"debounce": 300}
+
+    all_handler = handler.stop_propagation.prevent_default.throttle(200).debounce(100)
+    assert handler is not all_handler
+    assert all_handler.event_actions == {
+        "stopPropagation": True,
+        "preventDefault": True,
+        "throttle": 200,
+        "debounce": 100,
+    }
+
     assert not handler.event_actions
 
     # Convert to EventSpec should carry event actions
-    sp_handler2 = handler.stop_propagation
+    sp_handler2 = handler.stop_propagation.throttle(200)
     spec = sp_handler2()
-    assert spec.event_actions == {"stopPropagation": True}
+    assert spec.event_actions == {"stopPropagation": True, "throttle": 200}
     assert spec.event_actions == sp_handler2.event_actions
     assert spec.event_actions is not sp_handler2.event_actions
     # But it should be a copy!
     assert spec.event_actions is not sp_handler2.event_actions
     spec2 = spec.prevent_default
     assert spec is not spec2
-    assert spec2.event_actions == {"stopPropagation": True, "preventDefault": True}
+    assert spec2.event_actions == {
+        "stopPropagation": True,
+        "preventDefault": True,
+        "throttle": 200,
+    }
     assert spec2.event_actions != spec.event_actions
 
     # The original handler should still not be touched.

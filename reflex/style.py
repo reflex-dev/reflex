@@ -274,3 +274,17 @@ def convert_dict_to_style_and_format_emotion(
 
     """
     return format_as_emotion(Style(raw_dict))
+
+
+STACK_CHILDREN_FULL_WIDTH = {
+    "& :where(.rx-Stack)": {
+        "width": "100%",
+    },
+    "& :where(.rx-Stack) > :where( "
+    "div:not(.rt-Box, .rx-Upload, .rx-Html),"
+    "input, select, textarea, table"
+    ")": {
+        "width": "100%",
+        "flex_shrink": "1",
+    },
+}

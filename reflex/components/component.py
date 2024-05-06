@@ -213,6 +213,91 @@ class Component(BaseComponent, ABC):
     # State class associated with this component instance
     State: Optional[Type[reflex.state.State]] = None
 
+    def add_imports(self) -> dict[str, str | ImportVar | list[str | ImportVar]]:
+        """Add imports for the component.
+
+        This method should be implemented by subclasses to add new imports for the component.
+
+        Implementations do NOT need to call super(). The result of calling
+        add_imports in each parent class will be merged internally.
+
+        Returns:
+            The additional imports for this component subclass.
+
+        The format of the return value is a dictionary where the keys are the
+        library names (with optional npm-style version specifications) mapping
+        to a single name to be imported, or a list names to be imported.
+
+        For advanced use cases, the values can be ImportVar instances (for
+        example, to provide an alias or mark that an import is the default
+        export from the given library).
+
+        ```python
+        return {
+            "react": "useEffect",
+            "react-draggable": ["DraggableCore", rx.ImportVar(tag="Draggable", is_default=True)],
+        }
+        ```
+        """
+        return {}
+
+    def add_hooks(self) -> list[str]:
+        """Add hooks inside the component function.
+
+        Hooks are pieces of literal Javascript code that is inserted inside the
+        React component function.
+
+        Each logical hook should be a separate string in the list.
+
+        Common strings will be deduplicated and inserted into the component
+        function only once, so define const variables and other identical code
+        in their own strings to avoid defining the same const or hook multiple
+        times.
+
+        If a hook depends on specific data from the component instance, be sure
+        to use unique values inside the string to _avoid_ deduplication.
+
+        Implementations do NOT need to call super(). The result of calling
+        add_hooks in each parent class will be merged and deduplicated internally.
+
+        Returns:
+            The additional hooks for this component subclass.
+
+        ```python
+        return [
+            "const [count, setCount] = useState(0);",
+            "useEffect(() => { setCount((prev) => prev + 1); console.log(`mounted ${count} times`); }, []);",
+        ]
+        ```
+        """
+        return []
+
+    def add_custom_code(self) -> list[str]:
+        """Add custom Javascript code into the page that contains this component.
+
+        Custom code is inserted at module level, after any imports.
+
+        Each string of custom code is deduplicated per-page, so take care to
+        avoid defining the same const or function differently from different
+        component instances.
+
+        Custom code is useful for defining global functions or constants which
+        can then be referenced inside hooks or used by component vars.
+
+        Implementations do NOT need to call super(). The result of calling
+        add_custom_code in each parent class will be merged and deduplicated internally.
+
+        Returns:
+            The additional custom code for this component subclass.
+
+        ```python
+        return [
+            "const translatePoints = (event) => { return { x: event.clientX, y: event.clientY }; };",
+        ]
+        ```
+        """
+        return []
+
     @classmethod
     def __init_subclass__(cls, **kwargs):
         """Set default properties.
@@ -255,6 +340,7 @@ class Component(BaseComponent, ABC):
 
         Raises:
             TypeError: If an invalid prop is passed.
+            ValueError: If an event trigger passed is not valid.
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
@@ -284,6 +370,12 @@ class Component(BaseComponent, ABC):
 
         # Iterate through the kwargs and set the props.
         for key, value in kwargs.items():
+            if key.startswith("on_") and key not in triggers and key not in props:
+                raise ValueError(
+                    f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. If {comp_name}"
+                    f" is a third party component make sure to add `{key}` to the component's event triggers. "
+                    f"visit https://reflex.dev/docs/wrapping-react/logic/#event-triggers for more info."
+                )
             if key in triggers:
                 # Event triggers are bound to event chains.
                 field_type = EventChain
@@ -296,6 +388,8 @@ class Component(BaseComponent, ABC):
 
             # Check whether the key is a component prop.
             if types._issubclass(field_type, Var):
+                # Used to store the passed types if var type is a union.
+                passed_types = None
                 try:
                     # Try to create a var from the value.
                     kwargs[key] = Var.create(value)
@@ -320,10 +414,25 @@ class Component(BaseComponent, ABC):
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
                     expected_type = fields[key].outer_type_
-                if not types._issubclass(passed_type, expected_type):
+                if types.is_union(passed_type):
+                    # We need to check all possible types in the union.
+                    passed_types = (
+                        arg for arg in passed_type.__args__ if arg is not type(None)
+                    )
+                if (
+                    # If the passed var is a union, check if all possible types are valid.
+                    passed_types
+                    and not all(
+                        types._issubclass(pt, expected_type) for pt in passed_types
+                    )
+                ) or (
+                    # Else just check if the passed var type is valid.
+                    not passed_types
+                    and not types._issubclass(passed_type, expected_type)
+                ):
                     value_name = value._var_name if isinstance(value, Var) else value
                     raise TypeError(
-                        f"Invalid var passed for prop {key}, expected type {expected_type}, got value {value_name} of type {passed_type}."
+                        f"Invalid var passed for prop {type(self).__name__}.{key}, expected type {expected_type}, got value {value_name} of type {passed_types or passed_type}."
                     )
 
             # Check if the key is an event trigger.
@@ -397,7 +506,7 @@ class Component(BaseComponent, ABC):
         if isinstance(value, List):
             events: list[EventSpec] = []
             for v in value:
-                if isinstance(v, EventHandler):
+                if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
                     try:
                         event = call_event_handler(v, args_spec)
@@ -408,9 +517,6 @@ class Component(BaseComponent, ABC):
 
                     # Add the event to the chain.
                     events.append(event)
-                elif isinstance(v, EventSpec):
-                    # Add the event to the chain.
-                    events.append(v)
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
                     events.extend(call_event_fn(v, args_spec))
@@ -925,6 +1031,30 @@ class Component(BaseComponent, ABC):
                     return True
         return False
 
+    @classmethod
+    def _iter_parent_classes_with_method(cls, method: str) -> Iterator[Type[Component]]:
+        """Iterate through parent classes that define a given method.
+
+        Used for handling the `add_*` API functions that internally simulate a super() call chain.
+
+        Args:
+            method: The method to look for.
+
+        Yields:
+            The parent classes that define the method (differently than the base).
+        """
+        seen_methods = set([getattr(Component, method)])
+        for clz in cls.mro():
+            if clz is Component:
+                break
+            if not issubclass(clz, Component):
+                continue
+            method_func = getattr(clz, method, None)
+            if not callable(method_func) or method_func in seen_methods:
+                continue
+            seen_methods.add(method_func)
+            yield clz
+
     def _get_custom_code(self) -> str | None:
         """Get custom code for the component.
 
@@ -946,6 +1076,11 @@ class Component(BaseComponent, ABC):
         custom_code = self._get_custom_code()
         if custom_code is not None:
             code.add(custom_code)
+
+        # Add the custom code from add_custom_code method.
+        for clz in self._iter_parent_classes_with_method("add_custom_code"):
+            for item in clz.add_custom_code(self):
+                code.add(item)
 
         # Add the custom code for the children.
         for child in self.children:
@@ -1082,6 +1217,26 @@ class Component(BaseComponent, ABC):
             var._var_data.imports for var in self._get_vars() if var._var_data
         ]
 
+        # If any subclass implements add_imports, merge the imports.
+        def _make_list(
+            value: str | ImportVar | list[str | ImportVar],
+        ) -> list[str | ImportVar]:
+            if isinstance(value, (str, ImportVar)):
+                return [value]
+            return value
+
+        _added_import_dicts = []
+        for clz in self._iter_parent_classes_with_method("add_imports"):
+            _added_import_dicts.append(
+                {
+                    package: [
+                        ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
+                        for tag in _make_list(maybe_tags)
+                    ]
+                    for package, maybe_tags in clz.add_imports(self).items()
+                }
+            )
+
         return imports.merge_imports(
             *self._get_props_imports(),
             self._get_dependencies_imports(),
@@ -1089,6 +1244,7 @@ class Component(BaseComponent, ABC):
             _imports,
             event_imports,
             *var_imports,
+            *_added_import_dicts,
         )
 
     def _get_all_imports(self, collapse: bool = False) -> imports.ImportDict:
@@ -1223,6 +1379,12 @@ class Component(BaseComponent, ABC):
         hooks = self._get_hooks()
         if hooks is not None:
             code[hooks] = None
+
+        # Add the hook code from add_hooks for each parent class (this is reversed to preserve
+        # the order of the hooks in the final output)
+        for clz in reversed(tuple(self._iter_parent_classes_with_method("add_hooks"))):
+            for hook in clz.add_hooks(self):
+                code[hook] = None
 
         # Add the hook code for the children.
         for child in self.children:
@@ -1397,7 +1559,7 @@ class CustomComponent(Component):
                 else:
                     value = base_value
             else:
-                value = Var.create(value, _var_is_string=type(value) is str)
+                value = Var.create(value, _var_is_string=isinstance(value, str))
 
             # Set the prop.
             self.props[format.to_camel_case(key)] = value
@@ -1516,7 +1678,7 @@ class CustomComponent(Component):
 
 
 def custom_component(
-    component_fn: Callable[..., Component]
+    component_fn: Callable[..., Component],
 ) -> Callable[..., CustomComponent]:
     """Create a custom component from a function.
 
@@ -1583,9 +1745,7 @@ class NoSSRComponent(Component):
         library_import = f"const {self.alias if self.alias else self.tag} = dynamic(() => import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
-            f".then((mod) => mod.{self.tag})"
-            if not self.is_default
-            else ""
+            f".then((mod) => mod.{self.tag})" if not self.is_default else ""
         )
         return "".join((library_import, mod_import, opts_fragment))
 
@@ -1939,6 +2099,16 @@ class StatefulComponent(BaseComponent):
             The tag to render.
         """
         return dict(Tag(name=self.tag))
+
+    def __str__(self) -> str:
+        """Represent the component in React.
+
+        Returns:
+            The code to render the component.
+        """
+        from reflex.compiler.compiler import _compile_component
+
+        return _compile_component(self)
 
     @classmethod
     def compile_from(cls, component: BaseComponent) -> BaseComponent:

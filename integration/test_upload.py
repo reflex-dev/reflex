@@ -49,7 +49,7 @@ def UploadFile():
                 id="token",
             ),
             rx.heading("Default Upload"),
-            rx.upload(
+            rx.upload.root(
                 rx.vstack(
                     rx.button("Select File"),
                     rx.text("Drag and drop files here or click to select files"),
@@ -73,7 +73,7 @@ def UploadFile():
                 id="clear_button",
             ),
             rx.heading("Secondary Upload"),
-            rx.upload(
+            rx.upload.root(
                 rx.vstack(
                     rx.button("Select File"),
                     rx.text("Drag and drop files here or click to select files"),

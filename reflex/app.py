@@ -63,9 +63,8 @@ from reflex.page import (
     DECORATED_PAGES,
 )
 from reflex.route import (
-    catchall_in_route,
-    catchall_prefix,
     get_route_args,
+    replace_brackets_with_keywords,
     verify_route_validity,
 )
 from reflex.state import (
@@ -102,46 +101,45 @@ class OverlayFragment(Fragment):
 
 
 class App(Base):
-    """A Reflex application."""
+    """The main Reflex app that encapsulates the backend and frontend.
 
-    # A map from a page route to the component to render.
-    pages: Dict[str, Component] = {}
+    Every Reflex app needs an app defined in its main module.
 
-    # A list of URLs to stylesheets to include in the app.
-    stylesheets: List[str] = []
+    ```python
+    # app.py
+    import reflex as rx
 
-    # The backend API object.
-    api: FastAPI = None  # type: ignore
+    # Define state and pages
+    ...
 
-    # The Socket.IO AsyncServer.
-    sio: Optional[AsyncServer] = None
+    app = rx.App(
+        # Set global level style.
+        style={...},
+        # Set the top level theme.
+        theme=rx.theme(accent_color="blue"),
+    )
+    ```
+    """
 
-    # The socket app.
-    socket_app: Optional[ASGIApp] = None
+    # The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app.
+    theme: Optional[Component] = themes.theme(accent_color="blue")
 
-    # The state class to use for the app.
-    state: Optional[Type[BaseState]] = None
-
-    # Class to manage many client states.
-    _state_manager: Optional[StateManager] = None
-
-    # The styling to apply to each component.
+    # The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
     style: ComponentStyle = {}
 
-    # Middleware to add to the app.
-    middleware: List[Middleware] = []
+    # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
+    stylesheets: List[str] = []
 
-    # List of event handlers to trigger when a page loads.
-    load_events: Dict[str, List[Union[EventHandler, EventSpec]]] = {}
-
-    # Admin dashboard
-    admin_dash: Optional[AdminDash] = None
-
-    # The async server name space
-    event_namespace: Optional[EventNamespace] = None
+    # A component that is present on every page (defaults to the Connection Error banner).
+    overlay_component: Optional[
+        Union[Component, ComponentCallable]
+    ] = default_overlay_component
 
     # Components to add to the head of every page.
     head_components: List[Component] = []
+
+    # The Socket.IO AsyncServer instance.
+    sio: Optional[AsyncServer] = None
 
     # The language to add to the html root tag of every page.
     html_lang: Optional[str] = None
@@ -149,16 +147,32 @@ class App(Base):
     # Attributes to add to the html root tag of every page.
     html_custom_attrs: Optional[Dict[str, str]] = None
 
-    # A component that is present on every page.
-    overlay_component: Optional[
-        Union[Component, ComponentCallable]
-    ] = default_overlay_component
+    # A map from a page route to the component to render. Users should use `add_page`. PRIVATE.
+    pages: Dict[str, Component] = {}
 
-    # Background tasks that are currently running
+    # The backend API object. PRIVATE.
+    api: FastAPI = None  # type: ignore
+
+    # The state class to use for the app. PRIVATE.
+    state: Optional[Type[BaseState]] = None
+
+    # Class to manage many client states.
+    _state_manager: Optional[StateManager] = None
+
+    # Middleware to add to the app. Users should use `add_middleware`. PRIVATE.
+    middleware: List[Middleware] = []
+
+    # Mapping from a route to event handlers to trigger when the page loads. PRIVATE.
+    load_events: Dict[str, List[Union[EventHandler, EventSpec]]] = {}
+
+    # Admin dashboard to view and manage the database. PRIVATE.
+    admin_dash: Optional[AdminDash] = None
+
+    # The async server name space. PRIVATE.
+    event_namespace: Optional[EventNamespace] = None
+
+    # Background tasks that are currently running. PRIVATE.
     background_tasks: Set[asyncio.Task] = set()
-
-    # The radix theme for the entire app
-    theme: Optional[Component] = themes.theme(accent_color="blue")
 
     def __init__(self, **kwargs):
         """Initialize the app.
@@ -198,22 +212,26 @@ class App(Base):
 
         # Set up the API.
         self.api = FastAPI()
-        self.add_cors()
-        self.add_default_endpoints()
+        self._add_cors()
+        self._add_default_endpoints()
 
-        self.setup_state()
+        self._setup_state()
 
         # Set up the admin dash.
-        self.setup_admin_dash()
+        self._setup_admin_dash()
 
-    def enable_state(self) -> None:
+    def _enable_state(self) -> None:
         """Enable state for the app."""
         if not self.state:
             self.state = State
-            self.setup_state()
+            self._setup_state()
 
-    def setup_state(self) -> None:
-        """Set up the state for the app."""
+    def _setup_state(self) -> None:
+        """Set up the state for the app.
+
+        Raises:
+            RuntimeError: If the socket server is invalid.
+        """
         if not self.state:
             return
 
@@ -223,21 +241,26 @@ class App(Base):
         self._state_manager = StateManager.create(state=self.state)
 
         # Set up the Socket.IO AsyncServer.
-        self.sio = AsyncServer(
-            async_mode="asgi",
-            cors_allowed_origins=(
-                "*"
-                if config.cors_allowed_origins == ["*"]
-                else config.cors_allowed_origins
-            ),
-            cors_credentials=True,
-            max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
-            ping_interval=constants.Ping.INTERVAL,
-            ping_timeout=constants.Ping.TIMEOUT,
-        )
+        if not self.sio:
+            self.sio = AsyncServer(
+                async_mode="asgi",
+                cors_allowed_origins=(
+                    "*"
+                    if config.cors_allowed_origins == ["*"]
+                    else config.cors_allowed_origins
+                ),
+                cors_credentials=True,
+                max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
+                ping_interval=constants.Ping.INTERVAL,
+                ping_timeout=constants.Ping.TIMEOUT,
+            )
+        elif getattr(self.sio, "async_mode", "") != "asgi":
+            raise RuntimeError(
+                f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
+            )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
-        self.socket_app = ASGIApp(self.sio, socketio_path="")
+        socket_app = ASGIApp(self.sio, socketio_path="")
         namespace = config.get_event_namespace()
 
         # Create the event namespace and attach the main app. Not related to any paths.
@@ -246,7 +269,7 @@ class App(Base):
         # Register the event namespace with the socket.
         self.sio.register_namespace(self.event_namespace)
         # Mount the socket app with the API.
-        self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
+        self.api.mount(str(constants.Endpoint.EVENT), socket_app)
 
     def __repr__(self) -> str:
         """Get the string representation of the app.
@@ -264,12 +287,12 @@ class App(Base):
         """
         return self.api
 
-    def add_default_endpoints(self):
+    def _add_default_endpoints(self):
         """Add default api endpoints (ping)."""
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
 
-    def add_optional_endpoints(self):
+    def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
         # To upload files.
         if Upload.is_used:
@@ -282,7 +305,7 @@ class App(Base):
                 name="uploaded_files",
             )
 
-    def add_cors(self):
+    def _add_cors(self):
         """Add CORS middleware to the app."""
         self.api.add_middleware(
             cors.CORSMiddleware,
@@ -306,7 +329,7 @@ class App(Base):
             raise ValueError("The state manager has not been initialized.")
         return self._state_manager
 
-    async def preprocess(self, state: BaseState, event: Event) -> StateUpdate | None:
+    async def _preprocess(self, state: BaseState, event: Event) -> StateUpdate | None:
         """Preprocess the event.
 
         This is where middleware can modify the event before it is processed.
@@ -330,7 +353,7 @@ class App(Base):
             if out is not None:
                 return out  # type: ignore
 
-    async def postprocess(
+    async def _postprocess(
         self, state: BaseState, event: Event, update: StateUpdate
     ) -> StateUpdate:
         """Postprocess the event.
@@ -349,11 +372,17 @@ class App(Base):
         for middleware in self.middleware:
             if asyncio.iscoroutinefunction(middleware.postprocess):
                 out = await middleware.postprocess(
-                    app=self, state=state, event=event, update=update  # type: ignore
+                    app=self,  # type: ignore
+                    state=state,
+                    event=event,
+                    update=update,
                 )
             else:
                 out = middleware.postprocess(
-                    app=self, state=state, event=event, update=update  # type: ignore
+                    app=self,  # type: ignore
+                    state=state,
+                    event=event,
+                    update=update,
                 )
             if out is not None:
                 return out  # type: ignore
@@ -426,6 +455,9 @@ class App(Base):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
             script_tags: List of script tags to be added to component
+
+        Raises:
+            ValueError: When the specified route name already exists.
         """
         # If the route is not set, get it from the callable.
         if route is None:
@@ -439,6 +471,23 @@ class App(Base):
 
         # Check if the route given is valid
         verify_route_validity(route)
+
+        if route in self.pages and os.getenv(constants.RELOAD_CONFIG):
+            # when the app is reloaded(typically for app harness tests), we should maintain
+            # the latest render function of a route.This applies typically to decorated pages
+            # since they are only added when app._compile is called.
+            self.pages.pop(route)
+
+        if route in self.pages:
+            route_name = (
+                f"`{route}` or `/`"
+                if route == constants.PageNames.INDEX_ROUTE
+                else f"`{route}`"
+            )
+            raise ValueError(
+                f"Duplicate page route {route_name} already exists. Make sure you do not have two"
+                f" pages with the same route"
+            )
 
         # Setup dynamic args for the route.
         # this state assignment is only required for tests using the deprecated state kwarg for App
@@ -455,14 +504,14 @@ class App(Base):
         # Ensure state is enabled if this page uses state.
         if self.state is None:
             if on_load or component._has_event_triggers():
-                self.enable_state()
+                self._enable_state()
             else:
                 for var in component._get_vars(include_children=True):
                     if not var._var_data:
                         continue
                     if not var._var_data.state:
                         continue
-                    self.enable_state()
+                    self._enable_state()
                     break
 
         component = OverlayFragment.create(component)
@@ -531,27 +580,31 @@ class App(Base):
         Args:
             new_route: the route being newly added.
         """
-        newroute_catchall = catchall_in_route(new_route)
-        if not newroute_catchall:
+        if "[" not in new_route:
             return
 
+        segments = (
+            constants.RouteRegex.SINGLE_SEGMENT,
+            constants.RouteRegex.DOUBLE_SEGMENT,
+            constants.RouteRegex.SINGLE_CATCHALL_SEGMENT,
+            constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
+        )
         for route in self.pages:
-            route = "" if route == "index" else route
-
-            if new_route.startswith(f"{route}/[[..."):
-                raise ValueError(
-                    f"You cannot define a route with the same specificity as a optional catch-all route ('{route}' and '{new_route}')"
-                )
-
-            route_catchall = catchall_in_route(route)
-            if (
-                route_catchall
-                and newroute_catchall
-                and catchall_prefix(route) == catchall_prefix(new_route)
+            replaced_route = replace_brackets_with_keywords(route)
+            for rw, r, nr in zip(
+                replaced_route.split("/"), route.split("/"), new_route.split("/")
             ):
-                raise ValueError(
-                    f"You cannot use multiple catchall for the same dynamic route ({route} !== {new_route})"
-                )
+                if rw in segments and r != nr:
+                    # If the slugs in the segments of both routes are not the same, then the route is invalid
+                    raise ValueError(
+                        f"You cannot use different slug names for the same dynamic path in  {route} and {new_route} ('{r}' != '{nr}')"
+                    )
+                elif rw not in segments and r != nr:
+                    # if the section being compared in both routes is not a dynamic segment(i.e not wrapped in brackets)
+                    # then we are guaranteed that the route is valid and there's no need checking the rest.
+                    # eg. /posts/[id]/info/[slug1] and /posts/[id]/info1/[slug1] is always going to be valid since
+                    # info1 will break away into its own tree.
+                    break
 
     def add_custom_404_page(
         self,
@@ -567,7 +620,7 @@ class App(Base):
         """Define a custom 404 page for any url having no match.
 
         If there is no page defined on 'index' route, add the 404 page to it.
-        If there is no global catchall defined, add the 404 page with a catchall
+        If there is no global catchall defined, add the 404 page with a catchall.
 
         Args:
             component: The component to display at the page.
@@ -589,7 +642,7 @@ class App(Base):
             meta=meta,
         )
 
-    def setup_admin_dash(self):
+    def _setup_admin_dash(self):
         """Setup the admin dash."""
         # Get the admin dash.
         admin_dash = self.admin_dash
@@ -612,14 +665,14 @@ class App(Base):
 
             admin.mount_to(self.api)
 
-    def get_frontend_packages(self, imports: Dict[str, set[ImportVar]]):
+    def _get_frontend_packages(self, imports: Dict[str, set[ImportVar]]):
         """Gets the frontend packages to be installed and filters out the unnecessary ones.
 
         Args:
             imports: A dictionary containing the imports used in the current page.
 
         Example:
-            >>> get_frontend_packages({"react": "16.14.0", "react-dom": "16.14.0"})
+            >>> _get_frontend_packages({"react": "16.14.0", "react-dom": "16.14.0"})
         """
         page_imports = {
             i
@@ -702,19 +755,6 @@ class App(Base):
         for k, component in self.pages.items():
             self.pages[k] = self._add_overlay_to_component(component)
 
-    def compile(self):
-        """compile_() is the new function for performing compilation.
-        Reflex framework will call it automatically as needed.
-        """
-        console.deprecate(
-            feature_name="app.compile()",
-            reason="Explicit calls to app.compile() are not needed."
-            " Method will be removed in 0.4.0",
-            deprecation_version="0.3.8",
-            removal_version="0.5.0",
-        )
-        return
-
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app.
 
@@ -728,7 +768,7 @@ class App(Base):
         for render, kwargs in DECORATED_PAGES[get_config().app_name]:
             self.add_page(render, **kwargs)
 
-    def compile_(self, export: bool = False):
+    def _compile(self, export: bool = False):
         """Compile the app and output it to the pages folder.
 
         Args:
@@ -742,7 +782,7 @@ class App(Base):
             self.add_custom_404_page()
 
         # Add the optional endpoints (_upload)
-        self.add_optional_endpoints()
+        self._add_optional_endpoints()
 
         if not self._should_compile():
             return
@@ -940,7 +980,7 @@ class App(Base):
         progress.stop()
 
         # Install frontend packages.
-        self.get_frontend_packages(all_imports)
+        self._get_frontend_packages(all_imports)
 
         # Setup the next.config.js
         transpile_packages = [
@@ -1015,7 +1055,7 @@ class App(Base):
                 handler=handler, state=substate, payload=event.payload
             ):
                 # Postprocess the event.
-                update = await self.postprocess(state, event, update)
+                update = await self._postprocess(state, event, update)
 
                 # Send the update to the client.
                 await self.event_namespace.emit_update(
@@ -1066,7 +1106,7 @@ async def process(
             state.router = RouterData(router_data)
 
         # Preprocess the event.
-        update = await app.preprocess(state, event)
+        update = await app._preprocess(state, event)
 
         # If there was an update, yield it.
         if update is not None:
@@ -1082,7 +1122,7 @@ async def process(
             # Process the event synchronously.
             async for update in state._process(event):
                 # Postprocess the event.
-                update = await app.postprocess(state, event, update)
+                update = await app._postprocess(state, event, update)
 
                 # Yield the update.
                 yield update
@@ -1203,7 +1243,7 @@ def upload(app: App):
             async with app.state_manager.modify_state(event.substate_token) as state:
                 async for update in state._process(event):
                     # Postprocess the event.
-                    update = await app.postprocess(state, event, update)
+                    update = await app._postprocess(state, event, update)
                     yield update.json() + "\n"
 
         # Stream updates to client

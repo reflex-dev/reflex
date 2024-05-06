@@ -40,7 +40,7 @@ class BaseList(Component):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Union[Var[Iterable], Iterable], Iterable]] = None,
+        items: Optional[Union[Var[Iterable], Iterable]] = None,
         list_style_type: Optional[
             Union[
                 Var[
@@ -600,7 +600,7 @@ class List(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        items: Optional[Union[Union[Var[Iterable], Iterable], Iterable]] = None,
+        items: Optional[Union[Var[Iterable], Iterable]] = None,
         list_style_type: Optional[
             Union[
                 Var[

@@ -24,7 +24,9 @@ class Badge(el.Span, RadixThemesComponent):
                 Literal["solid", "soft", "surface", "outline"],
             ]
         ] = None,
-        size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
         color_scheme: Optional[
             Union[
                 Var[

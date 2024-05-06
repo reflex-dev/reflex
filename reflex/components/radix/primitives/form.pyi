@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Any, Dict, Literal
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.el.elements.forms import Form as HTMLForm
-from reflex.components.radix.themes.components.text_field import TextFieldInput
+from reflex.components.radix.themes.components.text_field import TextFieldRoot
 from reflex.constants.event import EventTriggers
 from reflex.vars import Var
 from .base import RadixPrimitiveComponentWithClassName

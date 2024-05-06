@@ -8,7 +8,6 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from reflex.components.component import Component
-from reflex.style import Style
 from reflex.utils import console, format
 from reflex.vars import Var
 

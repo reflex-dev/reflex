@@ -42,7 +42,6 @@ import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.state import (
     BaseState,
-    State,
     StateManagerMemory,
     StateManagerRedis,
     reload_state_module,
@@ -538,7 +537,7 @@ class AppHarness:
         if driver_clz is None:
             requested_driver = os.environ.get("APP_HARNESS_DRIVER", "Chrome")
             driver_clz = getattr(webdriver, requested_driver)
-            options = webdriver.ChromeOptions()
+            options = getattr(webdriver, f"{requested_driver}Options")()
         if driver_clz is webdriver.Chrome and want_headless:
             options = webdriver.ChromeOptions()
             options.add_argument("--headless=new")
@@ -598,7 +597,7 @@ class AppHarness:
                 await self.state_manager.close()
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[State]:
+    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
         """Modify the state associated with the given token and send update to frontend.
 
         Args:

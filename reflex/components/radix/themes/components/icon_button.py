@@ -6,20 +6,20 @@ from reflex import el
 from reflex.components.component import Component
 from reflex.components.core.match import Match
 from reflex.components.lucide import Icon
-from reflex.style import Style
 from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
     LiteralRadius,
     LiteralVariant,
+    RadixLoadingProp,
     RadixThemesComponent,
 )
 
 LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 
-class IconButton(el.Button, RadixThemesComponent):
+class IconButton(el.Button, RadixLoadingProp, RadixThemesComponent):
     """A button designed specifically for usage with a single icon."""
 
     tag = "IconButton"
@@ -57,7 +57,7 @@ class IconButton(el.Button, RadixThemesComponent):
             The IconButton component.
         """
         if children:
-            if type(children[0]) == str:
+            if isinstance(children[0], str):
                 children = [
                     Icon.create(
                         children[0],
@@ -68,7 +68,7 @@ class IconButton(el.Button, RadixThemesComponent):
                 "IconButton requires a child icon. Pass a string as the first child or a rx.icon."
             )
         if "size" in props:
-            if type(props["size"]) == str:
+            if isinstance(props["size"], str):
                 RADIX_TO_LUCIDE_SIZE = {
                     "1": "12px",
                     "2": "24px",
@@ -85,10 +85,8 @@ class IconButton(el.Button, RadixThemesComponent):
                     ("4", "48px"),
                     "12px",
                 )
+        props.setdefault("padding", "6px")
         return super().create(*children, **props)
-
-    def _apply_theme(self, theme: Component):
-        self.style = Style({"padding": "6px", **self.style})
 
 
 icon_button = IconButton.create

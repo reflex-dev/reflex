@@ -73,10 +73,17 @@ class CommonMarginProps(Component):
     ml: Var[LiteralSpacing]
 
 
+class RadixLoadingProp(Component):
+    """Base class for components that can be in a loading state."""
+
+    # If set, show an rx.spinner instead of the component children.
+    loading: Var[bool]
+
+
 class RadixThemesComponent(Component):
     """Base class for all @radix-ui/themes components."""
 
-    library = "@radix-ui/themes@^2.0.0"
+    library = "@radix-ui/themes@^3.0.0"
 
     # "Fake" prop color_scheme is used to avoid shadowing CSS prop "color".
     _rename_props: Dict[str, str] = {"colorScheme": "color"}
