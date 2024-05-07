@@ -44,7 +44,7 @@ class Icon(LucideIconComponent):
                     feature_name=f"icon {tag}",
                     reason=f"it was renamed upstream. Use {new_tag} instead.",
                     deprecation_version="0.4.6",
-                    removal_version="0.5.0",
+                    removal_version="0.6.0",
                 )
                 return new_tag
             return tag

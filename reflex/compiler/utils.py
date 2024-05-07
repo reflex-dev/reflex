@@ -392,27 +392,6 @@ def get_stateful_components_path() -> str:
     )
 
 
-def get_asset_path(filename: str | None = None) -> str:
-    """Get the path for an asset.
-
-    Args:
-        filename: If given, is added to the root path of assets dir.
-
-    Returns:
-        The path of the asset.
-    """
-    console.deprecate(
-        feature_name="rx.get_asset_path",
-        reason="use rx.get_upload_dir() instead.",
-        deprecation_version="0.4.0",
-        removal_version="0.5.0",
-    )
-    if filename is None:
-        return constants.Dirs.WEB_ASSETS
-    else:
-        return os.path.join(constants.Dirs.WEB_ASSETS, filename)
-
-
 def add_meta(
     page: Component,
     title: str,

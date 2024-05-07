@@ -120,7 +120,6 @@ _MAPPING = {
     "reflex.app": ["app", "App", "UploadFile"],
     "reflex.base": ["base", "Base"],
     "reflex.compiler": ["compiler"],
-    "reflex.compiler.utils": ["get_asset_path"],
     "reflex.components": _ALL_COMPONENTS,
     "reflex.components.component": ["Component", "NoSSRComponent", "memo"],
     "reflex.components.chakra": ["chakra"],

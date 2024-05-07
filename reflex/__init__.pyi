@@ -7,7 +7,6 @@ from reflex.app import UploadFile as UploadFile
 from reflex import base as base
 from reflex.base import Base as Base
 from reflex import compiler as compiler
-from reflex.compiler.utils import get_asset_path as get_asset_path
 from reflex.components import color as color
 from reflex.components import cond as cond
 from reflex.components import foreach as foreach
