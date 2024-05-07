@@ -915,6 +915,7 @@ def needs_reinit(frontend: bool = True) -> bool:
 
     if constants.IS_WINDOWS:
         import uvicorn
+
         uvi_ver = uvicorn.__version__
         console.warn(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
