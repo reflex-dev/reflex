@@ -9,6 +9,7 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
+from reflex.state import ComponentState
 from reflex.vars import Var
 
 
@@ -43,6 +44,12 @@ class Foreach(Component):
             raise TypeError(
                 f"Could not foreach over var of type Any. (If you are trying to foreach over a state var, add a type annotation to the var.)"
             )
+
+        if render_fn.__qualname__ == ComponentState.create.__qualname__:
+            raise TypeError(
+                "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported."
+            )
+
         component = cls(
             iterable=iterable,
             render_fn=render_fn,
