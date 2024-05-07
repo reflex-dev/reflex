@@ -347,3 +347,21 @@ def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwa
                 fallback=None,
                 **kwargs,
             )
+
+
+def execute_command_and_return_output(command) -> str | None:
+    """Execute a command and return the output.
+
+    Args:
+        command: The command to run.
+
+    Returns:
+        The output of the command.
+    """
+    try:
+        return subprocess.check_output(command, shell=True).decode().strip()
+    except subprocess.SubprocessError as err:
+        console.error(
+            f"The command `{command}` failed with error: {err}. This will return None."
+        )
+        return None

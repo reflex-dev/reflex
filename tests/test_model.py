@@ -96,18 +96,23 @@ def test_automigration(tmp_working_dir, monkeypatch):
 
     sqlmodel.SQLModel.metadata.clear()
 
-    # Create column t2
+    # Create column t2, mark t1 as optional with default
     class AlembicThing(Model, table=True):  # type: ignore
-        t1: str
+        t1: Optional[str] = "default"
         t2: str = "bar"
 
     Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 2
 
     with reflex.model.session() as session:
+        session.add(AlembicThing(t2="baz"))
+        session.commit()
         result = session.exec(sqlmodel.select(AlembicThing)).all()
-        assert len(result) == 1
+        assert len(result) == 2
+        assert result[0].t1 == "foo"
         assert result[0].t2 == "bar"
+        assert result[1].t1 == "default"
+        assert result[1].t2 == "baz"
 
     sqlmodel.SQLModel.metadata.clear()
 
@@ -120,8 +125,9 @@ def test_automigration(tmp_working_dir, monkeypatch):
 
     with reflex.model.session() as session:
         result = session.exec(sqlmodel.select(AlembicThing)).all()
-        assert len(result) == 1
+        assert len(result) == 2
         assert result[0].t2 == "bar"
+        assert result[1].t2 == "baz"
 
     # Add table
     class AlembicSecond(Model, table=True):  # type: ignore
@@ -158,8 +164,9 @@ def test_automigration(tmp_working_dir, monkeypatch):
         assert errctx.match(r"no such table: alembicsecond")
         # first table should still exist
         result = session.exec(sqlmodel.select(AlembicThing)).all()
-        assert len(result) == 1
+        assert len(result) == 2
         assert result[0].t2 == "bar"
+        assert result[1].t2 == "baz"
 
     sqlmodel.SQLModel.metadata.clear()
 

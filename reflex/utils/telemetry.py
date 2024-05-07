@@ -32,6 +32,15 @@ def get_os() -> str:
     return platform.system()
 
 
+def get_detailed_platform_str() -> str:
+    """Get the detailed os/platform string.
+
+    Returns:
+        The platform string
+    """
+    return platform.platform()
+
+
 def get_python_version() -> str:
     """Get the Python version.
 
@@ -97,6 +106,8 @@ def _prepare_event(event: str, **kwargs) -> dict:
     Returns:
         The event data.
     """
+    from reflex.utils.prerequisites import get_cpu_info
+
     installation_id = ensure_reflex_installation_id()
     project_hash = get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
 
@@ -112,6 +123,9 @@ def _prepare_event(event: str, **kwargs) -> dict:
     else:
         # for python 3.11 & 3.12
         stamp = datetime.now(UTC).isoformat()
+
+    cpuinfo = get_cpu_info()
+
     return {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
         "event": event,
@@ -119,10 +133,12 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "distinct_id": installation_id,
             "distinct_app_id": project_hash,
             "user_os": get_os(),
+            "user_os_detail": get_detailed_platform_str(),
             "reflex_version": get_reflex_version(),
             "python_version": get_python_version(),
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
+            "cpu_info": dict(cpuinfo) if cpuinfo else {},
             **(
                 {"template": template}
                 if (template := kwargs.get("template")) is not None
@@ -165,5 +181,4 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs) -> bool:
     event_data = _prepare_event(event, **kwargs)
     if not event_data:
         return False
-
     return _send_event(event_data)

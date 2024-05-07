@@ -1,4 +1,5 @@
 """reflex.testing - tools for testing reflex apps."""
+
 from __future__ import annotations
 
 import asyncio
@@ -166,6 +167,8 @@ class AppHarness:
                 app_name = app_source.__name__
 
             app_name = app_name.lower()
+            while "__" in app_name:
+                app_name = app_name.replace("__", "_")
         return cls(
             app_name=app_name,
             app_source=app_source,

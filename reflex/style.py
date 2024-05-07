@@ -159,12 +159,17 @@ def format_style_key(key: str) -> Tuple[str, ...]:
 class Style(dict):
     """A style dictionary."""
 
-    def __init__(self, style_dict: dict | None = None):
+    def __init__(self, style_dict: dict | None = None, **kwargs):
         """Initialize the style.
 
         Args:
             style_dict: The style dictionary.
+            kwargs: Other key value pairs to apply to the dict update.
         """
+        if style_dict:
+            style_dict.update(kwargs)
+        else:
+            style_dict = kwargs
         style_dict, self._var_data = convert(style_dict or {})
         super().__init__(style_dict)
 

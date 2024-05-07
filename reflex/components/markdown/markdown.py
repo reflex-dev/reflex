@@ -18,7 +18,6 @@ from reflex.components.radix.themes.typography.heading import Heading
 from reflex.components.radix.themes.typography.link import Link
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.tags.tag import Tag
-from reflex.style import Style
 from reflex.utils import console, imports, types
 from reflex.utils.imports import ImportVar
 from reflex.vars import Var
@@ -230,7 +229,8 @@ class Markdown(Component):
         component = self.component_map[tag](*children, **props).set(
             special_props=special_props
         )
-        component._add_style(Style(self.custom_styles.get(tag, {})))
+        component.style.update(self.custom_styles.get(tag, {}))
+
         return component
 
     def format_component(self, tag: str, **props) -> str:
