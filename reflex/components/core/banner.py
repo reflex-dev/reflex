@@ -16,7 +16,9 @@ from reflex.components.radix.themes.components.dialog import (
 )
 from reflex.components.radix.themes.layout import Flex
 from reflex.components.radix.themes.typography.text import Text
+from reflex.components.sonner.toast import Toaster
 from reflex.constants import Dirs, Hooks, Imports
+from reflex.constants.compiler import CompileVars
 from reflex.utils import imports
 from reflex.vars import Var, VarData
 
@@ -24,6 +26,13 @@ connect_error_var_data: VarData = VarData(  # type: ignore
     imports=Imports.EVENTS,
     hooks={Hooks.EVENTS: None},
 )
+
+connect_errors: Var = Var.create_safe(
+    value=CompileVars.CONNECT_ERROR,
+    _var_is_local=True,
+    _var_is_string=False,
+)._replace(merge_var_data=connect_error_var_data)
+
 
 connection_error: Var = Var.create_safe(
     value="(connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : ''",
@@ -79,6 +88,54 @@ def default_connection_error() -> list[str | Var | Component]:
         ". Check if server is reachable at ",
         WebsocketTargetURL.create(),
     ]
+
+
+class ConnectionToaster(Toaster):
+    """A connection toaster component."""
+
+    def add_imports(self) -> dict[list[str | imports.ImportVar]]:
+        """Add the imports for the connection toaster.
+
+        Returns:
+            The imports for the connection toaster.
+        """
+        imports_ = {**Imports.EVENTS}
+        imports_["react"].append("useEffect")  # type: ignore
+        (imports_.setdefault(f"/{Dirs.STATE_PATH}", []).append("getBackendURL"))  # type: ignore
+        imports_.setdefault("/env.json", []).append(
+            imports.ImportVar(tag="env", is_default=True)
+        )
+        return imports_
+
+    def add_hooks(self) -> list[str]:
+        """Add the hooks for the connection toaster.
+
+        Returns:
+            The hooks for the connection toaster.
+        """
+        util_hook = """const getLastMessage = (connectErrors) => {
+    if (connectErrors.length > 0)
+      return connectErrors[connectErrors.length - 1].message;
+    else
+        return '';
+};"""
+        hook = Var.create(
+            f"""useEffect(() => {{
+    toast.error(
+        `Cannot connect to server: ${{getLastMessage({connect_errors})}}.`,
+        {{description:`Check if server is reachable at ${{getBackendURL(env.EVENT).href}}`}})
+}}, {connect_errors});"""
+        )
+
+        hook._var_data = VarData.merge(
+            connect_errors._var_data,
+            VarData(imports={"react": "useEffect"}),
+        )
+        return [
+            Hooks.EVENTS,
+            util_hook,
+            hook,
+        ]
 
 
 class ConnectionBanner(Component):
