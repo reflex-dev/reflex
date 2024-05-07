@@ -1954,16 +1954,7 @@ class ComputedVar(Var, property):
         """
         return f"__last_updated_{self._var_name}"
 
-    @property
-    def always_dirty(self) -> bool:
-        """Whether the computed var should always be marked as dirty.
-
-        Returns:
-            True if the computed var should always be marked as dirty, False otherwise.
-        """
-        return not self._cache or self._update_interval is not None
-
-    def _needs_update(self, instance) -> bool:
+    def needs_update(self, instance: BaseState) -> bool:
         """Check if the computed var needs to be updated.
 
         Args:
@@ -1979,7 +1970,7 @@ class ComputedVar(Var, property):
             return True
         return datetime.datetime.now() - last_updated > self._update_interval
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: BaseState | None, owner):
         """Get the ComputedVar value.
 
         If the value is already cached on the instance, return the cached value.
@@ -1995,7 +1986,7 @@ class ComputedVar(Var, property):
             return super().__get__(instance, owner)
 
         # handle caching
-        if not hasattr(instance, self._cache_attr) or self._needs_update(instance):
+        if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
             # Set cache attr on state instance.
             setattr(instance, self._cache_attr, super().__get__(instance, owner))
             # Ensure the computed var gets serialized to redis.
@@ -2156,7 +2147,7 @@ def computed_var(
     if fget is not None:
         return ComputedVar(fget=fget, cache=cache)
 
-    def wrapper(fget):
+    def wrapper(fget: Callable[[BaseState], Any]) -> ComputedVar:
         return ComputedVar(
             fget=fget,
             initial_value=initial_value,

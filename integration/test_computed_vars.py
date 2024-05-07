@@ -38,15 +38,19 @@ def ComputedVars():
             return self.count
 
         # explicit dependency on count1 var
-        @rx.cached_var(deps=[count1])
+        @rx.cached_var(deps=[count1], auto_deps=False)
         def depends_on_count1(self) -> int:
+            return self.count
+
+        @rx.var(deps=[count3], auto_deps=False, cache=True)
+        def depends_on_count3(self) -> int:
             return self.count
 
         def increment(self):
             self.count += 1
 
-        def do_nothing(self):
-            pass
+        def mark_dirty(self):
+            self._mark_dirty()
 
     def index() -> rx.Component:
         return rx.center(
@@ -57,18 +61,29 @@ def ComputedVars():
                     is_read_only=True,
                 ),
                 rx.button("Increment", on_click=State.increment, id="increment"),
-                rx.button("Do nothing", on_click=State.do_nothing, id="do_nothing"),
+                rx.button("Do nothing", on_click=State.mark_dirty, id="mark_dirty"),
+                rx.text("count:"),
                 rx.text(State.count, id="count"),
+                rx.text("count1:"),
                 rx.text(State.count1, id="count1"),
+                rx.text("count2:"),
                 rx.text(State.count2, id="count2"),
+                rx.text("count3:"),
                 rx.text(State.count3, id="count3"),
+                rx.text("depends_on_count1:"),
                 rx.text(
                     State.depends_on_count1,
                     id="depends_on_count1",
                 ),
+                rx.text("depends_on_count3:"),
+                rx.text(
+                    State.depends_on_count3,
+                    id="depends_on_count3",
+                ),
             ),
         )
 
+    # raise Exception(State.count3._deps(objclass=State))
     app = rx.App()
     app.add_page(index)
 
@@ -162,21 +177,34 @@ def test_computed_vars(
     assert count3
     assert count3.text == "0"
 
+    depends_on_count1 = driver.find_element(By.ID, "depends_on_count1")
+    assert depends_on_count1
+    assert depends_on_count1.text == "0"
+
+    depends_on_count3 = driver.find_element(By.ID, "depends_on_count3")
+    assert depends_on_count3
+    assert depends_on_count3.text == "0"
+
     increment = driver.find_element(By.ID, "increment")
     assert increment.is_enabled()
 
-    do_nothing = driver.find_element(By.ID, "do_nothing")
-    assert do_nothing.is_enabled()
+    mark_dirty = driver.find_element(By.ID, "mark_dirty")
+    assert mark_dirty.is_enabled()
+
+    mark_dirty.click()
 
     increment.click()
     assert computed_vars.poll_for_content(count, timeout=2, exp_not_equal="0") == "1"
     assert computed_vars.poll_for_content(count1, timeout=2, exp_not_equal="0") == "1"
     assert computed_vars.poll_for_content(count2, timeout=2, exp_not_equal="0") == "1"
 
-    do_nothing.click()
+    mark_dirty.click()
     with pytest.raises(TimeoutError):
         computed_vars.poll_for_content(count3, timeout=5, exp_not_equal="0")
 
     time.sleep(10)
-    do_nothing.click()
-    assert computed_vars.poll_for_content(count3, timeout=2) == "1"
+    assert count3.text == "0"
+    assert depends_on_count3.text == "0"
+    mark_dirty.click()
+    assert computed_vars.poll_for_content(count3, timeout=2, exp_not_equal="0") == "1"
+    assert depends_on_count3.text == "1"
