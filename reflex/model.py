@@ -133,7 +133,7 @@ class ModelRegistry:
         return metadata
 
 
-class Model(Base, sqlmodel.SQLModel):
+class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssues]
     """Base class to define a table in the database."""
 
     # The primary key for the table.

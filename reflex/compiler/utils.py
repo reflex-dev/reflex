@@ -3,19 +3,13 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, Union
+from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
 
 try:
-    # TODO The type checking guard can be removed once
-    # reflex-hosting-cli tools are compatible with pydantic v2
-
-    if not TYPE_CHECKING:
-        from pydantic.v1.fields import ModelField
-    else:
-        raise ModuleNotFoundError
+    from pydantic.v1.fields import ModelField
 except ModuleNotFoundError:
-    from pydantic.fields import ModelField
+    from pydantic.fields import ModelField  # type: ignore
 
 from reflex import constants
 from reflex.components.base import (
