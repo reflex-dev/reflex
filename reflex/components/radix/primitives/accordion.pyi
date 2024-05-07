@@ -9,41 +9,95 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Literal, Optional, Union
 from reflex.components.component import Component, ComponentNamespace
-from reflex.components.core.match import Match
+from reflex.components.core.colors import color
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor
-from reflex.style import (
-    Style,
-    convert_dict_to_style_and_format_emotion,
-    format_as_emotion,
-)
+from reflex.style import Style
 from reflex.utils import imports
-from reflex.vars import BaseVar, Var, VarData, get_uuid_string_var
+from reflex.vars import Var, get_uuid_string_var
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
 LiteralAccordionOrientation = Literal["vertical", "horizontal"]
-LiteralAccordionRootVariant = Literal["classic", "soft", "surface", "outline", "ghost"]
-LiteralAccordionRootColorScheme = Literal["primary", "accent"]
+LiteralAccordionVariant = Literal["classic", "soft", "surface", "outline", "ghost"]
 DEFAULT_ANIMATION_DURATION = 250
 
-def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseVar: ...
-def get_theme_accordion_item(): ...
-def get_theme_accordion_header() -> dict[str, str]: ...
-def get_theme_accordion_trigger(
-    variant: str | Var, color_scheme: str | Var
-) -> BaseVar: ...
-def get_theme_accordion_content(
-    variant: str | Var, color_scheme: str | Var
-) -> BaseVar: ...
-
 class AccordionComponent(RadixPrimitiveComponent):
+    def add_style(self) -> Style | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                Literal["classic", "soft", "surface", "outline", "ghost"],
+            ]
+        ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -102,6 +156,8 @@ class AccordionComponent(RadixPrimitiveComponent):
 
         Args:
             *children: The children of the component.
+            color_scheme: The color scheme of the component.
+            variant: The variant of the component.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -208,8 +264,6 @@ class AccordionRoot(AccordionComponent):
                 ],
             ]
         ] = None,
-        _dynamic_themes: Optional[Union[Var[dict], dict]] = None,
-        _var_data: Optional[VarData] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -278,10 +332,8 @@ class AccordionRoot(AccordionComponent):
             disabled: Whether or not the accordion is disabled.
             dir: The reading direction of the accordion when applicable.
             orientation: The orientation of the accordion.
-            variant: The variant of the accordion.
-            color_scheme: The color scheme of the accordion.
-            _dynamic_themes: dynamic themes of the accordion generated at compile time.
-            _var_data: The var_data associated with the component.
+            variant: The variant of the component.
+            color_scheme: The color scheme of the component.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -296,6 +348,7 @@ class AccordionRoot(AccordionComponent):
         """
         ...
     def get_event_triggers(self) -> Dict[str, Any]: ...
+    def add_style(self): ...
 
 class AccordionItem(AccordionComponent):
     @overload
@@ -307,6 +360,74 @@ class AccordionItem(AccordionComponent):
         content: Optional[Union[Component, Var]] = None,
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                Literal["classic", "soft", "surface", "outline", "ghost"],
+            ]
+        ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -364,11 +485,13 @@ class AccordionItem(AccordionComponent):
         """Create an accordion item.
 
         Args:
+            *children: The list of children to use if header and content are not provided.
             header: The header of the accordion item.
             content: The content of the accordion item.
-            *children: The list of children to use if header and content are not provided.
             value: A unique identifier for the item.
             disabled: When true, prevents the user from interacting with the item.
+            color_scheme: The color scheme of the component.
+            variant: The variant of the component.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -382,6 +505,7 @@ class AccordionItem(AccordionComponent):
             The accordion item.
         """
         ...
+    def add_style(self) -> Style | None: ...
 
 class AccordionHeader(AccordionComponent):
     @overload
@@ -389,6 +513,74 @@ class AccordionHeader(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                Literal["classic", "soft", "surface", "outline", "ghost"],
+            ]
+        ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -447,6 +639,8 @@ class AccordionHeader(AccordionComponent):
 
         Args:
             *children: The children of the component.
+            color_scheme: The color scheme of the component.
+            variant: The variant of the component.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -460,6 +654,9 @@ class AccordionHeader(AccordionComponent):
             The Accordion header Component.
         """
         ...
+    def add_style(self) -> Style | None: ...
+
+cubic_bezier = "cubic-bezier(0.87, 0, 0.13, 1)"
 
 class AccordionTrigger(AccordionComponent):
     @overload
@@ -467,6 +664,74 @@ class AccordionTrigger(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                Literal["classic", "soft", "surface", "outline", "ghost"],
+            ]
+        ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -525,6 +790,8 @@ class AccordionTrigger(AccordionComponent):
 
         Args:
             *children: The children of the component.
+            color_scheme: The color scheme of the component.
+            variant: The variant of the component.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -538,6 +805,7 @@ class AccordionTrigger(AccordionComponent):
             The Accordion trigger Component.
         """
         ...
+    def add_style(self) -> Style | None: ...
 
 class AccordionIcon(Icon):
     @overload
@@ -618,11 +886,80 @@ class AccordionIcon(Icon):
         ...
 
 class AccordionContent(AccordionComponent):
+    def add_imports(self) -> imports.ImportDict: ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                Literal["classic", "soft", "surface", "outline", "ghost"],
+            ]
+        ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -681,6 +1018,8 @@ class AccordionContent(AccordionComponent):
 
         Args:
             *children: The children of the component.
+            color_scheme: The color scheme of the component.
+            variant: The variant of the component.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -694,6 +1033,8 @@ class AccordionContent(AccordionComponent):
             The Accordion content Component.
         """
         ...
+    def add_custom_code(self) -> list[str]: ...
+    def add_style(self) -> Style | None: ...
 
 class Accordion(ComponentNamespace):
     content = staticmethod(AccordionContent.create)

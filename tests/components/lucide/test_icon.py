@@ -1,7 +1,6 @@
 import pytest
 
 from reflex.components.lucide.icon import LUCIDE_ICON_LIST, RENAMED_ICONS_05, Icon
-from reflex.components.radix.themes.base import Theme
 from reflex.utils import format
 
 
@@ -17,7 +16,7 @@ RENAMED_TAGS = [tag for tag in RENAMED_ICONS_05.items()]
 @pytest.mark.parametrize("tag, new_tag", RENAMED_TAGS)
 def test_icon_renamed_tags(tag, new_tag):
     Icon.create(tag)
-    # need a PR so we can pass the following test. Currently it fails and uses the old tag as the import.
+    # TODO: need a PR so we can pass the following test. Currently it fails and uses the old tag as the import.
     # assert icon.alias == f"Lucide{format.to_title_case(new_tag)}Icon"
 
 
@@ -36,6 +35,6 @@ def test_icon_multiple_children():
         _ = Icon.create("activity", "child1", "child2")
 
 
-def test_icon_apply_theme():
+def test_icon_add_style():
     ic = Icon.create("activity")
-    ic._apply_theme(Theme())
+    assert ic.add_style() is None

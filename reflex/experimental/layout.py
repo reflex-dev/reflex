@@ -1,5 +1,7 @@
 """To experiment with layout component, move them to reflex/components later."""
 
+from __future__ import annotations
+
 from reflex import color, cond
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
@@ -9,6 +11,7 @@ from reflex.components.radix.themes.layout import Box, Container, HStack
 from reflex.event import call_script
 from reflex.experimental import hooks
 from reflex.state import ComponentState
+from reflex.style import Style
 from reflex.vars import Var
 
 
@@ -26,22 +29,37 @@ class Sidebar(Box, MemoizationLeaf):
         Returns:
             The sidebar component.
         """
-        props.setdefault("border_right", f"1px solid {color('accent', 12)}")
-        props.setdefault("background_color", color("accent", 1))
-        props.setdefault("width", "20vw")
-        props.setdefault("height", "100vh")
-        props.setdefault("position", "fixed")
+        # props.setdefault("border_right", f"1px solid {color('accent', 12)}")
+        # props.setdefault("background_color", color("accent", 1))
+        # props.setdefault("width", "20vw")
+        # props.setdefault("height", "100vh")
+        # props.setdefault("position", "fixed")
 
         return super().create(
             Box.create(*children, **props),  # sidebar for content
             Box.create(width=props.get("width")),  # spacer for layout
         )
 
-    def _apply_theme(self, theme: Component | None):
+    def add_style(self) -> Style | None:
+        """Add style to the component.
+
+        Returns:
+            The style of the component.
+        """
         sidebar: Component = self.children[-2]  # type: ignore
         spacer: Component = self.children[-1]  # type: ignore
         open = self.State.open if self.State else Var.create("open")  # type: ignore
         sidebar.style["display"] = spacer.style["display"] = cond(open, "block", "none")
+
+        return Style(
+            {
+                "position": "fixed",
+                "border_right": f"1px solid {color('accent', 12)}",
+                "background_color": color("accent", 1),
+                "width": "20vw",
+                "height": "100vh",
+            }
+        )
 
     def _get_hooks(self) -> Var | None:
         return hooks.useState("open", "true") if not self.State else None

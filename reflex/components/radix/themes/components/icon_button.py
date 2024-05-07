@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+from __future__ import annotations
 
 from typing import Literal
 
@@ -6,6 +7,7 @@ from reflex import el
 from reflex.components.component import Component
 from reflex.components.core.match import Match
 from reflex.components.lucide import Icon
+from reflex.style import Style
 from reflex.vars import Var
 
 from ..base import (
@@ -68,25 +70,25 @@ class IconButton(el.Button, RadixLoadingProp, RadixThemesComponent):
                 "IconButton requires a child icon. Pass a string as the first child or a rx.icon."
             )
         if "size" in props:
+            RADIX_TO_LUCIDE_SIZE = {"1": "12px", "2": "24px", "3": "36px", "4": "48px"}
+
             if isinstance(props["size"], str):
-                RADIX_TO_LUCIDE_SIZE = {
-                    "1": "12px",
-                    "2": "24px",
-                    "3": "36px",
-                    "4": "48px",
-                }
                 children[0].size = RADIX_TO_LUCIDE_SIZE[props["size"]]
             else:
                 children[0].size = Match.create(
                     props["size"],
-                    ("1", "12px"),
-                    ("2", "24px"),
-                    ("3", "36px"),
-                    ("4", "48px"),
+                    *[(size, px) for size, px in RADIX_TO_LUCIDE_SIZE.items()],
                     "12px",
                 )
-        props.setdefault("padding", "6px")
         return super().create(*children, **props)
+
+    def add_style(self):
+        """Add style to the component.
+
+        Returns:
+            The style of the component.
+        """
+        return Style({"padding": "6px"})
 
 
 icon_button = IconButton.create
