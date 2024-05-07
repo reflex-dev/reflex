@@ -7,9 +7,7 @@ import contextlib
 import copy
 import functools
 import inspect
-import json
 import traceback
-import urllib.parse
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -960,124 +958,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for func in inspect.getmembers(BaseState, predicate=inspect.isfunction)
             if not func[0].startswith("__")
         }
-
-    def get_token(self) -> str:
-        """Return the token of the client associated with this state.
-
-        Returns:
-            The token of the client.
-        """
-        console.deprecate(
-            feature_name="get_token",
-            reason="replaced by `State.router.session.client_token`",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-        return self.router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
-
-    def get_sid(self) -> str:
-        """Return the session ID of the client associated with this state.
-
-        Returns:
-            The session ID of the client.
-        """
-        console.deprecate(
-            feature_name="get_sid",
-            reason="replaced by `State.router.session.session_id`",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-        return self.router_data.get(constants.RouteVar.SESSION_ID, "")
-
-    def get_headers(self) -> Dict:
-        """Return the headers of the client associated with this state.
-
-        Returns:
-            The headers of the client.
-        """
-        console.deprecate(
-            feature_name="get_headers",
-            reason="replaced by `State.router.headers`",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-        return self.router_data.get(constants.RouteVar.HEADERS, {})
-
-    def get_client_ip(self) -> str:
-        """Return the IP of the client associated with this state.
-
-        Returns:
-            The IP of the client.
-        """
-        console.deprecate(
-            feature_name="get_client_ip",
-            reason="replaced by `State.router.session.client_ip`",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-        return self.router_data.get(constants.RouteVar.CLIENT_IP, "")
-
-    def get_current_page(self, origin=False) -> str:
-        """Obtain the path of current page from the router data.
-
-        Args:
-            origin: whether to return the base route as shown in browser
-
-        Returns:
-            The current page.
-        """
-        console.deprecate(
-            feature_name="get_current_page",
-            reason="replaced by State.router.page / self.router.page",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-
-        return self.router.page.raw_path if origin else self.router.page.path
-
-    def get_query_params(self) -> dict[str, str]:
-        """Obtain the query parameters for the queried page.
-
-        The query object contains both the URI parameters and the GET parameters.
-
-        Returns:
-            The dict of query parameters.
-        """
-        console.deprecate(
-            feature_name="get_query_params",
-            reason="replaced by `State.router.page.params`",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-        return self.router_data.get(constants.RouteVar.QUERY, {})
-
-    def get_cookies(self) -> dict[str, str]:
-        """Obtain the cookies of the client stored in the browser.
-
-        Returns:
-                The dict of cookies.
-        """
-        console.deprecate(
-            feature_name=f"rx.get_cookies",
-            reason="and has been replaced by rx.Cookie, which can be used as a state var",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-        cookie_dict = {}
-        cookies = self.get_headers().get(constants.RouteVar.COOKIE, "").split(";")
-
-        cookie_pairs = [cookie.split("=") for cookie in cookies if cookie]
-
-        for pair in cookie_pairs:
-            key, value = pair[0].strip(), urllib.parse.unquote(pair[1].strip())
-            try:
-                # cast non-string values to the actual types.
-                value = json.loads(value)
-            except json.JSONDecodeError:
-                pass
-            finally:
-                cookie_dict[key] = value
-        return cookie_dict
 
     @classmethod
     def setup_dynamic_args(cls, args: dict[str, str]):
