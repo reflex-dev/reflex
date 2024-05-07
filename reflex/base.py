@@ -5,19 +5,14 @@ import os
 from typing import TYPE_CHECKING, Any, List, Type
 
 try:
-    # TODO The type checking guard can be removed once
-    # reflex-hosting-cli tools are compatible with pydantic v2
-
-    if not TYPE_CHECKING:
-        import pydantic.v1 as pydantic
-        from pydantic.v1 import BaseModel
-        from pydantic.v1.fields import ModelField
-    else:
-        raise ModuleNotFoundError
+    import pydantic.v1 as pydantic
+    from pydantic.v1 import BaseModel
+    from pydantic.v1.fields import ModelField
 except ModuleNotFoundError:
-    import pydantic
-    from pydantic import BaseModel
-    from pydantic.fields import ModelField
+    if not TYPE_CHECKING:
+        import pydantic
+        from pydantic import BaseModel
+        from pydantic.fields import ModelField  # type: ignore
 
 
 from reflex import constants
@@ -50,7 +45,7 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 pydantic.main.validate_field_name = validate_field_name  # type: ignore
 
 
-class Base(pydantic.BaseModel):
+class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
     """The base class subclassed by all Reflex classes.
 
     This class wraps Pydantic and provides common methods such as
@@ -75,7 +70,10 @@ class Base(pydantic.BaseModel):
         """
         from reflex.utils.serializers import serialize
 
-        return self.__config__.json_dumps(self.dict(), default=serialize)
+        return self.__config__.json_dumps(  # type: ignore
+            self.dict(),
+            default=serialize,
+        )
 
     def set(self, **kwargs):
         """Set multiple fields and return the object.
@@ -114,7 +112,7 @@ class Base(pydantic.BaseModel):
             value=default_value,
             annotation=var._var_type,
             class_validators=None,
-            config=cls.__config__,
+            config=cls.__config__,  # type: ignore
         )
         cls.__fields__.update({var._var_name: new_field})
 
