@@ -743,7 +743,7 @@ class Component(BaseComponent, ABC):
                     f"Underscore suffix for prop `{under_prop}`",
                     reason=f"for consistency. Use `{prop}` instead.",
                     deprecation_version="0.4.0",
-                    removal_version="0.5.0",
+                    removal_version="0.6.0",
                     dedupe=False,
                 )
                 props[prop] = props.pop(under_prop)
