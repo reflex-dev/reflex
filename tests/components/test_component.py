@@ -1063,7 +1063,7 @@ def test_stateful_banner():
 TEST_VAR = Var.create_safe("test")._replace(
     merge_var_data=VarData(
         hooks={"useTest": None},
-        imports={"test": {ImportVar(tag="test")}},
+        imports={"test": [ImportVar(tag="test")]},
         state="Test",
         interpolations=[],
     )
@@ -1951,3 +1951,41 @@ def test_component_add_custom_code():
         "const custom_code5 = 46",
         "const custom_code6 = 47",
     }
+
+
+def test_component_add_hooks_var():
+    class HookComponent(Component):
+        def add_hooks(self):
+            return [
+                "const hook3 = useRef(null)",
+                "const hook1 = 42",
+                Var.create(
+                    "useEffect(() => () => {}, [])",
+                    _var_data=VarData(
+                        hooks={
+                            "const hook2 = 43": None,
+                            "const hook3 = useRef(null)": None,
+                        },
+                        imports={"react": [ImportVar(tag="useEffect")]},
+                    ),
+                ),
+                Var.create(
+                    "const hook3 = useRef(null)",
+                    _var_data=VarData(
+                        imports={"react": [ImportVar(tag="useRef")]},
+                    ),
+                ),
+            ]
+
+    assert list(HookComponent()._get_all_hooks()) == [
+        "const hook3 = useRef(null)",
+        "const hook1 = 42",
+        "const hook2 = 43",
+        "useEffect(() => () => {}, [])",
+    ]
+    imports = HookComponent()._get_all_imports()
+    assert len(imports) == 1
+    assert "react" in imports
+    assert len(imports["react"]) == 2
+    assert ImportVar(tag="useRef") in imports["react"]
+    assert ImportVar(tag="useEffect") in imports["react"]

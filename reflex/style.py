@@ -16,10 +16,10 @@ LIGHT_COLOR_MODE: str = "light"
 DARK_COLOR_MODE: str = "dark"
 
 # Reference the global ColorModeContext
-color_mode_var_data = VarData(  # type: ignore
+color_mode_var_data = VarData(
     imports={
-        f"/{constants.Dirs.CONTEXTS_PATH}": {ImportVar(tag="ColorModeContext")},
-        "react": {ImportVar(tag="useContext")},
+        f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="ColorModeContext")],
+        "react": [ImportVar(tag="useContext")],
     },
     hooks={
         f"const [ {constants.ColorMode.NAME}, {constants.ColorMode.TOGGLE} ] = useContext(ColorModeContext)": None,

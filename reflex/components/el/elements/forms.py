@@ -216,13 +216,17 @@ class Form(BaseHTML):
             if ref.startswith("refs_"):
                 ref_var = Var.create_safe(ref[:-3]).as_ref()
                 form_refs[ref[5:-3]] = Var.create_safe(
-                    f"getRefValues({str(ref_var)})", _var_is_local=False
-                )._replace(merge_var_data=ref_var._var_data)
+                    f"getRefValues({str(ref_var)})",
+                    _var_is_local=False,
+                    _var_data=ref_var._var_data,
+                )
             else:
                 ref_var = Var.create_safe(ref).as_ref()
                 form_refs[ref[4:]] = Var.create_safe(
-                    f"getRefValue({str(ref_var)})", _var_is_local=False
-                )._replace(merge_var_data=ref_var._var_data)
+                    f"getRefValue({str(ref_var)})",
+                    _var_is_local=False,
+                    _var_data=ref_var._var_data,
+                )
         return form_refs
 
     def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
@@ -619,14 +623,16 @@ class Textarea(BaseHTML):
                 on_key_down=Var.create_safe(
                     f"(e) => enterKeySubmitOnKeyDown(e, {self.enter_key_submit._var_name_unwrapped})",
                     _var_is_local=False,
-                )._replace(merge_var_data=self.enter_key_submit._var_data),
+                    _var_data=self.enter_key_submit._var_data,
+                )
             )
         if self.auto_height is not None:
             tag.add_props(
                 on_input=Var.create_safe(
                     f"(e) => autoHeightOnInput(e, {self.auto_height._var_name_unwrapped})",
                     _var_is_local=False,
-                )._replace(merge_var_data=self.auto_height._var_data),
+                    _var_data=self.auto_height._var_data,
+                )
             )
         return tag
 

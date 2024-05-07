@@ -109,13 +109,11 @@ class DebounceInput(Component):
                 "{%s}" % (child.alias or child.tag),
                 _var_is_local=False,
                 _var_is_string=False,
-            )._replace(
-                _var_type=Type[Component],
-                merge_var_data=VarData(  # type: ignore
+                _var_data=VarData(
                     imports=child._get_imports(),
                     hooks=child._get_hooks_internal(),
                 ),
-            ),
+            ).to(Type[Component]),
         )
 
         component = super().create(**props)

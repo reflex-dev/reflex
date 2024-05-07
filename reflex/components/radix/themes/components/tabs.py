@@ -68,7 +68,7 @@ class TabsTrigger(RadixThemesComponent):
     _valid_parents: List[str] = ["TabsList"]
 
     @classmethod
-    def create(self, *children, **props) -> Component:
+    def create(cls, *children, **props) -> Component:
         """Create a TabsTrigger component.
 
         Args:
