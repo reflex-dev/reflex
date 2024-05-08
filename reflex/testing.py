@@ -1,4 +1,5 @@
 """reflex.testing - tools for testing reflex apps."""
+
 from __future__ import annotations
 
 import asyncio
@@ -541,16 +542,22 @@ class AppHarness:
             requested_driver = os.environ.get("APP_HARNESS_DRIVER", "Chrome")
             driver_clz = getattr(webdriver, requested_driver)
             options = getattr(webdriver, f"{requested_driver}Options")()
-        if driver_clz is webdriver.Chrome and want_headless:
+        if driver_clz is webdriver.Chrome:
             options = webdriver.ChromeOptions()
-            options.add_argument("--headless=new")
-        elif driver_clz is webdriver.Firefox and want_headless:
+            options.add_argument("--class=AppHarness")
+            if want_headless:
+                options.add_argument("--headless=new")
+        elif driver_clz is webdriver.Firefox:
             options = webdriver.FirefoxOptions()
-            options.add_argument("-headless")
-        elif driver_clz is webdriver.Edge and want_headless:
+            if want_headless:
+                options.add_argument("-headless")
+        elif driver_clz is webdriver.Edge:
             options = webdriver.EdgeOptions()
-            options.add_argument("headless")
-        if options and (args := os.environ.get("APP_HARNESS_DRIVER_ARGS")):
+            if want_headless:
+                options.add_argument("headless")
+        if options is None:
+            raise RuntimeError(f"Could not determine options for {driver_clz}")
+        if args := os.environ.get("APP_HARNESS_DRIVER_ARGS"):
             for arg in args.split(","):
                 options.add_argument(arg)
         if driver_kwargs is None:
