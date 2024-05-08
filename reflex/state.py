@@ -39,6 +39,7 @@ from redis.asyncio import Redis
 from reflex import constants
 from reflex.base import Base
 from reflex.event import (
+    BACKGROUND_TASK_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -579,6 +580,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             closure=fn.__closure__,
         )
         newfn.__annotations__ = fn.__annotations__
+        if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
+            setattr(newfn, BACKGROUND_TASK_MARKER, mark)
         return newfn
 
     @staticmethod
