@@ -1276,7 +1276,7 @@ class Component(BaseComponent, ABC):
             and user_hooks._var_data is not None
             and user_hooks._var_data.imports
         ):
-            other_imports.extend(user_hooks._var_data.imports)
+            other_imports.append(user_hooks._var_data.imports)
         other_imports.extend(
             hook_imports for hook_imports in self._get_added_hooks().values()
         )
