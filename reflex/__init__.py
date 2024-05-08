@@ -79,6 +79,7 @@ _ALL_COMPONENTS = [
     "scroll_area",
     "section",
     "select",
+    "skeleton",
     "slider",
     "spacer",
     "spinner",
