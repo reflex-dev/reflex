@@ -114,13 +114,16 @@ class TextFieldRoot(el.Div, RadixThemesComponent):
             for child in children
             if isinstance(child, (TextFieldRoot, DebounceInput))
         ]
+        if not inputs:
+            # Old-style where no explicit child input was provided
+            return cls.create(*children, **props)
         slots = [child for child in children if isinstance(child, TextFieldSlot)]
         carry_props = {
             prop: props.pop(prop)
             for prop in ["size", "variant", "color_scheme", "radius"]
             if prop in props
         }
-        fragment = Fragment.create(**props)
+        template = cls.create(**props)
         for child in inputs:
             child.children.extend(slots)
             custom_attrs = child.custom_attrs
@@ -131,11 +134,14 @@ class TextFieldRoot(el.Div, RadixThemesComponent):
                     if prop not in custom_attrs and getattr(child, prop) is None
                 }
             )
-            style = Style(fragment.style)
+            style = Style(template.style)
             style.update(child.style)
             child._get_style = lambda style=style: {
                 "css": Var.create(format_as_emotion(style))
             }
+            for trigger in template.event_triggers:
+                if trigger not in child.event_triggers:
+                    child.event_triggers[trigger] = template.event_triggers[trigger]
         return Fragment.create(*inputs)
 
     @classmethod
