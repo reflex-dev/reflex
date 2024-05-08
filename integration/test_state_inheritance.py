@@ -1,4 +1,5 @@
 """Test state inheritance."""
+
 from __future__ import annotations
 
 from contextlib import suppress
@@ -413,13 +414,13 @@ def test_state_inheritance(
         child2_other_mixin, exp_not_equal="Child2.clicked.1"
     )
     child2_computed_mixin_value = state_inheritance.poll_for_content(
-        child2_computed_other_mixin, exp_not_equal="other_mixin"
+        child2_computed_other_mixin, exp_not_equal="Child2.clicked.1"
     )
     child3_other_mixin_value = state_inheritance.poll_for_content(
-        child3_other_mixin, exp_not_equal="other_mixin"
+        child3_other_mixin, exp_not_equal="Child2.clicked.1"
     )
     child3_computed_mixin_value = state_inheritance.poll_for_content(
-        child3_computed_other_mixin, exp_not_equal="other_mixin"
+        child3_computed_other_mixin, exp_not_equal="Child2.clicked.1"
     )
     assert child2_other_mixin_value == "Child2.clicked.2"
     assert child2_computed_mixin_value == "Child2.clicked.2"
