@@ -544,6 +544,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if isinstance(value, ComputedVar):
                     fget = cls._copy_fn(value.fget)
                     newcv = value._replace(fget=fget)
+                    # cleanup refs to mixin cls in var_data
+                    newcv._var_data = None
                     newcv._var_set_state(cls)
                     setattr(cls, name, newcv)
                     cls.computed_vars[newcv._var_name] = newcv
