@@ -56,7 +56,14 @@ if sys.version_info >= (3, 12):
 else:
 
     def override(func: Callable) -> Callable:
-        """Fallback for @override decorator."""
+        """Fallback for @override decorator.
+
+        Args:
+            func: The function to decorate.
+
+        Returns:
+            The unmodified function.
+        """
         return func
 
 
