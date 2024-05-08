@@ -26,6 +26,7 @@ from typing import (
     AsyncIterator,
     Callable,
     Coroutine,
+    List,
     Optional,
     Type,
     TypeVar,
@@ -512,7 +513,10 @@ class AppHarness:
         return backend.servers[0].sockets[0]
 
     def frontend(
-        self, driver_clz: Optional[Type["WebDriver"]] = None, driver_kwargs=None
+        self,
+        driver_clz: Optional[Type["WebDriver"]] = None,
+        driver_kwargs: dict[str, Any] | None = None,
+        driver_option_args: List[str] | None = None,
     ) -> "WebDriver":
         """Get a selenium webdriver instance pointed at the app.
 
@@ -520,6 +524,7 @@ class AppHarness:
             driver_clz: webdriver.Chrome (default), webdriver.Firefox, webdriver.Safari,
                 webdriver.Edge, etc
             driver_kwargs: additional keyword arguments to pass to the webdriver constructor
+            driver_option_args: additional arguments for the webdriver options
 
         Returns:
             Instance of the given webdriver navigated to the frontend url of the app.
@@ -559,6 +564,9 @@ class AppHarness:
             raise RuntimeError(f"Could not determine options for {driver_clz}")
         if args := os.environ.get("APP_HARNESS_DRIVER_ARGS"):
             for arg in args.split(","):
+                options.add_argument(arg)
+        if driver_option_args is not None:
+            for arg in driver_option_args:
                 options.add_argument(arg)
         if driver_kwargs is None:
             driver_kwargs = {}
