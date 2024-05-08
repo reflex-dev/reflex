@@ -30,7 +30,6 @@ from typing import (
     get_args,
     get_origin,
     get_type_hints,
-    override,
 )
 
 from reflex import constants
@@ -39,9 +38,11 @@ from reflex.utils import console, format, imports, serializers, types
 
 # This module used to export ImportVar itself, so we still import it for export here
 from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.types import override
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
+
 
 # Set of unique variable names.
 USED_VARIABLES = set()
