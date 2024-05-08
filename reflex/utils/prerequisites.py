@@ -914,9 +914,21 @@ def needs_reinit(frontend: bool = True) -> bool:
         return True
 
     if constants.IS_WINDOWS:
+        import uvicorn
+
+        uvi_ver = uvicorn.__version__
         console.warn(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
+        if sys.version_info >= (3, 12) and uvi_ver != "0.24.0.post1":
+            console.warn(
+                f"""On Python 3.12, `uvicorn==0.24.0.post1` is recommended for improved hot reload times. Found {uvi_ver} instead."""
+            )
+
+        if sys.version_info < (3, 12) and uvi_ver != "0.20.0":
+            console.warn(
+                f"""On Python < 3.12, `uvicorn==0.20.0` is recommended for improved hot reload times.  Found {uvi_ver} instead."""
+            )
     # No need to reinitialize if the app is already initialized.
     return False
 
