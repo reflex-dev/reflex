@@ -1,21 +1,27 @@
 """Custom Exceptions."""
 
 
-class InvalidStylePropError(TypeError):
+class ReflexError(Exception):
+    """Base exception for all Reflex exceptions."""
+
+    pass
+
+
+class InvalidStylePropError(ReflexError, TypeError):
     """Custom Type Error when style props have invalid values."""
 
     pass
 
 
-class ImmutableStateError(AttributeError):
+class ImmutableStateError(ReflexError):
     """Raised when a background task attempts to modify state outside of context."""
 
 
-class LockExpiredError(Exception):
+class LockExpiredError(ReflexError):
     """Raised when the state lock expires while an event is being processed."""
 
 
-class MatchTypeError(TypeError):
+class MatchTypeError(ReflexError, TypeError):
     """Raised when the return types of match cases are different."""
 
     pass
