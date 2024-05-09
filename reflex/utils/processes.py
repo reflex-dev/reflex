@@ -211,6 +211,8 @@ def stream_logs(
     process: subprocess.Popen,
     progress=None,
     suppress_errors: bool = False,
+    analytics_enabled: bool = False,
+    error_filter_fn: Callable[[str], bool] | None = None,
 ):
     """Stream the logs for a process.
 
@@ -219,6 +221,8 @@ def stream_logs(
         process: The process.
         progress: The ongoing progress bar if one is being used.
         suppress_errors: If True, do not exit if errors are encountered (for fallback).
+        analytics_enabled: Whether analytics are enabled for this command.
+        error_filter_fn: A function that takes a line of output and returns True if the line should be considered an error, False otherwise. If None, all lines are considered errors.
 
     Yields:
         The lines of the process output.
@@ -226,6 +230,8 @@ def stream_logs(
     Raises:
         Exit: If the process failed.
     """
+    from reflex.utils import telemetry
+
     # Store the tail of the logs.
     logs = collections.deque(maxlen=512)
     with process:
@@ -246,6 +252,16 @@ def stream_logs(
         console.error(f"{message} failed with exit code {process.returncode}")
         for line in logs:
             console.error(line, end="")
+        if analytics_enabled:
+            error_lines = [
+                line.strip()
+                for line in logs
+                if error_filter_fn is None or error_filter_fn(line)
+            ]
+            max_error_lines = 20
+            telemetry.send(
+                "error", context=message, detail=error_lines[:max_error_lines]
+            )
         console.error("Run with [bold]--loglevel debug [/bold] for the full log.")
         raise typer.Exit(1)
 
@@ -261,16 +277,30 @@ def show_logs(message: str, process: subprocess.Popen):
         pass
 
 
-def show_status(message: str, process: subprocess.Popen, suppress_errors: bool = False):
+def show_status(
+    message: str,
+    process: subprocess.Popen,
+    suppress_errors: bool = False,
+    analytics_enabled: bool = False,
+    error_filter_fn: Callable[[str], bool] | None = None,
+):
     """Show the status of a process.
 
     Args:
         message: The initial message to display.
         process: The process.
         suppress_errors: If True, do not exit if errors are encountered (for fallback).
+        analytics_enabled: Whether analytics are enabled for this command.
+        error_filter_fn: A function that takes a line of output and returns True if the line should be considered an error, False otherwise. If None, all lines are considered errors.
     """
     with console.status(message) as status:
-        for line in stream_logs(message, process, suppress_errors=suppress_errors):
+        for line in stream_logs(
+            message,
+            process,
+            suppress_errors=suppress_errors,
+            analytics_enabled=analytics_enabled,
+            error_filter_fn=error_filter_fn,
+        ):
             status.update(f"{message} {line}")
 
 
@@ -319,19 +349,34 @@ def get_command_with_loglevel(command: list[str]) -> list[str]:
     return command
 
 
-def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwargs):
+def run_process_with_fallback(
+    args,
+    *,
+    show_status_message,
+    fallback=None,
+    analytics_enabled: bool = False,
+    error_filter_fn: Callable[[str], bool] | None = None,
+    **kwargs,
+):
     """Run subprocess and retry using fallback command if initial command fails.
 
     Args:
         args: A string, or a sequence of program arguments.
         show_status_message: The status message to be displayed in the console.
         fallback: The fallback command to run.
+        analytics_enabled: Whether analytics are enabled for this command.
+        error_filter_fn: A function that takes a line of output and returns True if the line should be considered an error, False otherwise. If None, all lines are considered errors.
         kwargs: Kwargs to pass to new_process function.
     """
     process = new_process(get_command_with_loglevel(args), **kwargs)
     if fallback is None:
         # No fallback given, or this _is_ the fallback command.
-        show_status(show_status_message, process)
+        show_status(
+            show_status_message,
+            process,
+            analytics_enabled=analytics_enabled,
+            error_filter_fn=error_filter_fn,
+        )
     else:
         # Suppress errors for initial command, because we will try to fallback
         show_status(show_status_message, process, suppress_errors=True)
@@ -345,6 +390,8 @@ def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwa
                 fallback_args,
                 show_status_message=show_status_message,
                 fallback=None,
+                analytics_enabled=analytics_enabled,
+                error_filter_fn=error_filter_fn,
                 **kwargs,
             )
 
