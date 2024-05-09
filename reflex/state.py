@@ -1688,10 +1688,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if initial:
             computed_vars = {
                 # Include initial computed vars.
-                prop_name: cv._initial_value
-                if isinstance(cv, ComputedVar)
-                and not isinstance(cv._initial_value, types.Unset)
-                else self.get_value(getattr(self, prop_name))
+                prop_name: (
+                    cv._initial_value
+                    if isinstance(cv, ComputedVar)
+                    and not isinstance(cv._initial_value, types.Unset)
+                    else self.get_value(getattr(self, prop_name))
+                )
                 for prop_name, cv in self.computed_vars.items()
             }
         elif include_computed:
@@ -2006,7 +2008,8 @@ class StateProxy(wrapt.ObjectProxy):
         if name in ["substates", "parent_state"] and not self._self_mutable:
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
+                "manager. Use `async with self` to modify state.",
+                analytics_enabled=True,
             )
         value = super().__getattr__(name)
         if not name.startswith("_self_") and isinstance(value, MutableProxy):
@@ -2052,7 +2055,8 @@ class StateProxy(wrapt.ObjectProxy):
 
         raise ImmutableStateError(
             "Background task StateProxy is immutable outside of a context "
-            "manager. Use `async with self` to modify state."
+            "manager. Use `async with self` to modify state.",
+            analytics_enabled=True,
         )
 
     def get_substate(self, path: Sequence[str]) -> BaseState:
@@ -2070,7 +2074,8 @@ class StateProxy(wrapt.ObjectProxy):
         if not self._self_mutable:
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
+                "manager. Use `async with self` to modify state.",
+                analytics_enabled=True,
             )
         return self.__wrapped__.get_substate(path)
 
@@ -2089,7 +2094,8 @@ class StateProxy(wrapt.ObjectProxy):
         if not self._self_mutable:
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
+                "manager. Use `async with self` to modify state.",
+                analytics_enabled=True,
             )
         return await self.__wrapped__.get_state(state_cls)
 
@@ -2495,7 +2501,8 @@ class StateManagerRedis(StateManager):
             raise LockExpiredError(
                 f"Lock expired for token {token} while processing. Consider increasing "
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-                "or use `@rx.background` decorator for long-running tasks."
+                "or use `@rx.background` decorator for long-running tasks.",
+                analytics_enabled=True,
             )
         client_token, substate_name = _split_substate_key(token)
         # If the substate name on the token doesn't match the instance name, it cannot have a parent.
@@ -3054,7 +3061,8 @@ class ImmutableMutableProxy(MutableProxy):
         if not self._self_state._self_mutable:
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
+                "manager. Use `async with self` to modify state.",
+                analytics_enabled=True,
             )
         return super()._mark_dirty(
             wrapped=wrapped, instance=instance, args=args, kwargs=kwargs

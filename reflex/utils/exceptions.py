@@ -4,7 +4,18 @@
 class ReflexError(Exception):
     """Base exception for all Reflex exceptions."""
 
-    pass
+    def __init__(self, message: str, analytics_enabled: bool = False) -> None:
+        """Custom constructor. If analytics enabled, send telemetry.
+
+        Args:
+            message: the exception message
+            analytics_enabled: whether to include this exception when telemetry is enabled.
+        """
+        from reflex.utils import telemetry
+
+        if analytics_enabled:
+            telemetry.send("error", context="backend", message=message)
+        super().__init__(message)
 
 
 class InvalidStylePropError(ReflexError, TypeError):
