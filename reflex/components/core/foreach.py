@@ -95,7 +95,15 @@ class Foreach(Component):
             props["index_var_name"] = params[1].name
         else:
             # Otherwise, use a deterministic index, based on the render function bytecode.
-            code_hash = hash(self.render_fn.__code__).to_bytes(8, signed=True).hex()
+            code_hash = (
+                hash(self.render_fn.__code__)
+                .to_bytes(
+                    length=8,
+                    byteorder="big",
+                    signed=True,
+                )
+                .hex()
+            )
             props["index_var_name"] = f"index_{code_hash}"
 
         return IterTag(
