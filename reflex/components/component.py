@@ -801,20 +801,16 @@ class Component(BaseComponent, ABC):
             The style to add.
         """
         styles = []
-        vars = []
 
         # Walk the MRO to call all `add_style` methods.
         for base in self._iter_parent_classes_with_method("add_style"):
             s = base.add_style(self)  # type: ignore
             if s is not None:
                 styles.append(s)
-                vars.append(s._var_data)
 
         _style = Style()
         for s in reversed(styles):
             _style.update(s)
-
-        _style._var_data = VarData.merge(*vars)
         return _style
 
     def _get_component_style(self, styles: ComponentStyle) -> Style | None:
