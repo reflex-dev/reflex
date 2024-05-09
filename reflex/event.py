@@ -722,7 +722,7 @@ def call_script(
         elif isinstance(callback, FunctionType):
             event_spec = call_event_fn(callback, _callback_arg_spec)[0]
         else:
-            raise ValueError("Cannot use {callback!r} as a call_script callback.")
+            raise ValueError(f"Cannot use {callback!r} as a call_script callback.")
         callback_kwargs = {
             "callback": f"({arg_name}) => queueEvents([{format.format_event(event_spec)}], {constants.CompileVars.SOCKET})"
         }
