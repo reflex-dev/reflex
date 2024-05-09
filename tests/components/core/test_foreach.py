@@ -2,7 +2,7 @@ from typing import Dict, List, Set, Tuple, Union
 
 import pytest
 
-from reflex.components import box, foreach, text
+from reflex.components import box, el, foreach, text
 from reflex.components.core import Foreach
 from reflex.state import BaseState
 from reflex.vars import Var
@@ -236,3 +236,15 @@ def test_foreach_no_param_in_signature():
             ForEachState.colors_list,  # type: ignore
             lambda: text("color"),
         )
+
+
+def test_foreach_component_styles():
+    """Test that the foreach component works with global component styles."""
+    component = el.div(
+        foreach(
+            ForEachState.colors_list,  # type: ignore
+            display_color,
+        )
+    )
+    component._add_style_recursive({box: {"color": "red"}})
+    assert 'css={{"color": "red"}}' in str(component)
