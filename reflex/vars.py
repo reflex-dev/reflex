@@ -35,6 +35,7 @@ from typing import (
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format, imports, serializers, types
+from reflex.utils.exceptions import VarAttributeError, VarTypeError, VarValueError
 
 # This module used to export ImportVar itself, so we still import it for export here
 from reflex.utils.imports import ImportDict, ImportVar
@@ -353,7 +354,7 @@ class Var:
             The var.
 
         Raises:
-            TypeError: If the value is JSON-unserializable.
+            VarTypeError: If the value is JSON-unserializable.
         """
         # Check for none values.
         if value is None:
@@ -372,7 +373,7 @@ class Var:
         type_ = type(value)
         name = value if type_ in types.JSONType else serializers.serialize(value)
         if name is None:
-            raise TypeError(
+            raise VarTypeError(
                 f"No JSON serializer found for var {value} of type {type_}."
             )
         name = name if isinstance(name, str) else format.json_dumps(name)
@@ -465,7 +466,7 @@ class Var:
             return self._var_name
         try:
             return json.loads(self._var_name)
-        except ValueError:
+        except VarValueError:
             return self._var_name
 
     def equals(self, other: Var) -> bool:
@@ -542,9 +543,9 @@ class Var:
         """Raise exception if using Var in a boolean context.
 
         Raises:
-            TypeError: when attempting to bool-ify the Var.
+            VarTypeError: when attempting to bool-ify the Var.
         """
-        raise TypeError(
+        raise VarTypeError(
             f"Cannot convert Var {self._var_full_name!r} to bool for use with `if`, `and`, `or`, and `not`. "
             "Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert)."
         )
@@ -553,9 +554,9 @@ class Var:
         """Raise exception if using Var in an iterable context.
 
         Raises:
-            TypeError: when attempting to iterate over the Var.
+            VarTypeError: when attempting to iterate over the Var.
         """
-        raise TypeError(
+        raise VarTypeError(
             f"Cannot iterate over Var {self._var_full_name!r}. Instead use `rx.foreach`."
         )
 
@@ -584,7 +585,7 @@ class Var:
             The indexed var.
 
         Raises:
-            TypeError: If the var is not indexable.
+            VarTypeError: If the var is not indexable.
         """
         # Indexing is only supported for strings, lists, tuples, dicts, and dataframes.
         if not (
@@ -592,11 +593,11 @@ class Var:
             or types.is_dataframe(self._var_type)
         ):
             if self._var_type == Any:
-                raise TypeError(
+                raise VarTypeError(
                     "Could not index into var of type Any. (If you are trying to index into a state var, "
                     "add the correct type annotation to the var.)"
                 )
-            raise TypeError(
+            raise VarTypeError(
                 f"Var {self._var_name} of type {self._var_type} does not support indexing."
             )
 
@@ -615,7 +616,7 @@ class Var:
                 or isinstance(i, Var)
                 and not i._var_type == int
             ):
-                raise TypeError("Index must be an integer or an integer var.")
+                raise VarTypeError("Index must be an integer or an integer var.")
 
             # Handle slices first.
             if isinstance(i, slice):
@@ -658,7 +659,7 @@ class Var:
                 i._var_type, types.get_args(Union[int, str, float])
             )
         ):
-            raise TypeError(
+            raise VarTypeError(
                 "Index must be one of the following types: int, str, int or str Var"
             )
         # Get the type of the indexed var.
@@ -687,7 +688,7 @@ class Var:
             The var attribute.
 
         Raises:
-            AttributeError: If the attribute cannot be found, or if __getattr__ fallback should be used.
+            VarAttributeError: If the attribute cannot be found, or if __getattr__ fallback should be used.
         """
         try:
             var_attribute = super().__getattribute__(name)
@@ -698,10 +699,12 @@ class Var:
                     super().__getattribute__("_var_type"), name
                 )
                 if type_ is not None:
-                    raise AttributeError(f"{name} is being accessed through the Var.")
+                    raise VarAttributeError(
+                        f"{name} is being accessed through the Var."
+                    )
             # Return the attribute as-is.
             return var_attribute
-        except AttributeError:
+        except VarAttributeError:
             raise  # fall back to __getattr__ anyway
 
     def __getattr__(self, name: str) -> Var:
@@ -714,13 +717,13 @@ class Var:
             The var attribute.
 
         Raises:
-            AttributeError: If the var is wrongly annotated or can't find attribute.
-            TypeError: If an annotation to the var isn't provided.
+            VarAttributeError: If the var is wrongly annotated or can't find attribute.
+            VarTypeError: If an annotation to the var isn't provided.
         """
         # Check if the attribute is one of the class fields.
         if not name.startswith("_"):
             if self._var_type == Any:
-                raise TypeError(
+                raise VarTypeError(
                     f"You must provide an annotation for the state var `{self._var_full_name}`. Annotation cannot be `{self._var_type}`"
                 ) from None
             is_optional = types.is_optional(self._var_type)
@@ -734,16 +737,16 @@ class Var:
                 )
 
             if name in REPLACED_NAMES:
-                raise AttributeError(
+                raise VarAttributeError(
                     f"Field {name!r} was renamed to {REPLACED_NAMES[name]!r}"
                 )
 
-            raise AttributeError(
+            raise VarAttributeError(
                 f"The State var `{self._var_full_name}` has no attribute '{name}' or may have been annotated "
                 f"wrongly."
             )
 
-        raise AttributeError(
+        raise VarAttributeError(
             f"The State var has no attribute '{name}' or may have been annotated wrongly.",
         )
 
@@ -770,8 +773,8 @@ class Var:
             The operation result.
 
         Raises:
-            TypeError: If the operation between two operands is invalid.
-            ValueError: If flip is set to true and value of operand is not provided
+            VarTypeError: If the operation between two operands is invalid.
+            VarValueError: If flip is set to true and value of operand is not provided
         """
         if isinstance(other, str):
             other = Var.create(json.dumps(other))
@@ -781,7 +784,7 @@ class Var:
         type_ = type_ or self._var_type
 
         if other is None and flip:
-            raise ValueError(
+            raise VarValueError(
                 "flip_operands cannot be set to True if the value of 'other' operand is not provided"
             )
 
@@ -804,7 +807,7 @@ class Var:
                 types.get_base_class(right_operand._var_type),  # type: ignore
                 op,
             ):
-                raise TypeError(
+                raise VarTypeError(
                     f"Unsupported Operand type(s) for {op}: `{left_operand._var_full_name}` of type {left_operand._var_type.__name__} and `{right_operand._var_full_name}` of type {right_operand._var_type.__name__}"  # type: ignore
                 )
 
@@ -925,10 +928,10 @@ class Var:
             A var with the absolute value.
 
         Raises:
-            TypeError: If the var is not a list.
+            VarTypeError: If the var is not a list.
         """
         if not types._issubclass(self._var_type, List):
-            raise TypeError(f"Cannot get length of non-list var {self}.")
+            raise VarTypeError(f"Cannot get length of non-list var {self}.")
         return self._replace(
             _var_name=f"{self._var_name}.length",
             _var_type=int,
@@ -1328,9 +1331,9 @@ class Var:
         """Override the 'in' operator to alert the user that it is not supported.
 
         Raises:
-            TypeError: the operation is not supported
+            VarTypeError: the operation is not supported
         """
-        raise TypeError(
+        raise VarTypeError(
             "'in' operator not supported for Var types, use Var.contains() instead."
         )
 
@@ -1341,13 +1344,13 @@ class Var:
             other: The object to check.
 
         Raises:
-            TypeError: If the var is not a valid type: dict, list, tuple or str.
+            VarTypeError: If the var is not a valid type: dict, list, tuple or str.
 
         Returns:
             A var representing the contain check.
         """
         if not (types._issubclass(self._var_type, Union[dict, list, tuple, str, set])):
-            raise TypeError(
+            raise VarTypeError(
                 f"Var {self._var_full_name} of type {self._var_type} does not support contains check."
             )
         method = (
@@ -1371,7 +1374,7 @@ class Var:
             if types._issubclass(self._var_type, str) and not types._issubclass(
                 other._var_type, str
             ):
-                raise TypeError(
+                raise VarTypeError(
                     f"'in <string>' requires string as left operand, not {other._var_type}"
                 )
             return self._replace(
@@ -1385,13 +1388,13 @@ class Var:
         """Reverse a list var.
 
         Raises:
-            TypeError: If the var is not a list.
+            VarTypeError: If the var is not a list.
 
         Returns:
             A var with the reversed list.
         """
         if not types._issubclass(self._var_type, list):
-            raise TypeError(f"Cannot reverse non-list var {self._var_full_name}.")
+            raise VarTypeError(f"Cannot reverse non-list var {self._var_full_name}.")
 
         return self._replace(
             _var_name=f"[...{self._var_full_name}].reverse()",
@@ -1406,10 +1409,10 @@ class Var:
             A var with the lowercase string.
 
         Raises:
-            TypeError: If the var is not a string.
+            VarTypeError: If the var is not a string.
         """
         if not types._issubclass(self._var_type, str):
-            raise TypeError(
+            raise VarTypeError(
                 f"Cannot convert non-string var {self._var_full_name} to lowercase."
             )
 
@@ -1426,10 +1429,10 @@ class Var:
             A var with the uppercase string.
 
         Raises:
-            TypeError: If the var is not a string.
+            VarTypeError: If the var is not a string.
         """
         if not types._issubclass(self._var_type, str):
-            raise TypeError(
+            raise VarTypeError(
                 f"Cannot convert non-string var {self._var_full_name} to uppercase."
             )
 
@@ -1449,10 +1452,10 @@ class Var:
             A var with the stripped string.
 
         Raises:
-            TypeError: If the var is not a string.
+            VarTypeError: If the var is not a string.
         """
         if not types._issubclass(self._var_type, str):
-            raise TypeError(f"Cannot strip non-string var {self._var_full_name}.")
+            raise VarTypeError(f"Cannot strip non-string var {self._var_full_name}.")
 
         other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
 
@@ -1472,10 +1475,10 @@ class Var:
             A var with the list.
 
         Raises:
-            TypeError: If the var is not a string.
+            VarTypeError: If the var is not a string.
         """
         if not types._issubclass(self._var_type, str):
-            raise TypeError(f"Cannot split non-string var {self._var_full_name}.")
+            raise VarTypeError(f"Cannot split non-string var {self._var_full_name}.")
 
         other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
 
@@ -1496,10 +1499,10 @@ class Var:
             A var with the string.
 
         Raises:
-            TypeError: If the var is not a list.
+            VarTypeError: If the var is not a list.
         """
         if not types._issubclass(self._var_type, list):
-            raise TypeError(f"Cannot join non-list var {self._var_full_name}.")
+            raise VarTypeError(f"Cannot join non-list var {self._var_full_name}.")
 
         if other is None:
             other = Var.create_safe('""')
@@ -1525,11 +1528,11 @@ class Var:
             A var representing foreach operation.
 
         Raises:
-            TypeError: If the var is not a list.
+            VarTypeError: If the var is not a list.
         """
         inner_types = get_args(self._var_type)
         if not inner_types:
-            raise TypeError(
+            raise VarTypeError(
                 f"Cannot foreach over non-sequence var {self._var_full_name} of type {self._var_type}."
             )
         arg = BaseVar(
@@ -1566,25 +1569,27 @@ class Var:
             A var representing range operation.
 
         Raises:
-            TypeError: If the var is not an int.
+            VarTypeError: If the var is not an int.
         """
         if not isinstance(v1, Var):
             v1 = Var.create_safe(v1)
         if v1._var_type != int:
-            raise TypeError(f"Cannot get range on non-int var {v1._var_full_name}.")
+            raise VarTypeError(f"Cannot get range on non-int var {v1._var_full_name}.")
         if not isinstance(v2, Var):
             v2 = Var.create(v2)
         if v2 is None:
             v2 = Var.create_safe("undefined")
         elif v2._var_type != int:
-            raise TypeError(f"Cannot get range on non-int var {v2._var_full_name}.")
+            raise VarTypeError(f"Cannot get range on non-int var {v2._var_full_name}.")
 
         if not isinstance(step, Var):
             step = Var.create(step)
         if step is None:
             step = Var.create_safe(1)
         elif step._var_type != int:
-            raise TypeError(f"Cannot get range on non-int var {step._var_full_name}.")
+            raise VarTypeError(
+                f"Cannot get range on non-int var {step._var_full_name}."
+            )
 
         return BaseVar(
             _var_name=f"Array.from(range({v1._var_full_name}, {v2._var_full_name}, {step._var_name}))",
@@ -1824,7 +1829,7 @@ class BaseVar(Var):
                 try:
                     value = self._var_type(value)
                     setattr(state, self._var_name, value)
-                except ValueError:
+                except VarValueError:
                     console.debug(
                         f"{type(state).__name__}.{self._var_name}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
                     )
@@ -1919,7 +1924,7 @@ class ComputedVar(Var, property):
             A set of variable names accessed by the given obj.
 
         Raises:
-            ValueError: if the function references the get_state, parent_state, or substates attributes
+            VarValueError: if the function references the get_state, parent_state, or substates attributes
                 (cannot track deps in a related state, only implicitly via parent state).
         """
         d = set()
@@ -1966,7 +1971,7 @@ class ComputedVar(Var, property):
                 except Exception:
                     ref_obj = None
                 if instruction.argval in invalid_names:
-                    raise ValueError(
+                    raise VarValueError(
                         f"Cached var {self._var_full_name} cannot access arbitrary state via `{instruction.argval}`."
                     )
                 if callable(ref_obj):
