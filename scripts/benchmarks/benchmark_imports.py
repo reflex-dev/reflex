@@ -11,7 +11,7 @@ import psycopg2
 
 
 def extract_stats_from_json(json_file: str) -> dict:
-    """Extracts the stats from the JSON data and returns them as a list of dictionaries.
+    """Extracts the stats from the JSON data and returns them as dictionaries.
 
     Args:
         json_file: The JSON file to extract the stats data from.
@@ -26,7 +26,11 @@ def extract_stats_from_json(json_file: str) -> dict:
     data = json.loads(json_data) if isinstance(json_data, str) else json_data
 
     result = data.get("results", [{}])[0]
-    return {k: v for k, v in result.items() if k in ("mean", "stddev", "median", "min", "max")}
+    return {
+        k: v
+        for k, v in result.items()
+        if k in ("mean", "stddev", "median", "min", "max")
+    }
 
 
 def insert_benchmarking_data(
@@ -47,7 +51,7 @@ def insert_benchmarking_data(
         db_connection_url: The URL to connect to the database.
         os_type_version: The OS type and version to insert.
         python_version: The Python version to insert.
-        performance_data: The performance data of reflex web to insert.
+        performance_data: The imports performance data to insert.
         commit_sha: The commit SHA to insert.
         pr_title: The PR title to insert.
         branch_name: The name of the branch.
@@ -136,8 +140,6 @@ def main():
     # Get the PR title from env or the args. For the PR merge or push event, there is no PR title, leaving it empty.
     pr_title = args.pr_title or os.getenv("PR_TITLE", "")
 
-    # Get the results of pytest benchmarks
-    print(f"path: {args.benchmark_json}")
     cleaned_benchmark_results = extract_stats_from_json(args.benchmark_json)
     # Insert the data into the database
     insert_benchmarking_data(
