@@ -75,6 +75,8 @@ jobs:
         working-directory: ./reflex-examples/counter
         run: |
           poetry run pip install -r requirements.txt
+      - name: cargo check
+        run: cargo --version
       - name: Install additional dependencies for DB access
         run: poetry run pip install psycopg2-binary
       - name: Check export --backend-only before init for counter example
