@@ -1462,6 +1462,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Yields:
             StateUpdate object
         """
+        from reflex.utils import telemetry
+        from reflex.utils.exceptions import ReflexError
+
         # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
 
@@ -1497,9 +1500,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 yield state._as_state_update(handler, events, final=True)
 
         # If an error occurs, throw a window alert.
-        except Exception:
+        except Exception as ex:
             error = traceback.format_exc()
             print(error)
+            if isinstance(ex, ReflexError):
+                telemetry.send("error", context="backend", detail=str(ex))
             yield state._as_state_update(
                 handler,
                 window_alert("An error occurred. See logs for details."),

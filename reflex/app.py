@@ -1067,50 +1067,61 @@ async def process(
         headers: The client headers.
         client_ip: The client_ip.
 
+    Raise:
+        ReflexError: If a reflex specific error occurs during processing the event.
+
     Yields:
         The state updates after processing the event.
     """
-    # Add request data to the state.
-    router_data = event.router_data
-    router_data.update(
-        {
-            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
-            constants.RouteVar.CLIENT_TOKEN: event.token,
-            constants.RouteVar.SESSION_ID: sid,
-            constants.RouteVar.HEADERS: headers,
-            constants.RouteVar.CLIENT_IP: client_ip,
-        }
-    )
-    # Get the state for the session exclusively.
-    async with app.state_manager.modify_state(event.substate_token) as state:
-        # re-assign only when the value is different
-        if state.router_data != router_data:
-            # assignment will recurse into substates and force recalculation of
-            # dependent ComputedVar (dynamic route variables)
-            state.router_data = router_data
-            state.router = RouterData(router_data)
+    from reflex.utils import telemetry
+    from reflex.utils.exceptions import ReflexError
 
-        # Preprocess the event.
-        update = await app._preprocess(state, event)
+    try:
+        # Add request data to the state.
+        router_data = event.router_data
+        router_data.update(
+            {
+                constants.RouteVar.QUERY: format.format_query_params(event.router_data),
+                constants.RouteVar.CLIENT_TOKEN: event.token,
+                constants.RouteVar.SESSION_ID: sid,
+                constants.RouteVar.HEADERS: headers,
+                constants.RouteVar.CLIENT_IP: client_ip,
+            }
+        )
+        # Get the state for the session exclusively.
+        async with app.state_manager.modify_state(event.substate_token) as state:
+            # re-assign only when the value is different
+            if state.router_data != router_data:
+                # assignment will recurse into substates and force recalculation of
+                # dependent ComputedVar (dynamic route variables)
+                state.router_data = router_data
+                state.router = RouterData(router_data)
 
-        # If there was an update, yield it.
-        if update is not None:
-            yield update
+            # Preprocess the event.
+            update = await app._preprocess(state, event)
 
-        # Only process the event if there is no update.
-        else:
-            if app._process_background(state, event) is not None:
-                # `final=True` allows the frontend send more events immediately.
-                yield StateUpdate(final=True)
-                return
-
-            # Process the event synchronously.
-            async for update in state._process(event):
-                # Postprocess the event.
-                update = await app._postprocess(state, event, update)
-
-                # Yield the update.
+            # If there was an update, yield it.
+            if update is not None:
                 yield update
+
+            # Only process the event if there is no update.
+            else:
+                if app._process_background(state, event) is not None:
+                    # `final=True` allows the frontend send more events immediately.
+                    yield StateUpdate(final=True)
+                    return
+
+                # Process the event synchronously.
+                async for update in state._process(event):
+                    # Postprocess the event.
+                    update = await app._postprocess(state, event, update)
+
+                    # Yield the update.
+                    yield update
+    except ReflexError as ex:
+        print("martin")
+        telemetry.send("error", context="backend", detail=str(ex))
+        raise
 
 
 async def ping() -> str:
