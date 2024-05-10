@@ -1067,7 +1067,7 @@ async def process(
         headers: The client headers.
         client_ip: The client_ip.
 
-    Raise:
+    Raises:
         ReflexError: If a reflex specific error occurs during processing the event.
 
     Yields:
