@@ -63,7 +63,7 @@ def insert_benchmarking_data(
     # Connect to the database and insert the data
     with psycopg2.connect(db_connection_url) as conn, conn.cursor() as cursor:
         insert_query = """
-            INSERT INTO import_benchmarks (os, python_version, commit_sha, time, pr_title, branch_name, event_type, actor, performance_data, pr_id)
+            INSERT INTO import_benchmarks (os, python_version, commit_sha, time, pr_title, branch_name, event_type, actor, performance, pr_id)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """
         cursor.execute(
