@@ -731,6 +731,7 @@ class Component(BaseComponent, ABC):
         # Import here to avoid circular imports.
         from reflex.components.base.bare import Bare
         from reflex.components.base.fragment import Fragment
+        from reflex.utils.exceptions import ComponentTypeError
 
         # Translate deprecated props to new names.
         new_prop_names = [
@@ -757,7 +758,7 @@ class Component(BaseComponent, ABC):
                     validate_children(child)
                 # Make sure the child is a valid type.
                 if not types._isinstance(child, ComponentChild):
-                    raise TypeError(
+                    raise ComponentTypeError(
                         "Children of Reflex components must be other components, "
                         "state vars, or primitive Python types. "
                         f"Got child {child} of type {type(child)}.",

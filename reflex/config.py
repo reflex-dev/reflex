@@ -251,8 +251,10 @@ class Config(Base):
             The updated config values.
 
         Raises:
-            ValueError: If an environment variable is set to an invalid type.
+            EnvVarValueError: If an environment variable is set to an invalid type.
         """
+        from reflex.utils.exceptions import EnvVarValueError
+
         updated_values = {}
         # Iterate over the fields.
         for key, field in self.__fields__.items():
@@ -273,11 +275,11 @@ class Config(Base):
                         env_var = env_var.lower() in ["true", "1", "yes"]
                     else:
                         env_var = field.type_(env_var)
-                except ValueError:
+                except ValueError as ve:
                     console.error(
                         f"Could not convert {key.upper()}={env_var} to type {field.type_}"
                     )
-                    raise
+                    raise EnvVarValueError from ve
 
                 # Set the value.
                 updated_values[key] = env_var
