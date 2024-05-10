@@ -139,6 +139,9 @@ class AccordionRoot(AccordionComponent):
         """
         if self.radius is not None:
             self.custom_attrs["data-radius"] = self.radius
+        if self.variant is None:
+            # The default variant is classic
+            self.custom_attrs["data-variant"] = "classic"
 
         style = {
             "border_radius": "max(var(--radius-2), var(--radius-5))",
