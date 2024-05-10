@@ -237,7 +237,7 @@ def get_app(reload: bool = False) -> ModuleType:
 
         return app
     except exceptions.ReflexError as ex:
-        telemetry.send("error", context="backend", detail=str(ex))
+        telemetry.send("error", context="frontend", detail=str(ex))
         raise
 
 
