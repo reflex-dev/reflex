@@ -1119,7 +1119,6 @@ async def process(
                     # Yield the update.
                     yield update
     except ReflexError as ex:
-        print("martin")
         telemetry.send("error", context="backend", detail=str(ex))
         raise
 
