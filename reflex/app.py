@@ -403,9 +403,12 @@ class App(Base):
             The generated component.
 
         Raises:
+            VarOperationTypeError: When an invalid component var related function is passed.
             TypeError: When an invalid component function is passed.
             exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
+        from reflex.utils.exceptions import VarOperationTypeError
+
         try:
             return component if isinstance(component, Component) else component()
         except exceptions.MatchTypeError:
@@ -413,7 +416,7 @@ class App(Base):
         except TypeError as e:
             message = str(e)
             if "BaseVar" in message or "ComputedVar" in message:
-                raise TypeError(
+                raise VarOperationTypeError(
                     "You may be trying to use an invalid Python function on a state var. "
                     "When referencing a var inside your render code, only limited var operations are supported. "
                     "See the var operation docs here: https://reflex.dev/docs/vars/var-operations/"
@@ -555,11 +558,13 @@ class App(Base):
         Based on conflicts that NextJS would throw if not intercepted.
 
         Raises:
-            ValueError: exception showing which conflict exist with the route to be added
+            RouteValueError: exception showing which conflict exist with the route to be added
 
         Args:
             new_route: the route being newly added.
         """
+        from reflex.utils.exceptions import RouteValueError
+
         if "[" not in new_route:
             return
 
@@ -576,7 +581,7 @@ class App(Base):
             ):
                 if rw in segments and r != nr:
                     # If the slugs in the segments of both routes are not the same, then the route is invalid
-                    raise ValueError(
+                    raise RouteValueError(
                         f"You cannot use different slug names for the same dynamic path in  {route} and {new_route} ('{r}' != '{nr}')"
                     )
                 elif rw not in segments and r != nr:
@@ -755,8 +760,10 @@ class App(Base):
             export: Whether to compile the app for export.
 
         Raises:
-            RuntimeError: When any page uses state, but no rx.State subclass is defined.
+            ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
         """
+        from reflex.utils.exceptions import ReflexRuntimeError
+
         # Render a default 404 page if the user didn't supply one
         if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
@@ -837,7 +844,7 @@ class App(Base):
 
         # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
         if code_uses_state_contexts(stateful_components_code) and self.state is None:
-            raise RuntimeError(
+            raise ReflexRuntimeError(
                 "To access rx.State in frontend components, at least one "
                 "subclass of rx.State must be defined in the app."
             )
@@ -1137,10 +1144,12 @@ def upload(app: App):
             emitted by the upload handler.
 
         Raises:
-            ValueError: if there are no args with supported annotation.
-            TypeError: if a background task is used as the handler.
+            UploadValueError: if there are no args with supported annotation.
+            UploadTypeError: if a background task is used as the handler.
             HTTPException: when the request does not include token / handler headers.
         """
+        from reflex.utils.exceptions import UploadTypeError, UploadValueError
+
         token = request.headers.get("reflex-client-token")
         handler = request.headers.get("reflex-event-handler")
 
@@ -1166,7 +1175,7 @@ def upload(app: App):
         # check if there exists any handler args with annotation, List[UploadFile]
         if isinstance(func, EventHandler):
             if func.is_background:
-                raise TypeError(
+                raise UploadTypeError(
                     f"@rx.background is not supported for upload handler `{handler}`.",
                 )
             func = func.fn
@@ -1181,7 +1190,7 @@ def upload(app: App):
                 break
 
         if not handler_upload_param:
-            raise ValueError(
+            raise UploadValueError(
                 f"`{handler}` handler should have a parameter annotated as "
                 "List[rx.UploadFile]"
             )

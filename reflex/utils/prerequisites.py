@@ -210,28 +210,35 @@ def get_app(reload: bool = False) -> ModuleType:
 
     Raises:
         RuntimeError: If the app name is not set in the config.
+        exceptions.ReflexError: Reflex specific errors.
     """
-    os.environ[constants.RELOAD_CONFIG] = str(reload)
-    config = get_config()
-    if not config.app_name:
-        raise RuntimeError(
-            "Cannot get the app module because `app_name` is not set in rxconfig! "
-            "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
-        )
-    module = config.module
-    sys.path.insert(0, os.getcwd())
-    app = __import__(module, fromlist=(constants.CompileVars.APP,))
+    from reflex.utils import exceptions, telemetry
 
-    if reload:
-        from reflex.state import reload_state_module
+    try:
+        os.environ[constants.RELOAD_CONFIG] = str(reload)
+        config = get_config()
+        if not config.app_name:
+            raise RuntimeError(
+                "Cannot get the app module because `app_name` is not set in rxconfig! "
+                "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
+            )
+        module = config.module
+        sys.path.insert(0, os.getcwd())
+        app = __import__(module, fromlist=(constants.CompileVars.APP,))
 
-        # Reset rx.State subclasses to avoid conflict when reloading.
-        reload_state_module(module=module)
+        if reload:
+            from reflex.state import reload_state_module
 
-        # Reload the app module.
-        importlib.reload(app)
+            # Reset rx.State subclasses to avoid conflict when reloading.
+            reload_state_module(module=module)
 
-    return app
+            # Reload the app module.
+            importlib.reload(app)
+
+        return app
+    except exceptions.ReflexError as ex:
+        telemetry.send("error", context="frontend", detail=str(ex))
+        raise
 
 
 def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
@@ -848,6 +855,8 @@ def install_frontend_packages(packages: set[str], config: Config):
     processes.run_process_with_fallback(
         [get_install_package_manager(), "install"],  # type: ignore
         fallback=fallback_command,
+        analytics_enabled=True,
+        error_filter_fn=lambda output: "404" in output,
         show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
@@ -863,6 +872,8 @@ def install_frontend_packages(packages: set[str], config: Config):
                 *((config.tailwind or {}).get("plugins", [])),
             ],
             fallback=fallback_command,
+            analytics_enabled=True,
+            error_filter_fn=lambda output: "404" in output,
             show_status_message="Installing tailwind",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
@@ -873,6 +884,8 @@ def install_frontend_packages(packages: set[str], config: Config):
         processes.run_process_with_fallback(
             [get_install_package_manager(), "add", *packages],
             fallback=fallback_command,
+            analytics_enabled=True,
+            error_filter_fn=lambda output: "404" in output,
             show_status_message="Installing frontend packages from config and components",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,

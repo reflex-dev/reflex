@@ -1,4 +1,5 @@
 """Define the base Reflex class."""
+
 from __future__ import annotations
 
 import os
@@ -26,15 +27,17 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
         field_name: name of attribute
 
     Raises:
-        NameError: If state var field shadows another in its parent state
+        VarNameError: If state var field shadows another in its parent state
     """
+    from reflex.utils.exceptions import VarNameError
+
     reload = os.getenv(constants.RELOAD_CONFIG) == "True"
     for base in bases:
         try:
             if not reload and getattr(base, field_name, None):
                 pass
         except TypeError as te:
-            raise NameError(
+            raise VarNameError(
                 f'State var "{field_name}" in {base} has been shadowed by a substate var; '
                 f'use a different field name instead".'
             ) from te
