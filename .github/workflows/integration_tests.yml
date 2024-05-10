@@ -112,7 +112,7 @@ jobs:
         run: cargo install --locked hyperfine
       - name: Benchmark imports
 #        if: github.event.pull_request.merged == true
-        run: hyperfine --warmup 3 "poetry run python counter/counter.py" --show-output --export-json "${{ env.OUTPUT_FILE }}"
+        run: pwd && ls && hyperfine --warmup 3 "poetry run python counter/counter.py" --show-output --export-json "${{ env.OUTPUT_FILE }}"
       - name: Upload Benchmarks
         if: ${{ env.DATABASE_URL }}
         run:
