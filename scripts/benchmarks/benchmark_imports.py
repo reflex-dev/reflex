@@ -137,6 +137,7 @@ def main():
     pr_title = args.pr_title or os.getenv("PR_TITLE", "")
 
     # Get the results of pytest benchmarks
+    print(f"path: {args.benchmark_json}")
     cleaned_benchmark_results = extract_stats_from_json(args.benchmark_json)
     # Insert the data into the database
     insert_benchmarking_data(
