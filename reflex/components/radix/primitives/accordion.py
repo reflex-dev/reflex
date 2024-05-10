@@ -144,7 +144,7 @@ class AccordionRoot(AccordionComponent):
             self.custom_attrs["data-variant"] = "classic"
 
         style = {
-            "border_radius": "max(var(--radius-2), var(--radius-5))",
+            "border_radius": "var(--radius-4)",
             "box_shadow": f"0 2px 10px {color('black', 1, alpha=True)}",
             "&[data-variant='classic']": {
                 "background_color": color("accent", 9),
