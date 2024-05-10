@@ -466,7 +466,7 @@ class Var:
             return self._var_name
         try:
             return json.loads(self._var_name)
-        except VarValueError:
+        except ValueError:
             return self._var_name
 
     def equals(self, other: Var) -> bool:
@@ -1829,7 +1829,7 @@ class BaseVar(Var):
                 try:
                     value = self._var_type(value)
                     setattr(state, self._var_name, value)
-                except VarValueError:
+                except ValueError:
                     console.debug(
                         f"{type(state).__name__}.{self._var_name}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
                     )
