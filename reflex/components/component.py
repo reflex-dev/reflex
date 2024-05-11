@@ -782,7 +782,7 @@ class Component(BaseComponent, ABC):
 
         return cls(children=children, **props)
 
-    def add_style(self) -> Dict[str, Any] | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Downstream components can override this method to return a style dict
