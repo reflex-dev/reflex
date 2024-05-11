@@ -856,7 +856,6 @@ def install_frontend_packages(packages: set[str], config: Config):
         [get_install_package_manager(), "install"],  # type: ignore
         fallback=fallback_command,
         analytics_enabled=True,
-        error_filter_fn=lambda output: "404" in output,
         show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
@@ -873,7 +872,6 @@ def install_frontend_packages(packages: set[str], config: Config):
             ],
             fallback=fallback_command,
             analytics_enabled=True,
-            error_filter_fn=lambda output: "404" in output,
             show_status_message="Installing tailwind",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
@@ -885,7 +883,6 @@ def install_frontend_packages(packages: set[str], config: Config):
             [get_install_package_manager(), "add", *packages],
             fallback=fallback_command,
             analytics_enabled=True,
-            error_filter_fn=lambda output: "404" in output,
             show_status_message="Installing frontend packages from config and components",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
