@@ -113,7 +113,7 @@ jobs:
       - name: Benchmark imports
 #        if: github.event.pull_request.merged == true
         working-directory: ./reflex-examples/counter
-        run: hyperfine --warmup 3 "poetry run python counter/counter.py" --show-output --export-json "${{ env.OUTPUT_FILE }}"
+        run: hyperfine --warmup 3 "export POETRY_VIRTUALENVS_PATH=../../.venv; poetry run python counter/counter.py" --show-output --export-json "${{ env.OUTPUT_FILE }}" --shell bash
       - name: Upload Benchmarks
 #        if: github.event.pull_request.merged == true && ${{ env.DATABASE_URL }}
         run:
