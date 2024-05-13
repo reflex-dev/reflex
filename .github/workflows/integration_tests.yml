@@ -100,7 +100,7 @@ jobs:
           npm -v
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev
       - name: Measure and upload .web size
-        if: github.event.pull_request.merged == true && ${{ env.DATABASE_URL }}
+        if: ${{ env.DATABASE_URL  && github.event.pull_request.merged == true }}
         run:
           poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
@@ -166,7 +166,7 @@ jobs:
           npm -v
           poetry run bash scripts/integration.sh ./reflex-web prod
       - name: Measure and upload .web size
-        if: github.event.pull_request.merged == true && ${{ env.DATABASE_URL }}
+        if: ${{ env.DATABASE_URL  && github.event.pull_request.merged == true }}
         run:
           poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
