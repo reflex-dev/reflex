@@ -2041,14 +2041,14 @@ def test_add_style_embedded_vars(test_state: BaseState):
     page._add_style_recursive(Style())
 
     assert (
-        "const test_state = useContext(StateContexts.test_state)"
+        f"const {test_state.get_name()} = useContext(StateContexts.{test_state.get_name()})"
         in page._get_all_hooks_internal()
     )
     assert "useText" in page._get_all_hooks_internal()
     assert "useParent" in page._get_all_hooks_internal()
     assert (
         str(page).count(
-            'css={{"fakeParent": "parent", "color": "var(--plum-10)", "fake": "text", "margin": `${test_state.num}%`}}'
+            f'css={{{{"fakeParent": "parent", "color": "var(--plum-10)", "fake": "text", "margin": `${{{test_state.get_name()}.num}}%`}}}}'
         )
         == 1
     )
