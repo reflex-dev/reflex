@@ -74,9 +74,9 @@ jobs:
       - name: Install requirements for counter example
         working-directory: ./reflex-examples/counter
         run: |
-          poetry run pip install -r requirements.txt
+          poetry run uv pip install -r requirements.txt
       - name: Install additional dependencies for DB access
-        run: poetry run pip install psycopg2-binary
+        run: poetry run uv pip install psycopg2-binary
       - name: Check export --backend-only before init for counter example
         working-directory: ./reflex-examples/counter
         run: |
@@ -134,9 +134,9 @@ jobs:
 
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
-        run: poetry run pip install -r requirements.txt
+        run: poetry run uv pip install -r requirements.txt
       - name: Install additional dependencies for DB access
-        run: poetry run pip install psycopg2-binary
+        run: poetry run uv pip install psycopg2-binary
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: poetry run reflex init
