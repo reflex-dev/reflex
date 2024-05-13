@@ -266,12 +266,12 @@ class AccordionItem(AccordionComponent):
                 "&:first-child": {
                     "margin_top": 0,
                     "border_top": 0,
-                    "border_top_left_radius": "max(var(--radius-2), var(--radius-6))",
-                    "border_top_right_radius": "max(var(--radius-2), var(--radius-6))",
+                    "border_top_left_radius": "var(--radius-4)",
+                    "border_top_right_radius": "var(--radius-4)",
                 },
                 "&:last-child": {
-                    "border_bottom_left_radius": "max(var(--radius-2), var(--radius-6))",
-                    "border_bottom_right_radius": "max(var(--radius-2), var(--radius-6))",
+                    "border_bottom_left_radius": "var(--radius-4)",
+                    "border_bottom_right_radius": "var(--radius-4)",
                 },
                 "&:focus-within": {
                     "position": "relative",
