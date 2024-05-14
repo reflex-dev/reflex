@@ -83,7 +83,6 @@ class Img(BaseHTML):
     def create(cls, *children, **props) -> Component:
         if len(children) == 0:
             comp = super().create(*children, **props)
-            print(props)
         else:
             return super().create(src=children[0], **props)
 
