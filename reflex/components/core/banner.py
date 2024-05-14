@@ -100,7 +100,7 @@ class ConnectionToaster(Toaster):
             The imports for the connection toaster.
         """
         imports_ = {**Imports.EVENTS}
-        imports_["react"].append("useEffect")  # type: ignore
+        imports_["react"].append("useEffect")  # type: ignore # remove when 3248 is merged
         (imports_.setdefault(f"/{Dirs.STATE_PATH}", []).append("getBackendURL"))  # type: ignore
         imports_.setdefault("/env.json", []).append(
             imports.ImportVar(tag="env", is_default=True)
@@ -123,14 +123,14 @@ class ConnectionToaster(Toaster):
             f"""useEffect(() => {{
     toast.error(
         `Cannot connect to server: ${{getLastMessage({connect_errors})}}.`,
-        {{description:`Check if server is reachable at ${{getBackendURL(env.EVENT).href}}`}})
+        {{description:`Check if server is reachable at ${{getBackendURL(env.EVENT).href}}`, id:"websocker-error"}})
 }}, {connect_errors});"""
         )
 
-        hook._var_data = VarData.merge(
-            connect_errors._var_data,
-            VarData(imports={"react": "useEffect"}),
-        )
+        # can uncomment when 3248 is merged
+        # hook._var_data = VarData.merge(
+        #     connect_errors._var_data, VarData(imports={"react": ["useEffect"]})
+        # )
         return [
             Hooks.EVENTS,
             util_hook,
