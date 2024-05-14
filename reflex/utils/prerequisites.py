@@ -965,7 +965,6 @@ def needs_reinit(frontend: bool = True) -> bool:
             console.warn(
                 "Creating project directories in OneDrive may lead to performance issues. For optimal performance, It is recommended to avoid using OneDrive for your reflex app."
             )
-        # print(f"path: {Path.cwd()}")
     # No need to reinitialize if the app is already initialized.
     return False
 
