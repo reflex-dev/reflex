@@ -181,7 +181,11 @@ def get_install_package_manager() -> str | None:
     Returns:
         The path to the package manager.
     """
-    if constants.IS_WINDOWS and not is_windows_bun_supported() or windows_check_onedrive_in_path():
+    if (
+        constants.IS_WINDOWS
+        and not is_windows_bun_supported()
+        or windows_check_onedrive_in_path()
+    ):
         return get_package_manager()
     return get_config().bun_path
 
@@ -199,13 +203,14 @@ def get_package_manager() -> str | None:
     return npm_path
 
 
-def windows_check_onedrive_in_path():
+def windows_check_onedrive_in_path() -> bool:
     """For windows, check if oneDrive is present in the project dir path.
 
     Returns:
         If oneDrive is in the path of the project directory.
     """
     return "onedrive" in str(Path.cwd()).lower()
+
 
 def get_app(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
@@ -752,7 +757,9 @@ def install_bun():
     Raises:
         FileNotFoundError: If required packages are not found.
     """
-    if constants.IS_WINDOWS and not (win_supported := is_windows_bun_supported()) or (one_drive_in_path := windows_check_onedrive_in_path()):
+    win_supported = is_windows_bun_supported()
+    one_drive_in_path = windows_check_onedrive_in_path()
+    if constants.IS_WINDOWS and not win_supported or one_drive_in_path:
         if not win_supported:
             console.warn(
                 "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
