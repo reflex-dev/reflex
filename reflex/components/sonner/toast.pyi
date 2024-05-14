@@ -11,6 +11,7 @@ from typing import Any, Literal, Optional
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
+from reflex.components.props import PropsBase
 from reflex.event import EventSpec, call_script
 from reflex.style import Style, color_mode
 from reflex.utils import format
@@ -34,9 +35,6 @@ class ToastAction(Base):
 
 @serializer
 def serialize_action(action: ToastAction) -> dict: ...
-
-class PropsBase(Base):
-    def json(self) -> str: ...
 
 class ToastProps(PropsBase):
     description: Optional[str]

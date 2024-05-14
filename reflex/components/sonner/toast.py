@@ -7,6 +7,7 @@ from typing import Any, Literal, Optional
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
+from reflex.components.props import PropsBase
 from reflex.event import (
     EventSpec,
     call_script,
@@ -51,28 +52,6 @@ def serialize_action(action: ToastAction) -> dict:
         "label": action.label,
         "onClick": format.format_queue_events(action.on_click),
     }
-
-
-class PropsBase(Base):
-    """Base class for all props classes."""
-
-    def json(self) -> str:
-        """Convert the object to a json string.
-
-        Returns:
-            The object as a json string.
-        """
-        from reflex.utils.serializers import serialize
-
-        return format.unwrap_vars(
-            self.__config__.json_dumps(
-                {
-                    format.to_camel_case(key): value
-                    for key, value in self.dict().items()
-                },
-                default=serialize,
-            )
-        )
 
 
 def _toast_callback_signature(toast: Var) -> list[Var]:
