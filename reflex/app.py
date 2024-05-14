@@ -193,20 +193,12 @@ class App(Base):
         base_state_subclasses = BaseState.__subclasses__()
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
-        if not is_testing_env():
+        if not is_testing_env() and len(base_state_subclasses) > 1:
             # Only one Base State class is allowed.
-            if len(base_state_subclasses) > 1:
-                raise ValueError(
-                    "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
-                )
+            raise ValueError(
+                "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
+            )
 
-            if "state" in kwargs:
-                console.deprecate(
-                    feature_name="`state` argument for App()",
-                    reason="due to all `rx.State` subclasses being inferred.",
-                    deprecation_version="0.3.5",
-                    removal_version="0.5.0",
-                )
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
 
@@ -411,9 +403,12 @@ class App(Base):
             The generated component.
 
         Raises:
+            VarOperationTypeError: When an invalid component var related function is passed.
             TypeError: When an invalid component function is passed.
             exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
+        from reflex.utils.exceptions import VarOperationTypeError
+
         try:
             return component if isinstance(component, Component) else component()
         except exceptions.MatchTypeError:
@@ -421,7 +416,7 @@ class App(Base):
         except TypeError as e:
             message = str(e)
             if "BaseVar" in message or "ComputedVar" in message:
-                raise TypeError(
+                raise VarOperationTypeError(
                     "You may be trying to use an invalid Python function on a state var. "
                     "When referencing a var inside your render code, only limited var operations are supported. "
                     "See the var operation docs here: https://reflex.dev/docs/vars/var-operations/"
@@ -439,7 +434,6 @@ class App(Base):
             EventHandler | EventSpec | list[EventHandler | EventSpec] | None
         ) = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
-        script_tags: list[Component] | None = None,
     ):
         """Add a page to the app.
 
@@ -454,7 +448,6 @@ class App(Base):
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
-            script_tags: List of script tags to be added to component
 
         Raises:
             ValueError: When the specified route name already exists.
@@ -535,16 +528,6 @@ class App(Base):
             **meta_args,
         )
 
-        # Add script tags if given
-        if script_tags:
-            console.deprecate(
-                feature_name="Passing script tags to add_page",
-                reason="Add script components as children to the page component instead",
-                deprecation_version="0.2.9",
-                removal_version="0.5.0",
-            )
-            component.children.extend(script_tags)
-
         # Add the page.
         self._check_routes_conflict(route)
         self.pages[route] = component
@@ -575,11 +558,13 @@ class App(Base):
         Based on conflicts that NextJS would throw if not intercepted.
 
         Raises:
-            ValueError: exception showing which conflict exist with the route to be added
+            RouteValueError: exception showing which conflict exist with the route to be added
 
         Args:
             new_route: the route being newly added.
         """
+        from reflex.utils.exceptions import RouteValueError
+
         if "[" not in new_route:
             return
 
@@ -596,7 +581,7 @@ class App(Base):
             ):
                 if rw in segments and r != nr:
                     # If the slugs in the segments of both routes are not the same, then the route is invalid
-                    raise ValueError(
+                    raise RouteValueError(
                         f"You cannot use different slug names for the same dynamic path in  {route} and {new_route} ('{r}' != '{nr}')"
                     )
                 elif rw not in segments and r != nr:
@@ -775,8 +760,10 @@ class App(Base):
             export: Whether to compile the app for export.
 
         Raises:
-            RuntimeError: When any page uses state, but no rx.State subclass is defined.
+            ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
         """
+        from reflex.utils.exceptions import ReflexRuntimeError
+
         # Render a default 404 page if the user didn't supply one
         if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
@@ -833,9 +820,7 @@ class App(Base):
 
         for _route, component in self.pages.items():
             # Merge the component style with the app style.
-            component._add_style_recursive(self.style)
-
-            component.apply_theme(self.theme)
+            component._add_style_recursive(self.style, self.theme)
 
             # Add component._get_all_imports() to all_imports.
             all_imports.update(component._get_all_imports())
@@ -859,7 +844,7 @@ class App(Base):
 
         # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
         if code_uses_state_contexts(stateful_components_code) and self.state is None:
-            raise RuntimeError(
+            raise ReflexRuntimeError(
                 "To access rx.State in frontend components, at least one "
                 "subclass of rx.State must be defined in the app."
             )
@@ -1082,50 +1067,60 @@ async def process(
         headers: The client headers.
         client_ip: The client_ip.
 
+    Raises:
+        ReflexError: If a reflex specific error occurs during processing the event.
+
     Yields:
         The state updates after processing the event.
     """
-    # Add request data to the state.
-    router_data = event.router_data
-    router_data.update(
-        {
-            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
-            constants.RouteVar.CLIENT_TOKEN: event.token,
-            constants.RouteVar.SESSION_ID: sid,
-            constants.RouteVar.HEADERS: headers,
-            constants.RouteVar.CLIENT_IP: client_ip,
-        }
-    )
-    # Get the state for the session exclusively.
-    async with app.state_manager.modify_state(event.substate_token) as state:
-        # re-assign only when the value is different
-        if state.router_data != router_data:
-            # assignment will recurse into substates and force recalculation of
-            # dependent ComputedVar (dynamic route variables)
-            state.router_data = router_data
-            state.router = RouterData(router_data)
+    from reflex.utils import telemetry
+    from reflex.utils.exceptions import ReflexError
 
-        # Preprocess the event.
-        update = await app._preprocess(state, event)
+    try:
+        # Add request data to the state.
+        router_data = event.router_data
+        router_data.update(
+            {
+                constants.RouteVar.QUERY: format.format_query_params(event.router_data),
+                constants.RouteVar.CLIENT_TOKEN: event.token,
+                constants.RouteVar.SESSION_ID: sid,
+                constants.RouteVar.HEADERS: headers,
+                constants.RouteVar.CLIENT_IP: client_ip,
+            }
+        )
+        # Get the state for the session exclusively.
+        async with app.state_manager.modify_state(event.substate_token) as state:
+            # re-assign only when the value is different
+            if state.router_data != router_data:
+                # assignment will recurse into substates and force recalculation of
+                # dependent ComputedVar (dynamic route variables)
+                state.router_data = router_data
+                state.router = RouterData(router_data)
 
-        # If there was an update, yield it.
-        if update is not None:
-            yield update
+            # Preprocess the event.
+            update = await app._preprocess(state, event)
 
-        # Only process the event if there is no update.
-        else:
-            if app._process_background(state, event) is not None:
-                # `final=True` allows the frontend send more events immediately.
-                yield StateUpdate(final=True)
-                return
-
-            # Process the event synchronously.
-            async for update in state._process(event):
-                # Postprocess the event.
-                update = await app._postprocess(state, event, update)
-
-                # Yield the update.
+            # If there was an update, yield it.
+            if update is not None:
                 yield update
+
+            # Only process the event if there is no update.
+            else:
+                if app._process_background(state, event) is not None:
+                    # `final=True` allows the frontend send more events immediately.
+                    yield StateUpdate(final=True)
+                    return
+
+                # Process the event synchronously.
+                async for update in state._process(event):
+                    # Postprocess the event.
+                    update = await app._postprocess(state, event, update)
+
+                    # Yield the update.
+                    yield update
+    except ReflexError as ex:
+        telemetry.send("error", context="backend", detail=str(ex))
+        raise
 
 
 async def ping() -> str:
@@ -1159,10 +1154,12 @@ def upload(app: App):
             emitted by the upload handler.
 
         Raises:
-            ValueError: if there are no args with supported annotation.
-            TypeError: if a background task is used as the handler.
+            UploadValueError: if there are no args with supported annotation.
+            UploadTypeError: if a background task is used as the handler.
             HTTPException: when the request does not include token / handler headers.
         """
+        from reflex.utils.exceptions import UploadTypeError, UploadValueError
+
         token = request.headers.get("reflex-client-token")
         handler = request.headers.get("reflex-event-handler")
 
@@ -1188,7 +1185,7 @@ def upload(app: App):
         # check if there exists any handler args with annotation, List[UploadFile]
         if isinstance(func, EventHandler):
             if func.is_background:
-                raise TypeError(
+                raise UploadTypeError(
                     f"@rx.background is not supported for upload handler `{handler}`.",
                 )
             func = func.fn
@@ -1203,7 +1200,7 @@ def upload(app: App):
                 break
 
         if not handler_upload_param:
-            raise ValueError(
+            raise UploadValueError(
                 f"`{handler}` handler should have a parameter annotated as "
                 "List[rx.UploadFile]"
             )

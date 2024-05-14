@@ -8,7 +8,6 @@ import sys
 import types
 from functools import wraps
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -28,15 +27,9 @@ from typing import (
 import sqlalchemy
 
 try:
-    # TODO The type checking guard can be removed once
-    # reflex-hosting-cli tools are compatible with pydantic v2
-
-    if not TYPE_CHECKING:
-        from pydantic.v1.fields import ModelField
-    else:
-        raise ModuleNotFoundError
+    from pydantic.v1.fields import ModelField
 except ModuleNotFoundError:
-    from pydantic.fields import ModelField
+    from pydantic.fields import ModelField  # type: ignore
 
 from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property

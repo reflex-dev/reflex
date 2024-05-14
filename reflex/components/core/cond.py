@@ -102,15 +102,6 @@ class Cond(MemoizationLeaf):
             _IS_TRUE_IMPORT,
         )
 
-    def _apply_theme(self, theme: Component):
-        """Apply the theme to this component.
-
-        Args:
-            theme: The theme to apply.
-        """
-        self.comp1.apply_theme(theme)  # type: ignore
-        self.comp2.apply_theme(theme)  # type: ignore
-
 
 @overload
 def cond(condition: Any, c1: Component, c2: Any) -> Component:

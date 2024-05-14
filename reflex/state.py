@@ -7,9 +7,7 @@ import contextlib
 import copy
 import functools
 import inspect
-import json
 import traceback
-import urllib.parse
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -31,13 +29,7 @@ from typing import (
 import dill
 
 try:
-    # TODO The type checking guard can be removed once
-    # reflex-hosting-cli tools are compatible with pydantic v2
-
-    if not TYPE_CHECKING:
-        import pydantic.v1 as pydantic
-    else:
-        raise ModuleNotFoundError
+    import pydantic.v1 as pydantic
 except ModuleNotFoundError:
     import pydantic
 
@@ -47,6 +39,7 @@ from redis.asyncio import Redis
 from reflex import constants
 from reflex.base import Base
 from reflex.event import (
+    BACKGROUND_TASK_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -286,11 +279,13 @@ class EventHandlerSetVar(EventHandler):
 
         Raises:
             AttributeError: If the given Var name does not exist on the state.
-            ValueError: If the given Var name is not a str
+            EventHandlerValueError: If the given Var name is not a str
         """
+        from reflex.utils.exceptions import EventHandlerValueError
+
         if args:
             if not isinstance(args[0], str):
-                raise ValueError(
+                raise EventHandlerValueError(
                     f"Var name must be passed as a string, got {args[0]!r}"
                 )
             # Check that the requested Var setter exists on the State at compile time.
@@ -387,10 +382,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             **kwargs: The kwargs to pass to the Pydantic init method.
 
         Raises:
-            RuntimeError: If the state is instantiated directly by end user.
+            ReflexRuntimeError: If the state is instantiated directly by end user.
         """
+        from reflex.utils.exceptions import ReflexRuntimeError
+
         if not _reflex_internal_init and not is_testing_env():
-            raise RuntimeError(
+            raise ReflexRuntimeError(
                 "State classes should not be instantiated directly in a Reflex app. "
                 "See https://reflex.dev/docs/state/ for further information."
             )
@@ -445,8 +442,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
 
         Raises:
-            ValueError: If a substate class shadows another.
+            StateValueError: If a substate class shadows another.
         """
+        from reflex.utils.exceptions import StateValueError
+
         super().__init_subclass__(**kwargs)
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
@@ -478,7 +477,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 else:
                     # During normal operation, subclasses cannot have the same name, even if they are
                     # defined in different modules.
-                    raise ValueError(
+                    raise StateValueError(
                         f"The substate class '{cls.__name__}' has been defined multiple times. "
                         "Shadowing substate classes is not allowed."
                     )
@@ -587,6 +586,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             closure=fn.__closure__,
         )
         newfn.__annotations__ = fn.__annotations__
+        if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
+            setattr(newfn, BACKGROUND_TASK_MARKER, mark)
         return newfn
 
     @staticmethod
@@ -834,10 +835,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             prop: The variable to initialize
 
         Raises:
-            TypeError: if the variable has an incorrect type
+            VarTypeError: if the variable has an incorrect type
         """
+        from reflex.utils.exceptions import VarTypeError
+
         if not types.is_valid_var_type(prop._var_type):
-            raise TypeError(
+            raise VarTypeError(
                 "State vars must be primitive Python types, "
                 "Plotly figures, Pandas dataframes, "
                 "or subclasses of rx.Base. "
@@ -881,7 +884,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls.vars.update({name: var})
 
         # let substates know about the new variable
-        for substate_class in cls.__subclasses__():
+        for substate_class in cls.class_subclasses:
             substate_class.vars.setdefault(name, var)
 
         # Reinitialize dependency tracking dicts.
@@ -960,124 +963,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for func in inspect.getmembers(BaseState, predicate=inspect.isfunction)
             if not func[0].startswith("__")
         }
-
-    def get_token(self) -> str:
-        """Return the token of the client associated with this state.
-
-        Returns:
-            The token of the client.
-        """
-        console.deprecate(
-            feature_name="get_token",
-            reason="replaced by `State.router.session.client_token`",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-        return self.router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
-
-    def get_sid(self) -> str:
-        """Return the session ID of the client associated with this state.
-
-        Returns:
-            The session ID of the client.
-        """
-        console.deprecate(
-            feature_name="get_sid",
-            reason="replaced by `State.router.session.session_id`",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-        return self.router_data.get(constants.RouteVar.SESSION_ID, "")
-
-    def get_headers(self) -> Dict:
-        """Return the headers of the client associated with this state.
-
-        Returns:
-            The headers of the client.
-        """
-        console.deprecate(
-            feature_name="get_headers",
-            reason="replaced by `State.router.headers`",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-        return self.router_data.get(constants.RouteVar.HEADERS, {})
-
-    def get_client_ip(self) -> str:
-        """Return the IP of the client associated with this state.
-
-        Returns:
-            The IP of the client.
-        """
-        console.deprecate(
-            feature_name="get_client_ip",
-            reason="replaced by `State.router.session.client_ip`",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-        return self.router_data.get(constants.RouteVar.CLIENT_IP, "")
-
-    def get_current_page(self, origin=False) -> str:
-        """Obtain the path of current page from the router data.
-
-        Args:
-            origin: whether to return the base route as shown in browser
-
-        Returns:
-            The current page.
-        """
-        console.deprecate(
-            feature_name="get_current_page",
-            reason="replaced by State.router.page / self.router.page",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-
-        return self.router.page.raw_path if origin else self.router.page.path
-
-    def get_query_params(self) -> dict[str, str]:
-        """Obtain the query parameters for the queried page.
-
-        The query object contains both the URI parameters and the GET parameters.
-
-        Returns:
-            The dict of query parameters.
-        """
-        console.deprecate(
-            feature_name="get_query_params",
-            reason="replaced by `State.router.page.params`",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-        return self.router_data.get(constants.RouteVar.QUERY, {})
-
-    def get_cookies(self) -> dict[str, str]:
-        """Obtain the cookies of the client stored in the browser.
-
-        Returns:
-                The dict of cookies.
-        """
-        console.deprecate(
-            feature_name=f"rx.get_cookies",
-            reason="and has been replaced by rx.Cookie, which can be used as a state var",
-            deprecation_version="0.3.0",
-            removal_version="0.5.0",
-        )
-        cookie_dict = {}
-        cookies = self.get_headers().get(constants.RouteVar.COOKIE, "").split(";")
-
-        cookie_pairs = [cookie.split("=") for cookie in cookies if cookie]
-
-        for pair in cookie_pairs:
-            key, value = pair[0].strip(), urllib.parse.unquote(pair[1].strip())
-            try:
-                # cast non-string values to the actual types.
-                value = json.loads(value)
-            except json.JSONDecodeError:
-                pass
-            finally:
-                cookie_dict[key] = value
-        return cookie_dict
 
     @classmethod
     def setup_dynamic_args(cls, args: dict[str, str]):
@@ -1577,6 +1462,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Yields:
             StateUpdate object
         """
+        from reflex.utils import telemetry
+        from reflex.utils.exceptions import ReflexError
+
         # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
 
@@ -1612,9 +1500,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 yield state._as_state_update(handler, events, final=True)
 
         # If an error occurs, throw a window alert.
-        except Exception:
+        except Exception as ex:
             error = traceback.format_exc()
             print(error)
+            if isinstance(ex, ReflexError):
+                telemetry.send("error", context="backend", detail=str(ex))
             yield state._as_state_update(
                 handler,
                 window_alert("An error occurred. See logs for details."),
@@ -1811,10 +1701,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if initial:
             computed_vars = {
                 # Include initial computed vars.
-                prop_name: cv._initial_value
-                if isinstance(cv, ComputedVar)
-                and not isinstance(cv._initial_value, types.Unset)
-                else self.get_value(getattr(self, prop_name))
+                prop_name: (
+                    cv._initial_value
+                    if isinstance(cv, ComputedVar)
+                    and not isinstance(cv._initial_value, types.Unset)
+                    else self.get_value(getattr(self, prop_name))
+                )
                 for prop_name, cv in self.computed_vars.items()
             }
         elif include_computed:

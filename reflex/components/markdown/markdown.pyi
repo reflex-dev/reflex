@@ -22,8 +22,7 @@ from reflex.components.radix.themes.typography.heading import Heading
 from reflex.components.radix.themes.typography.link import Link
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.tags.tag import Tag
-from reflex.style import Style
-from reflex.utils import console, imports, types
+from reflex.utils import imports, types
 from reflex.utils.imports import ImportVar
 from reflex.vars import Var
 
@@ -49,7 +48,6 @@ class Markdown(Component):
         cls,
         *children,
         component_map: Optional[Dict[str, Any]] = None,
-        custom_styles: Optional[Dict[str, Any]] = None,
         component_map_hash: Optional[str] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -109,7 +107,6 @@ class Markdown(Component):
         Args:
             *children: The children of the component.
             component_map: The component map from a tag to a lambda that creates a component.
-            custom_styles: Custom styles for the markdown (deprecated in v0.2.9).
             component_map_hash: The hash of the component map, generated at create() time.
             style: The style of the component.
             key: A unique key for the component.

@@ -62,7 +62,8 @@ __all__ = [
     "inset",
     "menu",
     "popover",
-    "progress",
+    # progress is in experimental namespace until https://github.com/radix-ui/themes/pull/492
+    # "progress",
     "radio",
     "radio_cards",
     "radio_group",

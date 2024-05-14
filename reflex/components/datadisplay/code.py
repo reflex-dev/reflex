@@ -1,4 +1,6 @@
 """A code component."""
+from __future__ import annotations
+
 import re
 from typing import Dict, Literal, Optional, Union
 
@@ -491,8 +493,9 @@ class CodeBlock(Component):
         else:
             return code_block
 
-    def _add_style(self, style):
-        self.custom_style.update(style)  # type: ignore
+    def add_style(self) -> Style | None:
+        """Add style to the component."""
+        self.custom_style.update(self.style)
 
     def _render(self):
         out = super()._render()

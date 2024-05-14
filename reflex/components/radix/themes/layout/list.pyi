@@ -157,6 +157,7 @@ class BaseList(Component):
 
         """
         ...
+    def add_style(self) -> Style | None: ...
 
 class UnorderedList(BaseList, Ul):
     @overload
@@ -165,7 +166,7 @@ class UnorderedList(BaseList, Ul):
         cls,
         *children,
         items: Optional[Union[Var[Iterable], Iterable]] = None,
-        list_style_type: Optional[Literal["none", "disc", "circle", "square"]] = "disc",
+        list_style_type: Optional[LiteralListStyleTypeUnordered] = "disc",
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -302,24 +303,7 @@ class OrderedList(BaseList, Ol):
         cls,
         *children,
         items: Optional[Union[Var[Iterable], Iterable]] = None,
-        list_style_type: Optional[
-            Literal[
-                "none",
-                "decimal",
-                "decimal-leading-zero",
-                "lower-roman",
-                "upper-roman",
-                "lower-greek",
-                "lower-latin",
-                "upper-latin",
-                "armenian",
-                "georgian",
-                "lower-alpha",
-                "upper-alpha",
-                "hiragana",
-                "katakana",
-            ]
-        ] = "decimal",
+        list_style_type: Optional[LiteralListStyleTypeOrdered] = "decimal",
         reversed: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
