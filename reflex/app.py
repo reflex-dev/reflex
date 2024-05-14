@@ -13,6 +13,7 @@ import os
 import platform
 from typing import (
     Any,
+    AsyncGenerator,
     AsyncIterator,
     Callable,
     Coroutine,
@@ -92,6 +93,23 @@ def default_overlay_component() -> Component:
         The default overlay_component, which is a connection_modal.
     """
     return Fragment.create(connection_pulser(), connection_modal())
+
+
+@contextlib.asynccontextmanager
+async def lifespan(api: FastAPI) -> AsyncGenerator[None, None]:
+    """Context manager to handle the lifespan of the app.
+
+    Args:
+        api: The FastAPI instance.
+
+    Yields:
+        None
+    """
+    # try to set up proxying if its enabled
+    from .proxy import proxy_middleware
+
+    async with proxy_middleware(api):
+        yield
 
 
 class OverlayFragment(Fragment):
@@ -203,7 +221,7 @@ class App(Base):
         self.middleware.append(HydrateMiddleware())
 
         # Set up the API.
-        self.api = FastAPI()
+        self.api = FastAPI(lifespan=lifespan)
         self._add_cors()
         self._add_default_endpoints()
 
