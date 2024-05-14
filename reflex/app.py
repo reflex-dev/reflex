@@ -212,6 +212,13 @@ class App(Base):
         # Set up the admin dash.
         self._setup_admin_dash()
 
+        if os.environ.get(constants.ENV_MODE_ENV_VAR) == constants.Env.PROD.value:
+            static_dir = constants.Dirs.WEB_STATIC
+            if os.path.exists(static_dir):
+                self.api.mount(
+                    "/", StaticFiles(directory=static_dir, html=True), name="frontend"
+                )
+
     def _enable_state(self) -> None:
         """Enable state for the app."""
         if not self.state:

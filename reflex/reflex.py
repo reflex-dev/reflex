@@ -132,6 +132,7 @@ def _run(
     backend_port: str = str(config.backend_port),
     backend_host: str = config.backend_host,
     loglevel: constants.LogLevel = config.loglevel,
+    export: bool = False,
 ):
     """Run the app in the given directory."""
     from reflex.utils import build, exec, prerequisites, processes
@@ -179,7 +180,7 @@ def _run(
 
     if frontend:
         # Get the app module.
-        prerequisites.get_compiled_app()
+        prerequisites.get_compiled_app(export=export and env == constants.Env.PROD)
 
     # Warn if schema is not up to date.
     prerequisites.check_schema_up_to_date()
@@ -212,7 +213,11 @@ def _run(
     # Run the frontend on a separate thread.
     if frontend:
         setup_frontend(Path.cwd())
-        commands.append((frontend_cmd, Path.cwd(), frontend_port, backend))
+        if export and env == constants.Env.PROD:
+            # In prod mode, export the frontend and serve it via static files.
+            build.export(backend=False, frontend=True, zip=False)
+        else:
+            commands.append((frontend_cmd, Path.cwd(), frontend_port, backend))
 
     # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:
@@ -251,9 +256,21 @@ def run(
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
+    export: bool = typer.Option(
+        False, help="Export the frontend first in production mode."
+    ),
 ):
     """Run the app in the current directory."""
-    _run(env, frontend, backend, frontend_port, backend_port, backend_host, loglevel)
+    _run(
+        env,
+        frontend,
+        backend,
+        frontend_port,
+        backend_port,
+        backend_host,
+        loglevel,
+        export,
+    )
 
 
 @cli.command()
