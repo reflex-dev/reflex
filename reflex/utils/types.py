@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import datetime
 import inspect
 import sys
 import types
@@ -72,6 +73,7 @@ JSONType = {str, int, float, bool}
 PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
+StringVarType = {datetime.date, datetime.datetime}
 
 # ArgsSpec = Callable[[Var], list[Var]]
 ArgsSpec = Callable
@@ -394,6 +396,18 @@ def is_backend_variable(name: str, cls: Type | None = None) -> bool:
     if cls is not None and name.startswith(f"_{cls.__name__}__"):
         return False
     return name.startswith("_") and not name.startswith("__")
+
+
+def check_type_in_var_is_string_type(value_type: Type) -> bool:
+    """Check if this variable type is a string literal.
+
+    Args:
+        value_type: Type of value.
+
+    Returns:
+        bool: The result of the check
+    """
+    return value_type in StringVarType
 
 
 def check_type_in_allowed_types(value_type: Type, allowed_types: Iterable) -> bool:

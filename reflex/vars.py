@@ -39,6 +39,7 @@ from reflex.utils.exceptions import VarAttributeError, VarTypeError, VarValueErr
 
 # This module used to export ImportVar itself, so we still import it for export here
 from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.types import check_type_in_var_is_string_type
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -363,6 +364,11 @@ class Var:
         # If the value is already a var, do nothing.
         if isinstance(value, Var):
             return value
+
+        # If value type should be used as a string literal, set var is string true, f.e. datetime, date
+        _var_is_string = (
+            True if check_type_in_var_is_string_type(type(value)) else _var_is_string
+        )
 
         # Try to pull the imports and hooks from contained values.
         _var_data = None
