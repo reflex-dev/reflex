@@ -210,28 +210,35 @@ def get_app(reload: bool = False) -> ModuleType:
 
     Raises:
         RuntimeError: If the app name is not set in the config.
+        exceptions.ReflexError: Reflex specific errors.
     """
-    os.environ[constants.RELOAD_CONFIG] = str(reload)
-    config = get_config()
-    if not config.app_name:
-        raise RuntimeError(
-            "Cannot get the app module because `app_name` is not set in rxconfig! "
-            "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
-        )
-    module = config.module
-    sys.path.insert(0, os.getcwd())
-    app = __import__(module, fromlist=(constants.CompileVars.APP,))
+    from reflex.utils import exceptions, telemetry
 
-    if reload:
-        from reflex.state import reload_state_module
+    try:
+        os.environ[constants.RELOAD_CONFIG] = str(reload)
+        config = get_config()
+        if not config.app_name:
+            raise RuntimeError(
+                "Cannot get the app module because `app_name` is not set in rxconfig! "
+                "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
+            )
+        module = config.module
+        sys.path.insert(0, os.getcwd())
+        app = __import__(module, fromlist=(constants.CompileVars.APP,))
 
-        # Reset rx.State subclasses to avoid conflict when reloading.
-        reload_state_module(module=module)
+        if reload:
+            from reflex.state import reload_state_module
 
-        # Reload the app module.
-        importlib.reload(app)
+            # Reset rx.State subclasses to avoid conflict when reloading.
+            reload_state_module(module=module)
 
-    return app
+            # Reload the app module.
+            importlib.reload(app)
+
+        return app
+    except exceptions.ReflexError as ex:
+        telemetry.send("error", context="frontend", detail=str(ex))
+        raise
 
 
 def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
@@ -848,6 +855,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     processes.run_process_with_fallback(
         [get_install_package_manager(), "install"],  # type: ignore
         fallback=fallback_command,
+        analytics_enabled=True,
         show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
@@ -863,6 +871,7 @@ def install_frontend_packages(packages: set[str], config: Config):
                 *((config.tailwind or {}).get("plugins", [])),
             ],
             fallback=fallback_command,
+            analytics_enabled=True,
             show_status_message="Installing tailwind",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
@@ -873,6 +882,7 @@ def install_frontend_packages(packages: set[str], config: Config):
         processes.run_process_with_fallback(
             [get_install_package_manager(), "add", *packages],
             fallback=fallback_command,
+            analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
@@ -914,9 +924,21 @@ def needs_reinit(frontend: bool = True) -> bool:
         return True
 
     if constants.IS_WINDOWS:
+        import uvicorn
+
+        uvi_ver = uvicorn.__version__
         console.warn(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
+        if sys.version_info >= (3, 12) and uvi_ver != "0.24.0.post1":
+            console.warn(
+                f"""On Python 3.12, `uvicorn==0.24.0.post1` is recommended for improved hot reload times. Found {uvi_ver} instead."""
+            )
+
+        if sys.version_info < (3, 12) and uvi_ver != "0.20.0":
+            console.warn(
+                f"""On Python < 3.12, `uvicorn==0.20.0` is recommended for improved hot reload times.  Found {uvi_ver} instead."""
+            )
     # No need to reinitialize if the app is already initialized.
     return False
 

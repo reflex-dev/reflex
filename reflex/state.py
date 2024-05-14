@@ -29,13 +29,7 @@ from typing import (
 import dill
 
 try:
-    # TODO The type checking guard can be removed once
-    # reflex-hosting-cli tools are compatible with pydantic v2
-
-    if not TYPE_CHECKING:
-        import pydantic.v1 as pydantic
-    else:
-        raise ModuleNotFoundError
+    import pydantic.v1 as pydantic
 except ModuleNotFoundError:
     import pydantic
 
@@ -45,6 +39,7 @@ from redis.asyncio import Redis
 from reflex import constants
 from reflex.base import Base
 from reflex.event import (
+    BACKGROUND_TASK_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -284,11 +279,13 @@ class EventHandlerSetVar(EventHandler):
 
         Raises:
             AttributeError: If the given Var name does not exist on the state.
-            ValueError: If the given Var name is not a str
+            EventHandlerValueError: If the given Var name is not a str
         """
+        from reflex.utils.exceptions import EventHandlerValueError
+
         if args:
             if not isinstance(args[0], str):
-                raise ValueError(
+                raise EventHandlerValueError(
                     f"Var name must be passed as a string, got {args[0]!r}"
                 )
             # Check that the requested Var setter exists on the State at compile time.
@@ -385,10 +382,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             **kwargs: The kwargs to pass to the Pydantic init method.
 
         Raises:
-            RuntimeError: If the state is instantiated directly by end user.
+            ReflexRuntimeError: If the state is instantiated directly by end user.
         """
+        from reflex.utils.exceptions import ReflexRuntimeError
+
         if not _reflex_internal_init and not is_testing_env():
-            raise RuntimeError(
+            raise ReflexRuntimeError(
                 "State classes should not be instantiated directly in a Reflex app. "
                 "See https://reflex.dev/docs/state/ for further information."
             )
@@ -443,8 +442,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
 
         Raises:
-            ValueError: If a substate class shadows another.
+            StateValueError: If a substate class shadows another.
         """
+        from reflex.utils.exceptions import StateValueError
+
         super().__init_subclass__(**kwargs)
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
@@ -476,7 +477,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 else:
                     # During normal operation, subclasses cannot have the same name, even if they are
                     # defined in different modules.
-                    raise ValueError(
+                    raise StateValueError(
                         f"The substate class '{cls.__name__}' has been defined multiple times. "
                         "Shadowing substate classes is not allowed."
                     )
@@ -585,6 +586,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             closure=fn.__closure__,
         )
         newfn.__annotations__ = fn.__annotations__
+        if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
+            setattr(newfn, BACKGROUND_TASK_MARKER, mark)
         return newfn
 
     @staticmethod
@@ -832,10 +835,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             prop: The variable to initialize
 
         Raises:
-            TypeError: if the variable has an incorrect type
+            VarTypeError: if the variable has an incorrect type
         """
+        from reflex.utils.exceptions import VarTypeError
+
         if not types.is_valid_var_type(prop._var_type):
-            raise TypeError(
+            raise VarTypeError(
                 "State vars must be primitive Python types, "
                 "Plotly figures, Pandas dataframes, "
                 "or subclasses of rx.Base. "
@@ -1457,6 +1462,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Yields:
             StateUpdate object
         """
+        from reflex.utils import telemetry
+        from reflex.utils.exceptions import ReflexError
+
         # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
 
@@ -1492,9 +1500,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 yield state._as_state_update(handler, events, final=True)
 
         # If an error occurs, throw a window alert.
-        except Exception:
+        except Exception as ex:
             error = traceback.format_exc()
             print(error)
+            if isinstance(ex, ReflexError):
+                telemetry.send("error", context="backend", detail=str(ex))
             yield state._as_state_update(
                 handler,
                 window_alert("An error occurred. See logs for details."),
@@ -1691,10 +1701,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if initial:
             computed_vars = {
                 # Include initial computed vars.
-                prop_name: cv._initial_value
-                if isinstance(cv, ComputedVar)
-                and not isinstance(cv._initial_value, types.Unset)
-                else self.get_value(getattr(self, prop_name))
+                prop_name: (
+                    cv._initial_value
+                    if isinstance(cv, ComputedVar)
+                    and not isinstance(cv._initial_value, types.Unset)
+                    else self.get_value(getattr(self, prop_name))
+                )
                 for prop_name, cv in self.computed_vars.items()
             }
         elif include_computed:

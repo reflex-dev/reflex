@@ -70,16 +70,19 @@ class IconButton(el.Button, RadixLoadingProp, RadixThemesComponent):
                 "IconButton requires a child icon. Pass a string as the first child or a rx.icon."
             )
         if "size" in props:
-            RADIX_TO_LUCIDE_SIZE = {"1": "12px", "2": "24px", "3": "36px", "4": "48px"}
+            RADIX_TO_LUCIDE_SIZE = {"1": 12, "2": 24, "3": 36, "4": 48}
 
             if isinstance(props["size"], str):
                 children[0].size = RADIX_TO_LUCIDE_SIZE[props["size"]]
             else:
-                children[0].size = Match.create(
+                size_map_var = Match.create(
                     props["size"],
                     *[(size, px) for size, px in RADIX_TO_LUCIDE_SIZE.items()],
-                    "12px",
+                    12,
                 )
+                if not isinstance(size_map_var, Var):
+                    raise ValueError(f"Match did not return a Var: {size_map_var}")
+                children[0].size = size_map_var
         return super().create(*children, **props)
 
     def add_style(self):

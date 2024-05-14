@@ -2,16 +2,10 @@ from typing import Dict, List, Set, Tuple, Union
 
 import pytest
 
-from reflex.components import box, foreach, text
-from reflex.components.core import Foreach
+from reflex.components import box, el, foreach, text
+from reflex.components.core.foreach import Foreach, ForeachRenderError, ForeachVarError
 from reflex.state import BaseState
 from reflex.vars import Var
-
-try:
-    # When pydantic v2 is installed
-    from pydantic.v1 import ValidationError  # type: ignore
-except ImportError:
-    from pydantic import ValidationError
 
 
 class ForEachState(BaseState):
@@ -84,12 +78,12 @@ def display_nested_color_with_shades_v2(color):
 
 def display_color_tuple(color):
     assert color._var_type == str
-    return box(text(color, "tuple"))
+    return box(text(color))
 
 
 def display_colors_set(color):
     assert color._var_type == str
-    return box(text(color, "set"))
+    return box(text(color))
 
 
 def display_nested_list_element(element: Var[str], index: Var[int]):
@@ -100,7 +94,7 @@ def display_nested_list_element(element: Var[str], index: Var[int]):
 
 def display_color_index_tuple(color):
     assert color._var_type == Union[int, str]
-    return box(text(color, "index_tuple"))
+    return box(text(color))
 
 
 seen_index_vars = set()
@@ -215,24 +209,46 @@ def test_foreach_render(state_var, render_fn, render_dict):
 
     # Make sure the index vars are unique.
     arg_index = rend["arg_index"]
+    assert isinstance(arg_index, Var)
     assert arg_index._var_name not in seen_index_vars
     assert arg_index._var_type == int
     seen_index_vars.add(arg_index._var_name)
 
 
 def test_foreach_bad_annotations():
-    """Test that the foreach component raises a TypeError if the iterable is of type Any."""
-    with pytest.raises(TypeError):
+    """Test that the foreach component raises a ForeachVarError if the iterable is of type Any."""
+    with pytest.raises(ForeachVarError):
         Foreach.create(
-            ForEachState.bad_annotation_list,  # type: ignore
+            ForEachState.bad_annotation_list,
             lambda sublist: Foreach.create(sublist, lambda color: text(color)),
         )
 
 
 def test_foreach_no_param_in_signature():
-    """Test that the foreach component raises a TypeError if no parameters are passed."""
-    with pytest.raises(ValidationError):
+    """Test that the foreach component raises a ForeachRenderError if no parameters are passed."""
+    with pytest.raises(ForeachRenderError):
         Foreach.create(
-            ForEachState.colors_list,  # type: ignore
+            ForEachState.colors_list,
             lambda: text("color"),
         )
+
+
+def test_foreach_too_many_params_in_signature():
+    """Test that the foreach component raises a ForeachRenderError if too many parameters are passed."""
+    with pytest.raises(ForeachRenderError):
+        Foreach.create(
+            ForEachState.colors_list,
+            lambda color, index, extra: text(color),
+        )
+
+
+def test_foreach_component_styles():
+    """Test that the foreach component works with global component styles."""
+    component = el.div(
+        foreach(
+            ForEachState.colors_list,
+            display_color,
+        )
+    )
+    component._add_style_recursive({box: {"color": "red"}})
+    assert 'css={{"color": "red"}}' in str(component)
