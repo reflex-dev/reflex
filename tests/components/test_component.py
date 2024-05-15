@@ -1989,3 +1989,73 @@ def test_component_add_hooks_var():
     assert len(imports["react"]) == 2
     assert ImportVar(tag="useRef") in imports["react"]
     assert ImportVar(tag="useEffect") in imports["react"]
+
+
+def test_add_style_embedded_vars(test_state: BaseState):
+    """Test that add_style works with embedded vars when returning a plain dict.
+
+    Args:
+        test_state: A test state.
+    """
+    v0 = Var.create_safe("parent")._replace(
+        merge_var_data=VarData(hooks={"useParent": None}),  # type: ignore
+    )
+    v1 = rx.color("plum", 10)
+    v2 = Var.create_safe("text")._replace(
+        merge_var_data=VarData(hooks={"useText": None}),  # type: ignore
+    )
+
+    class ParentComponent(Component):
+        def add_style(self):
+            return Style(
+                {
+                    "fake_parent": v0,
+                }
+            )
+
+    class StyledComponent(ParentComponent):
+        tag = "StyledComponent"
+
+        def add_style(self):
+            return {
+                "color": v1,
+                "fake": v2,
+                "margin": f"{test_state.num}%",
+            }
+
+    page = rx.vstack(StyledComponent.create())
+    page._add_style_recursive(Style())
+
+    assert (
+        "const test_state = useContext(StateContexts.test_state)"
+        in page._get_all_hooks_internal()
+    )
+    assert "useText" in page._get_all_hooks_internal()
+    assert "useParent" in page._get_all_hooks_internal()
+    assert (
+        str(page).count(
+            'css={{"fakeParent": "parent", "color": "var(--plum-10)", "fake": "text", "margin": `${test_state.num}%`}}'
+        )
+        == 1
+    )
+
+
+def test_add_style_foreach():
+    class StyledComponent(Component):
+        tag = "StyledComponent"
+        ix: Var[int]
+
+        def add_style(self):
+            return Style({"color": "red"})
+
+    page = rx.vstack(rx.foreach(Var.range(3), lambda i: StyledComponent.create(i)))
+    page._add_style_recursive(Style())
+
+    # Expect only a single child of the foreach on the python side
+    assert len(page.children[0].children) == 1
+
+    # Expect the style to be added to the child of the foreach
+    assert 'css={{"color": "red"}}' in str(page.children[0].children[0])
+
+    # Expect only one instance of this CSS dict in the rendered page
+    assert str(page).count('css={{"color": "red"}}') == 1

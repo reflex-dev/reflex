@@ -181,7 +181,12 @@ def get_install_package_manager() -> str | None:
     Returns:
         The path to the package manager.
     """
-    if constants.IS_WINDOWS and not is_windows_bun_supported():
+    if (
+        constants.IS_WINDOWS
+        and not is_windows_bun_supported()
+        or windows_check_onedrive_in_path()
+        or windows_npm_escape_hatch()
+    ):
         return get_package_manager()
     return get_config().bun_path
 
@@ -199,6 +204,24 @@ def get_package_manager() -> str | None:
     return npm_path
 
 
+def windows_check_onedrive_in_path() -> bool:
+    """For windows, check if oneDrive is present in the project dir path.
+
+    Returns:
+        If oneDrive is in the path of the project directory.
+    """
+    return "onedrive" in str(Path.cwd()).lower()
+
+
+def windows_npm_escape_hatch() -> bool:
+    """For windows, if the user sets REFLEX_USE_NPM, use npm instead of bun.
+
+    Returns:
+        If the user has set REFLEX_USE_NPM.
+    """
+    return os.environ.get("REFLEX_USE_NPM", "").lower() in ["true", "1", "yes"]
+
+
 def get_app(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
 
@@ -210,28 +233,35 @@ def get_app(reload: bool = False) -> ModuleType:
 
     Raises:
         RuntimeError: If the app name is not set in the config.
+        exceptions.ReflexError: Reflex specific errors.
     """
-    os.environ[constants.RELOAD_CONFIG] = str(reload)
-    config = get_config()
-    if not config.app_name:
-        raise RuntimeError(
-            "Cannot get the app module because `app_name` is not set in rxconfig! "
-            "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
-        )
-    module = config.module
-    sys.path.insert(0, os.getcwd())
-    app = __import__(module, fromlist=(constants.CompileVars.APP,))
+    from reflex.utils import exceptions, telemetry
 
-    if reload:
-        from reflex.state import reload_state_module
+    try:
+        os.environ[constants.RELOAD_CONFIG] = str(reload)
+        config = get_config()
+        if not config.app_name:
+            raise RuntimeError(
+                "Cannot get the app module because `app_name` is not set in rxconfig! "
+                "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
+            )
+        module = config.module
+        sys.path.insert(0, os.getcwd())
+        app = __import__(module, fromlist=(constants.CompileVars.APP,))
 
-        # Reset rx.State subclasses to avoid conflict when reloading.
-        reload_state_module(module=module)
+        if reload:
+            from reflex.state import reload_state_module
 
-        # Reload the app module.
-        importlib.reload(app)
+            # Reset rx.State subclasses to avoid conflict when reloading.
+            reload_state_module(module=module)
 
-    return app
+            # Reload the app module.
+            importlib.reload(app)
+
+        return app
+    except exceptions.ReflexError as ex:
+        telemetry.send("error", context="frontend", detail=str(ex))
+        raise
 
 
 def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
@@ -737,10 +767,17 @@ def install_bun():
     Raises:
         FileNotFoundError: If required packages are not found.
     """
-    if constants.IS_WINDOWS and not is_windows_bun_supported():
-        console.warn(
-            "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
-        )
+    win_supported = is_windows_bun_supported()
+    one_drive_in_path = windows_check_onedrive_in_path()
+    if constants.IS_WINDOWS and not win_supported or one_drive_in_path:
+        if not win_supported:
+            console.warn(
+                "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
+            )
+        if one_drive_in_path:
+            console.warn(
+                "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
+            )
 
     # Skip if bun is already installed.
     if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
@@ -843,11 +880,13 @@ def install_frontend_packages(packages: set[str], config: Config):
         if not constants.IS_WINDOWS
         or constants.IS_WINDOWS
         and is_windows_bun_supported()
+        and not windows_check_onedrive_in_path()
         else None
     )
     processes.run_process_with_fallback(
         [get_install_package_manager(), "install"],  # type: ignore
         fallback=fallback_command,
+        analytics_enabled=True,
         show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
@@ -863,6 +902,7 @@ def install_frontend_packages(packages: set[str], config: Config):
                 *((config.tailwind or {}).get("plugins", [])),
             ],
             fallback=fallback_command,
+            analytics_enabled=True,
             show_status_message="Installing tailwind",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
@@ -873,6 +913,7 @@ def install_frontend_packages(packages: set[str], config: Config):
         processes.run_process_with_fallback(
             [get_install_package_manager(), "add", *packages],
             fallback=fallback_command,
+            analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
@@ -914,9 +955,26 @@ def needs_reinit(frontend: bool = True) -> bool:
         return True
 
     if constants.IS_WINDOWS:
+        import uvicorn
+
+        uvi_ver = uvicorn.__version__
         console.warn(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
+        if sys.version_info >= (3, 12) and uvi_ver != "0.24.0.post1":
+            console.warn(
+                f"""On Python 3.12, `uvicorn==0.24.0.post1` is recommended for improved hot reload times. Found {uvi_ver} instead."""
+            )
+
+        if sys.version_info < (3, 12) and uvi_ver != "0.20.0":
+            console.warn(
+                f"""On Python < 3.12, `uvicorn==0.20.0` is recommended for improved hot reload times.  Found {uvi_ver} instead."""
+            )
+
+        if windows_check_onedrive_in_path():
+            console.warn(
+                "Creating project directories in OneDrive may lead to performance issues. For optimal performance, It is recommended to avoid using OneDrive for your reflex app."
+            )
     # No need to reinitialize if the app is already initialized.
     return False
 
