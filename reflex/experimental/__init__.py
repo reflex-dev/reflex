@@ -2,6 +2,10 @@
 
 from types import SimpleNamespace
 
+from reflex.components.props import PropsBase
+from reflex.components.radix.themes.components.progress import progress as progress
+from reflex.components.sonner.toast import toast as toast
+
 from ..utils.console import warn
 from . import hooks as hooks
 from .layout import layout as layout
@@ -14,5 +18,8 @@ warn(
 _x = SimpleNamespace(
     hooks=hooks,
     layout=layout,
+    progress=progress,
+    PropsBase=PropsBase,
     run_in_thread=run_in_thread,
+    toast=toast,
 )

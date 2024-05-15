@@ -44,7 +44,7 @@ class FormRoot(FormComponent, HTMLForm):
         Returns:
             The style of the component.
         """
-        return Style({"width": "260px"})
+        return Style({"width": "100%"})
 
 
 class FormField(FormComponent):

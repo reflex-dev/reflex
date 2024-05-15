@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import inspect
 from base64 import b64encode
-from types import FunctionType
 from typing import (
     Any,
     Callable,
@@ -180,8 +179,10 @@ class EventHandler(EventActionsMixin):
             The event spec, containing both the function and args.
 
         Raises:
-            TypeError: If the arguments are invalid.
+            EventHandlerTypeError: If the arguments are invalid.
         """
+        from reflex.utils.exceptions import EventHandlerTypeError
+
         # Get the function args.
         fn_args = inspect.getfullargspec(self.fn).args[1:]
         fn_args = (Var.create_safe(arg) for arg in fn_args)
@@ -197,7 +198,7 @@ class EventHandler(EventActionsMixin):
             try:
                 values.append(Var.create(arg, _var_is_string=isinstance(arg, str)))
             except TypeError as e:
-                raise TypeError(
+                raise EventHandlerTypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
                 ) from e
         payload = tuple(zip(fn_args, values))
@@ -256,8 +257,10 @@ class EventSpec(EventActionsMixin):
             The event spec with the new arguments.
 
         Raises:
-            TypeError: If the arguments are invalid.
+            EventHandlerTypeError: If the arguments are invalid.
         """
+        from reflex.utils.exceptions import EventHandlerTypeError
+
         # Get the remaining unfilled function args.
         fn_args = inspect.getfullargspec(self.handler.fn).args[1 + len(self.args) :]
         fn_args = (Var.create_safe(arg) for arg in fn_args)
@@ -268,7 +271,7 @@ class EventSpec(EventActionsMixin):
             try:
                 values.append(Var.create(arg, _var_is_string=isinstance(arg, str)))
             except TypeError as e:
-                raise TypeError(
+                raise EventHandlerTypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
                 ) from e
         new_payload = tuple(zip(fn_args, values))
@@ -312,10 +315,12 @@ class CallableEventSpec(EventSpec):
             The EventSpec returned from calling the function.
 
         Raises:
-            TypeError: If the CallableEventSpec has no associated function.
+            EventHandlerTypeError: If the CallableEventSpec has no associated function.
         """
+        from reflex.utils.exceptions import EventHandlerTypeError
+
         if self.fn is None:
-            raise TypeError("CallableEventSpec has no associated function.")
+            raise EventHandlerTypeError("CallableEventSpec has no associated function.")
         return self.fn(*args, **kwargs)
 
 
@@ -700,7 +705,11 @@ def _callback_arg_spec(eval_result):
 
 def call_script(
     javascript_code: str,
-    callback: EventHandler | Callable | None = None,
+    callback: EventSpec
+    | EventHandler
+    | Callable
+    | List[EventSpec | EventHandler | Callable]
+    | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -710,21 +719,14 @@ def call_script(
 
     Returns:
         EventSpec: An event that will execute the client side javascript.
-
-    Raises:
-        ValueError: If the callback is not a valid event handler.
     """
     callback_kwargs = {}
     if callback is not None:
-        arg_name = parse_args_spec(_callback_arg_spec)[0]._var_name
-        if isinstance(callback, EventHandler):
-            event_spec = call_event_handler(callback, _callback_arg_spec)
-        elif isinstance(callback, FunctionType):
-            event_spec = call_event_fn(callback, _callback_arg_spec)[0]
-        else:
-            raise ValueError("Cannot use {callback!r} as a call_script callback.")
         callback_kwargs = {
-            "callback": f"({arg_name}) => queueEvents([{format.format_event(event_spec)}], {constants.CompileVars.SOCKET})"
+            "callback": format.format_queue_events(
+                callback,
+                args_spec=lambda result: [result],
+            )
         }
     return server_side(
         "_call_script",
@@ -834,10 +836,11 @@ def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec]:
         The event specs from calling the function.
 
     Raises:
-        ValueError: If the lambda has an invalid signature.
+        EventHandlerValueError: If the lambda has an invalid signature.
     """
     # Import here to avoid circular imports.
     from reflex.event import EventHandler, EventSpec
+    from reflex.utils.exceptions import EventHandlerValueError
 
     # Get the args of the lambda.
     args = inspect.getfullargspec(fn).args
@@ -851,7 +854,7 @@ def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec]:
         elif len(args) == 1:
             out = fn(arg)
         else:
-            raise ValueError(f"Lambda {fn} must have 0 or 1 arguments.")
+            raise EventHandlerValueError(f"Lambda {fn} must have 0 or 1 arguments.")
 
     # Convert the output to a list.
     if not isinstance(out, List):
@@ -869,7 +872,9 @@ def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec]:
 
         # Make sure the event spec is valid.
         if not isinstance(e, EventSpec):
-            raise ValueError(f"Lambda {fn} returned an invalid event spec: {e}.")
+            raise EventHandlerValueError(
+                f"Lambda {fn} returned an invalid event spec: {e}."
+            )
 
         # Add the event spec to the chain.
         events.append(e)

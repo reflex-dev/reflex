@@ -121,6 +121,8 @@ class DebounceInput(Component):
         component = super().create(**props)
         component._get_style = child._get_style
         component.event_triggers.update(child.event_triggers)
+        component.children = child.children
+        component._rename_props = child._rename_props
         return component
 
     def get_event_triggers(self) -> dict[str, Any]:
