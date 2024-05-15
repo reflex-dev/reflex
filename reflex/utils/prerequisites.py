@@ -185,6 +185,7 @@ def get_install_package_manager() -> str | None:
         constants.IS_WINDOWS
         and not is_windows_bun_supported()
         or windows_check_onedrive_in_path()
+        or windows_npm_escape_hatch()
     ):
         return get_package_manager()
     return get_config().bun_path
@@ -210,6 +211,15 @@ def windows_check_onedrive_in_path() -> bool:
         If oneDrive is in the path of the project directory.
     """
     return "onedrive" in str(Path.cwd()).lower()
+
+
+def windows_npm_escape_hatch() -> bool:
+    """For windows, if the user sets REFLEX_USE_NPM, use npm instead of bun.
+
+    Returns:
+        If the user has set REFLEX_USE_NPM.
+    """
+    return os.environ.get("REFLEX_USE_NPM", "").lower() in ["true", "1", "yes"]
 
 
 def get_app(reload: bool = False) -> ModuleType:
