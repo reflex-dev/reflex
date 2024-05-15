@@ -219,9 +219,6 @@ class SliderTrack(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -298,9 +295,6 @@ class SliderFilledTrack(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -379,9 +373,6 @@ class SliderThumb(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -458,8 +449,5 @@ class SliderMark(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...

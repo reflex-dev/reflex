@@ -28,6 +28,15 @@ def set_log_level(log_level: LogLevel):
     _LOG_LEVEL = log_level
 
 
+def is_debug() -> bool:
+    """Check if the log level is debug.
+
+    Returns:
+        True if the log level is debug.
+    """
+    return _LOG_LEVEL <= LogLevel.DEBUG
+
+
 def print(msg: str, **kwargs):
     """Print a message.
 
@@ -45,7 +54,7 @@ def debug(msg: str, **kwargs):
         msg: The debug message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if _LOG_LEVEL <= LogLevel.DEBUG:
+    if is_debug():
         msg_ = f"[blue]Debug: {msg}[/blue]"
         if progress := kwargs.pop("progress", None):
             progress.console.print(msg_, **kwargs)
@@ -165,7 +174,9 @@ def ask(
     Returns:
         A string with the user input.
     """
-    return Prompt.ask(question, choices=choices, default=default, show_choices=show_choices)  # type: ignore
+    return Prompt.ask(
+        question, choices=choices, default=default, show_choices=show_choices
+    )  # type: ignore
 
 
 def progress():

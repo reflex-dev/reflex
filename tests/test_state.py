@@ -33,7 +33,7 @@ from reflex.state import (
     StateUpdate,
     _substate_key,
 )
-from reflex.utils import prerequisites, types
+from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
 from reflex.vars import BaseVar, ComputedVar
 
@@ -788,94 +788,69 @@ async def test_process_event_generator():
     assert count == 6
 
 
-def test_get_token(test_state, mocker, router_data):
+def test_get_client_token(test_state, router_data):
     """Test that the token obtained from the router_data is correct.
 
     Args:
         test_state: The test state.
-        mocker: Pytest Mocker object.
         router_data: The router data fixture.
     """
-    mocker.patch.object(test_state, "router_data", router_data)
+    test_state.router = RouterData(router_data)
+    assert (
+        test_state.router.session.client_token == "b181904c-3953-4a79-dc18-ae9518c22f05"
+    )
 
-    assert test_state.get_token() == "b181904c-3953-4a79-dc18-ae9518c22f05"
 
-
-def test_get_sid(test_state, mocker, router_data):
+def test_get_sid(test_state, router_data):
     """Test getting session id.
 
     Args:
         test_state: A state.
-        mocker: Pytest Mocker object.
         router_data: The router data fixture.
     """
-    mocker.patch.object(test_state, "router_data", router_data)
+    test_state.router = RouterData(router_data)
+    assert test_state.router.session.session_id == "9fpxSzPb9aFMb4wFAAAH"
 
-    assert test_state.get_sid() == "9fpxSzPb9aFMb4wFAAAH"
 
-
-def test_get_headers(test_state, mocker, router_data, router_data_headers):
+def test_get_headers(test_state, router_data, router_data_headers):
     """Test getting client headers.
 
     Args:
         test_state: A state.
-        mocker: Pytest Mocker object.
         router_data: The router data fixture.
         router_data_headers: The expected headers.
     """
-    mocker.patch.object(test_state, "router_data", router_data)
+    test_state.router = RouterData(router_data)
+    assert test_state.router.headers.dict() == {
+        format.to_snake_case(k): v for k, v in router_data_headers.items()
+    }
 
-    assert test_state.get_headers() == router_data_headers
 
-
-def test_get_client_ip(test_state, mocker, router_data):
+def test_get_client_ip(test_state, router_data):
     """Test getting client IP.
 
     Args:
         test_state: A state.
-        mocker: Pytest Mocker object.
         router_data: The router data fixture.
     """
-    mocker.patch.object(test_state, "router_data", router_data)
-
-    assert test_state.get_client_ip() == "127.0.0.1"
-
-
-def test_get_cookies(test_state, mocker, router_data):
-    """Test getting client cookies.
-
-    Args:
-        test_state: A state.
-        mocker: Pytest Mocker object.
-        router_data: The router data fixture.
-    """
-    mocker.patch.object(test_state, "router_data", router_data)
-
-    assert test_state.get_cookies() == {
-        "csrftoken": "mocktoken",
-        "name": "reflex",
-        "list_cookies": ["some", "random", "cookies"],
-        "dict_cookies": {"name": "reflex"},
-        "val": True,
-    }
+    test_state.router = RouterData(router_data)
+    assert test_state.router.session.client_ip == "127.0.0.1"
 
 
 def test_get_current_page(test_state):
-    assert test_state.get_current_page() == ""
+    assert test_state.router.page.path == ""
 
     route = "mypage/subpage"
     test_state.router = RouterData({RouteVar.PATH: route})
-
-    assert test_state.get_current_page() == route
+    assert test_state.router.page.path == route
 
 
 def test_get_query_params(test_state):
-    assert test_state.get_query_params() == {}
+    assert test_state.router.page.params == {}
 
     params = {"p1": "a", "p2": "b"}
-    test_state.router_data = {RouteVar.QUERY: params}
-
-    assert test_state.get_query_params() == params
+    test_state.router = RouterData({RouteVar.QUERY: params})
+    assert dict(test_state.router.page.params) == params
 
 
 def test_add_var():
@@ -1723,7 +1698,9 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     parent_state = child_state.parent_state
     assert parent_state is not None
     if isinstance(mock_app.state_manager, StateManagerMemory):
-        mock_app.state_manager.states[parent_state.get_token()] = parent_state
+        mock_app.state_manager.states[
+            parent_state.router.session.client_token
+        ] = parent_state
 
     sp = StateProxy(grandchild_state)
     assert sp.__wrapped__ == grandchild_state
@@ -1802,7 +1779,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
             },
         }
     )
-    assert mcall.kwargs["to"] == grandchild_state.get_sid()
+    assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
 
 
 class BackgroundTaskState(BaseState):
@@ -2845,3 +2822,41 @@ def test_potentially_dirty_substates():
     assert RxState._potentially_dirty_substates() == {State}
     assert State._potentially_dirty_substates() == {C1}
     assert C1._potentially_dirty_substates() == set()
+
+
+@pytest.mark.asyncio
+async def test_setvar(mock_app: rx.App, token: str):
+    """Test that setvar works correctly.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+    state = await mock_app.state_manager.get_state(_substate_key(token, TestState))
+
+    # Set Var in same state (with Var type casting)
+    for event in rx.event.fix_events(
+        [TestState.setvar("num1", 42), TestState.setvar("num2", "4.2")], token
+    ):
+        async for update in state._process(event):
+            print(update)
+    assert state.num1 == 42
+    assert state.num2 == 4.2
+
+    # Set Var in parent state
+    for event in rx.event.fix_events([GrandchildState.setvar("array", [43])], token):
+        async for update in state._process(event):
+            print(update)
+    assert state.array == [43]
+
+    # Cannot setvar for non-existant var
+    with pytest.raises(AttributeError):
+        TestState.setvar("non_existant_var")
+
+    # Cannot setvar for computed vars
+    with pytest.raises(AttributeError):
+        TestState.setvar("sum")
+
+    # Cannot setvar with non-string
+    with pytest.raises(ValueError):
+        TestState.setvar(42, 42)

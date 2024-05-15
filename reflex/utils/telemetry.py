@@ -32,6 +32,15 @@ def get_os() -> str:
     return platform.system()
 
 
+def get_detailed_platform_str() -> str:
+    """Get the detailed os/platform string.
+
+    Returns:
+        The platform string
+    """
+    return platform.platform()
+
+
 def get_python_version() -> str:
     """Get the Python version.
 
@@ -87,15 +96,18 @@ def _raise_on_missing_project_hash() -> bool:
     return True
 
 
-def _prepare_event(event: str) -> dict:
+def _prepare_event(event: str, **kwargs) -> dict:
     """Prepare the event to be sent to the PostHog server.
 
     Args:
         event: The event name.
+        kwargs: Additional data to send with the event.
 
     Returns:
         The event data.
     """
+    from reflex.utils.prerequisites import get_cpu_info
+
     installation_id = ensure_reflex_installation_id()
     project_hash = get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
 
@@ -111,6 +123,13 @@ def _prepare_event(event: str) -> dict:
     else:
         # for python 3.11 & 3.12
         stamp = datetime.now(UTC).isoformat()
+
+    cpuinfo = get_cpu_info()
+
+    additional_keys = ["template", "context", "detail"]
+    additional_fields = {
+        key: value for key in additional_keys if (value := kwargs.get(key)) is not None
+    }
     return {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
         "event": event,
@@ -118,10 +137,13 @@ def _prepare_event(event: str) -> dict:
             "distinct_id": installation_id,
             "distinct_app_id": project_hash,
             "user_os": get_os(),
+            "user_os_detail": get_detailed_platform_str(),
             "reflex_version": get_reflex_version(),
             "python_version": get_python_version(),
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
+            "cpu_info": dict(cpuinfo) if cpuinfo else {},
+            **additional_fields,
         },
         "timestamp": stamp,
     }
@@ -135,12 +157,13 @@ def _send_event(event_data: dict) -> bool:
         return False
 
 
-def send(event: str, telemetry_enabled: bool | None = None) -> bool:
+def send(event: str, telemetry_enabled: bool | None = None, **kwargs) -> bool:
     """Send anonymous telemetry for Reflex.
 
     Args:
         event: The event name.
         telemetry_enabled: Whether to send the telemetry (If None, get from config).
+        kwargs: Additional data to send with the event.
 
     Returns:
         Whether the telemetry was sent successfully.
@@ -155,8 +178,7 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
     if not telemetry_enabled:
         return False
 
-    event_data = _prepare_event(event)
+    event_data = _prepare_event(event, **kwargs)
     if not event_data:
         return False
-
     return _send_event(event_data)

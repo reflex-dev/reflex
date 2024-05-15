@@ -16,12 +16,12 @@ import alembic.script
 import alembic.util
 import sqlalchemy
 import sqlalchemy.orm
-import sqlmodel
 
 from reflex import constants
 from reflex.base import Base
 from reflex.config import get_config
 from reflex.utils import console
+from reflex.utils.compat import sqlmodel
 
 
 def get_engine(url: str | None = None):
@@ -133,7 +133,7 @@ class ModelRegistry:
         return metadata
 
 
-class Model(Base, sqlmodel.SQLModel):
+class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssues]
     """Base class to define a table in the database."""
 
     # The primary key for the table.
@@ -310,6 +310,7 @@ class Model(Base, sqlmodel.SQLModel):
                 render_item=cls._alembic_render_item,
                 process_revision_directives=writer,  # type: ignore
                 compare_type=False,
+                render_as_batch=True,  # for sqlite compatibility
             )
             env.run_migrations()
         changes_detected = False

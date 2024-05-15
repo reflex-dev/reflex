@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Type
+from contextlib import nullcontext
+from typing import Any, Dict, List, Optional, Type, Union
 
 import pytest
 
@@ -6,6 +7,7 @@ import reflex as rx
 from reflex.base import Base
 from reflex.compiler.compiler import compile_components
 from reflex.components.base.bare import Bare
+from reflex.components.base.fragment import Fragment
 from reflex.components.chakra.layout.box import Box
 from reflex.components.component import (
     Component,
@@ -14,12 +16,12 @@ from reflex.components.component import (
     custom_component,
 )
 from reflex.constants import EventTriggers
-from reflex.event import EventChain, EventHandler
+from reflex.event import EventChain, EventHandler, parse_args_spec
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import BaseVar, Var, VarData
 
 
 @pytest.fixture
@@ -50,6 +52,9 @@ def component1() -> Type[Component]:
 
         # A test number prop.
         number: Var[int]
+
+        # A test string/number prop.
+        text_or_number: Var[Union[int, str]]
 
         def _get_imports(self) -> imports.ImportDict:
             return {"react": [ImportVar(tag="Component")]}
@@ -252,6 +257,154 @@ def test_create_component(component1):
     assert c.style == {"color": "white", "textAlign": "center"}
 
 
+@pytest.mark.parametrize(
+    "prop_name,var,expected",
+    [
+        pytest.param(
+            "text",
+            Var.create("hello"),
+            None,
+            id="text",
+        ),
+        pytest.param(
+            "text",
+            BaseVar(_var_name="hello", _var_type=Optional[str]),
+            None,
+            id="text-optional",
+        ),
+        pytest.param(
+            "text",
+            BaseVar(_var_name="hello", _var_type=Union[str, None]),
+            None,
+            id="text-union-str-none",
+        ),
+        pytest.param(
+            "text",
+            BaseVar(_var_name="hello", _var_type=Union[None, str]),
+            None,
+            id="text-union-none-str",
+        ),
+        pytest.param(
+            "text",
+            Var.create(1),
+            TypeError,
+            id="text-int",
+        ),
+        pytest.param(
+            "number",
+            Var.create(1),
+            None,
+            id="number",
+        ),
+        pytest.param(
+            "number",
+            BaseVar(_var_name="1", _var_type=Optional[int]),
+            None,
+            id="number-optional",
+        ),
+        pytest.param(
+            "number",
+            BaseVar(_var_name="1", _var_type=Union[int, None]),
+            None,
+            id="number-union-int-none",
+        ),
+        pytest.param(
+            "number",
+            BaseVar(_var_name="1", _var_type=Union[None, int]),
+            None,
+            id="number-union-none-int",
+        ),
+        pytest.param(
+            "number",
+            Var.create("1"),
+            TypeError,
+            id="number-str",
+        ),
+        pytest.param(
+            "text_or_number",
+            Var.create("hello"),
+            None,
+            id="text_or_number-str",
+        ),
+        pytest.param(
+            "text_or_number",
+            Var.create(1),
+            None,
+            id="text_or_number-int",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="hello", _var_type=Optional[str]),
+            None,
+            id="text_or_number-optional-str",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="hello", _var_type=Union[str, None]),
+            None,
+            id="text_or_number-union-str-none",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="hello", _var_type=Union[None, str]),
+            None,
+            id="text_or_number-union-none-str",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="1", _var_type=Optional[int]),
+            None,
+            id="text_or_number-optional-int",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="1", _var_type=Union[int, None]),
+            None,
+            id="text_or_number-union-int-none",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="1", _var_type=Union[None, int]),
+            None,
+            id="text_or_number-union-none-int",
+        ),
+        pytest.param(
+            "text_or_number",
+            Var.create(1.0),
+            TypeError,
+            id="text_or_number-float",
+        ),
+        pytest.param(
+            "text_or_number",
+            BaseVar(_var_name="hello", _var_type=Optional[Union[str, int]]),
+            None,
+            id="text_or_number-optional-union-str-int",
+        ),
+    ],
+)
+def test_create_component_prop_validation(
+    component1: Type[Component],
+    prop_name: str,
+    var: Union[Var, str, int],
+    expected: Type[Exception],
+):
+    """Test that component props are validated correctly.
+
+    Args:
+        component1: A test component.
+        prop_name: The name of the prop.
+        var: The value of the prop.
+        expected: The expected exception.
+    """
+    ctx = pytest.raises(expected) if expected else nullcontext()
+    kwargs = {prop_name: var}
+    with ctx:
+        c = component1.create(**kwargs)
+        assert isinstance(c, component1)
+        assert c.children == []
+        assert c.style == {}
+
+
 def test_add_style(component1, component2):
     """Test adding a style to a component.
 
@@ -337,7 +490,7 @@ def test_get_props(component1, component2):
         component1: A test component.
         component2: A test component.
     """
-    assert component1.get_props() == {"text", "number"}
+    assert component1.get_props() == {"text", "number", "text_or_number"}
     assert component2.get_props() == {"arr"}
 
 
@@ -455,6 +608,190 @@ def test_create_filters_none_props(test_component):
     # Assert that the style prop is present in the component's props
     assert component.style["color"] == "white"
     assert component.style["text-align"] == "center"
+
+
+@pytest.mark.parametrize("children", [((None,),), ("foo", ("bar", (None,)))])
+def test_component_create_unallowed_types(children, test_component):
+    with pytest.raises(TypeError) as err:
+        test_component.create(*children)
+    assert (
+        err.value.args[0]
+        == "Children of Reflex components must be other components, state vars, or primitive Python types. Got child None of type <class 'NoneType'>."
+    )
+
+
+@pytest.mark.parametrize(
+    "element, expected",
+    [
+        (
+            (rx.text("first_text"),),
+            {
+                "name": "Fragment",
+                "props": [],
+                "contents": "",
+                "args": None,
+                "special_props": set(),
+                "children": [
+                    {
+                        "name": "RadixThemesText",
+                        "props": ["as={`p`}"],
+                        "contents": "",
+                        "args": None,
+                        "special_props": set(),
+                        "children": [
+                            {
+                                "name": "",
+                                "props": [],
+                                "contents": "{`first_text`}",
+                                "args": None,
+                                "special_props": set(),
+                                "children": [],
+                                "autofocus": False,
+                            }
+                        ],
+                        "autofocus": False,
+                    }
+                ],
+                "autofocus": False,
+            },
+        ),
+        (
+            (rx.text("first_text"), rx.text("second_text")),
+            {
+                "args": None,
+                "autofocus": False,
+                "children": [
+                    {
+                        "args": None,
+                        "autofocus": False,
+                        "children": [
+                            {
+                                "args": None,
+                                "autofocus": False,
+                                "children": [],
+                                "contents": "{`first_text`}",
+                                "name": "",
+                                "props": [],
+                                "special_props": set(),
+                            }
+                        ],
+                        "contents": "",
+                        "name": "RadixThemesText",
+                        "props": ["as={`p`}"],
+                        "special_props": set(),
+                    },
+                    {
+                        "args": None,
+                        "autofocus": False,
+                        "children": [
+                            {
+                                "args": None,
+                                "autofocus": False,
+                                "children": [],
+                                "contents": "{`second_text`}",
+                                "name": "",
+                                "props": [],
+                                "special_props": set(),
+                            }
+                        ],
+                        "contents": "",
+                        "name": "RadixThemesText",
+                        "props": ["as={`p`}"],
+                        "special_props": set(),
+                    },
+                ],
+                "contents": "",
+                "name": "Fragment",
+                "props": [],
+                "special_props": set(),
+            },
+        ),
+        (
+            (rx.text("first_text"), rx.box((rx.text("second_text"),))),
+            {
+                "args": None,
+                "autofocus": False,
+                "children": [
+                    {
+                        "args": None,
+                        "autofocus": False,
+                        "children": [
+                            {
+                                "args": None,
+                                "autofocus": False,
+                                "children": [],
+                                "contents": "{`first_text`}",
+                                "name": "",
+                                "props": [],
+                                "special_props": set(),
+                            }
+                        ],
+                        "contents": "",
+                        "name": "RadixThemesText",
+                        "props": ["as={`p`}"],
+                        "special_props": set(),
+                    },
+                    {
+                        "args": None,
+                        "autofocus": False,
+                        "children": [
+                            {
+                                "args": None,
+                                "autofocus": False,
+                                "children": [
+                                    {
+                                        "args": None,
+                                        "autofocus": False,
+                                        "children": [
+                                            {
+                                                "args": None,
+                                                "autofocus": False,
+                                                "children": [],
+                                                "contents": "{`second_text`}",
+                                                "name": "",
+                                                "props": [],
+                                                "special_props": set(),
+                                            }
+                                        ],
+                                        "contents": "",
+                                        "name": "RadixThemesText",
+                                        "props": ["as={`p`}"],
+                                        "special_props": set(),
+                                    }
+                                ],
+                                "contents": "",
+                                "name": "Fragment",
+                                "props": [],
+                                "special_props": set(),
+                            }
+                        ],
+                        "contents": "",
+                        "name": "RadixThemesBox",
+                        "props": [],
+                        "special_props": set(),
+                    },
+                ],
+                "contents": "",
+                "name": "Fragment",
+                "props": [],
+                "special_props": set(),
+            },
+        ),
+    ],
+)
+def test_component_create_unpack_tuple_child(test_component, element, expected):
+    """Test that component in tuples are unwrapped into an rx.Fragment.
+
+    Args:
+        test_component: Component fixture.
+        element: The children to pass to the component.
+        expected: The expected render dict.
+    """
+    comp = test_component.create(element)
+
+    assert len(comp.children) == 1
+    assert isinstance((fragment_wrapper := comp.children[0]), Fragment)
+    assert fragment_wrapper.render() == expected
 
 
 class C1State(BaseState):
@@ -1357,11 +1694,12 @@ def test_custom_component_declare_event_handlers_in_fields():
             """
             return {
                 **super().get_event_triggers(),
-                "on_a": lambda e: [e],
-                "on_b": lambda e: [e.target.value],
-                "on_c": lambda e: [],
+                "on_a": lambda e0: [e0],
+                "on_b": lambda e0: [e0.target.value],
+                "on_c": lambda e0: [],
                 "on_d": lambda: [],
                 "on_e": lambda: [],
+                "on_f": lambda a, b, c: [c, b, a],
             }
 
     class TestComponent(Component):
@@ -1370,10 +1708,316 @@ def test_custom_component_declare_event_handlers_in_fields():
         on_c: EventHandler[lambda e0: []]
         on_d: EventHandler[lambda: []]
         on_e: EventHandler
+        on_f: EventHandler[lambda a, b, c: [c, b, a]]
 
     custom_component = ReferenceComponent.create()
     test_component = TestComponent.create()
-    assert (
-        custom_component.get_event_triggers().keys()
-        == test_component.get_event_triggers().keys()
+    custom_triggers = custom_component.get_event_triggers()
+    test_triggers = test_component.get_event_triggers()
+    assert custom_triggers.keys() == test_triggers.keys()
+    for trigger_name in custom_component.get_event_triggers():
+        for v1, v2 in zip(
+            parse_args_spec(test_triggers[trigger_name]),
+            parse_args_spec(custom_triggers[trigger_name]),
+        ):
+            assert v1.equals(v2)
+
+
+def test_invalid_event_trigger():
+    class TriggerComponent(Component):
+        on_push: Var[bool]
+
+        def get_event_triggers(self) -> Dict[str, Any]:
+            """Test controlled triggers.
+
+            Returns:
+                Test controlled triggers.
+            """
+            return {
+                **super().get_event_triggers(),
+                "on_a": lambda: [],
+            }
+
+    trigger_comp = TriggerComponent.create
+
+    # test that these do not throw errors.
+    trigger_comp(on_push=True)
+    trigger_comp(on_a=rx.console_log("log"))
+
+    with pytest.raises(ValueError):
+        trigger_comp(on_b=rx.console_log("log"))
+
+
+@pytest.mark.parametrize(
+    "tags",
+    (
+        ["Component"],
+        ["Component", "useState"],
+        [ImportVar(tag="Component")],
+        [ImportVar(tag="Component"), ImportVar(tag="useState")],
+        ["Component", ImportVar(tag="useState")],
+    ),
+)
+def test_component_add_imports(tags):
+    def _list_to_import_vars(tags: List[str]) -> List[ImportVar]:
+        return [
+            ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
+            for tag in tags
+        ]
+
+    class BaseComponent(Component):
+        def _get_imports(self) -> imports.ImportDict:
+            return {}
+
+    class Reference(Component):
+        def _get_imports(self) -> imports.ImportDict:
+            return imports.merge_imports(
+                super()._get_imports(),
+                {"react": _list_to_import_vars(tags)},
+                {"foo": [ImportVar(tag="bar")]},
+            )
+
+    class TestBase(Component):
+        def add_imports(
+            self,
+        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
+            return {"foo": "bar"}
+
+    class Test(TestBase):
+        def add_imports(
+            self,
+        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
+            return {"react": (tags[0] if len(tags) == 1 else tags)}
+
+    baseline = Reference.create()
+    test = Test.create()
+
+    assert baseline._get_all_imports() == {
+        "react": _list_to_import_vars(tags),
+        "foo": [ImportVar(tag="bar")],
+    }
+    assert test._get_all_imports() == baseline._get_all_imports()
+
+
+def test_component_add_hooks():
+    class BaseComponent(Component):
+        def _get_hooks(self):
+            return "const hook1 = 42"
+
+    class ChildComponent1(BaseComponent):
+        pass
+
+    class GrandchildComponent1(ChildComponent1):
+        def add_hooks(self):
+            return [
+                "const hook2 = 43",
+                "const hook3 = 44",
+            ]
+
+    class GreatGrandchildComponent1(GrandchildComponent1):
+        def add_hooks(self):
+            return [
+                "const hook4 = 45",
+            ]
+
+    class GrandchildComponent2(ChildComponent1):
+        def _get_hooks(self):
+            return "const hook5 = 46"
+
+    class GreatGrandchildComponent2(GrandchildComponent2):
+        def add_hooks(self):
+            return [
+                "const hook2 = 43",
+                "const hook6 = 47",
+            ]
+
+    assert list(BaseComponent()._get_all_hooks()) == ["const hook1 = 42"]
+    assert list(ChildComponent1()._get_all_hooks()) == ["const hook1 = 42"]
+    assert list(GrandchildComponent1()._get_all_hooks()) == [
+        "const hook1 = 42",
+        "const hook2 = 43",
+        "const hook3 = 44",
+    ]
+    assert list(GreatGrandchildComponent1()._get_all_hooks()) == [
+        "const hook1 = 42",
+        "const hook2 = 43",
+        "const hook3 = 44",
+        "const hook4 = 45",
+    ]
+    assert list(GrandchildComponent2()._get_all_hooks()) == ["const hook5 = 46"]
+    assert list(GreatGrandchildComponent2()._get_all_hooks()) == [
+        "const hook5 = 46",
+        "const hook2 = 43",
+        "const hook6 = 47",
+    ]
+    assert list(
+        BaseComponent.create(
+            GrandchildComponent1.create(GreatGrandchildComponent2()),
+            GreatGrandchildComponent1(),
+        )._get_all_hooks(),
+    ) == [
+        "const hook1 = 42",
+        "const hook2 = 43",
+        "const hook3 = 44",
+        "const hook5 = 46",
+        "const hook6 = 47",
+        "const hook4 = 45",
+    ]
+    assert list(
+        Fragment.create(
+            GreatGrandchildComponent2(),
+            GreatGrandchildComponent1(),
+        )._get_all_hooks()
+    ) == [
+        "const hook5 = 46",
+        "const hook2 = 43",
+        "const hook6 = 47",
+        "const hook1 = 42",
+        "const hook3 = 44",
+        "const hook4 = 45",
+    ]
+
+
+def test_component_add_custom_code():
+    class BaseComponent(Component):
+        def _get_custom_code(self):
+            return "const custom_code1 = 42"
+
+    class ChildComponent1(BaseComponent):
+        pass
+
+    class GrandchildComponent1(ChildComponent1):
+        def add_custom_code(self):
+            return [
+                "const custom_code2 = 43",
+                "const custom_code3 = 44",
+            ]
+
+    class GreatGrandchildComponent1(GrandchildComponent1):
+        def add_custom_code(self):
+            return [
+                "const custom_code4 = 45",
+            ]
+
+    class GrandchildComponent2(ChildComponent1):
+        def _get_custom_code(self):
+            return "const custom_code5 = 46"
+
+    class GreatGrandchildComponent2(GrandchildComponent2):
+        def add_custom_code(self):
+            return [
+                "const custom_code2 = 43",
+                "const custom_code6 = 47",
+            ]
+
+    assert BaseComponent()._get_all_custom_code() == {"const custom_code1 = 42"}
+    assert ChildComponent1()._get_all_custom_code() == {"const custom_code1 = 42"}
+    assert GrandchildComponent1()._get_all_custom_code() == {
+        "const custom_code1 = 42",
+        "const custom_code2 = 43",
+        "const custom_code3 = 44",
+    }
+    assert GreatGrandchildComponent1()._get_all_custom_code() == {
+        "const custom_code1 = 42",
+        "const custom_code2 = 43",
+        "const custom_code3 = 44",
+        "const custom_code4 = 45",
+    }
+    assert GrandchildComponent2()._get_all_custom_code() == {"const custom_code5 = 46"}
+    assert GreatGrandchildComponent2()._get_all_custom_code() == {
+        "const custom_code2 = 43",
+        "const custom_code5 = 46",
+        "const custom_code6 = 47",
+    }
+    assert BaseComponent.create(
+        GrandchildComponent1.create(GreatGrandchildComponent2()),
+        GreatGrandchildComponent1(),
+    )._get_all_custom_code() == {
+        "const custom_code1 = 42",
+        "const custom_code2 = 43",
+        "const custom_code3 = 44",
+        "const custom_code4 = 45",
+        "const custom_code5 = 46",
+        "const custom_code6 = 47",
+    }
+    assert Fragment.create(
+        GreatGrandchildComponent2(),
+        GreatGrandchildComponent1(),
+    )._get_all_custom_code() == {
+        "const custom_code1 = 42",
+        "const custom_code2 = 43",
+        "const custom_code3 = 44",
+        "const custom_code4 = 45",
+        "const custom_code5 = 46",
+        "const custom_code6 = 47",
+    }
+
+
+def test_add_style_embedded_vars(test_state: BaseState):
+    """Test that add_style works with embedded vars when returning a plain dict.
+
+    Args:
+        test_state: A test state.
+    """
+    v0 = Var.create_safe("parent")._replace(
+        merge_var_data=VarData(hooks={"useParent": None}),  # type: ignore
     )
+    v1 = rx.color("plum", 10)
+    v2 = Var.create_safe("text")._replace(
+        merge_var_data=VarData(hooks={"useText": None}),  # type: ignore
+    )
+
+    class ParentComponent(Component):
+        def add_style(self):
+            return Style(
+                {
+                    "fake_parent": v0,
+                }
+            )
+
+    class StyledComponent(ParentComponent):
+        tag = "StyledComponent"
+
+        def add_style(self):
+            return {
+                "color": v1,
+                "fake": v2,
+                "margin": f"{test_state.num}%",
+            }
+
+    page = rx.vstack(StyledComponent.create())
+    page._add_style_recursive(Style())
+
+    assert (
+        "const test_state = useContext(StateContexts.test_state)"
+        in page._get_all_hooks_internal()
+    )
+    assert "useText" in page._get_all_hooks_internal()
+    assert "useParent" in page._get_all_hooks_internal()
+    assert (
+        str(page).count(
+            'css={{"fakeParent": "parent", "color": "var(--plum-10)", "fake": "text", "margin": `${test_state.num}%`}}'
+        )
+        == 1
+    )
+
+
+def test_add_style_foreach():
+    class StyledComponent(Component):
+        tag = "StyledComponent"
+        ix: Var[int]
+
+        def add_style(self):
+            return Style({"color": "red"})
+
+    page = rx.vstack(rx.foreach(Var.range(3), lambda i: StyledComponent.create(i)))
+    page._add_style_recursive(Style())
+
+    # Expect only a single child of the foreach on the python side
+    assert len(page.children[0].children) == 1
+
+    # Expect the style to be added to the child of the foreach
+    assert 'css={{"color": "red"}}' in str(page.children[0].children[0])
+
+    # Expect only one instance of this CSS dict in the rendered page
+    assert str(page).count('css={{"color": "red"}}') == 1

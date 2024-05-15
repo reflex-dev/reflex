@@ -1,7 +1,6 @@
 """Lucide Icon component."""
 
 from reflex.components.component import Component
-from reflex.style import Style
 from reflex.utils import console, format
 from reflex.vars import Var
 
@@ -45,24 +44,24 @@ class Icon(LucideIconComponent):
                     feature_name=f"icon {tag}",
                     reason=f"it was renamed upstream. Use {new_tag} instead.",
                     deprecation_version="0.4.6",
-                    removal_version="0.5.0",
+                    removal_version="0.6.0",
                 )
                 return new_tag
             return tag
 
         if children:
-            if len(children) == 1 and type(children[0]) == str:
+            if len(children) == 1 and isinstance(children[0], str):
                 props["tag"] = children[0]
                 children = []
             else:
                 raise AttributeError(
                     f"Passing multiple children to Icon component is not allowed: remove positional arguments {children[1:]} to fix"
                 )
-        if "tag" not in props.keys():
+        if "tag" not in props:
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
 
         if (
-            type(props["tag"]) != str
+            not isinstance(props["tag"], str)
             or map_deprecated_icon_names_05(format.to_snake_case(props["tag"]))
             not in LUCIDE_ICON_LIST
         ):
@@ -73,15 +72,8 @@ class Icon(LucideIconComponent):
 
         props["tag"] = format.to_title_case(format.to_snake_case(props["tag"])) + "Icon"
         props["alias"] = f"Lucide{props['tag']}"
+        props.setdefault("color", f"var(--current-color)")
         return super().create(*children, **props)
-
-    def _apply_theme(self, theme: Component):
-        self.style = Style(
-            {
-                "color": f"var(--current-color)",
-                **self.style,
-            }
-        )
 
 
 RENAMED_ICONS_05 = {

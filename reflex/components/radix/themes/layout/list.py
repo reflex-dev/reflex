@@ -1,4 +1,5 @@
 """List components."""
+from __future__ import annotations
 
 from typing import Iterable, Literal, Optional, Union
 
@@ -49,7 +50,7 @@ class BaseList(Component):
     def create(
         cls,
         *children,
-        items: Optional[Union[Var[Iterable], Iterable]] = None,
+        items: Optional[Var[Iterable]] = None,
         **props,
     ):
         """Create a list component.
@@ -68,7 +69,7 @@ class BaseList(Component):
             if isinstance(items, Var):
                 children = [Foreach.create(items, ListItem.create)]
             else:
-                children = [ListItem.create(item) for item in items]
+                children = [ListItem.create(item) for item in items]  # type: ignore
         props["list_style_position"] = "outside"
         props["direction"] = "column"
         style = props.setdefault("style", {})
@@ -77,12 +78,16 @@ class BaseList(Component):
             style["gap"] = props["gap"]
         return super().create(*children, **props)
 
-    def _apply_theme(self, theme: Component):
-        self.style = Style(
+    def add_style(self) -> Style | None:
+        """Add style to the component.
+
+        Returns:
+            The style of the component.
+        """
+        return Style(
             {
                 "direction": "column",
                 "list_style_position": "inside",
-                **self.style,
             }
         )
 

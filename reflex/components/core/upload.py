@@ -9,7 +9,7 @@ from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 from reflex import constants
 from reflex.components.chakra.forms.input import Input
 from reflex.components.chakra.layout.box import Box
-from reflex.components.component import Component, MemoizationLeaf
+from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.constants import Dirs
 from reflex.event import (
     CallableEventSpec,
@@ -140,7 +140,9 @@ def get_upload_url(file_path: str) -> Var[str]:
     """
     Upload.is_used = True
 
-    return Var.create_safe(f"{uploaded_files_url_prefix}/{file_path}")
+    return Var.create_safe(
+        f"{uploaded_files_url_prefix}/{file_path}", _var_is_string=True
+    )
 
 
 def _on_drop_spec(files: Var):
@@ -216,6 +218,12 @@ class Upload(MemoizationLeaf):
         """
         # Mark the Upload component as used in the app.
         cls.is_used = True
+
+        # Apply the default classname
+        given_class_name = props.pop("class_name", [])
+        if isinstance(given_class_name, str):
+            given_class_name = [given_class_name]
+        props["class_name"] = ["rx-Upload", *given_class_name]
 
         # get only upload component props
         supported_props = cls.get_props().union({"on_drop"})
@@ -297,3 +305,38 @@ class Upload(MemoizationLeaf):
         return {
             (5, "UploadFilesProvider"): UploadFilesProvider.create(),
         }
+
+
+class StyledUpload(Upload):
+    """The styled Upload Component."""
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the styled upload component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The styled upload component.
+        """
+        # Set default props.
+        props.setdefault("border", "1px dashed var(--accent-12)")
+        props.setdefault("padding", "5em")
+        props.setdefault("textAlign", "center")
+
+        # Mark the Upload component as used in the app.
+        Upload.is_used = True
+
+        return super().create(
+            *children,
+            **props,
+        )
+
+
+class UploadNamespace(ComponentNamespace):
+    """Upload component namespace."""
+
+    root = Upload.create
+    __call__ = StyledUpload.create

@@ -1,7 +1,8 @@
 """Wrapper around react-debounce-input."""
+
 from __future__ import annotations
 
-from typing import Any, Type
+from typing import Any, Type, Union
 
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
@@ -34,7 +35,7 @@ class DebounceInput(Component):
     force_notify_on_blur: Var[bool]
 
     # If provided, create a fully-controlled input
-    value: Var[str]
+    value: Var[Union[str, int, float]]
 
     # The ref to attach to the created input
     input_ref: Var[str]
@@ -79,7 +80,9 @@ class DebounceInput(Component):
             for p in cls.get_props()
             if getattr(child, p, None) is not None
         }
-        props_from_child.update(child.event_triggers)
+        props[EventTriggers.ON_CHANGE] = child.event_triggers.pop(
+            EventTriggers.ON_CHANGE
+        )
         props = {**props_from_child, **props}
 
         # Carry all other child props directly via custom_attrs
@@ -117,6 +120,9 @@ class DebounceInput(Component):
 
         component = super().create(**props)
         component._get_style = child._get_style
+        component.event_triggers.update(child.event_triggers)
+        component.children = child.children
+        component._rename_props = child._rename_props
         return component
 
     def get_event_triggers(self) -> dict[str, Any]:

@@ -185,9 +185,6 @@ class AccordionItem(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -264,9 +261,6 @@ class AccordionButton(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -343,9 +337,6 @@ class AccordionPanel(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -422,8 +413,5 @@ class AccordionIcon(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...

@@ -91,14 +91,12 @@ class SliderComponent(RadixPrimitiveComponentWithClassName):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
 class SliderRoot(SliderComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
+    def add_style(self) -> Style | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -195,13 +193,11 @@ class SliderRoot(SliderComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
 class SliderTrack(SliderComponent):
+    def add_style(self) -> Style | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -276,13 +272,11 @@ class SliderTrack(SliderComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
 class SliderRange(SliderComponent):
+    def add_style(self) -> Style | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -357,13 +351,11 @@ class SliderRange(SliderComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
 class SliderThumb(SliderComponent):
+    def add_style(self) -> Style | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -438,9 +430,6 @@ class SliderThumb(SliderComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 

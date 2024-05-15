@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import glob
 import importlib
 import inspect
@@ -19,7 +20,7 @@ from datetime import datetime
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 import httpx
 import pkg_resources
@@ -35,6 +36,7 @@ from reflex.base import Base
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
+from reflex.utils.format import format_library_name
 
 CURRENTLY_INSTALLING_NODE = False
 
@@ -46,6 +48,14 @@ class Template(Base):
     description: str
     code_url: str
     demo_url: str
+
+
+class CpuInfo(Base):
+    """Model to save cpu info."""
+
+    manufacturer_id: Optional[str]
+    model_name: Optional[str]
+    address_width: Optional[int]
 
 
 def check_latest_package_version(package_name: str):
@@ -166,16 +176,18 @@ def get_bun_version() -> version.Version | None:
 
 def get_install_package_manager() -> str | None:
     """Get the package manager executable for installation.
-      Currently on unix systems, bun is used for installation only.
+      Currently, bun is used for installation only.
 
     Returns:
         The path to the package manager.
     """
-    # On Windows, we use npm instead of bun.
-    if constants.IS_WINDOWS:
+    if (
+        constants.IS_WINDOWS
+        and not is_windows_bun_supported()
+        or windows_check_onedrive_in_path()
+        or windows_npm_escape_hatch()
+    ):
         return get_package_manager()
-
-    # On other platforms, we use bun.
     return get_config().bun_path
 
 
@@ -192,6 +204,24 @@ def get_package_manager() -> str | None:
     return npm_path
 
 
+def windows_check_onedrive_in_path() -> bool:
+    """For windows, check if oneDrive is present in the project dir path.
+
+    Returns:
+        If oneDrive is in the path of the project directory.
+    """
+    return "onedrive" in str(Path.cwd()).lower()
+
+
+def windows_npm_escape_hatch() -> bool:
+    """For windows, if the user sets REFLEX_USE_NPM, use npm instead of bun.
+
+    Returns:
+        If the user has set REFLEX_USE_NPM.
+    """
+    return os.environ.get("REFLEX_USE_NPM", "").lower() in ["true", "1", "yes"]
+
+
 def get_app(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
 
@@ -203,35 +233,43 @@ def get_app(reload: bool = False) -> ModuleType:
 
     Raises:
         RuntimeError: If the app name is not set in the config.
+        exceptions.ReflexError: Reflex specific errors.
     """
-    os.environ[constants.RELOAD_CONFIG] = str(reload)
-    config = get_config()
-    if not config.app_name:
-        raise RuntimeError(
-            "Cannot get the app module because `app_name` is not set in rxconfig! "
-            "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
-        )
-    module = config.module
-    sys.path.insert(0, os.getcwd())
-    app = __import__(module, fromlist=(constants.CompileVars.APP,))
+    from reflex.utils import exceptions, telemetry
 
-    if reload:
-        from reflex.state import reload_state_module
+    try:
+        os.environ[constants.RELOAD_CONFIG] = str(reload)
+        config = get_config()
+        if not config.app_name:
+            raise RuntimeError(
+                "Cannot get the app module because `app_name` is not set in rxconfig! "
+                "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
+            )
+        module = config.module
+        sys.path.insert(0, os.getcwd())
+        app = __import__(module, fromlist=(constants.CompileVars.APP,))
 
-        # Reset rx.State subclasses to avoid conflict when reloading.
-        reload_state_module(module=module)
+        if reload:
+            from reflex.state import reload_state_module
 
-        # Reload the app module.
-        importlib.reload(app)
+            # Reset rx.State subclasses to avoid conflict when reloading.
+            reload_state_module(module=module)
 
-    return app
+            # Reload the app module.
+            importlib.reload(app)
+
+        return app
+    except exceptions.ReflexError as ex:
+        telemetry.send("error", context="frontend", detail=str(ex))
+        raise
 
 
-def get_compiled_app(reload: bool = False) -> ModuleType:
+def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
     Args:
         reload: Re-import the app module from disk
+        export: Compile the app for export
 
     Returns:
         The compiled app based on the default config.
@@ -241,7 +279,7 @@ def get_compiled_app(reload: bool = False) -> ModuleType:
     # For py3.8 and py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
-    app.compile_()
+    app._compile(export=export)
     return app_module
 
 
@@ -286,7 +324,7 @@ def parse_redis_url() -> str | dict | None:
         feature_name="host[:port] style redis urls",
         reason="redis-py url syntax is now being used",
         deprecation_version="0.3.6",
-        removal_version="0.5.0",
+        removal_version="0.6.0",
     )
     redis_url, has_port, redis_port = config.redis_url.partition(":")
     if not has_port:
@@ -326,7 +364,7 @@ def validate_app_name(app_name: str | None = None) -> str:
         app_name if app_name else os.getcwd().split(os.path.sep)[-1].replace("-", "_")
     )
     # Make sure the app is not named "reflex".
-    if app_name == constants.Reflex.MODULE_NAME:
+    if app_name.lower() == constants.Reflex.MODULE_NAME:
         console.error(
             f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
         )
@@ -562,28 +600,39 @@ def init_reflex_json(project_hash: int | None):
     path_ops.update_json_file(constants.Reflex.JSON, reflex_json)
 
 
-def update_next_config(export=False):
+def update_next_config(export=False, transpile_packages: Optional[List[str]] = None):
     """Update Next.js config from Reflex config.
 
     Args:
         export: if the method run during reflex export.
+        transpile_packages: list of packages to transpile via next.config.js.
     """
-    next_config_file = os.path.join(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
+    next_config_file = Path(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
 
-    next_config = _update_next_config(get_config(), export=export)
+    next_config = _update_next_config(
+        get_config(), export=export, transpile_packages=transpile_packages
+    )
 
-    with open(next_config_file, "w") as file:
-        file.write(next_config)
-        file.write("\n")
+    # Overwriting the next.config.js triggers a full server reload, so make sure
+    # there is actually a diff.
+    orig_next_config = next_config_file.read_text() if next_config_file.exists() else ""
+    if orig_next_config != next_config:
+        next_config_file.write_text(next_config)
 
 
-def _update_next_config(config, export=False):
+def _update_next_config(
+    config: Config, export: bool = False, transpile_packages: Optional[List[str]] = None
+):
     next_config = {
         "basePath": config.frontend_path or "",
         "compress": config.next_compression,
         "reactStrictMode": True,
         "trailingSlash": True,
     }
+    if transpile_packages:
+        next_config["transpilePackages"] = list(
+            set((format_library_name(p) for p in transpile_packages))
+        )
     if export:
         next_config["output"] = "export"
         next_config["distDir"] = constants.Dirs.STATIC
@@ -718,10 +767,17 @@ def install_bun():
     Raises:
         FileNotFoundError: If required packages are not found.
     """
-    # Bun is not supported on Windows.
-    if constants.IS_WINDOWS:
-        console.debug("Skipping bun installation on Windows.")
-        return
+    win_supported = is_windows_bun_supported()
+    one_drive_in_path = windows_check_onedrive_in_path()
+    if constants.IS_WINDOWS and not win_supported or one_drive_in_path:
+        if not win_supported:
+            console.warn(
+                "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
+            )
+        if one_drive_in_path:
+            console.warn(
+                "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
+            )
 
     # Skip if bun is already installed.
     if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
@@ -731,16 +787,32 @@ def install_bun():
         return
 
     #  if unzip is installed
-    unzip_path = path_ops.which("unzip")
-    if unzip_path is None:
-        raise FileNotFoundError("Reflex requires unzip to be installed.")
+    if constants.IS_WINDOWS:
+        processes.new_process(
+            [
+                "powershell",
+                "-c",
+                f"irm {constants.Bun.WINDOWS_INSTALL_URL}|iex",
+            ],
+            env={
+                "BUN_INSTALL": constants.Bun.ROOT_PATH,
+                "BUN_VERSION": constants.Bun.VERSION,
+            },
+            shell=True,
+            run=True,
+            show_logs=console.is_debug(),
+        )
+    else:
+        unzip_path = path_ops.which("unzip")
+        if unzip_path is None:
+            raise FileNotFoundError("Reflex requires unzip to be installed.")
 
-    # Run the bun install script.
-    download_and_run(
-        constants.Bun.INSTALL_URL,
-        f"bun-v{constants.Bun.VERSION}",
-        BUN_INSTALL=constants.Bun.ROOT_PATH,
-    )
+        # Run the bun install script.
+        download_and_run(
+            constants.Bun.INSTALL_URL,
+            f"bun-v{constants.Bun.VERSION}",
+            BUN_INSTALL=constants.Bun.ROOT_PATH,
+        )
 
 
 def _write_cached_procedure_file(payload: str, cache_file: str):
@@ -802,18 +874,26 @@ def install_frontend_packages(packages: set[str], config: Config):
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    # Install the base packages.
-    process = processes.new_process(
-        [get_install_package_manager(), "install", "--loglevel", "silly"],
+    # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
+    fallback_command = (
+        get_package_manager()
+        if not constants.IS_WINDOWS
+        or constants.IS_WINDOWS
+        and is_windows_bun_supported()
+        and not windows_check_onedrive_in_path()
+        else None
+    )
+    processes.run_process_with_fallback(
+        [get_install_package_manager(), "install"],  # type: ignore
+        fallback=fallback_command,
+        analytics_enabled=True,
+        show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
     )
 
-    processes.show_status("Installing base frontend packages", process)
-
     if config.tailwind is not None:
-        # install tailwind and tailwind plugins as dev dependencies.
-        process = processes.new_process(
+        processes.run_process_with_fallback(
             [
                 get_install_package_manager(),
                 "add",
@@ -821,20 +901,22 @@ def install_frontend_packages(packages: set[str], config: Config):
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
             ],
+            fallback=fallback_command,
+            analytics_enabled=True,
+            show_status_message="Installing tailwind",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
         )
-        processes.show_status("Installing tailwind", process)
 
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
-        process = processes.new_process(
+        processes.run_process_with_fallback(
             [get_install_package_manager(), "add", *packages],
+            fallback=fallback_command,
+            analytics_enabled=True,
+            show_status_message="Installing frontend packages from config and components",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
-        )
-        processes.show_status(
-            "Installing frontend packages from config and components", process
         )
 
 
@@ -868,10 +950,31 @@ def needs_reinit(frontend: bool = True) -> bool:
     if not os.path.exists(constants.Dirs.WEB):
         return True
 
+    # If the template is out of date, then we need to re-init
+    if not is_latest_template():
+        return True
+
     if constants.IS_WINDOWS:
+        import uvicorn
+
+        uvi_ver = uvicorn.__version__
         console.warn(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
+        if sys.version_info >= (3, 12) and uvi_ver != "0.24.0.post1":
+            console.warn(
+                f"""On Python 3.12, `uvicorn==0.24.0.post1` is recommended for improved hot reload times. Found {uvi_ver} instead."""
+            )
+
+        if sys.version_info < (3, 12) and uvi_ver != "0.20.0":
+            console.warn(
+                f"""On Python < 3.12, `uvicorn==0.20.0` is recommended for improved hot reload times.  Found {uvi_ver} instead."""
+            )
+
+        if windows_check_onedrive_in_path():
+            console.warn(
+                "Creating project directories in OneDrive may lead to performance issues. For optimal performance, It is recommended to avoid using OneDrive for your reflex app."
+            )
     # No need to reinitialize if the app is already initialized.
     return False
 
@@ -941,9 +1044,6 @@ def validate_frontend_dependencies(init=True):
                 f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
             )
             raise typer.Exit(1)
-
-    if constants.IS_WINDOWS:
-        return
 
     if init:
         # we only need bun for package install on `reflex init`.
@@ -1160,17 +1260,17 @@ def _get_rx_chakra_component_to_migrate() -> set[str]:
         rx_chakra_object = getattr(reflex.chakra, rx_chakra_name)
         try:
             if (
-                inspect.ismethod(rx_chakra_object)
-                and inspect.isclass(rx_chakra_object.__self__)
-                and issubclass(rx_chakra_object.__self__, ChakraComponent)
+                (
+                    inspect.ismethod(rx_chakra_object)
+                    and inspect.isclass(rx_chakra_object.__self__)
+                    and issubclass(rx_chakra_object.__self__, ChakraComponent)
+                )
+                or (
+                    inspect.isclass(rx_chakra_object)
+                    and issubclass(rx_chakra_object, ChakraComponent)
+                )
+                or rx_chakra_name in whitelist
             ):
-                names_to_migrate.add(rx_chakra_name)
-
-            elif inspect.isclass(rx_chakra_object) and issubclass(
-                rx_chakra_object, ChakraComponent
-            ):
-                names_to_migrate.add(rx_chakra_name)
-            elif rx_chakra_name in whitelist:
                 names_to_migrate.add(rx_chakra_name)
 
         except Exception:
@@ -1373,7 +1473,9 @@ def initialize_app(app_name: str, template: str | None = None):
         else:
             # Check if the template is a github repo.
             if template.startswith("https://github.com"):
-                template_url = f"{template.strip('/')}/archive/main.zip"
+                template_url = (
+                    f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+                )
             else:
                 console.error(f"Template `{template}` not found.")
                 raise typer.Exit(1)
@@ -1382,4 +1484,93 @@ def initialize_app(app_name: str, template: str | None = None):
             template_url=template_url,
         )
 
-    telemetry.send("init")
+    telemetry.send("init", template=template)
+
+
+def format_address_width(address_width) -> int | None:
+    """Cast address width to an int.
+
+    Args:
+        address_width: The address width.
+
+    Returns:
+        Address width int
+    """
+    try:
+        return int(address_width) if address_width else None
+    except ValueError:
+        return None
+
+
+@functools.lru_cache(maxsize=None)
+def get_cpu_info() -> CpuInfo | None:
+    """Get the CPU info of the underlining host.
+
+    Returns:
+         The CPU info.
+    """
+    platform_os = platform.system()
+    cpuinfo = {}
+    try:
+        if platform_os == "Windows":
+            cmd = "wmic cpu get addresswidth,caption,manufacturer /FORMAT:csv"
+            output = processes.execute_command_and_return_output(cmd)
+            if output:
+                val = output.splitlines()[-1].split(",")[1:]
+                cpuinfo["manufacturer_id"] = val[2]
+                cpuinfo["model_name"] = val[1].split("Family")[0].strip()
+                cpuinfo["address_width"] = format_address_width(val[0])
+        elif platform_os == "Linux":
+            output = processes.execute_command_and_return_output("lscpu")
+            if output:
+                lines = output.split("\n")
+                for line in lines:
+                    if "Architecture" in line:
+                        cpuinfo["address_width"] = (
+                            64 if line.split(":")[1].strip() == "x86_64" else 32
+                        )
+                    if "Vendor ID:" in line:
+                        cpuinfo["manufacturer_id"] = line.split(":")[1].strip()
+                    if "Model name" in line:
+                        cpuinfo["model_name"] = line.split(":")[1].strip()
+        elif platform_os == "Darwin":
+            cpuinfo["address_width"] = format_address_width(
+                processes.execute_command_and_return_output("getconf LONG_BIT")
+            )
+            cpuinfo["manufacturer_id"] = processes.execute_command_and_return_output(
+                "sysctl -n machdep.cpu.brand_string"
+            )
+            cpuinfo["model_name"] = processes.execute_command_and_return_output(
+                "uname -m"
+            )
+    except Exception as err:
+        console.error(f"Failed to retrieve CPU info. {err}")
+        return None
+
+    return (
+        CpuInfo(
+            manufacturer_id=cpuinfo.get("manufacturer_id"),
+            model_name=cpuinfo.get("model_name"),
+            address_width=cpuinfo.get("address_width"),
+        )
+        if cpuinfo
+        else None
+    )
+
+
+@functools.lru_cache(maxsize=None)
+def is_windows_bun_supported() -> bool:
+    """Check whether the underlining host running windows qualifies to run bun.
+    We typically do not run bun on ARM or 32 bit devices that use windows.
+
+    Returns:
+        Whether the host is qualified to use bun.
+    """
+    cpu_info = get_cpu_info()
+    return (
+        constants.IS_WINDOWS
+        and cpu_info is not None
+        and cpu_info.address_width == 64
+        and cpu_info.model_name is not None
+        and "ARM" not in cpu_info.model_name
+    )

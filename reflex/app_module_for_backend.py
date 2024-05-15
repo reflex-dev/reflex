@@ -15,7 +15,7 @@ app = getattr(app_module, constants.CompileVars.APP)
 # For py3.8 and py3.9 compatibility when redis is used, we MUST add any decorator pages
 # before compiling the app in a thread to avoid event loop error (REF-2172).
 app._apply_decorated_pages()
-compile_future = ThreadPoolExecutor(max_workers=1).submit(app.compile_)
+compile_future = ThreadPoolExecutor(max_workers=1).submit(app._compile)
 compile_future.add_done_callback(
     # Force background compile errors to print eagerly
     lambda f: f.result()

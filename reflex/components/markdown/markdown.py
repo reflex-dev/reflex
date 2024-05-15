@@ -18,8 +18,7 @@ from reflex.components.radix.themes.typography.heading import Heading
 from reflex.components.radix.themes.typography.link import Link
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.tags.tag import Tag
-from reflex.style import Style
-from reflex.utils import console, imports, types
+from reflex.utils import imports, types
 from reflex.utils.imports import ImportVar
 from reflex.vars import Var
 
@@ -85,9 +84,6 @@ class Markdown(Component):
     # The component map from a tag to a lambda that creates a component.
     component_map: Dict[str, Any] = {}
 
-    # Custom styles for the markdown (deprecated in v0.2.9).
-    custom_styles: Dict[str, Any] = {}
-
     # The hash of the component map, generated at create() time.
     component_map_hash: str = ""
 
@@ -102,18 +98,9 @@ class Markdown(Component):
         Returns:
             The markdown component.
         """
-        assert len(children) == 1 and types._isinstance(
-            children[0], Union[str, Var]
+        assert (
+            len(children) == 1 and types._isinstance(children[0], Union[str, Var])
         ), "Markdown component must have exactly one child containing the markdown source."
-
-        # Custom styles are deprecated.
-        if "custom_styles" in props:
-            console.deprecate(
-                feature_name="rx.markdown custom_styles",
-                reason="Use the component_map prop instead.",
-                deprecation_version="0.2.9",
-                removal_version="0.5.0",
-            )
 
         # Update the base component map with the custom component map.
         component_map = {**get_base_component_map(), **props.pop("component_map", {})}
@@ -230,7 +217,6 @@ class Markdown(Component):
         component = self.component_map[tag](*children, **props).set(
             special_props=special_props
         )
-        component._add_style(Style(self.custom_styles.get(tag, {})))
         return component
 
     def format_component(self, tag: str, **props) -> str:
@@ -257,9 +243,7 @@ class Markdown(Component):
         }
 
         # Separate out inline code and code blocks.
-        components[
-            "code"
-        ] = f"""{{({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
+        components["code"] = f"""{{({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
     if (language) {{
@@ -277,9 +261,7 @@ class Markdown(Component):
     ) : (
         {self.format_component("codeblock", language=Var.create_safe("language", _var_is_local=False))}
     );
-      }}}}""".replace(
-            "\n", " "
-        )
+      }}}}""".replace("\n", " ")
 
         return components
 

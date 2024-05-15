@@ -16,7 +16,7 @@ class Stack(Flex):
     def create(
         cls,
         *children,
-        spacing: LiteralSpacing = "2",
+        spacing: LiteralSpacing = "3",
         align: LiteralAlign = "start",
         **props,
     ) -> Component:
@@ -31,6 +31,12 @@ class Stack(Flex):
         Returns:
             The stack component.
         """
+        # Apply the default classname
+        given_class_name = props.pop("class_name", [])
+        if isinstance(given_class_name, str):
+            given_class_name = [given_class_name]
+        props["class_name"] = ["rx-Stack", *given_class_name]
+
         return super().create(
             *children,
             spacing=spacing,

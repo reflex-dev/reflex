@@ -91,13 +91,11 @@ class ProgressComponent(RadixPrimitiveComponentWithClassName):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
 class ProgressRoot(ProgressComponent):
+    def add_style(self) -> Style | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -179,13 +177,11 @@ class ProgressRoot(ProgressComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
 class ProgressIndicator(ProgressComponent):
+    def add_style(self) -> Style | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -327,9 +323,6 @@ class ProgressIndicator(ProgressComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 

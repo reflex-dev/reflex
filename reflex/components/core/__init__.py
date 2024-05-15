@@ -16,7 +16,7 @@ from .responsive import (
     tablet_only,
 )
 from .upload import (
-    Upload,
+    UploadNamespace,
     cancel_upload,
     clear_selected_files,
     get_upload_dir,
@@ -31,4 +31,4 @@ debounce_input = DebounceInput.create
 foreach = Foreach.create
 html = Html.create
 match = Match.create
-upload = Upload.create
+upload = UploadNamespace()

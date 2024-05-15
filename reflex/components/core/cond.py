@@ -102,15 +102,6 @@ class Cond(MemoizationLeaf):
             _IS_TRUE_IMPORT,
         )
 
-    def _apply_theme(self, theme: Component):
-        """Apply the theme to this component.
-
-        Args:
-            theme: The theme to apply.
-        """
-        self.comp1.apply_theme(theme)  # type: ignore
-        self.comp2.apply_theme(theme)  # type: ignore
-
 
 @overload
 def cond(condition: Any, c1: Component, c2: Any) -> Component:
@@ -172,7 +163,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
     def create_var(cond_part):
         return Var.create_safe(
             cond_part,
-            _var_is_string=type(cond_part) is str or isinstance(cond_part, Color),
+            _var_is_string=isinstance(cond_part, (str, Color)),
         )
 
     # convert the truth and false cond parts into vars so the _var_data can be obtained.

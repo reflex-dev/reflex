@@ -7,6 +7,7 @@ import types as builtin_types
 import warnings
 from datetime import date, datetime, time, timedelta
 from enum import Enum
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_hints
 
 from reflex.base import Base
@@ -234,6 +235,19 @@ def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
 
 
 @serializer
+def serialize_path(path: Path):
+    """Serialize a pathlib.Path to a JSON string.
+
+    Args:
+        path: The path to serialize.
+
+    Returns:
+        The serialized path.
+    """
+    return str(path.as_posix())
+
+
+@serializer
 def serialize_enum(en: Enum) -> str:
     """Serialize a enum to a JSON string.
 
@@ -345,7 +359,7 @@ try:
                 mime_type = MIME[image_format]
             except KeyError:
                 # Unknown mime_type: warn and return image/png and hope the browser can sort it out.
-                warnings.warn(
+                warnings.warn(  # noqa: B028
                     f"Unknown mime type for {image} {image_format}. Defaulting to image/png"
                 )
                 mime_type = "image/png"

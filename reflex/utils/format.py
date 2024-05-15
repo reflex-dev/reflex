@@ -6,7 +6,7 @@ import inspect
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
@@ -15,7 +15,7 @@ from reflex.vars import BaseVar, Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
-    from reflex.event import EventChain, EventHandler, EventSpec
+    from reflex.event import ArgsSpec, EventChain, EventHandler, EventSpec
 
 WRAP_MAP = {
     "{": "}",
@@ -330,7 +330,7 @@ def format_cond(
     cond = f"isTrue({cond})"
 
     def create_var(cond_part):
-        return Var.create_safe(cond_part, _var_is_string=type(cond_part) is str)
+        return Var.create_safe(cond_part, _var_is_string=isinstance(cond_part, str))
 
     # Format prop conds.
     if is_prop:
@@ -588,6 +588,77 @@ def format_event_chain(
             ")",
         ]
     )
+
+
+def format_queue_events(
+    events: EventSpec
+    | EventHandler
+    | Callable
+    | List[EventSpec | EventHandler | Callable]
+    | None = None,
+    args_spec: Optional[ArgsSpec] = None,
+) -> Var[EventChain]:
+    """Format a list of event handler / event spec as a javascript callback.
+
+    The resulting code can be passed to interfaces that expect a callback
+    function and when triggered it will directly call queueEvents.
+
+    It is intended to be executed in the rx.call_script context, where some
+    existing API needs a callback to trigger a backend event handler.
+
+    Args:
+        events: The events to queue.
+        args_spec: The argument spec for the callback.
+
+    Returns:
+        The compiled javascript callback to queue the given events on the frontend.
+    """
+    from reflex.event import (
+        EventChain,
+        EventHandler,
+        EventSpec,
+        call_event_fn,
+        call_event_handler,
+    )
+
+    if not events:
+        return Var.create_safe(
+            "() => null", _var_is_string=False, _var_is_local=False
+        ).to(EventChain)
+
+    # If no spec is provided, the function will take no arguments.
+    def _default_args_spec():
+        return []
+
+    # Construct the arguments that the function accepts.
+    sig = inspect.signature(args_spec or _default_args_spec)  # type: ignore
+    if sig.parameters:
+        arg_def = ",".join(f"_{p}" for p in sig.parameters)
+        arg_def = f"({arg_def})"
+    else:
+        arg_def = "()"
+
+    payloads = []
+    if not isinstance(events, list):
+        events = [events]
+
+    # Process each event/spec/lambda (similar to Component._create_event_chain).
+    for spec in events:
+        specs: list[EventSpec] = []
+        if isinstance(spec, (EventHandler, EventSpec)):
+            specs = [call_event_handler(spec, args_spec or _default_args_spec)]
+        elif isinstance(spec, type(lambda: None)):
+            specs = call_event_fn(spec, args_spec or _default_args_spec)
+        payloads.extend(format_event(s) for s in specs)
+
+    # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
+    # Typically this snippet will _only_ run from within an rx.call_script eval context.
+    return Var.create_safe(
+        f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}); "
+        f"processEvent({constants.CompileVars.SOCKET})}}",
+        _var_is_string=False,
+        _var_is_local=False,
+    ).to(EventChain)
 
 
 def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:

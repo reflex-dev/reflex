@@ -1,4 +1,5 @@
 """reflex.testing - tools for testing reflex apps."""
+
 from __future__ import annotations
 
 import asyncio
@@ -25,6 +26,7 @@ from typing import (
     AsyncIterator,
     Callable,
     Coroutine,
+    List,
     Optional,
     Type,
     TypeVar,
@@ -42,7 +44,6 @@ import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.state import (
     BaseState,
-    State,
     StateManagerMemory,
     StateManagerRedis,
     reload_state_module,
@@ -112,7 +113,9 @@ class AppHarness:
     """AppHarness executes a reflex app in-process for testing."""
 
     app_name: str
-    app_source: Optional[types.FunctionType | types.ModuleType] | str
+    app_source: Optional[
+        types.FunctionType | types.ModuleType | str | functools.partial
+    ]
     app_path: pathlib.Path
     app_module_path: pathlib.Path
     app_module: Optional[types.ModuleType] = None
@@ -124,6 +127,7 @@ class AppHarness:
     backend: Optional[uvicorn.Server] = None
     state_manager: Optional[StateManagerMemory | StateManagerRedis] = None
     _frontends: list["WebDriver"] = dataclasses.field(default_factory=list)
+    _decorated_pages: list = dataclasses.field(default_factory=list)
 
     @classmethod
     def create(
@@ -149,15 +153,23 @@ class AppHarness:
         """
         if app_name is None:
             if app_source is None:
-                app_name = root.name.lower()
+                app_name = root.name
             elif isinstance(app_source, functools.partial):
-                app_name = app_source.func.__name__.lower()
+                keywords = app_source.keywords
+                slug_suffix = "_".join([str(v) for v in keywords.values()])
+                func_name = app_source.func.__name__
+                app_name = f"{func_name}_{slug_suffix}"
+                app_name = re.sub(r"[^a-zA-Z0-9_]", "_", app_name)
             elif isinstance(app_source, str):
                 raise ValueError(
                     "app_name must be provided when app_source is a string."
                 )
             else:
-                app_name = app_source.__name__.lower()
+                app_name = app_source.__name__
+
+            app_name = app_name.lower()
+            while "__" in app_name:
+                app_name = app_name.replace("__", "_")
         return cls(
             app_name=app_name,
             app_source=app_source,
@@ -230,11 +242,17 @@ class AppHarness:
         with chdir(self.app_path):
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
-            # Clean out any `rx.page` decorators from other tests.
-            reflex.app.DECORATED_PAGES.clear()
+            # Save decorated pages before importing the test app module
+            before_decorated_pages = reflex.app.DECORATED_PAGES[self.app_name].copy()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
+            # Save the pages that were added during testing
+            self._decorated_pages = [
+                p
+                for p in reflex.app.DECORATED_PAGES[self.app_name]
+                if p not in before_decorated_pages
+            ]
         self.app_instance = self.app_module.app
         if isinstance(self.app_instance._state_manager, StateManagerRedis):
             # Create our own redis connection for testing.
@@ -396,6 +414,10 @@ class AppHarness:
         for driver in self._frontends:
             driver.quit()
 
+        # Cleanup decorated pages added during testing
+        for page in self._decorated_pages:
+            reflex.app.DECORATED_PAGES[self.app_name].remove(page)
+
     def __exit__(self, *excinfo) -> None:
         """Contextmanager protocol for `stop()`.
 
@@ -492,12 +514,19 @@ class AppHarness:
             raise TimeoutError("Backend is not listening.")
         return backend.servers[0].sockets[0]
 
-    def frontend(self, driver_clz: Optional[Type["WebDriver"]] = None) -> "WebDriver":
+    def frontend(
+        self,
+        driver_clz: Optional[Type["WebDriver"]] = None,
+        driver_kwargs: dict[str, Any] | None = None,
+        driver_option_args: List[str] | None = None,
+    ) -> "WebDriver":
         """Get a selenium webdriver instance pointed at the app.
 
         Args:
             driver_clz: webdriver.Chrome (default), webdriver.Firefox, webdriver.Safari,
                 webdriver.Edge, etc
+            driver_kwargs: additional keyword arguments to pass to the webdriver constructor
+            driver_option_args: additional arguments for the webdriver options
 
         Returns:
             Instance of the given webdriver navigated to the frontend url of the app.
@@ -519,20 +548,31 @@ class AppHarness:
         if driver_clz is None:
             requested_driver = os.environ.get("APP_HARNESS_DRIVER", "Chrome")
             driver_clz = getattr(webdriver, requested_driver)
+            options = getattr(webdriver, f"{requested_driver}Options")()
+        if driver_clz is webdriver.Chrome:
             options = webdriver.ChromeOptions()
-        if driver_clz is webdriver.Chrome and want_headless:
-            options = webdriver.ChromeOptions()
-            options.add_argument("--headless=new")
-        elif driver_clz is webdriver.Firefox and want_headless:
+            options.add_argument("--class=AppHarness")
+            if want_headless:
+                options.add_argument("--headless=new")
+        elif driver_clz is webdriver.Firefox:
             options = webdriver.FirefoxOptions()
-            options.add_argument("-headless")
-        elif driver_clz is webdriver.Edge and want_headless:
+            if want_headless:
+                options.add_argument("-headless")
+        elif driver_clz is webdriver.Edge:
             options = webdriver.EdgeOptions()
-            options.add_argument("headless")
-        if options and (args := os.environ.get("APP_HARNESS_DRIVER_ARGS")):
+            if want_headless:
+                options.add_argument("headless")
+        if options is None:
+            raise RuntimeError(f"Could not determine options for {driver_clz}")
+        if args := os.environ.get("APP_HARNESS_DRIVER_ARGS"):
             for arg in args.split(","):
                 options.add_argument(arg)
-        driver = driver_clz(options=options)  # type: ignore
+        if driver_option_args is not None:
+            for arg in driver_option_args:
+                options.add_argument(arg)
+        if driver_kwargs is None:
+            driver_kwargs = {}
+        driver = driver_clz(options=options, **driver_kwargs)  # type: ignore
         driver.get(self.frontend_url)
         self._frontends.append(driver)
         return driver
@@ -579,7 +619,7 @@ class AppHarness:
                 await self.state_manager.close()
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[State]:
+    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
         """Modify the state associated with the given token and send update to frontend.
 
         Args:

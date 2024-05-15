@@ -415,6 +415,7 @@ def test_basic_operations(TestObj):
     "var, expected",
     [
         (v([1, 2, 3]), "[1, 2, 3]"),
+        (v(set([1, 2, 3])), "[1, 2, 3]"),
         (v(["1", "2", "3"]), '["1", "2", "3"]'),
         (BaseVar(_var_name="foo", _var_type=list)._var_set_state("state"), "state.foo"),
         (BaseVar(_var_name="foo", _var_type=list), "foo"),
@@ -836,7 +837,7 @@ def test_state_with_initial_computed_var(
         (f"{BaseVar(_var_name='var', _var_type=str)}", "${var}"),
         (
             f"testing f-string with {BaseVar(_var_name='myvar', _var_type=int)._var_set_state('state')}",
-            'testing f-string with $<reflex.Var>{"state": "state", "interpolations": [], "imports": {"/utils/context": [{"tag": "StateContexts", "is_default": false, "alias": null, "install": true, "render": true}], "react": [{"tag": "useContext", "is_default": false, "alias": null, "install": true, "render": true}]}, "hooks": {"const state = useContext(StateContexts.state)": null}, "string_length": 13}</reflex.Var>{state.myvar}',
+            'testing f-string with $<reflex.Var>{"state": "state", "interpolations": [], "imports": {"/utils/context": [{"tag": "StateContexts", "is_default": false, "alias": null, "install": true, "render": true, "transpile": false}], "react": [{"tag": "useContext", "is_default": false, "alias": null, "install": true, "render": true, "transpile": false}]}, "hooks": {"const state = useContext(StateContexts.state)": null}, "string_length": 13}</reflex.Var>{state.myvar}',
         ),
         (
             f"testing local f-string {BaseVar(_var_name='x', _var_is_local=True, _var_type=str)}",
@@ -918,7 +919,6 @@ def test_unsupported_types_for_reverse(var):
         BaseVar(_var_name="var", _var_type=int),
         BaseVar(_var_name="var", _var_type=float),
         BaseVar(_var_name="var", _var_type=bool),
-        BaseVar(_var_name="var", _var_type=set),
         BaseVar(_var_name="var", _var_type=None),
     ],
 )

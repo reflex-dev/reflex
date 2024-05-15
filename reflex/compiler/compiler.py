@@ -174,7 +174,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
     return templates.STYLE.render(stylesheets=sheets)
 
 
-def _compile_component(component: Component) -> str:
+def _compile_component(component: Component | StatefulComponent) -> str:
     """Compile a single component.
 
     Args:
@@ -263,9 +263,18 @@ def _compile_stateful_components(
             # Reset this flag to render the actual component.
             component.rendered_as_shared = False
 
+            # Include dynamic imports in the shared component.
+            if dynamic_imports := component._get_all_dynamic_imports():
+                rendered_components.update(
+                    {dynamic_import: None for dynamic_import in dynamic_imports}
+                )
+
+            # Include custom code in the shared component.
             rendered_components.update(
                 {code: None for code in component._get_all_custom_code()},
             )
+
+            # Include all imports in the shared component.
             all_import_dicts.append(component._get_all_imports())
 
             # Indicate that this component now imports from the shared file.

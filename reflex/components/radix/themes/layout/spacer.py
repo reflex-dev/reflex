@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from reflex.components.component import Component
+from reflex.style import Style
 
 from .flex import Flex
 
@@ -10,8 +10,13 @@ from .flex import Flex
 class Spacer(Flex):
     """A spacer component."""
 
-    def _apply_theme(self, theme: Component):
-        self.style.update(
+    def add_style(self) -> Style | None:
+        """Add style to the component.
+
+        Returns:
+            The style of the component.
+        """
+        return Style(
             {
                 "flex": 1,
                 "justify_self": "stretch",

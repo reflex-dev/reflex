@@ -35,13 +35,15 @@ env:
 
 jobs:
   example-counter:
+    env:
+      OUTPUT_FILE: import_benchmark.json
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
       fail-fast: false
       matrix:
         # Show OS combos first in GUI
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-12]
         python-version: ['3.8.18', '3.9.18', '3.10.13', '3.11.5', '3.12.0']
         exclude:
           - os: windows-latest
@@ -74,9 +76,9 @@ jobs:
       - name: Install requirements for counter example
         working-directory: ./reflex-examples/counter
         run: |
-          poetry run pip install -r requirements.txt
+          poetry run uv pip install -r requirements.txt
       - name: Install additional dependencies for DB access
-        run: poetry run pip install psycopg2-binary
+        run: poetry run uv pip install psycopg2-binary
       - name: Check export --backend-only before init for counter example
         working-directory: ./reflex-examples/counter
         run: |
@@ -98,21 +100,39 @@ jobs:
           npm -v
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev
       - name: Measure and upload .web size
-        if: ${{ env.DATABASE_URL }}
+        if: ${{ env.DATABASE_URL  && github.event.pull_request.merged == true }}
         run:
           poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}"
           --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "counter-app-dot-web" --path ./reflex-examples/counter/.web
+      - name: Install hyperfine
+        if: github.event.pull_request.merged == true
+        run: cargo install --locked hyperfine
+      - name: Benchmark imports
+        if: github.event.pull_request.merged == true
+        working-directory: ./reflex-examples/counter
+        run: hyperfine --warmup 3 "export POETRY_VIRTUALENVS_PATH=../../.venv; poetry run python counter/counter.py" --show-output --export-json "${{ env.OUTPUT_FILE }}" --shell bash
+      - name: Upload Benchmarks
+        if : ${{ env.DATABASE_URL  && github.event.pull_request.merged == true }}
+        run:
+          poetry run python scripts/benchmarks/benchmark_imports.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --benchmark-json "./reflex-examples/counter/${{ env.OUTPUT_FILE }}"
+          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+          --event-type "${{ github.event_name }}" --actor "${{ github.actor }}" --pr-id "${{ github.event.pull_request.id }}"
+
+
+
 
   reflex-web:
     strategy:
       fail-fast: false
       matrix:
         # Show OS combos first in GUI
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.10.10', '3.11.4']
+        os: [ubuntu-latest, windows-latest, macos-12]
+        python-version: ['3.10.11', '3.11.4']
 
     env:
       REFLEX_WEB_WINDOWS_OVERRIDE: '1'
@@ -134,9 +154,9 @@ jobs:
 
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
-        run: poetry run pip install -r requirements.txt
+        run: poetry run uv pip install -r requirements.txt
       - name: Install additional dependencies for DB access
-        run: poetry run pip install psycopg2-binary
+        run: poetry run uv pip install psycopg2-binary
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: poetry run reflex init
@@ -146,7 +166,7 @@ jobs:
           npm -v
           poetry run bash scripts/integration.sh ./reflex-web prod
       - name: Measure and upload .web size
-        if: ${{ env.DATABASE_URL }}
+        if: ${{ env.DATABASE_URL  && github.event.pull_request.merged == true }}
         run:
           poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"

@@ -90,9 +90,6 @@ class DrawerComponent(RadixPrimitiveComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -200,9 +197,6 @@ class DrawerRoot(DrawerComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -352,9 +346,6 @@ class DrawerPortal(DrawerComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -531,9 +522,6 @@ class DrawerOverlay(DrawerComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -683,9 +671,6 @@ class DrawerTitle(DrawerComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -764,9 +749,6 @@ class DrawerDescription(DrawerComponent):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -878,9 +860,6 @@ class Drawer(ComponentNamespace):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 

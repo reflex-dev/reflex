@@ -15,7 +15,7 @@ class RangeSlider(ChakraComponent):
 
     tag = "RangeSlider"
 
-    # State var to bind the the input.
+    # State var to bind the input.
     value: Var[List[int]]
 
     # The default values.

@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-12]
         python-version: ['3.8.18', '3.9.18', '3.10.13', '3.11.5', '3.12.0']
         # Windows is a bit behind on Python version availability in Github
         exclude:
@@ -75,5 +75,11 @@ jobs:
         run: |
           export PYTHONUNBUFFERED=1
           export REDIS_URL=redis://localhost:6379
+          poetry run pytest tests --cov --no-cov-on-fail --cov-report=
+      # Change to explicitly install v1 when reflex-hosting-cli is compatible with v2
+      - name: Run unit tests w/ pydantic v1
+        run: |
+          export PYTHONUNBUFFERED=1
+          poetry run uv pip install "pydantic~=1.10"
           poetry run pytest tests --cov --no-cov-on-fail --cov-report=
       - run: poetry run coverage html
