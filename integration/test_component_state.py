@@ -1,4 +1,5 @@
 """Test that per-component state scaffold works and operates independently."""
+
 from typing import Generator
 
 import pytest

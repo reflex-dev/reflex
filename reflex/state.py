@@ -279,11 +279,13 @@ class EventHandlerSetVar(EventHandler):
 
         Raises:
             AttributeError: If the given Var name does not exist on the state.
-            ValueError: If the given Var name is not a str
+            EventHandlerValueError: If the given Var name is not a str
         """
+        from reflex.utils.exceptions import EventHandlerValueError
+
         if args:
             if not isinstance(args[0], str):
-                raise ValueError(
+                raise EventHandlerValueError(
                     f"Var name must be passed as a string, got {args[0]!r}"
                 )
             # Check that the requested Var setter exists on the State at compile time.
@@ -357,6 +359,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # Whether the state has ever been touched since instantiation.
     _was_touched: bool = False
 
+    # Whether this state class is a mixin and should not be instantiated.
+    _mixin: ClassVar[bool] = False
+
     # A special event handler for setting base vars.
     setvar: ClassVar[EventHandler]
 
@@ -380,10 +385,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             **kwargs: The kwargs to pass to the Pydantic init method.
 
         Raises:
-            RuntimeError: If the state is instantiated directly by end user.
+            ReflexRuntimeError: If the state is instantiated directly by end user.
         """
+        from reflex.utils.exceptions import ReflexRuntimeError
+
         if not _reflex_internal_init and not is_testing_env():
-            raise RuntimeError(
+            raise ReflexRuntimeError(
                 "State classes should not be instantiated directly in a Reflex app. "
                 "See https://reflex.dev/docs/state/ for further information."
             )
@@ -424,23 +431,30 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         return [
             v
-            for mixin in cls.__mro__
-            if mixin is cls or not issubclass(mixin, (BaseState, ABC))
+            for mixin in cls._mixins() + [cls]
             for v in mixin.__dict__.values()
             if isinstance(v, ComputedVar)
         ]
 
     @classmethod
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, mixin: bool = False, **kwargs):
         """Do some magic for the subclass initialization.
 
         Args:
+            mixin: Whether the subclass is a mixin and should not be initialized.
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
 
         Raises:
-            ValueError: If a substate class shadows another.
+            StateValueError: If a substate class shadows another.
         """
+        from reflex.utils.exceptions import StateValueError
+
         super().__init_subclass__(**kwargs)
+
+        cls._mixin = mixin
+        if mixin:
+            return
+
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
         # Computed vars should not shadow builtin state props.
@@ -471,7 +485,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 else:
                     # During normal operation, subclasses cannot have the same name, even if they are
                     # defined in different modules.
-                    raise ValueError(
+                    raise StateValueError(
                         f"The substate class '{cls.__name__}' has been defined multiple times. "
                         "Shadowing substate classes is not allowed."
                     )
@@ -612,8 +626,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return [
             mixin
             for mixin in cls.__mro__
-            if not issubclass(mixin, (BaseState, ABC))
-            and mixin not in [pydantic.BaseModel, Base]
+            if (
+                mixin not in [pydantic.BaseModel, Base, cls]
+                and issubclass(mixin, BaseState)
+                and mixin._mixin is True
+            )
         ]
 
     @classmethod
@@ -736,7 +753,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         parent_states = [
             base
             for base in cls.__bases__
-            if types._issubclass(base, BaseState) and base is not BaseState
+            if issubclass(base, BaseState) and base is not BaseState and not base._mixin
         ]
         assert len(parent_states) < 2, "Only one parent state is allowed."
         return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
@@ -829,10 +846,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             prop: The variable to initialize
 
         Raises:
-            TypeError: if the variable has an incorrect type
+            VarTypeError: if the variable has an incorrect type
         """
+        from reflex.utils.exceptions import VarTypeError
+
         if not types.is_valid_var_type(prop._var_type):
-            raise TypeError(
+            raise VarTypeError(
                 "State vars must be primitive Python types, "
                 "Plotly figures, Pandas dataframes, "
                 "or subclasses of rx.Base. "
@@ -1454,6 +1473,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Yields:
             StateUpdate object
         """
+        from reflex.utils import telemetry
+        from reflex.utils.exceptions import ReflexError
+
         # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
 
@@ -1489,9 +1511,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 yield state._as_state_update(handler, events, final=True)
 
         # If an error occurs, throw a window alert.
-        except Exception:
+        except Exception as ex:
             error = traceback.format_exc()
             print(error)
+            if isinstance(ex, ReflexError):
+                telemetry.send("error", context="backend", detail=str(ex))
             yield state._as_state_update(
                 handler,
                 window_alert("An error occurred. See logs for details."),
@@ -1688,10 +1712,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if initial:
             computed_vars = {
                 # Include initial computed vars.
-                prop_name: cv._initial_value
-                if isinstance(cv, ComputedVar)
-                and not isinstance(cv._initial_value, types.Unset)
-                else self.get_value(getattr(self, prop_name))
+                prop_name: (
+                    cv._initial_value
+                    if isinstance(cv, ComputedVar)
+                    and not isinstance(cv._initial_value, types.Unset)
+                    else self.get_value(getattr(self, prop_name))
+                )
                 for prop_name, cv in self.computed_vars.items()
             }
         elif include_computed:
@@ -1818,7 +1844,7 @@ class OnLoadInternalState(State):
         ]
 
 
-class ComponentState(Base):
+class ComponentState(State, mixin=True):
     """Base class to allow for the creation of a state instance per component.
 
     This allows for the bundling of UI and state logic into a single class,
@@ -1859,6 +1885,18 @@ class ComponentState(Base):
 
     # The number of components created from this class.
     _per_component_state_instance_count: ClassVar[int] = 0
+
+    @classmethod
+    def __init_subclass__(cls, mixin: bool = False, **kwargs):
+        """Overwrite mixin default to True.
+
+        Args:
+            mixin: Whether the subclass is a mixin and should not be initialized.
+            **kwargs: The kwargs to pass to the pydantic init_subclass method.
+        """
+        if ComponentState in cls.__bases__:
+            mixin = True
+        super().__init_subclass__(mixin=mixin, **kwargs)
 
     @classmethod
     def get_component(cls, *children, **props) -> "Component":

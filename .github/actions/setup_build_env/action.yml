@@ -106,3 +106,8 @@ runs:
       run: |
         source ${{ inputs.create-venv-at-path }}/*/activate
         poetry install --only-root --no-interaction
+
+    - name: Install uv
+      shell: bash
+      run: |
+        poetry run pip install uv

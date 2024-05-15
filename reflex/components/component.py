@@ -374,7 +374,7 @@ class Component(BaseComponent, ABC):
                 raise ValueError(
                     f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. If {comp_name}"
                     f" is a third party component make sure to add `{key}` to the component's event triggers. "
-                    f"visit https://reflex.dev/docs/wrapping-react/logic/#event-triggers for more info."
+                    f"visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info."
                 )
             if key in triggers:
                 # Event triggers are bound to event chains.
@@ -731,6 +731,7 @@ class Component(BaseComponent, ABC):
         # Import here to avoid circular imports.
         from reflex.components.base.bare import Bare
         from reflex.components.base.fragment import Fragment
+        from reflex.utils.exceptions import ComponentTypeError
 
         # Translate deprecated props to new names.
         new_prop_names = [
@@ -757,7 +758,7 @@ class Component(BaseComponent, ABC):
                     validate_children(child)
                 # Make sure the child is a valid type.
                 if not types._isinstance(child, ComponentChild):
-                    raise TypeError(
+                    raise ComponentTypeError(
                         "Children of Reflex components must be other components, "
                         "state vars, or primitive Python types. "
                         f"Got child {child} of type {type(child)}.",
@@ -781,7 +782,7 @@ class Component(BaseComponent, ABC):
 
         return cls(children=children, **props)
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Downstream components can override this method to return a style dict
@@ -801,20 +802,16 @@ class Component(BaseComponent, ABC):
             The style to add.
         """
         styles = []
-        vars = []
 
         # Walk the MRO to call all `add_style` methods.
         for base in self._iter_parent_classes_with_method("add_style"):
             s = base.add_style(self)  # type: ignore
             if s is not None:
                 styles.append(s)
-                vars.append(s._var_data)
 
         _style = Style()
         for s in reversed(styles):
             _style.update(s)
-
-        _style._var_data = VarData.merge(*vars)
         return _style
 
     def _get_component_style(self, styles: ComponentStyle) -> Style | None:

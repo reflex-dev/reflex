@@ -211,6 +211,7 @@ def stream_logs(
     process: subprocess.Popen,
     progress=None,
     suppress_errors: bool = False,
+    analytics_enabled: bool = False,
 ):
     """Stream the logs for a process.
 
@@ -219,6 +220,7 @@ def stream_logs(
         process: The process.
         progress: The ongoing progress bar if one is being used.
         suppress_errors: If True, do not exit if errors are encountered (for fallback).
+        analytics_enabled: Whether analytics are enabled for this command.
 
     Yields:
         The lines of the process output.
@@ -226,6 +228,8 @@ def stream_logs(
     Raises:
         Exit: If the process failed.
     """
+    from reflex.utils import telemetry
+
     # Store the tail of the logs.
     logs = collections.deque(maxlen=512)
     with process:
@@ -246,6 +250,8 @@ def stream_logs(
         console.error(f"{message} failed with exit code {process.returncode}")
         for line in logs:
             console.error(line, end="")
+        if analytics_enabled:
+            telemetry.send("error", context=message)
         console.error("Run with [bold]--loglevel debug [/bold] for the full log.")
         raise typer.Exit(1)
 
@@ -261,16 +267,27 @@ def show_logs(message: str, process: subprocess.Popen):
         pass
 
 
-def show_status(message: str, process: subprocess.Popen, suppress_errors: bool = False):
+def show_status(
+    message: str,
+    process: subprocess.Popen,
+    suppress_errors: bool = False,
+    analytics_enabled: bool = False,
+):
     """Show the status of a process.
 
     Args:
         message: The initial message to display.
         process: The process.
         suppress_errors: If True, do not exit if errors are encountered (for fallback).
+        analytics_enabled: Whether analytics are enabled for this command.
     """
     with console.status(message) as status:
-        for line in stream_logs(message, process, suppress_errors=suppress_errors):
+        for line in stream_logs(
+            message,
+            process,
+            suppress_errors=suppress_errors,
+            analytics_enabled=analytics_enabled,
+        ):
             status.update(f"{message} {line}")
 
 
@@ -319,19 +336,31 @@ def get_command_with_loglevel(command: list[str]) -> list[str]:
     return command
 
 
-def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwargs):
+def run_process_with_fallback(
+    args,
+    *,
+    show_status_message,
+    fallback=None,
+    analytics_enabled: bool = False,
+    **kwargs,
+):
     """Run subprocess and retry using fallback command if initial command fails.
 
     Args:
         args: A string, or a sequence of program arguments.
         show_status_message: The status message to be displayed in the console.
         fallback: The fallback command to run.
+        analytics_enabled: Whether analytics are enabled for this command.
         kwargs: Kwargs to pass to new_process function.
     """
     process = new_process(get_command_with_loglevel(args), **kwargs)
     if fallback is None:
         # No fallback given, or this _is_ the fallback command.
-        show_status(show_status_message, process)
+        show_status(
+            show_status_message,
+            process,
+            analytics_enabled=analytics_enabled,
+        )
     else:
         # Suppress errors for initial command, because we will try to fallback
         show_status(show_status_message, process, suppress_errors=True)
@@ -345,6 +374,7 @@ def run_process_with_fallback(args, *, show_status_message, fallback=None, **kwa
                 fallback_args,
                 show_status_message=show_status_message,
                 fallback=None,
+                analytics_enabled=analytics_enabled,
                 **kwargs,
             )
 
