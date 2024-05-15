@@ -73,7 +73,7 @@ class Foreach(Component):
             and render_fn.__qualname__ == ComponentState.create.__qualname__
         ):
             raise TypeError(
-                "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported."
+                "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported yet."
             )
 
         component = cls(
