@@ -45,7 +45,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-      - run: poetry run pip install pyvirtualdisplay pillow
+      - run: poetry run uv pip install pyvirtualdisplay pillow
       - name: Run app harness tests
         env:
           SCREENSHOT_DIR: /tmp/screenshots

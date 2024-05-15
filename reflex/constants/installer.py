@@ -35,7 +35,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.1.6"
+    VERSION = "1.1.8"
     # Min Bun Version
     MIN_VERSION = "0.7.0"
     # The directory to store the bun.
