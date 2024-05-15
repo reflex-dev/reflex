@@ -20,10 +20,11 @@ from reflex.components.radix.themes.components.dialog import (
 )
 from reflex.components.radix.themes.layout import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.components.sonner.toast import Toaster
+from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
 from reflex.utils import imports
+from reflex.utils.serializers import serialize
 from reflex.vars import Var, VarData
 
 connect_error_var_data: VarData
@@ -103,7 +104,7 @@ class WebsocketTargetURL(Bare):
 def default_connection_error() -> list[str | Var | Component]: ...
 
 class ConnectionToaster(Toaster):
-    def add_imports(self) -> dict[list[str | imports.ImportVar]]: ...
+    def add_imports(self) -> dict[str, list[str | imports.ImportVar]]: ...
     def add_hooks(self) -> list[str]: ...
     @overload
     @classmethod

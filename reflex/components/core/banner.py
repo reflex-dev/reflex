@@ -16,10 +16,11 @@ from reflex.components.radix.themes.components.dialog import (
 )
 from reflex.components.radix.themes.layout import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.components.sonner.toast import Toaster
+from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
 from reflex.utils import imports
+from reflex.utils.serializers import serialize
 from reflex.vars import Var, VarData
 
 connect_error_var_data: VarData = VarData(  # type: ignore
@@ -93,19 +94,19 @@ def default_connection_error() -> list[str | Var | Component]:
 class ConnectionToaster(Toaster):
     """A connection toaster component."""
 
-    def add_imports(self) -> dict[list[str | imports.ImportVar]]:
+    def add_imports(self) -> dict[str, list[str | imports.ImportVar]]:
         """Add the imports for the connection toaster.
 
         Returns:
             The imports for the connection toaster.
         """
-        imports_ = {**Imports.EVENTS}
+        imports_ = {**Imports.EVENTS}  # type: ignore
         imports_["react"].append("useEffect")  # type: ignore # remove when 3248 is merged
         (imports_.setdefault(f"/{Dirs.STATE_PATH}", []).append("getBackendURL"))  # type: ignore
         imports_.setdefault("/env.json", []).append(
             imports.ImportVar(tag="env", is_default=True)
         )
-        return imports_
+        return imports_  # type: ignore
 
     def add_hooks(self) -> list[str]:
         """Add the hooks for the connection toaster.
@@ -119,12 +120,15 @@ class ConnectionToaster(Toaster):
     else
         return '';
 };"""
+        props = ToastProps(
+            description=f"Check if server is reachable at ${{getBackendURL(env.EVENT).href}}",
+            id="websocket-error",
+        )
         hook = Var.create(
             f"""useEffect(() => {{
     toast.error(
-        `Cannot connect to server: ${{getLastMessage({connect_errors})}}.`,
-        {{description:`Check if server is reachable at ${{getBackendURL(env.EVENT).href}}`, id:"websocker-error"}})
-}}, {connect_errors});"""
+        `Cannot connect to server: ${{getLastMessage({connect_errors})}}.`, {serialize(props)},)
+}}, [{connect_errors}]);"""
         )
 
         # can uncomment when 3248 is merged
