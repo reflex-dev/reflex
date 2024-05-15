@@ -17,4 +17,16 @@ module.exports = {
 	{% if darkMode is defined %}
 	darkMode: {{darkMode|json_dumps}},
 	{% endif %}
+	{% if corePlugins is defined %}
+	corePlugins: {{corePlugins|json_dumps}},
+	{% endif %}
+	{% if important is defined %}
+	important: {{important|json_dumps}},
+	{% endif %}
+	{% if prefix is defined %}
+	prefix: {{prefix|json_dumps}},
+	{% endif %}
+	{% if separator is defined %}
+	separator: {{separator|json_dumps}},
+	{% endif %}
 };

@@ -180,12 +180,15 @@ class Style(dict):
             style_dict: The style dictionary.
             kwargs: Other key value pairs to apply to the dict update.
         """
-        if kwargs:
-            style_dict = {**(style_dict or {}), **kwargs}
         if not isinstance(style_dict, Style):
             converted_dict = type(self)(style_dict)
         else:
             converted_dict = style_dict
+        if kwargs:
+            if converted_dict is None:
+                converted_dict = type(self)(kwargs)
+            else:
+                converted_dict.update(kwargs)
         # Combine our VarData with that of any Vars in the style_dict that was passed.
         self._var_data = VarData.merge(self._var_data, converted_dict._var_data)
         super().update(converted_dict)

@@ -44,7 +44,7 @@ def template(main_content: Callable[[], rx.Component]) -> rx.Component:
                 ),
                 rx.chakra.menu_item(
                     rx.chakra.link(
-                        "Contact", href="mailto:founders@=reflex.dev", width="100%"
+                        "Contact", href="mailto:founders@reflex.dev", width="100%"
                     )
                 ),
             ),

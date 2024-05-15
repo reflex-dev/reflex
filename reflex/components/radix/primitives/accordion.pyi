@@ -10,9 +10,10 @@ from reflex.style import Style
 from typing import Any, Dict, List, Literal, Optional, Union
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
+from reflex.components.core.cond import cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
-from reflex.components.radix.themes.base import LiteralAccentColor
+from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
 from reflex.style import Style
 from reflex.utils import imports
 from reflex.vars import Var, get_uuid_string_var
@@ -22,6 +23,7 @@ LiteralAccordionDir = Literal["ltr", "rtl"]
 LiteralAccordionOrientation = Literal["vertical", "horizontal"]
 LiteralAccordionVariant = Literal["classic", "soft", "surface", "outline", "ghost"]
 DEFAULT_ANIMATION_DURATION = 250
+DEFAULT_ANIMATION_EASING = "cubic-bezier(0.87, 0, 0.13, 1)"
 
 class AccordionComponent(RadixPrimitiveComponent):
     def add_style(self) -> Style | None: ...
@@ -173,6 +175,8 @@ class AccordionComponent(RadixPrimitiveComponent):
         ...
 
 class AccordionRoot(AccordionComponent):
+    def get_event_triggers(self) -> Dict[str, Any]: ...
+    def add_style(self): ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -196,12 +200,15 @@ class AccordionRoot(AccordionComponent):
                 Literal["vertical", "horizontal"],
             ]
         ] = None,
-        variant: Optional[
+        radius: Optional[
             Union[
-                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
-                Literal["classic", "soft", "surface", "outline", "ghost"],
+                Var[Literal["none", "small", "medium", "large", "full"]],
+                Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
+        duration: Optional[Union[Var[int], int]] = None,
+        easing: Optional[Union[Var[str], str]] = None,
+        show_dividers: Optional[Union[Var[bool], bool]] = None,
         color_scheme: Optional[
             Union[
                 Var[
@@ -264,6 +271,12 @@ class AccordionRoot(AccordionComponent):
                 ],
             ]
         ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                Literal["classic", "soft", "surface", "outline", "ghost"],
+            ]
+        ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -321,7 +334,7 @@ class AccordionRoot(AccordionComponent):
         ] = None,
         **props
     ) -> "AccordionRoot":
-        """Create the Accordion root component.
+        """Create the component.
 
         Args:
             *children: The children of the component.
@@ -332,8 +345,12 @@ class AccordionRoot(AccordionComponent):
             disabled: Whether or not the accordion is disabled.
             dir: The reading direction of the accordion when applicable.
             orientation: The orientation of the accordion.
-            variant: The variant of the component.
+            radius: The radius of the accordion corners.
+            duration: The time in milliseconds to animate open and close
+            easing: The easing function to use for the animation.
+            show_dividers: Whether to show divider lines between items.
             color_scheme: The color scheme of the component.
+            variant: The variant of the component.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -341,14 +358,12 @@ class AccordionRoot(AccordionComponent):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The properties of the component.
+            **props: The props of the component.
 
         Returns:
-            The Accordion root Component.
+            The component.
         """
         ...
-    def get_event_triggers(self) -> Dict[str, Any]: ...
-    def add_style(self): ...
 
 class AccordionItem(AccordionComponent):
     @overload
@@ -655,8 +670,6 @@ class AccordionHeader(AccordionComponent):
         """
         ...
     def add_style(self) -> Style | None: ...
-
-cubic_bezier = "cubic-bezier(0.87, 0, 0.13, 1)"
 
 class AccordionTrigger(AccordionComponent):
     @overload

@@ -126,6 +126,10 @@ def _prepare_event(event: str, **kwargs) -> dict:
 
     cpuinfo = get_cpu_info()
 
+    additional_keys = ["template", "context", "detail"]
+    additional_fields = {
+        key: value for key in additional_keys if (value := kwargs.get(key)) is not None
+    }
     return {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
         "event": event,
@@ -139,11 +143,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
             "cpu_info": dict(cpuinfo) if cpuinfo else {},
-            **(
-                {"template": template}
-                if (template := kwargs.get("template")) is not None
-                else {}
-            ),
+            **additional_fields,
         },
         "timestamp": stamp,
     }
