@@ -4,7 +4,6 @@ from reflex.admin import AdminDash as AdminDash
 from reflex import app as app
 from reflex.app import App as App
 from reflex.app import UploadFile as UploadFile
-from reflex.app import asset as asset
 from reflex import base as base
 from reflex.base import Base as Base
 from reflex import compiler as compiler
