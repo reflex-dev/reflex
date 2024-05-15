@@ -59,6 +59,7 @@ _ALL_COMPONENTS = [
     "code",
     "container",
     "context_menu",
+    "data_list",
     "dialog",
     "divider",
     "drawer",
@@ -79,6 +80,7 @@ _ALL_COMPONENTS = [
     "scroll_area",
     "section",
     "select",
+    "skeleton",
     "slider",
     "spacer",
     "spinner",
@@ -111,7 +113,8 @@ _ALL_COMPONENTS = [
     "ordered_list",
     "moment",
     "logo",
-    "toast",
+    # Toast is in experimental namespace initially
+    # "toast",
 ]
 
 _MAPPING = {
@@ -120,7 +123,6 @@ _MAPPING = {
     "reflex.app": ["app", "App", "UploadFile"],
     "reflex.base": ["base", "Base"],
     "reflex.compiler": ["compiler"],
-    "reflex.compiler.utils": ["get_asset_path"],
     "reflex.components": _ALL_COMPONENTS,
     "reflex.components.component": ["Component", "NoSSRComponent", "memo"],
     "reflex.components.chakra": ["chakra"],

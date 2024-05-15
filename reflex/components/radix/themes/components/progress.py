@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.component import Component
 from reflex.vars import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -12,8 +13,11 @@ class Progress(RadixThemesComponent):
 
     tag = "Progress"
 
-    # The value of the progress bar: "0" to "100"
+    # The value of the progress bar: 0 to max (default 100)
     value: Var[int]
+
+    # The maximum progress value.
+    max: Var[int]
 
     # The size of the progress bar: "1" | "2" | "3"
     size: Var[Literal["1", "2", "3"]]
@@ -32,6 +36,20 @@ class Progress(RadixThemesComponent):
 
     # The duration of the progress bar animation. Once the duration times out, the progress bar will start an indeterminate animation.
     duration: Var[str]
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a Progress component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The Progress Component.
+        """
+        props.setdefault("width", "100%")
+        return super().create(*children, **props)
 
 
 progress = Progress.create

@@ -7,10 +7,11 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from reflex.components.component import Component
+from reflex.style import Style
 from .flex import Flex
 
 class Center(Flex):
+    def add_style(self) -> Style | None: ...
     @overload
     @classmethod
     def create(  # type: ignore

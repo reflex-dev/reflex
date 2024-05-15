@@ -374,7 +374,7 @@ class Component(BaseComponent, ABC):
                 raise ValueError(
                     f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. If {comp_name}"
                     f" is a third party component make sure to add `{key}` to the component's event triggers. "
-                    f"visit https://reflex.dev/docs/wrapping-react/logic/#event-triggers for more info."
+                    f"visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info."
                 )
             if key in triggers:
                 # Event triggers are bound to event chains.
@@ -608,6 +608,8 @@ class Component(BaseComponent, ABC):
     def _apply_theme(self, theme: Optional[Component]):
         """Apply the theme to this component.
 
+        Deprecated. Use add_style instead.
+
         Args:
             theme: The theme to apply.
         """
@@ -729,6 +731,7 @@ class Component(BaseComponent, ABC):
         # Import here to avoid circular imports.
         from reflex.components.base.bare import Bare
         from reflex.components.base.fragment import Fragment
+        from reflex.utils.exceptions import ComponentTypeError
 
         # Translate deprecated props to new names.
         new_prop_names = [
@@ -741,7 +744,7 @@ class Component(BaseComponent, ABC):
                     f"Underscore suffix for prop `{under_prop}`",
                     reason=f"for consistency. Use `{prop}` instead.",
                     deprecation_version="0.4.0",
-                    removal_version="0.5.0",
+                    removal_version="0.6.0",
                     dedupe=False,
                 )
                 props[prop] = props.pop(under_prop)
@@ -755,7 +758,7 @@ class Component(BaseComponent, ABC):
                     validate_children(child)
                 # Make sure the child is a valid type.
                 if not types._isinstance(child, ComponentChild):
-                    raise TypeError(
+                    raise ComponentTypeError(
                         "Children of Reflex components must be other components, "
                         "state vars, or primitive Python types. "
                         f"Got child {child} of type {type(child)}.",
@@ -779,44 +782,115 @@ class Component(BaseComponent, ABC):
 
         return cls(children=children, **props)
 
-    def _add_style(self, style: dict):
-        """Add additional style to the component.
+    def add_style(self) -> dict[str, Any] | None:
+        """Add style to the component.
+
+        Downstream components can override this method to return a style dict
+        that will be applied to the component.
+
+        Returns:
+            The style to add.
+        """
+        return None
+
+    def _add_style(self) -> Style:
+        """Call add_style for all bases in the MRO.
+
+        Downstream components should NOT override. Use add_style instead.
+
+        Returns:
+            The style to add.
+        """
+        styles = []
+
+        # Walk the MRO to call all `add_style` methods.
+        for base in self._iter_parent_classes_with_method("add_style"):
+            s = base.add_style(self)  # type: ignore
+            if s is not None:
+                styles.append(s)
+
+        _style = Style()
+        for s in reversed(styles):
+            _style.update(s)
+        return _style
+
+    def _get_component_style(self, styles: ComponentStyle) -> Style | None:
+        """Get the style to the component from `App.style`.
 
         Args:
-            style: A style dict to apply.
-        """
-        self.style.update(style)
+            styles: The style to apply.
 
-    def _add_style_recursive(self, style: ComponentStyle) -> Component:
+        Returns:
+            The style of the component.
+        """
+        component_style = None
+        if type(self) in styles:
+            component_style = Style(styles[type(self)])
+        if self.create in styles:
+            component_style = Style(styles[self.create])
+        return component_style
+
+    def _add_style_recursive(
+        self, style: ComponentStyle, theme: Optional[Component] = None
+    ) -> Component:
         """Add additional style to the component and its children.
+
+        Apply order is as follows (with the latest overriding the earliest):
+        1. Default style from `_add_style`/`add_style`.
+        2. User-defined style from `App.style`.
+        3. User-defined style from `Component.style`.
+        4. style dict and css props passed to the component instance.
 
         Args:
             style: A dict from component to styling.
+            theme: The theme to apply. (for retro-compatibility with deprecated _apply_theme API)
+
+        Raises:
+            UserWarning: If `_add_style` has been overridden.
 
         Returns:
             The component with the additional style.
         """
-        component_style = None
-        if type(self) in style:
-            # Extract the style for this component.
-            component_style = Style(style[type(self)])
-        if self.create in style:
-            component_style = Style(style[self.create])
-        if component_style is not None:
-            # Only add style props that are not overridden.
-            component_style = {
-                k: v for k, v in component_style.items() if k not in self.style
-            }
+        # 1. Default style from `_add_style`/`add_style`.
+        if type(self)._add_style != Component._add_style:
+            raise UserWarning(
+                "Do not override _add_style directly. Use add_style instead."
+            )
+        new_style = self._add_style()
+        style_vars = [new_style._var_data]
 
-            # Add the style to the component.
-            self._add_style(component_style)
+        # 2. User-defined style from `App.style`.
+        component_style = self._get_component_style(style)
+        if component_style:
+            new_style.update(component_style)
+            style_vars.append(component_style._var_data)
+
+        # 3. User-defined style from `Component.style`.
+        # Apply theme for retro-compatibility with deprecated _apply_theme API
+        if type(self)._apply_theme != Component._apply_theme:
+            console.deprecate(
+                f"{self.__class__.__name__}._apply_theme",
+                reason="use add_style instead",
+                deprecation_version="0.5.0",
+                removal_version="0.6.0",
+            )
+            self._apply_theme(theme)
+
+        # 4. style dict and css props passed to the component instance.
+        new_style.update(self.style)
+        style_vars.append(self.style._var_data)
+
+        new_style._var_data = VarData.merge(*style_vars)
+
+        # Assign the new style
+        self.style = new_style
 
         # Recursively add style to the children.
         for child in self.children:
             # Skip BaseComponent and StatefulComponent children.
             if not isinstance(child, Component):
                 continue
-            child._add_style_recursive(style)
+            child._add_style_recursive(style, theme)
         return self
 
     def _get_style(self) -> dict:

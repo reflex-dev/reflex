@@ -59,8 +59,13 @@ class SliderRoot(SliderComponent):
             "on_value_commit": lambda e0: [e0],  # trigger when thumb is released
         }
 
-    def _apply_theme(self, theme: Component):
-        self.style = Style(
+    def add_style(self) -> Style | None:
+        """Add style to the component.
+
+        Returns:
+            The style of the component.
+        """
+        return Style(
             {
                 "position": "relative",
                 "display": "flex",
@@ -74,7 +79,6 @@ class SliderRoot(SliderComponent):
                     "width": "20px",
                     "height": "100px",
                 },
-                **self.style,
             }
         )
 
@@ -85,18 +89,20 @@ class SliderTrack(SliderComponent):
     tag = "Track"
     alias = "RadixSliderTrack"
 
-    def _apply_theme(self, theme: Component):
-        self.style = Style(
+    def add_style(self) -> Style | None:
+        """Add style to the component.
+
+        Returns:
+            The style of the component.
+        """
+        return Style(
             {
                 "position": "relative",
                 "flex_grow": "1",
                 "background_color": "black",
                 "border_radius": "9999px",
                 "height": "3px",
-                "&[data-orientation='vertical']": {
-                    "width": "3px",
-                },
-                **self.style,
+                "&[data-orientation='vertical']": {"width": "3px"},
             }
         )
 
@@ -107,16 +113,18 @@ class SliderRange(SliderComponent):
     tag = "Range"
     alias = "RadixSliderRange"
 
-    def _apply_theme(self, theme: Component):
-        self.style = Style(
+    def add_style(self) -> Style | None:
+        """Add style to the component.
+
+        Returns:
+            The style of the component.
+        """
+        return Style(
             {
                 "position": "absolute",
                 "background_color": "white",
                 "height": "100%",
-                "&[data-orientation='vertical']": {
-                    "width": "100%",
-                },
-                **self.style,
+                "&[data-orientation='vertical']": {"width": "100%"},
             }
         )
 
@@ -127,8 +135,13 @@ class SliderThumb(SliderComponent):
     tag = "Thumb"
     alias = "RadixSliderThumb"
 
-    def _apply_theme(self, theme: Component):
-        self.style = Style(
+    def add_style(self) -> Style | None:
+        """Add style to the component.
+
+        Returns:
+            The style of the component.
+        """
+        return Style(
             {
                 "display": "block",
                 "width": "20px",
@@ -143,7 +156,6 @@ class SliderThumb(SliderComponent):
                     "outline": "none",
                     "box_shadow": "0 0 0 4px gray",
                 },
-                **self.style,
             }
         )
 

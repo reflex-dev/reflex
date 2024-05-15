@@ -159,12 +159,17 @@ def format_style_key(key: str) -> Tuple[str, ...]:
 class Style(dict):
     """A style dictionary."""
 
-    def __init__(self, style_dict: dict | None = None):
+    def __init__(self, style_dict: dict | None = None, **kwargs):
         """Initialize the style.
 
         Args:
             style_dict: The style dictionary.
+            kwargs: Other key value pairs to apply to the dict update.
         """
+        if style_dict:
+            style_dict.update(kwargs)
+        else:
+            style_dict = kwargs
         style_dict, self._var_data = convert(style_dict or {})
         super().__init__(style_dict)
 
@@ -175,12 +180,15 @@ class Style(dict):
             style_dict: The style dictionary.
             kwargs: Other key value pairs to apply to the dict update.
         """
-        if kwargs:
-            style_dict = {**(style_dict or {}), **kwargs}
         if not isinstance(style_dict, Style):
             converted_dict = type(self)(style_dict)
         else:
             converted_dict = style_dict
+        if kwargs:
+            if converted_dict is None:
+                converted_dict = type(self)(kwargs)
+            else:
+                converted_dict.update(kwargs)
         # Combine our VarData with that of any Vars in the style_dict that was passed.
         self._var_data = VarData.merge(self._var_data, converted_dict._var_data)
         super().update(converted_dict)

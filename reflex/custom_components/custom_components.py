@@ -20,7 +20,6 @@ from reflex import constants
 from reflex.config import get_config
 from reflex.constants import CustomComponents
 from reflex.utils import console
-from reflex.utils.pyi_generator import PyiGenerator
 
 config = get_config()
 custom_components_cli = typer.Typer()
@@ -438,6 +437,8 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
 
 def _make_pyi_files():
     """Create pyi files for the custom component."""
+    from reflex.utils.pyi_generator import PyiGenerator
+
     package_name = _get_package_config()["project"]["name"]
 
     for dir, _, _ in os.walk(f"./{package_name}"):

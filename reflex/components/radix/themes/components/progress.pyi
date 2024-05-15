@@ -8,6 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
+from reflex.components.component import Component
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -18,6 +19,7 @@ class Progress(RadixThemesComponent):
         cls,
         *children,
         value: Optional[Union[Var[int], int]] = None,
+        max: Optional[Union[Var[int], int]] = None,
         size: Optional[
             Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
@@ -150,14 +152,12 @@ class Progress(RadixThemesComponent):
         ] = None,
         **props
     ) -> "Progress":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a Progress component.
 
         Args:
-            *children: Child components.
-            value: The value of the progress bar: "0" to "100"
+            *children: The children of the component.
+            value: The value of the progress bar: 0 to max (default 100)
+            max: The maximum progress value.
             size: The size of the progress bar: "1" | "2" | "3"
             variant: The variant of the progress bar: "classic" | "surface" | "soft"
             color_scheme: The color theme of the progress bar
@@ -170,10 +170,10 @@ class Progress(RadixThemesComponent):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: Component properties.
+            **props: The properties of the component.
 
         Returns:
-            A new component instance.
+            The Progress Component.
         """
         ...
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from reflex.components.component import Component
+from reflex.style import Style
 
 from .flex import Flex
 
@@ -10,8 +10,13 @@ from .flex import Flex
 class Center(Flex):
     """A center component."""
 
-    def _apply_theme(self, theme: Component):
-        self.style.update(
+    def add_style(self) -> Style | None:
+        """Add style that center the content.
+
+        Returns:
+            The style of the component.
+        """
+        return Style(
             {
                 "display": "flex",
                 "align_items": "center",

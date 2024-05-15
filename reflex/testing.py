@@ -1,4 +1,5 @@
 """reflex.testing - tools for testing reflex apps."""
+
 from __future__ import annotations
 
 import asyncio
@@ -25,6 +26,7 @@ from typing import (
     AsyncIterator,
     Callable,
     Coroutine,
+    List,
     Optional,
     Type,
     TypeVar,
@@ -166,6 +168,8 @@ class AppHarness:
                 app_name = app_source.__name__
 
             app_name = app_name.lower()
+            while "__" in app_name:
+                app_name = app_name.replace("__", "_")
         return cls(
             app_name=app_name,
             app_source=app_source,
@@ -510,12 +514,19 @@ class AppHarness:
             raise TimeoutError("Backend is not listening.")
         return backend.servers[0].sockets[0]
 
-    def frontend(self, driver_clz: Optional[Type["WebDriver"]] = None) -> "WebDriver":
+    def frontend(
+        self,
+        driver_clz: Optional[Type["WebDriver"]] = None,
+        driver_kwargs: dict[str, Any] | None = None,
+        driver_option_args: List[str] | None = None,
+    ) -> "WebDriver":
         """Get a selenium webdriver instance pointed at the app.
 
         Args:
             driver_clz: webdriver.Chrome (default), webdriver.Firefox, webdriver.Safari,
                 webdriver.Edge, etc
+            driver_kwargs: additional keyword arguments to pass to the webdriver constructor
+            driver_option_args: additional arguments for the webdriver options
 
         Returns:
             Instance of the given webdriver navigated to the frontend url of the app.
@@ -538,19 +549,30 @@ class AppHarness:
             requested_driver = os.environ.get("APP_HARNESS_DRIVER", "Chrome")
             driver_clz = getattr(webdriver, requested_driver)
             options = getattr(webdriver, f"{requested_driver}Options")()
-        if driver_clz is webdriver.Chrome and want_headless:
+        if driver_clz is webdriver.Chrome:
             options = webdriver.ChromeOptions()
-            options.add_argument("--headless=new")
-        elif driver_clz is webdriver.Firefox and want_headless:
+            options.add_argument("--class=AppHarness")
+            if want_headless:
+                options.add_argument("--headless=new")
+        elif driver_clz is webdriver.Firefox:
             options = webdriver.FirefoxOptions()
-            options.add_argument("-headless")
-        elif driver_clz is webdriver.Edge and want_headless:
+            if want_headless:
+                options.add_argument("-headless")
+        elif driver_clz is webdriver.Edge:
             options = webdriver.EdgeOptions()
-            options.add_argument("headless")
-        if options and (args := os.environ.get("APP_HARNESS_DRIVER_ARGS")):
+            if want_headless:
+                options.add_argument("headless")
+        if options is None:
+            raise RuntimeError(f"Could not determine options for {driver_clz}")
+        if args := os.environ.get("APP_HARNESS_DRIVER_ARGS"):
             for arg in args.split(","):
                 options.add_argument(arg)
-        driver = driver_clz(options=options)  # type: ignore
+        if driver_option_args is not None:
+            for arg in driver_option_args:
+                options.add_argument(arg)
+        if driver_kwargs is None:
+            driver_kwargs = {}
+        driver = driver_clz(options=options, **driver_kwargs)  # type: ignore
         driver.get(self.frontend_url)
         self._frontends.append(driver)
         return driver
