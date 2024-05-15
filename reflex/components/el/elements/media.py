@@ -79,15 +79,6 @@ class Audio(BaseHTML):
 class Img(BaseHTML):
     """Display the img element."""
 
-    @classmethod
-    def create(cls, *children, **props) -> Component:
-        if len(children) == 0:
-            comp = super().create(*children, **props)
-        else:
-            return super().create(src=children[0], **props)
-
-        return comp
-
     tag = "img"
 
     # Image alignment with respect to its surrounding elements
@@ -125,6 +116,24 @@ class Img(BaseHTML):
 
     # The name of the map to use with the image
     use_map: Var[Union[str, int, bool]]
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Override create method to apply source attribute to value if user fails to pass in attribute.
+
+        Args:
+            *children: The children of the component.
+            **props: The props of the component.
+
+        Returns:
+            The component.
+
+        """
+        return (
+            super().create(src=children[0], **props)
+            if children
+            else super().create(*children, **props)
+        )
 
 
 class Map(BaseHTML):
