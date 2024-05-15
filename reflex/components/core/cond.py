@@ -13,7 +13,7 @@ from reflex.utils import format, imports
 from reflex.vars import BaseVar, Var, VarData
 
 _IS_TRUE_IMPORT = {
-    f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="isTrue")},
+    f"/{Dirs.STATE_PATH}": [imports.ImportVar(tag="isTrue")],
 }
 
 

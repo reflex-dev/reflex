@@ -341,7 +341,11 @@ class Var:
 
     @classmethod
     def create(
-        cls, value: Any, _var_is_local: bool = True, _var_is_string: bool = False
+        cls,
+        value: Any,
+        _var_is_local: bool = True,
+        _var_is_string: bool = False,
+        _var_data: Optional[VarData] = None,
     ) -> Var | None:
         """Create a var from a value.
 
@@ -349,6 +353,7 @@ class Var:
             value: The value to create the var from.
             _var_is_local: Whether the var is local.
             _var_is_string: Whether the var is a string literal.
+            _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
             The var.
@@ -365,9 +370,8 @@ class Var:
             return value
 
         # Try to pull the imports and hooks from contained values.
-        _var_data = None
         if not isinstance(value, str):
-            _var_data = VarData.merge(*_extract_var_data(value))
+            _var_data = VarData.merge(*_extract_var_data(value), _var_data)
 
         # Try to serialize the value.
         type_ = type(value)
@@ -388,7 +392,11 @@ class Var:
 
     @classmethod
     def create_safe(
-        cls, value: Any, _var_is_local: bool = True, _var_is_string: bool = False
+        cls,
+        value: Any,
+        _var_is_local: bool = True,
+        _var_is_string: bool = False,
+        _var_data: Optional[VarData] = None,
     ) -> Var:
         """Create a var from a value, asserting that it is not None.
 
@@ -396,6 +404,7 @@ class Var:
             value: The value to create the var from.
             _var_is_local: Whether the var is local.
             _var_is_string: Whether the var is a string literal.
+            _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
             The var.
@@ -404,6 +413,7 @@ class Var:
             value,
             _var_is_local=_var_is_local,
             _var_is_string=_var_is_string,
+            _var_data=_var_data,
         )
         assert var is not None
         return var

@@ -162,7 +162,7 @@ class ToastProps(PropsBase):
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
 
-    library = "sonner@1.4.41"
+    library: str = "sonner@1.4.41"
 
     tag = "Toaster"
 
@@ -209,12 +209,15 @@ class Toaster(Component):
     pause_when_page_is_hidden: Var[bool]
 
     def _get_hooks(self) -> Var[str]:
-        hook = Var.create_safe(f"{toast_ref} = toast", _var_is_local=True)
-        hook._var_data = VarData(  # type: ignore
-            imports={
-                "/utils/state": [ImportVar(tag="refs")],
-                self.library: [ImportVar(tag="toast", install=False)],
-            }
+        hook = Var.create_safe(
+            f"{toast_ref} = toast",
+            _var_is_local=True,
+            _var_data=VarData(
+                imports={
+                    "/utils/state": [ImportVar(tag="refs")],
+                    self.library: [ImportVar(tag="toast", install=False)],
+                }
+            ),
         )
         return hook
 
