@@ -37,7 +37,7 @@ class ToastAction(Base):
 def serialize_action(action: ToastAction) -> dict: ...
 
 class ToastProps(PropsBase):
-    description: Optional[str]
+    description: Optional[str | Var]
     close_button: Optional[bool]
     invert: Optional[bool]
     important: Optional[bool]

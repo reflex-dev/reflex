@@ -74,7 +74,7 @@ class ToastProps(PropsBase):
     """Props for the toast component."""
 
     # Toast's description, renders underneath the title.
-    description: Optional[str]
+    description: Optional[str | Var]
 
     # Whether to show the close button.
     close_button: Optional[bool]

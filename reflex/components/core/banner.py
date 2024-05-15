@@ -32,8 +32,8 @@ connect_errors: Var = Var.create_safe(
     value=CompileVars.CONNECT_ERROR,
     _var_is_local=True,
     _var_is_string=False,
-)._replace(merge_var_data=connect_error_var_data)
-
+    _var_data=connect_error_var_data,
+)
 
 connection_error: Var = Var.create_safe(
     value="(connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : ''",
@@ -98,20 +98,6 @@ def default_connection_error() -> list[str | Var | Component]:
 class ConnectionToaster(Toaster):
     """A connection toaster component."""
 
-    def add_imports(self) -> dict[str, list[str | imports.ImportVar]]:
-        """Add the imports for the connection toaster.
-
-        Returns:
-            The imports for the connection toaster.
-        """
-        imports_ = {**Imports.EVENTS}  # type: ignore
-        imports_["react"].append("useEffect")  # type: ignore # remove when 3248 is merged
-        (imports_.setdefault(f"/{Dirs.STATE_PATH}", []).append("getBackendURL"))  # type: ignore
-        imports_.setdefault("/env.json", []).append(
-            imports.ImportVar(tag="env", is_default=True)
-        )
-        return imports_  # type: ignore
-
     def add_hooks(self) -> list[str]:
         """Add the hooks for the connection toaster.
 
@@ -124,8 +110,13 @@ class ConnectionToaster(Toaster):
     else
         return '';
 };"""
-        props = ToastProps(
-            description=f"Check if server is reachable at ${{getBackendURL(env.EVENT).href}}",
+        target_url = WebsocketTargetURL.create()
+        props = ToastProps(  # type: ignore
+            description=Var.create(
+                f"`Check if server is reachable at ${target_url}`",
+                _var_is_string=False,
+                _var_is_local=False,
+            ),
             id="websocket-error",
         )
         hook = Var.create(
@@ -135,14 +126,19 @@ class ConnectionToaster(Toaster):
 }}, [{connect_errors}]);"""
         )
 
-        # can uncomment when 3248 is merged
-        # hook._var_data = VarData.merge(
-        #     connect_errors._var_data, VarData(imports={"react": ["useEffect"]})
-        # )
+        hook._var_data = VarData.merge(  # type: ignore
+            connect_errors._var_data,
+            VarData(
+                imports={
+                    "react": [imports.ImportVar(tag="useEffect")],
+                    **target_url._get_imports(),
+                }
+            ),
+        )
         return [
             Hooks.EVENTS,
             util_hook,
-            hook,
+            hook,  # type: ignore
         ]
 
 
