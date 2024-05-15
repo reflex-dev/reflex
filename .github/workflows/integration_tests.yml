@@ -35,6 +35,8 @@ env:
 
 jobs:
   example-counter:
+    env:
+      OUTPUT_FILE: import_benchmark.json
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
@@ -98,13 +100,31 @@ jobs:
           npm -v
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev
       - name: Measure and upload .web size
-        if: ${{ env.DATABASE_URL }}
+        if: ${{ env.DATABASE_URL  && github.event.pull_request.merged == true }}
         run:
           poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}"
           --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "counter-app-dot-web" --path ./reflex-examples/counter/.web
+      - name: Install hyperfine
+        if: github.event.pull_request.merged == true
+        run: cargo install --locked hyperfine
+      - name: Benchmark imports
+        if: github.event.pull_request.merged == true
+        working-directory: ./reflex-examples/counter
+        run: hyperfine --warmup 3 "export POETRY_VIRTUALENVS_PATH=../../.venv; poetry run python counter/counter.py" --show-output --export-json "${{ env.OUTPUT_FILE }}" --shell bash
+      - name: Upload Benchmarks
+        if : ${{ env.DATABASE_URL  && github.event.pull_request.merged == true }}
+        run:
+          poetry run python scripts/benchmarks/benchmark_imports.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --benchmark-json "./reflex-examples/counter/${{ env.OUTPUT_FILE }}"
+          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+          --event-type "${{ github.event_name }}" --actor "${{ github.actor }}" --pr-id "${{ github.event.pull_request.id }}"
+
+
+
 
   reflex-web:
     strategy:
@@ -146,7 +166,7 @@ jobs:
           npm -v
           poetry run bash scripts/integration.sh ./reflex-web prod
       - name: Measure and upload .web size
-        if: ${{ env.DATABASE_URL }}
+        if: ${{ env.DATABASE_URL  && github.event.pull_request.merged == true }}
         run:
           poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
