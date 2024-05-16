@@ -100,7 +100,35 @@ class OverlayFragment(Fragment):
     pass
 
 
-class App(Base):
+class LifespanMixin:
+    """A Mixin that allow tasks to run during the whole app lifespan."""
+
+    # Lifespan tasks that are planned to run.
+    lifespan_tasks: Set[asyncio.Task] = set()
+
+    @contextlib.asynccontextmanager
+    async def _run_lifespan_tasks(self, app: FastAPI):
+        running_tasks = []
+        try:
+            running_tasks = [
+                task if isinstance(task, asyncio.Task) else asyncio.create_task(task())
+                for task in self.lifespan_tasks
+            ]
+            yield
+        finally:
+            for task in running_tasks:
+                task.cancel()
+
+    def register_lifespan_task(self, task: Callable | asyncio.Task):
+        """Register a task to run during the lifespan of the app.
+
+        Args:
+            task: The task to register.
+        """
+        self.lifespan_tasks.add(task)  # type: ignore
+
+
+class App(LifespanMixin, Base):
     """The main Reflex app that encapsulates the backend and frontend.
 
     Every Reflex app needs an app defined in its main module.
@@ -203,7 +231,7 @@ class App(Base):
         self.middleware.append(HydrateMiddleware())
 
         # Set up the API.
-        self.api = FastAPI()
+        self.api = FastAPI(lifespan=self._run_lifespan_tasks)
         self._add_cors()
         self._add_default_endpoints()
 
