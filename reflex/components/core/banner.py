@@ -104,12 +104,7 @@ class ConnectionToaster(Toaster):
         Returns:
             The hooks for the connection toaster.
         """
-        util_hook = """const getLastMessage = (connectErrors) => {
-    if (connectErrors.length > 0)
-      return connectErrors[connectErrors.length - 1].message;
-    else
-        return '';
-};"""
+        toast_id = "websocket-error"
         target_url = WebsocketTargetURL.create()
         props = ToastProps(  # type: ignore
             description=Var.create(
@@ -117,12 +112,26 @@ class ConnectionToaster(Toaster):
                 _var_is_string=False,
                 _var_is_local=False,
             ),
-            id="websocket-error",
+            close_button=True,
+            duration=120000,
+            id=toast_id,
         )
         hook = Var.create(
-            f"""useEffect(() => {{
-    toast.error(
-        `Cannot connect to server: ${{getLastMessage({connect_errors})}}.`, {serialize(props)},)
+            f"""
+const toast_props = {serialize(props)};
+const [userDismissed, setUserDismissed] = useState(false);
+useEffect(() => {{
+    if ({has_too_many_connection_errors}) {{
+        if (!userDismissed) {{
+            toast.error(
+                `Cannot connect to server: {connection_error}.`,
+                {{...toast_props, onDismiss: () => setUserDismissed(true)}},
+            )
+        }}
+    }} else {{
+        toast.dismiss("{toast_id}");
+        setUserDismissed(false);  // after reconnection reset dismissed state
+    }}
 }}, [{connect_errors}]);"""
         )
 
@@ -130,14 +139,16 @@ class ConnectionToaster(Toaster):
             connect_errors._var_data,
             VarData(
                 imports={
-                    "react": [imports.ImportVar(tag="useEffect")],
+                    "react": [
+                        imports.ImportVar(tag="useEffect"),
+                        imports.ImportVar(tag="useState"),
+                    ],
                     **target_url._get_imports(),
                 }
             ),
         )
         return [
             Hooks.EVENTS,
-            util_hook,
             hook,  # type: ignore
         ]
 
