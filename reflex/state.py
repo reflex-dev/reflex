@@ -550,7 +550,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for name, value in mixin.__dict__.items():
                 if isinstance(value, ComputedVar):
                     fget = cls._copy_fn(value.fget)
-                    newcv = ComputedVar(fget=fget, _var_name=value._var_name)
+                    newcv = value._replace(fget=fget)
+                    # cleanup refs to mixin cls in var_data
+                    newcv._var_data = None
                     newcv._var_set_state(cls)
                     setattr(cls, name, newcv)
                     cls.computed_vars[newcv._var_name] = newcv

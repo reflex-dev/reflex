@@ -39,9 +39,11 @@ from reflex.utils.exceptions import VarAttributeError, VarTypeError, VarValueErr
 
 # This module used to export ImportVar itself, so we still import it for export here
 from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.types import override
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
+
 
 # Set of unique variable names.
 USED_VARIABLES = set()
@@ -832,19 +834,19 @@ class Var:
                 if invoke_fn:
                     # invoke the function on left operand.
                     operation_name = (
-                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"
-                    )  # type: ignore
+                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
+                    )
                 else:
                     # pass the operands as arguments to the function.
                     operation_name = (
-                        f"{left_operand_full_name} {op} {right_operand_full_name}"
-                    )  # type: ignore
+                        f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                    )
                     operation_name = f"{fn}({operation_name})"
             else:
                 # apply operator to operands (left operand <operator> right_operand)
                 operation_name = (
-                    f"{left_operand_full_name} {op} {right_operand_full_name}"
-                )  # type: ignore
+                    f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                )
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
@@ -1881,6 +1883,32 @@ class ComputedVar(Var, property):
         kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", self._determine_var_type())
         BaseVar.__init__(self, **kwargs)  # type: ignore
+
+    @override
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> ComputedVar:
+        """Replace the attributes of the ComputedVar.
+
+        Args:
+            merge_var_data: VarData to merge into the existing VarData.
+            **kwargs: Var fields to update.
+
+        Returns:
+            The new ComputedVar instance.
+        """
+        return ComputedVar(
+            fget=kwargs.get("fget", self.fget),
+            initial_value=kwargs.get("initial_value", self._initial_value),
+            cache=kwargs.get("cache", self._cache),
+            _var_name=kwargs.get("_var_name", self._var_name),
+            _var_type=kwargs.get("_var_type", self._var_type),
+            _var_is_local=kwargs.get("_var_is_local", self._var_is_local),
+            _var_is_string=kwargs.get("_var_is_string", self._var_is_string),
+            _var_full_name_needs_state_prefix=kwargs.get(
+                "_var_full_name_needs_state_prefix",
+                self._var_full_name_needs_state_prefix,
+            ),
+            _var_data=VarData.merge(self._var_data, merge_var_data),
+        )
 
     @property
     def _cache_attr(self) -> str:
