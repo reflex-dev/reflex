@@ -117,7 +117,7 @@ class LifespanMixin:
             yield
         finally:
             for task in running_tasks:
-                task.cancel()
+                task.cancel("lifespan_cleanup")
 
     def register_lifespan_task(
         self, task: Callable | asyncio.Task, *task_args, **task_kwargs
