@@ -8,6 +8,7 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
+from reflex.state import ComponentState
 from reflex.utils import console
 from reflex.vars import Var
 
@@ -50,6 +51,7 @@ class Foreach(Component):
 
         Raises:
             ForeachVarError: If the iterable is of type Any.
+            TypeError: If the render function is a ComponentState.
         """
         if props:
             console.deprecate(
@@ -65,6 +67,15 @@ class Foreach(Component):
                 "(If you are trying to foreach over a state var, add a type annotation to the var). "
                 "See https://reflex.dev/docs/library/layout/foreach/"
             )
+
+        if (
+            hasattr(render_fn, "__qualname__")
+            and render_fn.__qualname__ == ComponentState.create.__qualname__
+        ):
+            raise TypeError(
+                "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported yet."
+            )
+
         component = cls(
             iterable=iterable,
             render_fn=render_fn,
