@@ -8,6 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Union
+from reflex import Component
 from reflex.vars import Var as Var
 from .base import BaseHTML
 
@@ -470,7 +471,7 @@ class Img(BaseHTML):
         ] = None,
         **props
     ) -> "Img":
-        """Create the component.
+        """Override create method to apply source attribute to value if user fails to pass in attribute.
 
         Args:
             *children: The children of the component.
@@ -512,6 +513,7 @@ class Img(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 

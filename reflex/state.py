@@ -359,6 +359,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # Whether the state has ever been touched since instantiation.
     _was_touched: bool = False
 
+    # Whether this state class is a mixin and should not be instantiated.
+    _mixin: ClassVar[bool] = False
+
     # A special event handler for setting base vars.
     setvar: ClassVar[EventHandler]
 
@@ -428,17 +431,17 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         return [
             v
-            for mixin in cls.__mro__
-            if mixin is cls or not issubclass(mixin, (BaseState, ABC))
+            for mixin in cls._mixins() + [cls]
             for v in mixin.__dict__.values()
             if isinstance(v, ComputedVar)
         ]
 
     @classmethod
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, mixin: bool = False, **kwargs):
         """Do some magic for the subclass initialization.
 
         Args:
+            mixin: Whether the subclass is a mixin and should not be initialized.
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
 
         Raises:
@@ -447,6 +450,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         from reflex.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
+
+        cls._mixin = mixin
+        if mixin:
+            return
+
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
         # Computed vars should not shadow builtin state props.
@@ -542,7 +550,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for name, value in mixin.__dict__.items():
                 if isinstance(value, ComputedVar):
                     fget = cls._copy_fn(value.fget)
-                    newcv = ComputedVar(fget=fget, _var_name=value._var_name)
+                    newcv = value._replace(fget=fget)
+                    # cleanup refs to mixin cls in var_data
+                    newcv._var_data = None
                     newcv._var_set_state(cls)
                     setattr(cls, name, newcv)
                     cls.computed_vars[newcv._var_name] = newcv
@@ -618,8 +628,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return [
             mixin
             for mixin in cls.__mro__
-            if not issubclass(mixin, (BaseState, ABC))
-            and mixin not in [pydantic.BaseModel, Base]
+            if (
+                mixin not in [pydantic.BaseModel, Base, cls]
+                and issubclass(mixin, BaseState)
+                and mixin._mixin is True
+            )
         ]
 
     @classmethod
@@ -742,7 +755,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         parent_states = [
             base
             for base in cls.__bases__
-            if types._issubclass(base, BaseState) and base is not BaseState
+            if issubclass(base, BaseState) and base is not BaseState and not base._mixin
         ]
         assert len(parent_states) < 2, "Only one parent state is allowed."
         return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
@@ -1833,7 +1846,7 @@ class OnLoadInternalState(State):
         ]
 
 
-class ComponentState(Base):
+class ComponentState(State, mixin=True):
     """Base class to allow for the creation of a state instance per component.
 
     This allows for the bundling of UI and state logic into a single class,
@@ -1874,6 +1887,18 @@ class ComponentState(Base):
 
     # The number of components created from this class.
     _per_component_state_instance_count: ClassVar[int] = 0
+
+    @classmethod
+    def __init_subclass__(cls, mixin: bool = False, **kwargs):
+        """Overwrite mixin default to True.
+
+        Args:
+            mixin: Whether the subclass is a mixin and should not be initialized.
+            **kwargs: The kwargs to pass to the pydantic init_subclass method.
+        """
+        if ComponentState in cls.__bases__:
+            mixin = True
+        super().__init_subclass__(mixin=mixin, **kwargs)
 
     @classmethod
     def get_component(cls, *children, **props) -> "Component":
