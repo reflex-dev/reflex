@@ -100,7 +100,7 @@ class State(rx.State):
     def get_image(self):
         """Get the image from the prompt."""
         if self.prompt == "":
-            return rx.window_alert("Prompt Empty")
+            return rx._x.toast.error("Prompt Empty")
 
         self.processing, self.complete = True, False
         yield
@@ -120,20 +120,21 @@ def index():
                 on_blur=State.set_prompt,
                 width="25em",
             ),
-            rx.button("Generate Image", on_click=State.get_image, width="25em"),
+            rx.button(
+                "Generate Image", 
+                on_click=State.get_image,
+                width="25em",
+                loading=State.processing
+            ),
             rx.cond(
-                State.processing,
-                rx.chakra.circular_progress(is_indeterminate=True),
-                rx.cond(
-                    State.complete,
-                    rx.image(src=State.image_url, width="20em"),
-                ),
+                State.complete,
+                rx.image(src=State.image_url, width="20em"),
             ),
             align="center",
         ),
         width="100%",
         height="100vh",
-    )
+    ), rx._x.toast.provider()
 
 # Add state and page to the app.
 app = rx.App()
@@ -185,7 +186,7 @@ class State(rx.State):
 
 The state defines all the variables (called vars) in an app that can change and the functions that change them.
 
-Here the state is comprised of a `prompt` and `image_url`. There are also the booleans `processing` and `complete` to indicate when to show the circular progress and image.
+Here the state is comprised of a `prompt` and `image_url`. There are also the booleans `processing` and `complete` to indicate when to block the button and when to show the image.
 
 ### **Event Handlers**
 
@@ -193,7 +194,7 @@ Here the state is comprised of a `prompt` and `image_url`. There are also the bo
 def get_image(self):
     """Get the image from the prompt."""
     if self.prompt == "":
-        return rx.window_alert("Prompt Empty")
+        return rx._x.toast.error("Prompt Empty")
 
     self.processing, self.complete = True, False
     yield
