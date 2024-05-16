@@ -230,8 +230,8 @@ class WifiOffPulse(Icon):
             size=props.pop("size", 32),
             z_index=props.pop("z_index", 9999),
             position=props.pop("position", "fixed"),
-            bottom=props.pop("botton", "30px"),
-            right=props.pop("right", "30px"),
+            bottom=props.pop("botton", "33px"),
+            right=props.pop("right", "33px"),
             animation=Var.create(f"${{pulse}} 1s infinite", _var_is_string=True),
             **props,
         )
@@ -273,6 +273,7 @@ class ConnectionPulser(Div):
                 has_connection_errors,
                 WifiOffPulse.create(**props),
             ),
+            title=f"Connection Error: {connection_error}",
             position="fixed",
             width="100vw",
             height="0",
