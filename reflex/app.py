@@ -119,12 +119,18 @@ class LifespanMixin:
             for task in running_tasks:
                 task.cancel()
 
-    def register_lifespan_task(self, task: Callable | asyncio.Task):
+    def register_lifespan_task(
+        self, task: Callable | asyncio.Task, *task_args, **task_kwargs
+    ):
         """Register a task to run during the lifespan of the app.
 
         Args:
             task: The task to register.
+            task_args: The args of the task.
+            task_kwargs: The kwargs of the task.
         """
+        if task_args or task_kwargs:
+            task = functools.partial(task, *task_args, **task_kwargs)  # type: ignore
         self.lifespan_tasks.add(task)  # type: ignore
 
 
