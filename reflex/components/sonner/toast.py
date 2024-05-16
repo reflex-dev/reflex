@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
@@ -74,7 +74,7 @@ class ToastProps(PropsBase):
     """Props for the toast component."""
 
     # Toast's description, renders underneath the title.
-    description: Optional[str | Var]
+    description: Optional[Union[str, Var]]
 
     # Whether to show the close button.
     close_button: Optional[bool]
