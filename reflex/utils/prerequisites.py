@@ -413,7 +413,7 @@ def initialize_gitignore(
     # Write files to the .gitignore file.
     with open(gitignore_file, "w", newline="\n") as f:
         console.debug(f"Creating {gitignore_file}")
-        f.write(f"{(path_ops.join(sorted(files_to_ignore))).lstrip()}")
+        f.write(f"{(path_ops.join(sorted(files_to_ignore))).lstrip()}\n")
 
 
 def initialize_requirements_txt():

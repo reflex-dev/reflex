@@ -3,8 +3,9 @@ from typing import Dict, List, Set, Tuple, Union
 import pytest
 
 from reflex.components import box, el, foreach, text
+from reflex.components.component import Component
 from reflex.components.core.foreach import Foreach, ForeachRenderError, ForeachVarError
-from reflex.state import BaseState
+from reflex.state import BaseState, ComponentState
 from reflex.vars import Var
 
 
@@ -35,6 +36,25 @@ class ForEachState(BaseState):
     colors_set: Set[str] = {"red", "green"}
     bad_annotation_list: list = [["red", "orange"], ["yellow", "blue"]]
     color_index_tuple: Tuple[int, str] = (0, "red")
+
+
+class TestComponentState(ComponentState):
+    """A test component state."""
+
+    foo: bool
+
+    @classmethod
+    def get_component(cls, *children, **props) -> Component:
+        """Get the component.
+
+        Args:
+            children: The children components.
+            props: The component props.
+
+        Returns:
+            The component.
+        """
+        return el.div(*children, **props)
 
 
 def display_color(color):
@@ -252,3 +272,12 @@ def test_foreach_component_styles():
     )
     component._add_style_recursive({box: {"color": "red"}})
     assert 'css={{"color": "red"}}' in str(component)
+
+
+def test_foreach_component_state():
+    """Test that using a component state to render in the foreach raises an error."""
+    with pytest.raises(TypeError):
+        Foreach.create(
+            ForEachState.colors_list,
+            TestComponentState.create,
+        )
