@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from reflex import color, cond
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
@@ -40,7 +42,7 @@ class Sidebar(Box, MemoizationLeaf):
             Box.create(width=props.get("width")),  # spacer for layout
         )
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:

@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Literal
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
 from reflex.constants import EventTriggers
-from reflex.style import Style
 from reflex.vars import Var
 
 from ..base import (
@@ -132,7 +131,7 @@ class TabsContent(RadixThemesComponent):
     # The value of the tab. Must be unique for each tab.
     value: Var[str]
 
-    def add_style(self) -> Style:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style for the component.
 
         Returns:

@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
-from reflex.style import Style
 from reflex.vars import Var
 
 LiteralSliderOrientation = Literal["horizontal", "vertical"]
@@ -59,28 +58,26 @@ class SliderRoot(SliderComponent):
             "on_value_commit": lambda e0: [e0],  # trigger when thumb is released
         }
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style(
-            {
-                "position": "relative",
-                "display": "flex",
-                "align_items": "center",
-                "user_select": "none",
-                "touch_action": "none",
-                "width": "200px",
-                "height": "20px",
-                "&[data-orientation='vertical']": {
-                    "flex_direction": "column",
-                    "width": "20px",
-                    "height": "100px",
-                },
-            }
-        )
+        return {
+            "position": "relative",
+            "display": "flex",
+            "align_items": "center",
+            "user_select": "none",
+            "touch_action": "none",
+            "width": "200px",
+            "height": "20px",
+            "&[data-orientation='vertical']": {
+                "flex_direction": "column",
+                "width": "20px",
+                "height": "100px",
+            },
+        }
 
 
 class SliderTrack(SliderComponent):
@@ -89,22 +86,20 @@ class SliderTrack(SliderComponent):
     tag = "Track"
     alias = "RadixSliderTrack"
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style(
-            {
-                "position": "relative",
-                "flex_grow": "1",
-                "background_color": "black",
-                "border_radius": "9999px",
-                "height": "3px",
-                "&[data-orientation='vertical']": {"width": "3px"},
-            }
-        )
+        return {
+            "position": "relative",
+            "flex_grow": "1",
+            "background_color": "black",
+            "border_radius": "9999px",
+            "height": "3px",
+            "&[data-orientation='vertical']": {"width": "3px"},
+        }
 
 
 class SliderRange(SliderComponent):
@@ -113,20 +108,18 @@ class SliderRange(SliderComponent):
     tag = "Range"
     alias = "RadixSliderRange"
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style(
-            {
-                "position": "absolute",
-                "background_color": "white",
-                "height": "100%",
-                "&[data-orientation='vertical']": {"width": "100%"},
-            }
-        )
+        return {
+            "position": "absolute",
+            "background_color": "white",
+            "height": "100%",
+            "&[data-orientation='vertical']": {"width": "100%"},
+        }
 
 
 class SliderThumb(SliderComponent):
@@ -135,29 +128,27 @@ class SliderThumb(SliderComponent):
     tag = "Thumb"
     alias = "RadixSliderThumb"
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style(
-            {
-                "display": "block",
-                "width": "20px",
-                "height": "20px",
-                "background_color": "black",
-                "box_shadow": "0 2px 10px black",
-                "border_radius": "10px",
-                "&:hover": {
-                    "background_color": "gray",
-                },
-                "&:focus": {
-                    "outline": "none",
-                    "box_shadow": "0 0 0 4px gray",
-                },
-            }
-        )
+        return {
+            "display": "block",
+            "width": "20px",
+            "height": "20px",
+            "background_color": "black",
+            "box_shadow": "0 2px 10px black",
+            "border_radius": "10px",
+            "&:hover": {
+                "background_color": "gray",
+            },
+            "&:focus": {
+                "outline": "none",
+                "box_shadow": "0 0 0 4px gray",
+            },
+        }
 
 
 class Slider(ComponentNamespace):

@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Literal
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
 from reflex.constants import EventTriggers
-from reflex.style import Style
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -339,7 +338,7 @@ class TabsTrigger(RadixThemesComponent):
     def add_style(self) -> Dict[str, Any] | None: ...
 
 class TabsContent(RadixThemesComponent):
-    def add_style(self) -> Style: ...
+    def add_style(self) -> dict[str, Any] | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
