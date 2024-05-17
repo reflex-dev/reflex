@@ -12,6 +12,7 @@ import io
 import multiprocessing
 import os
 import platform
+import sys
 from typing import (
     Any,
     AsyncIterator,
@@ -126,8 +127,11 @@ class LifespanMixin(Base):
                             running_tasks.append(asyncio.create_task(_t))
                 yield
         finally:
+            cancel_kwargs = (
+                {"msg": "lifespan_cleanup"} if sys.version_info >= (3, 9) else {}
+            )
             for task in running_tasks:
-                task.cancel("lifespan_cleanup")
+                task.cancel(**cancel_kwargs)
 
     def register_lifespan_task(
         self, task: Callable | asyncio.Task, *task_args, **task_kwargs
