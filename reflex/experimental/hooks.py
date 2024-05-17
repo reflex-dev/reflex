@@ -18,7 +18,7 @@ def _add_react_import(v: Optional[Var], tags: Union[str, list]):
     )
 
 
-def const(name, value) -> Var | None:
+def const(name, value) -> Optional[Var]:
     """Create a constant Var.
 
     Args:
@@ -33,7 +33,7 @@ def const(name, value) -> Var | None:
     return Var.create(f"const {name} = {value}")
 
 
-def useCallback(func, deps) -> Var | None:
+def useCallback(func, deps) -> Optional[Var]:
     """Create a useCallback hook with a function and dependencies.
 
     Args:
@@ -51,7 +51,7 @@ def useCallback(func, deps) -> Var | None:
     return v
 
 
-def useContext(context) -> Var | None:
+def useContext(context) -> Optional[Var]:
     """Create a useContext hook with a context.
 
     Args:
@@ -65,7 +65,7 @@ def useContext(context) -> Var | None:
     return v
 
 
-def useRef(default) -> Var | None:
+def useRef(default) -> Optional[Var]:
     """Create a useRef hook with a default value.
 
     Args:
@@ -79,7 +79,7 @@ def useRef(default) -> Var | None:
     return v
 
 
-def useState(var_name, default=None) -> Var | None:
+def useState(var_name, default=None) -> Optional[Var]:
     """Create a useState hook with a variable name and setter name.
 
     Args:
