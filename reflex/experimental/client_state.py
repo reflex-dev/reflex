@@ -110,7 +110,7 @@ class ClientStateVar(Var):
                         f"{_client_state_ref(setter_name)} = {setter_name}": None,
                     },
                     imports={
-                        "react": {ImportVar(tag="useState", install=False)},
+                        "react": [ImportVar(tag="useState", install=False)],
                         f"/{constants.Dirs.STATE_PATH}": [ImportVar(tag="refs")],
                     },
                 ),
