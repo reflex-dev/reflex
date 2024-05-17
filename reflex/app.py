@@ -7,6 +7,7 @@ import concurrent.futures
 import contextlib
 import copy
 import functools
+import inspect
 import io
 import multiprocessing
 import os
@@ -100,11 +101,11 @@ class OverlayFragment(Fragment):
     pass
 
 
-class LifespanMixin:
+class LifespanMixin(Base):
     """A Mixin that allow tasks to run during the whole app lifespan."""
 
     # Lifespan tasks that are planned to run.
-    lifespan_tasks: Set[asyncio.Task] = set()
+    lifespan_tasks: Set[Union[asyncio.Task, Callable]] = set()
 
     @contextlib.asynccontextmanager
     async def _run_lifespan_tasks(self, app: FastAPI):
@@ -115,6 +116,9 @@ class LifespanMixin:
                     if isinstance(task, asyncio.Task):
                         running_tasks.append(task)
                     else:
+                        signature = inspect.signature(task)
+                        if "app" in signature.parameters:
+                            task = functools.partial(task, app=app)
                         _t = task()
                         if isinstance(_t, contextlib._AsyncGeneratorContextManager):
                             await stack.enter_async_context(_t)
