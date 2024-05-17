@@ -1,10 +1,12 @@
 """Add standard Hooks wrapper for React."""
 
+from typing import Optional, Union
+
 from reflex.utils.imports import ImportVar
 from reflex.vars import Var, VarData
 
 
-def _add_react_import(v: Var | None, tags: str | list):
+def _add_react_import(v: Optional[Var], tags: Union[str, list]):
     if v is None:
         return
 
