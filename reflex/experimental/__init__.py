@@ -18,6 +18,7 @@ warn(
 )
 
 _x = SimpleNamespace(
+    asset=asset,
     client_state=ClientStateVar.create,
     hooks=hooks,
     layout=layout,
@@ -25,5 +26,4 @@ _x = SimpleNamespace(
     PropsBase=PropsBase,
     run_in_thread=run_in_thread,
     toast=toast,
-    asset=asset,
 )
