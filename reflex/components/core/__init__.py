@@ -1,7 +1,12 @@
 """Core Reflex components."""
 
 from . import layout as layout
-from .banner import ConnectionBanner, ConnectionModal, ConnectionPulser
+from .banner import (
+    ConnectionBanner,
+    ConnectionModal,
+    ConnectionPulser,
+    ConnectionToaster,
+)
 from .colors import color
 from .cond import Cond, color_mode_cond, cond
 from .debounce import DebounceInput
@@ -26,6 +31,7 @@ from .upload import (
 
 connection_banner = ConnectionBanner.create
 connection_modal = ConnectionModal.create
+connection_toaster = ConnectionToaster.create
 connection_pulser = ConnectionPulser.create
 debounce_input = DebounceInput.create
 foreach = Foreach.create

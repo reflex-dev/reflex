@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
@@ -37,7 +37,7 @@ class ToastAction(Base):
 def serialize_action(action: ToastAction) -> dict: ...
 
 class ToastProps(PropsBase):
-    description: Optional[str]
+    description: Optional[Union[str, Var]]
     close_button: Optional[bool]
     invert: Optional[bool]
     important: Optional[bool]
