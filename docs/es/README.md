@@ -139,7 +139,7 @@ app.add_page(index, title="Reflex:DALL-E")
 ## Vamos a analizarlo.
 
 <div align="center">
-<img src="docs/images/dalle_colored_code_example.png" alt="Explicando las diferencias entre las partes del backend y frontend de la aplicación DALL-E." width="900" />
+<img src="https://github.com/reflex-dev/reflex/blob/main/docs/images/dalle_colored_code_example.png?raw=true" alt="Explicando las diferencias entre las partes del backend y frontend de la aplicación DALL-E." width="900" />
 </div>
 
 ### **Reflex UI**
