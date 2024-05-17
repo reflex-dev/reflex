@@ -44,6 +44,22 @@ from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, serializers
 
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+
+    def override(func: Callable) -> Callable:
+        """Fallback for @override decorator.
+
+        Args:
+            func: The function to decorate.
+
+        Returns:
+            The unmodified function.
+        """
+        return func
+
+
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = [_GenericAlias]
 

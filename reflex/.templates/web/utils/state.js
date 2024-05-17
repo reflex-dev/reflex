@@ -126,8 +126,13 @@ export const applyDelta = (state, delta) => {
 export const applyEvent = async (event, socket) => {
   // Handle special events
   if (event.name == "_redirect") {
-    if (event.payload.external) window.open(event.payload.path, "_blank");
-    else Router.push(event.payload.path);
+    if (event.payload.external) {
+      window.open(event.payload.path, "_blank");
+    } else if (event.payload.replace) {
+      Router.replace(event.payload.path);
+    } else {
+      Router.push(event.payload.path);
+    }
     return false;
   }
 

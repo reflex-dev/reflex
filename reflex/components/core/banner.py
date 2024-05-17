@@ -16,8 +16,11 @@ from reflex.components.radix.themes.components.dialog import (
 )
 from reflex.components.radix.themes.layout import Flex
 from reflex.components.radix.themes.typography.text import Text
+from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants import Dirs, Hooks, Imports
+from reflex.constants.compiler import CompileVars
 from reflex.utils import imports
+from reflex.utils.serializers import serialize
 from reflex.vars import Var, VarData
 
 connect_error_var_data: VarData = VarData(  # type: ignore
@@ -25,27 +28,38 @@ connect_error_var_data: VarData = VarData(  # type: ignore
     hooks={Hooks.EVENTS: None},
 )
 
+connect_errors: Var = Var.create_safe(
+    value=CompileVars.CONNECT_ERROR,
+    _var_is_local=True,
+    _var_is_string=False,
+    _var_data=connect_error_var_data,
+)
+
 connection_error: Var = Var.create_safe(
     value="(connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : ''",
     _var_is_local=False,
     _var_is_string=False,
-)._replace(merge_var_data=connect_error_var_data)
+    _var_data=connect_error_var_data,
+)
 
 connection_errors_count: Var = Var.create_safe(
     value="connectErrors.length",
     _var_is_string=False,
     _var_is_local=False,
-)._replace(merge_var_data=connect_error_var_data)
+    _var_data=connect_error_var_data,
+)
 
 has_connection_errors: Var = Var.create_safe(
     value="connectErrors.length > 0",
     _var_is_string=False,
-)._replace(_var_type=bool, merge_var_data=connect_error_var_data)
+    _var_data=connect_error_var_data,
+).to(bool)
 
 has_too_many_connection_errors: Var = Var.create_safe(
     value="connectErrors.length >= 2",
     _var_is_string=False,
-)._replace(_var_type=bool, merge_var_data=connect_error_var_data)
+    _var_data=connect_error_var_data,
+).to(bool)
 
 
 class WebsocketTargetURL(Bare):
@@ -79,6 +93,64 @@ def default_connection_error() -> list[str | Var | Component]:
         ". Check if server is reachable at ",
         WebsocketTargetURL.create(),
     ]
+
+
+class ConnectionToaster(Toaster):
+    """A connection toaster component."""
+
+    def add_hooks(self) -> list[str]:
+        """Add the hooks for the connection toaster.
+
+        Returns:
+            The hooks for the connection toaster.
+        """
+        toast_id = "websocket-error"
+        target_url = WebsocketTargetURL.create()
+        props = ToastProps(  # type: ignore
+            description=Var.create(
+                f"`Check if server is reachable at ${target_url}`",
+                _var_is_string=False,
+                _var_is_local=False,
+            ),
+            close_button=True,
+            duration=120000,
+            id=toast_id,
+        )
+        hook = Var.create(
+            f"""
+const toast_props = {serialize(props)};
+const [userDismissed, setUserDismissed] = useState(false);
+useEffect(() => {{
+    if ({has_too_many_connection_errors}) {{
+        if (!userDismissed) {{
+            toast.error(
+                `Cannot connect to server: {connection_error}.`,
+                {{...toast_props, onDismiss: () => setUserDismissed(true)}},
+            )
+        }}
+    }} else {{
+        toast.dismiss("{toast_id}");
+        setUserDismissed(false);  // after reconnection reset dismissed state
+    }}
+}}, [{connect_errors}]);"""
+        )
+
+        hook._var_data = VarData.merge(  # type: ignore
+            connect_errors._var_data,
+            VarData(
+                imports={
+                    "react": [
+                        imports.ImportVar(tag="useEffect"),
+                        imports.ImportVar(tag="useState"),
+                    ],
+                    **target_url._get_imports(),
+                }
+            ),
+        )
+        return [
+            Hooks.EVENTS,
+            hook,  # type: ignore
+        ]
 
 
 class ConnectionBanner(Component):
@@ -158,8 +230,8 @@ class WifiOffPulse(Icon):
             size=props.pop("size", 32),
             z_index=props.pop("z_index", 9999),
             position=props.pop("position", "fixed"),
-            bottom=props.pop("botton", "30px"),
-            right=props.pop("right", "30px"),
+            bottom=props.pop("botton", "33px"),
+            right=props.pop("right", "33px"),
             animation=Var.create(f"${{pulse}} 1s infinite", _var_is_string=True),
             **props,
         )
@@ -201,6 +273,7 @@ class ConnectionPulser(Div):
                 has_connection_errors,
                 WifiOffPulse.create(**props),
             ),
+            title=f"Connection Error: {connection_error}",
             position="fixed",
             width="100vw",
             height="0",

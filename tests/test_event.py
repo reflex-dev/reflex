@@ -158,12 +158,29 @@ def test_fix_events(arg1, arg2):
 @pytest.mark.parametrize(
     "input,output",
     [
-        (("/path", None), 'Event("_redirect", {path:`/path`,external:false})'),
-        (("/path", True), 'Event("_redirect", {path:`/path`,external:true})'),
-        (("/path", False), 'Event("_redirect", {path:`/path`,external:false})'),
         (
-            (Var.create_safe("path"), None),
-            'Event("_redirect", {path:path,external:false})',
+            ("/path", None, None),
+            'Event("_redirect", {path:`/path`,external:false,replace:false})',
+        ),
+        (
+            ("/path", True, None),
+            'Event("_redirect", {path:`/path`,external:true,replace:false})',
+        ),
+        (
+            ("/path", False, None),
+            'Event("_redirect", {path:`/path`,external:false,replace:false})',
+        ),
+        (
+            (Var.create_safe("path"), None, None),
+            'Event("_redirect", {path:path,external:false,replace:false})',
+        ),
+        (
+            ("/path", None, True),
+            'Event("_redirect", {path:`/path`,external:false,replace:true})',
+        ),
+        (
+            ("/path", True, True),
+            'Event("_redirect", {path:`/path`,external:true,replace:true})',
         ),
     ],
 )
@@ -174,11 +191,13 @@ def test_event_redirect(input, output):
         input: The input for running the test.
         output: The expected output to validate the test.
     """
-    path, external = input
-    if external is None:
-        spec = event.redirect(path)
-    else:
-        spec = event.redirect(path, external=external)
+    path, external, replace = input
+    kwargs = {}
+    if external is not None:
+        kwargs["external"] = external
+    if replace is not None:
+        kwargs["replace"] = replace
+    spec = event.redirect(path, **kwargs)
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_redirect"
 
