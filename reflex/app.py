@@ -41,7 +41,6 @@ from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.compiler.compiler import ExecutorSafeFunctions
-from reflex.components import connection_modal, connection_pulser
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
@@ -49,6 +48,7 @@ from reflex.components.component import (
     ComponentStyle,
     evaluate_style_namespaces,
 )
+from reflex.components.core import connection_pulser, connection_toaster
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
@@ -91,7 +91,7 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    return Fragment.create(connection_pulser(), connection_modal())
+    return Fragment.create(connection_pulser(), connection_toaster())
 
 
 class OverlayFragment(Fragment):
