@@ -110,11 +110,17 @@ class LifespanMixin:
     async def _run_lifespan_tasks(self, app: FastAPI):
         running_tasks = []
         try:
-            running_tasks = [
-                task if isinstance(task, asyncio.Task) else asyncio.create_task(task())
-                for task in self.lifespan_tasks
-            ]
-            yield
+            async with contextlib.AsyncExitStack() as stack:
+                for task in self.lifespan_tasks:
+                    if isinstance(task, asyncio.Task):
+                        running_tasks.append(task)
+                    else:
+                        _t = task()
+                        if isinstance(_t, contextlib._AsyncGeneratorContextManager):
+                            await stack.enter_async_context(_t)
+                        elif isinstance(_t, Coroutine):
+                            running_tasks.append(asyncio.create_task(_t))
+                yield
         finally:
             for task in running_tasks:
                 task.cancel("lifespan_cleanup")
