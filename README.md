@@ -194,7 +194,7 @@ Here the state is comprised of a `prompt` and `image_url`. There are also the bo
 def get_image(self):
     """Get the image from the prompt."""
     if self.prompt == "":
-        return rx._x.toast.error("Prompt Empty")
+        return rx.window_alert("Prompt Empty")
 
     self.processing, self.complete = True, False
     yield
