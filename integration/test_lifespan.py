@@ -1,5 +1,4 @@
 """Test cases for the FastAPI lifespan integration."""
-import asyncio
 from typing import Generator
 
 import pytest
@@ -38,8 +37,8 @@ def LifespanApp():
             while True:
                 lifespan_task_global += inc  # pyright: ignore[reportUnboundVariable]
                 await asyncio.sleep(0.1)
-        except asyncio.CancelledError:
-            print("Lifespan global cancelled.")
+        except asyncio.CancelledError as ce:
+            print(f"Lifespan global cancelled: {ce}.")
             lifespan_task_global = 0
 
     class LifespanState(rx.State):
@@ -104,8 +103,9 @@ async def test_lifespan(lifespan_app: AppHarness):
     assert context_global.text == "2"
     assert lifespan_app.app_module.lifespan_context_global == 2  # type: ignore
 
-    original_task_global_value = int(task_global.text)
-    await asyncio.sleep(0.3)
+    original_task_global_text = task_global.text
+    original_task_global_value = int(original_task_global_text)
+    lifespan_app.poll_for_content(task_global, exp_not_equal=original_task_global_text)
     assert lifespan_app.app_module.lifespan_task_global > original_task_global_value  # type: ignore
     assert int(task_global.text) > original_task_global_value
 
