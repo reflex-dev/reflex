@@ -175,10 +175,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
     c1_type = c1._var_type if isinstance(c1, Var) else type(c1)
     c2_type = c2._var_type if isinstance(c2, Var) else type(c2)
 
-    if c1_type == c2_type:
-        var_type = c1_type
-    else:
-        var_type = Union[c1_type, c2_type]
+    var_type = c1_type if c1_type == c2_type else Union[c1_type, c2_type]
 
     # Create the conditional var.
     return cond_var._replace(
