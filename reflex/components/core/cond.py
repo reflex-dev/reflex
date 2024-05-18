@@ -1,7 +1,8 @@
 """Create a list of components from an iterable."""
+
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, overload
+from typing import Any, Dict, Optional, Union, overload
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
@@ -171,6 +172,14 @@ def cond(condition: Any, c1: Any, c2: Any = None):
     c2 = create_var(c2)
     var_datas.extend([c1._var_data, c2._var_data])
 
+    c1_type = c1._var_type if isinstance(c1, Var) else type(c1)
+    c2_type = c2._var_type if isinstance(c2, Var) else type(c2)
+
+    if c1_type == c2_type:
+        var_type = c1_type
+    else:
+        var_type = Union[c1_type, c2_type]
+
     # Create the conditional var.
     return cond_var._replace(
         _var_name=format.format_cond(
@@ -179,7 +188,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
             false_value=c2,
             is_prop=True,
         ),
-        _var_type=c1._var_type if isinstance(c1, Var) else type(c1),
+        _var_type=var_type,
         _var_is_local=False,
         _var_full_name_needs_state_prefix=False,
         merge_var_data=VarData.merge(*var_datas),

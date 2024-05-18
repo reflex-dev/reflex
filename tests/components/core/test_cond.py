@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Union
 
 import pytest
 
@@ -144,5 +144,4 @@ def test_cond_computed_var():
         == f"{{isTrue(true) ? {state_name}.computed_int : {state_name}.computed_str}}"
     )
 
-    # TODO: shouln't this be a Union[int, str]?
-    assert comp._var_type == int
+    assert comp._var_type == Union[int, str]
