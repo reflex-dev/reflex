@@ -175,7 +175,7 @@ class State(rx.State):
 
 El estado (State) define todas las variables (llamadas vars) de una aplicación que pueden cambiar y las funciones que las modifican.
 
-Aquí el estado se compone de `prompt` e `image_url`. También están los booleanos `processing` y `complete` para indicar cuándo se deshabilite el boton (durante la generacion de la imagen) y cuándo se muestre la imagen resultante.
+Aquí el estado se compone de `prompt` e `image_url`. También están los booleanos `processing` y `complete` para indicar cuando se deshabilite el botón (durante la generación de la imagen) y cuando se muestre la imagen resultante.
 
 ### **Manejadores de Evento**
 
