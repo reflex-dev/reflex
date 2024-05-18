@@ -10,7 +10,7 @@ from reflex.constants import Dirs
 from reflex.constants.colors import Color
 from reflex.style import LIGHT_COLOR_MODE, color_mode
 from reflex.utils import format, imports
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import Var, VarData
 
 _IS_TRUE_IMPORT = {
     f"/{Dirs.STATE_PATH}": [imports.ImportVar(tag="isTrue")],
