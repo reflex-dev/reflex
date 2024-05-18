@@ -116,14 +116,15 @@ def index():
                 on_blur=State.set_prompt,
                 width="25em",
             ),
-            rx.button("Generate Image", on_click=State.get_image, width="25em"),
+            rx.button(
+                "Generate Image", 
+                on_click=State.get_image,
+                width="25em",
+                loading=State.processing
+            ),
             rx.cond(
-                State.processing,
-                rx.chakra.circular_progress(is_indeterminate=True),
-                rx.cond(
-                    State.complete,
-                    rx.image(src=State.image_url, width="20em"),
-                ),
+                State.complete,
+                rx.image(src=State.image_url, width="20em"),
             ),
             align="center",
         ),
@@ -174,7 +175,7 @@ class State(rx.State):
 
 El estado (State) define todas las variables (llamadas vars) de una aplicación que pueden cambiar y las funciones que las modifican.
 
-Aquí el estado se compone de `prompt` e `image_url`. También están los booleanos `processing` y `complete` para poder indicar cuándo mostrar el progreso circular y la imagen.
+Aquí el estado se compone de `prompt` e `image_url`. También están los booleanos `processing` y `complete` para indicar cuándo se deshabilite el boton (durante la generacion de la imagen) y cuándo se muestre la imagen resultante.
 
 ### **Manejadores de Evento**
 
