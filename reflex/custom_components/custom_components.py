@@ -8,6 +8,7 @@ import subprocess
 import sys
 from collections import namedtuple
 from contextlib import contextmanager
+from functools import lru_cache
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -70,6 +71,7 @@ def _create_package_config(module_name: str, package_name: str):
         )
 
 
+@lru_cache(maxsize=None)
 def _get_package_config(exit_on_fail: bool = True) -> dict:
     """Get the package configuration from the pyproject.toml file.
 
