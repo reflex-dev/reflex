@@ -1,11 +1,11 @@
 // State management for Reflex web apps.
 import axios from "axios";
 import io from "socket.io-client";
-import JSON5 from "json5";
 import env from "/env.json";
 import Cookies from "universal-cookie";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
+import { Parser } from "pickleparser";
 import {
   initialEvents,
   initialState,
@@ -14,6 +14,7 @@ import {
 } from "utils/context.js";
 import debounce from "/utils/helpers/debounce";
 import throttle from "/utils/helpers/throttle";
+import { Buffer } from "buffer";
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
@@ -169,7 +170,10 @@ export const applyEvent = async (event, socket) => {
     const a = document.createElement("a");
     a.hidden = true;
     // Special case when linking to uploaded files
-    a.href = event.payload.url.replace("${getBackendURL(env.UPLOAD)}", getBackendURL(env.UPLOAD))
+    a.href = event.payload.url.replace(
+      "${getBackendURL(env.UPLOAD)}",
+      getBackendURL(env.UPLOAD),
+    );
     a.download = event.payload.filename;
     a.click();
     a.remove();
@@ -230,7 +234,7 @@ export const applyEvent = async (event, socket) => {
   if (socket) {
     socket.emit(
       "event",
-      JSON.stringify(event, (k, v) => (v === undefined ? null : v))
+      JSON.stringify(event, (k, v) => (v === undefined ? null : v)),
     );
     return true;
   }
@@ -248,10 +252,9 @@ export const applyEvent = async (event, socket) => {
 export const applyRestEvent = async (event, socket) => {
   let eventSent = false;
   if (event.handler === "uploadFiles") {
-
-    if (event.payload.files === undefined || event.payload.files.length === 0){
+    if (event.payload.files === undefined || event.payload.files.length === 0) {
       // Submit the event over the websocket to trigger the event handler.
-      return await applyEvent(Event(event.name), socket)
+      return await applyEvent(Event(event.name), socket);
     }
 
     // Start upload, but do not wait for it, which would block other events.
@@ -260,7 +263,7 @@ export const applyRestEvent = async (event, socket) => {
       event.payload.files,
       event.payload.upload_id,
       event.payload.on_upload_progress,
-      socket
+      socket,
     );
     return false;
   }
@@ -327,7 +330,7 @@ export const connect = async (
   dispatch,
   transports,
   setConnectErrors,
-  client_storage = {}
+  client_storage = {},
 ) => {
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
@@ -360,7 +363,11 @@ export const connect = async (
   });
   // On each received message, queue the updates and events.
   socket.current.on("event", (message) => {
-    const update = JSON5.parse(message);
+    // const update = JSON5.parse(message);
+
+    const buffer = Buffer.from(message, "binary");
+    const parser = new Parser();
+    const update = parser.parse(buffer);
     for (const substate in update.delta) {
       dispatch[substate](update.delta[substate]);
     }
@@ -369,6 +376,7 @@ export const connect = async (
     if (update.events) {
       queueEvents(update.events, socket);
     }
+    console.log("update done");
   });
 
   document.addEventListener("visibilitychange", checkVisibility);
@@ -390,7 +398,7 @@ export const uploadFiles = async (
   files,
   upload_id,
   on_upload_progress,
-  socket
+  socket,
 ) => {
   // return if there's no file to upload
   if (files === undefined || files.length === 0) {
@@ -499,7 +507,7 @@ export const hydrateClientStorage = (client_storage) => {
     for (const state_key in client_storage.local_storage) {
       const options = client_storage.local_storage[state_key];
       const local_storage_value = localStorage.getItem(
-        options.name || state_key
+        options.name || state_key,
       );
       if (local_storage_value !== null) {
         client_storage_values[state_key] = local_storage_value;
@@ -520,7 +528,7 @@ export const hydrateClientStorage = (client_storage) => {
 const applyClientStorageDelta = (client_storage, delta) => {
   // find the main state and check for is_hydrated
   const unqualified_states = Object.keys(delta).filter(
-    (key) => key.split(".").length === 1
+    (key) => key.split(".").length === 1,
   );
   if (unqualified_states.length === 1) {
     const main_state = delta[unqualified_states[0]];
@@ -564,7 +572,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
 export const useEventLoop = (
   dispatch,
   initial_events = () => [],
-  client_storage = {}
+  client_storage = {},
 ) => {
   const socket = useRef(null);
   const router = useRouter();
@@ -609,7 +617,7 @@ export const useEventLoop = (
             query,
             asPath,
           }))(router),
-        }))
+        })),
       );
       sentHydrate.current = true;
     }
@@ -630,7 +638,7 @@ export const useEventLoop = (
           dispatch,
           ["websocket", "polling"],
           setConnectErrors,
-          client_storage
+          client_storage,
         );
       }
       (async () => {
@@ -663,7 +671,7 @@ export const useEventLoop = (
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = Event(
           `${state_name}.update_vars_internal_state.update_vars_internal`,
-          { vars: vars }
+          { vars: vars },
         );
         addEvents([event], e);
       }
@@ -676,11 +684,11 @@ export const useEventLoop = (
   // Route after the initial page hydration.
   useEffect(() => {
     const change_start = () => {
-      const main_state_dispatch = dispatch["state"]
+      const main_state_dispatch = dispatch["state"];
       if (main_state_dispatch !== undefined) {
-        main_state_dispatch({is_hydrated: false})
+        main_state_dispatch({ is_hydrated: false });
       }
-    }
+    };
     const change_complete = () => addEvents(onLoadInternalEvent());
     router.events.on("routeChangeStart", change_start);
     router.events.on("routeChangeComplete", change_complete);
@@ -745,7 +753,7 @@ export const getRefValues = (refs) => {
   return refs.map((ref) =>
     ref.current
       ? ref.current.value || ref.current.getAttribute("aria-valuenow")
-      : null
+      : null,
   );
 };
 

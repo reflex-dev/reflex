@@ -1,4 +1,5 @@
 """File for constants related to the installation process. (Bun/FNM/Node)."""
+
 from __future__ import annotations
 
 import os
@@ -119,6 +120,7 @@ class PackageJson(SimpleNamespace):
         "react-focus-lock": "2.11.3",
         "socket.io-client": "4.6.1",
         "universal-cookie": "4.0.4",
+        "pickleparser": "0.2.1",
     }
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.14",
