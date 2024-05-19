@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 
 from reflex import constants
-from reflex.components.chakra.forms.input import Input
-from reflex.components.chakra.layout.box import Box
+from reflex.components.radix.themes.components import input
+from reflex.components.radix.themes.layout.box import Box
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.constants import Dirs
 from reflex.event import (
@@ -230,7 +230,7 @@ class Upload(MemoizationLeaf):
             key: value for key, value in props.items() if key in supported_props
         }
         # The file input to use.
-        upload = Input.create(type_="file")
+        upload = input(type_="file")
         upload.special_props = {
             BaseVar(_var_name="{...getInputProps()}", _var_type=None)
         }

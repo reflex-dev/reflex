@@ -197,4 +197,4 @@ class TextField(ComponentNamespace):
     __call__ = staticmethod(TextFieldRoot.create)
 
 
-text_field = TextField()
+input = text_field = TextField()

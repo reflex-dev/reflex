@@ -174,4 +174,4 @@ class ColorModeNamespace(BaseVar):
     switch = staticmethod(ColorModeSwitch.create)
 
 
-color_mode_var_and_namespace = ColorModeNamespace(**dataclasses.asdict(color_mode))
+color_mode = color_mode_var_and_namespace = ColorModeNamespace(**dataclasses.asdict(color_mode))
