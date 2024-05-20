@@ -11,7 +11,7 @@ from reflex.utils.prerequisites import get_app
 if "app" != constants.CompileVars.APP:
     raise AssertionError("unexpected variable name for 'app'")
 
-telemetry.send("reload")
+telemetry.send("compile")
 app_module = get_app(reload=False)
 app = getattr(app_module, constants.CompileVars.APP)
 # For py3.8 and py3.9 compatibility when redis is used, we MUST add any decorator pages
