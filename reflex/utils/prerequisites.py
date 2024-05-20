@@ -233,9 +233,8 @@ def get_app(reload: bool = False) -> ModuleType:
 
     Raises:
         RuntimeError: If the app name is not set in the config.
-        exceptions.ReflexError: Reflex specific errors.
     """
-    from reflex.utils import exceptions, telemetry
+    from reflex.utils import telemetry
 
     try:
         os.environ[constants.RELOAD_CONFIG] = str(reload)
@@ -259,8 +258,8 @@ def get_app(reload: bool = False) -> ModuleType:
             importlib.reload(app)
 
         return app
-    except exceptions.ReflexError as ex:
-        telemetry.send("error", context="frontend", detail=str(ex))
+    except Exception as ex:
+        telemetry.send_error(ex, context="frontend")
         raise
 
 
