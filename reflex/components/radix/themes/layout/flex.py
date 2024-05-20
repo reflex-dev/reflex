@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Dict, Literal
 
-from reflex import el
+from reflex.components.el import elements
 from reflex.vars import Var
 
 from ..base import (
@@ -18,7 +18,7 @@ LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 LiteralFlexWrap = Literal["nowrap", "wrap", "wrap-reverse"]
 
 
-class Flex(el.Div, RadixThemesComponent):
+class Flex(elements.Div, RadixThemesComponent):
     """Component for creating flex layouts."""
 
     tag = "Flex"
@@ -43,3 +43,6 @@ class Flex(el.Div, RadixThemesComponent):
 
     # Reflex maps the "spacing" prop to "gap" prop.
     _rename_props: Dict[str, str] = {"spacing": "gap"}
+
+
+flex = Flex.create

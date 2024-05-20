@@ -50,3 +50,8 @@ class Script(BaseHTML):
 
     # Specifies the MIME type of the script
     type: Var[Union[str, int, bool]]
+
+
+canvas = Canvas.create
+noscript = Noscript.create
+script = Script.create

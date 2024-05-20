@@ -53,3 +53,10 @@ class Title(Element):  # noqa: E742
     """Display the title element."""
 
     tag = "title"
+
+
+base = Base.create
+head = Head.create
+link = Link.create
+meta = Meta.create
+title = Title.create

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Dict, Literal
 
-from reflex import el
+from reflex.components.el import elements
 from reflex.vars import Var
 
 from ..base import (
@@ -17,7 +17,7 @@ from ..base import (
 LiteralGridFlow = Literal["row", "column", "dense", "row-dense", "column-dense"]
 
 
-class Grid(el.Div, RadixThemesComponent):
+class Grid(elements.Div, RadixThemesComponent):
     """Component for creating grid layouts."""
 
     tag = "Grid"
@@ -55,3 +55,6 @@ class Grid(el.Div, RadixThemesComponent):
         "spacing_x": "gap_x",
         "spacing_y": "gap_y",
     }
+
+
+grid = Grid.create

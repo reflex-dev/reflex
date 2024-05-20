@@ -21,3 +21,5 @@ class Center(Flex):
             "align_items": "center",
             "justify_content": "center",
         }
+
+center = Center.create

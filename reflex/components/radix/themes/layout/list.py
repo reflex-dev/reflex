@@ -184,3 +184,6 @@ class List(ComponentNamespace):
 
 
 list_ns = List()
+list_item = list_ns.item
+ordered_list = list_ns.ordered
+unordered_list = list_ns.unordered

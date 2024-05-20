@@ -21,3 +21,5 @@ class Spacer(Flex):
             "justify_self": "stretch",
             "align_self": "stretch",
         }
+
+spacer = Spacer.create

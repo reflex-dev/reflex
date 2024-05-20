@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Literal, Union
 
-from reflex.components import el
+from reflex.components.el import elements
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.debounce import DebounceInput
@@ -22,7 +22,7 @@ LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
 
 
-class TextFieldRoot(el.Div, RadixThemesComponent):
+class TextFieldRoot(elements.Div, RadixThemesComponent):
     """Captures user input with an optional slot for buttons and icons."""
 
     tag = "TextField.Root"
