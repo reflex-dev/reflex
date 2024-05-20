@@ -1068,13 +1068,12 @@ async def process(
         client_ip: The client_ip.
 
     Raises:
-        ReflexError: If a reflex specific error occurs during processing the event.
+        Exception: If a reflex specific error occurs during processing the event.
 
     Yields:
         The state updates after processing the event.
     """
     from reflex.utils import telemetry
-    from reflex.utils.exceptions import ReflexError
 
     try:
         # Add request data to the state.
@@ -1118,8 +1117,8 @@ async def process(
 
                     # Yield the update.
                     yield update
-    except ReflexError as ex:
-        telemetry.send("error", context="backend", detail=str(ex))
+    except Exception as ex:
+        telemetry.send_error(ex, context="backend")
         raise
 
 

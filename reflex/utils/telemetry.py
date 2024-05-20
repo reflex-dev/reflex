@@ -182,3 +182,16 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs) -> bool:
     if not event_data:
         return False
     return _send_event(event_data)
+
+
+def send_error(error: Exception, context: str) -> bool:
+    """Send an error event.
+
+    Args:
+        error: The error to send.
+        context: The context of the error (e.g. "frontend" or "backend")
+
+    Returns:
+        Whether the telemetry was sent successfully.
+    """
+    return send("error", detail=type(error).__name__, context=context)
