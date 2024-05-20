@@ -273,3 +273,5 @@ class Match(MemoizationLeaf):
             super()._get_imports(),
             getattr(self.cond._var_data, "imports", {}),
         )
+
+match = Match.create

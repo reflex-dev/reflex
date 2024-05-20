@@ -43,3 +43,5 @@ class Html(Div):
 
         # Create the component.
         return super().create(**props)
+
+html = Html.create

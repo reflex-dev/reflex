@@ -339,3 +339,5 @@ class UploadNamespace(ComponentNamespace):
 
     root = Upload.create
     __call__ = StyledUpload.create
+
+upload = UploadNamespace()

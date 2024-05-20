@@ -1,7 +1,24 @@
 """Radix primitive components (https://www.radix-ui.com/primitives)."""
+import lazy_loader as lazy
 
-from .accordion import accordion
-from .drawer import drawer
-from .form import form
-from .progress import progress
-from .slider import slider
+__getattr__, __dir__, __all__ = lazy.attach(
+    __name__,
+    submod_attrs={
+        "accordion": [
+            "accordion",
+        ],
+        "drawer": [
+            "drawer",
+        ],
+        "form": [
+            "form",
+        ],
+        "progress": [
+            "progress",
+        ],
+        "slider": [
+            "slider",
+        ]
+    },
+)
+

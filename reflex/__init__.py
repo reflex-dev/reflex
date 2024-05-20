@@ -123,7 +123,6 @@ _MAPPING = {
     "reflex.app": ["app", "App", "UploadFile"],
     "reflex.base": ["base", "Base"],
     "reflex.compiler": ["compiler"],
-    # "reflex.components": _ALL_COMPONENTS,
     "reflex.components.component": ["Component", "NoSSRComponent", "memo"],
     "reflex.components.chakra": ["chakra"],
     "reflex.components.el": ["el"],
