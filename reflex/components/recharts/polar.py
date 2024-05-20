@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-import reflex as rx
 
 from .recharts import (
     LiteralAnimationEasing,
@@ -308,10 +307,10 @@ class PolarRadiusAxis(Recharts):
 
     # Valid children components
     _valid_children: List[str] = ["Label"]
-    
+
     # The domain of the polar radius axis, specifying the minimum and maximum values.
     domain: List[int]
-            
+
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
