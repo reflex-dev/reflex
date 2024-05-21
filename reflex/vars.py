@@ -704,7 +704,11 @@ class Var:
         """
         try:
             var_attribute = super().__getattribute__(name)
-            if not name.startswith("_"):
+            if (
+                not name.startswith("_")
+                and name not in Var.__dict__
+                and name not in BaseVar.__dict__
+            ):
                 # Check if the attribute should be accessed through the Var instead of
                 # accessing one of the Var operations
                 type_ = types.get_attribute_access_type(
