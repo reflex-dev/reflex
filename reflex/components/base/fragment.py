@@ -7,3 +7,5 @@ class Fragment(Component):
 
     library = "react"
     tag = "Fragment"
+
+fragment = Fragment.create

@@ -15,106 +15,7 @@ from reflex.utils import console
 from reflex.utils.format import to_snake_case
 
 _ALL_COMPONENTS = [
-    # Core
-    "color",
-    "cond",
-    "foreach",
-    "html",
-    "match",
-    "color_mode_cond",
-    "connection_banner",
-    "connection_modal",
-    "debounce_input",
-    # Base
-    "fragment",
-    "Fragment",
     "image",
-    "script",
-    # Responsive
-    "desktop_only",
-    "mobile_and_tablet",
-    "mobile_only",
-    "tablet_and_desktop",
-    "tablet_only",
-    # Upload
-    "cancel_upload",
-    "clear_selected_files",
-    "get_upload_dir",
-    "get_upload_url",
-    "selected_files",
-    "upload",
-    # Radix
-    "accordion",
-    "alert_dialog",
-    "aspect_ratio",
-    "avatar",
-    "badge",
-    "blockquote",
-    "box",
-    "button",
-    "callout",
-    "card",
-    # "center",
-    "checkbox",
-    "code",
-    "container",
-    "context_menu",
-    "data_list",
-    "dialog",
-    "divider",
-    "drawer",
-    "flex",
-    "form",
-    "grid",
-    "heading",
-    "hover_card",
-    "hstack",
-    "icon_button",
-    "inset",
-    "input",
-    "link",
-    "menu",
-    "popover",
-    "progress",
-    "radio",
-    "scroll_area",
-    "section",
-    "select",
-    "skeleton",
-    "slider",
-    "spacer",
-    "spinner",
-    "stack",
-    "switch",
-    "table",
-    "tabs",
-    "text",
-    "text_area",
-    "theme",
-    "theme_panel",
-    "tooltip",
-    "vstack",
-    # Other
-    "code_block",
-    "data_editor",
-    "data_editor_theme",
-    "data_table",
-    "plotly",
-    "audio",
-    "video",
-    "editor",
-    "EditorButtonList",
-    "EditorOptions",
-    "icon",
-    "markdown",
-    "list",
-    "list_item",
-    "unordered_list",
-    "ordered_list",
-    "moment",
-    "logo",
-    # Toast is in experimental namespace initially
-    # "toast",
 ]
 
 _MAPPING = {
@@ -126,9 +27,28 @@ _MAPPING = {
     "reflex.components.component": ["Component", "NoSSRComponent", "memo"],
     "reflex.components.chakra": ["chakra"],
     "reflex.components.el": ["el"],
-    "reflex.components.lucide": ["lucide"],
+    "reflex.components.lucide": ["lucide", "icon"],
+    "reflex.components.base": [
+        "fragment",
+        "Fragment",
+        "script",
+        "Script"
+    ],
+    "reflex.components.suneditor": [
+        "editor",
+        "EditorButtonList",
+        "EditorOptions",
+    ],
+    "reflex.components": ["image"],
+    "reflex.components.markdown.markdown" : ["markdown"],
     "reflex.components.next": ["next"],
     "reflex.components.radix": ["radix", "color_mode"],
+    "reflex.components.radix.themes": ["theme", "theme_panel"],
+    "reflex.components.plotly": ["plotly"],
+    "reflex.components.react_player": [
+        "audio",
+        "video"
+    ],
     "reflex.components.radix.themes.layout": [
         "box",
         "center",
@@ -153,7 +73,26 @@ _MAPPING = {
                                "color_mode_cond",
                                "connection_banner",
                                "connection_modal",
-                               "debounce_input", ],
+                               "debounce_input",
+                               "desktop_only",
+                               "mobile_and_tablet",
+                               "mobile_only",
+                               "tablet_and_desktop",
+                               "tablet_only",
+                               "cancel_upload",
+                               "clear_selected_files",
+                               "get_upload_dir",
+                               "get_upload_url",
+                               "selected_files",
+                               "upload",
+                               ],
+    "reflex.components.radix.primitives": [
+        "accordion",
+        "drawer",
+        "form",
+        "progress",
+        "slider"
+    ],
     "reflex.components.radix.themes.components": [
         "alert_dialog",
         "aspect_ratio",
@@ -200,8 +139,14 @@ _MAPPING = {
         "link",
         "text",
     ],
+    "reflex.components.datadisplay": [
+        "code_block",
+        "data_editor",
+        "data_editor_theme",
+        "logo"
+    ],
     "reflex.components.recharts": ["recharts"],
-    "reflex.components.moment.moment": ["MomentDelta"],
+    "reflex.components.moment": ["MomentDelta", "moment"],
     "reflex.config": ["config", "Config", "DBConfig"],
     "reflex.constants": ["constants", "Env"],
     "reflex.event": [
@@ -271,7 +216,7 @@ _MAPPING = _reverse_mapping(_MAPPING)
 
 
 def _removeprefix(text, prefix):
-    return text[text.startswith(prefix) and len(prefix) :]
+    return text[text.startswith(prefix) and len(prefix):]
 
 
 __all__ = (_removeprefix(mod, "reflex.") for mod in _MAPPING)
@@ -305,8 +250,4 @@ def __getattr__(name: str) -> Type:
             getattr(module, name) if name != _MAPPING[name].rsplit(".")[-1] else module
         )
     except ModuleNotFoundError:
-        # breakpoint()
         raise AttributeError(f"module 'reflex' has no attribute {name}") from None
-    except AttributeError as err:
-        # breakpoint()
-        raise

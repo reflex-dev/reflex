@@ -1,12 +1,39 @@
 """Base components."""
 
-from .body import Body
-from .document import DocumentHead, Html, Main, NextScript
-from .fragment import Fragment
-from .head import Head
-from .link import RawLink, ScriptTag
-from .meta import Description, Image, Meta, Title
-from .script import Script
+import lazy_loader as lazy
 
-fragment = Fragment.create
-script = Script.create
+__getattr__, __dir__, __all__ = lazy.attach(
+    __name__,
+    submodules={"app_wrap", "bare"},
+    submod_attrs={
+        "body": ["Body"],
+        "document": [
+            "DocumentHead",
+            "Html",
+            "Main",
+            "NextScript"
+        ],
+        "fragment": [
+            "Fragment",
+            "fragment",
+        ],
+        "head": [
+            "head",
+            "Head",
+        ],
+        "link": [
+            "RawLink",
+            "ScriptTag"
+        ],
+        "meta": [
+            "Description",
+            "Image",
+            "Meta",
+            "Title"
+        ],
+        "script": [
+            "Script",
+            "script"
+        ]
+    },
+)
