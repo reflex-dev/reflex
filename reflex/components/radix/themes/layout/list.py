@@ -1,14 +1,13 @@
 """List components."""
 from __future__ import annotations
 
-from typing import Iterable, Literal, Optional, Union
+from typing import Any, Iterable, Literal, Optional, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
 from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.typography.text import Text
-from reflex.style import Style
 from reflex.vars import Var
 
 LiteralListStyleTypeUnordered = Literal[
@@ -78,18 +77,16 @@ class BaseList(Component):
             style["gap"] = props["gap"]
         return super().create(*children, **props)
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style(
-            {
-                "direction": "column",
-                "list_style_position": "inside",
-            }
-        )
+        return {
+            "direction": "column",
+            "list_style_position": "inside",
+        }
 
 
 class UnorderedList(BaseList, Ul):
