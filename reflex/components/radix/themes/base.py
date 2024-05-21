@@ -6,6 +6,7 @@ from typing import Any, Dict, Literal
 
 from reflex.components import Component
 from reflex.components.tags import Tag
+from reflex.config import get_config
 from reflex.utils import imports
 from reflex.vars import Var
 
@@ -209,12 +210,20 @@ class Theme(RadixThemesComponent):
         return super().create(*children, **props)
 
     def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
+        if get_config().tailwind is not None:
+            # If tailwind is used, the radix-ui styles are inlined within tailwind.css for compatibility.
+            style_import = {}
+        else:
+            # When tailwind is disabled, import the radix-ui styles directly.
+            style_import = {
                 "": [
                     imports.ImportVar(tag="@radix-ui/themes/styles.css", install=False)
                 ],
+            }
+        return imports.merge_imports(
+            super()._get_imports(),
+            style_import,
+            {
                 "/utils/theme.js": [
                     imports.ImportVar(tag="theme", is_default=True),
                 ],
