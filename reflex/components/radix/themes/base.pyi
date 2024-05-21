@@ -10,6 +10,7 @@ from reflex.style import Style
 from typing import Any, Dict, Literal
 from reflex.components import Component
 from reflex.components.tags import Tag
+from reflex.config import get_config
 from reflex.utils import imports
 from reflex.vars import Var
 
