@@ -12,7 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from reflex.testing import AppHarness
 
 
-def DeployUrlSample():
+def DeployUrlSample() -> None:
     """Sample app for testing config deploy_url is correct (in tests)."""
     import reflex as rx
 
@@ -33,7 +33,14 @@ def DeployUrlSample():
 def deploy_url_sample(
     tmp_path_factory: pytest.TempPathFactory,
 ) -> Generator[AppHarness, None, None]:
-    """AppHarness fixture for testing deploy_url."""
+    """AppHarness fixture for testing deploy_url.
+
+    Args:
+        tmp_path_factory: pytest fixture for creating temporary directories.
+
+    Yields:
+        AppHarness: An AppHarness instance.
+    """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("deploy_url_sample"),
         app_source=DeployUrlSample,  # type: ignore
@@ -43,7 +50,14 @@ def deploy_url_sample(
 
 @pytest.fixture()
 def driver(deploy_url_sample: AppHarness) -> Generator[WebDriver, None, None]:
-    """WebDriver fixture for testing deploy_url."""
+    """WebDriver fixture for testing deploy_url.
+
+    Args:
+        deploy_url_sample: AppHarness fixture for testing deploy_url.
+
+    Yields:
+        WebDriver: A WebDriver instance.
+    """
     assert deploy_url_sample.app_instance is not None, "app is not running"
     driver = deploy_url_sample.frontend()
     try:
@@ -52,8 +66,13 @@ def driver(deploy_url_sample: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-def test_deploy_url(deploy_url_sample: AppHarness, driver: WebDriver):
-    """Test deploy_url is correct."""
+def test_deploy_url(deploy_url_sample: AppHarness, driver: WebDriver) -> None:
+    """Test deploy_url is correct.
+
+    Args:
+        deploy_url_sample: AppHarness fixture for testing deploy_url.
+        driver: WebDriver fixture for testing deploy_url.
+    """
     import reflex as rx
 
     deploy_url = rx.config.get_config().deploy_url
@@ -64,8 +83,13 @@ def test_deploy_url(deploy_url_sample: AppHarness, driver: WebDriver):
     assert driver.current_url == deploy_url + "/"
 
 
-def test_deploy_url_in_app(deploy_url_sample: AppHarness, driver: WebDriver):
-    """Test deploy_url is correct in app."""
+def test_deploy_url_in_app(deploy_url_sample: AppHarness, driver: WebDriver) -> None:
+    """Test deploy_url is correct in app.
+
+    Args:
+        deploy_url_sample: AppHarness fixture for testing deploy_url.
+        driver: WebDriver fixture for testing deploy_url.
+    """
     driver.implicitly_wait(10)
     driver.find_element(By.ID, "goto_self").click()
 
