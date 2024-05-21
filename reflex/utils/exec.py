@@ -217,8 +217,12 @@ def run_backend_prod(
     """
     from reflex.utils import processes
 
-    num_workers = processes.get_num_workers()
     config = get_config()
+    num_workers = (
+        processes.get_num_workers()
+        if not config.number_gunicorn_workers
+        else config.number_gunicorn_workers
+    )
     RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --preload --timeout {config.timeout} --log-level critical".split()
     RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
     app_module = f"reflex.app_module_for_backend:{constants.CompileVars.APP}"

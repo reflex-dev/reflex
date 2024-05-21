@@ -213,6 +213,9 @@ class Config(Base):
     # The worker class used in production mode
     gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
 
+    # Number of gunicorn workers from user
+    number_gunicorn_workers: Optional[int] = None
+
     # Attributes that were explicitly set by the user.
     _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
 
