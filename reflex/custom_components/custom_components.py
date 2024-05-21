@@ -667,6 +667,9 @@ def publish(
     # Validate the credentials.
     username, password = _validate_credentials(username, password, token)
 
+    # Minimal Validation of the pyproject.toml.
+    _min_validate_project_info()
+
     # Get the version to publish from the pyproject.toml.
     version_to_publish = _get_version_to_publish()
 
@@ -735,6 +738,34 @@ def _process_entered_list(input: str | None) -> list | None:
     return [t.strip() for t in (input or "").split(",") if t if input] or None
 
 
+def _min_validate_project_info():
+    """Ensures minimal project information in the pyproject.toml file.
+
+    Raises:
+        Exit: If the pyproject.toml file is ill-formed.
+    """
+    pyproject_toml = _get_package_config()
+
+    project = pyproject_toml.get("project")
+    if project is None:
+        console.error(
+            f"The project section is not found in {CustomComponents.PYPROJECT_TOML}"
+        )
+        raise typer.Exit(code=1)
+
+    if not project.get("name"):
+        console.error(
+            f"The project name is not found in {CustomComponents.PYPROJECT_TOML}"
+        )
+        raise typer.Exit(code=1)
+
+    if not project.get("version"):
+        console.error(
+            f"The project version is not found in {CustomComponents.PYPROJECT_TOML}"
+        )
+        raise typer.Exit(code=1)
+
+
 def _validate_project_info():
     """Validate the project information in the pyproject.toml file.
 
@@ -742,18 +773,10 @@ def _validate_project_info():
         Exit: If the pyproject.toml file is ill-formed.
     """
     pyproject_toml = _get_package_config()
-
-    try:
-        project = pyproject_toml.get("project", {})
-        if not project:
-            console.error("The project section not found in pyproject.toml")
-            raise typer.Exit(code=1)
-        console.print(
-            f'Double check the information before publishing: {project["name"]} version {project["version"]}'
-        )
-    except KeyError as ke:
-        console.error(f"The pyproject.toml is possibly ill-formed due to {ke}")
-        raise typer.Exit(code=1) from ke
+    project = pyproject_toml["project"]
+    console.print(
+        f'Double check the information before publishing: {project["name"]} version {project["version"]}'
+    )
 
     console.print("Update or enter to keep the current information.")
     project["description"] = console.ask(
