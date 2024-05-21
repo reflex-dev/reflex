@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import multiprocessing
 import platform
+import warnings
 
 try:
     from datetime import UTC, datetime
@@ -192,6 +193,7 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
         asyncio.create_task(async_send(event, telemetry_enabled, **kwargs))
     except RuntimeError:
         # If there is no event loop, send the event synchronously.
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
         _send(event, telemetry_enabled, **kwargs)
 
 
