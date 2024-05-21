@@ -44,8 +44,7 @@ def asset(relative_filename: str, subfolder: Optional[str] = None) -> str:
         raise FileNotFoundError(f"File not found: {src_file}")
 
     # Create the asset folder in the currently compiling app.
-    cwd = Path.cwd()
-    asset_folder = Path(Path(cwd) / assets / external / subfolder)
+    asset_folder = Path.cwd() / assets / external / subfolder
     asset_folder.mkdir(parents=True, exist_ok=True)
 
     dst_file = asset_folder / relative_filename
