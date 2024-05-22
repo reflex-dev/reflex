@@ -1353,11 +1353,12 @@ class Var:
             "'in' operator not supported for Var types, use Var.contains() instead."
         )
 
-    def contains(self, other: Any) -> Var:
+    def contains(self, other: Any, field: str | None = None) -> Var:
         """Check if a var contains the object `other`.
 
         Args:
             other: The object to check.
+            field: Optionally specify a field to check on both object and the other var.
 
         Raises:
             VarTypeError: If the var is not a valid type: dict, list, tuple or str.
@@ -1393,8 +1394,13 @@ class Var:
                 raise VarTypeError(
                     f"'in <string>' requires string as left operand, not {other._var_type}"
                 )
+            expression = (
+                f"e=>e.{field}==={other._var_full_name}"
+                if field
+                else f"e=>e==={other._var_full_name}"
+            )
             return self._replace(
-                _var_name=f"{self._var_name}.includes({other._var_full_name})",
+                _var_name=f"{self._var_name}.some({expression})",
                 _var_type=bool,
                 _var_is_string=False,
                 merge_var_data=other._var_data,
