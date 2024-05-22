@@ -838,19 +838,19 @@ class Var:
                 if invoke_fn:
                     # invoke the function on left operand.
                     operation_name = (
-                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
-                    )
+                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"
+                    )  # type: ignore
                 else:
                     # pass the operands as arguments to the function.
                     operation_name = (
-                        f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
-                    )
+                        f"{left_operand_full_name} {op} {right_operand_full_name}"
+                    )  # type: ignore
                     operation_name = f"{fn}({operation_name})"
             else:
                 # apply operator to operands (left operand <operator> right_operand)
                 operation_name = (
-                    f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
-                )
+                    f"{left_operand_full_name} {op} {right_operand_full_name}"
+                )  # type: ignore
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
@@ -1353,7 +1353,7 @@ class Var:
             "'in' operator not supported for Var types, use Var.contains() instead."
         )
 
-    def contains(self, other: Any, field: str | None = None) -> Var:
+    def contains(self, other: Any, field: Union[str, None] = None) -> Var:
         """Check if a var contains the object `other`.
 
         Args:
@@ -1398,7 +1398,7 @@ class Var:
             _var_name = (
                 f"{self._var_name}.includes({other._var_full_name})"
                 if field is None
-                else f"{self._var_name}.some({f"e=>e.{field}==={other._var_full_name}"})"
+                else f"{self._var_name}.some(e=>e.{field}==={other._var_full_name})"
             )
 
             return self._replace(
