@@ -7,10 +7,12 @@ import concurrent.futures
 import contextlib
 import copy
 import functools
+import inspect
 import io
 import multiprocessing
 import os
 import platform
+import sys
 from typing import (
     Any,
     AsyncIterator,
@@ -100,7 +102,50 @@ class OverlayFragment(Fragment):
     pass
 
 
-class App(Base):
+class LifespanMixin(Base):
+    """A Mixin that allow tasks to run during the whole app lifespan."""
+
+    # Lifespan tasks that are planned to run.
+    lifespan_tasks: Set[Union[asyncio.Task, Callable]] = set()
+
+    @contextlib.asynccontextmanager
+    async def _run_lifespan_tasks(self, app: FastAPI):
+        running_tasks = []
+        try:
+            async with contextlib.AsyncExitStack() as stack:
+                for task in self.lifespan_tasks:
+                    if isinstance(task, asyncio.Task):
+                        running_tasks.append(task)
+                    else:
+                        signature = inspect.signature(task)
+                        if "app" in signature.parameters:
+                            task = functools.partial(task, app=app)
+                        _t = task()
+                        if isinstance(_t, contextlib._AsyncGeneratorContextManager):
+                            await stack.enter_async_context(_t)
+                        elif isinstance(_t, Coroutine):
+                            running_tasks.append(asyncio.create_task(_t))
+                yield
+        finally:
+            cancel_kwargs = (
+                {"msg": "lifespan_cleanup"} if sys.version_info >= (3, 9) else {}
+            )
+            for task in running_tasks:
+                task.cancel(**cancel_kwargs)
+
+    def register_lifespan_task(self, task: Callable | asyncio.Task, **task_kwargs):
+        """Register a task to run during the lifespan of the app.
+
+        Args:
+            task: The task to register.
+            task_kwargs: The kwargs of the task.
+        """
+        if task_kwargs:
+            task = functools.partial(task, **task_kwargs)  # type: ignore
+        self.lifespan_tasks.add(task)  # type: ignore
+
+
+class App(LifespanMixin, Base):
     """The main Reflex app that encapsulates the backend and frontend.
 
     Every Reflex app needs an app defined in its main module.
@@ -203,7 +248,7 @@ class App(Base):
         self.middleware.append(HydrateMiddleware())
 
         # Set up the API.
-        self.api = FastAPI()
+        self.api = FastAPI(lifespan=self._run_lifespan_tasks)
         self._add_cors()
         self._add_default_endpoints()
 
