@@ -1394,13 +1394,15 @@ class Var:
                 raise VarTypeError(
                     f"'in <string>' requires string as left operand, not {other._var_type}"
                 )
-            expression = (
-                f"e=>e.{field}==={other._var_full_name}"
-                if field
-                else f"e=>e==={other._var_full_name}"
+
+            _var_name = (
+                f"{self._var_name}.includes({other._var_full_name})"
+                if field is None
+                else f"{self._var_name}.some({f"e=>e.{field}==={other._var_full_name}"})"
             )
+
             return self._replace(
-                _var_name=f"{self._var_name}.some({expression})",
+                _var_name=_var_name,
                 _var_type=bool,
                 _var_is_string=False,
                 merge_var_data=other._var_data,
