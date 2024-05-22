@@ -220,8 +220,8 @@ def run_backend_prod(
     config = get_config()
     num_workers = (
         processes.get_num_workers()
-        if not config.number_gunicorn_workers
-        else config.number_gunicorn_workers
+        if not config.gunicorn_workers
+        else config.gunicorn_workers
     )
     RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --preload --timeout {config.timeout} --log-level critical".split()
     RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
