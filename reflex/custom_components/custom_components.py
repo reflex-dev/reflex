@@ -616,15 +616,17 @@ def publish(
         help="The API token to use for authentication on python package repository. If token is provided, no username/password should be provided at the same time",
     ),
     username: Optional[str] = typer.Option(
-        None,
+        os.getenv("TWINE_USERNAME"),
         "-u",
         "--username",
+        show_default="TWINE_USERNAME environment variable value if set",
         help="The username to use for authentication on python package repository. Username and password must both be provided.",
     ),
     password: Optional[str] = typer.Option(
-        None,
+        os.getenv("TWINE_PASSWORD"),
         "-p",
         "--password",
+        show_default="TWINE_PASSWORD environment variable value if set",
         help="The password to use for authentication on python package repository. Username and password must both be provided.",
     ),
     build: bool = typer.Option(
