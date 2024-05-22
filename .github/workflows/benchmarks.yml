@@ -23,7 +23,7 @@ env:
 
 jobs:
   reflex-web:
-    if: github.event.pull_request.merged == true
+#    if: github.event.pull_request.merged == true
     strategy:
       fail-fast: false
       matrix:
@@ -54,7 +54,7 @@ jobs:
 
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
-        run: poetry run uv pip install -r requirements.txt
+        run: poetry run uv pip install -r requirements.txt email-validator==2.1.1
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: poetry run reflex init
