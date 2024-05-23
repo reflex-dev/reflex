@@ -7,16 +7,6 @@ we use the Flask "import name as name" syntax.
 
 from __future__ import annotations
 
-import importlib
-from typing import Type
-
-from reflex.page import page as page
-from reflex.utils import console
-from reflex.utils.format import to_snake_case
-
-_ALL_COMPONENTS = [
-    "image",
-]
 
 RADIX_MAPPING = {
     "components.radix.themes": [
@@ -111,6 +101,7 @@ RADIX_MAPPING = {
             "tooltip",
         ]
     },
+
     "components.radix.themes.components.text_field": [
         "text_field",
         "input"
@@ -146,10 +137,9 @@ RADIX_MAPPING = {
 
 _MAPPING = {
     "experimental": ["_x"],
-    "admin": ["admin", "AdminDash"],
-    "app": ["app", "App", "UploadFile"],
-    "base": ["base", "Base"],
-    "compiler": ["compiler"],
+    "admin": ["AdminDash"],
+    "app": ["App", "UploadFile"],
+    "base": ["Base"],
     "components.component": ["Component", "NoSSRComponent", "memo"],
 
     # "components.chakra": ["chakra"],
@@ -219,16 +209,20 @@ _MAPPING = {
         "selected_files",
         "upload",
     ],
-    "components.datadisplay": [
+    "components.datadisplay.code": [
         "code_block",
+    ],
+    "components.datadisplay.dataeditor": [
         "data_editor",
         "data_editor_theme",
+    ],
+    "components.datadisplay.logo": [
         "logo"
     ],
     "components.gridjs": ["data_table"],
     # "components.recharts": ["recharts"],
     "components.moment": ["MomentDelta", "moment"],
-    "config": ["config", "Config", "DBConfig"],
+    "config": ["Config", "DBConfig"],
     "constants": ["constants", "Env"],
     "event": [
         "event",
@@ -252,9 +246,8 @@ _MAPPING = {
         "window_alert",
     ],
     "middleware": ["middleware", "Middleware"],
-    "model": ["model", "session", "Model"],
+    "model": ["session", "Model"],
     "page": ["page"],
-    "route": ["route"],
     "state": [
         "state",
         "var",
@@ -263,17 +256,15 @@ _MAPPING = {
         "ComponentState",
         "State",
     ],
-    "style": ["style", "toggle_color_mode"],
-    "testing": ["testing"],
-    "utils": ["utils"],
+    "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportVar"],
-    "vars": ["vars", "cached_var", "Var"],
+    "vars": ["cached_var", "Var"],
 }
 
 import lazy_loader as lazy
 
 __getattr__, __dir__, __all__ = lazy.attach(
     __name__,
-    submodules={"components", "event"},
+    submodules={"components", "event", "app", "style", "page", "admin", "base", "model", "testing", "utils", "vars", "config", "compiler"},
     submod_attrs=_MAPPING,
 )
