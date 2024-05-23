@@ -22,5 +22,3 @@ __getattr__, __dir__, __all__ = lazy.attach(
         "script": ["Script", "script"],
     },
 )
-
-# print(sys.modules.get(__name__).__dict__)
