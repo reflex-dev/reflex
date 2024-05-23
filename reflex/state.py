@@ -757,7 +757,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for base in cls.__bases__
             if issubclass(base, BaseState) and base is not BaseState and not base._mixin
         ]
-        assert len(parent_states) < 2, "Only one parent state is allowed."
+        assert (
+            len(parent_states) < 2
+        ), f"Only one parent state is allowed {parent_states}."
         return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
 
     @classmethod
@@ -1887,15 +1889,13 @@ class ComponentState(State, mixin=True):
     _per_component_state_instance_count: ClassVar[int] = 0
 
     @classmethod
-    def __init_subclass__(cls, mixin: bool = False, **kwargs):
+    def __init_subclass__(cls, mixin: bool = True, **kwargs):
         """Overwrite mixin default to True.
 
         Args:
             mixin: Whether the subclass is a mixin and should not be initialized.
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
         """
-        if ComponentState in cls.__bases__:
-            mixin = True
         super().__init_subclass__(mixin=mixin, **kwargs)
 
     @classmethod
@@ -1926,7 +1926,7 @@ class ComponentState(State, mixin=True):
         """
         cls._per_component_state_instance_count += 1
         state_cls_name = f"{cls.__name__}_n{cls._per_component_state_instance_count}"
-        component_state = type(state_cls_name, (cls, State), {})
+        component_state = type(state_cls_name, (cls, State), {}, mixin=False)
         component = component_state.get_component(*children, **props)
         component.State = component_state
         return component
