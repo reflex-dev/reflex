@@ -2415,6 +2415,14 @@ class Custom2(Base):
     c1: Optional[Custom1] = None
     c1r: Custom1
 
+    def set_c1r_foo(self, val: str):
+        """Set the foo attribute of the c1 field.
+
+        Args:
+            val: The value to set.
+        """
+        self.c1r.set_foo(val)
+
 
 class Custom3(Base):
     """A custom class with a Custom2 field."""
@@ -2457,13 +2465,40 @@ def test_set_base_field_via_setter():
 
     class BaseFieldSetterState(BaseState):
         c1: Custom1 = Custom1(foo="")
+        c2: Custom2 = Custom2(c1r=Custom1(foo=""))
 
     bfss = BaseFieldSetterState()
     assert "c1" not in bfss.dirty_vars
+
+    # Non-mutating function, not dirty
     bfss.c1.double_foo()
     assert "c1" not in bfss.dirty_vars
+
+    # Mutating function, dirty
     bfss.c1.set_foo("bar")
     assert "c1" in bfss.dirty_vars
+    bfss.dirty_vars.clear()
+    assert "c1" not in bfss.dirty_vars
+
+    # Mutating function from Base, dirty
+    bfss.c1.set(foo="bar")
+    assert "c1" in bfss.dirty_vars
+    bfss.dirty_vars.clear()
+    assert "c1" not in bfss.dirty_vars
+
+    # Assert identity of MutableProxy
+    mp = bfss.c1
+    assert isinstance(mp, MutableProxy)
+    mp2 = mp.set()
+    assert mp is mp2
+    mp3 = bfss.c1.set()
+    assert mp is not mp3
+    # Since none of these set calls had values, the state should not be dirty
+    assert not bfss.dirty_vars
+
+    # Chained Mutating function, dirty
+    bfss.c2.set_c1r_foo("baz")
+    assert "c2" in bfss.dirty_vars
 
 
 def exp_is_hydrated(state: State, is_hydrated: bool = True) -> Dict[str, Any]:
