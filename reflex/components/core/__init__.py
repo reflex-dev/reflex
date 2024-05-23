@@ -13,28 +13,18 @@ __getattr__, __dir__, __all__ = lazy.attach(
             "connection_banner",
             "connection_modal",
             "connection_toaster",
-            "connection_pulser"
+            "connection_pulser",
         ],
         "colors": [
             "color",
         ],
-        "cond": [
-            "Cond",
-            "color_mode_cond",
-            "cond"
-        ],
-        "debounce": [
-            "DebounceInput",
-            "debounce_input"
-        ],
+        "cond": ["Cond", "color_mode_cond", "cond"],
+        "debounce": ["DebounceInput", "debounce_input"],
         "foreach": [
             "foreach",
             "Foreach",
         ],
-        "html": [
-            "html",
-            "Html"
-        ],
+        "html": ["html", "Html"],
         "match": [
             "match",
             "Match",
@@ -44,7 +34,7 @@ __getattr__, __dir__, __all__ = lazy.attach(
             "mobile_and_tablet",
             "mobile_only",
             "tablet_and_desktop",
-            "tablet_only"
+            "tablet_only",
         ],
         "upload": [
             "upload",

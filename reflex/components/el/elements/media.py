@@ -317,6 +317,7 @@ class Path(BaseHTML):
     # Defines the shape of the path
     d: Var[Union[str, int, bool]]
 
+
 area = Area.create
 audio = Audio.create
 image = img = Img.create

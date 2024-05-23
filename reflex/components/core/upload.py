@@ -7,9 +7,9 @@ from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 
 from reflex import constants
+from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.components.radix.themes.components import input
 from reflex.components.radix.themes.layout.box import Box
-from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.constants import Dirs
 from reflex.event import (
     CallableEventSpec,
@@ -339,5 +339,6 @@ class UploadNamespace(ComponentNamespace):
 
     root = Upload.create
     __call__ = StyledUpload.create
+
 
 upload = UploadNamespace()

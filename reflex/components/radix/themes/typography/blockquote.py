@@ -34,4 +34,5 @@ class Blockquote(elements.Blockquote, RadixThemesComponent):
     # Whether to render the text with higher contrast color
     high_contrast: Var[bool]
 
+
 blockquote = Blockquote.create

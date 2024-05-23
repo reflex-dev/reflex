@@ -38,4 +38,5 @@ class Code(elements.Code, RadixThemesComponent):
     # Whether to render the text with higher contrast color
     high_contrast: Var[bool]
 
+
 code = Code.create

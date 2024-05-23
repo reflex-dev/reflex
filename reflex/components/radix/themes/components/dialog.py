@@ -2,8 +2,8 @@
 
 from typing import Any, Dict, Literal
 
-from reflex.components.el import elements
 from reflex.components.component import ComponentNamespace
+from reflex.components.el import elements
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 

@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Literal
 
-from reflex.components.el import elements
 from reflex.components.component import ComponentNamespace
+from reflex.components.el import elements
 from reflex.vars import Var
 
 from ..base import (

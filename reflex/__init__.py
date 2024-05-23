@@ -7,16 +7,15 @@ we use the Flask "import name as name" syntax.
 
 from __future__ import annotations
 
+import lazy_loader as lazy
+
 RADIX_THEMES_MAPPING = {
-"components.radix.themes": [
-        "color_mode",
-        "theme",
-        "theme_panel"
-    ]
+    "components.radix.themes": ["color_mode", "theme", "theme_panel"]
 }
 RADIX_THEMES_COMPONENTS_MAPPING = {
-**{
-        f"components.radix.themes.components.{mod}": [mod] for mod in [
+    **{
+        f"components.radix.themes.components.{mod}": [mod]
+        for mod in [
             "alert_dialog",
             "aspect_ratio",
             "avatar",
@@ -45,28 +44,14 @@ RADIX_THEMES_COMPONENTS_MAPPING = {
             "tooltip",
         ]
     },
-
-    "components.radix.themes.components.text_field": [
-        "text_field",
-        "input"
-    ],
-    "components.radix.themes.components.radio_group": [
-        "radio",
-        "radio_group"
-    ],
-    "components.radix.themes.components.dropdown_menu": [
-        "menu",
-        "dropdown_menu"
-    ],
-    "components.radix.themes.components.separator": [
-        "divider",
-        "separator"
-    ],
+    "components.radix.themes.components.text_field": ["text_field", "input"],
+    "components.radix.themes.components.radio_group": ["radio", "radio_group"],
+    "components.radix.themes.components.dropdown_menu": ["menu", "dropdown_menu"],
+    "components.radix.themes.components.separator": ["divider", "separator"],
 }
 
-
 RADIX_THEMES_LAYOUT_MAPPING = {
-"components.radix.themes.layout.box": [
+    "components.radix.themes.layout.box": [
         "box",
     ],
     "components.radix.themes.layout.center": [
@@ -100,7 +85,6 @@ RADIX_THEMES_LAYOUT_MAPPING = {
     ],
 }
 
-
 RADIX_THEMES_TYPOGRAPHY_MAPPING = {
     "components.radix.themes.typography.blockquote": [
         "blockquote",
@@ -129,9 +113,43 @@ RADIX_PRIMITIVES_MAPPING = {
     "components.radix.primitives.form": [
         "form",
     ],
-    "components.radix.primitives.progress": [
-        "progress"
-    ]
+    "components.radix.primitives.progress": ["progress"],
+}
+
+COMPONENTS_CORE_MAPPING = {
+    "components.core.banner": [
+        "connection_banner",
+        "connection_modal",
+    ],
+    "components.core.cond": ["cond", "color_mode_cond"],
+    "components.core.foreach": ["foreach"],
+    "components.core.debounce": ["debounce_input"],
+    "components.core.html": ["html"],
+    "components.core.match": ["match"],
+    "components.core.colors": ["color"],
+    "components.core.responsive": [
+        "desktop_only",
+        "mobile_and_tablet",
+        "mobile_only",
+        "tablet_and_desktop",
+        "tablet_only",
+    ],
+    "components.core.upload": [
+        "cancel_upload",
+        "clear_selected_files",
+        "get_upload_dir",
+        "get_upload_url",
+        "selected_files",
+        "upload",
+    ],
+}
+
+COMPONENTS_BASE_MAPPING = {
+    "components.base.fragment": [
+        "fragment",
+        "Fragment",
+    ],
+    "components.base.script": ["script", "Script"],
 }
 
 RADIX_MAPPING = {
@@ -150,14 +168,7 @@ _MAPPING = {
     "components.component": ["Component", "NoSSRComponent", "memo"],
     "components.el.elements.media": ["image"],
     "components.lucide": ["icon"],
-    "components.base.fragment": [
-        "fragment",
-        "Fragment",
-    ],
-    "components.base.script": [
-        "script",
-        "Script"
-    ],
+    **COMPONENTS_BASE_MAPPING,
     "components.suneditor": [
         "editor",
         "EditorButtonList",
@@ -168,48 +179,8 @@ _MAPPING = {
     "components.next": ["next"],
     **RADIX_MAPPING,
     "components.plotly": ["plotly"],
-    "components.react_player": [
-        "audio",
-        "video"
-    ],
-    "components.core.banner": [
-        "connection_banner",
-        "connection_modal",
-    ],
-    "components.core.cond": [
-        "cond",
-        "color_mode_cond"
-    ],
-    "components.core.foreach": [
-        "foreach"
-    ],
-    "components.core.debounce": [
-        "debounce_input"
-    ],
-    "components.core.html": [
-        "html"
-    ],
-    "components.core.match": [
-        "match"
-    ],
-    "components.core.colors": [
-        "color"
-    ],
-    "components.core.responsive": [
-        "desktop_only",
-        "mobile_and_tablet",
-        "mobile_only",
-        "tablet_and_desktop",
-        "tablet_only",
-    ],
-    "components.core.upload": [
-        "cancel_upload",
-        "clear_selected_files",
-        "get_upload_dir",
-        "get_upload_url",
-        "selected_files",
-        "upload",
-    ],
+    "components.react_player": ["audio", "video"],
+    **COMPONENTS_CORE_MAPPING,
     "components.datadisplay.code": [
         "code_block",
     ],
@@ -217,9 +188,7 @@ _MAPPING = {
         "data_editor",
         "data_editor_theme",
     ],
-    "components.datadisplay.logo": [
-        "logo"
-    ],
+    "components.datadisplay.logo": ["logo"],
     "components.gridjs": ["data_table"],
     "components.moment": ["MomentDelta", "moment"],
     "config": ["Config", "DBConfig"],
@@ -261,10 +230,23 @@ _MAPPING = {
     "vars": ["cached_var", "Var"],
 }
 
-import lazy_loader as lazy
 
 __getattr__, __dir__, __all__ = lazy.attach(
     __name__,
-    submodules={"components", "event", "app", "style", "page", "admin", "base", "model", "testing", "utils", "vars", "config", "compiler"},
+    submodules={
+        "components",
+        "event",
+        "app",
+        "style",
+        "page",
+        "admin",
+        "base",
+        "model",
+        "testing",
+        "utils",
+        "vars",
+        "config",
+        "compiler",
+    },
     submod_attrs=_MAPPING,
 )

@@ -22,13 +22,9 @@ __getattr__, __dir__, __all__ = lazy.attach(
             "theme",
             "theme_panel",
             "LiteralCodeBlockTheme",
-            "LiteralCodeLanguage"
+            "LiteralCodeLanguage",
         ],
-        "dataeditor": [
-            "data_editor",
-            "data_editor_theme",
-            "DataEditorTheme"
-        ],
-        "logo": ["logo"]
+        "dataeditor": ["data_editor", "data_editor_theme", "DataEditorTheme"],
+        "logo": ["logo"],
     },
 )

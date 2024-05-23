@@ -19,4 +19,5 @@ class Section(elements.Section, RadixThemesComponent):
     # The size of the section: "1" - "3" (default "2")
     size: Var[LiteralSectionSize] = Var.create_safe("2")
 
+
 section = Section.create

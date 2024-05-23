@@ -11,4 +11,5 @@ class Box(elements.Div, RadixThemesComponent):
 
     tag = "Box"
 
+
 box = Box.create

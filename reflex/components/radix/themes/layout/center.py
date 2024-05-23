@@ -22,4 +22,5 @@ class Center(Flex):
             "justify_content": "center",
         }
 
+
 center = Center.create

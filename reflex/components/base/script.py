@@ -71,4 +71,5 @@ class Script(Component):
             "on_error": lambda: [],
         }
 
+
 script = Script.create

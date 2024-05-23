@@ -1,9 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal, Union
 
-from reflex.components.el import elements
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
+from reflex.components.el import elements
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 

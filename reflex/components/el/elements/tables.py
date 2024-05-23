@@ -125,6 +125,7 @@ class Tr(BaseHTML):
     # Alignment of the content within the table row
     align: Var[Union[str, int, bool]]
 
+
 caption = Caption.create
 col = Col.create
 colgroup = Colgroup.create
