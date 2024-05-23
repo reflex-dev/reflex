@@ -15,7 +15,7 @@ from ..base import (
 LiteralTextAreaSize = Literal["1", "2", "3"]
 
 
-class TextArea(RadixThemesComponent, el.Textarea):
+class TextArea(RadixThemesComponent, elements.Textarea):
     """The input part of a TextArea, may be used by itself."""
 
     tag = "TextArea"

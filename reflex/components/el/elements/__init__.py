@@ -52,6 +52,7 @@ MAP = {
             "area",
             "audio",
             "img",
+            "image",
             "map",
             "track",
             "video",
@@ -111,7 +112,8 @@ MAP = {
             "tfoot",
             "th",
             "thead",
-            "tr"
+            "tr",
+            "Tbody"
         ],
         "typography": [
             "blockquote",
@@ -127,8 +129,6 @@ MAP = {
             "pre",
             "ul",
             "ins",
-            "del_",
-            "Del"
         ],
     }
 import lazy_loader as lazy

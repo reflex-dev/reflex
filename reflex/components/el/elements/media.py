@@ -319,7 +319,7 @@ class Path(BaseHTML):
 
 area = Area.create
 audio = Audio.create
-img = Img.create
+image = img = Img.create
 map = Map.create
 track = Track.create
 video = Video.create

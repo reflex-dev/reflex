@@ -1,5 +1,5 @@
 """Base components."""
-
+import sys
 import lazy_loader as lazy
 
 __getattr__, __dir__, __all__ = lazy.attach(
@@ -37,3 +37,5 @@ __getattr__, __dir__, __all__ = lazy.attach(
         ]
     },
 )
+
+# print(sys.modules.get(__name__).__dict__)

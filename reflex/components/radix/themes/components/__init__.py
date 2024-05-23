@@ -15,22 +15,21 @@ FIELDS = [
     "data_list",
     "dialog",
     "divider",
-    "dropdown_menu",
+    # "dropdown_menu",
     "hover_card",
     "icon_button",
     "input",
     "inset",
-    "menu",
+    # "menu",
     "popover",
     # progress is in experimental namespace until https://github.com/radix-ui/themes/pull/492
     # "progress",
-    "radio",
+    # "radio",
     "radio_cards",
-    "radio_group",
+    # "radio_group",
     "scroll_area",
     "segmented_control",
     "select",
-    "separator",
     "skeleton",
     "slider",
     "spinner",
@@ -38,13 +37,30 @@ FIELDS = [
     "table",
     "tabs",
     "text_area",
-    "text_field",
     "tooltip",
 ]
+EXTRAS = {
+    "text_field": [
+        "text_field",
+        "input"
+    ],
+    "separator": [
+        "separator",
+        "divider"
+    ],
+    "dropdown_menu": [
+        "dropdown_menu",
+        "menu"
+    ],
+    "radio_group":[
+        "radio",
+        "radio_group"
+    ],
 
+}
 import lazy_loader as lazy
 
 __getattr__, __dir__, __all__ = lazy.attach(
     __name__,
-    submod_attrs={k: [k] if not k == "text_field" else [k, "input"] for k in FIELDS},
+    submod_attrs={**{k: [k] for k in FIELDS}, **EXTRAS},
 )

@@ -35,9 +35,9 @@ __getattr__, __dir__, __all__ = lazy.attach(
         "stack": [
             "stack",
             "Stack",
-            "Hstack",
+            "HStack",
             "hstack",
-            "Vstack",
+            "VStack",
             "vstack"
         ],
         "list": [

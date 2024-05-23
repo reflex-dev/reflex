@@ -18,138 +18,219 @@ _ALL_COMPONENTS = [
     "image",
 ]
 
-_MAPPING = {
-    "reflex.experimental": ["_x"],
-    "reflex.admin": ["admin", "AdminDash"],
-    "reflex.app": ["app", "App", "UploadFile"],
-    "reflex.base": ["base", "Base"],
-    "reflex.compiler": ["compiler"],
-    "reflex.components.component": ["Component", "NoSSRComponent", "memo"],
-    "reflex.components.chakra": ["chakra"],
-    "reflex.components.el": ["el"],
-    "reflex.components.lucide": ["lucide", "icon"],
-    "reflex.components.base": [
-        "fragment",
-        "Fragment",
-        "script",
-        "Script"
+RADIX_MAPPING = {
+    "components.radix.themes": [
+        "color_mode",
+        "theme",
+        "theme_panel"
     ],
-    "reflex.components.suneditor": [
-        "editor",
-        "EditorButtonList",
-        "EditorOptions",
-    ],
-    "reflex.components": ["image"],
-    "reflex.components.markdown.markdown" : ["markdown"],
-    "reflex.components.next": ["next"],
-    "reflex.components.radix": ["radix", "color_mode"],
-    "reflex.components.radix.themes": ["theme", "theme_panel"],
-    "reflex.components.plotly": ["plotly"],
-    "reflex.components.react_player": [
-        "audio",
-        "video"
-    ],
-    "reflex.components.radix.themes.layout": [
+    "components.radix.themes.layout.box": [
         "box",
+    ],
+    "components.radix.themes.layout.center": [
         "center",
+    ],
+    "components.radix.themes.layout.container": [
         "container",
+    ],
+    "components.radix.themes.layout.flex": [
         "flex",
+    ],
+    "components.radix.themes.layout.grid": [
         "grid",
+    ],
+    "components.radix.themes.layout.section": [
         "section",
+    ],
+    "components.radix.themes.layout.spacer": [
         "spacer",
+    ],
+    "components.radix.themes.layout.stack": [
         "stack",
         "hstack",
         "vstack",
+    ],
+    "components.radix.themes.layout.list": [
         "list",
         "list_item",
         "ordered_list",
         "unordered_list",
     ],
-    "reflex.components.core": ["color",
-                               "cond",
-                               "foreach",
-                               "html",
-                               "match",
-                               "color_mode_cond",
-                               "connection_banner",
-                               "connection_modal",
-                               "debounce_input",
-                               "desktop_only",
-                               "mobile_and_tablet",
-                               "mobile_only",
-                               "tablet_and_desktop",
-                               "tablet_only",
-                               "cancel_upload",
-                               "clear_selected_files",
-                               "get_upload_dir",
-                               "get_upload_url",
-                               "selected_files",
-                               "upload",
-                               ],
-    "reflex.components.radix.primitives": [
+    "components.radix.primitives.accordion": [
         "accordion",
+    ],
+    "components.radix.primitives.drawer": [
         "drawer",
+    ],
+    "components.radix.primitives.form": [
         "form",
+    ],
+    # "components.radix.primitives.slider": [
+    #     "slider"
+    # ],
+    "components.radix.primitives.progress": [
         "progress",
-        "slider"
     ],
-    "reflex.components.radix.themes.components": [
-        "alert_dialog",
-        "aspect_ratio",
-        "avatar",
-        "badge",
-        "button",
-        "callout",
-        "card",
-        "checkbox",
-        "checkbox_cards",
-        "checkbox_group",
-        "context_menu",
-        "data_list",
-        "dialog",
-        "divider",
-        "dropdown_menu",
-        "hover_card",
-        "icon_button",
-        "input",
-        "inset",
-        "menu",
-        "popover",
-        "radio",
-        "radio_cards",
-        "radio_group",
-        "scroll_area",
-        "segmented_control",
-        "select",
-        "separator",
-        "skeleton",
-        "slider",
-        "spinner",
-        "switch",
-        "table",
-        "tabs",
-        "text_area",
+    **{
+        f"components.radix.themes.components.{mod}": [mod] for mod in [
+            "alert_dialog",
+            "aspect_ratio",
+            "avatar",
+            "badge",
+            "button",
+            "callout",
+            "card",
+            "checkbox",
+            # "checkbox_cards",
+            # "checkbox_group",
+            "context_menu",
+            "data_list",
+            "dialog",
+            # "divider",
+            # "dropdown_menu",
+            "hover_card",
+            "icon_button",
+            "input",
+            "inset",
+            # "menu",
+            "popover",
+            # "radio",
+            # "radio_cards",
+            # "radio_group",
+            "scroll_area",
+            # "segmented_control",
+            "select",
+            # "separator",
+            "skeleton",
+            "slider",
+            "spinner",
+            "switch",
+            "table",
+            "tabs",
+            "text_area",
+            "tooltip",
+        ]
+    },
+    "components.radix.themes.components.text_field": [
         "text_field",
-        "tooltip",
+        "input"
     ],
-    "reflex.components.radix.themes.typography": [
-        "heading",
+    "components.radix.themes.components.radio_group": [
+        "radio",
+        "radio_group"
+    ],
+    "components.radix.themes.components.dropdown_menu": [
+        "menu",
+        "dropdown_menu"
+    ],
+    "components.radix.themes.components.separator": [
+        "divider",
+        "separator"
+    ],
+    "components.radix.themes.typography.blockquote": [
         "blockquote",
+    ],
+    "components.radix.themes.typography.code": [
         "code",
+    ],
+    "components.radix.themes.typography.heading": [
+        "heading",
+    ],
+    "components.radix.themes.typography.link": [
         "link",
+    ],
+    "components.radix.themes.typography.text": [
         "text",
     ],
-    "reflex.components.datadisplay": [
+}
+
+_MAPPING = {
+    "experimental": ["_x"],
+    "admin": ["admin", "AdminDash"],
+    "app": ["app", "App", "UploadFile"],
+    "base": ["base", "Base"],
+    "compiler": ["compiler"],
+    "components.component": ["Component", "NoSSRComponent", "memo"],
+
+    # "components.chakra": ["chakra"],
+    # "components": ["el"],
+    "components.el.elements.media": ["image"],
+    "components.lucide": ["icon"],
+    "components.base.fragment": [
+        "fragment",
+        "Fragment",
+    ],
+    "components.base.script": [
+        "script",
+        "Script"
+    ],
+    "components.suneditor": [
+        "editor",
+        "EditorButtonList",
+        "EditorOptions",
+    ],
+    "components": ["el", "chakra", "radix", "lucide", "recharts"],
+    "components.markdown": ["markdown"],
+    "components.next": ["next"],
+    # "components.radix": ["radix", "color_mode"],
+
+    **RADIX_MAPPING,
+    "components.plotly": ["plotly"],
+    "components.react_player": [
+        "audio",
+        "video"
+    ],
+
+    "components.core.banner": [
+        "connection_banner",
+        "connection_modal",
+    ],
+    "components.core.cond": [
+        "cond",
+        "color_mode_cond"
+    ],
+    "components.core.foreach": [
+        "foreach"
+    ],
+    "components.core.debounce": [
+        "debounce_input"
+    ],
+    "components.core.html": [
+        "html"
+    ],
+    "components.core.match": [
+        "match"
+    ],
+    "components.core.colors": [
+        "color"
+    ],
+    "components.core.responsive": [
+        "desktop_only",
+        "mobile_and_tablet",
+        "mobile_only",
+        "tablet_and_desktop",
+        "tablet_only",
+    ],
+    "components.core.upload": [
+        "cancel_upload",
+        "clear_selected_files",
+        "get_upload_dir",
+        "get_upload_url",
+        "selected_files",
+        "upload",
+    ],
+    "components.datadisplay": [
         "code_block",
         "data_editor",
         "data_editor_theme",
         "logo"
     ],
-    "reflex.components.recharts": ["recharts"],
-    "reflex.components.moment": ["MomentDelta", "moment"],
-    "reflex.config": ["config", "Config", "DBConfig"],
-    "reflex.constants": ["constants", "Env"],
-    "reflex.event": [
+    "components.gridjs": ["data_table"],
+    # "components.recharts": ["recharts"],
+    "components.moment": ["MomentDelta", "moment"],
+    "config": ["config", "Config", "DBConfig"],
+    "constants": ["constants", "Env"],
+    "event": [
         "event",
         "EventChain",
         "EventHandler",
@@ -170,11 +251,11 @@ _MAPPING = {
         "upload_files",
         "window_alert",
     ],
-    "reflex.middleware": ["middleware", "Middleware"],
-    "reflex.model": ["model", "session", "Model"],
-    "reflex.page": ["page"],
-    "reflex.route": ["route"],
-    "reflex.state": [
+    "middleware": ["middleware", "Middleware"],
+    "model": ["model", "session", "Model"],
+    "page": ["page"],
+    "route": ["route"],
+    "state": [
         "state",
         "var",
         "Cookie",
@@ -182,72 +263,17 @@ _MAPPING = {
         "ComponentState",
         "State",
     ],
-    "reflex.style": ["style", "toggle_color_mode"],
-    "reflex.testing": ["testing"],
-    "reflex.utils": ["utils"],
-    "reflex.utils.imports": ["ImportVar"],
-    "reflex.vars": ["vars", "cached_var", "Var"],
+    "style": ["style", "toggle_color_mode"],
+    "testing": ["testing"],
+    "utils": ["utils"],
+    "utils.imports": ["ImportVar"],
+    "vars": ["vars", "cached_var", "Var"],
 }
 
+import lazy_loader as lazy
 
-def _reverse_mapping(mapping: dict[str, list]) -> dict[str, str]:
-    """Reverse the mapping used to lazy loading, and check for conflicting name.
-
-    Args:
-        mapping: The mapping to reverse.
-
-    Returns:
-        The reversed mapping.
-    """
-    reversed_mapping = {}
-    for key, values in mapping.items():
-        for value in values:
-            if value not in reversed_mapping:
-                reversed_mapping[value] = key
-            else:
-                console.warn(
-                    f"Key {value} is present multiple times in the imports _MAPPING: {key} / {reversed_mapping[value]}"
-                )
-    return reversed_mapping
-
-
-# _MAPPING = {value: key for key, values in _MAPPING.items() for value in values}
-_MAPPING = _reverse_mapping(_MAPPING)
-
-
-def _removeprefix(text, prefix):
-    return text[text.startswith(prefix) and len(prefix):]
-
-
-__all__ = (_removeprefix(mod, "reflex.") for mod in _MAPPING)
-
-
-def __getattr__(name: str) -> Type:
-    """Lazy load all modules.
-
-    Args:
-        name: name of the module to load.
-
-    Returns:
-        The module or the attribute of the module.
-
-    Raises:
-        AttributeError: If the module or the attribute does not exist.
-    """
-    try:
-        # Check for import of a module that is not in the mapping.
-        if name not in _MAPPING:
-            # If the name does not start with reflex, add it.
-            if not name.startswith("reflex") and name != "__all__":
-                name = f"reflex.{name}"
-            return importlib.import_module(name)
-
-        # Import the module.
-        module = importlib.import_module(_MAPPING[name])
-
-        # Get the attribute from the module if the name is not the module itself.
-        return (
-            getattr(module, name) if name != _MAPPING[name].rsplit(".")[-1] else module
-        )
-    except ModuleNotFoundError:
-        raise AttributeError(f"module 'reflex' has no attribute {name}") from None
+__getattr__, __dir__, __all__ = lazy.attach(
+    __name__,
+    submodules={"components", "event"},
+    submod_attrs=_MAPPING,
+)
