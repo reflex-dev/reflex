@@ -12,6 +12,8 @@ from reflex.testing import AppHarness
 
 def CallScript():
     """A test app for browser javascript integration."""
+    from typing import Dict, List, Optional, Union
+
     import reflex as rx
 
     inline_scripts = """
@@ -37,7 +39,7 @@ def CallScript():
     external_scripts = inline_scripts.replace("inline", "external")
 
     class CallScriptState(rx.State):
-        results: list[str | dict | list | None] = []
+        results: List[Optional[Union[str, Dict, List]]] = []
         inline_counter: int = 0
         external_counter: int = 0
 
@@ -142,17 +144,17 @@ def CallScript():
     @app.add_page
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=CallScriptState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.input(
+            rx.chakra.input(
                 value=CallScriptState.inline_counter.to(str),  # type: ignore
                 id="inline_counter",
                 is_read_only=True,
             ),
-            rx.input(
+            rx.chakra.input(
                 value=CallScriptState.external_counter.to(str),  # type: ignore
                 id="external_counter",
                 is_read_only=True,
@@ -227,10 +229,8 @@ def CallScript():
             rx.button("Reset", id="reset", on_click=CallScriptState.reset_),
         )
 
-    app.compile()
 
-
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def call_script(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start CallScript app at tmp_path via AppHarness.
 
@@ -314,7 +314,7 @@ def test_call_script(
     update_counter_button.click()
     assert call_script.poll_for_value(counter, exp_not_equal="0") == "4"
     reset_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="3") == "0"
+    assert call_script.poll_for_value(counter, exp_not_equal="4") == "0"
     return_button.click()
     update_counter_button.click()
     assert call_script.poll_for_value(counter, exp_not_equal="0") == "1"
@@ -324,15 +324,17 @@ def test_call_script(
     yield_callback_button.click()
     update_counter_button.click()
     assert call_script.poll_for_value(counter, exp_not_equal="0") == "4"
-    assert call_script.poll_for_value(
-        results, exp_not_equal="[]"
-    ) == '["%s1",null,{"%s3":42,"a":[1,2,3],"s":"js","o":{"a":1,"b":2}},"async %s4"]' % (
-        script,
-        script,
-        script,
+    assert (
+        call_script.poll_for_value(results, exp_not_equal="[]")
+        == '["%s1",null,{"%s3":42,"a":[1,2,3],"s":"js","o":{"a":1,"b":2}},"async %s4"]'
+        % (
+            script,
+            script,
+            script,
+        )
     )
     reset_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="3") == "0"
+    assert call_script.poll_for_value(counter, exp_not_equal="4") == "0"
 
     return_callback_button.click()
     update_counter_button.click()

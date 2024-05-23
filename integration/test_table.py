@@ -31,13 +31,13 @@ def Table():
     @app.add_page
     def index():
         return rx.center(
-            rx.input(
+            rx.chakra.input(
                 id="token",
                 value=TableState.router.session.client_token,
                 is_read_only=True,
             ),
-            rx.table_container(
-                rx.table(
+            rx.chakra.table_container(
+                rx.chakra.table(
                     headers=TableState.headers,
                     rows=TableState.rows,
                     footers=TableState.footers,
@@ -52,43 +52,45 @@ def Table():
     @app.add_page
     def another():
         return rx.center(
-            rx.table_container(
-                rx.table(  # type: ignore
-                    rx.thead(  # type: ignore
-                        rx.tr(  # type: ignore
-                            rx.th("Name"),
-                            rx.th("Age"),
-                            rx.th("Location"),
+            rx.chakra.table_container(
+                rx.chakra.table(  # type: ignore
+                    rx.chakra.thead(  # type: ignore
+                        rx.chakra.tr(  # type: ignore
+                            rx.chakra.th("Name"),
+                            rx.chakra.th("Age"),
+                            rx.chakra.th("Location"),
                         )
                     ),
-                    rx.tbody(  # type: ignore
-                        rx.tr(  # type: ignore
-                            rx.td("John"),
-                            rx.td(30),
-                            rx.td("New York"),
+                    rx.chakra.tbody(  # type: ignore
+                        rx.chakra.tr(  # type: ignore
+                            rx.chakra.td("John"),
+                            rx.chakra.td(30),
+                            rx.chakra.td("New York"),
                         ),
-                        rx.tr(  # type: ignore
-                            rx.td("Jane"),
-                            rx.td(31),
-                            rx.td("San Francisco"),
+                        rx.chakra.tr(  # type: ignore
+                            rx.chakra.td("Jane"),
+                            rx.chakra.td(31),
+                            rx.chakra.td("San Francisco"),
                         ),
-                        rx.tr(  # type: ignore
-                            rx.td("Joe"),
-                            rx.td(32),
-                            rx.td("Los Angeles"),
+                        rx.chakra.tr(  # type: ignore
+                            rx.chakra.td("Joe"),
+                            rx.chakra.td(32),
+                            rx.chakra.td("Los Angeles"),
                         ),
                     ),
-                    rx.tfoot(  # type: ignore
-                        rx.tr(rx.td("footer1"), rx.td("footer2"), rx.td("footer3"))  # type: ignore
+                    rx.chakra.tfoot(  # type: ignore
+                        rx.chakra.tr(
+                            rx.chakra.td("footer1"),
+                            rx.chakra.td("footer2"),
+                            rx.chakra.td("footer3"),
+                        )  # type: ignore
                     ),
-                    rx.table_caption("random caption"),
+                    rx.chakra.table_caption("random caption"),
                     variant="striped",
                     color_scheme="teal",
                 )
             )
         )
-
-    app.compile()
 
 
 @pytest.fixture()

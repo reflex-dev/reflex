@@ -1,11 +1,15 @@
 """Common utility functions used in the compiler."""
+
 from __future__ import annotations
 
 import os
-from typing import Any, Type
+from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
 
-from pydantic.fields import ModelField
+try:
+    from pydantic.v1.fields import ModelField
+except ModuleNotFoundError:
+    from pydantic.fields import ModelField  # type: ignore
 
 from reflex import constants
 from reflex.components.base import (
@@ -24,6 +28,7 @@ from reflex.components.component import Component, ComponentStyle, CustomCompone
 from reflex.state import BaseState, Cookie, LocalStorage
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
+from reflex.vars import Var
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -138,12 +143,12 @@ def compile_state(state: Type[BaseState]) -> dict:
         A dictionary of the compiled state.
     """
     try:
-        initial_state = state().dict()
+        initial_state = state(_reflex_internal_init=True).dict(initial=True)
     except Exception as e:
         console.warn(
             f"Failed to compile initial state with computed vars, excluding them: {e}"
         )
-        initial_state = state().dict(include_computed=False)
+        initial_state = state(_reflex_internal_init=True).dict(include_computed=False)
     return format.format_state(initial_state)
 
 
@@ -241,7 +246,7 @@ def compile_custom_component(
     # Get the imports.
     imports = {
         lib: fields
-        for lib, fields in render.get_imports().items()
+        for lib, fields in render._get_all_imports().items()
         if lib != component.library
     }
 
@@ -254,18 +259,24 @@ def compile_custom_component(
             "name": component.tag,
             "props": props,
             "render": render.render(),
-            "hooks": render.get_hooks(),
-            "custom_code": render.get_custom_code(),
+            "hooks": {**render._get_all_hooks_internal(), **render._get_all_hooks()},
+            "custom_code": render._get_all_custom_code(),
         },
         imports,
     )
 
 
-def create_document_root(head_components: list[Component] | None = None) -> Component:
+def create_document_root(
+    head_components: list[Component] | None = None,
+    html_lang: Optional[str] = None,
+    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+) -> Component:
     """Create the document root.
 
     Args:
         head_components: The components to add to the head.
+        html_lang: The language of the document, will be added to the html root element.
+        html_custom_attrs: custom attributes added to the html root element.
 
     Returns:
         The document root.
@@ -277,6 +288,8 @@ def create_document_root(head_components: list[Component] | None = None) -> Comp
             Main.create(),
             NextScript.create(),
         ),
+        lang=html_lang or "en",
+        custom_attrs=html_custom_attrs or {},
     )
 
 
@@ -290,20 +303,21 @@ def create_theme(style: ComponentStyle) -> dict:
         The base style for the app.
     """
     # Get the global style from the style dict.
-    global_style = Style({k: v for k, v in style.items() if not isinstance(k, type)})
+    style_rules = Style({k: v for k, v in style.items() if not isinstance(k, Callable)})
 
-    # Root styles.
-    root_style = Style({k: v for k, v in global_style.items() if k.startswith("::")})
-
-    # Body styles.
-    root_style["body"] = Style(
-        {k: v for k, v in global_style.items() if k not in root_style}
-    )
+    root_style = {
+        # Root styles.
+        ":root": Style(
+            {f"*{k}": v for k, v in style_rules.items() if k.startswith(":")}
+        ),
+        # Body styles.
+        "body": Style(
+            {k: v for k, v in style_rules.items() if not k.startswith(":")},
+        ),
+    }
 
     # Return the theme.
-    return {
-        "styles": {"global": root_style},
-    }
+    return {"styles": {"global": root_style}}
 
 
 def get_page_path(path: str) -> str:
@@ -372,23 +386,12 @@ def get_stateful_components_path() -> str:
     )
 
 
-def get_asset_path(filename: str | None = None) -> str:
-    """Get the path for an asset.
-
-    Args:
-        filename: If given, is added to the root path of assets dir.
-
-    Returns:
-        The path of the asset.
-    """
-    if filename is None:
-        return constants.Dirs.WEB_ASSETS
-    else:
-        return os.path.join(constants.Dirs.WEB_ASSETS, filename)
-
-
 def add_meta(
-    page: Component, title: str, image: str, description: str, meta: list[dict]
+    page: Component,
+    title: str,
+    image: str,
+    meta: list[dict],
+    description: str | None = None,
 ) -> Component:
     """Add metadata to a page.
 
@@ -396,19 +399,24 @@ def add_meta(
         page: The component for the page.
         title: The title of the page.
         image: The image for the page.
-        description: The description of the page.
         meta: The metadata list.
+        description: The description of the page.
 
     Returns:
         The component with the metadata added.
     """
     meta_tags = [Meta.create(**item) for item in meta]
 
+    children: list[Any] = [
+        Title.create(title),
+    ]
+    if description:
+        children.append(Description.create(content=description))
+    children.append(Image.create(content=image))
+
     page.children.append(
         Head.create(
-            Title.create(title),
-            Description.create(content=description),
-            Image.create(content=image),
+            *children,
             *meta_tags,
         )
     )

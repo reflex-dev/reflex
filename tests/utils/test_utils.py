@@ -144,6 +144,18 @@ def test_setup_frontend(tmp_path, mocker):
     assert (web_public_folder / "favicon.ico").exists()
 
 
+@pytest.fixture
+def test_backend_variable_cls():
+    class TestBackendVariable:
+        """Test backend variable."""
+
+        _hidden: int = 0
+        not_hidden: int = 0
+        __dunderattr__: int = 0
+
+    return TestBackendVariable
+
+
 @pytest.mark.parametrize(
     "input, output",
     [
@@ -152,8 +164,8 @@ def test_setup_frontend(tmp_path, mocker):
         ("__dundermethod__", False),
     ],
 )
-def test_is_backend_variable(input, output):
-    assert types.is_backend_variable(input) == output
+def test_is_backend_variable(test_backend_variable_cls, input, output):
+    assert types.is_backend_variable(input, test_backend_variable_cls) == output
 
 
 @pytest.mark.parametrize(
@@ -297,7 +309,7 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
         """
         )
 
-    prerequisites.initialize_gitignore()
+    prerequisites.initialize_gitignore(gitignore_file=gitignore_file)
 
     assert gitignore_file.exists()
     file_content = [
@@ -306,8 +318,8 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
     assert set(file_content) - expected == set()
 
 
-def test_app_default_name(tmp_path, mocker):
-    """Test that an error is raised if the app name is reflex.
+def test_validate_app_name(tmp_path, mocker):
+    """Test that an error is raised if the app name is reflex or if the name is not according to python package naming conventions.
 
     Args:
         tmp_path: Test working dir.
@@ -319,7 +331,10 @@ def test_app_default_name(tmp_path, mocker):
     mocker.patch("reflex.utils.prerequisites.os.getcwd", return_value=str(reflex))
 
     with pytest.raises(typer.Exit):
-        prerequisites.get_default_app_name()
+        prerequisites.validate_app_name()
+
+    with pytest.raises(typer.Exit):
+        prerequisites.validate_app_name(app_name="1_test")
 
 
 def test_node_install_windows(tmp_path, mocker):
@@ -470,7 +485,7 @@ def test_create_reflex_dir(mocker, is_windows):
         "reflex.utils.prerequisites.path_ops.mkdir", mocker.Mock()
     )
 
-    prerequisites.initialize_frontend_dependencies()
+    prerequisites.initialize_reflex_user_directory()
 
     assert create_cmd.called
 
@@ -500,9 +515,9 @@ def test_style_prop_with_event_handler_value(callable):
 
     """
     style = {
-        "color": EventHandler(fn=callable)
-        if type(callable) != EventHandler
-        else callable
+        "color": (
+            EventHandler(fn=callable) if type(callable) != EventHandler else callable
+        )
     }
 
     with pytest.raises(TypeError):

@@ -1,13 +1,16 @@
 name: reflex-init-in-docker-test
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
     paths-ignore:
       - '**/*.md'
   pull_request:
-    branches:
-      - main
+    branches: ['main']
     paths-ignore:
       - '**/*.md'
 
@@ -18,12 +21,12 @@ jobs:
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - shell: bash
-      run: |
-        # Run reflex init in a docker container
- 
-        # cwd is repo root
-        docker build -f integration/init-test/Dockerfile -t reflex-init-test integration/init-test
-        docker run --rm -v $(pwd):/reflex-repo/ reflex-init-test /reflex-repo/integration/init-test/in_docker_test_script.sh
+      - shell: bash
+        run: |
+          # Run reflex init in a docker container
+
+          # cwd is repo root
+          docker build -f integration/init-test/Dockerfile -t reflex-init-test integration/init-test
+          docker run --rm -v $(pwd):/reflex-repo/ reflex-init-test /reflex-repo/integration/init-test/in_docker_test_script.sh

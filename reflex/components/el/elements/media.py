@@ -1,6 +1,7 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
-from typing import Union
+from typing import Any, Union
 
+from reflex import Component
 from reflex.vars import Var as Var
 
 from .base import BaseHTML
@@ -86,17 +87,11 @@ class Img(BaseHTML):
     # Alternative text for the image
     alt: Var[Union[str, int, bool]]
 
-    # Border width around the image
-    border: Var[Union[str, int, bool]]
-
     # Configures the CORS requests for the image
     cross_origin: Var[Union[str, int, bool]]
 
     # How the image should be decoded
     decoding: Var[Union[str, int, bool]]
-
-    # The intrinsic height of the image
-    height: Var[Union[str, int, bool]]
 
     # Specifies an intrinsic size for the image
     intrinsicsize: Var[Union[str, int, bool]]
@@ -114,7 +109,7 @@ class Img(BaseHTML):
     sizes: Var[Union[str, int, bool]]
 
     # URL of the image to display
-    src: Var[Union[str, int, bool]]
+    src: Var[Any]
 
     # A set of source sizes and URLs for responsive images
     src_set: Var[Union[str, int, bool]]
@@ -122,8 +117,23 @@ class Img(BaseHTML):
     # The name of the map to use with the image
     use_map: Var[Union[str, int, bool]]
 
-    # The intrinsic width of the image
-    width: Var[Union[str, int, bool]]
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Override create method to apply source attribute to value if user fails to pass in attribute.
+
+        Args:
+            *children: The children of the component.
+            **props: The props of the component.
+
+        Returns:
+            The component.
+
+        """
+        return (
+            super().create(src=children[0], **props)
+            if children
+            else super().create(*children, **props)
+        )
 
 
 class Map(BaseHTML):
@@ -173,9 +183,6 @@ class Video(BaseHTML):
     # Configures the CORS requests for the video
     cross_origin: Var[Union[str, int, bool]]
 
-    # The intrinsic height of the video
-    height: Var[Union[str, int, bool]]
-
     # Specifies that the video will loop
     loop: Var[Union[str, int, bool]]
 
@@ -194,26 +201,17 @@ class Video(BaseHTML):
     # URL of the video to play
     src: Var[Union[str, int, bool]]
 
-    # The intrinsic width of the video
-    width: Var[Union[str, int, bool]]
-
 
 class Embed(BaseHTML):
     """Display the embed element."""
 
     tag = "embed"
 
-    # The intrinsic height of the embedded content
-    height: Var[Union[str, int, bool]]
-
     # URL of the embedded content
     src: Var[Union[str, int, bool]]
 
     # Media type of the embedded content
     type: Var[Union[str, int, bool]]
-
-    # The intrinsic width of the embedded content
-    width: Var[Union[str, int, bool]]
 
 
 class Iframe(BaseHTML):
@@ -229,9 +227,6 @@ class Iframe(BaseHTML):
 
     # Content Security Policy to apply to the iframe's content
     csp: Var[Union[str, int, bool]]
-
-    # The height of the iframe
-    height: Var[Union[str, int, bool]]
 
     # Specifies the loading behavior of the iframe
     loading: Var[Union[str, int, bool]]
@@ -251,26 +246,17 @@ class Iframe(BaseHTML):
     # HTML content to embed directly within the iframe
     src_doc: Var[Union[str, int, bool]]
 
-    # The width of the iframe
-    width: Var[Union[str, int, bool]]
-
 
 class Object(BaseHTML):
     """Display the object element."""
 
     tag = "object"
 
-    # Border width around the object
-    border: Var[Union[str, int, bool]]
-
     # URL of the data to be used by the object
     data: Var[Union[str, int, bool]]
 
     # Associates the object with a form element
     form: Var[Union[str, int, bool]]
-
-    # The intrinsic height of the object
-    height: Var[Union[str, int, bool]]
 
     # Name of the object, used for scripting or as a target for forms and links
     name: Var[Union[str, int, bool]]
@@ -280,9 +266,6 @@ class Object(BaseHTML):
 
     # Name of an image map to use with the object
     use_map: Var[Union[str, int, bool]]
-
-    # The intrinsic width of the object
-    width: Var[Union[str, int, bool]]
 
 
 class Picture(BaseHTML):
@@ -324,12 +307,6 @@ class Svg(BaseHTML):
     """Display the svg element."""
 
     tag = "svg"
-
-    # Specifies the width of the element
-    width: Var[Union[str, int, bool]]
-
-    # Specifies the height of the element
-    height: Var[Union[str, int, bool]]
 
 
 class Path(BaseHTML):

@@ -45,43 +45,43 @@ sidebar_style = dict(
 )
 
 base_style = {
-    rx.Avatar: {
+    rx.chakra.Avatar: {
         "shadow": shadow,
         "color": text_light_color,
         # "bg": border_color,
     },
-    rx.Button: {
+    rx.chakra.Button: {
         "shadow": shadow,
         "color": text_light_color,
         "_hover": {
             "bg": accent_dark,
         },
     },
-    rx.Menu: {
+    rx.chakra.Menu: {
         "bg": bg_dark_color,
         "border": f"red",
     },
-    rx.MenuList: {
+    rx.chakra.MenuList: {
         "bg": bg_dark_color,
         "border": f"1.5px solid {bg_medium_color}",
     },
-    rx.MenuDivider: {
+    rx.chakra.MenuDivider: {
         "border": f"1px solid {bg_medium_color}",
     },
-    rx.MenuItem: {
+    rx.chakra.MenuItem: {
         "bg": bg_dark_color,
         "color": text_light_color,
     },
-    rx.DrawerContent: {
+    rx.chakra.DrawerContent: {
         "bg": bg_dark_color,
         "color": text_light_color,
         "opacity": "0.9",
     },
-    rx.Hstack: {
+    rx.chakra.Hstack: {
         "align_items": "center",
         "justify_content": "space-between",
     },
-    rx.Vstack: {
+    rx.chakra.Vstack: {
         "align_items": "stretch",
         "justify_content": "space-between",
     },

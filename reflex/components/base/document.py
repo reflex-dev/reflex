@@ -1,7 +1,8 @@
 """Document components."""
 
+from typing import Optional
+
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
 
 
 class NextDocumentLib(Component):
@@ -14,6 +15,8 @@ class Html(NextDocumentLib):
     """The document html."""
 
     tag = "Html"
+
+    lang: Optional[str]
 
 
 class DocumentHead(NextDocumentLib):
@@ -32,10 +35,3 @@ class NextScript(NextDocumentLib):
     """The document main scripts."""
 
     tag = "NextScript"
-
-
-class ColorModeScript(ChakraComponent):
-    """Chakra color mode script."""
-
-    tag = "ColorModeScript"
-    initialColorMode = "light"

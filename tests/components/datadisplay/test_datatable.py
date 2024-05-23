@@ -2,12 +2,9 @@ import pandas as pd
 import pytest
 
 import reflex as rx
-from reflex.components.datadisplay.datatable import (
-    DataTable,
-    serialize_dataframe,  # type: ignore
-)
+from reflex.components.gridjs.datatable import DataTable
 from reflex.utils import types
-from reflex.utils.serializers import serialize
+from reflex.utils.serializers import serialize, serialize_dataframe
 
 
 @pytest.mark.parametrize(

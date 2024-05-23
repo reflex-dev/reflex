@@ -1,13 +1,17 @@
 name: pre-commit
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
 on:
   pull_request:
-    branches: [main]
+    branches: ['main']
   push:
     # Note even though this job is called "pre-commit" and runs "pre-commit", this job will run
     # also POST-commit on main also!  In case there are mishandled merge conflicts / bad auto-resolves
     # when merging into main branch.
-    branches: [main]
+    branches: ['main']
 
 jobs:
   pre-commit:
@@ -21,9 +25,10 @@ jobs:
           # i.e. ruff, black, etc.
           python-version: 3.11.5
           run-poetry-install: true
-          shell: bash
           create-venv-at-path: .venv
       # TODO pre-commit related stuff can be cached too (not a bottleneck yet)
       - run: |
-          poetry run pip install pre-commit
+          poetry run uv pip install pre-commit
           poetry run pre-commit run --all-files
+        env:
+          SKIP: update-pyi-files

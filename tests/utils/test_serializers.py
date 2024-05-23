@@ -5,17 +5,14 @@ from typing import Any, Dict, List, Type
 import pytest
 
 from reflex.base import Base
+from reflex.components.core.colors import Color
 from reflex.utils import serializers
 from reflex.vars import Var
 
 
 @pytest.mark.parametrize(
     "type_,expected",
-    [
-        (str, True),
-        (dict, True),
-        (Dict[int, int], True),
-    ],
+    [(str, True), (dict, True), (Dict[int, int], True), (Enum, True)],
 )
 def test_has_serializer(type_: Type, expected: bool):
     """Test that has_serializer returns the correct value.
@@ -45,6 +42,7 @@ def test_has_serializer(type_: Type, expected: bool):
         (int, serializers.serialize_primitive),
         (float, serializers.serialize_primitive),
         (bool, serializers.serialize_primitive),
+        (Enum, serializers.serialize_enum),
     ],
 )
 def test_get_serializer(type_: Type, expected: serializers.Serializer):
@@ -102,6 +100,13 @@ class StrEnum(str, Enum):
     BAR = "bar"
 
 
+class TestEnum(Enum):
+    """A lone enum class."""
+
+    FOO = "foo"
+    BAR = "bar"
+
+
 class EnumWithPrefix(Enum):
     """An enum with a serializer adding a prefix."""
 
@@ -144,6 +149,12 @@ class BaseSubclass(Base):
             {"key1": EnumWithPrefix.FOO, "key2": EnumWithPrefix.BAR},
             '{"key1": "prefix_foo", "key2": "prefix_bar"}',
         ),
+        (TestEnum.FOO, "foo"),
+        ([TestEnum.FOO, TestEnum.BAR], '["foo", "bar"]'),
+        (
+            {"key1": TestEnum.FOO, "key2": TestEnum.BAR},
+            '{"key1": "foo", "key2": "bar"}',
+        ),
         (
             BaseSubclass(ts=datetime.timedelta(1, 1, 1)),
             '{"ts": "1 day, 0:00:01.000001"}',
@@ -169,6 +180,9 @@ class BaseSubclass(Base):
             [datetime.timedelta(1, 1, 1), datetime.timedelta(1, 1, 2)],
             '["1 day, 0:00:01.000001", "1 day, 0:00:01.000002"]',
         ),
+        (Color(color="slate", shade=1), "var(--slate-1)"),
+        (Color(color="orange", shade=1, alpha=True), "var(--orange-a1)"),
+        (Color(color="accent", shade=1, alpha=True), "var(--accent-a1)"),
     ],
 )
 def test_serialize(value: Any, expected: str):

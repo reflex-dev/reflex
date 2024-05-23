@@ -1,12 +1,16 @@
 name: integration-tests-wsl
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
     paths-ignore:
       - '**/*.md'
   pull_request:
-    branches: [ main ]
+    branches: ['main']
     paths-ignore:
       - '**/*.md'
 
@@ -15,7 +19,7 @@ permissions:
 
 env:
   TELEMETRY_ENABLED: false
-  NODE_OPTIONS: "--max_old_space_size=4096"
+  NODE_OPTIONS: '--max_old_space_size=4096'
 
 jobs:
   example-counter-wsl:
@@ -32,7 +36,7 @@ jobs:
           repository: reflex-dev/reflex-examples
           path: reflex-examples
 
-      - uses: Vampire/setup-wsl@v2
+      - uses: Vampire/setup-wsl@v3
 
       - name: Install Python
         shell: wsl-bash {0}
@@ -52,32 +56,42 @@ jobs:
         run: |
           poetry install
 
+      - name: Install uv
+        shell: wsl-bash {0}
+        run: |
+          poetry run pip install uv
+
       - name: Install requirements for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
-          poetry run pip install -r requirements.txt
+          poetry run uv pip install -r requirements.txt
       - name: Check export --backend-only before init for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           poetry run reflex export --backend-only
       - name: Check run --backend-only before init for counter example
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           dos2unix scripts/integration.sh
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev 8001 --backend-only --backend-port 8001
       - name: Init Website for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           poetry run reflex init --loglevel debug
       - name: Check export for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           poetry run reflex export --frontend-only --loglevel debug
       - name: Run Website and Check for errors
         shell: wsl-bash {0}
         run: |
+          export TELEMETRY_ENABLED=false
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev

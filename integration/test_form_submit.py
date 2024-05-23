@@ -1,4 +1,5 @@
 """Integration tests for forms."""
+import functools
 import time
 from typing import Generator
 
@@ -10,16 +11,22 @@ from reflex.testing import AppHarness
 from reflex.utils import format
 
 
-def FormSubmit():
-    """App with a form using on_submit."""
+def FormSubmit(form_component):
+    """App with a form using on_submit.
+
+    Args:
+        form_component: The str name of the form component to use.
+    """
+    from typing import Dict, List
+
     import reflex as rx
 
     class FormState(rx.State):
-        form_data: dict = {}
+        form_data: Dict = {}
 
-        var_options: list[str] = ["option3", "option4"]
+        var_options: List[str] = ["option3", "option4"]
 
-        def form_submit(self, form_data: dict):
+        def form_submit(self, form_data: Dict):
             self.form_data = form_data
 
     app = rx.App(state=rx.State)
@@ -27,28 +34,28 @@ def FormSubmit():
     @app.add_page
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=FormState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.form(
+            eval(form_component)(
                 rx.vstack(
-                    rx.input(id="name_input"),
-                    rx.hstack(rx.pin_input(length=4, id="pin_input")),
-                    rx.number_input(id="number_input"),
+                    rx.chakra.input(id="name_input"),
+                    rx.hstack(rx.chakra.pin_input(length=4, id="pin_input")),
+                    rx.chakra.number_input(id="number_input"),
                     rx.checkbox(id="bool_input"),
                     rx.switch(id="bool_input2"),
                     rx.checkbox(id="bool_input3"),
                     rx.switch(id="bool_input4"),
-                    rx.slider(id="slider_input"),
-                    rx.range_slider(id="range_input"),
-                    rx.radio_group(["option1", "option2"], id="radio_input"),
-                    rx.radio_group(FormState.var_options, id="radio_input_var"),
-                    rx.select(["option1", "option2"], id="select_input"),
-                    rx.select(FormState.var_options, id="select_input_var"),
+                    rx.slider(id="slider_input", default_value=[50], width="100%"),
+                    rx.chakra.range_slider(id="range_input"),
+                    rx.radio(["option1", "option2"], id="radio_input"),
+                    rx.radio(FormState.var_options, id="radio_input_var"),
+                    rx.chakra.select(["option1", "option2"], id="select_input"),
+                    rx.chakra.select(FormState.var_options, id="select_input_var"),
                     rx.text_area(id="text_area_input"),
-                    rx.input(
+                    rx.chakra.input(
                         id="debounce_input",
                         debounce_timeout=0,
                         on_change=rx.console_log,
@@ -62,19 +69,23 @@ def FormSubmit():
             height="100vh",
         )
 
-    app.compile()
 
+def FormSubmitName(form_component):
+    """App with a form using on_submit.
 
-def FormSubmitName():
-    """App with a form using on_submit."""
+    Args:
+        form_component: The str name of the form component to use.
+    """
+    from typing import Dict, List
+
     import reflex as rx
 
     class FormState(rx.State):
-        form_data: dict = {}
+        form_data: Dict = {}
         val: str = "foo"
-        options: list[str] = ["option1", "option2"]
+        options: List[str] = ["option1", "option2"]
 
-        def form_submit(self, form_data: dict):
+        def form_submit(self, form_data: Dict):
             self.form_data = form_data
 
     app = rx.App(state=rx.State)
@@ -82,37 +93,41 @@ def FormSubmitName():
     @app.add_page
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=FormState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.form(
+            eval(form_component)(
                 rx.vstack(
-                    rx.input(name="name_input"),
-                    rx.hstack(rx.pin_input(length=4, name="pin_input")),
-                    rx.number_input(name="number_input"),
+                    rx.chakra.input(name="name_input"),
+                    rx.hstack(rx.chakra.pin_input(length=4, name="pin_input")),
+                    rx.chakra.number_input(name="number_input"),
                     rx.checkbox(name="bool_input"),
                     rx.switch(name="bool_input2"),
                     rx.checkbox(name="bool_input3"),
                     rx.switch(name="bool_input4"),
-                    rx.slider(name="slider_input"),
-                    rx.range_slider(name="range_input"),
-                    rx.radio_group(FormState.options, name="radio_input"),
-                    rx.select(FormState.options, name="select_input"),
+                    rx.slider(name="slider_input", default_value=[50], width="100%"),
+                    rx.chakra.range_slider(name="range_input"),
+                    rx.radio(FormState.options, name="radio_input"),
+                    rx.select(
+                        FormState.options,
+                        name="select_input",
+                        default_value=FormState.options[0],
+                    ),
                     rx.text_area(name="text_area_input"),
-                    rx.input_group(
-                        rx.input_left_element(rx.icon(tag="chevron_right")),
-                        rx.input(
+                    rx.chakra.input_group(
+                        rx.chakra.input_left_element(rx.icon(tag="chevron_right")),
+                        rx.chakra.input(
                             name="debounce_input",
                             debounce_timeout=0,
                             on_change=rx.console_log,
                         ),
-                        rx.input_right_element(rx.icon(tag="chevron_left")),
+                        rx.chakra.input_right_element(rx.icon(tag="chevron_left")),
                     ),
-                    rx.button_group(
+                    rx.chakra.button_group(
                         rx.button("Submit", type_="submit"),
-                        rx.icon_button(FormState.val, icon=rx.icon(tag="add")),
+                        rx.icon_button(FormState.val, icon=rx.icon(tag="plus")),
                         variant="outline",
                         is_attached=True,
                     ),
@@ -124,11 +139,25 @@ def FormSubmitName():
             height="100vh",
         )
 
-    app.compile()
-
 
 @pytest.fixture(
-    scope="session", params=[FormSubmit, FormSubmitName], ids=["id", "name"]
+    scope="module",
+    params=[
+        functools.partial(FormSubmit, form_component="rx.form.root"),
+        functools.partial(FormSubmitName, form_component="rx.form.root"),
+        functools.partial(FormSubmit, form_component="rx.el.form"),
+        functools.partial(FormSubmitName, form_component="rx.el.form"),
+        functools.partial(FormSubmit, form_component="rx.chakra.form"),
+        functools.partial(FormSubmitName, form_component="rx.chakra.form"),
+    ],
+    ids=[
+        "id-radix",
+        "name-radix",
+        "id-html",
+        "name-html",
+        "id-chakra",
+        "name-chakra",
+    ],
 )
 def form_submit(request, tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start FormSubmit app at tmp_path via AppHarness.
@@ -140,9 +169,11 @@ def form_submit(request, tmp_path_factory) -> Generator[AppHarness, None, None]:
     Yields:
         running AppHarness instance
     """
+    param_id = request._pyfuncitem.callspec.id.replace("-", "_")
     with AppHarness.create(
         root=tmp_path_factory.mktemp("form_submit"),
         app_source=request.param,  # type: ignore
+        app_name=request.param.func.__name__ + f"_{param_id}",
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness
@@ -198,16 +229,16 @@ async def test_submit(driver, form_submit: AppHarness):
     for _ in range(3):
         buttons[1].click()
 
-    checkbox_input = driver.find_element(By.CLASS_NAME, "chakra-checkbox__control")
+    checkbox_input = driver.find_element(By.XPATH, "//button[@role='checkbox']")
     checkbox_input.click()
 
-    switch_input = driver.find_element(By.CLASS_NAME, "chakra-switch__track")
+    switch_input = driver.find_element(By.XPATH, "//button[@role='switch']")
     switch_input.click()
 
-    radio_buttons = driver.find_elements(By.CLASS_NAME, "chakra-radio__control")
+    radio_buttons = driver.find_elements(By.XPATH, "//button[@role='radio']")
     radio_buttons[1].click()
 
-    textarea_input = driver.find_element(By.CLASS_NAME, "chakra-textarea")
+    textarea_input = driver.find_element(By.TAG_NAME, "textarea")
     textarea_input.send_keys("Some", Keys.ENTER, "Text")
 
     debounce_input = driver.find_element(by, "debounce_input")
@@ -217,11 +248,15 @@ async def test_submit(driver, form_submit: AppHarness):
 
     prev_url = driver.current_url
 
-    submit_input = driver.find_element(By.CLASS_NAME, "chakra-button")
+    submit_input = driver.find_element(By.CLASS_NAME, "rt-Button")
     submit_input.click()
 
     async def get_form_data():
-        return (await form_submit.get_state(token)).substates["form_state"].form_data
+        return (
+            (await form_submit.get_state(f"{token}_state.form_state"))
+            .substates["form_state"]
+            .form_data
+        )
 
     # wait for the form data to arrive at the backend
     form_data = await AppHarness._poll_for_async(get_form_data)

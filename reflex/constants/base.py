@@ -43,6 +43,8 @@ class Dirs(SimpleNamespace):
     ENV_JSON = os.path.join(WEB, "env.json")
     # The reflex json file.
     REFLEX_JSON = os.path.join(WEB, "reflex.json")
+    # The path to postcss.config.js
+    POSTCSS_JS = os.path.join(WEB, "postcss.config.js")
 
 
 class Reflex(SimpleNamespace):
@@ -59,10 +61,14 @@ class Reflex(SimpleNamespace):
 
     # Files and directories used to init a new project.
     # The directory to store reflex dependencies.
-    DIR = (
+    # Get directory value from enviroment variables if it exists.
+    _dir = os.environ.get("REFLEX_DIR", "")
+
+    DIR = _dir or (
         # on windows, we use C:/Users/<username>/AppData/Local/reflex.
         # on macOS, we use ~/Library/Application Support/reflex.
         # on linux, we use ~/.local/share/reflex.
+        # If user sets REFLEX_DIR envroment variable use that instead.
         PlatformDirs(MODULE_NAME, False).user_data_dir
     )
     # The root directory of the reflex library.
@@ -72,15 +78,21 @@ class Reflex(SimpleNamespace):
     )
 
 
+class ReflexHostingCLI(SimpleNamespace):
+    """Base constants concerning Reflex Hosting CLI."""
+
+    # The name of the Reflex Hosting CLI package.
+    MODULE_NAME = "reflex-hosting-cli"
+
+
 class Templates(SimpleNamespace):
     """Constants related to Templates."""
 
-    # Dynamically get the enum values from the .templates folder
-    template_dir = os.path.join(Reflex.ROOT_DIR, Reflex.MODULE_NAME, ".templates/apps")
-    template_dirs = next(os.walk(template_dir))[1]
+    # The route on Reflex backend to query which templates are available and their URLs.
+    APP_TEMPLATES_ROUTE = "/app-templates"
 
-    # Create an enum value for each directory in the .templates folder
-    Kind = Enum("Kind", {template.upper(): template for template in template_dirs})
+    # The default template
+    DEFAULT = "blank"
 
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""
@@ -170,7 +182,13 @@ LOCAL_STORAGE = "local_storage"
 # If this env var is set to "yes", App.compile will be a no-op
 SKIP_COMPILE_ENV_VAR = "__REFLEX_SKIP_COMPILE"
 
+# This env var stores the execution mode of the app
+ENV_MODE_ENV_VAR = "REFLEX_ENV_MODE"
+
 # Testing variables.
 # Testing os env set by pytest when running a test case.
 PYTEST_CURRENT_TEST = "PYTEST_CURRENT_TEST"
 RELOAD_CONFIG = "__REFLEX_RELOAD_CONFIG"
+
+REFLEX_VAR_OPENING_TAG = "<reflex.Var>"
+REFLEX_VAR_CLOSING_TAG = "</reflex.Var>"

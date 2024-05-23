@@ -1,6 +1,12 @@
 [run]
 source = reflex
 branch = true
+omit =
+    */pyi_generator.py
+    reflex/__main__.py
+    reflex/app_module_for_backend.py
+    reflex/components/chakra/*
+    reflex/experimental/*
 
 [report]
 show_missing = true
@@ -24,6 +30,9 @@ exclude_also =
 
     # Don't complain about abstract methods, they aren't run:
     @(abc\.)?abstractmethod
+    
+    # Don't complain about overloaded methods:
+    @overload
 
 ignore_errors = True
 

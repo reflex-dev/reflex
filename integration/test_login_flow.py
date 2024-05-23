@@ -28,7 +28,7 @@ def LoginSample():
             yield rx.redirect("/")
 
     def index():
-        return rx.Cond.create(
+        return rx.cond(
             State.is_hydrated & State.auth_token,  # type: ignore
             rx.vstack(
                 rx.heading(State.auth_token, id="auth-token"),
@@ -45,10 +45,9 @@ def LoginSample():
     app = rx.App(state=rx.State)
     app.add_page(index)
     app.add_page(login)
-    app.compile()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def login_sample(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start LoginSample app at tmp_path via AppHarness.
 

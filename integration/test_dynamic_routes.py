@@ -1,4 +1,6 @@
 """Integration tests for dynamic route page behavior."""
+from __future__ import annotations
+
 from typing import Callable, Coroutine, Generator, Type
 from urllib.parse import urlsplit
 
@@ -12,10 +14,12 @@ from .utils import poll_for_navigation
 
 def DynamicRoute():
     """App for testing dynamic routes."""
+    from typing import List
+
     import reflex as rx
 
     class DynamicState(rx.State):
-        order: list[str] = []
+        order: List[str] = []
         page_id: str = ""
 
         def on_load(self):
@@ -35,20 +39,32 @@ def DynamicRoute():
 
     def index():
         return rx.fragment(
-            rx.input(
+            rx.chakra.input(
                 value=DynamicState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.input(value=DynamicState.page_id, is_read_only=True, id="page_id"),
+            rx.chakra.input(
+                value=DynamicState.page_id, is_read_only=True, id="page_id"
+            ),
+            rx.chakra.input(
+                value=DynamicState.router.page.raw_path,
+                is_read_only=True,
+                id="raw_path",
+            ),
             rx.link("index", href="/", id="link_index"),
             rx.link("page_X", href="/static/x", id="link_page_x"),
             rx.link(
-                "next", href="/page/" + DynamicState.next_page, id="link_page_next"  # type: ignore
+                "next",
+                href="/page/" + DynamicState.next_page,
+                id="link_page_next",  # type: ignore
             ),
             rx.link("missing", href="/missing", id="link_missing"),
-            rx.list(
-                rx.foreach(DynamicState.order, lambda i: rx.list_item(rx.text(i))),  # type: ignore
+            rx.chakra.list(
+                rx.foreach(
+                    DynamicState.order,  # type: ignore
+                    lambda i: rx.chakra.list_item(rx.text(i)),
+                ),
             ),
         )
 
@@ -61,10 +77,9 @@ def DynamicRoute():
     app.add_page(index, route="/page/[page_id]", on_load=DynamicState.on_load)  # type: ignore
     app.add_page(index, route="/static/x", on_load=DynamicState.on_load)  # type: ignore
     app.add_custom_404_page(on_load=DynamicState.on_load)  # type: ignore
-    app.compile()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def dynamic_route(
     app_harness_env: Type[AppHarness], tmp_path_factory
 ) -> Generator[AppHarness, None, None]:
@@ -79,6 +94,7 @@ def dynamic_route(
     """
     with app_harness_env.create(
         root=tmp_path_factory.mktemp(f"dynamic_route"),
+        app_name=f"dynamicroute_{app_harness_env.__name__.lower()}",
         app_source=DynamicRoute,  # type: ignore
     ) as harness:
         yield harness
@@ -140,7 +156,7 @@ def poll_for_order(
 
     async def _poll_for_order(exp_order: list[str]):
         async def _backend_state():
-            return await dynamic_route.get_state(token)
+            return await dynamic_route.get_state(f"{token}_state.dynamic_state")
 
         async def _check():
             return (await _backend_state()).substates[
@@ -183,11 +199,15 @@ async def test_on_load_navigate(
 
         link = driver.find_element(By.ID, "link_page_next")
         page_id_input = driver.find_element(By.ID, "page_id")
+        raw_path_input = driver.find_element(By.ID, "raw_path")
 
         assert link
         assert page_id_input
 
-        assert dynamic_route.poll_for_value(page_id_input) == str(ix)
+        assert dynamic_route.poll_for_value(
+            page_id_input, exp_not_equal=str(ix - 1)
+        ) == str(ix)
+        assert dynamic_route.poll_for_value(raw_path_input) == f"/page/{ix}/"
     await poll_for_order(exp_order)
 
     # manually load the next page to trigger client side routing in prod mode
@@ -212,7 +232,9 @@ async def test_on_load_navigate(
     with poll_for_navigation(driver):
         driver.get(f"{driver.current_url}?foo=bar")
     await poll_for_order(exp_order)
-    assert (await dynamic_route.get_state(token)).router.page.params["foo"] == "bar"
+    assert (
+        await dynamic_route.get_state(f"{token}_state.dynamic_state")
+    ).router.page.params["foo"] == "bar"
 
     # hit a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]

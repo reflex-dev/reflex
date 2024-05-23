@@ -1,4 +1,5 @@
 """Ensure that Event Chains are properly queued and handled between frontend and backend."""
+from __future__ import annotations
 
 from typing import Generator
 
@@ -14,6 +15,7 @@ def EventChain():
     """App with chained event handlers."""
     import asyncio
     import time
+    from typing import List
 
     import reflex as rx
 
@@ -21,7 +23,7 @@ def EventChain():
     MANY_EVENTS = 50
 
     class State(rx.State):
-        event_order: list[str] = []
+        event_order: List[str] = []
         interim_value: str = ""
 
         def event_no_args(self):
@@ -124,7 +126,7 @@ def EventChain():
 
     app = rx.App(state=rx.State)
 
-    token_input = rx.input(
+    token_input = rx.chakra.input(
         value=State.router.session.client_token, is_read_only=True, id="token"
     )
 
@@ -132,7 +134,9 @@ def EventChain():
     def index():
         return rx.fragment(
             token_input,
-            rx.input(value=State.interim_value, is_read_only=True, id="interim_value"),
+            rx.chakra.input(
+                value=State.interim_value, is_read_only=True, id="interim_value"
+            ),
             rx.button(
                 "Return Event",
                 id="return_event",
@@ -242,10 +246,8 @@ def EventChain():
     app.add_page(on_mount_return_chain)
     app.add_page(on_mount_yield_chain)
 
-    app.compile()
 
-
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def event_chain(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start EventChain app at tmp_path via AppHarness.
 
@@ -298,7 +300,7 @@ def assert_token(event_chain: AppHarness, driver: WebDriver) -> str:
     token = event_chain.poll_for_value(token_input)
     assert token is not None
 
-    return token
+    return f"{token}_state.state"
 
 
 @pytest.mark.parametrize(

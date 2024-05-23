@@ -1,12 +1,20 @@
 """Define the base Reflex class."""
+
 from __future__ import annotations
 
 import os
-from typing import Any, List, Type
+from typing import TYPE_CHECKING, Any, List, Type
 
-import pydantic
-from pydantic import BaseModel
-from pydantic.fields import ModelField
+try:
+    import pydantic.v1 as pydantic
+    from pydantic.v1 import BaseModel
+    from pydantic.v1.fields import ModelField
+except ModuleNotFoundError:
+    if not TYPE_CHECKING:
+        import pydantic
+        from pydantic import BaseModel
+        from pydantic.fields import ModelField  # type: ignore
+
 
 from reflex import constants
 
@@ -19,15 +27,17 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
         field_name: name of attribute
 
     Raises:
-        NameError: If state var field shadows another in its parent state
+        VarNameError: If state var field shadows another in its parent state
     """
+    from reflex.utils.exceptions import VarNameError
+
     reload = os.getenv(constants.RELOAD_CONFIG) == "True"
     for base in bases:
         try:
             if not reload and getattr(base, field_name, None):
                 pass
         except TypeError as te:
-            raise NameError(
+            raise VarNameError(
                 f'State var "{field_name}" in {base} has been shadowed by a substate var; '
                 f'use a different field name instead".'
             ) from te
@@ -38,7 +48,7 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 pydantic.main.validate_field_name = validate_field_name  # type: ignore
 
 
-class Base(pydantic.BaseModel):
+class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
     """The base class subclassed by all Reflex classes.
 
     This class wraps Pydantic and provides common methods such as
@@ -63,7 +73,10 @@ class Base(pydantic.BaseModel):
         """
         from reflex.utils.serializers import serialize
 
-        return self.__config__.json_dumps(self.dict(), default=serialize)
+        return self.__config__.json_dumps(  # type: ignore
+            self.dict(),
+            default=serialize,
+        )
 
     def set(self, **kwargs):
         """Set multiple fields and return the object.
@@ -102,7 +115,7 @@ class Base(pydantic.BaseModel):
             value=default_value,
             annotation=var._var_type,
             class_validators=None,
-            config=cls.__config__,
+            config=cls.__config__,  # type: ignore
         )
         cls.__fields__.update({var._var_name: new_field})
 
@@ -115,6 +128,10 @@ class Base(pydantic.BaseModel):
         Returns:
             The value of the field.
         """
+        if isinstance(key, str) and key in self.__fields__:
+            # Seems like this function signature was wrong all along?
+            # If the user wants a field that we know of, get it and pass it off to _get_value
+            key = getattr(self, key)
         return self._get_value(
             key,
             to_dict=True,

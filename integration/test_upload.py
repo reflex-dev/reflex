@@ -13,19 +13,21 @@ from reflex.testing import AppHarness, WebDriver
 
 def UploadFile():
     """App for testing dynamic routes."""
+    from typing import Dict, List
+
     import reflex as rx
 
     class UploadState(rx.State):
-        _file_data: dict[str, str] = {}
-        event_order: list[str] = []
-        progress_dicts: list[dict] = []
+        _file_data: Dict[str, str] = {}
+        event_order: List[str] = []
+        progress_dicts: List[dict] = []
 
-        async def handle_upload(self, files: list[rx.UploadFile]):
+        async def handle_upload(self, files: List[rx.UploadFile]):
             for file in files:
                 upload_data = await file.read()
                 self._file_data[file.filename or ""] = upload_data.decode("utf-8")
 
-        async def handle_upload_secondary(self, files: list[rx.UploadFile]):
+        async def handle_upload_secondary(self, files: List[rx.UploadFile]):
             for file in files:
                 upload_data = await file.read()
                 self._file_data[file.filename or ""] = upload_data.decode("utf-8")
@@ -41,13 +43,13 @@ def UploadFile():
 
     def index():
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 value=UploadState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
             rx.heading("Default Upload"),
-            rx.upload(
+            rx.upload.root(
                 rx.vstack(
                     rx.button("Select File"),
                     rx.text("Drag and drop files here or click to select files"),
@@ -61,7 +63,7 @@ def UploadFile():
             rx.box(
                 rx.foreach(
                     rx.selected_files,
-                    lambda f: rx.text(f),
+                    lambda f: rx.text(f, as_="p"),
                 ),
                 id="selected_files",
             ),
@@ -71,7 +73,7 @@ def UploadFile():
                 id="clear_button",
             ),
             rx.heading("Secondary Upload"),
-            rx.upload(
+            rx.upload.root(
                 rx.vstack(
                     rx.button("Select File"),
                     rx.text("Drag and drop files here or click to select files"),
@@ -91,7 +93,7 @@ def UploadFile():
             rx.box(
                 rx.foreach(
                     rx.selected_files("secondary"),
-                    lambda f: rx.text(f),
+                    lambda f: rx.text(f, as_="p"),
                 ),
                 id="selected_files_secondary",
             ),
@@ -115,10 +117,9 @@ def UploadFile():
 
     app = rx.App(state=rx.State)
     app.add_page(index)
-    app.compile()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def upload_file(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start UploadFile app at tmp_path via AppHarness.
 
@@ -172,6 +173,7 @@ async def test_upload_file(
     # wait for the backend connection to send the token
     token = upload_file.poll_for_value(token_input)
     assert token is not None
+    substate_token = f"{token}_state.upload_state"
 
     suffix = "_secondary" if secondary else ""
 
@@ -192,7 +194,11 @@ async def test_upload_file(
 
     # look up the backend state and assert on uploaded contents
     async def get_file_data():
-        return (await upload_file.get_state(token)).substates["upload_state"]._file_data
+        return (
+            (await upload_file.get_state(substate_token))
+            .substates["upload_state"]
+            ._file_data
+        )
 
     file_data = await AppHarness._poll_for_async(get_file_data)
     assert isinstance(file_data, dict)
@@ -202,7 +208,7 @@ async def test_upload_file(
     selected_files = driver.find_element(By.ID, f"selected_files{suffix}")
     assert selected_files.text == exp_name
 
-    state = await upload_file.get_state(token)
+    state = await upload_file.get_state(substate_token)
     if secondary:
         # only the secondary form tracks progress and chain events
         assert state.substates["upload_state"].event_order.count("upload_progress") == 1
@@ -224,6 +230,7 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
     # wait for the backend connection to send the token
     token = upload_file.poll_for_value(token_input)
     assert token is not None
+    substate_token = f"{token}_state.upload_state"
 
     upload_box = driver.find_element(By.XPATH, "//input[@type='file']")
     assert upload_box
@@ -251,7 +258,11 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
 
     # look up the backend state and assert on uploaded contents
     async def get_file_data():
-        return (await upload_file.get_state(token)).substates["upload_state"]._file_data
+        return (
+            (await upload_file.get_state(substate_token))
+            .substates["upload_state"]
+            ._file_data
+        )
 
     file_data = await AppHarness._poll_for_async(get_file_data)
     assert isinstance(file_data, dict)
@@ -331,6 +342,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     # wait for the backend connection to send the token
     token = upload_file.poll_for_value(token_input)
     assert token is not None
+    substate_token = f"{token}_state.upload_state"
 
     upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[1]
     upload_button = driver.find_element(By.ID, f"upload_button_secondary")
@@ -348,7 +360,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     cancel_button.click()
 
     # look up the backend state and assert on progress
-    state = await upload_file.get_state(token)
+    state = await upload_file.get_state(substate_token)
     assert state.substates["upload_state"].progress_dicts
     assert exp_name not in state.substates["upload_state"]._file_data
 

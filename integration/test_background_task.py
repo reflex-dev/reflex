@@ -59,11 +59,11 @@ def BackgroundTask():
 
     def index() -> rx.Component:
         return rx.vstack(
-            rx.input(
+            rx.chakra.input(
                 id="token", value=State.router.session.client_token, is_read_only=True
             ),
             rx.heading(State.counter, id="counter"),
-            rx.input(
+            rx.chakra.input(
                 id="iterations",
                 placeholder="Iterations",
                 value=State.iterations.to_string(),  # type: ignore
@@ -95,10 +95,9 @@ def BackgroundTask():
 
     app = rx.App(state=rx.State)
     app.add_page(index)
-    app.compile()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def background_task(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:

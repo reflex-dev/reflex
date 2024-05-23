@@ -1,4 +1,5 @@
 """Compiler variables."""
+
 import enum
 from enum import Enum
 from types import SimpleNamespace
@@ -25,6 +26,8 @@ class Ext(SimpleNamespace):
     CSS = ".css"
     # The extension for zip files.
     ZIP = ".zip"
+    # The extension for executable files on Windows.
+    EXE = ".exe"
 
 
 class CompileVars(SimpleNamespace):
@@ -55,11 +58,13 @@ class CompileVars(SimpleNamespace):
     # The name of the function to add events to the queue.
     ADD_EVENTS = "addEvents"
     # The name of the var storing any connection error.
-    CONNECT_ERROR = "connectError"
+    CONNECT_ERROR = "connectErrors"
     # The name of the function for converting a dict to an event.
     TO_EVENT = "Event"
     # The name of the internal on_load event.
-    ON_LOAD_INTERNAL = "on_load_internal"
+    ON_LOAD_INTERNAL = "on_load_internal_state.on_load_internal"
+    # The name of the internal event to update generic state vars.
+    UPDATE_VARS_INTERNAL = "update_vars_internal_state.update_vars_internal"
 
 
 class PageNames(SimpleNamespace):
@@ -98,9 +103,9 @@ class Imports(SimpleNamespace):
     """Common sets of import vars."""
 
     EVENTS = {
-        "react": {ImportVar(tag="useContext")},
-        f"/{Dirs.CONTEXTS_PATH}": {ImportVar(tag="EventLoopContext")},
-        f"/{Dirs.STATE_PATH}": {ImportVar(tag=CompileVars.TO_EVENT)},
+        "react": [ImportVar(tag="useContext")],
+        f"/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
+        f"/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
     }
 
 
@@ -108,6 +113,14 @@ class Hooks(SimpleNamespace):
     """Common sets of hook declarations."""
 
     EVENTS = f"const [{CompileVars.ADD_EVENTS}, {CompileVars.CONNECT_ERROR}] = useContext(EventLoopContext);"
+    AUTOFOCUS = """
+                // Set focus to the specified element.
+                const focusRef = useRef(null)
+                useEffect(() => {
+                  if (focusRef.current) {
+                    focusRef.current.focus();
+                  }
+                })"""
 
 
 class MemoizationDisposition(enum.Enum):
@@ -115,7 +128,8 @@ class MemoizationDisposition(enum.Enum):
 
     # If the component uses state or events, it should be memoized.
     STATEFUL = "stateful"
-    # TODO: add more modes, like always and never
+    ALWAYS = "always"
+    NEVER = "never"
 
 
 class MemoizationMode(Base):

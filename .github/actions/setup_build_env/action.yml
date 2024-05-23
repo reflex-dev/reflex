@@ -29,10 +29,10 @@ inputs:
     default: '.venv'
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Set up Python ${{ inputs.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python-version }}
 
@@ -51,7 +51,7 @@ runs:
 
     - name: Restore cached poetry install
       id: restore-poetry-cache
-      uses: actions/cache/restore@v3
+      uses: actions/cache/restore@v4
       with:
         path: ~/.local
         key: ${{ runner.os }}-python-${{ inputs.python-version }}-poetry-${{ inputs.poetry-version }}
@@ -67,14 +67,14 @@ runs:
 
     - if: steps.restore-poetry-cache.outputs.cache-hit != 'true'
       name: Save poetry install to cache
-      uses: actions/cache/save@v3
+      uses: actions/cache/save@v4
       with:
         path: ~/.local
         key: ${{ steps.restore-poetry-cache.outputs.cache-primary-key }}
 
     - name: Restore cached project python deps
       id: restore-pydeps-cache
-      uses: actions/cache/restore@v3
+      uses: actions/cache/restore@v4
       with:
         path: ${{ inputs.create-venv-at-path }}
         key: ${{ runner.os }}-python-${{ inputs.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
@@ -93,7 +93,7 @@ runs:
 
     - if: steps.restore-pydeps-cache.outputs.cache-hit != 'true'
       name: Save Python deps to cache
-      uses: actions/cache/save@v3
+      uses: actions/cache/save@v4
       with:
         path: ${{ inputs.create-venv-at-path }}
         key: ${{ steps.restore-pydeps-cache.outputs.cache-primary-key }}
@@ -106,3 +106,8 @@ runs:
       run: |
         source ${{ inputs.create-venv-at-path }}/*/activate
         poetry install --only-root --no-interaction
+
+    - name: Install uv
+      shell: bash
+      run: |
+        poetry run pip install uv

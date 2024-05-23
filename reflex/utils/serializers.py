@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import json
 import types as builtin_types
+import warnings
 from datetime import date, datetime, time, timedelta
+from enum import Enum
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_hints
 
 from reflex.base import Base
+from reflex.constants.colors import Color, format_color
 from reflex.utils import exceptions, format, types
 
 # Mapping from type to a serializer.
@@ -227,3 +232,139 @@ def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
         The serialized datetime.
     """
     return str(dt)
+
+
+@serializer
+def serialize_path(path: Path):
+    """Serialize a pathlib.Path to a JSON string.
+
+    Args:
+        path: The path to serialize.
+
+    Returns:
+        The serialized path.
+    """
+    return str(path.as_posix())
+
+
+@serializer
+def serialize_enum(en: Enum) -> str:
+    """Serialize a enum to a JSON string.
+
+    Args:
+        en: The enum to serialize.
+
+    Returns:
+         The serialized enum.
+    """
+    return en.value
+
+
+@serializer
+def serialize_color(color: Color) -> str:
+    """Serialize a color.
+
+    Args:
+        color: The color to serialize.
+
+    Returns:
+        The serialized color.
+    """
+    return format_color(color.color, color.shade, color.alpha)
+
+
+try:
+    from pandas import DataFrame
+
+    def format_dataframe_values(df: DataFrame) -> List[List[Any]]:
+        """Format dataframe values to a list of lists.
+
+        Args:
+            df: The dataframe to format.
+
+        Returns:
+            The dataframe as a list of lists.
+        """
+        return [
+            [str(d) if isinstance(d, (list, tuple)) else d for d in data]
+            for data in list(df.values.tolist())
+        ]
+
+    @serializer
+    def serialize_dataframe(df: DataFrame) -> dict:
+        """Serialize a pandas dataframe.
+
+        Args:
+            df: The dataframe to serialize.
+
+        Returns:
+            The serialized dataframe.
+        """
+        return {
+            "columns": df.columns.tolist(),
+            "data": format_dataframe_values(df),
+        }
+
+except ImportError:
+    pass
+
+try:
+    from plotly.graph_objects import Figure
+    from plotly.io import to_json
+
+    @serializer
+    def serialize_figure(figure: Figure) -> list:
+        """Serialize a plotly figure.
+
+        Args:
+            figure: The figure to serialize.
+
+        Returns:
+            The serialized figure.
+        """
+        return json.loads(str(to_json(figure)))["data"]
+
+except ImportError:
+    pass
+
+
+try:
+    import base64
+    import io
+
+    from PIL.Image import MIME
+    from PIL.Image import Image as Img
+
+    @serializer
+    def serialize_image(image: Img) -> str:
+        """Serialize a plotly figure.
+
+        Args:
+            image: The image to serialize.
+
+        Returns:
+            The serialized image.
+        """
+        buff = io.BytesIO()
+        image_format = getattr(image, "format", None) or "PNG"
+        image.save(buff, format=image_format)
+        image_bytes = buff.getvalue()
+        base64_image = base64.b64encode(image_bytes).decode("utf-8")
+        try:
+            # Newer method to get the mime type, but does not always work.
+            mime_type = image.get_format_mimetype()  # type: ignore
+        except AttributeError:
+            try:
+                # Fallback method
+                mime_type = MIME[image_format]
+            except KeyError:
+                # Unknown mime_type: warn and return image/png and hope the browser can sort it out.
+                warnings.warn(  # noqa: B028
+                    f"Unknown mime type for {image} {image_format}. Defaulting to image/png"
+                )
+                mime_type = "image/png"
+
+        return f"data:{mime_type};base64,{base64_image}"
+
+except ImportError:
+    pass

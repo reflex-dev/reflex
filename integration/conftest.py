@@ -1,4 +1,5 @@
 """Shared conftest for all integration tests."""
+
 import os
 import re
 from pathlib import Path
@@ -20,13 +21,13 @@ def xvfb():
     Yields:
         the pyvirtualdisplay object that the browser will be open on
     """
-    if os.environ.get("GITHUB_ACTIONS"):
+    if os.environ.get("GITHUB_ACTIONS") and not os.environ.get("APP_HARNESS_HEADLESS"):
         from pyvirtualdisplay.smartdisplay import (  # pyright: ignore [reportMissingImports]
             SmartDisplay,
         )
 
         global DISPLAY
-        with SmartDisplay(visible=0, size=XVFB_DIMENSIONS) as DISPLAY:
+        with SmartDisplay(visible=False, size=XVFB_DIMENSIONS) as DISPLAY:
             yield DISPLAY
         DISPLAY = None
     else:
@@ -50,7 +51,7 @@ def pytest_exception_interact(node, call, report):
     safe_filename = re.sub(
         r"(?u)[^-\w.]",
         "_",
-        str(node.nodeid).strip().replace(" ", "_").replace(":", "_"),
+        str(node.nodeid).strip().replace(" ", "_").replace(":", "_").replace(".py", ""),
     )
 
     try:

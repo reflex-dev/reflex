@@ -5,6 +5,7 @@ import time
 from typing import Generator
 
 import pytest
+from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
@@ -41,6 +42,13 @@ def ClientSide():
         l3: str = rx.LocalStorage(name="l3")
         l4: str = rx.LocalStorage("l4 default")
 
+        # Sync'd local storage
+        l5: str = rx.LocalStorage(sync=True)
+        l6: str = rx.LocalStorage(sync=True, name="l6")
+
+        def set_l6(self, my_param: str):
+            self.l6 = my_param
+
         def set_var(self):
             setattr(self, self.state_var, self.input_value)
             self.state_var = self.input_value = ""
@@ -55,18 +63,18 @@ def ClientSide():
 
     def index():
         return rx.fragment(
-            rx.input(
+            rx.chakra.input(
                 value=ClientSideState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.input(
+            rx.chakra.input(
                 placeholder="state var",
                 value=ClientSideState.state_var,
                 on_change=ClientSideState.set_state_var,  # type: ignore
                 id="state_var",
             ),
-            rx.input(
+            rx.chakra.input(
                 placeholder="input value",
                 value=ClientSideState.input_value,
                 on_change=ClientSideState.set_input_value,  # type: ignore
@@ -93,6 +101,8 @@ def ClientSide():
             rx.box(ClientSideSubState.l2, id="l2"),
             rx.box(ClientSideSubState.l3, id="l3"),
             rx.box(ClientSideSubState.l4, id="l4"),
+            rx.box(ClientSideSubState.l5, id="l5"),
+            rx.box(ClientSideSubState.l6, id="l6"),
             rx.box(ClientSideSubSubState.c1s, id="c1s"),
             rx.box(ClientSideSubSubState.l1s, id="l1s"),
         )
@@ -100,10 +110,9 @@ def ClientSide():
     app = rx.App(state=rx.State)
     app.add_page(index)
     app.add_page(index, route="/foo")
-    app.compile()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def client_side(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start ClientSide app at tmp_path via AppHarness.
 
@@ -192,18 +201,43 @@ async def test_client_side_state(
     """
     assert client_side.app_instance is not None
     assert client_side.frontend_url is not None
-    token_input = driver.find_element(By.ID, "token")
-    assert token_input
 
-    # wait for the backend connection to send the token
-    token = client_side.poll_for_value(token_input)
-    assert token is not None
+    def poll_for_token():
+        token_input = driver.find_element(By.ID, "token")
+        assert token_input
 
-    # get a reference to the cookie manipulation form
-    state_var_input = driver.find_element(By.ID, "state_var")
-    input_value_input = driver.find_element(By.ID, "input_value")
-    set_sub_state_button = driver.find_element(By.ID, "set_sub_state")
-    set_sub_sub_state_button = driver.find_element(By.ID, "set_sub_sub_state")
+        # wait for the backend connection to send the token
+        token = client_side.poll_for_value(token_input)
+        assert token is not None
+        return token
+
+    def set_sub(var: str, value: str):
+        # Get a reference to the cookie manipulation form.
+        state_var_input = driver.find_element(By.ID, "state_var")
+        input_value_input = driver.find_element(By.ID, "input_value")
+        set_sub_state_button = driver.find_element(By.ID, "set_sub_state")
+        AppHarness._poll_for(lambda: state_var_input.get_attribute("value") == "")
+        AppHarness._poll_for(lambda: input_value_input.get_attribute("value") == "")
+
+        # Set the values.
+        state_var_input.send_keys(var)
+        input_value_input.send_keys(value)
+        set_sub_state_button.click()
+
+    def set_sub_sub(var: str, value: str):
+        # Get a reference to the cookie manipulation form.
+        state_var_input = driver.find_element(By.ID, "state_var")
+        input_value_input = driver.find_element(By.ID, "input_value")
+        set_sub_sub_state_button = driver.find_element(By.ID, "set_sub_sub_state")
+        AppHarness._poll_for(lambda: state_var_input.get_attribute("value") == "")
+        AppHarness._poll_for(lambda: input_value_input.get_attribute("value") == "")
+
+        # Set the values.
+        state_var_input.send_keys(var)
+        input_value_input.send_keys(value)
+        set_sub_sub_state_button.click()
+
+    token = poll_for_token()
 
     # get a reference to all cookie and local storage elements
     c1 = driver.find_element(By.ID, "c1")
@@ -242,45 +276,19 @@ async def test_client_side_state(
     assert not local_storage_items
 
     # set some cookies and local storage values
-    state_var_input.send_keys("c1")
-    input_value_input.send_keys("c1 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c2")
-    input_value_input.send_keys("c2 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c4")
-    input_value_input.send_keys("c4 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c5")
-    input_value_input.send_keys("c5 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c6")
-    input_value_input.send_keys("c6 throwaway value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c6")
-    input_value_input.send_keys("c6 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c7")
-    input_value_input.send_keys("c7 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("l1")
-    input_value_input.send_keys("l1 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("l2")
-    input_value_input.send_keys("l2 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("l3")
-    input_value_input.send_keys("l3 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("l4")
-    input_value_input.send_keys("l4 value")
-    set_sub_state_button.click()
-    state_var_input.send_keys("c1s")
-    input_value_input.send_keys("c1s value")
-    set_sub_sub_state_button.click()
-    state_var_input.send_keys("l1s")
-    input_value_input.send_keys("l1s value")
-    set_sub_sub_state_button.click()
+    set_sub("c1", "c1 value")
+    set_sub("c2", "c2 value")
+    set_sub("c4", "c4 value")
+    set_sub("c5", "c5 value")
+    set_sub("c6", "c6 throwaway value")
+    set_sub("c6", "c6 value")
+    set_sub("c7", "c7 value")
+    set_sub("l1", "l1 value")
+    set_sub("l2", "l2 value")
+    set_sub("l3", "l3 value")
+    set_sub("l4", "l4 value")
+    set_sub_sub("c1s", "c1s value")
+    set_sub_sub("l1s", "l1s value")
 
     exp_cookies = {
         "state.client_side_state.client_side_sub_state.c1": {
@@ -348,9 +356,7 @@ async def test_client_side_state(
     assert not cookies
 
     # Test cookie with expiry by itself to avoid timing flakiness
-    state_var_input.send_keys("c3")
-    input_value_input.send_keys("c3 value")
-    set_sub_state_button.click()
+    set_sub("c3", "c3 value")
     AppHarness._poll_for(
         lambda: "state.client_side_state.client_side_sub_state.c3"
         in cookie_info_map(driver)
@@ -369,9 +375,12 @@ async def test_client_side_state(
         "value": "c3%20value",
     }
     time.sleep(2)  # wait for c3 to expire
-    assert "state.client_side_state.client_side_sub_state.c3" not in cookie_info_map(
-        driver
-    )
+    if not isinstance(driver, Firefox):
+        # Note: Firefox does not remove expired cookies Bug 576347
+        assert (
+            "state.client_side_state.client_side_sub_state.c3"
+            not in cookie_info_map(driver)
+        )
 
     local_storage_items = local_storage.items()
     local_storage_items.pop("chakra-ui-color-mode", None)
@@ -444,7 +453,7 @@ async def test_client_side_state(
     assert l1s.text == "l1s value"
 
     # reset the backend state to force refresh from client storage
-    async with client_side.modify_state(token) as state:
+    async with client_side.modify_state(f"{token}_state.client_side_state") as state:
         state.reset()
     driver.refresh()
 
@@ -499,6 +508,31 @@ async def test_client_side_state(
         "secure": False,
         "value": "c5%20value",
     }
+
+    # Open a new tab to check that sync'd local storage is working
+    main_tab = driver.window_handles[0]
+    driver.switch_to.new_window("window")
+    driver.get(client_side.frontend_url)
+
+    # New tab should have a different state token.
+    assert poll_for_token() != token
+
+    # Set values and check them in the new tab.
+    set_sub("l5", "l5 value")
+    set_sub("l6", "l6 value")
+    l5 = driver.find_element(By.ID, "l5")
+    l6 = driver.find_element(By.ID, "l6")
+    assert AppHarness._poll_for(lambda: l6.text == "l6 value")
+    assert l5.text == "l5 value"
+
+    # Switch back to main window.
+    driver.switch_to.window(main_tab)
+
+    # The values should have updated automatically.
+    l5 = driver.find_element(By.ID, "l5")
+    l6 = driver.find_element(By.ID, "l6")
+    assert AppHarness._poll_for(lambda: l6.text == "l6 value")
+    assert l5.text == "l5 value"
 
     # clear the cookie jar and local storage, ensure state reset to default
     driver.delete_all_cookies()
