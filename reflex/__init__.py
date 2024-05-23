@@ -7,14 +7,66 @@ we use the Flask "import name as name" syntax.
 
 from __future__ import annotations
 
-
-RADIX_MAPPING = {
-    "components.radix.themes": [
+RADIX_THEMES_MAPPING = {
+"components.radix.themes": [
         "color_mode",
         "theme",
         "theme_panel"
+    ]
+}
+RADIX_THEMES_COMPONENTS_MAPPING = {
+**{
+        f"components.radix.themes.components.{mod}": [mod] for mod in [
+            "alert_dialog",
+            "aspect_ratio",
+            "avatar",
+            "badge",
+            "button",
+            "callout",
+            "card",
+            "checkbox",
+            "context_menu",
+            "data_list",
+            "dialog",
+            "hover_card",
+            "icon_button",
+            "input",
+            "inset",
+            "popover",
+            "scroll_area",
+            "select",
+            "skeleton",
+            "slider",
+            "spinner",
+            "switch",
+            "table",
+            "tabs",
+            "text_area",
+            "tooltip",
+        ]
+    },
+
+    "components.radix.themes.components.text_field": [
+        "text_field",
+        "input"
     ],
-    "components.radix.themes.layout.box": [
+    "components.radix.themes.components.radio_group": [
+        "radio",
+        "radio_group"
+    ],
+    "components.radix.themes.components.dropdown_menu": [
+        "menu",
+        "dropdown_menu"
+    ],
+    "components.radix.themes.components.separator": [
+        "divider",
+        "separator"
+    ],
+}
+
+
+RADIX_THEMES_LAYOUT_MAPPING = {
+"components.radix.themes.layout.box": [
         "box",
     ],
     "components.radix.themes.layout.center": [
@@ -46,78 +98,10 @@ RADIX_MAPPING = {
         "ordered_list",
         "unordered_list",
     ],
-    "components.radix.primitives.accordion": [
-        "accordion",
-    ],
-    "components.radix.primitives.drawer": [
-        "drawer",
-    ],
-    "components.radix.primitives.form": [
-        "form",
-    ],
-    # "components.radix.primitives.slider": [
-    #     "slider"
-    # ],
-    "components.radix.primitives.progress": [
-        "progress",
-    ],
-    **{
-        f"components.radix.themes.components.{mod}": [mod] for mod in [
-            "alert_dialog",
-            "aspect_ratio",
-            "avatar",
-            "badge",
-            "button",
-            "callout",
-            "card",
-            "checkbox",
-            # "checkbox_cards",
-            # "checkbox_group",
-            "context_menu",
-            "data_list",
-            "dialog",
-            # "divider",
-            # "dropdown_menu",
-            "hover_card",
-            "icon_button",
-            "input",
-            "inset",
-            # "menu",
-            "popover",
-            # "radio",
-            # "radio_cards",
-            # "radio_group",
-            "scroll_area",
-            # "segmented_control",
-            "select",
-            # "separator",
-            "skeleton",
-            "slider",
-            "spinner",
-            "switch",
-            "table",
-            "tabs",
-            "text_area",
-            "tooltip",
-        ]
-    },
+}
 
-    "components.radix.themes.components.text_field": [
-        "text_field",
-        "input"
-    ],
-    "components.radix.themes.components.radio_group": [
-        "radio",
-        "radio_group"
-    ],
-    "components.radix.themes.components.dropdown_menu": [
-        "menu",
-        "dropdown_menu"
-    ],
-    "components.radix.themes.components.separator": [
-        "divider",
-        "separator"
-    ],
+
+RADIX_THEMES_TYPOGRAPHY_MAPPING = {
     "components.radix.themes.typography.blockquote": [
         "blockquote",
     ],
@@ -135,15 +119,35 @@ RADIX_MAPPING = {
     ],
 }
 
+RADIX_PRIMITIVES_MAPPING = {
+    "components.radix.primitives.accordion": [
+        "accordion",
+    ],
+    "components.radix.primitives.drawer": [
+        "drawer",
+    ],
+    "components.radix.primitives.form": [
+        "form",
+    ],
+    "components.radix.primitives.progress": [
+        "progress"
+    ]
+}
+
+RADIX_MAPPING = {
+    **RADIX_THEMES_MAPPING,
+    **RADIX_THEMES_COMPONENTS_MAPPING,
+    **RADIX_THEMES_TYPOGRAPHY_MAPPING,
+    **RADIX_THEMES_LAYOUT_MAPPING,
+    **RADIX_PRIMITIVES_MAPPING,
+}
+
 _MAPPING = {
     "experimental": ["_x"],
     "admin": ["AdminDash"],
     "app": ["App", "UploadFile"],
     "base": ["Base"],
     "components.component": ["Component", "NoSSRComponent", "memo"],
-
-    # "components.chakra": ["chakra"],
-    # "components": ["el"],
     "components.el.elements.media": ["image"],
     "components.lucide": ["icon"],
     "components.base.fragment": [
@@ -162,15 +166,12 @@ _MAPPING = {
     "components": ["el", "chakra", "radix", "lucide", "recharts"],
     "components.markdown": ["markdown"],
     "components.next": ["next"],
-    # "components.radix": ["radix", "color_mode"],
-
     **RADIX_MAPPING,
     "components.plotly": ["plotly"],
     "components.react_player": [
         "audio",
         "video"
     ],
-
     "components.core.banner": [
         "connection_banner",
         "connection_modal",
@@ -220,7 +221,6 @@ _MAPPING = {
         "logo"
     ],
     "components.gridjs": ["data_table"],
-    # "components.recharts": ["recharts"],
     "components.moment": ["MomentDelta", "moment"],
     "config": ["Config", "DBConfig"],
     "constants": ["constants", "Env"],

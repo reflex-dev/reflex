@@ -5,6 +5,10 @@ from types import SimpleNamespace
 from reflex.components.props import PropsBase
 from reflex.components.radix.themes.components.progress import progress as progress
 from reflex.components.sonner.toast import toast as toast
+from reflex.components.radix.themes.components.segmented_control import segmented_control
+from reflex.components.radix.themes.components.radio_cards import radio_cards
+from reflex.components.radix.themes.components.checkbox_cards import checkbox_cards
+from reflex.components.radix.themes.components.checkbox_group import checkbox_group
 
 from ..utils.console import warn
 from . import hooks as hooks
@@ -26,4 +30,8 @@ _x = SimpleNamespace(
     PropsBase=PropsBase,
     run_in_thread=run_in_thread,
     toast=toast,
+    segmented_control=segmented_control,
+    radio_cards=radio_cards,
+    checkbox_cards=checkbox_cards,
+    checkbox_group=checkbox_group
 )

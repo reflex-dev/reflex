@@ -14,7 +14,7 @@ from reflex.components.radix.themes.components.dialog import (
     DialogRoot,
     DialogTitle,
 )
-from reflex.components.radix.themes.layout import Flex
+from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants import Dirs, Hooks, Imports
