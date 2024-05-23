@@ -47,6 +47,8 @@ STYLE_PROP_SHORTHAND_MAPPING = {
     "marginY": ("marginTop", "marginBottom"),
     "bg": ("background",),
     "bgColor": ("backgroundColor",),
+    # Radix components derive their font from this CSS var, not inherited from body or class.
+    "fontFamily": ("fontFamily", "--default-font-family"),
 }
 
 
