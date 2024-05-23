@@ -2887,7 +2887,7 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The wrapped value.
         """
-        if isinstance(value, self.__mutable_types__):
+        if isinstance(value, self.__mutable_types__) and not isinstance(value, MutableProxy):
             return type(self)(
                 wrapped=value,
                 state=self._self_state,
