@@ -1,15 +1,15 @@
-from . import base as base
-from . import event as event
+from . import admin as admin
 from . import app as app
+from . import base as base
+from . import compiler as compiler
+from . import components as components
 from . import config as config
+from . import event as event
+from . import model as model
+from . import style as style
+from . import testing as testing
 from . import utils as utils
 from . import vars as vars
-from . import testing as testing
-from . import components as components
-from . import model as model
-from . import admin as admin
-from . import style as style
-from . import compiler as compiler
 
 from experimental import _x as _x
 from admin import AdminDash as AdminDash
