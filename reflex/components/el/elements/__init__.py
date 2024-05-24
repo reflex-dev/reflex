@@ -122,7 +122,7 @@ MAPPING = {
 }
 
 
-EXCLUDE = ["del_", "Del"]
+EXCLUDE = ["del_", "Del", "image"]
 for _, v in MAPPING.items():
     v.extend([mod.capitalize() for mod in v if mod not in EXCLUDE])
 

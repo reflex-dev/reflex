@@ -84,3 +84,5 @@ class Fragment(Component):
             The component.
         """
         ...
+
+fragment = Fragment.create

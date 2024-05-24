@@ -8,13 +8,14 @@ we use the Flask "import name as name" syntax.
 from __future__ import annotations
 
 import lazy_loader as lazy
+
 from .page import page as page
 
-RADIX_THEMES_MAPPING = {
+RADIX_THEMES_MAPPING: dict[str, list[str]] = {
     "components.radix.themes.base": ["color_mode", "theme", "theme_panel"],
-    "components.radix.themes.color_mode": ["color_mode"]
+    "components.radix.themes.color_mode": ["color_mode"],
 }
-RADIX_THEMES_COMPONENTS_MAPPING = {
+RADIX_THEMES_COMPONENTS_MAPPING: dict[str, list[str]] = {
     **{
         f"components.radix.themes.components.{mod}": [mod]
         for mod in [
@@ -52,7 +53,7 @@ RADIX_THEMES_COMPONENTS_MAPPING = {
     "components.radix.themes.components.separator": ["divider", "separator"],
 }
 
-RADIX_THEMES_LAYOUT_MAPPING = {
+RADIX_THEMES_LAYOUT_MAPPING: dict[str, list[str]] = {
     "components.radix.themes.layout.box": [
         "box",
     ],
@@ -87,7 +88,7 @@ RADIX_THEMES_LAYOUT_MAPPING = {
     ],
 }
 
-RADIX_THEMES_TYPOGRAPHY_MAPPING = {
+RADIX_THEMES_TYPOGRAPHY_MAPPING: dict[str, list[str]] = {
     "components.radix.themes.typography.blockquote": [
         "blockquote",
     ],
@@ -105,7 +106,7 @@ RADIX_THEMES_TYPOGRAPHY_MAPPING = {
     ],
 }
 
-RADIX_PRIMITIVES_MAPPING = {
+RADIX_PRIMITIVES_MAPPING: dict[str, list[str]] = {
     "components.radix.primitives.accordion": [
         "accordion",
     ],
@@ -118,7 +119,7 @@ RADIX_PRIMITIVES_MAPPING = {
     "components.radix.primitives.progress": ["progress"],
 }
 
-COMPONENTS_CORE_MAPPING = {
+COMPONENTS_CORE_MAPPING: dict[str, list[str]] = {
     "components.core.banner": [
         "connection_banner",
         "connection_modal",
@@ -146,14 +147,14 @@ COMPONENTS_CORE_MAPPING = {
     ],
 }
 
-COMPONENTS_BASE_MAPPING = {
+COMPONENTS_BASE_MAPPING: dict[str, list[str]] = {
     "components.base.fragment": [
         "fragment",
     ],
     "components.base.script": ["script"],
 }
 
-RADIX_MAPPING = {
+RADIX_MAPPING: dict[str, list[str]] = {
     **RADIX_THEMES_MAPPING,
     **RADIX_THEMES_COMPONENTS_MAPPING,
     **RADIX_THEMES_TYPOGRAPHY_MAPPING,
@@ -161,7 +162,7 @@ RADIX_MAPPING = {
     **RADIX_PRIMITIVES_MAPPING,
 }
 
-_MAPPING = {
+_MAPPING: dict[str, list[str]] = {
     "experimental": ["_x"],
     "admin": ["AdminDash"],
     "app": ["App", "UploadFile"],
@@ -228,23 +229,23 @@ _MAPPING = {
     "vars": ["cached_var", "Var"],
 }
 
-
-
+_SUBMODULES: set[str] = {
+    "components",
+    "event",
+    "app",
+    "style",
+    "admin",
+    "base",
+    "model",
+    "testing",
+    "utils",
+    "vars",
+    "config",
+    "compiler",
+}
+_SUBMOD_ATTRS: dict[str, list[str]] = _MAPPING
 __getattr__, __dir__, __all__ = lazy.attach(
     __name__,
-    submodules={
-        "components",
-        "event",
-        "app",
-        "style",
-        "admin",
-        "base",
-        "model",
-        "testing",
-        "utils",
-        "vars",
-        "config",
-        "compiler",
-    },
+    submodules=_SUBMODULES,
     submod_attrs=_MAPPING,
 )

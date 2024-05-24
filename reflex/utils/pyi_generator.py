@@ -775,6 +775,13 @@ class StubGenerator(ast.NodeTransformer):
             # Remove annotated assignments in Component classes (props)
             return None
 
+        # remove dunder method assignments for lazy_loader.attach
+        for target in node.targets:
+            if isinstance(target, ast.Tuple):
+                for name in target.elts:
+                    if isinstance(name, ast.Name) and name.id.startswith("_"):
+                        return
+
         return node
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AnnAssign | None:
@@ -789,6 +796,7 @@ class StubGenerator(ast.NodeTransformer):
             The modified AnnAssign node (or None).
         """
         # skip ClassVars
+        print(f"assign: {node.annotation} | {node.target.id}")
         if (
             isinstance(node.annotation, ast.Subscript)
             and isinstance(node.annotation.value, ast.Name)
@@ -925,13 +933,43 @@ class PyiGenerator:
 
 
 def generate_init():
-    """Generate a pyi file for the main __init__.py."""
-    from reflex import _MAPPING  # type: ignore
+    """Generate pyi files for __init__.py files."""
+    modules_to_generate = ["reflex/", "reflex/components/el"]
+    for file in modules_to_generate:
+        f = Path(file).resolve()
+        module_import = (
+            _relative_to_pwd(f)
+            .with_suffix("")
+            .as_posix()
+            .replace("/", ".")
+            .replace("\\", ".")
+        )
 
-    imports = [
-        f"from {path if mod != path.rsplit('.')[-1] or mod == 'page' else '.'.join(path.rsplit('.')[:-1])} import {mod} as {mod}"
-        for mod, path in _MAPPING.items()
-    ]
-    imports.append("")
-    with contextlib.suppress(Exception):
-        INIT_FILE.write_text("\n".join(imports))
+        mod = importlib.import_module(module_import)
+        sub_mods = getattr(mod, "_SUBMODULES", None)
+        sub_mod_attrs = getattr(mod, "_SUBMOD_ATTRS", None)
+
+        new_tree = StubGenerator(mod, {}).visit(ast.parse(inspect.getsource(mod)))
+
+        if not sub_mods and not sub_mod_attrs:
+            return
+        sub_mods_imports = []
+        sub_mod_attrs_imports = []
+
+        if sub_mods:
+            sub_mods_imports = [f"from . import {mod} as {mod}" for mod in sub_mods]
+            sub_mods_imports.append("")
+
+        if sub_mod_attrs:
+            sub_mod_attrs = {
+                attr: mod for mod, attrs in sub_mod_attrs.items() for attr in attrs
+            }
+            sub_mod_attrs_imports = [
+                f"from {path} import {mod} as {mod}"
+                for mod, path in sub_mod_attrs.items()
+            ]
+            sub_mod_attrs_imports.append("")
+        with contextlib.suppress(Exception):
+            text = "\n".join([*sub_mods_imports, *sub_mod_attrs_imports])
+            text += ast.unparse(new_tree)
+            (f / "__init__.pyi").write_text(text)

@@ -8,13 +8,13 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
-from reflex import el
+from reflex.components.el import elements
 from reflex.vars import Var
 from ..base import RadixThemesComponent
 
 LiteralSectionSize = Literal["1", "2", "3"]
 
-class Section(el.Section, RadixThemesComponent):
+class Section(elements.Section, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -152,3 +152,5 @@ class Section(el.Section, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+section = Section.create
