@@ -8,9 +8,11 @@ we use the Flask "import name as name" syntax.
 from __future__ import annotations
 
 import lazy_loader as lazy
+from .page import page as page
 
 RADIX_THEMES_MAPPING = {
-    "components.radix.themes": ["color_mode", "theme", "theme_panel"]
+    "components.radix.themes.base": ["color_mode", "theme", "theme_panel"],
+    "components.radix.themes.color_mode": ["color_mode"]
 }
 RADIX_THEMES_COMPONENTS_MAPPING = {
     **{
@@ -147,9 +149,8 @@ COMPONENTS_CORE_MAPPING = {
 COMPONENTS_BASE_MAPPING = {
     "components.base.fragment": [
         "fragment",
-        "Fragment",
     ],
-    "components.base.script": ["script", "Script"],
+    "components.base.script": ["script"],
 }
 
 RADIX_MAPPING = {
@@ -192,9 +193,8 @@ _MAPPING = {
     "components.gridjs": ["data_table"],
     "components.moment": ["MomentDelta", "moment"],
     "config": ["Config", "DBConfig"],
-    "constants": ["constants", "Env"],
+    "constants": ["Env"],
     "event": [
-        "event",
         "EventChain",
         "EventHandler",
         "background",
@@ -216,9 +216,7 @@ _MAPPING = {
     ],
     "middleware": ["middleware", "Middleware"],
     "model": ["session", "Model"],
-    "page": ["page"],
     "state": [
-        "state",
         "var",
         "Cookie",
         "LocalStorage",
@@ -231,6 +229,7 @@ _MAPPING = {
 }
 
 
+
 __getattr__, __dir__, __all__ = lazy.attach(
     __name__,
     submodules={
@@ -238,7 +237,6 @@ __getattr__, __dir__, __all__ = lazy.attach(
         "event",
         "app",
         "style",
-        "page",
         "admin",
         "base",
         "model",
