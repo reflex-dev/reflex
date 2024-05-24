@@ -325,6 +325,8 @@ class AppHarness:
             m = re.search(reflex.constants.Next.FRONTEND_LISTENING_REGEX, line)
             if m is not None:
                 self.frontend_url = m.group(1)
+                config = reflex.config.get_config()
+                config.deploy_url = self.frontend_url
                 break
         if self.frontend_url is None:
             raise RuntimeError("Frontend did not start")
