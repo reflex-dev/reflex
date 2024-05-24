@@ -956,7 +956,7 @@ def generate_init():
         sub_mod_attrs_imports = []
 
         if sub_mods:
-            sub_mods_imports = [f"from . import {mod} as {mod}" for mod in sub_mods]
+            sub_mods_imports = [f"from . import {mod} as {mod}" for mod in sorted(sub_mods)]
             sub_mods_imports.append("")
 
         if sub_mod_attrs:
