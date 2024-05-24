@@ -32,6 +32,12 @@ class TextArea(RadixThemesComponent, el.Textarea):
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
+        resize: Optional[
+            Union[
+                Var[Literal["none", "vertical", "horizontal", "both"]],
+                Literal["none", "vertical", "horizontal", "both"],
+            ]
+        ] = None,
         color_scheme: Optional[
             Union[
                 Var[
@@ -92,6 +98,12 @@ class TextArea(RadixThemesComponent, el.Textarea):
                     "bronze",
                     "gray",
                 ],
+            ]
+        ] = None,
+        radius: Optional[
+            Union[
+                Var[Literal["none", "small", "medium", "large", "full"]],
+                Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
         auto_complete: Optional[Union[Var[bool], bool]] = None,
