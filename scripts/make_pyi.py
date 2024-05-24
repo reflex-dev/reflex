@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from reflex.utils.pyi_generator import PyiGenerator, _relative_to_pwd, generate_init
+from reflex.utils.pyi_generator import PyiGenerator, _relative_to_pwd
 
 logger = logging.getLogger("pyi_generator")
 

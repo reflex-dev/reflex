@@ -1,7 +1,7 @@
 """Element classes."""
 import lazy_loader as lazy
 
-MAPPING = {
+_MAPPING = {
     "forms": [
         "button",
         "fieldset",
@@ -123,10 +123,12 @@ MAPPING = {
 
 
 EXCLUDE = ["del_", "Del", "image"]
-for _, v in MAPPING.items():
+for _, v in _MAPPING.items():
     v.extend([mod.capitalize() for mod in v if mod not in EXCLUDE])
+
+_SUBMOD_ATTRS: dict[str, list[str]] = _MAPPING
 
 __getattr__, __dir__, __all__ = lazy.attach(
     __name__,
-    submod_attrs=MAPPING,
+    submod_attrs=_SUBMOD_ATTRS,
 )

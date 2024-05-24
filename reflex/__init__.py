@@ -247,7 +247,5 @@ _SUBMOD_ATTRS: dict[str, list[str]] = _MAPPING
 __getattr__, __dir__, __all__ = lazy.attach(
     __name__,
     submodules=_SUBMODULES,
-    submod_attrs=_MAPPING,
+    submod_attrs=_SUBMOD_ATTRS,
 )
-
-

@@ -272,8 +272,8 @@ def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
 
 
 def _extract_func_kwargs_as_ast_nodes(
-        func: Callable,
-        type_hint_globals: dict[str, Any],
+    func: Callable,
+    type_hint_globals: dict[str, Any],
 ) -> list[tuple[ast.arg, ast.Constant | None]]:
     """Get the kwargs already defined on the function.
 
@@ -301,10 +301,10 @@ def _extract_func_kwargs_as_ast_nodes(
 
 
 def _extract_class_props_as_ast_nodes(
-        func: Callable,
-        clzs: list[Type],
-        type_hint_globals: dict[str, Any],
-        extract_real_default: bool = False,
+    func: Callable,
+    clzs: list[Type],
+    type_hint_globals: dict[str, Any],
+    extract_real_default: bool = False,
 ) -> list[tuple[ast.arg, ast.Constant | None]]:
     """Get the props defined on the class and all parents.
 
@@ -326,10 +326,10 @@ def _extract_class_props_as_ast_nodes(
         exec(f"from {target_class.__module__} import *", type_hint_globals)
         for name, value in target_class.__annotations__.items():
             if (
-                    name in spec.kwonlyargs
-                    or name in EXCLUDED_PROPS
-                    or name in all_props
-                    or (isinstance(value, str) and "ClassVar" in value)
+                name in spec.kwonlyargs
+                or name in EXCLUDED_PROPS
+                or name in all_props
+                or (isinstance(value, str) and "ClassVar" in value)
             ):
                 continue
             all_props.append(name)
@@ -373,9 +373,9 @@ def _get_parent_imports(func):
 
 
 def _generate_component_create_functiondef(
-        node: ast.FunctionDef | None,
-        clz: type[Component] | type[SimpleNamespace],
-        type_hint_globals: dict[str, Any],
+    node: ast.FunctionDef | None,
+    clz: type[Component] | type[SimpleNamespace],
+    type_hint_globals: dict[str, Any],
 ) -> ast.FunctionDef:
     """Generate the create function definition for a Component.
 
@@ -462,9 +462,9 @@ def _generate_component_create_functiondef(
 
 
 def _generate_staticmethod_call_functiondef(
-        node: ast.FunctionDef | None,
-        clz: type[Component] | type[SimpleNamespace],
-        type_hint_globals: dict[str, Any],
+    node: ast.FunctionDef | None,
+    clz: type[Component] | type[SimpleNamespace],
+    type_hint_globals: dict[str, Any],
 ) -> ast.FunctionDef | None:
     ...
 
@@ -512,10 +512,10 @@ def _generate_staticmethod_call_functiondef(
 
 
 def _generate_namespace_call_functiondef(
-        node: ast.ClassDef | None,
-        clz_name: str,
-        classes: dict[str, type[Component] | type[SimpleNamespace]],
-        type_hint_globals: dict[str, Any],
+    node: ast.ClassDef | None,
+    clz_name: str,
+    classes: dict[str, type[Component] | type[SimpleNamespace]],
+    type_hint_globals: dict[str, Any],
 ) -> ast.FunctionDef | None:
     """Generate the __call__ function definition for a SimpleNamespace.
 
@@ -562,7 +562,7 @@ class StubGenerator(ast.NodeTransformer):
     """A node transformer that will generate the stubs for a given module."""
 
     def __init__(
-            self, module: ModuleType, classes: dict[str, Type[Component | SimpleNamespace]]
+        self, module: ModuleType, classes: dict[str, Type[Component | SimpleNamespace]]
     ):
         """Initialize the stub generator.
 
@@ -586,7 +586,7 @@ class StubGenerator(ast.NodeTransformer):
 
     @staticmethod
     def _remove_docstring(
-            node: ast.Module | ast.ClassDef | ast.FunctionDef,
+        node: ast.Module | ast.ClassDef | ast.FunctionDef,
     ) -> ast.Module | ast.ClassDef | ast.FunctionDef:
         """Removes any docstring in place.
 
@@ -597,9 +597,9 @@ class StubGenerator(ast.NodeTransformer):
             The modified node.
         """
         if (
-                node.body
-                and isinstance(node.body[0], ast.Expr)
-                and isinstance(node.body[0].value, ast.Constant)
+            node.body
+            and isinstance(node.body[0], ast.Expr)
+            and isinstance(node.body[0].value, ast.Constant)
         ):
             node.body.pop(0)
         return node
@@ -611,9 +611,9 @@ class StubGenerator(ast.NodeTransformer):
             Whether the current class is a Component.
         """
         return (
-                self.current_class is not None
-                and self.current_class in self.classes
-                and issubclass(self.classes[self.current_class], Component)
+            self.current_class is not None
+            and self.current_class in self.classes
+            and issubclass(self.classes[self.current_class], Component)
         )
 
     def visit_Module(self, node: ast.Module) -> ast.Module:
@@ -629,7 +629,7 @@ class StubGenerator(ast.NodeTransformer):
         return self._remove_docstring(node)  # type: ignore
 
     def visit_Import(
-            self, node: ast.Import | ast.ImportFrom
+        self, node: ast.Import | ast.ImportFrom
     ) -> ast.Import | ast.ImportFrom | list[ast.Import | ast.ImportFrom]:
         """Collect import statements from the module.
 
@@ -648,7 +648,7 @@ class StubGenerator(ast.NodeTransformer):
         return node
 
     def visit_ImportFrom(
-            self, node: ast.ImportFrom
+        self, node: ast.ImportFrom
     ) -> ast.Import | ast.ImportFrom | list[ast.Import | ast.ImportFrom] | None:
         """Visit an ImportFrom node.
 
@@ -704,11 +704,11 @@ class StubGenerator(ast.NodeTransformer):
         self.generic_visit(node)  # Visit child nodes.
 
         if (
-                not any(
-                    isinstance(child, ast.FunctionDef) and child.name == "create"
-                    for child in node.body
-                )
-                and self._current_class_is_component()
+            not any(
+                isinstance(child, ast.FunctionDef) and child.name == "create"
+                for child in node.body
+            )
+            and self._current_class_is_component()
         ):
             # Add a new .create FunctionDef since one does not exist.
             node.body.append(
@@ -765,9 +765,9 @@ class StubGenerator(ast.NodeTransformer):
         """
         # Special case for assignments to `typing.Any` as fallback.
         if (
-                node.value is not None
-                and isinstance(node.value, ast.Name)
-                and node.value.id == "Any"
+            node.value is not None
+            and isinstance(node.value, ast.Name)
+            and node.value.id == "Any"
         ):
             return node
 
@@ -797,9 +797,9 @@ class StubGenerator(ast.NodeTransformer):
         """
         # skip ClassVars
         if (
-                isinstance(node.annotation, ast.Subscript)
-                and isinstance(node.annotation.value, ast.Name)
-                and node.annotation.value.id == "ClassVar"
+            isinstance(node.annotation, ast.Subscript)
+            and isinstance(node.annotation.value, ast.Name)
+            and node.annotation.value.id == "ClassVar"
         ):
             return node
         if isinstance(node.target, ast.Name) and node.target.id.startswith("_"):
@@ -832,9 +832,9 @@ class PyiGenerator:
         ]
         if black is not None:
             for formatted_line in black.format_file_contents(
-                    src_contents=source,
-                    fast=True,
-                    mode=black.mode.Mode(is_pyi=True),
+                src_contents=source,
+                fast=True,
+                mode=black.mode.Mode(is_pyi=True),
             ).splitlines():
                 # Bit of a hack here, since the AST cannot represent comments.
                 if "def create(" in formatted_line or "Figure" in formatted_line:
@@ -850,7 +850,6 @@ class PyiGenerator:
         logger.info(f"Wrote {relpath}")
 
     def _get_init_lazy_imports(self, mod, new_tree):
-
         sub_mods = getattr(mod, "_SUBMODULES", None)
         sub_mod_attrs = getattr(mod, "_SUBMOD_ATTRS", None)
 
@@ -892,9 +891,9 @@ class PyiGenerator:
             name: obj
             for name, obj in vars(module).items()
             if inspect.isclass(obj)
-               and (issubclass(obj, Component) or issubclass(obj, SimpleNamespace))
-               and obj != Component
-               and inspect.getmodule(obj) == module
+            and (issubclass(obj, Component) or issubclass(obj, SimpleNamespace))
+            and obj != Component
+            and inspect.getmodule(obj) == module
         }
         is_init_file = _relative_to_pwd(module_path).name == "__init__.py"
         if not class_names and not is_init_file:
@@ -930,9 +929,9 @@ class PyiGenerator:
         for target in targets:
             target_path = Path(target)
             if (
-                    target_path.is_file()
-                    and target_path.suffix == ".py"
-                    and target_path.name not in EXCLUDED_FILES
+                target_path.is_file()
+                and target_path.suffix == ".py"
+                and target_path.name not in EXCLUDED_FILES
             ):
                 file_targets.append(target_path)
                 continue
@@ -943,8 +942,8 @@ class PyiGenerator:
                 if relative.name in EXCLUDED_FILES or file_path.suffix != ".py":
                     continue
                 if (
-                        changed_files is not None
-                        and _relative_to_pwd(file_path) not in changed_files
+                    changed_files is not None
+                    and _relative_to_pwd(file_path) not in changed_files
                 ):
                     continue
                 file_targets.append(file_path)
@@ -965,4 +964,3 @@ class PyiGenerator:
             self._scan_files(file_targets)
         else:
             self._scan_files_multiprocess(file_targets)
-
