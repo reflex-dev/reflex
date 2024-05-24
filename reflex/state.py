@@ -2836,7 +2836,9 @@ class MutableProxy(wrapt.ObjectProxy):
         ]
     )
 
-    __never_wrap_base_attrs__ = set(Base.__dict__) - {"set"} | set(pydantic.BaseModel.__dict__)
+    __never_wrap_base_attrs__ = set(Base.__dict__) - {"set"} | set(
+        pydantic.BaseModel.__dict__
+    )
 
     __mutable_types__ = (list, dict, set, Base)
 
@@ -2887,7 +2889,9 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The wrapped value.
         """
-        if isinstance(value, self.__mutable_types__) and not isinstance(value, MutableProxy):
+        if isinstance(value, self.__mutable_types__) and not isinstance(
+            value, MutableProxy
+        ):
             return type(self)(
                 wrapped=value,
                 state=self._self_state,
