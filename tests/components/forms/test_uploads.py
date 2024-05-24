@@ -79,16 +79,16 @@ def test_upload_root_component_render(upload_root_component):
 
     # box inside of upload
     [box] = upload["children"]
-    assert box["name"] == "Box"
+    assert box["name"] == "RadixThemesBox"
     assert box["props"] == [
         "className={`rx-Upload`}",
-        'sx={{"border": "1px dotted black"}}',
+        'css={{"border": "1px dotted black"}}',
         "{...getRootProps()}",
     ]
 
     # input, button and text inside of box
     [input, button, text] = box["children"]
-    assert input["name"] == "Input"
+    assert input["name"] == "RadixThemesTextField.Root"
     assert input["props"] == ["type={`file`}", "{...getInputProps()}"]
 
     assert button["name"] == "RadixThemesButton"
@@ -121,16 +121,16 @@ def test_upload_component_render(upload_component):
 
     # box inside of upload
     [box] = upload["children"]
-    assert box["name"] == "Box"
+    assert box["name"] == "RadixThemesBox"
     assert box["props"] == [
         "className={`rx-Upload`}",
-        'sx={{"border": "1px dotted black", "padding": "5em", "textAlign": "center"}}',
+        'css={{"border": "1px dotted black", "padding": "5em", "textAlign": "center"}}',
         "{...getRootProps()}",
     ]
 
     # input, button and text inside of box
     [input, button, text] = box["children"]
-    assert input["name"] == "Input"
+    assert input["name"] == "RadixThemesTextField.Root"
     assert input["props"] == ["type={`file`}", "{...getInputProps()}"]
 
     assert button["name"] == "RadixThemesButton"

@@ -2,7 +2,8 @@ from typing import Dict, List, Set, Tuple, Union
 
 import pytest
 
-from reflex.components import box, el, foreach, text
+from reflex import box, el, foreach, text
+from reflex.components.radix.themes.layout.box import box
 from reflex.components.component import Component
 from reflex.components.core.foreach import Foreach, ForeachRenderError, ForeachVarError
 from reflex.state import BaseState, ComponentState

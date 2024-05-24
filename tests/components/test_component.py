@@ -1320,7 +1320,8 @@ def test_instantiate_all_components():
         "Tfoot",
         "Thead",
     }
-    for component_name in rx._ALL_COMPONENTS:  # type: ignore
+    component_nested_list = [*rx.RADIX_MAPPING.values(), *rx.COMPONENTS_BASE_MAPPING.values(), *rx.COMPONENTS_CORE_MAPPING.values()]
+    for component_name in [comp_name for submodule_list in component_nested_list for comp_name in submodule_list ]:  # type: ignore
         if component_name in untested_components:
             continue
         component = getattr(rx, component_name)
