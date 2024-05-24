@@ -796,7 +796,6 @@ class StubGenerator(ast.NodeTransformer):
             The modified AnnAssign node (or None).
         """
         # skip ClassVars
-        print(f"assign: {node.annotation} | {node.target.id}")
         if (
             isinstance(node.annotation, ast.Subscript)
             and isinstance(node.annotation.value, ast.Name)
@@ -971,5 +970,5 @@ def generate_init():
             sub_mod_attrs_imports.append("")
         with contextlib.suppress(Exception):
             text = "\n".join([*sub_mods_imports, *sub_mod_attrs_imports])
-            text += ast.unparse(new_tree)
+            text += ast.unparse(new_tree) + "\n"
             (f / "__init__.pyi").write_text(text)
