@@ -1,4 +1,6 @@
 """The el package exports raw HTML elements."""
+from __future__ import annotations
+
 import lazy_loader as lazy
 
 from . import elements
@@ -10,7 +12,7 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
 
 __getattr__, __dir__, __all__ = lazy.attach(
     __name__,
-    submodules={"elements"},
+    submodules=_SUBMODULES,
     submod_attrs=_SUBMOD_ATTRS,
 )
 
