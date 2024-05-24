@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import urllib.parse
 from base64 import b64encode
 from typing import (
     Any,
@@ -665,7 +666,7 @@ def download(
 
         if isinstance(data, str):
             # Caller provided a plain text string to download.
-            url = "data:text/plain," + data
+            url = "data:text/plain," + urllib.parse.quote(data)
         elif isinstance(data, Var):
             # Need to check on the frontend if the Var already looks like a data: URI.
             is_data_url = data._replace(
