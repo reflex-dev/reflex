@@ -1353,7 +1353,7 @@ class Var:
             "'in' operator not supported for Var types, use Var.contains() instead."
         )
 
-    def contains(self, other: Any, field: Union[str, None] = None) -> Var:
+    def contains(self, other: Any, field: Union[Var, None] = None) -> Var:
         """Check if a var contains the object `other`.
 
         Args:
@@ -1395,11 +1395,12 @@ class Var:
                     f"'in <string>' requires string as left operand, not {other._var_type}"
                 )
 
-            _var_name = (
-                f"{self._var_name}.includes({other._var_full_name})"
-                if field is None
-                else f"{self._var_name}.some(e=>e.{field}==={other._var_full_name})"
-            )
+            _var_name = None
+            if field is None:
+                _var_name = f"{self._var_name}.includes({other._var_full_name})"
+            else:
+                field = Var.create_safe(field, _var_is_string=isinstance(field, str))
+                _var_name = f"{self._var_name}.some(e=>e[{field._var_name_unwrapped}]==={other._var_full_name})"
 
             return self._replace(
                 _var_name=_var_name,

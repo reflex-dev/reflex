@@ -454,7 +454,9 @@ def test_str_contains(var, expected):
     other_var = BaseVar(_var_name="other", _var_type=str)
     assert str(var.contains(other_state_var)) == f"{{{expected}.includes(state.other)}}"
     assert str(var.contains(other_var)) == f"{{{expected}.includes(other)}}"
-    assert str(var.contains("1", "hello")) == f'{{{expected}.some(e=>e.hello==="1")}}'
+    assert (
+        str(var.contains("1", "hello")) == f'{{{expected}.some(e=>e[`hello`]==="1")}}'
+    )
 
 
 @pytest.mark.parametrize(
