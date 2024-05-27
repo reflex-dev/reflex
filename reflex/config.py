@@ -202,6 +202,9 @@ class Config(Base):
     # Whether to enable or disable nextJS gzip compression.
     next_compression: bool = True
 
+    # Whether to use React strict mode in nextJS
+    react_strict_mode: bool = True
+
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
 
