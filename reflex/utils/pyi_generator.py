@@ -812,6 +812,23 @@ class StubGenerator(ast.NodeTransformer):
         return node
 
 
+class InitStubGenerator(StubGenerator):
+    """A node transformer that will generate the stubs for a given init file."""
+
+    def visit_Import(
+        self, node: ast.Import | ast.ImportFrom
+    ) -> ast.Import | ast.ImportFrom | list[ast.Import | ast.ImportFrom]:
+        """Collect import statements from the init module.
+
+        Args:
+            node: The import node to visit.
+
+        Returns:
+                The modified import node(s).
+        """
+        return [node]
+
+
 class PyiGenerator:
     """A .pyi file generator that will scan all defined Component in Reflex and
     generate the approriate stub.
@@ -899,15 +916,17 @@ class PyiGenerator:
         if not class_names and not is_init_file:
             return
 
-        new_tree = StubGenerator(module, class_names).visit(
-            ast.parse(inspect.getsource(module))
-        )
         if is_init_file:
+            new_tree = InitStubGenerator(module, class_names).visit(
+                ast.parse(inspect.getsource(module))
+            )
             init_imports = self._get_init_lazy_imports(module, new_tree)
             if init_imports:
                 self._write_pyi_file(module_path, init_imports)
         else:
-            # print("Not its not an init file")
+            new_tree = StubGenerator(module, class_names).visit(
+                ast.parse(inspect.getsource(module))
+            )
             self._write_pyi_file(module_path, ast.unparse(new_tree))
 
     def _scan_files_multiprocess(self, files: list[Path]):
