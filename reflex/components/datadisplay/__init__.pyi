@@ -5,8 +5,6 @@
 
 from .code import CodeBlock as CodeBlock
 from .code import code_block as code_block
-from .code import theme as theme
-from .code import theme_panel as theme_panel
 from .code import LiteralCodeBlockTheme as LiteralCodeBlockTheme
 from .code import LiteralCodeLanguage as LiteralCodeLanguage
 from .dataeditor import data_editor as data_editor

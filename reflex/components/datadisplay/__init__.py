@@ -7,8 +7,6 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
     "code": [
         "CodeBlock",
         "code_block",
-        "theme",
-        "theme_panel",
         "LiteralCodeBlockTheme",
         "LiteralCodeLanguage",
     ],

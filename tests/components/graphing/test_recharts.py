@@ -1,4 +1,4 @@
-from reflex.components.recharts import (
+from reflex.components.recharts.charts import (
     AreaChart,
     BarChart,
     LineChart,
