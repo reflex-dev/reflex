@@ -1,4 +1,6 @@
 """Namespace for components provided by @radix-ui packages."""
+from __future__ import annotations
+
 from reflex import RADIX_MAPPING
 from reflex.utils import lazy_loader
 

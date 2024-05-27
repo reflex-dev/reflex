@@ -1,5 +1,5 @@
 """Typographic components."""
-
+from __future__ import annotations
 
 from reflex import RADIX_THEMES_TYPOGRAPHY_MAPPING
 from reflex.utils import lazy_loader

@@ -1,4 +1,6 @@
 """Namespace for components provided by the @radix-ui/themes library."""
+from __future__ import annotations
+
 from reflex.utils import lazy_loader
 
 _SUBMODULES: set[str] = {"components", "layout", "typography"}

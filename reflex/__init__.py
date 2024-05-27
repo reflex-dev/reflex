@@ -48,7 +48,7 @@ RADIX_THEMES_COMPONENTS_MAPPING: dict = {
             "segmented_control",
             "radio_cards",
             "checkbox_cards",
-            "checkbox_group"
+            "checkbox_group",
         ]
     },
     "components.radix.themes.components.text_field": ["text_field", "input"],

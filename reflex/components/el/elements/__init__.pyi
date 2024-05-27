@@ -221,7 +221,7 @@ from .typography import P as P
 from .typography import Pre as Pre
 from .typography import Ul as Ul
 from .typography import Ins as Ins
-import lazy_loader as lazy
+from reflex.utils import lazy_loader
 
 _MAPPING = {
     "forms": [

@@ -1,5 +1,7 @@
 """Element classes."""
-import lazy_loader as lazy
+from __future__ import annotations
+
+from reflex.utils import lazy_loader
 
 _MAPPING = {
     "forms": [
@@ -128,7 +130,7 @@ for _, v in _MAPPING.items():
 
 _SUBMOD_ATTRS: dict[str, list[str]] = _MAPPING
 
-__getattr__, __dir__, __all__ = lazy.attach(
+__getattr__, __dir__, __all__ = lazy_loader.attach(
     __name__,
     submod_attrs=_SUBMOD_ATTRS,
 )

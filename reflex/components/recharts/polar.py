@@ -325,3 +325,11 @@ class PolarRadiusAxis(Recharts):
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
+
+
+pie = Pie.create
+radar = Radar.create
+radial_bar = RadialBar.create
+polar_angle_axis = PolarAngleAxis.create
+polar_grid = PolarGrid.create
+polar_radius_axis = PolarRadiusAxis.create
