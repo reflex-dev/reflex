@@ -36,8 +36,8 @@ from .components import chakra as chakra
 from .components import radix as radix
 from .components import lucide as lucide
 from .components import recharts as recharts
+from .components import next as next
 from .components.markdown import markdown as markdown
-from .components.next import next as next
 from .components.radix.themes.color_mode import color_mode as color_mode
 from .components.radix.themes.base import theme as theme
 from .components.radix.themes.base import theme_panel as theme_panel
