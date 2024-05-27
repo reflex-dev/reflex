@@ -29,6 +29,10 @@ from .table import table as table
 from .tabs import tabs as tabs
 from .text_area import text_area as text_area
 from .tooltip import tooltip as tooltip
+from .segmented_control import segmented_control as segmented_control
+from .radio_cards import radio_cards as radio_cards
+from .checkbox_cards import checkbox_cards as checkbox_cards
+from .checkbox_group import checkbox_group as checkbox_group
 from .text_field import text_field as text_field
 from .radio_group import radio as radio
 from .radio_group import radio_group as radio_group

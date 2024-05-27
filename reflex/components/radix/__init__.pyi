@@ -35,6 +35,10 @@ from .themes.components.table import table as table
 from .themes.components.tabs import tabs as tabs
 from .themes.components.text_area import text_area as text_area
 from .themes.components.tooltip import tooltip as tooltip
+from .themes.components.segmented_control import segmented_control as segmented_control
+from .themes.components.radio_cards import radio_cards as radio_cards
+from .themes.components.checkbox_cards import checkbox_cards as checkbox_cards
+from .themes.components.checkbox_group import checkbox_group as checkbox_group
 from .themes.components.text_field import text_field as text_field
 from .themes.components.radio_group import radio as radio
 from .themes.components.radio_group import radio_group as radio_group

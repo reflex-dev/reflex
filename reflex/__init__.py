@@ -45,6 +45,10 @@ RADIX_THEMES_COMPONENTS_MAPPING: dict = {
             "tabs",
             "text_area",
             "tooltip",
+            "segmented_control",
+            "radio_cards",
+            "checkbox_cards",
+            "checkbox_group"
         ]
     },
     "components.radix.themes.components.text_field": ["text_field", "input"],
@@ -225,6 +229,7 @@ _MAPPING: dict = {
     ],
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportVar"],
+    "utils.serializers": ["serializer"],
     "vars": ["cached_var", "Var"],
 }
 

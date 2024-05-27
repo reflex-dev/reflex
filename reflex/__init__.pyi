@@ -73,6 +73,16 @@ from .components.radix.themes.components.table import table as table
 from .components.radix.themes.components.tabs import tabs as tabs
 from .components.radix.themes.components.text_area import text_area as text_area
 from .components.radix.themes.components.tooltip import tooltip as tooltip
+from .components.radix.themes.components.segmented_control import (
+    segmented_control as segmented_control,
+)
+from .components.radix.themes.components.radio_cards import radio_cards as radio_cards
+from .components.radix.themes.components.checkbox_cards import (
+    checkbox_cards as checkbox_cards,
+)
+from .components.radix.themes.components.checkbox_group import (
+    checkbox_group as checkbox_group,
+)
 from .components.radix.themes.components.text_field import text_field as text_field
 from .components.radix.themes.components.radio_group import radio as radio
 from .components.radix.themes.components.radio_group import radio_group as radio_group
@@ -168,6 +178,7 @@ from .state import State as State
 from .style import Style as Style
 from .style import toggle_color_mode as toggle_color_mode
 from .utils.imports import ImportVar as ImportVar
+from .utils.serializers import serializer as serializer
 from .vars import cached_var as cached_var
 from .vars import Var as Var
 from reflex.utils import lazy_loader
