@@ -13,9 +13,9 @@ from .spacer import spacer as spacer
 from .stack import stack as stack
 from .stack import hstack as hstack
 from .stack import vstack as vstack
-from .list import list as list
-from .list import list_item as list_item
-from .list import ordered_list as ordered_list
-from .list import unordered_list as unordered_list
+# from .list import list as list
+# from .list import list_item as list_item
+# from .list import ordered_list as ordered_list
+# from .list import unordered_list as unordered_list
 import lazy_loader as lazy
 from reflex import RADIX_THEMES_LAYOUT_MAPPING

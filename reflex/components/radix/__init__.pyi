@@ -57,10 +57,10 @@ from .themes.layout.spacer import spacer as spacer
 from .themes.layout.stack import stack as stack
 from .themes.layout.stack import hstack as hstack
 from .themes.layout.stack import vstack as vstack
-from .themes.layout.list import list as list
-from .themes.layout.list import list_item as list_item
-from .themes.layout.list import ordered_list as ordered_list
-from .themes.layout.list import unordered_list as unordered_list
+# from .themes.layout.list import list as list
+# from .themes.layout.list import list_item as list_item
+# from .themes.layout.list import ordered_list as ordered_list
+# from .themes.layout.list import unordered_list as unordered_list
 from .primitives.accordion import accordion as accordion
 from .primitives.drawer import drawer as drawer
 from .primitives.form import form as form
