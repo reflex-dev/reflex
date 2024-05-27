@@ -7,15 +7,15 @@ we use the Flask "import name as name" syntax.
 
 from __future__ import annotations
 
-import lazy_loader as lazy
+from reflex.utils import lazy_loader
 
 from .page import page as page
 
-RADIX_THEMES_MAPPING: dict[str, list[str]] = {
+RADIX_THEMES_MAPPING: dict = {
     "components.radix.themes.base": ["color_mode", "theme", "theme_panel"],
     "components.radix.themes.color_mode": ["color_mode"],
 }
-RADIX_THEMES_COMPONENTS_MAPPING: dict[str, list[str]] = {
+RADIX_THEMES_COMPONENTS_MAPPING: dict = {
     **{
         f"components.radix.themes.components.{mod}": [mod]
         for mod in [
@@ -53,7 +53,7 @@ RADIX_THEMES_COMPONENTS_MAPPING: dict[str, list[str]] = {
     "components.radix.themes.components.separator": ["divider", "separator"],
 }
 
-RADIX_THEMES_LAYOUT_MAPPING: dict[str, list[str]] = {
+RADIX_THEMES_LAYOUT_MAPPING: dict = {
     "components.radix.themes.layout.box": [
         "box",
     ],
@@ -81,14 +81,14 @@ RADIX_THEMES_LAYOUT_MAPPING: dict[str, list[str]] = {
         "vstack",
     ],
     "components.radix.themes.layout.list": [
-        "list",
+        ("list_ns", "list"),
         "list_item",
         "ordered_list",
         "unordered_list",
     ],
 }
 
-RADIX_THEMES_TYPOGRAPHY_MAPPING: dict[str, list[str]] = {
+RADIX_THEMES_TYPOGRAPHY_MAPPING: dict = {
     "components.radix.themes.typography.blockquote": [
         "blockquote",
     ],
@@ -106,7 +106,7 @@ RADIX_THEMES_TYPOGRAPHY_MAPPING: dict[str, list[str]] = {
     ],
 }
 
-RADIX_PRIMITIVES_MAPPING: dict[str, list[str]] = {
+RADIX_PRIMITIVES_MAPPING: dict = {
     "components.radix.primitives.accordion": [
         "accordion",
     ],
@@ -119,7 +119,7 @@ RADIX_PRIMITIVES_MAPPING: dict[str, list[str]] = {
     "components.radix.primitives.progress": ["progress"],
 }
 
-COMPONENTS_CORE_MAPPING: dict[str, list[str]] = {
+COMPONENTS_CORE_MAPPING: dict = {
     "components.core.banner": [
         "connection_banner",
         "connection_modal",
@@ -147,14 +147,14 @@ COMPONENTS_CORE_MAPPING: dict[str, list[str]] = {
     ],
 }
 
-COMPONENTS_BASE_MAPPING: dict[str, list[str]] = {
+COMPONENTS_BASE_MAPPING: dict = {
     "components.base.fragment": [
         "fragment",
     ],
     "components.base.script": ["script"],
 }
 
-RADIX_MAPPING: dict[str, list[str]] = {
+RADIX_MAPPING: dict = {
     **RADIX_THEMES_MAPPING,
     **RADIX_THEMES_COMPONENTS_MAPPING,
     **RADIX_THEMES_TYPOGRAPHY_MAPPING,
@@ -162,7 +162,7 @@ RADIX_MAPPING: dict[str, list[str]] = {
     **RADIX_PRIMITIVES_MAPPING,
 }
 
-_MAPPING: dict[str, list[str]] = {
+_MAPPING: dict = {
     "experimental": ["_x"],
     "admin": ["AdminDash"],
     "app": ["App", "UploadFile"],
@@ -243,8 +243,8 @@ _SUBMODULES: set[str] = {
     "config",
     "compiler",
 }
-_SUBMOD_ATTRS: dict[str, list[str]] = _MAPPING
-__getattr__, __dir__, __all__ = lazy.attach(
+_SUBMOD_ATTRS: dict = _MAPPING
+__getattr__, __dir__, __all__ = lazy_loader.attach(
     __name__,
     submodules=_SUBMODULES,
     submod_attrs=_SUBMOD_ATTRS,

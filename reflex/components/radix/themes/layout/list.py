@@ -183,7 +183,16 @@ class List(ComponentNamespace):
     __call__ = staticmethod(BaseList.create)
 
 
-list = list_ns = List()
+list_ns = List()
 list_item = list_ns.item
 ordered_list = list_ns.ordered
 unordered_list = list_ns.unordered
+
+
+def __getattr__(name):
+    if name == "list":
+        return list_ns
+    try:
+        return globals()[name]
+    except KeyError:
+        raise AttributeError(f"module '{__name__} has no attribute '{name}'") from None

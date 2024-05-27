@@ -97,10 +97,10 @@ from .components.radix.themes.layout.spacer import spacer as spacer
 from .components.radix.themes.layout.stack import stack as stack
 from .components.radix.themes.layout.stack import hstack as hstack
 from .components.radix.themes.layout.stack import vstack as vstack
-# from .components.radix.themes.layout.list import list as list
-# from .components.radix.themes.layout.list import list_item as list_item
-# from .components.radix.themes.layout.list import ordered_list as ordered_list
-# from .components.radix.themes.layout.list import unordered_list as unordered_list
+from .components.radix.themes.layout.list import list_ns as list
+from .components.radix.themes.layout.list import list_item as list_item
+from .components.radix.themes.layout.list import ordered_list as ordered_list
+from .components.radix.themes.layout.list import unordered_list as unordered_list
 from .components.radix.primitives.accordion import accordion as accordion
 from .components.radix.primitives.drawer import drawer as drawer
 from .components.radix.primitives.form import form as form
@@ -170,14 +170,14 @@ from .style import toggle_color_mode as toggle_color_mode
 from .utils.imports import ImportVar as ImportVar
 from .vars import cached_var as cached_var
 from .vars import Var as Var
-import lazy_loader as lazy
+from typing import Any, Dict, Literal, Optional, Union, overload
 from .page import page as page
 
-RADIX_THEMES_MAPPING: dict[str, list[str]]
-RADIX_THEMES_COMPONENTS_MAPPING: dict[str, list[str]]
-RADIX_THEMES_LAYOUT_MAPPING: dict[str, list[str]]
-RADIX_THEMES_TYPOGRAPHY_MAPPING: dict[str, list[str]]
-RADIX_PRIMITIVES_MAPPING: dict[str, list[str]]
-COMPONENTS_CORE_MAPPING: dict[str, list[str]]
-COMPONENTS_BASE_MAPPING: dict[str, list[str]]
-RADIX_MAPPING: dict[str, list[str]]
+RADIX_THEMES_MAPPING: dict
+RADIX_THEMES_COMPONENTS_MAPPING: dict
+RADIX_THEMES_LAYOUT_MAPPING: dict
+RADIX_THEMES_TYPOGRAPHY_MAPPING: dict
+RADIX_PRIMITIVES_MAPPING: dict
+COMPONENTS_CORE_MAPPING: dict
+COMPONENTS_BASE_MAPPING: dict
+RADIX_MAPPING: dict

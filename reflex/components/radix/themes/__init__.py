@@ -1,5 +1,5 @@
 """Namespace for components provided by the @radix-ui/themes library."""
-import lazy_loader as lazy
+from reflex.utils import lazy_loader
 
 _SUBMODULES: set[str] = {"components", "layout", "typography"}
 _SUBMOD_ATTRS: dict[str, list[str]] = {
@@ -12,7 +12,7 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
     ],
 }
 
-__getattr__, __dir__, __all__ = lazy.attach(
+__getattr__, __dir__, __all__ = lazy_loader.attach(
     __name__,
     submodules=_SUBMODULES,
     submod_attrs=_SUBMOD_ATTRS,

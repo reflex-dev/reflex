@@ -1,7 +1,7 @@
 """Import all the components."""
 from __future__ import annotations
 
-import lazy_loader as lazy
+from reflex.utils import lazy_loader
 
 _SUBMODULES: set[str] = {
     "lucide",
@@ -28,7 +28,7 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
     ],
     "next": ["NextLink", "next_link"],
 }
-__getattr__, __dir__, __all__ = lazy.attach(
+__getattr__, __dir__, __all__ = lazy_loader.attach(
     __name__,
     submodules=_SUBMODULES,
     submod_attrs=_SUBMOD_ATTRS,

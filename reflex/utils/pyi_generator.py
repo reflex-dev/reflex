@@ -869,7 +869,7 @@ class PyiGenerator:
                 attr: mod for mod, attrs in sub_mod_attrs.items() for attr in attrs
             }
             sub_mod_attrs_imports = [
-                f"from .{path} import {mod} as {mod}"
+                f"from .{path} import {mod if not isinstance(mod, tuple) else mod[0]} as {mod if not isinstance(mod, tuple) else mod[1]}"
                 for mod, path in sub_mod_attrs.items()
             ]
             sub_mod_attrs_imports.append("")
