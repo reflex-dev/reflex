@@ -1,5 +1,7 @@
 """Radix primitive components (https://www.radix-ui.com/primitives)."""
-import lazy_loader as lazy
+from __future__ import annotations
+
+from reflex.utils import lazy_loader
 
 from reflex import RADIX_PRIMITIVES_MAPPING
 
@@ -8,7 +10,7 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
     for k, v in RADIX_PRIMITIVES_MAPPING.items()
 }
 
-__getattr__, __dir__, __all__ = lazy.attach(
+__getattr__, __dir__, __all__ = lazy_loader.attach(
     __name__,
     submod_attrs=_SUBMOD_ATTRS,
 )
