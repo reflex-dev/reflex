@@ -865,6 +865,7 @@ class PyiGenerator:
         logger.info(f"Wrote {relpath}")
 
     def _get_init_lazy_imports(self, mod, new_tree):
+        # retrieve the _SUBMODULES and _SUBMOD_ATTRS from an init file if present.
         sub_mods = getattr(mod, "_SUBMODULES", None)
         sub_mod_attrs = getattr(mod, "_SUBMOD_ATTRS", None)
 
@@ -883,11 +884,13 @@ class PyiGenerator:
             sub_mod_attrs = {
                 attr: mod for mod, attrs in sub_mod_attrs.items() for attr in attrs
             }
+            # construct the import statement and handle special cases for aliases
             sub_mod_attrs_imports = [
                 f"from .{path} import {mod if not isinstance(mod, tuple) else mod[0]} as {mod if not isinstance(mod, tuple) else mod[1]}"
                 for mod, path in sub_mod_attrs.items()
             ]
             sub_mod_attrs_imports.append("")
+
         text = "\n" + "\n".join([*sub_mods_imports, *sub_mod_attrs_imports])
         text += ast.unparse(new_tree) + "\n"
         return text

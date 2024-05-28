@@ -190,6 +190,8 @@ unordered_list = list_ns.unordered
 
 
 def __getattr__(name):
+    # special case for when accessing list to avoid shadowing
+    # python's built in list object.
     if name == "list":
         return list_ns
     try:

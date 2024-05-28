@@ -5,10 +5,11 @@ import lazy_loader as lazy
 
 
 def attach(package_name, submodules=None, submod_attrs=None):
-    """Replace a package's __getattr__, __dir__ and __all__ via
-    lazy.attach. Lazy loader __getattr__ doesnt support tuples as list values.
-    We needed to add this functionality(tuples) in reflex to support 'import as _'
-    cases. We reformat the submod_attrs dict to flatten the module list before passing over ot lazy_loader.
+    """Replaces a package's __getattr__, __dir__, and __all__ attributes using lazy.attach.
+    The lazy loader __getattr__ doesn't support tuples as list values. We needed to add
+    this functionality (tuples) in Reflex to support 'import as _' statements. This function
+    reformats the submod_attrs dictionary to flatten the module list before passing it to
+    lazy_loader.
 
     Args:
         package_name: name of the package.

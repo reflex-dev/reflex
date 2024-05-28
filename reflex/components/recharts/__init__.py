@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from reflex.utils import lazy_loader
 
-_SUBMOD_ATTRS = {
+_SUBMOD_ATTRS: dict = {
     "cartesian": [
         "area",
         "Area",

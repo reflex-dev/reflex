@@ -223,5 +223,5 @@ from .elements.typography import P as P
 from .elements.typography import Pre as Pre
 from .elements.typography import Ul as Ul
 from .elements.typography import Ins as Ins
-import lazy_loader as lazy
+from reflex.utils import lazy_loader
 from . import elements

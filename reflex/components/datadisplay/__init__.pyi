@@ -11,4 +11,4 @@ from .dataeditor import data_editor as data_editor
 from .dataeditor import data_editor_theme as data_editor_theme
 from .dataeditor import DataEditorTheme as DataEditorTheme
 from .logo import logo as logo
-import lazy_loader as lazy
+from reflex.utils import lazy_loader

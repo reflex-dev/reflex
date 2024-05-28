@@ -2,7 +2,81 @@
 
 Anything imported here will be available in the default Reflex import as `rx.*`.
 To signal to typecheckers that something should be reexported,
-we use the Flask "import name as name" syntax.
+
+Dynamic Imports
+---------------
+Reflex utilizes dynamic imports, or lazy loading, to reduce startup/import times.
+With this approach, imports are delayed until they are actually needed. We use
+the `lazy_loader` library to achieve this.
+
+How it works
+--------------
+`lazy_loader.attach` takes two optional arguments: `submodules` and `submod_attrs`.
+- `submodules` typically points to directories or files to be accessed.
+- `submod_attrs` defines a mapping of directory or file names as keys with a list
+  of attributes or modules to access.
+
+Example directory structure:
+
+reflex/
+    |_ components/
+            |_ radix/
+                |_ themes/
+                    |_ components/
+                        |_ box.py
+
+To add `box` under the `rx` namespace (`rx.box`), add the relative path to `submod_attrs` in
+`reflex/__init__.py` (this file):
+
+```python
+lazy_loader.attach(
+    submodules={"components"},
+    submod_attrs={
+        "components.radix.themes.components.box": ["box"]
+    }
+)
+```
+
+This implies that `box` will be imported from `reflex/components/radix/themes/components/box.py`.
+
+To add box under the `rx.radix` namespace (`rx.radix.box`), add the relative path to the
+submod_attrs argument in `reflex/components/radix/__init__.py`:
+
+```python
+lazy_loader.attach(
+    submodules = {"themes"},
+    submod_attrs = {
+        "themes.components.box": ["box"]
+    }
+)
+```
+
+Note: It is important to specify the immediate submodules of a directory in the submodules
+argument to ensure they are registered at runtime. For example, 'components' for reflex,
+'radix' for components, 'themes' for radix, etc.
+
+Aliases
+------------
+If you need to use an alias for a component, you can specify the value as a tuple with the component as the
+first value and the alias as the second:
+
+```python
+lazy_loader.attach(
+    submodules={"components"},
+    submod_attrs={
+        "components.radix.themes.components.box": [("box", "box_alias")]
+    }
+)
+```
+
+In the example above, you will be able to do `rx.box_alias`
+
+Pyi_generator
+--------------
+To generate `.pyi` files for `__init__.py` files, we read the `_SUBMODULES` and `_SUBMOD_ATTRS`
+attributes to generate the import statements. It is highly recommended to define these with
+the provided annotations to facilitate their generation.
+
 """
 
 from __future__ import annotations
