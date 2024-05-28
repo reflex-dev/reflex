@@ -29,11 +29,9 @@ from reflex.vars import Var
 
 logger = logging.getLogger("pyi_generator")
 
-INIT_FILE = Path("reflex/__init__.pyi").resolve()
 PWD = Path(".").resolve()
 
 EXCLUDED_FILES = [
-    # "__init__.py",
     # "app.py",
     "component.py",
     "bare.py",
