@@ -48,7 +48,7 @@ class Plotly(PlotlyLib):
         tag = super()._render()
         if self.layout is None:
             tag.remove_props("data", "layout")
-            tag.special_props.add(Var.create_safe(f"{{...{self.data}}}"))
+            tag.special_props.add(Var.create_safe(f"{{...{self.data._var_name_unwrapped}}}"))
         else:
             tag.add_props(data=self.data.to(dict)["data"])
         return tag
