@@ -1536,6 +1536,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if actual_var is not None:
                     actual_var.mark_dirty(instance=self)
 
+    def _expired_computed_vars(self) -> set[str]:
+        """Determine ComputedVars that need to be recalculated based on the expiration time.
+
+        Returns:
+            Set of computed vars to include in the delta.
+        """
+        return set(
+            cvar
+            for cvar in self.computed_vars
+            if self.computed_vars[cvar].needs_update(instance=self)
+        )
+
     def _dirty_computed_vars(self, from_vars: set[str] | None = None) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the given vars.
 
@@ -1588,6 +1600,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # and always dirty computed vars (cache=False)
         delta_vars = (
             self.dirty_vars.intersection(self.base_vars)
+            .union(self.dirty_vars.intersection(self.computed_vars))
             .union(self._dirty_computed_vars())
             .union(self._always_dirty_computed_vars)
         )
@@ -1620,6 +1633,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ):
             self.parent_state.dirty_substates.add(self.get_name())
             self.parent_state._mark_dirty()
+
+        # Append expired computed vars to dirty_vars to trigger recalculation
+        self.dirty_vars.update(self._expired_computed_vars())
 
         # have to mark computed vars dirty to allow access to newly computed
         # values within the same ComputedVar function
