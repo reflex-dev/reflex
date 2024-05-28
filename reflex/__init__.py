@@ -152,10 +152,8 @@ COMPONENTS_CORE_MAPPING: dict = {
 }
 
 COMPONENTS_BASE_MAPPING: dict = {
-    "components.base.fragment": [
-        "fragment",
-    ],
-    "components.base.script": ["script"],
+    "components.base.fragment": ["fragment", "Fragment"],
+    "components.base.script": ["script", "Script"],
 }
 
 RADIX_MAPPING: dict = {

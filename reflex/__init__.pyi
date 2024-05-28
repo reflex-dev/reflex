@@ -27,7 +27,9 @@ from .components.component import memo as memo
 from .components.el.elements.media import image as image
 from .components.lucide import icon as icon
 from .components.base.fragment import fragment as fragment
+from .components.base.fragment import Fragment as Fragment
 from .components.base.script import script as script
+from .components.base.script import Script as Script
 from .components.suneditor import editor as editor
 from .components.suneditor import EditorButtonList as EditorButtonList
 from .components.suneditor import EditorOptions as EditorOptions
