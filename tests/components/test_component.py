@@ -1332,7 +1332,12 @@ def test_instantiate_all_components():
     ]:  # type: ignore
         if component_name in untested_components:
             continue
-        component = getattr(rx, component_name if not isinstance(component_name, tuple) else component_name[1])
+        component = getattr(
+            rx,
+            component_name
+            if not isinstance(component_name, tuple)
+            else component_name[1],
+        )
         if isinstance(component, type) and issubclass(component, Component):
             component.create()
 
