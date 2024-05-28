@@ -13,9 +13,10 @@ from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import LiteralAccentColor, RadixThemesComponent
+from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 LiteralTextAreaSize = Literal["1", "2", "3"]
+LiteralTextAreaResize = Literal["none", "vertical", "horizontal", "both"]
 
 class TextArea(RadixThemesComponent, el.Textarea):
     @overload
@@ -231,7 +232,9 @@ class TextArea(RadixThemesComponent, el.Textarea):
             *children: The children of the component.
             size: The size of the text area: "1" | "2" | "3"
             variant: The variant of the text area
+            resize: The resize behavior of the text area: "none" | "vertical" | "horizontal" | "both"
             color_scheme: The color of the text area
+            radius: The radius of the text area: "none" | "small" | "medium" | "large" | "full"
             auto_complete: Whether the form control should have autocomplete enabled
             auto_focus: Automatically focuses the textarea when the page loads
             dirname: Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
