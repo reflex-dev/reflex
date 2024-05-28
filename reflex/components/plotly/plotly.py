@@ -43,3 +43,12 @@ class Plotly(PlotlyLib):
 
     # If true, the graph will resize when the window is resized.
     use_resize_handler: Var[bool]
+
+    def _render(self):
+        tag = super()._render()
+        if self.layout is None:
+            tag.remove_props("data", "layout")
+            tag.special_props.add(Var.create_safe(f"{{...{self.data}}}"))
+        else:
+            tag.add_props(data=self.data.to(dict)["data"])
+        return tag
