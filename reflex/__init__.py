@@ -7,7 +7,7 @@ Dynamic Imports
 ---------------
 Reflex utilizes dynamic imports, or lazy loading, to reduce startup/import times.
 With this approach, imports are delayed until they are actually needed. We use
-the `lazy_loader` library to achieve this.
+the `lazy_loader` library(https://github.com/scientific-python/lazy_loader) to achieve this.
 
 How it works
 --------------
