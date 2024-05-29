@@ -88,7 +88,7 @@ def test_upload_root_component_render(upload_root_component):
 
     # input, button and text inside of box
     [input, button, text] = box["children"]
-    assert input["name"] == "RadixThemesTextField.Root"
+    assert input["name"] == "input"
     assert input["props"] == ["type={`file`}", "{...getInputProps()}"]
 
     assert button["name"] == "RadixThemesButton"
@@ -130,7 +130,7 @@ def test_upload_component_render(upload_component):
 
     # input, button and text inside of box
     [input, button, text] = box["children"]
-    assert input["name"] == "RadixThemesTextField.Root"
+    assert input["name"] == "input"
     assert input["props"] == ["type={`file`}", "{...getInputProps()}"]
 
     assert button["name"] == "RadixThemesButton"
