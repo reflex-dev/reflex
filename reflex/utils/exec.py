@@ -113,6 +113,14 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                     else:
                         console.print("New packages detected: Updating app...")
                 else:
+                    if any(
+                        [x in line for x in ("bin executable does not exist on disk",)]
+                    ):
+                        console.error(
+                            "Try setting `REFLEX_USE_NPM=1` and re-running `reflex init` and `reflex run` to use npm instead of bun:\n"
+                            "`REFLEX_USE_NPM=1 reflex init`\n"
+                            "`REFLEX_USE_NPM=1 reflex run`"
+                        )
                     new_hash = detect_package_change(json_file_path)
                     if new_hash != last_hash:
                         last_hash = new_hash
