@@ -309,7 +309,7 @@ class PolarRadiusAxis(Recharts):
     _valid_children: List[str] = ["Label"]
 
     # The domain of the polar radius axis, specifying the minimum and maximum values.
-    domain: List[int]
+    domain: List[int] = [0, 250]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
