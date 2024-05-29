@@ -7,6 +7,7 @@ import contextlib
 import copy
 import functools
 import inspect
+import os
 import traceback
 import uuid
 from abc import ABC, abstractmethod
@@ -35,6 +36,7 @@ except ModuleNotFoundError:
 
 import wrapt
 from redis.asyncio import Redis
+from redis.exceptions import ResponseError
 
 from reflex import constants
 from reflex.base import Base
@@ -2638,13 +2640,23 @@ class StateManagerRedis(StateManager):
         Args:
             lock_key: The redis key for the lock.
             lock_id: The ID of the lock.
+
+        Raises:
+            ResponseError: when the keyspace config cannot be set.
         """
         state_is_locked = False
         lock_key_channel = f"__keyspace@0__:{lock_key.decode()}"
         # Enable keyspace notifications for the lock key, so we know when it is available.
-        await self.redis.config_set(
-            "notify-keyspace-events", self._redis_notify_keyspace_events
-        )
+        try:
+            await self.redis.config_set(
+                "notify-keyspace-events",
+                self._redis_notify_keyspace_events,
+            )
+        except ResponseError:
+            # Some redis servers only allow out-of-band configuration, so ignore errors here.
+            ignore_config_error = os.environ.get("REFLEX_AWS_ELASTICACHE_REDIS", None)
+            if not ignore_config_error:
+                raise
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(lock_key_channel)
             while not state_is_locked:
