@@ -8,13 +8,20 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List
+from reflex.base import Base
 from reflex.components.component import NoSSRComponent
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 try:
     from plotly.graph_objects import Figure  # type: ignore
 except ImportError:
     Figure = Any  # type: ignore
+
+class _ButtonClickData(Base):
+    menu: Any
+    button: Any
+    active: Any
 
 class PlotlyLib(NoSSRComponent):
     @overload
@@ -93,6 +100,7 @@ class PlotlyLib(NoSSRComponent):
         ...
 
 class Plotly(PlotlyLib):
+    def add_custom_code(self) -> list[str]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -108,7 +116,28 @@ class Plotly(PlotlyLib):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_after_plot: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_animated: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_animating_frame: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_animation_interrupted: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_autosize: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_before_hover: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_button_clicked: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -117,10 +146,16 @@ class Plotly(PlotlyLib):
         on_context_menu: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_deselect: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_double_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_hover: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mount: Optional[
@@ -147,7 +182,34 @@ class Plotly(PlotlyLib):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_redraw: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_relayout: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_relayouting: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_restyle: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_selected: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_selecting: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_transition_interrupted: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_transitioning: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unhover: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_unmount: Optional[
