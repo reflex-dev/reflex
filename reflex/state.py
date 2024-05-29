@@ -757,7 +757,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for base in cls.__bases__
             if issubclass(base, BaseState) and base is not BaseState and not base._mixin
         ]
-        assert len(parent_states) < 2, "Only one parent state is allowed."
+        assert (
+            len(parent_states) < 2
+        ), f"Only one parent state is allowed {parent_states}."
         return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
 
     @classmethod
@@ -1476,7 +1478,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             StateUpdate object
         """
         from reflex.utils import telemetry
-        from reflex.utils.exceptions import ReflexError
 
         # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
@@ -1516,8 +1517,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             error = traceback.format_exc()
             print(error)
-            if isinstance(ex, ReflexError):
-                telemetry.send("error", context="backend", detail=str(ex))
+            telemetry.send_error(ex, context="backend")
             yield state._as_state_update(
                 handler,
                 window_alert("An error occurred. See logs for details."),
@@ -1535,6 +1535,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 actual_var = self.computed_vars.get(cvar)
                 if actual_var is not None:
                     actual_var.mark_dirty(instance=self)
+
+    def _expired_computed_vars(self) -> set[str]:
+        """Determine ComputedVars that need to be recalculated based on the expiration time.
+
+        Returns:
+            Set of computed vars to include in the delta.
+        """
+        return set(
+            cvar
+            for cvar in self.computed_vars
+            if self.computed_vars[cvar].needs_update(instance=self)
+        )
 
     def _dirty_computed_vars(self, from_vars: set[str] | None = None) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the given vars.
@@ -1588,6 +1600,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # and always dirty computed vars (cache=False)
         delta_vars = (
             self.dirty_vars.intersection(self.base_vars)
+            .union(self.dirty_vars.intersection(self.computed_vars))
             .union(self._dirty_computed_vars())
             .union(self._always_dirty_computed_vars)
         )
@@ -1620,6 +1633,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ):
             self.parent_state.dirty_substates.add(self.get_name())
             self.parent_state._mark_dirty()
+
+        # Append expired computed vars to dirty_vars to trigger recalculation
+        self.dirty_vars.update(self._expired_computed_vars())
 
         # have to mark computed vars dirty to allow access to newly computed
         # values within the same ComputedVar function
@@ -1889,15 +1905,13 @@ class ComponentState(State, mixin=True):
     _per_component_state_instance_count: ClassVar[int] = 0
 
     @classmethod
-    def __init_subclass__(cls, mixin: bool = False, **kwargs):
+    def __init_subclass__(cls, mixin: bool = True, **kwargs):
         """Overwrite mixin default to True.
 
         Args:
             mixin: Whether the subclass is a mixin and should not be initialized.
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
         """
-        if ComponentState in cls.__bases__:
-            mixin = True
         super().__init_subclass__(mixin=mixin, **kwargs)
 
     @classmethod
@@ -1928,7 +1942,7 @@ class ComponentState(State, mixin=True):
         """
         cls._per_component_state_instance_count += 1
         state_cls_name = f"{cls.__name__}_n{cls._per_component_state_instance_count}"
-        component_state = type(state_cls_name, (cls, State), {})
+        component_state = type(state_cls_name, (cls, State), {}, mixin=False)
         component = component_state.get_component(*children, **props)
         component.State = component_state
         return component

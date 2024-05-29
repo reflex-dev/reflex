@@ -493,7 +493,7 @@ class CodeBlock(Component):
         else:
             return code_block
 
-    def add_style(self) -> Style | None:
+    def add_style(self):
         """Add style to the component."""
         self.custom_style.update(self.style)
 

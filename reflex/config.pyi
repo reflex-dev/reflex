@@ -70,6 +70,7 @@ class Config(Base):
     cp_web_url: str
     username: Optional[str]
     gunicorn_worker_class: str
+    gunicorn_workers: Optional[int]
 
     def __init__(
         self,
@@ -97,6 +98,7 @@ class Config(Base):
         cp_web_url: Optional[str] = None,
         username: Optional[str] = None,
         gunicorn_worker_class: Optional[str] = None,
+        gunicorn_workers: Optional[int] = None,
         **kwargs
     ) -> None: ...
     @property

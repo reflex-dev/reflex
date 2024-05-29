@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Literal
 
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.colors import color
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -11,6 +12,8 @@ from ..base import (
     LiteralAccentColor,
     RadixThemesComponent,
 )
+
+vertical_orientation_css = "&[data-orientation='vertical']"
 
 
 class TabsRoot(RadixThemesComponent):
@@ -41,6 +44,18 @@ class TabsRoot(RadixThemesComponent):
             EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 
+    def add_style(self) -> Dict[str, Any] | None:
+        """Add style for the component.
+
+        Returns:
+            The style to add.
+        """
+        return {
+            vertical_orientation_css: {
+                "display": "flex",
+            }
+        }
+
 
 class TabsList(RadixThemesComponent):
     """Contains the triggers that sit alongside the active content."""
@@ -49,6 +64,19 @@ class TabsList(RadixThemesComponent):
 
     # Tabs size "1" - "2"
     size: Var[Literal["1", "2"]]
+
+    def add_style(self):
+        """Add style for the component.
+
+        Returns:
+            The style to add.
+        """
+        return {
+            vertical_orientation_css: {
+                "display": "block",
+                "box_shadow": f"inset -1px 0 0 0 {color('gray', 5, alpha=True)}",
+            },
+        }
 
 
 class TabsTrigger(RadixThemesComponent):
@@ -86,6 +114,14 @@ class TabsTrigger(RadixThemesComponent):
     def _exclude_props(self) -> list[str]:
         return ["color_scheme"]
 
+    def add_style(self) -> Dict[str, Any] | None:
+        """Add style for the component.
+
+        Returns:
+            The style to add.
+        """
+        return {vertical_orientation_css: {"width": "100%"}}
+
 
 class TabsContent(RadixThemesComponent):
     """Contains the content associated with each trigger."""
@@ -94,6 +130,16 @@ class TabsContent(RadixThemesComponent):
 
     # The value of the tab. Must be unique for each tab.
     value: Var[str]
+
+    def add_style(self) -> dict[str, Any] | None:
+        """Add style for the component.
+
+        Returns:
+            The style to add.
+        """
+        return {
+            vertical_orientation_css: {"width": "100%", "margin": None},
+        }
 
 
 class Tabs(ComponentNamespace):
