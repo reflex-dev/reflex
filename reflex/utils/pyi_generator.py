@@ -320,6 +320,7 @@ def _extract_class_props_as_ast_nodes(
     all_props = []
     kwargs = []
     for target_class in clzs:
+        event_triggers = target_class().get_event_triggers()
         # Import from the target class to ensure type hints are resolvable.
         exec(f"from {target_class.__module__} import *", type_hint_globals)
         for name, value in target_class.__annotations__.items():
@@ -327,6 +328,7 @@ def _extract_class_props_as_ast_nodes(
                 name in spec.kwonlyargs
                 or name in EXCLUDED_PROPS
                 or name in all_props
+                or name in event_triggers
                 or (isinstance(value, str) and "ClassVar" in value)
             ):
                 continue
