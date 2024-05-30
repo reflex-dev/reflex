@@ -2654,7 +2654,10 @@ class StateManagerRedis(StateManager):
             )
         except ResponseError:
             # Some redis servers only allow out-of-band configuration, so ignore errors here.
-            ignore_config_error = os.environ.get("REFLEX_AWS_ELASTICACHE_REDIS", None)
+            ignore_config_error = os.environ.get(
+                "REFLEX_IGNORE_REDIS_CONFIG_ERROR",
+                None,
+            )
             if not ignore_config_error:
                 raise
         async with self.redis.pubsub() as pubsub:
