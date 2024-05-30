@@ -17,6 +17,7 @@ LiteralTextAreaSize = Literal["1", "2", "3"]
 
 LiteralTextAreaResize = Literal["none", "vertical", "horizontal", "both"]
 
+
 class TextArea(RadixThemesComponent, el.Textarea):
     """The input part of a TextArea, may be used by itself."""
 
