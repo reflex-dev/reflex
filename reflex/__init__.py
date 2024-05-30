@@ -1,7 +1,6 @@
 """Import all classes and functions the end user will need to make an app.
 
 Anything imported here will be available in the default Reflex import as `rx.*`.
-To signal to typecheckers that something should be reexported,
 
 Dynamic Imports
 ---------------
@@ -82,8 +81,6 @@ the provided annotations to facilitate their generation.
 from __future__ import annotations
 
 from reflex.utils import lazy_loader
-
-from .page import page as page
 
 RADIX_THEMES_MAPPING: dict = {
     "components.radix.themes.base": ["color_mode", "theme", "theme_panel"],
@@ -303,6 +300,7 @@ _MAPPING: dict = {
     "utils.imports": ["ImportVar"],
     "utils.serializers": ["serializer"],
     "vars": ["cached_var", "Var"],
+    "page": ["page"],
 }
 
 _SUBMODULES: set[str] = {

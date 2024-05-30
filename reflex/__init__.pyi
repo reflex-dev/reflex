@@ -183,8 +183,8 @@ from .utils.imports import ImportVar as ImportVar
 from .utils.serializers import serializer as serializer
 from .vars import cached_var as cached_var
 from .vars import Var as Var
-from reflex.utils import lazy_loader
 from .page import page as page
+from reflex.utils import lazy_loader
 
 RADIX_THEMES_MAPPING: dict
 RADIX_THEMES_COMPONENTS_MAPPING: dict
