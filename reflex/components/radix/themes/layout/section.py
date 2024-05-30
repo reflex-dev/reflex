@@ -16,5 +16,5 @@ class Section(el.Section, RadixThemesComponent):
 
     tag = "Section"
 
-    # The size of the section: "1" - "3" (default "3")
-    size: Var[LiteralSectionSize]
+    # The size of the section: "1" - "3" (default "2")
+    size: Var[LiteralSectionSize] = Var.create_safe("2")
