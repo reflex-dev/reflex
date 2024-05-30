@@ -2836,6 +2836,7 @@ class MutableProxy(wrapt.ObjectProxy):
         ]
     )
 
+    # These internal attributes on rx.Base should NOT be wrapped in a MutableProxy.
     __never_wrap_base_attrs__ = set(Base.__dict__) - {"set"} | set(
         pydantic.BaseModel.__dict__
     )
@@ -2889,6 +2890,7 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The wrapped value.
         """
+        # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
         if isinstance(value, self.__mutable_types__) and not isinstance(
             value, MutableProxy
         ):
