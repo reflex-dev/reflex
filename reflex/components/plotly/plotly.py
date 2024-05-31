@@ -35,11 +35,17 @@ class Plotly(PlotlyLib):
     # The config of the graph.
     config: Var[Dict]
 
-    # The width of the graph.
-    width: Var[str]
-
-    # The height of the graph.
-    height: Var[str]
-
     # If true, the graph will resize when the window is resized.
     use_resize_handler: Var[bool]
+
+    def _render(self):
+        tag = super()._render()
+        figure = self.data.to(dict)
+        if self.layout is None:
+            tag.remove_props("data", "layout")
+            tag.special_props.add(
+                Var.create_safe(f"{{...{figure._var_name_unwrapped}}}")
+            )
+        else:
+            tag.add_props(data=figure["data"])
+        return tag
