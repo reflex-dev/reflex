@@ -54,21 +54,6 @@ Note: It is important to specify the immediate submodules of a directory in the 
 argument to ensure they are registered at runtime. For example, 'components' for reflex,
 'radix' for components, 'themes' for radix, etc.
 
-Aliases
-------------
-If you need to use an alias for a component, you can specify the value as a tuple with the component as the
-first value and the alias as the second:
-
-```python
-lazy_loader.attach(
-    submodules={"components"},
-    submod_attrs={
-        "components.radix.themes.components.box": [("box", "box_alias")]
-    }
-)
-```
-
-In the example above, you will be able to do `rx.box_alias`
 
 Pyi_generator
 --------------
@@ -76,11 +61,34 @@ To generate `.pyi` files for `__init__.py` files, we read the `_SUBMODULES` and 
 attributes to generate the import statements. It is highly recommended to define these with
 the provided annotations to facilitate their generation.
 
+
+Aliases
+------------
+his is a special case to specify an alias for a component.
+As an example, we use this typically for `rx.list` where defining `list` attribute in the list.py
+overshadows python's list object which messes up the pyi generation for `list.pyi`. As a result, aliases
+should be used for similar cases like this. Note that this logic is employed to fix the pyi generation and alias
+should still be defined or accessible. Check out the __getattr__ logic in `reflex/components/radix/themes/layouts/list.py`
+
+```python
+lazy_loader.attach(
+    submodules={"components"},
+    submod_attrs={
+        "components.radix.themes.layouts": [("list_ns", "list")]
+    }
+)
+```
+
+In the example above, you will be able to do `rx.list`
 """
 
 from __future__ import annotations
 
 from reflex.utils import lazy_loader
+
+# import this here explicitly to avoid returning the page module since page attr has the
+# same name as page module(page.py)
+from .page import page as page
 
 RADIX_THEMES_MAPPING: dict = {
     "components.radix.themes.base": ["color_mode", "theme", "theme_panel"],
@@ -300,7 +308,6 @@ _MAPPING: dict = {
     "utils.imports": ["ImportVar"],
     "utils.serializers": ["serializer"],
     "vars": ["cached_var", "Var"],
-    "page": ["page"],
 }
 
 _SUBMODULES: set[str] = {
