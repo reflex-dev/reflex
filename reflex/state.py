@@ -2867,6 +2867,11 @@ class MutableProxy(wrapt.ObjectProxy):
         ]
     )
 
+    # These internal attributes on rx.Base should NOT be wrapped in a MutableProxy.
+    __never_wrap_base_attrs__ = set(Base.__dict__) - {"set"} | set(
+        pydantic.BaseModel.__dict__
+    )
+
     __mutable_types__ = (list, dict, set, Base)
 
     def __init__(self, wrapped: Any, state: BaseState, field_name: str):
@@ -2916,7 +2921,10 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The wrapped value.
         """
-        if isinstance(value, self.__mutable_types__):
+        # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
+        if isinstance(value, self.__mutable_types__) and not isinstance(
+            value, MutableProxy
+        ):
             return type(self)(
                 wrapped=value,
                 state=self._self_state,
@@ -2960,6 +2968,17 @@ class MutableProxy(wrapt.ObjectProxy):
                 # Wrap methods that may return mutable objects tied to the state.
                 value = wrapt.FunctionWrapper(
                     value,
+                    self._wrap_recursive_decorator,
+                )
+
+            if (
+                isinstance(self.__wrapped__, Base)
+                and __name not in self.__never_wrap_base_attrs__
+                and hasattr(value, "__func__")
+            ):
+                # Wrap methods called on Base subclasses, which might do _anything_
+                return wrapt.FunctionWrapper(
+                    functools.partial(value.__func__, self),
                     self._wrap_recursive_decorator,
                 )
 
