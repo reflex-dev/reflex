@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from reflex.utils.pyi_generator import PyiGenerator, _relative_to_pwd, generate_init
+from reflex.utils.pyi_generator import PyiGenerator, _relative_to_pwd
 
 logger = logging.getLogger("pyi_generator")
 
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     targets = (
         [arg for arg in sys.argv[1:] if not arg.startswith("tests")]
         if len(sys.argv) > 1
-        else ["reflex/components"]
+        else ["reflex/components", "reflex/__init__.py"]
     )
     logger.info(f"Running .pyi generator for {targets}")
 
@@ -104,7 +104,6 @@ if __name__ == "__main__":
 
     gen = PyiGenerator()
     gen.scan_all(targets, changed_files)
-    generate_init()
 
     current_commit_sha = subprocess.run(
         ["git", "rev-parse", "HEAD"], capture_output=True, encoding="utf-8"

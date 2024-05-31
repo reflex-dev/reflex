@@ -1,9 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal, Union
 
-from reflex import el
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
+from reflex.components.el import elements
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -15,7 +15,7 @@ from ..base import (
 LiteralTextAreaSize = Literal["1", "2", "3"]
 
 
-class TextArea(RadixThemesComponent, el.Textarea):
+class TextArea(RadixThemesComponent, elements.Textarea):
     """The input part of a TextArea, may be used by itself."""
 
     tag = "TextArea"

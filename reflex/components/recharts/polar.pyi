@@ -547,3 +547,10 @@ class PolarRadiusAxis(Recharts):
             The component.
         """
         ...
+
+pie = Pie.create
+radar = Radar.create
+radial_bar = RadialBar.create
+polar_angle_axis = PolarAngleAxis.create
+polar_grid = PolarGrid.create
+polar_radius_axis = PolarRadiusAxis.create

@@ -139,3 +139,6 @@ class Foreach(Component):
             arg_index=tag.get_index_var_arg(),
             iterable_type=tag.iterable._var_type.mro()[0].__name__,
         )
+
+
+foreach = Foreach.create

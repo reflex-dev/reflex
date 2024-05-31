@@ -50,7 +50,7 @@ from reflex.components.component import (
     ComponentStyle,
     evaluate_style_namespaces,
 )
-from reflex.components.core import connection_pulser, connection_toaster
+from reflex.components.core.banner import connection_pulser, connection_toaster
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,

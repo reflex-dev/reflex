@@ -650,3 +650,18 @@ class Textarea(BaseHTML):
             EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
             EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
         }
+
+
+button = Button.create
+fieldset = Fieldset.create
+form = Form.create
+input = Input.create
+label = Label.create
+legend = Legend.create
+meter = Meter.create
+optgroup = Optgroup.create
+option = Option.create
+output = Output.create
+progress = Progress.create
+select = Select.create
+textarea = Textarea.create

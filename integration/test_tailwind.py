@@ -26,7 +26,6 @@ def TailwindApp(
         paragraph_class_name: Tailwind class_name for the paragraph.
     """
     import reflex as rx
-    import reflex.components.radix.themes as rdxt
 
     class UnusedState(rx.State):
         pass
@@ -35,7 +34,7 @@ def TailwindApp(
         return rx.el.div(
             rx.chakra.text(paragraph_text, class_name=paragraph_class_name),
             rx.el.p(paragraph_text, class_name=paragraph_class_name),
-            rdxt.text(paragraph_text, as_="p", class_name=paragraph_class_name),
+            rx.text(paragraph_text, as_="p", class_name=paragraph_class_name),
             id="p-content",
         )
 

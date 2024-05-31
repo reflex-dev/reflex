@@ -8,14 +8,14 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Dict, Literal
-from reflex import el
+from reflex.components.el import elements
 from reflex.vars import Var
 from ..base import LiteralAlign, LiteralJustify, LiteralSpacing, RadixThemesComponent
 
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 LiteralFlexWrap = Literal["nowrap", "wrap", "wrap-reverse"]
 
-class Flex(el.Div, RadixThemesComponent):
+class Flex(elements.Div, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -186,3 +186,5 @@ class Flex(el.Div, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+flex = Flex.create

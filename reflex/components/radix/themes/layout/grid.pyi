@@ -8,13 +8,13 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Dict, Literal
-from reflex import el
+from reflex.components.el import elements
 from reflex.vars import Var
 from ..base import LiteralAlign, LiteralJustify, LiteralSpacing, RadixThemesComponent
 
 LiteralGridFlow = Literal["row", "column", "dense", "row-dense", "column-dense"]
 
-class Grid(el.Div, RadixThemesComponent):
+class Grid(elements.Div, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -196,3 +196,5 @@ class Grid(el.Div, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+grid = Grid.create

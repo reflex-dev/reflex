@@ -1,8 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
-from reflex import el
 from reflex.components.component import ComponentNamespace
+from reflex.components.el import elements
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -37,7 +37,7 @@ class AlertDialogTrigger(RadixThemesTriggerComponent):
     tag = "AlertDialog.Trigger"
 
 
-class AlertDialogContent(el.Div, RadixThemesComponent):
+class AlertDialogContent(elements.Div, RadixThemesComponent):
     """Contains the content of the dialog. This component is based on the div element."""
 
     tag = "AlertDialog.Content"

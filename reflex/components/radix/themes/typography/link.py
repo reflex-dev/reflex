@@ -102,3 +102,6 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
                     **props,
                 )
         return super().create(*children, **props)
+
+
+link = Link.create

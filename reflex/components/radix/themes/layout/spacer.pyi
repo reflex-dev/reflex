@@ -182,3 +182,5 @@ class Spacer(Flex):
             A new component instance.
         """
         ...
+
+spacer = Spacer.create
