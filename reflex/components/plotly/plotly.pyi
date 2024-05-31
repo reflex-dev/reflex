@@ -101,8 +101,6 @@ class Plotly(PlotlyLib):
         data: Optional[Union[Var[Figure], Figure]] = None,  # type: ignore
         layout: Optional[Union[Var[Dict], Dict]] = None,
         config: Optional[Union[Var[Dict], Dict]] = None,
-        width: Optional[Union[Var[str], str]] = None,
-        height: Optional[Union[Var[str], str]] = None,
         use_resize_handler: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -164,8 +162,6 @@ class Plotly(PlotlyLib):
             data: The figure to display. This can be a plotly figure or a plotly data json.
             layout: The layout of the graph.
             config: The config of the graph.
-            width: The width of the graph.
-            height: The height of the graph.
             use_resize_handler: If true, the graph will resize when the window is resized.
             style: The style of the component.
             key: A unique key for the component.
