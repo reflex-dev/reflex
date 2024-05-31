@@ -33,10 +33,10 @@ class Plotly(PlotlyLib):
     layout: Var[Dict]
 
     # The config of the graph.
-    config: Var[Dict]
+    # config: Var[Dict]
 
     # If true, the graph will resize when the window is resized.
-    use_resize_handler: Var[bool]
+    # use_resize_handler: Var[bool]
 
     def _render(self):
         tag = super()._render()
