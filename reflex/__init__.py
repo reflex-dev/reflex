@@ -64,7 +64,7 @@ the provided annotations to facilitate their generation.
 
 Aliases
 ------------
-his is a special case to specify an alias for a component.
+This is a special case to specify an alias for a component.
 As an example, we use this typically for `rx.list` where defining `list` attribute in the list.py
 overshadows python's list object which messes up the pyi generation for `list.pyi`. As a result, aliases
 should be used for similar cases like this. Note that this logic is employed to fix the pyi generation and alias
