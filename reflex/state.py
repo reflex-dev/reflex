@@ -390,7 +390,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         from reflex.utils.exceptions import ReflexRuntimeError
 
         if not _reflex_internal_init and not is_testing_env():
-            breakpoint()
             raise ReflexRuntimeError(
                 "State classes should not be instantiated directly in a Reflex app. "
                 "See https://reflex.dev/docs/state/ for further information."
