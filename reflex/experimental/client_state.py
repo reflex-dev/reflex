@@ -105,7 +105,10 @@ class ClientStateVar(Var):
         if default is NoValue:
             default_var = Var.create_safe("", _var_is_local=False, _var_is_string=False)
         elif not isinstance(default, Var):
-            default_var = Var.create_safe(default)
+            default_var = Var.create_safe(
+                default,
+                _var_is_string=isinstance(default, str),
+            )
         else:
             default_var = default
         setter_name = f"set{var_name.capitalize()}"
