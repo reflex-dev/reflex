@@ -159,6 +159,18 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
+  if (event.name == "_clear_session_storage") {
+    sessionStorage.clear();
+    queueEvents(initialEvents(), socket);
+    return false;
+  }
+
+  if (event.name == "_remove_session_storage") {
+    sessionStorage.removeItem(event.payload.key);
+    queueEvents(initialEvents(), socket);
+    return false;
+  }
+
   if (event.name == "_set_clipboard") {
     const content = event.payload.content;
     navigator.clipboard.writeText(content);

@@ -164,7 +164,7 @@ _MAPPING = {
         "var",
         "Cookie",
         "LocalStorage",
-        "ComponentState",
+        "SessionStorage" "ComponentState",
         "State",
     ],
     "reflex.style": ["style", "toggle_color_mode"],

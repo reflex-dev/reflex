@@ -25,7 +25,7 @@ from reflex.components.base import (
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.state import BaseState, Cookie, LocalStorage
+from reflex.state import BaseState, Cookie, LocalStorage, SessionStorage
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
 from reflex.vars import Var
@@ -154,8 +154,11 @@ def compile_state(state: Type[BaseState]) -> dict:
 
 def _compile_client_storage_field(
     field: ModelField,
-) -> tuple[Type[Cookie] | Type[LocalStorage] | None, dict[str, Any] | None]:
-    """Compile the given cookie or local_storage field.
+) -> tuple[
+    Type[Cookie] | Type[LocalStorage] | Type[SessionStorage] | None,
+    dict[str, Any] | None,
+]:
+    """Compile the given cookie, local_storage or sessionStorage field.
 
     Args:
         field: The possible cookie field to compile.
@@ -163,7 +166,7 @@ def _compile_client_storage_field(
     Returns:
         A dictionary of the compiled cookie or None if the field is not cookie-like.
     """
-    for field_type in (Cookie, LocalStorage):
+    for field_type in (Cookie, LocalStorage, SessionStorage):
         if isinstance(field.default, field_type):
             cs_obj = field.default
         elif isinstance(field.type_, type) and issubclass(field.type_, field_type):
@@ -187,10 +190,12 @@ def _compile_client_storage_recursive(
             (
                 cookies: dict[str, dict],
                 local_storage: dict[str, dict[str, str]]
+                session_storage: dict[str, dict[str, str]]
             )
     """
     cookies = {}
     local_storage = {}
+    session_storage = {}
     state_name = state.get_full_name()
     for name, field in state.__fields__.items():
         if name in state.inherited_vars:
@@ -202,15 +207,20 @@ def _compile_client_storage_recursive(
             cookies[state_key] = options
         elif field_type is LocalStorage:
             local_storage[state_key] = options
+        elif field_type is SessionStorage:
+            session_storage[state_key] = options
         else:
             continue
     for substate in state.get_substates():
-        substate_cookies, substate_local_storage = _compile_client_storage_recursive(
-            substate
-        )
+        (
+            substate_cookies,
+            substate_local_storage,
+            substate_session_storage,
+        ) = _compile_client_storage_recursive(substate)
         cookies.update(substate_cookies)
         local_storage.update(substate_local_storage)
-    return cookies, local_storage
+        session_storage.update(substate_session_storage)
+    return cookies, local_storage, session_storage
 
 
 def compile_client_storage(state: Type[BaseState]) -> dict[str, dict]:
@@ -222,10 +232,11 @@ def compile_client_storage(state: Type[BaseState]) -> dict[str, dict]:
     Returns:
         A dictionary of the compiled client-side storage info.
     """
-    cookies, local_storage = _compile_client_storage_recursive(state)
+    cookies, local_storage, session_storage = _compile_client_storage_recursive(state)
     return {
         constants.COOKIES: cookies,
         constants.LOCAL_STORAGE: local_storage,
+        constants.SESSION_STORAGE: session_storage,
     }
 
 

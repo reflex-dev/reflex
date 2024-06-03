@@ -2806,6 +2806,54 @@ class LocalStorage(ClientStorageBase, str):
         return inst
 
 
+class SessionStorage(ClientStorageBase, str):
+    """Represents a state Var that is stored in sessionStorage in the browser."""
+
+    name: str | None
+    sync: bool = False
+    session_id: str | None
+    auth: bool = False
+    timeout: int | None
+
+    def __new__(
+        cls,
+        object: Any = "",
+        encoding: str | None = None,
+        errors: str | None = None,
+        /,
+        name: str | None = None,
+        sync: bool = False,
+        session_id: str | None = None,
+        auth: bool = False,
+        timeout: int | None = None,
+    ) -> "SessionStorage":
+        """Create a client-side sessionStorage (str).
+
+        Args:
+            object: The initial object.
+            encoding: The encoding to use.
+            errors: The error handling scheme to use.
+            name: The name of the storage key on the client side
+            sync: Whether changes should be propagated to other tabs.
+            session_id: The unique identifier for the session.
+            auth: Whether the user is authenticated or not.
+            timeout: A time limit after which the session expires due to inactivity.
+
+        Returns:
+            The client-side sessionStorage object.
+        """
+        if encoding or errors:
+            inst = super().__new__(cls, object, encoding or "utf-8", errors or "strict")
+        else:
+            inst = super().__new__(cls, object)
+        inst.name = name
+        inst.sync = sync
+        inst.session_id = session_id
+        inst.auth = auth
+        inst.timeout = timeout
+        return inst
+
+
 class MutableProxy(wrapt.ObjectProxy):
     """A proxy for a mutable object that tracks changes."""
 
