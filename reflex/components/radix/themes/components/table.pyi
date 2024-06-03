@@ -8,12 +8,12 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import List, Literal
+from reflex import el
 from reflex.components.component import ComponentNamespace
-from reflex.components.el import elements
 from reflex.vars import Var
 from ..base import RadixThemesComponent
 
-class TableRoot(elements.Table, RadixThemesComponent):
+class TableRoot(el.Table, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -164,7 +164,7 @@ class TableRoot(elements.Table, RadixThemesComponent):
         """
         ...
 
-class TableHeader(elements.Thead, RadixThemesComponent):
+class TableHeader(el.Thead, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -303,7 +303,7 @@ class TableHeader(elements.Thead, RadixThemesComponent):
         """
         ...
 
-class TableRow(elements.Tr, RadixThemesComponent):
+class TableRow(el.Tr, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -445,7 +445,7 @@ class TableRow(elements.Tr, RadixThemesComponent):
         """
         ...
 
-class TableColumnHeaderCell(elements.Th, RadixThemesComponent):
+class TableColumnHeaderCell(el.Th, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -607,7 +607,7 @@ class TableColumnHeaderCell(elements.Th, RadixThemesComponent):
         """
         ...
 
-class TableBody(elements.Tbody, RadixThemesComponent):
+class TableBody(el.Tbody, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -746,7 +746,7 @@ class TableBody(elements.Tbody, RadixThemesComponent):
         """
         ...
 
-class TableCell(elements.Td, RadixThemesComponent):
+class TableCell(el.Td, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -904,7 +904,7 @@ class TableCell(elements.Td, RadixThemesComponent):
         """
         ...
 
-class TableRowHeaderCell(elements.Th, RadixThemesComponent):
+class TableRowHeaderCell(el.Th, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore

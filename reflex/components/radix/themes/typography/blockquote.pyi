@@ -7,12 +7,12 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from reflex.components.el import elements
+from reflex import el
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextSize, LiteralTextWeight
 
-class Blockquote(elements.Blockquote, RadixThemesComponent):
+class Blockquote(el.Blockquote, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -227,5 +227,3 @@ class Blockquote(elements.Blockquote, RadixThemesComponent):
             A new component instance.
         """
         ...
-
-blockquote = Blockquote.create

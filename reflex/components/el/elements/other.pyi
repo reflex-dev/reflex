@@ -142,6 +142,9 @@ class Details(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -276,6 +279,9 @@ class Dialog(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -408,6 +414,9 @@ class Summary(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -540,6 +549,9 @@ class Slot(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -672,6 +684,9 @@ class Template(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -804,6 +819,9 @@ class Math(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -940,13 +958,8 @@ class Html(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
-
-details = Details.create
-dialog = Dialog.create
-summary = Summary.create
-slot = Slot.create
-template = Template.create
-math = Math.create
-html = Html.create

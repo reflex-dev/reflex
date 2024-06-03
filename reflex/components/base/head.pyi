@@ -82,6 +82,9 @@ class NextHeadLib(Component):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -160,5 +163,3 @@ class Head(NextHeadLib, MemoizationLeaf):
             The memoization leaf
         """
         ...
-
-head = Head.create

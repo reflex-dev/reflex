@@ -8,11 +8,11 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
-from reflex.components.el import elements
+from reflex import el
 from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
-class Badge(elements.Span, RadixThemesComponent):
+class Badge(el.Span, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -24,9 +24,7 @@ class Badge(elements.Span, RadixThemesComponent):
                 Literal["solid", "soft", "surface", "outline"],
             ]
         ] = None,
-        size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
-        ] = None,
+        size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
         color_scheme: Optional[
             Union[
                 Var[

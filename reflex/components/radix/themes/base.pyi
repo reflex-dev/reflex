@@ -10,8 +10,7 @@ from reflex.style import Style
 from typing import Any, Dict, Literal
 from reflex.components import Component
 from reflex.components.tags import Tag
-from reflex.config import get_config
-from reflex.utils.imports import ImportVar
+from reflex.utils import imports
 from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
@@ -174,84 +173,9 @@ class CommonMarginProps(Component):
 
         Returns:
             The component.
-        """
-        ...
 
-class RadixLoadingProp(Component):
-    @overload
-    @classmethod
-    def create(  # type: ignore
-        cls,
-        *children,
-        loading: Optional[Union[Var[bool], bool]] = None,
-        style: Optional[Style] = None,
-        key: Optional[Any] = None,
-        id: Optional[Any] = None,
-        class_name: Optional[Any] = None,
-        autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        **props
-    ) -> "RadixLoadingProp":
-        """Create the component.
-
-        Args:
-            *children: The children of the component.
-            loading: If set, show an rx.spinner instead of the component children.
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: The props of the component.
-
-        Returns:
-            The component.
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -410,7 +334,7 @@ class Theme(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color_mode: Optional[Literal["inherit", "light", "dark"]] = None,
+        color_mode: Optional[LiteralAppearance | None] = None,
         theme_panel: Optional[bool] = False,
         has_background: Optional[Union[Var[bool], bool]] = None,
         appearance: Optional[
@@ -580,10 +504,8 @@ class Theme(RadixThemesComponent):
             A new component instance.
         """
         ...
-    def add_imports(self) -> dict[str, list[ImportVar] | ImportVar]: ...
 
 class ThemePanel(RadixThemesComponent):
-    def add_imports(self) -> dict[str, str]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -737,6 +659,9 @@ class RadixThemesColorModeProvider(Component):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 

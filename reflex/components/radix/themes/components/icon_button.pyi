@@ -8,9 +8,9 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
+from reflex import el
 from reflex.components.component import Component
 from reflex.components.core.match import Match
-from reflex.components.el import elements
 from reflex.components.lucide import Icon
 from reflex.style import Style
 from reflex.vars import Var
@@ -18,13 +18,12 @@ from ..base import (
     LiteralAccentColor,
     LiteralRadius,
     LiteralVariant,
-    RadixLoadingProp,
     RadixThemesComponent,
 )
 
 LiteralButtonSize = Literal["1", "2", "3", "4"]
 
-class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
+class IconButton(el.Button, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -174,7 +173,6 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
         title: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        loading: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -265,7 +263,6 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            loading: If set, show an rx.spinner instead of the component children.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -281,6 +278,5 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
             The IconButton component.
         """
         ...
-    def add_style(self): ...
 
 icon_button = IconButton.create

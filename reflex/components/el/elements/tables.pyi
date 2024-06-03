@@ -144,6 +144,9 @@ class Caption(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -282,6 +285,9 @@ class Col(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -420,6 +426,9 @@ class Colgroup(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -560,6 +569,9 @@ class Table(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -696,6 +708,9 @@ class Tbody(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -844,6 +859,9 @@ class Td(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -980,6 +998,9 @@ class Tfoot(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1132,6 +1153,9 @@ class Th(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1268,6 +1292,9 @@ class Thead(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1404,16 +1431,8 @@ class Tr(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
-
-caption = Caption.create
-col = Col.create
-colgroup = Colgroup.create
-table = Table.create
-tbody = Tbody.create
-td = Td.create
-tfoot = Tfoot.create
-th = Th.create
-thead = Thead.create
-tr = Tr.create

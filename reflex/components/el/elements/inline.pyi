@@ -170,6 +170,9 @@ class A(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -302,6 +305,9 @@ class Abbr(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -434,6 +440,9 @@ class B(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -566,6 +575,9 @@ class Bdi(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -698,6 +710,9 @@ class Bdo(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -830,6 +845,9 @@ class Br(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -962,6 +980,9 @@ class Cite(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1094,6 +1115,9 @@ class Code(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1230,6 +1254,9 @@ class Data(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1362,6 +1389,9 @@ class Dfn(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1494,6 +1524,9 @@ class Em(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1626,6 +1659,9 @@ class I(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1758,6 +1794,9 @@ class Kbd(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1890,6 +1929,9 @@ class Mark(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2024,6 +2066,9 @@ class Q(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2156,6 +2201,9 @@ class Rp(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2288,6 +2336,9 @@ class Rt(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2420,6 +2471,9 @@ class Ruby(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2552,6 +2606,9 @@ class S(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2684,6 +2741,9 @@ class Samp(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2816,6 +2876,9 @@ class Small(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2948,6 +3011,9 @@ class Span(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -3080,6 +3146,9 @@ class Strong(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -3212,6 +3281,9 @@ class Sub(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -3344,6 +3416,9 @@ class Sup(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -3480,6 +3555,9 @@ class Time(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -3612,6 +3690,9 @@ class U(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -3744,34 +3825,8 @@ class Wbr(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
-
-a = A.create
-abbr = Abbr.create
-b = B.create
-bdi = Bdi.create
-bdo = Bdo.create
-br = Br.create
-cite = Cite.create
-code = Code.create
-data = Data.create
-dfn = Dfn.create
-em = Em.create
-i = I.create
-kbd = Kbd.create
-mark = Mark.create
-q = Q.create
-rp = Rp.create
-rt = Rt.create
-ruby = Ruby.create
-s = S.create
-samp = Samp.create
-small = Small.create
-span = Span.create
-strong = Strong.create
-sub = Sub.create
-sup = Sup.create
-time = Time.create
-u = U.create
-wbr = Wbr.create

@@ -189,6 +189,9 @@ class Button(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -321,6 +324,9 @@ class Datalist(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -405,6 +411,9 @@ class Fieldset(Element):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -662,7 +671,7 @@ class Input(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         value: Optional[
-            Union[Var[Union[str, int, float]], Union[str, int, float]]
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
@@ -829,6 +838,9 @@ class Input(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -967,6 +979,9 @@ class Label(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1099,6 +1114,9 @@ class Legend(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1249,6 +1267,9 @@ class Meter(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1389,6 +1410,9 @@ class Optgroup(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1537,6 +1561,9 @@ class Option(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1677,6 +1704,9 @@ class Output(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1817,6 +1847,9 @@ class Progress(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1979,6 +2012,9 @@ class Select(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2178,19 +2214,8 @@ class Textarea(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
-
-button = Button.create
-fieldset = Fieldset.create
-form = Form.create
-input = Input.create
-label = Label.create
-legend = Legend.create
-meter = Meter.create
-optgroup = Optgroup.create
-option = Option.create
-output = Output.create
-progress = Progress.create
-select = Select.create
-textarea = Textarea.create

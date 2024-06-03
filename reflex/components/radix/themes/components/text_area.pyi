@@ -8,16 +8,16 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, Literal, Union
+from reflex import el
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
-from reflex.components.el import elements
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
 LiteralTextAreaSize = Literal["1", "2", "3"]
 
-class TextArea(RadixThemesComponent, elements.Textarea):
+class TextArea(RadixThemesComponent, el.Textarea):
     @overload
     @classmethod
     def create(  # type: ignore

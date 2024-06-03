@@ -149,5 +149,3 @@ class Html(Div):
             ValueError: If children are not provided or more than one child is provided.
         """
         ...
-
-html = Html.create

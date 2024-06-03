@@ -236,6 +236,3 @@ class DataEditor(NoSSRComponent):
 
 @serializer
 def serialize_dataeditortheme(theme: DataEditorTheme): ...
-
-data_editor = DataEditor.create
-data_editor_theme = DataEditorTheme

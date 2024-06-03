@@ -145,6 +145,9 @@ class Base(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -277,6 +280,9 @@ class Head(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -430,6 +436,9 @@ class Link(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -572,6 +581,9 @@ class Meta(BaseHTML):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -648,11 +660,8 @@ class Title(Element):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
-
-base = Base.create
-head = Head.create
-link = Link.create
-meta = Meta.create
-title = Title.create

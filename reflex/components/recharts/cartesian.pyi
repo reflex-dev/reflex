@@ -144,6 +144,9 @@ class Axis(Recharts):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -264,6 +267,9 @@ class XAxis(Axis):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -384,6 +390,9 @@ class YAxis(Axis):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -509,6 +518,9 @@ class ZAxis(Recharts):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -566,6 +578,9 @@ class Brush(Recharts):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -629,6 +644,9 @@ class Cartesian(Recharts):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -746,6 +764,9 @@ class Area(Cartesian):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -824,6 +845,9 @@ class Bar(Cartesian):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -941,6 +965,9 @@ class Line(Cartesian):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1036,6 +1063,9 @@ class Scatter(Cartesian):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1111,6 +1141,9 @@ class Funnel(Cartesian):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1199,6 +1232,9 @@ class ErrorBar(Recharts):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1292,6 +1328,9 @@ class Reference(Recharts):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1387,6 +1426,9 @@ class ReferenceLine(Reference):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1454,6 +1496,9 @@ class ReferenceDot(Reference):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1557,6 +1602,9 @@ class ReferenceArea(Recharts):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1641,6 +1689,9 @@ class Grid(Recharts):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1735,6 +1786,9 @@ class CartesianGrid(Grid):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1847,21 +1901,8 @@ class CartesianAxis(Grid):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         ...
-
-area = Area.create
-bar = Bar.create
-line = Line.create
-scatter = Scatter.create
-x_axis = XAxis.create
-y_axis = YAxis.create
-z_axis = ZAxis.create
-brush = Brush.create
-cartesian_axis = CartesianAxis.create
-cartesian_grid = CartesianGrid.create
-reference_line = ReferenceLine.create
-reference_dot = ReferenceDot.create
-reference_area = ReferenceArea.create
-error_bar = ErrorBar.create
-funnel = Funnel.create
