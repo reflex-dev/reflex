@@ -295,7 +295,8 @@ class Toaster(Component):
         """
         return Toaster.send_toast(message, level="success", **kwargs)
 
-    def toast_dismiss(self, id: str | None):
+    @staticmethod
+    def toast_dismiss(id: Var | str | None = None):
         """Dismiss a toast.
 
         Args:
@@ -304,11 +305,21 @@ class Toaster(Component):
         Returns:
             The toast dismiss event.
         """
-        if id is None:
-            dismiss = f"{toast_ref}.dismiss()"
+        dismiss_var_data = None
+
+        if isinstance(id, Var):
+            dismiss = f"{toast_ref}.dismiss({id._var_full_name})"
+            dismiss_var_data = id._var_data
+        elif isinstance(id, str):
+            dismiss = f"{toast_ref}.dismiss('{id}')"
         else:
-            dismiss = f"{toast_ref}.dismiss({id})"
-        dismiss_action = Var.create(dismiss, _var_is_string=False, _var_is_local=True)
+            dismiss = f"{toast_ref}.dismiss()"
+        dismiss_action = Var.create(
+            dismiss,
+            _var_is_string=False,
+            _var_is_local=True,
+            _var_data=dismiss_var_data,
+        )
         return call_script(dismiss_action)  # type: ignore
 
 

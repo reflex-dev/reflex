@@ -24,6 +24,7 @@ from .base import Base as Base
 from .components.component import Component as Component
 from .components.component import NoSSRComponent as NoSSRComponent
 from .components.component import memo as memo
+from .components.component import ComponentNamespace as ComponentNamespace
 from .components.el.elements.media import image as image
 from .components.lucide import icon as icon
 from .components.base.fragment import fragment as fragment
@@ -143,6 +144,7 @@ from .components.core.upload import upload as upload
 from .components.datadisplay.code import code_block as code_block
 from .components.datadisplay.dataeditor import data_editor as data_editor
 from .components.datadisplay.dataeditor import data_editor_theme as data_editor_theme
+from .components.sonner.toast import toast as toast
 from .components.datadisplay.logo import logo as logo
 from .components.gridjs import data_table as data_table
 from .components.moment import MomentDelta as MomentDelta
