@@ -233,9 +233,8 @@ def get_app(reload: bool = False) -> ModuleType:
 
     Raises:
         RuntimeError: If the app name is not set in the config.
-        exceptions.ReflexError: Reflex specific errors.
     """
-    from reflex.utils import exceptions, telemetry
+    from reflex.utils import telemetry
 
     try:
         os.environ[constants.RELOAD_CONFIG] = str(reload)
@@ -259,8 +258,8 @@ def get_app(reload: bool = False) -> ModuleType:
             importlib.reload(app)
 
         return app
-    except exceptions.ReflexError as ex:
-        telemetry.send("error", context="frontend", detail=str(ex))
+    except Exception as ex:
+        telemetry.send_error(ex, context="frontend")
         raise
 
 
@@ -331,19 +330,6 @@ def parse_redis_url() -> str | dict | None:
         redis_port = 6379
     console.info(f"Using redis at {config.redis_url}")
     return dict(host=redis_url, port=int(redis_port), db=0)
-
-
-def get_production_backend_url() -> str:
-    """Get the production backend URL.
-
-    Returns:
-        The production backend URL.
-    """
-    config = get_config()
-    return constants.PRODUCTION_BACKEND_URL.format(
-        username=config.username,
-        app_name=config.app_name,
-    )
 
 
 def validate_app_name(app_name: str | None = None) -> str:
@@ -626,7 +612,7 @@ def _update_next_config(
     next_config = {
         "basePath": config.frontend_path or "",
         "compress": config.next_compression,
-        "reactStrictMode": True,
+        "reactStrictMode": config.react_strict_mode,
         "trailingSlash": True,
     }
     if transpile_packages:

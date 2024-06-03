@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from reflex.style import Style
+from typing import Any
 
 from .flex import Flex
 
@@ -10,16 +10,17 @@ from .flex import Flex
 class Center(Flex):
     """A center component."""
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style that center the content.
 
         Returns:
             The style of the component.
         """
-        return Style(
-            {
-                "display": "flex",
-                "align_items": "center",
-                "justify_content": "center",
-            }
-        )
+        return {
+            "display": "flex",
+            "align_items": "center",
+            "justify_content": "center",
+        }
+
+
+center = Center.create

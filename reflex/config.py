@@ -202,6 +202,9 @@ class Config(Base):
     # Whether to enable or disable nextJS gzip compression.
     next_compression: bool = True
 
+    # Whether to use React strict mode in nextJS
+    react_strict_mode: bool = True
+
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
 
@@ -212,6 +215,9 @@ class Config(Base):
 
     # The worker class used in production mode
     gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
+
+    # Number of gunicorn workers from user
+    gunicorn_workers: Optional[int] = None
 
     # Attributes that were explicitly set by the user.
     _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())

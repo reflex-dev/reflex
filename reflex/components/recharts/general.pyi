@@ -573,3 +573,9 @@ class LabelList(Recharts):
             The component.
         """
         ...
+
+responsive_container = ResponsiveContainer.create
+legend = Legend.create
+graphing_tooltip = GraphingTooltip.create
+label = Label.create
+label_list = LabelList.create

@@ -27,7 +27,9 @@ from reflex.app import (
     process,
     upload,
 )
-from reflex.components import Component, Cond, Fragment
+from reflex.components import Component
+from reflex.components.base.fragment import Fragment
+from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import Event
 from reflex.middleware import HydrateMiddleware

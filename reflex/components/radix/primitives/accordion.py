@@ -59,7 +59,7 @@ class AccordionComponent(RadixPrimitiveComponent):
     # The variant of the component.
     variant: Var[LiteralAccordionVariant]
 
-    def add_style(self) -> Style | None:
+    def add_style(self):
         """Add style to the component."""
         if self.color_scheme is not None:
             self.custom_attrs["data-accent-color"] = self.color_scheme
@@ -250,43 +250,41 @@ class AccordionItem(AccordionComponent):
 
         return super().create(*children, value=value, **props, class_name=cls_name)
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
         divider_style = f"var(--divider-px) solid {color('gray', 6, alpha=True)}"
-        return Style(
-            {
-                "overflow": "hidden",
-                "width": "100%",
-                "margin_top": "1px",
+        return {
+            "overflow": "hidden",
+            "width": "100%",
+            "margin_top": "1px",
+            "border_top": divider_style,
+            "&:first-child": {
+                "margin_top": 0,
+                "border_top": 0,
+                "border_top_left_radius": "var(--radius-4)",
+                "border_top_right_radius": "var(--radius-4)",
+            },
+            "&:last-child": {
+                "border_bottom_left_radius": "var(--radius-4)",
+                "border_bottom_right_radius": "var(--radius-4)",
+            },
+            "&:focus-within": {
+                "position": "relative",
+                "z_index": 1,
+            },
+            _inherited_variant_selector("ghost", "&:first-child"): {
+                "border_radius": 0,
                 "border_top": divider_style,
-                "&:first-child": {
-                    "margin_top": 0,
-                    "border_top": 0,
-                    "border_top_left_radius": "var(--radius-4)",
-                    "border_top_right_radius": "var(--radius-4)",
-                },
-                "&:last-child": {
-                    "border_bottom_left_radius": "var(--radius-4)",
-                    "border_bottom_right_radius": "var(--radius-4)",
-                },
-                "&:focus-within": {
-                    "position": "relative",
-                    "z_index": 1,
-                },
-                _inherited_variant_selector("ghost", "&:first-child"): {
-                    "border_radius": 0,
-                    "border_top": divider_style,
-                },
-                _inherited_variant_selector("ghost", "&:last-child"): {
-                    "border_radius": 0,
-                    "border_bottom": divider_style,
-                },
-            }
-        )
+            },
+            _inherited_variant_selector("ghost", "&:last-child"): {
+                "border_radius": 0,
+                "border_bottom": divider_style,
+            },
+        }
 
 
 class AccordionHeader(AccordionComponent):
@@ -314,13 +312,13 @@ class AccordionHeader(AccordionComponent):
 
         return super().create(*children, class_name=cls_name, **props)
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style({"display": "flex"})
+        return {"display": "flex"}
 
 
 class AccordionTrigger(AccordionComponent):
@@ -348,44 +346,42 @@ class AccordionTrigger(AccordionComponent):
 
         return super().create(*children, class_name=cls_name, **props)
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style(
-            {
-                "color": color("accent", 11),
-                "font_size": "1.1em",
-                "line_height": 1,
-                "justify_content": "space-between",
-                "align_items": "center",
-                "flex": 1,
-                "display": "flex",
-                "padding": "var(--space-3) var(--space-4)",
-                "width": "100%",
-                "box_shadow": f"0 var(--divider-px) 0 {color('gray', 6, alpha=True)}",
-                "&[data-state='open'] > .AccordionChevron": {
-                    "transform": "rotate(180deg)",
-                },
+        return {
+            "color": color("accent", 11),
+            "font_size": "1.1em",
+            "line_height": 1,
+            "justify_content": "space-between",
+            "align_items": "center",
+            "flex": 1,
+            "display": "flex",
+            "padding": "var(--space-3) var(--space-4)",
+            "width": "100%",
+            "box_shadow": f"0 var(--divider-px) 0 {color('gray', 6, alpha=True)}",
+            "&[data-state='open'] > .AccordionChevron": {
+                "transform": "rotate(180deg)",
+            },
+            "&:hover": {
+                "background_color": color("accent", 4),
+            },
+            "& > .AccordionChevron": {
+                "transition": f"transform var(--animation-duration) var(--animation-easing)",
+            },
+            _inherited_variant_selector("classic"): {
+                "color": "var(--accent-contrast)",
                 "&:hover": {
-                    "background_color": color("accent", 4),
+                    "background_color": color("accent", 10),
                 },
                 "& > .AccordionChevron": {
-                    "transition": f"transform var(--animation-duration) var(--animation-easing)",
-                },
-                _inherited_variant_selector("classic"): {
                     "color": "var(--accent-contrast)",
-                    "&:hover": {
-                        "background_color": color("accent", 10),
-                    },
-                    "& > .AccordionChevron": {
-                        "color": "var(--accent-contrast)",
-                    },
                 },
-            }
-        )
+            },
+        }
 
 
 class AccordionIcon(Icon):
@@ -470,7 +466,7 @@ to {
 """
         ]
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
@@ -486,24 +482,22 @@ to {
             _var_is_string=True,
         )
 
-        return Style(
-            {
-                "overflow": "hidden",
-                "color": color("accent", 11),
-                "padding_x": "var(--space-4)",
-                # Apply before and after content to avoid height animation jank.
-                "&:before, &:after": {
-                    "content": "' '",
-                    "display": "block",
-                    "height": "var(--space-3)",
-                },
-                "&[data-state='open']": {"animation": slideDown},
-                "&[data-state='closed']": {"animation": slideUp},
-                _inherited_variant_selector("classic"): {
-                    "color": "var(--accent-contrast)",
-                },
-            }
-        )
+        return {
+            "overflow": "hidden",
+            "color": color("accent", 11),
+            "padding_x": "var(--space-4)",
+            # Apply before and after content to avoid height animation jank.
+            "&:before, &:after": {
+                "content": "' '",
+                "display": "block",
+                "height": "var(--space-3)",
+            },
+            "&[data-state='open']": {"animation": slideDown},
+            "&[data-state='closed']": {"animation": slideUp},
+            _inherited_variant_selector("classic"): {
+                "color": "var(--accent-contrast)",
+            },
+        }
 
 
 class Accordion(ComponentNamespace):

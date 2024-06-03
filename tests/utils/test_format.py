@@ -3,12 +3,14 @@ from __future__ import annotations
 import datetime
 from typing import Any, List
 
+import plotly.graph_objects as go
 import pytest
 
 from reflex.components.tags.tag import Tag
 from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
 from reflex.style import Style
 from reflex.utils import format
+from reflex.utils.serializers import serialize_figure
 from reflex.vars import BaseVar, Var
 from tests.test_state import (
     ChildState,
@@ -661,7 +663,7 @@ formatted_router = {
                         2: {"prop1": 42, "prop2": "hello"},
                     },
                     "dt": "1989-11-09 18:53:00+01:00",
-                    "fig": [],
+                    "fig": serialize_figure(go.Figure()),
                     "key": "",
                     "map_key": "a",
                     "mapping": {"a": [1, 2, 3], "b": [4, 5, 6]},

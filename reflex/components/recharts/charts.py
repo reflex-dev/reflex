@@ -521,3 +521,15 @@ class Treemap(RechartsCharts):
             width=props.pop("width", "100%"),
             height=props.pop("height", "100%"),
         )
+
+
+area_chart = AreaChart.create
+bar_chart = BarChart.create
+line_chart = LineChart.create
+composed_chart = ComposedChart.create
+pie_chart = PieChart.create
+radar_chart = RadarChart.create
+radial_bar_chart = RadialBarChart.create
+scatter_chart = ScatterChart.create
+funnel_chart = FunnelChart.create
+treemap = Treemap.create

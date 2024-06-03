@@ -2086,3 +2086,18 @@ class Path(BaseHTML):
             The component.
         """
         ...
+
+area = Area.create
+audio = Audio.create
+image = img = Img.create
+map = Map.create
+track = Track.create
+video = Video.create
+embed = Embed.create
+iframe = Iframe.create
+object = Object.create
+picture = Picture.create
+portal = Portal.create
+source = Source.create
+svg = Svg.create
+path = Path.create

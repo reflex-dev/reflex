@@ -145,6 +145,7 @@ from reflex import state as state
 from reflex.state import var as var
 from reflex.state import Cookie as Cookie
 from reflex.state import LocalStorage as LocalStorage
+from reflex.state import SessionStorage as SessionStorage
 from reflex.state import SessionStorageComponentState as SessionStorageComponentState
 from reflex.state import State as State
 from reflex import style as style

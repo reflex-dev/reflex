@@ -7,10 +7,10 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from reflex import el
+from reflex.components.el import elements
 from ..base import RadixThemesComponent
 
-class Box(el.Div, RadixThemesComponent):
+class Box(elements.Div, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -144,3 +144,5 @@ class Box(el.Div, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+box = Box.create
