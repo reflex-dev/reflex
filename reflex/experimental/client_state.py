@@ -185,8 +185,13 @@ class ClientStateVar(Var):
             else self._setter_name
         )
         if value is not NoValue:
+            # This is a hack to make it work like an EventSpec taking an arg
             value = Var.create_safe(value, _var_is_string=isinstance(value, str))
-            setter = f"() => {setter}({value._var_name_unwrapped})"
+            if not value._var_is_string and value._var_full_name.startswith("_"):
+                arg = value._var_name_unwrapped
+            else:
+                arg = ""
+            setter = f"({arg}) => {setter}({value._var_name_unwrapped})"
         return (
             Var.create_safe(
                 setter,
