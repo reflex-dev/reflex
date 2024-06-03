@@ -528,6 +528,14 @@ class Var:
         fn = "JSON.stringify" if json else "String"
         return self.operation(fn=fn, type_=str)
 
+    def to_int(self) -> Var:
+        """Convert a var to an int.
+
+        Returns:
+            The parseInt var.
+        """
+        return self.operation(fn="parseInt", type_=int)
+
     def __hash__(self) -> int:
         """Define a hash function for a var.
 
