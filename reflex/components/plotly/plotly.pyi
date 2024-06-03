@@ -109,7 +109,7 @@ class Plotly(PlotlyLib):
         data: Optional[Union[Var[Figure], Figure]] = None,  # type: ignore
         layout: Optional[Union[Var[Dict], Dict]] = None,
         config: Optional[Union[Var[Dict], Dict]] = None,
-        use_resize_handler: Optional[Union[Var[bool], bool]] = True,
+        use_resize_handler: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
