@@ -308,7 +308,7 @@ class Toaster(Component):
         dismiss_var_data = None
 
         if isinstance(id, Var):
-            dismiss = f"{toast_ref}.dismiss({id._var_full_name})"
+            dismiss = f"{toast_ref}.dismiss({id._var_name_unwrapped})"
             dismiss_var_data = id._var_data
         elif isinstance(id, str):
             dismiss = f"{toast_ref}.dismiss('{id}')"
