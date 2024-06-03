@@ -4,9 +4,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
+from reflex.constants.colors import Color
 from reflex.vars import Var
-
-from constants.colors import Color
 
 from .recharts import (
     LiteralAnimationEasing,
