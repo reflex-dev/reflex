@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
+from constants.colors import Color
+
 from .recharts import (
     LiteralAnimationEasing,
     LiteralAreaType,
@@ -134,7 +136,7 @@ class Brush(Recharts):
     alias = "RechartsBrush"
 
     # Stroke color
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
@@ -219,13 +221,13 @@ class Area(Cartesian):
     alias = "RechartsArea"
 
     # The color of the line stroke.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The width of the line stroke.
     stroke_width: Var[int]
 
     # The color of the area fill.
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
     type_: Var[LiteralAreaType]
@@ -254,13 +256,13 @@ class Bar(Cartesian):
     alias = "RechartsBar"
 
     # The color of the line stroke.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The width of the line stroke.
     stroke_width: Var[int]
 
     # The width of the line stroke.
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
     background: Var[bool]
@@ -292,7 +294,7 @@ class Line(Cartesian):
     type_: Var[LiteralAreaType]
 
     # The color of the line stroke.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The width of the line stroke.
     stoke_width: Var[int]
@@ -339,7 +341,7 @@ class Scatter(Cartesian):
     line_type: Var[LiteralLineType]
 
     # The fill
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # the name
     name: Var[Union[str, int]]
@@ -388,7 +390,7 @@ class ErrorBar(Recharts):
     width: Var[int]
 
     # The stroke color of error bar.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The stroke width of error bar.
     stroke_width: Var[int]
@@ -464,10 +466,10 @@ class ReferenceArea(Recharts):
     alias = "RechartsReferenceArea"
 
     # Stroke color
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # Fill color
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # The opacity of area.
     fill_opacity: Var[float]
@@ -530,7 +532,7 @@ class CartesianGrid(Grid):
     vertical: Var[Dict[str, Any]]
 
     # The background of grid.
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # The opacity of the background used to fill the space between grid lines
     fill_opacity: Var[float]

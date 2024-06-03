@@ -319,7 +319,6 @@ class RadarChart(ChartBase):
         return {
             EventTriggers.ON_CLICK: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
@@ -377,7 +376,6 @@ class RadialBarChart(ChartBase):
         return {
             EventTriggers.ON_CLICK: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
@@ -412,10 +410,12 @@ class ScatterChart(ChartBase):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
@@ -457,18 +457,6 @@ class FunnelChart(RechartsCharts):
     # Valid children components
     _valid_children: List[str] = ["Legend", "GraphingTooltip", "Funnel"]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
 
 
 class Treemap(RechartsCharts):
@@ -522,6 +510,15 @@ class Treemap(RechartsCharts):
             height=props.pop("height", "100%"),
         )
 
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_ANIMATION_START: lambda: [],
+            EventTriggers.ON_ANIMATION_START: lambda: [],
+        }
 
 area_chart = AreaChart.create
 bar_chart = BarChart.create
