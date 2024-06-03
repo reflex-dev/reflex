@@ -517,7 +517,7 @@ class Treemap(RechartsCharts):
         """
         return {
             EventTriggers.ON_ANIMATION_START: lambda: [],
-            EventTriggers.ON_ANIMATION_START: lambda: [],
+            EventTriggers.ON_ANIMATION_END: lambda: [],
         }
 
 area_chart = AreaChart.create
