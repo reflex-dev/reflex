@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import types as builtin_types
 import warnings
@@ -40,11 +41,15 @@ Serializer = Callable[
 SERIALIZERS: dict[Type, Serializer] = {}
 
 
-def serializer(fn: Serializer) -> Serializer:
+def serializer(
+    fn: Serializer | None = None,
+    to: Type | None = None,
+) -> Serializer:
     """Decorator to add a serializer for a given type.
 
     Args:
         fn: The function to decorate.
+        to: The type returned by the serializer. If this is `str`, then any Var created from this type will be treated as a string.
 
     Returns:
         The decorated function.
@@ -52,6 +57,10 @@ def serializer(fn: Serializer) -> Serializer:
     Raises:
         ValueError: If the function does not take a single argument.
     """
+    if fn is None:
+        # If the function is not provided, return a partial that acts as a decorator.
+        return functools.partial(serializer, to=to)  # type: ignore
+
     # Get the global serializers.
     global SERIALIZERS
 
@@ -73,11 +82,30 @@ def serializer(fn: Serializer) -> Serializer:
             f"Serializer for type {type_} is already registered as {registered_fn.__qualname__}."
         )
 
-    # Register the serializer.
-    SERIALIZERS[type_] = fn
+    # Apply type transformation if requested
+    if to is not None:
 
-    # Return the function.
-    return fn
+        def wrapper(value: Any) -> tuple[SerializedType, Type]:
+            rval = fn(value)
+            if isinstance(rval, tuple):
+                if rval[1] != to:
+                    raise ValueError(
+                        f"Serializer for type {type_} returned a tuple with a different type than "
+                        f"expected. Expected {to}, got {rval[1]}"
+                    )
+                serialized_value = rval[0]
+            else:
+                serialized_value = rval
+            return serialized_value, to
+
+        SERIALIZERS[type_] = wrapper
+        # Return the function.
+        return wrapper
+    else:
+        # Register the serializer.
+        SERIALIZERS[type_] = fn
+        # Return the function.
+        return fn
 
 
 @overload
@@ -174,7 +202,7 @@ def has_serializer(type_: Type) -> bool:
     return get_serializer(type_) is not None
 
 
-@serializer
+@serializer(to=str)
 def serialize_type(value: type) -> str:
     """Serialize a python type.
 
@@ -277,8 +305,8 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
     return format.unwrap_vars(fprop)
 
 
-@serializer
-def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> Tuple[str, Type]:
+@serializer(to=str)
+def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
     """Serialize a datetime to a JSON string.
 
     Args:
@@ -287,11 +315,11 @@ def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> Tuple[str,
     Returns:
         The serialized datetime.
     """
-    return str(dt), str
+    return str(dt)
 
 
-@serializer
-def serialize_path(path: Path):
+@serializer(to=str)
+def serialize_path(path: Path) -> str:
     """Serialize a pathlib.Path to a JSON string.
 
     Args:
@@ -316,7 +344,7 @@ def serialize_enum(en: Enum) -> str:
     return en.value
 
 
-@serializer
+@serializer(to=str)
 def serialize_color(color: Color) -> str:
     """Serialize a color.
 

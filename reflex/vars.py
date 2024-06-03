@@ -347,7 +347,7 @@ class Var:
         cls,
         value: Any,
         _var_is_local: bool = True,
-        _var_is_string: bool = False,
+        _var_is_string: bool | None = None,
         _var_data: Optional[VarData] = None,
     ) -> Var | None:
         """Create a var from a value.
@@ -381,7 +381,13 @@ class Var:
         if type_ in types.JSONType:
             name = value
         else:
-            name, _ = serializers.serialize(value, get_type=True)
+            name, serialized_type = serializers.serialize(value, get_type=True)
+            if (
+                serialized_type is not None
+                and _var_is_string is None
+                and issubclass(serialized_type, str)
+            ):
+                _var_is_string = True
         if name is None:
             raise VarTypeError(
                 f"No JSON serializer found for var {value} of type {type_}."
@@ -392,7 +398,7 @@ class Var:
             _var_name=name,
             _var_type=type_,
             _var_is_local=_var_is_local,
-            _var_is_string=_var_is_string,
+            _var_is_string=_var_is_string if _var_is_string is not None else False,
             _var_data=_var_data,
         )
 
@@ -401,7 +407,7 @@ class Var:
         cls,
         value: Any,
         _var_is_local: bool = True,
-        _var_is_string: bool = False,
+        _var_is_string: bool | None = None,
         _var_data: Optional[VarData] = None,
     ) -> Var:
         """Create a var from a value, asserting that it is not None.

@@ -1,5 +1,6 @@
 import datetime
 from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List, Type
 
 import pytest
@@ -194,3 +195,39 @@ def test_serialize(value: Any, expected: str):
         expected: The expected result.
     """
     assert serializers.serialize(value) == expected
+
+
+@pytest.mark.parametrize(
+    "value,expected,exp_var_is_string",
+    [
+        ("test", "test", False),
+        (1, "1", False),
+        (1.0, "1.0", False),
+        (True, "true", False),
+        (False, "false", False),
+        ([1, 2, 3], "[1, 2, 3]", False),
+        ([{"key": 1}, {"key": 2}], '[{"key": 1}, {"key": 2}]', False),
+        (StrEnum.FOO, "foo", False),
+        ([StrEnum.FOO, StrEnum.BAR], '["foo", "bar"]', False),
+        (
+            BaseSubclass(ts=datetime.timedelta(1, 1, 1)),
+            '{"ts": "1 day, 0:00:01.000001"}',
+            False,
+        ),
+        (datetime.datetime(2021, 1, 1, 1, 1, 1, 1), "2021-01-01 01:01:01.000001", True),
+        (Color(color="slate", shade=1), "var(--slate-1)", True),
+        (BaseSubclass, "BaseSubclass", True),
+        (Path("."), ".", True),
+    ],
+)
+def test_serialize_var_to_str(value: Any, expected: str, exp_var_is_string: bool):
+    """Test that serialize with `to=str` passed to a Var is marked with _var_is_string.
+
+    Args:
+        value: The value to serialize.
+        expected: The expected result.
+        exp_var_is_string: The expected value of _var_is_string.
+    """
+    v = Var.create_safe(value)
+    assert v._var_full_name == expected
+    assert v._var_is_string == exp_var_is_string

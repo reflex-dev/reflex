@@ -51,11 +51,11 @@ class Var:
     _var_data: VarData | None = None
     @classmethod
     def create(
-        cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False, _var_data: VarData | None = None,
+        cls, value: Any, _var_is_local: bool = True, _var_is_string: bool | None = None, _var_data: VarData | None = None,
     ) -> Optional[Var]: ...
     @classmethod
     def create_safe(
-        cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False, _var_data: VarData | None = None,
+        cls, value: Any, _var_is_local: bool = True, _var_is_string: bool | None = None, _var_data: VarData | None = None,
     ) -> Var: ...
     @classmethod
     def __class_getitem__(cls, type_: Type) -> _GenericAlias: ...
