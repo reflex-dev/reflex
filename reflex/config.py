@@ -352,11 +352,7 @@ def get_config(reload: bool = False) -> Config:
         The app config.
     """
     sys.path.insert(0, os.getcwd())
-    try:
-        rxconfig = __import__(constants.Config.MODULE)
-        if reload:
-            importlib.reload(rxconfig)
-        return rxconfig.config
-
-    except ImportError:
-        return Config(app_name="")  # type: ignore
+    rxconfig = __import__(constants.Config.MODULE)
+    if reload:
+        importlib.reload(rxconfig)
+    return rxconfig.config
