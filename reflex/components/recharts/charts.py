@@ -17,7 +17,6 @@ from .recharts import (
     RechartsCharts,
 )
 
-
 class ChartBase(RechartsCharts):
     """A component that wraps a Recharts charts."""
 
