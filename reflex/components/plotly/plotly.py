@@ -110,6 +110,7 @@ class Plotly(PlotlyLib):
 
     # If true, the graph will resize when the window is resized.
     use_resize_handler: Var[bool]
+    
 
     # Fired after the plot is redrawn.
     on_after_plot: EventHandler[_passthrough_signature]
