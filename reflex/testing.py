@@ -522,6 +522,7 @@ class AppHarness:
         driver_kwargs: dict[str, Any] | None = None,
         driver_options: ArgOptions | None = None,
         driver_option_args: List[str] | None = None,
+        driver_option_capabilities: dict[str, Any] | None = None,
     ) -> "WebDriver":
         """Get a selenium webdriver instance pointed at the app.
 
@@ -531,6 +532,7 @@ class AppHarness:
             driver_kwargs: additional keyword arguments to pass to the webdriver constructor
             driver_options: selenium ArgOptions instance to pass to the webdriver constructor
             driver_option_args: additional arguments for the webdriver options
+            driver_option_capabilities: additional capabilities for the webdriver options
 
         Returns:
             Instance of the given webdriver navigated to the frontend url of the app.
@@ -577,6 +579,9 @@ class AppHarness:
         if driver_option_args is not None:
             for arg in driver_option_args:
                 driver_options.add_argument(arg)
+        if driver_option_capabilities is not None:
+            for key, value in driver_option_capabilities.items():
+                driver_options.set_capability(key, value)
         if driver_kwargs is None:
             driver_kwargs = {}
         driver = driver_clz(options=driver_options, **driver_kwargs)  # type: ignore
