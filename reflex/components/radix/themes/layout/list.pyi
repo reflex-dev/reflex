@@ -7,13 +7,12 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Iterable, Literal, Optional, Union
+from typing import Any, Iterable, Literal, Optional, Union
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
 from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.typography.text import Text
-from reflex.style import Style
 from reflex.vars import Var
 
 LiteralListStyleTypeUnordered = Literal["none", "disc", "circle", "square"]
@@ -157,6 +156,7 @@ class BaseList(Component):
 
         """
         ...
+    def add_style(self) -> dict[str, Any] | None: ...
 
 class UnorderedList(BaseList, Ul):
     @overload
@@ -165,7 +165,7 @@ class UnorderedList(BaseList, Ul):
         cls,
         *children,
         items: Optional[Union[Var[Iterable], Iterable]] = None,
-        list_style_type: Optional[Literal["none", "disc", "circle", "square"]] = "disc",
+        list_style_type: Optional[LiteralListStyleTypeUnordered] = "disc",
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -302,24 +302,7 @@ class OrderedList(BaseList, Ol):
         cls,
         *children,
         items: Optional[Union[Var[Iterable], Iterable]] = None,
-        list_style_type: Optional[
-            Literal[
-                "none",
-                "decimal",
-                "decimal-leading-zero",
-                "lower-roman",
-                "upper-roman",
-                "lower-greek",
-                "lower-latin",
-                "upper-latin",
-                "armenian",
-                "georgian",
-                "lower-alpha",
-                "upper-alpha",
-                "hiragana",
-                "katakana",
-            ]
-        ] = "decimal",
+        list_style_type: Optional[LiteralListStyleTypeOrdered] = "decimal",
         reversed: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -719,3 +702,6 @@ class List(ComponentNamespace):
         ...
 
 list_ns = List()
+list_item = list_ns.item
+ordered_list = list_ns.ordered
+unordered_list = list_ns.unordered

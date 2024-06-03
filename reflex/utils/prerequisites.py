@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import glob
 import importlib
 import inspect
@@ -47,6 +48,14 @@ class Template(Base):
     description: str
     code_url: str
     demo_url: str
+
+
+class CpuInfo(Base):
+    """Model to save cpu info."""
+
+    manufacturer_id: Optional[str]
+    model_name: Optional[str]
+    address_width: Optional[int]
 
 
 def check_latest_package_version(package_name: str):
@@ -172,7 +181,12 @@ def get_install_package_manager() -> str | None:
     Returns:
         The path to the package manager.
     """
-    if constants.IS_WINDOWS and not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
+    if (
+        constants.IS_WINDOWS
+        and not is_windows_bun_supported()
+        or windows_check_onedrive_in_path()
+        or windows_npm_escape_hatch()
+    ):
         return get_package_manager()
     return get_config().bun_path
 
@@ -190,6 +204,24 @@ def get_package_manager() -> str | None:
     return npm_path
 
 
+def windows_check_onedrive_in_path() -> bool:
+    """For windows, check if oneDrive is present in the project dir path.
+
+    Returns:
+        If oneDrive is in the path of the project directory.
+    """
+    return "onedrive" in str(Path.cwd()).lower()
+
+
+def windows_npm_escape_hatch() -> bool:
+    """For windows, if the user sets REFLEX_USE_NPM, use npm instead of bun.
+
+    Returns:
+        If the user has set REFLEX_USE_NPM.
+    """
+    return os.environ.get("REFLEX_USE_NPM", "").lower() in ["true", "1", "yes"]
+
+
 def get_app(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
 
@@ -202,27 +234,33 @@ def get_app(reload: bool = False) -> ModuleType:
     Raises:
         RuntimeError: If the app name is not set in the config.
     """
-    os.environ[constants.RELOAD_CONFIG] = str(reload)
-    config = get_config()
-    if not config.app_name:
-        raise RuntimeError(
-            "Cannot get the app module because `app_name` is not set in rxconfig! "
-            "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
-        )
-    module = config.module
-    sys.path.insert(0, os.getcwd())
-    app = __import__(module, fromlist=(constants.CompileVars.APP,))
+    from reflex.utils import telemetry
 
-    if reload:
-        from reflex.state import reload_state_module
+    try:
+        os.environ[constants.RELOAD_CONFIG] = str(reload)
+        config = get_config()
+        if not config.app_name:
+            raise RuntimeError(
+                "Cannot get the app module because `app_name` is not set in rxconfig! "
+                "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
+            )
+        module = config.module
+        sys.path.insert(0, os.getcwd())
+        app = __import__(module, fromlist=(constants.CompileVars.APP,))
 
-        # Reset rx.State subclasses to avoid conflict when reloading.
-        reload_state_module(module=module)
+        if reload:
+            from reflex.state import reload_state_module
 
-        # Reload the app module.
-        importlib.reload(app)
+            # Reset rx.State subclasses to avoid conflict when reloading.
+            reload_state_module(module=module)
 
-    return app
+            # Reload the app module.
+            importlib.reload(app)
+
+        return app
+    except Exception as ex:
+        telemetry.send_error(ex, context="frontend")
+        raise
 
 
 def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
@@ -285,26 +323,13 @@ def parse_redis_url() -> str | dict | None:
         feature_name="host[:port] style redis urls",
         reason="redis-py url syntax is now being used",
         deprecation_version="0.3.6",
-        removal_version="0.5.0",
+        removal_version="0.6.0",
     )
     redis_url, has_port, redis_port = config.redis_url.partition(":")
     if not has_port:
         redis_port = 6379
     console.info(f"Using redis at {config.redis_url}")
     return dict(host=redis_url, port=int(redis_port), db=0)
-
-
-def get_production_backend_url() -> str:
-    """Get the production backend URL.
-
-    Returns:
-        The production backend URL.
-    """
-    config = get_config()
-    return constants.PRODUCTION_BACKEND_URL.format(
-        username=config.username,
-        app_name=config.app_name,
-    )
 
 
 def validate_app_name(app_name: str | None = None) -> str:
@@ -374,7 +399,7 @@ def initialize_gitignore(
     # Write files to the .gitignore file.
     with open(gitignore_file, "w", newline="\n") as f:
         console.debug(f"Creating {gitignore_file}")
-        f.write(f"{(path_ops.join(sorted(files_to_ignore))).lstrip()}")
+        f.write(f"{(path_ops.join(sorted(files_to_ignore))).lstrip()}\n")
 
 
 def initialize_requirements_txt():
@@ -587,7 +612,7 @@ def _update_next_config(
     next_config = {
         "basePath": config.frontend_path or "",
         "compress": config.next_compression,
-        "reactStrictMode": True,
+        "reactStrictMode": config.react_strict_mode,
         "trailingSlash": True,
     }
     if transpile_packages:
@@ -728,10 +753,17 @@ def install_bun():
     Raises:
         FileNotFoundError: If required packages are not found.
     """
-    if constants.IS_WINDOWS and not constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE:
-        console.warn(
-            "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
-        )
+    win_supported = is_windows_bun_supported()
+    one_drive_in_path = windows_check_onedrive_in_path()
+    if constants.IS_WINDOWS and not win_supported or one_drive_in_path:
+        if not win_supported:
+            console.warn(
+                "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
+            )
+        if one_drive_in_path:
+            console.warn(
+                "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
+            )
 
     # Skip if bun is already installed.
     if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
@@ -833,12 +865,14 @@ def install_frontend_packages(packages: set[str], config: Config):
         get_package_manager()
         if not constants.IS_WINDOWS
         or constants.IS_WINDOWS
-        and constants.IS_WINDOWS_BUN_SUPPORTED_MACHINE
+        and is_windows_bun_supported()
+        and not windows_check_onedrive_in_path()
         else None
     )
     processes.run_process_with_fallback(
         [get_install_package_manager(), "install"],  # type: ignore
         fallback=fallback_command,
+        analytics_enabled=True,
         show_status_message="Installing base frontend packages",
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
@@ -854,6 +888,7 @@ def install_frontend_packages(packages: set[str], config: Config):
                 *((config.tailwind or {}).get("plugins", [])),
             ],
             fallback=fallback_command,
+            analytics_enabled=True,
             show_status_message="Installing tailwind",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
@@ -864,6 +899,7 @@ def install_frontend_packages(packages: set[str], config: Config):
         processes.run_process_with_fallback(
             [get_install_package_manager(), "add", *packages],
             fallback=fallback_command,
+            analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
@@ -905,9 +941,26 @@ def needs_reinit(frontend: bool = True) -> bool:
         return True
 
     if constants.IS_WINDOWS:
+        import uvicorn
+
+        uvi_ver = uvicorn.__version__
         console.warn(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
+        if sys.version_info >= (3, 12) and uvi_ver != "0.24.0.post1":
+            console.warn(
+                f"""On Python 3.12, `uvicorn==0.24.0.post1` is recommended for improved hot reload times. Found {uvi_ver} instead."""
+            )
+
+        if sys.version_info < (3, 12) and uvi_ver != "0.20.0":
+            console.warn(
+                f"""On Python < 3.12, `uvicorn==0.20.0` is recommended for improved hot reload times.  Found {uvi_ver} instead."""
+            )
+
+        if windows_check_onedrive_in_path():
+            console.warn(
+                "Creating project directories in OneDrive may lead to performance issues. For optimal performance, It is recommended to avoid using OneDrive for your reflex app."
+            )
     # No need to reinitialize if the app is already initialized.
     return False
 
@@ -1418,3 +1471,92 @@ def initialize_app(app_name: str, template: str | None = None):
         )
 
     telemetry.send("init", template=template)
+
+
+def format_address_width(address_width) -> int | None:
+    """Cast address width to an int.
+
+    Args:
+        address_width: The address width.
+
+    Returns:
+        Address width int
+    """
+    try:
+        return int(address_width) if address_width else None
+    except ValueError:
+        return None
+
+
+@functools.lru_cache(maxsize=None)
+def get_cpu_info() -> CpuInfo | None:
+    """Get the CPU info of the underlining host.
+
+    Returns:
+         The CPU info.
+    """
+    platform_os = platform.system()
+    cpuinfo = {}
+    try:
+        if platform_os == "Windows":
+            cmd = "wmic cpu get addresswidth,caption,manufacturer /FORMAT:csv"
+            output = processes.execute_command_and_return_output(cmd)
+            if output:
+                val = output.splitlines()[-1].split(",")[1:]
+                cpuinfo["manufacturer_id"] = val[2]
+                cpuinfo["model_name"] = val[1].split("Family")[0].strip()
+                cpuinfo["address_width"] = format_address_width(val[0])
+        elif platform_os == "Linux":
+            output = processes.execute_command_and_return_output("lscpu")
+            if output:
+                lines = output.split("\n")
+                for line in lines:
+                    if "Architecture" in line:
+                        cpuinfo["address_width"] = (
+                            64 if line.split(":")[1].strip() == "x86_64" else 32
+                        )
+                    if "Vendor ID:" in line:
+                        cpuinfo["manufacturer_id"] = line.split(":")[1].strip()
+                    if "Model name" in line:
+                        cpuinfo["model_name"] = line.split(":")[1].strip()
+        elif platform_os == "Darwin":
+            cpuinfo["address_width"] = format_address_width(
+                processes.execute_command_and_return_output("getconf LONG_BIT")
+            )
+            cpuinfo["manufacturer_id"] = processes.execute_command_and_return_output(
+                "sysctl -n machdep.cpu.brand_string"
+            )
+            cpuinfo["model_name"] = processes.execute_command_and_return_output(
+                "uname -m"
+            )
+    except Exception as err:
+        console.error(f"Failed to retrieve CPU info. {err}")
+        return None
+
+    return (
+        CpuInfo(
+            manufacturer_id=cpuinfo.get("manufacturer_id"),
+            model_name=cpuinfo.get("model_name"),
+            address_width=cpuinfo.get("address_width"),
+        )
+        if cpuinfo
+        else None
+    )
+
+
+@functools.lru_cache(maxsize=None)
+def is_windows_bun_supported() -> bool:
+    """Check whether the underlining host running windows qualifies to run bun.
+    We typically do not run bun on ARM or 32 bit devices that use windows.
+
+    Returns:
+        Whether the host is qualified to use bun.
+    """
+    cpu_info = get_cpu_info()
+    return (
+        constants.IS_WINDOWS
+        and cpu_info is not None
+        and cpu_info.address_width == 64
+        and cpu_info.model_name is not None
+        and "ARM" not in cpu_info.model_name
+    )

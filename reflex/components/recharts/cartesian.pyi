@@ -1849,3 +1849,19 @@ class CartesianAxis(Grid):
             The component.
         """
         ...
+
+area = Area.create
+bar = Bar.create
+line = Line.create
+scatter = Scatter.create
+x_axis = XAxis.create
+y_axis = YAxis.create
+z_axis = ZAxis.create
+brush = Brush.create
+cartesian_axis = CartesianAxis.create
+cartesian_grid = CartesianGrid.create
+reference_line = ReferenceLine.create
+reference_dot = ReferenceDot.create
+reference_area = ReferenceArea.create
+error_bar = ErrorBar.create
+funnel = Funnel.create

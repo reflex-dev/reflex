@@ -113,6 +113,14 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                     else:
                         console.print("New packages detected: Updating app...")
                 else:
+                    if any(
+                        [x in line for x in ("bin executable does not exist on disk",)]
+                    ):
+                        console.error(
+                            "Try setting `REFLEX_USE_NPM=1` and re-running `reflex init` and `reflex run` to use npm instead of bun:\n"
+                            "`REFLEX_USE_NPM=1 reflex init`\n"
+                            "`REFLEX_USE_NPM=1 reflex run`"
+                        )
                     new_hash = detect_package_change(json_file_path)
                     if new_hash != last_hash:
                         last_hash = new_hash
@@ -217,8 +225,12 @@ def run_backend_prod(
     """
     from reflex.utils import processes
 
-    num_workers = processes.get_num_workers()
     config = get_config()
+    num_workers = (
+        processes.get_num_workers()
+        if not config.gunicorn_workers
+        else config.gunicorn_workers
+    )
     RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --preload --timeout {config.timeout} --log-level critical".split()
     RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
     app_module = f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
@@ -280,7 +292,11 @@ def output_system_info():
 
     system = platform.system()
 
-    if system != "Windows":
+    if (
+        system != "Windows"
+        or system == "Windows"
+        and prerequisites.is_windows_bun_supported()
+    ):
         dependencies.extend(
             [
                 f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",

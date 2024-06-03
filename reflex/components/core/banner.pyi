@@ -18,13 +18,17 @@ from reflex.components.radix.themes.components.dialog import (
     DialogRoot,
     DialogTitle,
 )
-from reflex.components.radix.themes.layout import Flex
+from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
+from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants import Dirs, Hooks, Imports
+from reflex.constants.compiler import CompileVars
 from reflex.utils import imports
+from reflex.utils.serializers import serialize
 from reflex.vars import Var, VarData
 
 connect_error_var_data: VarData
+connect_errors: Var
 connection_error: Var
 connection_errors_count: Var
 has_connection_errors: Var
@@ -98,6 +102,132 @@ class WebsocketTargetURL(Bare):
         ...
 
 def default_connection_error() -> list[str | Var | Component]: ...
+
+class ConnectionToaster(Toaster):
+    def add_hooks(self) -> list[str]: ...
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        theme: Optional[Union[Var[str], str]] = None,
+        rich_colors: Optional[Union[Var[bool], bool]] = None,
+        expand: Optional[Union[Var[bool], bool]] = None,
+        visible_toasts: Optional[Union[Var[int], int]] = None,
+        position: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "top-left",
+                        "top-center",
+                        "top-right",
+                        "bottom-left",
+                        "bottom-center",
+                        "bottom-right",
+                    ]
+                ],
+                Literal[
+                    "top-left",
+                    "top-center",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-center",
+                    "bottom-right",
+                ],
+            ]
+        ] = None,
+        close_button: Optional[Union[Var[bool], bool]] = None,
+        offset: Optional[Union[Var[str], str]] = None,
+        dir: Optional[Union[Var[str], str]] = None,
+        hotkey: Optional[Union[Var[str], str]] = None,
+        invert: Optional[Union[Var[bool], bool]] = None,
+        toast_options: Optional[Union[Var[ToastProps], ToastProps]] = None,
+        gap: Optional[Union[Var[int], int]] = None,
+        loading_icon: Optional[Union[Var[Icon], Icon]] = None,
+        pause_when_page_is_hidden: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        **props
+    ) -> "ConnectionToaster":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            theme: the theme of the toast
+            rich_colors: whether to show rich colors
+            expand: whether to expand the toast
+            visible_toasts: the number of toasts that are currently visible
+            position: the position of the toast
+            close_button: whether to show the close button
+            offset: offset of the toast
+            dir: directionality of the toast (default: ltr)
+            hotkey: Keyboard shortcut that will move focus to the toaster area.
+            invert: Dark toasts in light mode and vice versa.
+            toast_options: These will act as default options for all toasts. See toast() for all available options.
+            gap: Gap between toasts when expanded
+            loading_icon: Changes the default loading icon
+            pause_when_page_is_hidden: Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
+        """
+        ...
 
 class ConnectionBanner(Component):
     @overload
@@ -444,3 +574,8 @@ class ConnectionPulser(Div):
             The connection pulser component.
         """
         ...
+
+connection_banner = ConnectionBanner.create
+connection_modal = ConnectionModal.create
+connection_toaster = ConnectionToaster.create
+connection_pulser = ConnectionPulser.create

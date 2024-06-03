@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
-from reflex.event import EventSpec, call_script
+from reflex.components.props import PropsBase
+from reflex.event import (
+    EventSpec,
+    call_script,
+)
 from reflex.style import Style, color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
-from reflex.utils.serializers import serialize
+from reflex.utils.serializers import serialize, serializer
 from reflex.vars import Var, VarData
 
 LiteralPosition = Literal[
@@ -27,46 +31,68 @@ LiteralPosition = Literal[
 toast_ref = Var.create_safe("refs['__toast']")
 
 
-class PropsBase(Base):
-    """Base class for all props classes."""
+class ToastAction(Base):
+    """A toast action that render a button in the toast."""
 
-    def json(self) -> str:
-        """Convert the object to a json string.
+    label: str
+    on_click: Any
 
-        Returns:
-            The object as a json string.
-        """
-        from reflex.utils.serializers import serialize
 
-        return self.__config__.json_dumps(
-            {format.to_camel_case(key): value for key, value in self.dict().items()},
-            default=serialize,
+@serializer
+def serialize_action(action: ToastAction) -> dict:
+    """Serialize a toast action.
+
+    Args:
+        action: The toast action to serialize.
+
+    Returns:
+        The serialized toast action with on_click formatted to queue the given event.
+    """
+    return {
+        "label": action.label,
+        "onClick": format.format_queue_events(action.on_click),
+    }
+
+
+def _toast_callback_signature(toast: Var) -> list[Var]:
+    """The signature for the toast callback, stripping out unserializable keys.
+
+    Args:
+        toast: The toast variable.
+
+    Returns:
+        A function call stripping non-serializable members of the toast object.
+    """
+    return [
+        Var.create_safe(
+            f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {toast}; return rest}})()"
         )
+    ]
 
 
 class ToastProps(PropsBase):
     """Props for the toast component."""
 
     # Toast's description, renders underneath the title.
-    description: str = ""
+    description: Optional[Union[str, Var]]
 
     # Whether to show the close button.
-    close_button: bool = False
+    close_button: Optional[bool]
 
     # Dark toast in light mode and vice versa.
-    invert: bool = False
+    invert: Optional[bool]
 
     # Control the sensitivity of the toast for screen readers
-    important: bool = False
+    important: Optional[bool]
 
     # Time in milliseconds that should elapse before automatically closing the toast.
-    duration: int = 4000
+    duration: Optional[int]
 
     # Position of the toast.
-    position: LiteralPosition = "bottom-right"
+    position: Optional[LiteralPosition]
 
     # If false, it'll prevent the user from dismissing the toast.
-    dismissible: bool = True
+    dismissible: Optional[bool]
 
     # TODO: fix serialization of icons for toast? (might not be possible yet)
     # Icon displayed in front of toast's text, aligned vertically.
@@ -74,31 +100,69 @@ class ToastProps(PropsBase):
 
     # TODO: fix implementation for action / cancel buttons
     # Renders a primary button, clicking it will close the toast.
-    # action: str = ""
+    action: Optional[ToastAction]
 
     # Renders a secondary button, clicking it will close the toast.
-    # cancel: str = ""
+    cancel: Optional[ToastAction]
 
     # Custom id for the toast.
-    id: str = ""
+    id: Optional[str]
 
     # Removes the default styling, which allows for easier customization.
-    unstyled: bool = False
+    unstyled: Optional[bool]
 
     # Custom style for the toast.
-    style: Style = Style()
+    style: Optional[Style]
 
+    # XXX: These still do not seem to work
     # Custom style for the toast primary button.
-    # action_button_styles: Style = Style()
+    action_button_styles: Optional[Style]
 
     # Custom style for the toast secondary button.
-    # cancel_button_styles: Style = Style()
+    cancel_button_styles: Optional[Style]
+
+    # The function gets called when either the close button is clicked, or the toast is swiped.
+    on_dismiss: Optional[Any]
+
+    # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
+    on_auto_close: Optional[Any]
+
+    def dict(self, *args, **kwargs) -> dict:
+        """Convert the object to a dictionary.
+
+        Args:
+            *args: The arguments to pass to the base class.
+            **kwargs: The keyword arguments to pass to the base
+
+        Returns:
+            The object as a dictionary with ToastAction fields intact.
+        """
+        kwargs.setdefault("exclude_none", True)
+        d = super().dict(*args, **kwargs)
+        # Keep these fields as ToastAction so they can be serialized specially
+        if "action" in d:
+            d["action"] = self.action
+            if isinstance(self.action, dict):
+                d["action"] = ToastAction(**self.action)
+        if "cancel" in d:
+            d["cancel"] = self.cancel
+            if isinstance(self.cancel, dict):
+                d["cancel"] = ToastAction(**self.cancel)
+        if "on_dismiss" in d:
+            d["on_dismiss"] = format.format_queue_events(
+                self.on_dismiss, _toast_callback_signature
+            )
+        if "on_auto_close" in d:
+            d["on_auto_close"] = format.format_queue_events(
+                self.on_auto_close, _toast_callback_signature
+            )
+        return d
 
 
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
 
-    library = "sonner@1.4.41"
+    library: str = "sonner@1.4.41"
 
     tag = "Toaster"
 
@@ -145,12 +209,15 @@ class Toaster(Component):
     pause_when_page_is_hidden: Var[bool]
 
     def _get_hooks(self) -> Var[str]:
-        hook = Var.create_safe(f"{toast_ref} = toast", _var_is_local=True)
-        hook._var_data = VarData(  # type: ignore
-            imports={
-                "/utils/state": [ImportVar(tag="refs")],
-                self.library: [ImportVar(tag="toast", install=False)],
-            }
+        hook = Var.create_safe(
+            f"{toast_ref} = toast",
+            _var_is_local=True,
+            _var_data=VarData(
+                imports={
+                    "/utils/state": [ImportVar(tag="refs")],
+                    self.library: [ImportVar(tag="toast", install=False)],
+                }
+            ),
         )
         return hook
 

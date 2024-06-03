@@ -7,9 +7,9 @@ from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 
 from reflex import constants
-from reflex.components.chakra.forms.input import Input
-from reflex.components.chakra.layout.box import Box
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
+from reflex.components.el.elements.forms import Input
+from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import Dirs
 from reflex.event import (
     CallableEventSpec,
@@ -24,12 +24,12 @@ from reflex.vars import BaseVar, CallableVar, Var, VarData
 
 DEFAULT_UPLOAD_ID: str = "default"
 
-upload_files_context_var_data: VarData = VarData(  # type: ignore
+upload_files_context_var_data: VarData = VarData(
     imports={
-        "react": {imports.ImportVar(tag="useContext")},
-        f"/{Dirs.CONTEXTS_PATH}": {
+        "react": [imports.ImportVar(tag="useContext")],
+        f"/{Dirs.CONTEXTS_PATH}": [
             imports.ImportVar(tag="UploadFilesContext"),
-        },
+        ],
     },
     hooks={
         "const [filesById, setFilesById] = useContext(UploadFilesContext);": None,
@@ -118,14 +118,13 @@ def get_upload_dir() -> Path:
 
 
 uploaded_files_url_prefix: Var = Var.create_safe(
-    "${getBackendURL(env.UPLOAD)}"
-)._replace(
-    merge_var_data=VarData(  # type: ignore
+    "${getBackendURL(env.UPLOAD)}",
+    _var_data=VarData(
         imports={
-            f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="getBackendURL")},
-            "/env.json": {imports.ImportVar(tag="env", is_default=True)},
+            f"/{Dirs.STATE_PATH}": [imports.ImportVar(tag="getBackendURL")],
+            "/env.json": [imports.ImportVar(tag="env", is_default=True)],
         }
-    )
+    ),
 )
 
 
@@ -340,3 +339,6 @@ class UploadNamespace(ComponentNamespace):
 
     root = Upload.create
     __call__ = StyledUpload.create
+
+
+upload = UploadNamespace()

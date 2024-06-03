@@ -10,7 +10,6 @@ from reflex.style import Style
 from typing import Any, Dict, List, Literal
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
-from reflex.style import Style
 from reflex.vars import Var
 
 LiteralSliderOrientation = Literal["horizontal", "vertical"]
@@ -96,6 +95,7 @@ class SliderComponent(RadixPrimitiveComponentWithClassName):
 
 class SliderRoot(SliderComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
+    def add_style(self) -> dict[str, Any] | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -196,6 +196,7 @@ class SliderRoot(SliderComponent):
         ...
 
 class SliderTrack(SliderComponent):
+    def add_style(self) -> dict[str, Any] | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -274,6 +275,7 @@ class SliderTrack(SliderComponent):
         ...
 
 class SliderRange(SliderComponent):
+    def add_style(self) -> dict[str, Any] | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -352,6 +354,7 @@ class SliderRange(SliderComponent):
         ...
 
 class SliderThumb(SliderComponent):
+    def add_style(self) -> dict[str, Any] | None: ...
     @overload
     @classmethod
     def create(  # type: ignore

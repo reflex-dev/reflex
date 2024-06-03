@@ -1,6 +1,7 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
 from typing import Any, Union
 
+from reflex import Component
 from reflex.vars import Var as Var
 
 from .base import BaseHTML
@@ -115,6 +116,24 @@ class Img(BaseHTML):
 
     # The name of the map to use with the image
     use_map: Var[Union[str, int, bool]]
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Override create method to apply source attribute to value if user fails to pass in attribute.
+
+        Args:
+            *children: The children of the component.
+            **props: The props of the component.
+
+        Returns:
+            The component.
+
+        """
+        return (
+            super().create(src=children[0], **props)
+            if children
+            else super().create(*children, **props)
+        )
 
 
 class Map(BaseHTML):
@@ -297,3 +316,19 @@ class Path(BaseHTML):
 
     # Defines the shape of the path
     d: Var[Union[str, int, bool]]
+
+
+area = Area.create
+audio = Audio.create
+image = img = Img.create
+map = Map.create
+track = Track.create
+video = Video.create
+embed = Embed.create
+iframe = Iframe.create
+object = Object.create
+picture = Picture.create
+portal = Portal.create
+source = Source.create
+svg = Svg.create
+path = Path.create

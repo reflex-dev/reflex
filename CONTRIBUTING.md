@@ -96,6 +96,15 @@ pre-commit install
 That's it you can now submit your PR. Thanks for contributing to Reflex!
 
 
+## Editing Templates 
+
+To edit the templates in Reflex you can do so in two way.
+
+Change to the basic `blank` template can be done in the `reflex/.templates/apps/blank` directory.
+
+Others templates can be edited in their own repository. For example the `sidebar` template can be found in the [`reflex-sidebar`](https://github.com/reflex-dev/sidebar-template) repository.
+
+
 ## Other Notes
 
 For some pull requests when adding new components you will have to generate a pyi file for the new component. This is done by running the following command in the `reflex` directory.

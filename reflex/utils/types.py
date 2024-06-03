@@ -8,7 +8,6 @@ import sys
 import types
 from functools import wraps
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -28,15 +27,9 @@ from typing import (
 import sqlalchemy
 
 try:
-    # TODO The type checking guard can be removed once
-    # reflex-hosting-cli tools are compatible with pydantic v2
-
-    if not TYPE_CHECKING:
-        from pydantic.v1.fields import ModelField
-    else:
-        raise ModuleNotFoundError
+    from pydantic.v1.fields import ModelField
 except ModuleNotFoundError:
-    from pydantic.fields import ModelField
+    from pydantic.fields import ModelField  # type: ignore
 
 from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -50,6 +43,22 @@ from sqlalchemy.orm import (
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, serializers
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+
+    def override(func: Callable) -> Callable:
+        """Fallback for @override decorator.
+
+        Args:
+            func: The function to decorate.
+
+        Returns:
+            The unmodified function.
+        """
+        return func
+
 
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = [_GenericAlias]

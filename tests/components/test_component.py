@@ -1063,7 +1063,7 @@ def test_stateful_banner():
 TEST_VAR = Var.create_safe("test")._replace(
     merge_var_data=VarData(
         hooks={"useTest": None},
-        imports={"test": {ImportVar(tag="test")}},
+        imports={"test": [ImportVar(tag="test")]},
         state="Test",
         interpolations=[],
     )
@@ -1320,10 +1320,24 @@ def test_instantiate_all_components():
         "Tfoot",
         "Thead",
     }
-    for component_name in rx._ALL_COMPONENTS:  # type: ignore
+    component_nested_list = [
+        *rx.RADIX_MAPPING.values(),
+        *rx.COMPONENTS_BASE_MAPPING.values(),
+        *rx.COMPONENTS_CORE_MAPPING.values(),
+    ]
+    for component_name in [
+        comp_name
+        for submodule_list in component_nested_list
+        for comp_name in submodule_list
+    ]:  # type: ignore
         if component_name in untested_components:
             continue
-        component = getattr(rx, component_name)
+        component = getattr(
+            rx,
+            component_name
+            if not isinstance(component_name, tuple)
+            else component_name[1],
+        )
         if isinstance(component, type) and issubclass(component, Component):
             component.create()
 
@@ -1951,3 +1965,111 @@ def test_component_add_custom_code():
         "const custom_code5 = 46",
         "const custom_code6 = 47",
     }
+
+
+def test_component_add_hooks_var():
+    class HookComponent(Component):
+        def add_hooks(self):
+            return [
+                "const hook3 = useRef(null)",
+                "const hook1 = 42",
+                Var.create(
+                    "useEffect(() => () => {}, [])",
+                    _var_data=VarData(
+                        hooks={
+                            "const hook2 = 43": None,
+                            "const hook3 = useRef(null)": None,
+                        },
+                        imports={"react": [ImportVar(tag="useEffect")]},
+                    ),
+                ),
+                Var.create(
+                    "const hook3 = useRef(null)",
+                    _var_data=VarData(
+                        imports={"react": [ImportVar(tag="useRef")]},
+                    ),
+                ),
+            ]
+
+    assert list(HookComponent()._get_all_hooks()) == [
+        "const hook3 = useRef(null)",
+        "const hook1 = 42",
+        "const hook2 = 43",
+        "useEffect(() => () => {}, [])",
+    ]
+    imports = HookComponent()._get_all_imports()
+    assert len(imports) == 1
+    assert "react" in imports
+    assert len(imports["react"]) == 2
+    assert ImportVar(tag="useRef") in imports["react"]
+    assert ImportVar(tag="useEffect") in imports["react"]
+
+
+def test_add_style_embedded_vars(test_state: BaseState):
+    """Test that add_style works with embedded vars when returning a plain dict.
+
+    Args:
+        test_state: A test state.
+    """
+    v0 = Var.create_safe("parent")._replace(
+        merge_var_data=VarData(hooks={"useParent": None}),  # type: ignore
+    )
+    v1 = rx.color("plum", 10)
+    v2 = Var.create_safe("text")._replace(
+        merge_var_data=VarData(hooks={"useText": None}),  # type: ignore
+    )
+
+    class ParentComponent(Component):
+        def add_style(self):
+            return Style(
+                {
+                    "fake_parent": v0,
+                }
+            )
+
+    class StyledComponent(ParentComponent):
+        tag = "StyledComponent"
+
+        def add_style(self):
+            return {
+                "color": v1,
+                "fake": v2,
+                "margin": f"{test_state.num}%",
+            }
+
+    page = rx.vstack(StyledComponent.create())
+    page._add_style_recursive(Style())
+
+    assert (
+        "const test_state = useContext(StateContexts.test_state)"
+        in page._get_all_hooks_internal()
+    )
+    assert "useText" in page._get_all_hooks_internal()
+    assert "useParent" in page._get_all_hooks_internal()
+    assert (
+        str(page).count(
+            'css={{"fakeParent": "parent", "color": "var(--plum-10)", "fake": "text", "margin": `${test_state.num}%`}}'
+        )
+        == 1
+    )
+
+
+def test_add_style_foreach():
+    class StyledComponent(Component):
+        tag = "StyledComponent"
+        ix: Var[int]
+
+        def add_style(self):
+            return Style({"color": "red"})
+
+    page = rx.vstack(rx.foreach(Var.range(3), lambda i: StyledComponent.create(i)))
+    page._add_style_recursive(Style())
+
+    # Expect only a single child of the foreach on the python side
+    assert len(page.children[0].children) == 1
+
+    # Expect the style to be added to the child of the foreach
+    assert 'css={{"color": "red"}}' in str(page.children[0].children[0])
+
+    # Expect only one instance of this CSS dict in the rendered page
+    assert str(page).count('css={{"color": "red"}}') == 1

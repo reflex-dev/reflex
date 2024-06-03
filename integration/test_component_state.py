@@ -1,4 +1,5 @@
 """Test that per-component state scaffold works and operates independently."""
+
 from typing import Generator
 
 import pytest
@@ -78,8 +79,7 @@ async def test_component_state_app(component_state_app: AppHarness):
     driver = component_state_app.frontend()
 
     ss = utils.SessionStorage(driver)
-    token = AppHarness._poll_for(lambda: ss.get("token") is not None)
-    assert token is not None
+    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
 
     count_a = driver.find_element(By.ID, "count-a")
     count_b = driver.find_element(By.ID, "count-b")

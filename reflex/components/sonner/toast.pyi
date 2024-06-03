@@ -7,15 +7,16 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Literal
+from typing import Any, Literal, Optional, Union
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
+from reflex.components.props import PropsBase
 from reflex.event import EventSpec, call_script
 from reflex.style import Style, color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
-from reflex.utils.serializers import serialize
+from reflex.utils.serializers import serialize, serializer
 from reflex.vars import Var, VarData
 
 LiteralPosition = Literal[
@@ -28,20 +29,32 @@ LiteralPosition = Literal[
 ]
 toast_ref = Var.create_safe("refs['__toast']")
 
-class PropsBase(Base):
-    def json(self) -> str: ...
+class ToastAction(Base):
+    label: str
+    on_click: Any
+
+@serializer
+def serialize_action(action: ToastAction) -> dict: ...
 
 class ToastProps(PropsBase):
-    description: str
-    close_button: bool
-    invert: bool
-    important: bool
-    duration: int
-    position: LiteralPosition
-    dismissible: bool
-    id: str
-    unstyled: bool
-    style: Style
+    description: Optional[Union[str, Var]]
+    close_button: Optional[bool]
+    invert: Optional[bool]
+    important: Optional[bool]
+    duration: Optional[int]
+    position: Optional[LiteralPosition]
+    dismissible: Optional[bool]
+    action: Optional[ToastAction]
+    cancel: Optional[ToastAction]
+    id: Optional[str]
+    unstyled: Optional[bool]
+    style: Optional[Style]
+    action_button_styles: Optional[Style]
+    cancel_button_styles: Optional[Style]
+    on_dismiss: Optional[Any]
+    on_auto_close: Optional[Any]
+
+    def dict(self, *args, **kwargs) -> dict: ...
 
 class Toaster(Component):
     @staticmethod

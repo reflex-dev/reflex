@@ -311,7 +311,7 @@ def serialize_enum(en: Enum) -> str:
         en: The enum to serialize.
 
     Returns:
-         The serialized enum.
+        The serialized enum.
     """
     return en.value
 
@@ -369,7 +369,7 @@ try:
     from plotly.io import to_json
 
     @serializer
-    def serialize_figure(figure: Figure) -> list:
+    def serialize_figure(figure: Figure) -> dict:
         """Serialize a plotly figure.
 
         Args:
@@ -378,7 +378,7 @@ try:
         Returns:
             The serialized figure.
         """
-        return json.loads(str(to_json(figure)))["data"]
+        return json.loads(str(to_json(figure)))
 
 except ImportError:
     pass

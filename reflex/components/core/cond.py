@@ -1,7 +1,8 @@
 """Create a list of components from an iterable."""
+
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, overload
+from typing import Any, Dict, Optional, Union, overload
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
@@ -10,10 +11,10 @@ from reflex.constants import Dirs
 from reflex.constants.colors import Color
 from reflex.style import LIGHT_COLOR_MODE, color_mode
 from reflex.utils import format, imports
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import Var, VarData
 
 _IS_TRUE_IMPORT = {
-    f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="isTrue")},
+    f"/{Dirs.STATE_PATH}": [imports.ImportVar(tag="isTrue")],
 }
 
 
@@ -102,15 +103,6 @@ class Cond(MemoizationLeaf):
             _IS_TRUE_IMPORT,
         )
 
-    def _apply_theme(self, theme: Component):
-        """Apply the theme to this component.
-
-        Args:
-            theme: The theme to apply.
-        """
-        self.comp1.apply_theme(theme)  # type: ignore
-        self.comp2.apply_theme(theme)  # type: ignore
-
 
 @overload
 def cond(condition: Any, c1: Component, c2: Any) -> Component:
@@ -180,6 +172,11 @@ def cond(condition: Any, c1: Any, c2: Any = None):
     c2 = create_var(c2)
     var_datas.extend([c1._var_data, c2._var_data])
 
+    c1_type = c1._var_type if isinstance(c1, Var) else type(c1)
+    c2_type = c2._var_type if isinstance(c2, Var) else type(c2)
+
+    var_type = c1_type if c1_type == c2_type else Union[c1_type, c2_type]
+
     # Create the conditional var.
     return cond_var._replace(
         _var_name=format.format_cond(
@@ -188,7 +185,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
             false_value=c2,
             is_prop=True,
         ),
-        _var_type=c1._var_type if isinstance(c1, BaseVar) else type(c1),
+        _var_type=var_type,
         _var_is_local=False,
         _var_full_name_needs_state_prefix=False,
         merge_var_data=VarData.merge(*var_datas),

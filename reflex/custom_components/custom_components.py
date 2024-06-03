@@ -20,7 +20,6 @@ from reflex import constants
 from reflex.config import get_config
 from reflex.constants import CustomComponents
 from reflex.utils import console
-from reflex.utils.pyi_generator import PyiGenerator
 
 config = get_config()
 custom_components_cli = typer.Typer()
@@ -438,6 +437,8 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
 
 def _make_pyi_files():
     """Create pyi files for the custom component."""
+    from reflex.utils.pyi_generator import PyiGenerator
+
     package_name = _get_package_config()["project"]["name"]
 
     for dir, _, _ in os.walk(f"./{package_name}"):
@@ -615,15 +616,17 @@ def publish(
         help="The API token to use for authentication on python package repository. If token is provided, no username/password should be provided at the same time",
     ),
     username: Optional[str] = typer.Option(
-        None,
+        os.getenv("TWINE_USERNAME"),
         "-u",
         "--username",
+        show_default="TWINE_USERNAME environment variable value if set",
         help="The username to use for authentication on python package repository. Username and password must both be provided.",
     ),
     password: Optional[str] = typer.Option(
-        None,
+        os.getenv("TWINE_PASSWORD"),
         "-p",
         "--password",
+        show_default="TWINE_PASSWORD environment variable value if set",
         help="The password to use for authentication on python package repository. Username and password must both be provided.",
     ),
     build: bool = typer.Option(
@@ -665,6 +668,9 @@ def publish(
 
     # Validate the credentials.
     username, password = _validate_credentials(username, password, token)
+
+    # Minimal Validation of the pyproject.toml.
+    _min_validate_project_info()
 
     # Get the version to publish from the pyproject.toml.
     version_to_publish = _get_version_to_publish()
@@ -734,6 +740,34 @@ def _process_entered_list(input: str | None) -> list | None:
     return [t.strip() for t in (input or "").split(",") if t if input] or None
 
 
+def _min_validate_project_info():
+    """Ensures minimal project information in the pyproject.toml file.
+
+    Raises:
+        Exit: If the pyproject.toml file is ill-formed.
+    """
+    pyproject_toml = _get_package_config()
+
+    project = pyproject_toml.get("project")
+    if project is None:
+        console.error(
+            f"The project section is not found in {CustomComponents.PYPROJECT_TOML}"
+        )
+        raise typer.Exit(code=1)
+
+    if not project.get("name"):
+        console.error(
+            f"The project name is not found in {CustomComponents.PYPROJECT_TOML}"
+        )
+        raise typer.Exit(code=1)
+
+    if not project.get("version"):
+        console.error(
+            f"The project version is not found in {CustomComponents.PYPROJECT_TOML}"
+        )
+        raise typer.Exit(code=1)
+
+
 def _validate_project_info():
     """Validate the project information in the pyproject.toml file.
 
@@ -741,18 +775,10 @@ def _validate_project_info():
         Exit: If the pyproject.toml file is ill-formed.
     """
     pyproject_toml = _get_package_config()
-
-    try:
-        project = pyproject_toml.get("project", {})
-        if not project:
-            console.error("The project section not found in pyproject.toml")
-            raise typer.Exit(code=1)
-        console.print(
-            f'Double check the information before publishing: {project["name"]} version {project["version"]}'
-        )
-    except KeyError as ke:
-        console.error(f"The pyproject.toml is possibly ill-formed due to {ke}")
-        raise typer.Exit(code=1) from ke
+    project = pyproject_toml["project"]
+    console.print(
+        f'Double check the information before publishing: {project["name"]} version {project["version"]}'
+    )
 
     console.print("Update or enter to keep the current information.")
     project["description"] = console.ask(

@@ -56,11 +56,16 @@ jobs:
         run: |
           poetry install
 
+      - name: Install uv
+        shell: wsl-bash {0}
+        run: |
+          poetry run pip install uv
+
       - name: Install requirements for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
-          poetry run pip install -r requirements.txt
+          poetry run uv pip install -r requirements.txt
       - name: Check export --backend-only before init for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}

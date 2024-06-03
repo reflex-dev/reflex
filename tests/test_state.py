@@ -33,7 +33,7 @@ from reflex.state import (
     StateUpdate,
     _substate_key,
 )
-from reflex.utils import prerequisites, types
+from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
 from reflex.vars import BaseVar, ComputedVar
 
@@ -788,94 +788,69 @@ async def test_process_event_generator():
     assert count == 6
 
 
-def test_get_token(test_state, mocker, router_data):
+def test_get_client_token(test_state, router_data):
     """Test that the token obtained from the router_data is correct.
 
     Args:
         test_state: The test state.
-        mocker: Pytest Mocker object.
         router_data: The router data fixture.
     """
-    mocker.patch.object(test_state, "router_data", router_data)
+    test_state.router = RouterData(router_data)
+    assert (
+        test_state.router.session.client_token == "b181904c-3953-4a79-dc18-ae9518c22f05"
+    )
 
-    assert test_state.get_token() == "b181904c-3953-4a79-dc18-ae9518c22f05"
 
-
-def test_get_sid(test_state, mocker, router_data):
+def test_get_sid(test_state, router_data):
     """Test getting session id.
 
     Args:
         test_state: A state.
-        mocker: Pytest Mocker object.
         router_data: The router data fixture.
     """
-    mocker.patch.object(test_state, "router_data", router_data)
+    test_state.router = RouterData(router_data)
+    assert test_state.router.session.session_id == "9fpxSzPb9aFMb4wFAAAH"
 
-    assert test_state.get_sid() == "9fpxSzPb9aFMb4wFAAAH"
 
-
-def test_get_headers(test_state, mocker, router_data, router_data_headers):
+def test_get_headers(test_state, router_data, router_data_headers):
     """Test getting client headers.
 
     Args:
         test_state: A state.
-        mocker: Pytest Mocker object.
         router_data: The router data fixture.
         router_data_headers: The expected headers.
     """
-    mocker.patch.object(test_state, "router_data", router_data)
+    test_state.router = RouterData(router_data)
+    assert test_state.router.headers.dict() == {
+        format.to_snake_case(k): v for k, v in router_data_headers.items()
+    }
 
-    assert test_state.get_headers() == router_data_headers
 
-
-def test_get_client_ip(test_state, mocker, router_data):
+def test_get_client_ip(test_state, router_data):
     """Test getting client IP.
 
     Args:
         test_state: A state.
-        mocker: Pytest Mocker object.
         router_data: The router data fixture.
     """
-    mocker.patch.object(test_state, "router_data", router_data)
-
-    assert test_state.get_client_ip() == "127.0.0.1"
-
-
-def test_get_cookies(test_state, mocker, router_data):
-    """Test getting client cookies.
-
-    Args:
-        test_state: A state.
-        mocker: Pytest Mocker object.
-        router_data: The router data fixture.
-    """
-    mocker.patch.object(test_state, "router_data", router_data)
-
-    assert test_state.get_cookies() == {
-        "csrftoken": "mocktoken",
-        "name": "reflex",
-        "list_cookies": ["some", "random", "cookies"],
-        "dict_cookies": {"name": "reflex"},
-        "val": True,
-    }
+    test_state.router = RouterData(router_data)
+    assert test_state.router.session.client_ip == "127.0.0.1"
 
 
 def test_get_current_page(test_state):
-    assert test_state.get_current_page() == ""
+    assert test_state.router.page.path == ""
 
     route = "mypage/subpage"
     test_state.router = RouterData({RouteVar.PATH: route})
-
-    assert test_state.get_current_page() == route
+    assert test_state.router.page.path == route
 
 
 def test_get_query_params(test_state):
-    assert test_state.get_query_params() == {}
+    assert test_state.router.page.params == {}
 
     params = {"p1": "a", "p2": "b"}
-    test_state.router_data = {RouteVar.QUERY: params}
-
-    assert test_state.get_query_params() == params
+    test_state.router = RouterData({RouteVar.QUERY: params})
+    assert dict(test_state.router.page.params) == params
 
 
 def test_add_var():
@@ -1723,7 +1698,9 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     parent_state = child_state.parent_state
     assert parent_state is not None
     if isinstance(mock_app.state_manager, StateManagerMemory):
-        mock_app.state_manager.states[parent_state.get_token()] = parent_state
+        mock_app.state_manager.states[
+            parent_state.router.session.client_token
+        ] = parent_state
 
     sp = StateProxy(grandchild_state)
     assert sp.__wrapped__ == grandchild_state
@@ -1802,7 +1779,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
             },
         }
     )
-    assert mcall.kwargs["to"] == grandchild_state.get_sid()
+    assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
 
 
 class BackgroundTaskState(BaseState):
@@ -2415,12 +2392,36 @@ class Custom1(Base):
 
     foo: str
 
+    def set_foo(self, val: str):
+        """Set the attribute foo.
+
+        Args:
+            val: The value to set.
+        """
+        self.foo = val
+
+    def double_foo(self) -> str:
+        """Concantenate foo with foo.
+
+        Returns:
+            foo + foo
+        """
+        return self.foo + self.foo
+
 
 class Custom2(Base):
     """A custom class with a Custom1 field."""
 
     c1: Optional[Custom1] = None
     c1r: Custom1
+
+    def set_c1r_foo(self, val: str):
+        """Set the foo attribute of the c1 field.
+
+        Args:
+            val: The value to set.
+        """
+        self.c1r.set_foo(val)
 
 
 class Custom3(Base):
@@ -2457,6 +2458,47 @@ def test_state_union_optional():
     assert UnionState.custom_union.c2r is not None  # type: ignore
     assert types.is_optional(UnionState.opt_int._var_type)  # type: ignore
     assert types.is_union(UnionState.int_float._var_type)  # type: ignore
+
+
+def test_set_base_field_via_setter():
+    """When calling a setter on a Base instance, also track changes."""
+
+    class BaseFieldSetterState(BaseState):
+        c1: Custom1 = Custom1(foo="")
+        c2: Custom2 = Custom2(c1r=Custom1(foo=""))
+
+    bfss = BaseFieldSetterState()
+    assert "c1" not in bfss.dirty_vars
+
+    # Non-mutating function, not dirty
+    bfss.c1.double_foo()
+    assert "c1" not in bfss.dirty_vars
+
+    # Mutating function, dirty
+    bfss.c1.set_foo("bar")
+    assert "c1" in bfss.dirty_vars
+    bfss.dirty_vars.clear()
+    assert "c1" not in bfss.dirty_vars
+
+    # Mutating function from Base, dirty
+    bfss.c1.set(foo="bar")
+    assert "c1" in bfss.dirty_vars
+    bfss.dirty_vars.clear()
+    assert "c1" not in bfss.dirty_vars
+
+    # Assert identity of MutableProxy
+    mp = bfss.c1
+    assert isinstance(mp, MutableProxy)
+    mp2 = mp.set()
+    assert mp is mp2
+    mp3 = bfss.c1.set()
+    assert mp is not mp3
+    # Since none of these set calls had values, the state should not be dirty
+    assert not bfss.dirty_vars
+
+    # Chained Mutating function, dirty
+    bfss.c2.set_c1r_foo("baz")
+    assert "c2" in bfss.dirty_vars
 
 
 def exp_is_hydrated(state: State, is_hydrated: bool = True) -> Dict[str, Any]:

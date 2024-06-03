@@ -308,6 +308,9 @@ class PolarRadiusAxis(Recharts):
     # Valid children components
     _valid_children: List[str] = ["Label"]
 
+    # The domain of the polar radius axis, specifying the minimum and maximum values.
+    domain: List[int] = [0, 250]
+
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
@@ -322,3 +325,11 @@ class PolarRadiusAxis(Recharts):
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
+
+
+pie = Pie.create
+radar = Radar.create
+radial_bar = RadialBar.create
+polar_angle_axis = PolarAngleAxis.create
+polar_grid = PolarGrid.create
+polar_radius_axis = PolarRadiusAxis.create

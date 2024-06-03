@@ -650,3 +650,9 @@ class Title(Element):
             The component.
         """
         ...
+
+base = Base.create
+head = Head.create
+link = Link.create
+meta = Meta.create
+title = Title.create

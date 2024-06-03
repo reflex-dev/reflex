@@ -11,11 +11,6 @@ from types import SimpleNamespace
 from platformdirs import PlatformDirs
 
 IS_WINDOWS = platform.system() == "Windows"
-# https://github.com/oven-sh/bun/blob/main/src/cli/install.ps1
-IS_WINDOWS_BUN_SUPPORTED_MACHINE = IS_WINDOWS and platform.machine() in [
-    "AMD64",
-    "x86_64",
-]  # filter out 32 bit + ARM
 
 
 class Dirs(SimpleNamespace):
@@ -26,6 +21,8 @@ class Dirs(SimpleNamespace):
     WEB = ".web"
     # The name of the assets directory.
     APP_ASSETS = "assets"
+    # The name of the assets directory for external ressource (a subfolder of APP_ASSETS).
+    EXTERNAL_APP_ASSETS = "external"
     # The name of the utils file.
     UTILS = "utils"
     # The name of the output static directory.

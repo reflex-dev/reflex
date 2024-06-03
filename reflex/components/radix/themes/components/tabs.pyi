@@ -8,13 +8,17 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Literal
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.colors import color
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import RadixThemesComponent
+from ..base import LiteralAccentColor, RadixThemesComponent
+
+vertical_orientation_css = "&[data-orientation='vertical']"
 
 class TabsRoot(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
+    def add_style(self) -> Dict[str, Any] | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -108,6 +112,7 @@ class TabsRoot(RadixThemesComponent):
         ...
 
 class TabsList(RadixThemesComponent):
+    def add_style(self): ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -196,6 +201,68 @@ class TabsTrigger(RadixThemesComponent):
         *children,
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -249,29 +316,29 @@ class TabsTrigger(RadixThemesComponent):
         ] = None,
         **props
     ) -> "TabsTrigger":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a TabsTrigger component.
 
         Args:
-            *children: Child components.
+            *children: The children of the component.
             value: The value of the tab. Must be unique for each tab.
             disabled: Whether the tab is disabled
+            color_scheme: The color of the line under the tab when active.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: Component properties.
+            **props: The properties of the component.
 
         Returns:
-            A new component instance.
+            The TabsTrigger Component.
         """
         ...
+    def add_style(self) -> Dict[str, Any] | None: ...
 
 class TabsContent(RadixThemesComponent):
+    def add_style(self) -> dict[str, Any] | None: ...
     @overload
     @classmethod
     def create(  # type: ignore

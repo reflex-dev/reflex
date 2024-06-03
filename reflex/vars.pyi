@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 from dataclasses import dataclass
 from _typeshed import Incomplete
 from reflex import constants as constants
@@ -34,10 +35,10 @@ def _decode_var(value: str) -> tuple[VarData, str]: ...
 def _extract_var_data(value: Iterable) -> list[VarData | None]: ...
 
 class VarData(Base):
-    state: str
-    imports: dict[str, set[ImportVar]]
-    hooks: Dict[str, None]
-    interpolations: List[Tuple[int, int]]
+    state: str = ""
+    imports: dict[str, List[ImportVar]] = {}
+    hooks: Dict[str, None] = {}
+    interpolations: List[Tuple[int, int]] = []
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None: ...
 
@@ -50,11 +51,11 @@ class Var:
     _var_data: VarData | None = None
     @classmethod
     def create(
-        cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False
+        cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False, _var_data: VarData | None = None,
     ) -> Optional[Var]: ...
     @classmethod
     def create_safe(
-        cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False
+        cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False, _var_data: VarData | None = None,
     ) -> Var: ...
     @classmethod
     def __class_getitem__(cls, type_: Type) -> _GenericAlias: ...
@@ -139,7 +140,9 @@ class ComputedVar(Var):
     def _cache_attr(self) -> str: ...
     def __get__(self, instance, owner): ...
     def _deps(self, objclass: Type, obj: Optional[FunctionType] = ...) -> Set[str]: ...
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> ComputedVar: ...
     def mark_dirty(self, instance) -> None: ...
+    def needs_update(self, instance) -> bool: ...
     def _determine_var_type(self) -> Type: ...
     @overload
     def __init__(
@@ -154,10 +157,24 @@ class ComputedVar(Var):
 def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
     initial_value: Any | None = None,
+    cache: bool = False,
+    deps: Optional[List[Union[str, Var]]] = None,
+    auto_deps: bool = True,
+    interval: Optional[Union[datetime.timedelta, int]] = None,
     **kwargs,
 ) -> Callable[[Callable[[Any], Any]], ComputedVar]: ...
 @overload
 def computed_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
+@overload
+def cached_var(
+    fget: Callable[[BaseState], Any] | None = None,
+    initial_value: Any | None = None,
+    deps: Optional[List[Union[str, Var]]] = None,
+    auto_deps: bool = True,
+    interval: Optional[Union[datetime.timedelta, int]] = None,
+    **kwargs,
+) -> Callable[[Callable[[Any], Any]], ComputedVar]: ...
+@overload
 def cached_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
 
 class CallableVar(BaseVar):

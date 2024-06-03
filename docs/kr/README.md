@@ -17,7 +17,7 @@
 </div>
 
 ---
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md)
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md)
 ---
 ## ⚙️ 설치
 
@@ -70,10 +70,12 @@ http://localhost:3000 에서 앱이 실행 됩니다.
 import reflex as rx
 import openai
 
-openai.api_key = "YOUR_API_KEY"
+openai_client = openai.OpenAI()
+
 
 class State(rx.State):
     """The app state."""
+
     prompt = ""
     image_url = ""
     processing = False
@@ -86,33 +88,33 @@ class State(rx.State):
 
         self.processing, self.complete = True, False
         yield
-        response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
-        self.image_url = response["data"][0]["url"]
+        response = openai_client.images.generate(
+            prompt=self.prompt, n=1, size="1024x1024"
+        )
+        self.image_url = response.data[0].url
         self.processing, self.complete = False, True
-        
+
 
 def index():
     return rx.center(
         rx.vstack(
-            rx.heading("DALL·E"),
-            rx.input(placeholder="Enter a prompt", on_blur=State.set_prompt),
+            rx.heading("DALL-E", font_size="1.5em"),
+            rx.input(
+                placeholder="Enter a prompt..",
+                on_blur=State.set_prompt,
+                width="25em",
+            ),
             rx.button(
-                "Generate Image",
+                "Generate Image", 
                 on_click=State.get_image,
-                is_loading=State.processing,
-                width="100%",
+                width="25em",
+                loading=State.processing
             ),
             rx.cond(
                 State.complete,
-                     rx.image(
-                         src=State.image_url,
-                         height="25em",
-                         width="25em",
-                    )
+                rx.image(src=State.image_url, width="20em"),
             ),
-            padding="2em",
-            shadow="lg",
-            border_radius="lg",
+            align="center",
         ),
         width="100%",
         height="100vh",
@@ -120,7 +122,7 @@ def index():
 
 # Add state and page to the app.
 app = rx.App()
-app.add_page(index, title="reflex:DALL·E")
+app.add_page(index, title="Reflex:DALL-E")
 ```
 
 ## 하나씩 살펴보겠습니다.
@@ -160,7 +162,7 @@ class State(rx.State):
 
 state는 앱에서 변경될 수 있는 모든 변수(vars로 불림)와 이러한 변수를 변경하는 함수를 정의합니다.
 
-여기서 state는 `prompt`와 `image_url`로 구성됩니다. 또한 `processing`과 `complete`라는 불리언 값이 있습니다. 이 값들은 원형 진행률과 이미지를 표시할 때를 나타냅니다.
+여기서 state는 `prompt`와 `image_url`로 구성됩니다. 또한 `processing`과 `complete`라는 불리언 값이 있습니다. 이 값들은 이미지 생성 중 버튼을 비활성화할 때와, 결과 이미지를 표시할 때를 나타냅니다.
 
 ### **Event Handlers**
 
@@ -172,8 +174,10 @@ def get_image(self):
 
     self.processing, self.complete = True, False
     yield
-    response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
-    self.image_url = response["data"][0]["url"]
+    response = openai_client.images.generate(
+        prompt=self.prompt, n=1, size="1024x1024"
+    )
+    self.image_url = response.data[0].url
     self.processing, self.complete = False, True
 ```
 

@@ -7,10 +7,12 @@ import concurrent.futures
 import contextlib
 import copy
 import functools
+import inspect
 import io
 import multiprocessing
 import os
 import platform
+import sys
 from typing import (
     Any,
     AsyncIterator,
@@ -41,7 +43,6 @@ from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.compiler.compiler import ExecutorSafeFunctions
-from reflex.components import connection_modal, connection_pulser
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
@@ -49,6 +50,7 @@ from reflex.components.component import (
     ComponentStyle,
     evaluate_style_namespaces,
 )
+from reflex.components.core.banner import connection_pulser, connection_toaster
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
@@ -91,7 +93,7 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    return Fragment.create(connection_pulser(), connection_modal())
+    return Fragment.create(connection_pulser(), connection_toaster())
 
 
 class OverlayFragment(Fragment):
@@ -100,7 +102,50 @@ class OverlayFragment(Fragment):
     pass
 
 
-class App(Base):
+class LifespanMixin(Base):
+    """A Mixin that allow tasks to run during the whole app lifespan."""
+
+    # Lifespan tasks that are planned to run.
+    lifespan_tasks: Set[Union[asyncio.Task, Callable]] = set()
+
+    @contextlib.asynccontextmanager
+    async def _run_lifespan_tasks(self, app: FastAPI):
+        running_tasks = []
+        try:
+            async with contextlib.AsyncExitStack() as stack:
+                for task in self.lifespan_tasks:
+                    if isinstance(task, asyncio.Task):
+                        running_tasks.append(task)
+                    else:
+                        signature = inspect.signature(task)
+                        if "app" in signature.parameters:
+                            task = functools.partial(task, app=app)
+                        _t = task()
+                        if isinstance(_t, contextlib._AsyncGeneratorContextManager):
+                            await stack.enter_async_context(_t)
+                        elif isinstance(_t, Coroutine):
+                            running_tasks.append(asyncio.create_task(_t))
+                yield
+        finally:
+            cancel_kwargs = (
+                {"msg": "lifespan_cleanup"} if sys.version_info >= (3, 9) else {}
+            )
+            for task in running_tasks:
+                task.cancel(**cancel_kwargs)
+
+    def register_lifespan_task(self, task: Callable | asyncio.Task, **task_kwargs):
+        """Register a task to run during the lifespan of the app.
+
+        Args:
+            task: The task to register.
+            task_kwargs: The kwargs of the task.
+        """
+        if task_kwargs:
+            task = functools.partial(task, **task_kwargs)  # type: ignore
+        self.lifespan_tasks.add(task)  # type: ignore
+
+
+class App(LifespanMixin, Base):
     """The main Reflex app that encapsulates the backend and frontend.
 
     Every Reflex app needs an app defined in its main module.
@@ -193,25 +238,17 @@ class App(Base):
         base_state_subclasses = BaseState.__subclasses__()
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
-        if not is_testing_env():
+        if not is_testing_env() and len(base_state_subclasses) > 1:
             # Only one Base State class is allowed.
-            if len(base_state_subclasses) > 1:
-                raise ValueError(
-                    "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
-                )
+            raise ValueError(
+                "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
+            )
 
-            if "state" in kwargs:
-                console.deprecate(
-                    feature_name="`state` argument for App()",
-                    reason="due to all `rx.State` subclasses being inferred.",
-                    deprecation_version="0.3.5",
-                    removal_version="0.5.0",
-                )
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
 
         # Set up the API.
-        self.api = FastAPI()
+        self.api = FastAPI(lifespan=self._run_lifespan_tasks)
         self._add_cors()
         self._add_default_endpoints()
 
@@ -411,9 +448,12 @@ class App(Base):
             The generated component.
 
         Raises:
+            VarOperationTypeError: When an invalid component var related function is passed.
             TypeError: When an invalid component function is passed.
             exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
+        from reflex.utils.exceptions import VarOperationTypeError
+
         try:
             return component if isinstance(component, Component) else component()
         except exceptions.MatchTypeError:
@@ -421,7 +461,7 @@ class App(Base):
         except TypeError as e:
             message = str(e)
             if "BaseVar" in message or "ComputedVar" in message:
-                raise TypeError(
+                raise VarOperationTypeError(
                     "You may be trying to use an invalid Python function on a state var. "
                     "When referencing a var inside your render code, only limited var operations are supported. "
                     "See the var operation docs here: https://reflex.dev/docs/vars/var-operations/"
@@ -439,7 +479,6 @@ class App(Base):
             EventHandler | EventSpec | list[EventHandler | EventSpec] | None
         ) = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
-        script_tags: list[Component] | None = None,
     ):
         """Add a page to the app.
 
@@ -454,7 +493,6 @@ class App(Base):
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
-            script_tags: List of script tags to be added to component
 
         Raises:
             ValueError: When the specified route name already exists.
@@ -535,16 +573,6 @@ class App(Base):
             **meta_args,
         )
 
-        # Add script tags if given
-        if script_tags:
-            console.deprecate(
-                feature_name="Passing script tags to add_page",
-                reason="Add script components as children to the page component instead",
-                deprecation_version="0.2.9",
-                removal_version="0.5.0",
-            )
-            component.children.extend(script_tags)
-
         # Add the page.
         self._check_routes_conflict(route)
         self.pages[route] = component
@@ -575,11 +603,13 @@ class App(Base):
         Based on conflicts that NextJS would throw if not intercepted.
 
         Raises:
-            ValueError: exception showing which conflict exist with the route to be added
+            RouteValueError: exception showing which conflict exist with the route to be added
 
         Args:
             new_route: the route being newly added.
         """
+        from reflex.utils.exceptions import RouteValueError
+
         if "[" not in new_route:
             return
 
@@ -596,7 +626,7 @@ class App(Base):
             ):
                 if rw in segments and r != nr:
                     # If the slugs in the segments of both routes are not the same, then the route is invalid
-                    raise ValueError(
+                    raise RouteValueError(
                         f"You cannot use different slug names for the same dynamic path in  {route} and {new_route} ('{r}' != '{nr}')"
                     )
                 elif rw not in segments and r != nr:
@@ -775,8 +805,10 @@ class App(Base):
             export: Whether to compile the app for export.
 
         Raises:
-            RuntimeError: When any page uses state, but no rx.State subclass is defined.
+            ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
         """
+        from reflex.utils.exceptions import ReflexRuntimeError
+
         # Render a default 404 page if the user didn't supply one
         if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
@@ -833,9 +865,7 @@ class App(Base):
 
         for _route, component in self.pages.items():
             # Merge the component style with the app style.
-            component._add_style_recursive(self.style)
-
-            component.apply_theme(self.theme)
+            component._add_style_recursive(self.style, self.theme)
 
             # Add component._get_all_imports() to all_imports.
             all_imports.update(component._get_all_imports())
@@ -859,7 +889,7 @@ class App(Base):
 
         # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
         if code_uses_state_contexts(stateful_components_code) and self.state is None:
-            raise RuntimeError(
+            raise ReflexRuntimeError(
                 "To access rx.State in frontend components, at least one "
                 "subclass of rx.State must be defined in the app."
             )
@@ -1082,50 +1112,59 @@ async def process(
         headers: The client headers.
         client_ip: The client_ip.
 
+    Raises:
+        Exception: If a reflex specific error occurs during processing the event.
+
     Yields:
         The state updates after processing the event.
     """
-    # Add request data to the state.
-    router_data = event.router_data
-    router_data.update(
-        {
-            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
-            constants.RouteVar.CLIENT_TOKEN: event.token,
-            constants.RouteVar.SESSION_ID: sid,
-            constants.RouteVar.HEADERS: headers,
-            constants.RouteVar.CLIENT_IP: client_ip,
-        }
-    )
-    # Get the state for the session exclusively.
-    async with app.state_manager.modify_state(event.substate_token) as state:
-        # re-assign only when the value is different
-        if state.router_data != router_data:
-            # assignment will recurse into substates and force recalculation of
-            # dependent ComputedVar (dynamic route variables)
-            state.router_data = router_data
-            state.router = RouterData(router_data)
+    from reflex.utils import telemetry
 
-        # Preprocess the event.
-        update = await app._preprocess(state, event)
+    try:
+        # Add request data to the state.
+        router_data = event.router_data
+        router_data.update(
+            {
+                constants.RouteVar.QUERY: format.format_query_params(event.router_data),
+                constants.RouteVar.CLIENT_TOKEN: event.token,
+                constants.RouteVar.SESSION_ID: sid,
+                constants.RouteVar.HEADERS: headers,
+                constants.RouteVar.CLIENT_IP: client_ip,
+            }
+        )
+        # Get the state for the session exclusively.
+        async with app.state_manager.modify_state(event.substate_token) as state:
+            # re-assign only when the value is different
+            if state.router_data != router_data:
+                # assignment will recurse into substates and force recalculation of
+                # dependent ComputedVar (dynamic route variables)
+                state.router_data = router_data
+                state.router = RouterData(router_data)
 
-        # If there was an update, yield it.
-        if update is not None:
-            yield update
+            # Preprocess the event.
+            update = await app._preprocess(state, event)
 
-        # Only process the event if there is no update.
-        else:
-            if app._process_background(state, event) is not None:
-                # `final=True` allows the frontend send more events immediately.
-                yield StateUpdate(final=True)
-                return
-
-            # Process the event synchronously.
-            async for update in state._process(event):
-                # Postprocess the event.
-                update = await app._postprocess(state, event, update)
-
-                # Yield the update.
+            # If there was an update, yield it.
+            if update is not None:
                 yield update
+
+            # Only process the event if there is no update.
+            else:
+                if app._process_background(state, event) is not None:
+                    # `final=True` allows the frontend send more events immediately.
+                    yield StateUpdate(final=True)
+                    return
+
+                # Process the event synchronously.
+                async for update in state._process(event):
+                    # Postprocess the event.
+                    update = await app._postprocess(state, event, update)
+
+                    # Yield the update.
+                    yield update
+    except Exception as ex:
+        telemetry.send_error(ex, context="backend")
+        raise
 
 
 async def ping() -> str:
@@ -1159,10 +1198,12 @@ def upload(app: App):
             emitted by the upload handler.
 
         Raises:
-            ValueError: if there are no args with supported annotation.
-            TypeError: if a background task is used as the handler.
+            UploadValueError: if there are no args with supported annotation.
+            UploadTypeError: if a background task is used as the handler.
             HTTPException: when the request does not include token / handler headers.
         """
+        from reflex.utils.exceptions import UploadTypeError, UploadValueError
+
         token = request.headers.get("reflex-client-token")
         handler = request.headers.get("reflex-event-handler")
 
@@ -1188,7 +1229,7 @@ def upload(app: App):
         # check if there exists any handler args with annotation, List[UploadFile]
         if isinstance(func, EventHandler):
             if func.is_background:
-                raise TypeError(
+                raise UploadTypeError(
                     f"@rx.background is not supported for upload handler `{handler}`.",
                 )
             func = func.fn
@@ -1203,7 +1244,7 @@ def upload(app: App):
                 break
 
         if not handler_upload_param:
-            raise ValueError(
+            raise UploadValueError(
                 f"`{handler}` handler should have a parameter annotated as "
                 "List[rx.UploadFile]"
             )
@@ -1261,6 +1302,12 @@ class EventNamespace(AsyncNamespace):
     # The application object.
     app: App
 
+    # Keep a mapping between socket ID and client token.
+    token_to_sid: dict[str, str] = {}
+
+    # Keep a mapping between client token and socket ID.
+    sid_to_token: dict[str, str] = {}
+
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
 
@@ -1286,7 +1333,9 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id.
         """
-        pass
+        disconnect_token = self.sid_to_token.pop(sid, None)
+        if disconnect_token:
+            self.token_to_sid.pop(disconnect_token, None)
 
     async def emit_update(self, update: StateUpdate, sid: str) -> None:
         """Emit an update to the client.
@@ -1309,6 +1358,9 @@ class EventNamespace(AsyncNamespace):
         """
         # Get the event.
         event = Event.parse_raw(data)
+
+        self.token_to_sid[event.token] = sid
+        self.sid_to_token[sid] = event.token
 
         # Get the event environment.
         assert self.app.sio is not None

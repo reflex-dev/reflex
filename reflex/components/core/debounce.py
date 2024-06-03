@@ -109,18 +109,18 @@ class DebounceInput(Component):
                 "{%s}" % (child.alias or child.tag),
                 _var_is_local=False,
                 _var_is_string=False,
-            )._replace(
-                _var_type=Type[Component],
-                merge_var_data=VarData(  # type: ignore
+                _var_data=VarData(
                     imports=child._get_imports(),
                     hooks=child._get_hooks_internal(),
                 ),
-            ),
+            ).to(Type[Component]),
         )
 
         component = super().create(**props)
         component._get_style = child._get_style
         component.event_triggers.update(child.event_triggers)
+        component.children = child.children
+        component._rename_props = child._rename_props
         return component
 
     def get_event_triggers(self) -> dict[str, Any]:
@@ -136,3 +136,6 @@ class DebounceInput(Component):
 
     def _render(self):
         return super()._render().remove_props("ref")
+
+
+debounce_input = DebounceInput.create

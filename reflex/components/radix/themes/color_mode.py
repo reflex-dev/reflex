@@ -23,7 +23,8 @@ from typing import Literal, get_args
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
 from reflex.components.lucide.icon import Icon
-from reflex.style import color_mode, toggle_color_mode
+from reflex.components.radix.themes.components.switch import Switch
+from reflex.style import LIGHT_COLOR_MODE, color_mode, toggle_color_mode
 from reflex.utils import console
 from reflex.vars import BaseVar, Var
 
@@ -143,11 +144,36 @@ class ColorModeIconButton(IconButton):
         )
 
 
+class ColorModeSwitch(Switch):
+    """Switch for toggling light / dark mode via toggle_color_mode."""
+
+    @classmethod
+    def create(cls, *children, **props):
+        """Create a switch component bound to color_mode.
+
+        Args:
+            *children: The children of the component.
+            **props: The props to pass to the component.
+
+        Returns:
+            The switch component.
+        """
+        return Switch.create(
+            *children,
+            checked=color_mode != LIGHT_COLOR_MODE,
+            on_change=toggle_color_mode,
+            **props,
+        )
+
+
 class ColorModeNamespace(BaseVar):
     """Namespace for color mode components."""
 
     icon = staticmethod(ColorModeIcon.create)
     button = staticmethod(ColorModeIconButton.create)
+    switch = staticmethod(ColorModeSwitch.create)
 
 
-color_mode_var_and_namespace = ColorModeNamespace(**dataclasses.asdict(color_mode))
+color_mode = color_mode_var_and_namespace = ColorModeNamespace(
+    **dataclasses.asdict(color_mode)
+)

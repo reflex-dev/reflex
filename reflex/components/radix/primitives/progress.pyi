@@ -7,13 +7,12 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Optional
+from typing import Any, Optional
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
 from reflex.components.radix.primitives.accordion import DEFAULT_ANIMATION_DURATION
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
-from reflex.style import Style
 from reflex.vars import Var
 
 class ProgressComponent(RadixPrimitiveComponentWithClassName):
@@ -95,6 +94,7 @@ class ProgressComponent(RadixPrimitiveComponentWithClassName):
         ...
 
 class ProgressRoot(ProgressComponent):
+    def add_style(self) -> dict[str, Any] | None: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -180,6 +180,7 @@ class ProgressRoot(ProgressComponent):
         ...
 
 class ProgressIndicator(ProgressComponent):
+    def add_style(self) -> dict[str, Any] | None: ...
     @overload
     @classmethod
     def create(  # type: ignore

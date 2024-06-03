@@ -8,17 +8,20 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, Literal, Union
-from reflex.components import el
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.debounce import DebounceInput
+from reflex.components.el import elements
 from reflex.constants import EventTriggers
+from reflex.style import Style, format_as_emotion
+from reflex.utils import console
 from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
 
-class TextFieldRoot(el.Div, RadixThemesComponent):
+class TextFieldRoot(elements.Div, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -263,6 +266,10 @@ class TextFieldRoot(el.Div, RadixThemesComponent):
             The component.
         """
         ...
+    @classmethod
+    def create_root_deprecated(cls, *children, **props) -> Component: ...
+    @classmethod
+    def create_input_deprecated(cls, *children, **props) -> Component: ...
     def get_event_triggers(self) -> Dict[str, Any]: ...
 
 class TextFieldSlot(RadixThemesComponent):
@@ -408,7 +415,8 @@ class TextFieldSlot(RadixThemesComponent):
         ...
 
 class TextField(ComponentNamespace):
-    root = staticmethod(TextFieldRoot.create)
+    root = staticmethod(TextFieldRoot.create_root_deprecated)
+    input = staticmethod(TextFieldRoot.create_input_deprecated)
     slot = staticmethod(TextFieldSlot.create)
 
     @staticmethod
@@ -654,4 +662,4 @@ class TextField(ComponentNamespace):
         """
         ...
 
-text_field = TextField()
+input = text_field = TextField()

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import datetime
 import dis
 import functools
 import inspect
@@ -35,12 +36,15 @@ from typing import (
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format, imports, serializers, types
+from reflex.utils.exceptions import VarAttributeError, VarTypeError, VarValueError
 
 # This module used to export ImportVar itself, so we still import it for export here
 from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.types import override
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
+
 
 # Set of unique variable names.
 USED_VARIABLES = set()
@@ -340,7 +344,11 @@ class Var:
 
     @classmethod
     def create(
-        cls, value: Any, _var_is_local: bool = True, _var_is_string: bool = False
+        cls,
+        value: Any,
+        _var_is_local: bool = True,
+        _var_is_string: bool = False,
+        _var_data: Optional[VarData] = None,
     ) -> Var | None:
         """Create a var from a value.
 
@@ -348,12 +356,13 @@ class Var:
             value: The value to create the var from.
             _var_is_local: Whether the var is local.
             _var_is_string: Whether the var is a string literal.
+            _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
             The var.
 
         Raises:
-            TypeError: If the value is JSON-unserializable.
+            VarTypeError: If the value is JSON-unserializable.
         """
         # Check for none values.
         if value is None:
@@ -364,9 +373,8 @@ class Var:
             return value
 
         # Try to pull the imports and hooks from contained values.
-        _var_data = None
         if not isinstance(value, str):
-            _var_data = VarData.merge(*_extract_var_data(value))
+            _var_data = VarData.merge(*_extract_var_data(value), _var_data)
 
         # Try to serialize the value.
         type_ = type(value)
@@ -375,7 +383,7 @@ class Var:
         else:
             name, _ = serializers.serialize(value, get_type=True)
         if name is None:
-            raise TypeError(
+            raise VarTypeError(
                 f"No JSON serializer found for var {value} of type {type_}."
             )
         name = name if isinstance(name, str) else format.json_dumps(name)
@@ -390,7 +398,11 @@ class Var:
 
     @classmethod
     def create_safe(
-        cls, value: Any, _var_is_local: bool = True, _var_is_string: bool = False
+        cls,
+        value: Any,
+        _var_is_local: bool = True,
+        _var_is_string: bool = False,
+        _var_data: Optional[VarData] = None,
     ) -> Var:
         """Create a var from a value, asserting that it is not None.
 
@@ -398,6 +410,7 @@ class Var:
             value: The value to create the var from.
             _var_is_local: Whether the var is local.
             _var_is_string: Whether the var is a string literal.
+            _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
             The var.
@@ -406,6 +419,7 @@ class Var:
             value,
             _var_is_local=_var_is_local,
             _var_is_string=_var_is_string,
+            _var_data=_var_data,
         )
         assert var is not None
         return var
@@ -545,9 +559,9 @@ class Var:
         """Raise exception if using Var in a boolean context.
 
         Raises:
-            TypeError: when attempting to bool-ify the Var.
+            VarTypeError: when attempting to bool-ify the Var.
         """
-        raise TypeError(
+        raise VarTypeError(
             f"Cannot convert Var {self._var_full_name!r} to bool for use with `if`, `and`, `or`, and `not`. "
             "Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert)."
         )
@@ -556,9 +570,9 @@ class Var:
         """Raise exception if using Var in an iterable context.
 
         Raises:
-            TypeError: when attempting to iterate over the Var.
+            VarTypeError: when attempting to iterate over the Var.
         """
-        raise TypeError(
+        raise VarTypeError(
             f"Cannot iterate over Var {self._var_full_name!r}. Instead use `rx.foreach`."
         )
 
@@ -587,7 +601,7 @@ class Var:
             The indexed var.
 
         Raises:
-            TypeError: If the var is not indexable.
+            VarTypeError: If the var is not indexable.
         """
         # Indexing is only supported for strings, lists, tuples, dicts, and dataframes.
         if not (
@@ -595,11 +609,11 @@ class Var:
             or types.is_dataframe(self._var_type)
         ):
             if self._var_type == Any:
-                raise TypeError(
+                raise VarTypeError(
                     "Could not index into var of type Any. (If you are trying to index into a state var, "
                     "add the correct type annotation to the var.)"
                 )
-            raise TypeError(
+            raise VarTypeError(
                 f"Var {self._var_name} of type {self._var_type} does not support indexing."
             )
 
@@ -618,7 +632,7 @@ class Var:
                 or isinstance(i, Var)
                 and not i._var_type == int
             ):
-                raise TypeError("Index must be an integer or an integer var.")
+                raise VarTypeError("Index must be an integer or an integer var.")
 
             # Handle slices first.
             if isinstance(i, slice):
@@ -661,7 +675,7 @@ class Var:
                 i._var_type, types.get_args(Union[int, str, float])
             )
         ):
-            raise TypeError(
+            raise VarTypeError(
                 "Index must be one of the following types: int, str, int or str Var"
             )
         # Get the type of the indexed var.
@@ -690,21 +704,27 @@ class Var:
             The var attribute.
 
         Raises:
-            AttributeError: If the attribute cannot be found, or if __getattr__ fallback should be used.
+            VarAttributeError: If the attribute cannot be found, or if __getattr__ fallback should be used.
         """
         try:
             var_attribute = super().__getattribute__(name)
-            if not name.startswith("_"):
+            if (
+                not name.startswith("_")
+                and name not in Var.__dict__
+                and name not in BaseVar.__dict__
+            ):
                 # Check if the attribute should be accessed through the Var instead of
                 # accessing one of the Var operations
                 type_ = types.get_attribute_access_type(
                     super().__getattribute__("_var_type"), name
                 )
                 if type_ is not None:
-                    raise AttributeError(f"{name} is being accessed through the Var.")
+                    raise VarAttributeError(
+                        f"{name} is being accessed through the Var."
+                    )
             # Return the attribute as-is.
             return var_attribute
-        except AttributeError:
+        except VarAttributeError:
             raise  # fall back to __getattr__ anyway
 
     def __getattr__(self, name: str) -> Var:
@@ -717,13 +737,13 @@ class Var:
             The var attribute.
 
         Raises:
-            AttributeError: If the var is wrongly annotated or can't find attribute.
-            TypeError: If an annotation to the var isn't provided.
+            VarAttributeError: If the var is wrongly annotated or can't find attribute.
+            VarTypeError: If an annotation to the var isn't provided.
         """
         # Check if the attribute is one of the class fields.
         if not name.startswith("_"):
             if self._var_type == Any:
-                raise TypeError(
+                raise VarTypeError(
                     f"You must provide an annotation for the state var `{self._var_full_name}`. Annotation cannot be `{self._var_type}`"
                 ) from None
             is_optional = types.is_optional(self._var_type)
@@ -737,16 +757,16 @@ class Var:
                 )
 
             if name in REPLACED_NAMES:
-                raise AttributeError(
+                raise VarAttributeError(
                     f"Field {name!r} was renamed to {REPLACED_NAMES[name]!r}"
                 )
 
-            raise AttributeError(
+            raise VarAttributeError(
                 f"The State var `{self._var_full_name}` has no attribute '{name}' or may have been annotated "
                 f"wrongly."
             )
 
-        raise AttributeError(
+        raise VarAttributeError(
             f"The State var has no attribute '{name}' or may have been annotated wrongly.",
         )
 
@@ -773,8 +793,8 @@ class Var:
             The operation result.
 
         Raises:
-            TypeError: If the operation between two operands is invalid.
-            ValueError: If flip is set to true and value of operand is not provided
+            VarTypeError: If the operation between two operands is invalid.
+            VarValueError: If flip is set to true and value of operand is not provided
         """
         if isinstance(other, str):
             other = Var.create(json.dumps(other))
@@ -784,7 +804,7 @@ class Var:
         type_ = type_ or self._var_type
 
         if other is None and flip:
-            raise ValueError(
+            raise VarValueError(
                 "flip_operands cannot be set to True if the value of 'other' operand is not provided"
             )
 
@@ -807,7 +827,7 @@ class Var:
                 types.get_base_class(right_operand._var_type),  # type: ignore
                 op,
             ):
-                raise TypeError(
+                raise VarTypeError(
                     f"Unsupported Operand type(s) for {op}: `{left_operand._var_full_name}` of type {left_operand._var_type.__name__} and `{right_operand._var_full_name}` of type {right_operand._var_type.__name__}"  # type: ignore
                 )
 
@@ -928,10 +948,10 @@ class Var:
             A var with the absolute value.
 
         Raises:
-            TypeError: If the var is not a list.
+            VarTypeError: If the var is not a list.
         """
         if not types._issubclass(self._var_type, List):
-            raise TypeError(f"Cannot get length of non-list var {self}.")
+            raise VarTypeError(f"Cannot get length of non-list var {self}.")
         return self._replace(
             _var_name=f"{self._var_name}.length",
             _var_type=int,
@@ -1331,26 +1351,27 @@ class Var:
         """Override the 'in' operator to alert the user that it is not supported.
 
         Raises:
-            TypeError: the operation is not supported
+            VarTypeError: the operation is not supported
         """
-        raise TypeError(
+        raise VarTypeError(
             "'in' operator not supported for Var types, use Var.contains() instead."
         )
 
-    def contains(self, other: Any) -> Var:
+    def contains(self, other: Any, field: Union[Var, None] = None) -> Var:
         """Check if a var contains the object `other`.
 
         Args:
             other: The object to check.
+            field: Optionally specify a field to check on both object and the other var.
 
         Raises:
-            TypeError: If the var is not a valid type: dict, list, tuple or str.
+            VarTypeError: If the var is not a valid type: dict, list, tuple or str.
 
         Returns:
             A var representing the contain check.
         """
         if not (types._issubclass(self._var_type, Union[dict, list, tuple, str, set])):
-            raise TypeError(
+            raise VarTypeError(
                 f"Var {self._var_full_name} of type {self._var_type} does not support contains check."
             )
         method = (
@@ -1374,11 +1395,19 @@ class Var:
             if types._issubclass(self._var_type, str) and not types._issubclass(
                 other._var_type, str
             ):
-                raise TypeError(
+                raise VarTypeError(
                     f"'in <string>' requires string as left operand, not {other._var_type}"
                 )
+
+            _var_name = None
+            if field is None:
+                _var_name = f"{self._var_name}.includes({other._var_full_name})"
+            else:
+                field = Var.create_safe(field, _var_is_string=isinstance(field, str))
+                _var_name = f"{self._var_name}.some(e=>e[{field._var_name_unwrapped}]==={other._var_full_name})"
+
             return self._replace(
-                _var_name=f"{self._var_name}.includes({other._var_full_name})",
+                _var_name=_var_name,
                 _var_type=bool,
                 _var_is_string=False,
                 merge_var_data=other._var_data,
@@ -1388,13 +1417,13 @@ class Var:
         """Reverse a list var.
 
         Raises:
-            TypeError: If the var is not a list.
+            VarTypeError: If the var is not a list.
 
         Returns:
             A var with the reversed list.
         """
         if not types._issubclass(self._var_type, list):
-            raise TypeError(f"Cannot reverse non-list var {self._var_full_name}.")
+            raise VarTypeError(f"Cannot reverse non-list var {self._var_full_name}.")
 
         return self._replace(
             _var_name=f"[...{self._var_full_name}].reverse()",
@@ -1409,10 +1438,10 @@ class Var:
             A var with the lowercase string.
 
         Raises:
-            TypeError: If the var is not a string.
+            VarTypeError: If the var is not a string.
         """
         if not types._issubclass(self._var_type, str):
-            raise TypeError(
+            raise VarTypeError(
                 f"Cannot convert non-string var {self._var_full_name} to lowercase."
             )
 
@@ -1429,10 +1458,10 @@ class Var:
             A var with the uppercase string.
 
         Raises:
-            TypeError: If the var is not a string.
+            VarTypeError: If the var is not a string.
         """
         if not types._issubclass(self._var_type, str):
-            raise TypeError(
+            raise VarTypeError(
                 f"Cannot convert non-string var {self._var_full_name} to uppercase."
             )
 
@@ -1452,10 +1481,10 @@ class Var:
             A var with the stripped string.
 
         Raises:
-            TypeError: If the var is not a string.
+            VarTypeError: If the var is not a string.
         """
         if not types._issubclass(self._var_type, str):
-            raise TypeError(f"Cannot strip non-string var {self._var_full_name}.")
+            raise VarTypeError(f"Cannot strip non-string var {self._var_full_name}.")
 
         other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
 
@@ -1475,10 +1504,10 @@ class Var:
             A var with the list.
 
         Raises:
-            TypeError: If the var is not a string.
+            VarTypeError: If the var is not a string.
         """
         if not types._issubclass(self._var_type, str):
-            raise TypeError(f"Cannot split non-string var {self._var_full_name}.")
+            raise VarTypeError(f"Cannot split non-string var {self._var_full_name}.")
 
         other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
 
@@ -1499,10 +1528,10 @@ class Var:
             A var with the string.
 
         Raises:
-            TypeError: If the var is not a list.
+            VarTypeError: If the var is not a list.
         """
         if not types._issubclass(self._var_type, list):
-            raise TypeError(f"Cannot join non-list var {self._var_full_name}.")
+            raise VarTypeError(f"Cannot join non-list var {self._var_full_name}.")
 
         if other is None:
             other = Var.create_safe('""')
@@ -1528,11 +1557,11 @@ class Var:
             A var representing foreach operation.
 
         Raises:
-            TypeError: If the var is not a list.
+            VarTypeError: If the var is not a list.
         """
         inner_types = get_args(self._var_type)
         if not inner_types:
-            raise TypeError(
+            raise VarTypeError(
                 f"Cannot foreach over non-sequence var {self._var_full_name} of type {self._var_type}."
             )
         arg = BaseVar(
@@ -1569,25 +1598,27 @@ class Var:
             A var representing range operation.
 
         Raises:
-            TypeError: If the var is not an int.
+            VarTypeError: If the var is not an int.
         """
         if not isinstance(v1, Var):
             v1 = Var.create_safe(v1)
         if v1._var_type != int:
-            raise TypeError(f"Cannot get range on non-int var {v1._var_full_name}.")
+            raise VarTypeError(f"Cannot get range on non-int var {v1._var_full_name}.")
         if not isinstance(v2, Var):
             v2 = Var.create(v2)
         if v2 is None:
             v2 = Var.create_safe("undefined")
         elif v2._var_type != int:
-            raise TypeError(f"Cannot get range on non-int var {v2._var_full_name}.")
+            raise VarTypeError(f"Cannot get range on non-int var {v2._var_full_name}.")
 
         if not isinstance(step, Var):
             step = Var.create(step)
         if step is None:
             step = Var.create_safe(1)
         elif step._var_type != int:
-            raise TypeError(f"Cannot get range on non-int var {step._var_full_name}.")
+            raise VarTypeError(
+                f"Cannot get range on non-int var {step._var_full_name}."
+            )
 
         return BaseVar(
             _var_name=f"Array.from(range({v1._var_full_name}, {v2._var_full_name}, {step._var_name}))",
@@ -1846,13 +1877,26 @@ class ComputedVar(Var, property):
     # Whether to track dependencies and cache computed values
     _cache: bool = dataclasses.field(default=False)
 
-    _initial_value: Any | types.Unset = dataclasses.field(default_factory=types.Unset)
+    # The initial value of the computed var
+    _initial_value: Any | types.Unset = dataclasses.field(default=types.Unset())
+
+    # Explicit var dependencies to track
+    _static_deps: set[str] = dataclasses.field(default_factory=set)
+
+    # Whether var dependencies should be auto-determined
+    _auto_deps: bool = dataclasses.field(default=True)
+
+    # Interval at which the computed var should be updated
+    _update_interval: Optional[datetime.timedelta] = dataclasses.field(default=None)
 
     def __init__(
         self,
         fget: Callable[[BaseState], Any],
         initial_value: Any | types.Unset = types.Unset(),
         cache: bool = False,
+        deps: Optional[List[Union[str, Var]]] = None,
+        auto_deps: bool = True,
+        interval: Optional[Union[int, datetime.timedelta]] = None,
         **kwargs,
     ):
         """Initialize a ComputedVar.
@@ -1861,14 +1905,55 @@ class ComputedVar(Var, property):
             fget: The getter function.
             initial_value: The initial value of the computed var.
             cache: Whether to cache the computed value.
+            deps: Explicit var dependencies to track.
+            auto_deps: Whether var dependencies should be auto-determined.
+            interval: Interval at which the computed var should be updated.
             **kwargs: additional attributes to set on the instance
         """
         self._initial_value = initial_value
         self._cache = cache
+        if isinstance(interval, int):
+            interval = datetime.timedelta(seconds=interval)
+        self._update_interval = interval
+        if deps is None:
+            deps = []
+        self._static_deps = {
+            dep._var_name if isinstance(dep, Var) else dep for dep in deps
+        }
+        self._auto_deps = auto_deps
         property.__init__(self, fget)
         kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", self._determine_var_type())
         BaseVar.__init__(self, **kwargs)  # type: ignore
+
+    @override
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> ComputedVar:
+        """Replace the attributes of the ComputedVar.
+
+        Args:
+            merge_var_data: VarData to merge into the existing VarData.
+            **kwargs: Var fields to update.
+
+        Returns:
+            The new ComputedVar instance.
+        """
+        return ComputedVar(
+            fget=kwargs.get("fget", self.fget),
+            initial_value=kwargs.get("initial_value", self._initial_value),
+            cache=kwargs.get("cache", self._cache),
+            deps=kwargs.get("deps", self._static_deps),
+            auto_deps=kwargs.get("auto_deps", self._auto_deps),
+            interval=kwargs.get("interval", self._update_interval),
+            _var_name=kwargs.get("_var_name", self._var_name),
+            _var_type=kwargs.get("_var_type", self._var_type),
+            _var_is_local=kwargs.get("_var_is_local", self._var_is_local),
+            _var_is_string=kwargs.get("_var_is_string", self._var_is_string),
+            _var_full_name_needs_state_prefix=kwargs.get(
+                "_var_full_name_needs_state_prefix",
+                self._var_full_name_needs_state_prefix,
+            ),
+            _var_data=VarData.merge(self._var_data, merge_var_data),
+        )
 
     @property
     def _cache_attr(self) -> str:
@@ -1879,7 +1964,32 @@ class ComputedVar(Var, property):
         """
         return f"__cached_{self._var_name}"
 
-    def __get__(self, instance, owner):
+    @property
+    def _last_updated_attr(self) -> str:
+        """Get the attribute used to store the last updated timestamp.
+
+        Returns:
+            An attribute name.
+        """
+        return f"__last_updated_{self._var_name}"
+
+    def needs_update(self, instance: BaseState) -> bool:
+        """Check if the computed var needs to be updated.
+
+        Args:
+            instance: The state instance that the computed var is attached to.
+
+        Returns:
+            True if the computed var needs to be updated, False otherwise.
+        """
+        if self._update_interval is None:
+            return False
+        last_updated = getattr(instance, self._last_updated_attr, None)
+        if last_updated is None:
+            return True
+        return datetime.datetime.now() - last_updated > self._update_interval
+
+    def __get__(self, instance: BaseState | None, owner):
         """Get the ComputedVar value.
 
         If the value is already cached on the instance, return the cached value.
@@ -1895,10 +2005,13 @@ class ComputedVar(Var, property):
             return super().__get__(instance, owner)
 
         # handle caching
-        if not hasattr(instance, self._cache_attr):
+        if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
+            # Set cache attr on state instance.
             setattr(instance, self._cache_attr, super().__get__(instance, owner))
             # Ensure the computed var gets serialized to redis.
             instance._was_touched = True
+            # Set the last updated timestamp on the state instance.
+            setattr(instance, self._last_updated_attr, datetime.datetime.now())
         return getattr(instance, self._cache_attr)
 
     def _deps(
@@ -1922,10 +2035,12 @@ class ComputedVar(Var, property):
             A set of variable names accessed by the given obj.
 
         Raises:
-            ValueError: if the function references the get_state, parent_state, or substates attributes
+            VarValueError: if the function references the get_state, parent_state, or substates attributes
                 (cannot track deps in a related state, only implicitly via parent state).
         """
-        d = set()
+        if not self._auto_deps:
+            return self._static_deps
+        d = self._static_deps.copy()
         if obj is None:
             fget = property.__getattribute__(self, "fget")
             if fget is not None:
@@ -1969,7 +2084,7 @@ class ComputedVar(Var, property):
                 except Exception:
                     ref_obj = None
                 if instruction.argval in invalid_names:
-                    raise ValueError(
+                    raise VarValueError(
                         f"Cached var {self._var_full_name} cannot access arbitrary state via `{instruction.argval}`."
                     )
                 if callable(ref_obj):
@@ -2023,6 +2138,9 @@ def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
     initial_value: Any | None = None,
     cache: bool = False,
+    deps: Optional[List[Union[str, Var]]] = None,
+    auto_deps: bool = True,
+    interval: Optional[Union[datetime.timedelta, int]] = None,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
     """A ComputedVar decorator with or without kwargs.
@@ -2031,19 +2149,31 @@ def computed_var(
         fget: The getter function.
         initial_value: The initial value of the computed var.
         cache: Whether to cache the computed value.
+        deps: Explicit var dependencies to track.
+        auto_deps: Whether var dependencies should be auto-determined.
+        interval: Interval at which the computed var should be updated.
         **kwargs: additional attributes to set on the instance
 
     Returns:
         A ComputedVar instance.
+
+    Raises:
+        ValueError: If caching is disabled and an update interval is set.
     """
+    if cache is False and interval is not None:
+        raise ValueError("Cannot set update interval without caching.")
+
     if fget is not None:
         return ComputedVar(fget=fget, cache=cache)
 
-    def wrapper(fget):
+    def wrapper(fget: Callable[[BaseState], Any]) -> ComputedVar:
         return ComputedVar(
             fget=fget,
             initial_value=initial_value,
             cache=cache,
+            deps=deps,
+            auto_deps=auto_deps,
+            interval=interval,
             **kwargs,
         )
 
