@@ -2,8 +2,8 @@
 
 from typing import Any, Dict, Literal
 
-from reflex import el
 from reflex.components.component import ComponentNamespace
+from reflex.components.el import elements
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -45,7 +45,7 @@ class DialogTitle(RadixThemesComponent):
     tag = "Dialog.Title"
 
 
-class DialogContent(el.Div, RadixThemesComponent):
+class DialogContent(elements.Div, RadixThemesComponent):
     """Content component to display inside a Dialog modal."""
 
     tag = "Dialog.Content"

@@ -523,3 +523,6 @@ class CodeBlock(Component):
         if theme in ["light", "dark"]:
             return f"one-{theme}"
         return theme
+
+
+code_block = CodeBlock.create

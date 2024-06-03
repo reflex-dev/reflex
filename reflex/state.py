@@ -7,6 +7,7 @@ import contextlib
 import copy
 import functools
 import inspect
+import os
 import traceback
 import uuid
 from abc import ABC, abstractmethod
@@ -35,6 +36,7 @@ except ModuleNotFoundError:
 
 import wrapt
 from redis.asyncio import Redis
+from redis.exceptions import ResponseError
 
 from reflex import constants
 from reflex.base import Base
@@ -1536,6 +1538,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if actual_var is not None:
                     actual_var.mark_dirty(instance=self)
 
+    def _expired_computed_vars(self) -> set[str]:
+        """Determine ComputedVars that need to be recalculated based on the expiration time.
+
+        Returns:
+            Set of computed vars to include in the delta.
+        """
+        return set(
+            cvar
+            for cvar in self.computed_vars
+            if self.computed_vars[cvar].needs_update(instance=self)
+        )
+
     def _dirty_computed_vars(self, from_vars: set[str] | None = None) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the given vars.
 
@@ -1588,6 +1602,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # and always dirty computed vars (cache=False)
         delta_vars = (
             self.dirty_vars.intersection(self.base_vars)
+            .union(self.dirty_vars.intersection(self.computed_vars))
             .union(self._dirty_computed_vars())
             .union(self._always_dirty_computed_vars)
         )
@@ -1620,6 +1635,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ):
             self.parent_state.dirty_substates.add(self.get_name())
             self.parent_state._mark_dirty()
+
+        # Append expired computed vars to dirty_vars to trigger recalculation
+        self.dirty_vars.update(self._expired_computed_vars())
 
         # have to mark computed vars dirty to allow access to newly computed
         # values within the same ComputedVar function
@@ -2622,13 +2640,26 @@ class StateManagerRedis(StateManager):
         Args:
             lock_key: The redis key for the lock.
             lock_id: The ID of the lock.
+
+        Raises:
+            ResponseError: when the keyspace config cannot be set.
         """
         state_is_locked = False
         lock_key_channel = f"__keyspace@0__:{lock_key.decode()}"
         # Enable keyspace notifications for the lock key, so we know when it is available.
-        await self.redis.config_set(
-            "notify-keyspace-events", self._redis_notify_keyspace_events
-        )
+        try:
+            await self.redis.config_set(
+                "notify-keyspace-events",
+                self._redis_notify_keyspace_events,
+            )
+        except ResponseError:
+            # Some redis servers only allow out-of-band configuration, so ignore errors here.
+            ignore_config_error = os.environ.get(
+                "REFLEX_IGNORE_REDIS_CONFIG_ERROR",
+                None,
+            )
+            if not ignore_config_error:
+                raise
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(lock_key_channel)
             while not state_is_locked:
@@ -2836,6 +2867,11 @@ class MutableProxy(wrapt.ObjectProxy):
         ]
     )
 
+    # These internal attributes on rx.Base should NOT be wrapped in a MutableProxy.
+    __never_wrap_base_attrs__ = set(Base.__dict__) - {"set"} | set(
+        pydantic.BaseModel.__dict__
+    )
+
     __mutable_types__ = (list, dict, set, Base)
 
     def __init__(self, wrapped: Any, state: BaseState, field_name: str):
@@ -2885,7 +2921,10 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The wrapped value.
         """
-        if isinstance(value, self.__mutable_types__):
+        # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
+        if isinstance(value, self.__mutable_types__) and not isinstance(
+            value, MutableProxy
+        ):
             return type(self)(
                 wrapped=value,
                 state=self._self_state,
@@ -2929,6 +2968,17 @@ class MutableProxy(wrapt.ObjectProxy):
                 # Wrap methods that may return mutable objects tied to the state.
                 value = wrapt.FunctionWrapper(
                     value,
+                    self._wrap_recursive_decorator,
+                )
+
+            if (
+                isinstance(self.__wrapped__, Base)
+                and __name not in self.__never_wrap_base_attrs__
+                and hasattr(value, "__func__")
+            ):
+                # Wrap methods called on Base subclasses, which might do _anything_
+                return wrapt.FunctionWrapper(
+                    functools.partial(value.__func__, self),
                     self._wrap_recursive_decorator,
                 )
 

@@ -8,8 +8,8 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, Literal
-from reflex import el
 from reflex.components.component import ComponentNamespace
+from reflex.components.el import elements
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import RadixThemesComponent, RadixThemesTriggerComponent
@@ -175,7 +175,7 @@ class HoverCardTrigger(RadixThemesTriggerComponent):
         """
         ...
 
-class HoverCardContent(el.Div, RadixThemesComponent):
+class HoverCardContent(elements.Div, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore

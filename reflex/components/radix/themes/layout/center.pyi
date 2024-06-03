@@ -182,3 +182,5 @@ class Center(Flex):
             A new component instance.
         """
         ...
+
+center = Center.create

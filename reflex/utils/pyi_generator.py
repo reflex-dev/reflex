@@ -29,11 +29,9 @@ from reflex.vars import Var
 
 logger = logging.getLogger("pyi_generator")
 
-INIT_FILE = Path("reflex/__init__.pyi").resolve()
 PWD = Path(".").resolve()
 
 EXCLUDED_FILES = [
-    "__init__.py",
     # "app.py",
     "component.py",
     "bare.py",
@@ -322,6 +320,7 @@ def _extract_class_props_as_ast_nodes(
     all_props = []
     kwargs = []
     for target_class in clzs:
+        event_triggers = target_class().get_event_triggers()
         # Import from the target class to ensure type hints are resolvable.
         exec(f"from {target_class.__module__} import *", type_hint_globals)
         for name, value in target_class.__annotations__.items():
@@ -329,6 +328,7 @@ def _extract_class_props_as_ast_nodes(
                 name in spec.kwonlyargs
                 or name in EXCLUDED_PROPS
                 or name in all_props
+                or name in event_triggers
                 or (isinstance(value, str) and "ClassVar" in value)
             ):
                 continue
@@ -775,6 +775,13 @@ class StubGenerator(ast.NodeTransformer):
             # Remove annotated assignments in Component classes (props)
             return None
 
+        # remove dunder method assignments for lazy_loader.attach
+        for target in node.targets:
+            if isinstance(target, ast.Tuple):
+                for name in target.elts:
+                    if isinstance(name, ast.Name) and name.id.startswith("_"):
+                        return
+
         return node
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AnnAssign | None:
@@ -803,6 +810,23 @@ class StubGenerator(ast.NodeTransformer):
         # Blank out assignments in type stubs.
         node.value = None
         return node
+
+
+class InitStubGenerator(StubGenerator):
+    """A node transformer that will generate the stubs for a given init file."""
+
+    def visit_Import(
+        self, node: ast.Import | ast.ImportFrom
+    ) -> ast.Import | ast.ImportFrom | list[ast.Import | ast.ImportFrom]:
+        """Collect import statements from the init module.
+
+        Args:
+            node: The import node to visit.
+
+        Returns:
+                The modified import node(s).
+        """
+        return [node]
 
 
 class PyiGenerator:
@@ -842,6 +866,37 @@ class PyiGenerator:
         pyi_path.write_text("\n".join(pyi_content))
         logger.info(f"Wrote {relpath}")
 
+    def _get_init_lazy_imports(self, mod, new_tree):
+        # retrieve the _SUBMODULES and _SUBMOD_ATTRS from an init file if present.
+        sub_mods = getattr(mod, "_SUBMODULES", None)
+        sub_mod_attrs = getattr(mod, "_SUBMOD_ATTRS", None)
+
+        if not sub_mods and not sub_mod_attrs:
+            return
+        sub_mods_imports = []
+        sub_mod_attrs_imports = []
+
+        if sub_mods:
+            sub_mods_imports = [
+                f"from . import {mod} as {mod}" for mod in sorted(sub_mods)
+            ]
+            sub_mods_imports.append("")
+
+        if sub_mod_attrs:
+            sub_mod_attrs = {
+                attr: mod for mod, attrs in sub_mod_attrs.items() for attr in attrs
+            }
+            # construct the import statement and handle special cases for aliases
+            sub_mod_attrs_imports = [
+                f"from .{path} import {mod if not isinstance(mod, tuple) else mod[0]} as {mod if not isinstance(mod, tuple) else mod[1]}"
+                for mod, path in sub_mod_attrs.items()
+            ]
+            sub_mod_attrs_imports.append("")
+
+        text = "\n" + "\n".join([*sub_mods_imports, *sub_mod_attrs_imports])
+        text += ast.unparse(new_tree) + "\n"
+        return text
+
     def _scan_file(self, module_path: Path):
         module_import = (
             _relative_to_pwd(module_path)
@@ -860,13 +915,22 @@ class PyiGenerator:
             and obj != Component
             and inspect.getmodule(obj) == module
         }
-        if not class_names:
+        is_init_file = _relative_to_pwd(module_path).name == "__init__.py"
+        if not class_names and not is_init_file:
             return
 
-        new_tree = StubGenerator(module, class_names).visit(
-            ast.parse(inspect.getsource(module))
-        )
-        self._write_pyi_file(module_path, ast.unparse(new_tree))
+        if is_init_file:
+            new_tree = InitStubGenerator(module, class_names).visit(
+                ast.parse(inspect.getsource(module))
+            )
+            init_imports = self._get_init_lazy_imports(module, new_tree)
+            if init_imports:
+                self._write_pyi_file(module_path, init_imports)
+        else:
+            new_tree = StubGenerator(module, class_names).visit(
+                ast.parse(inspect.getsource(module))
+            )
+            self._write_pyi_file(module_path, ast.unparse(new_tree))
 
     def _scan_files_multiprocess(self, files: list[Path]):
         with Pool(processes=cpu_count()) as pool:
@@ -922,16 +986,3 @@ class PyiGenerator:
             self._scan_files(file_targets)
         else:
             self._scan_files_multiprocess(file_targets)
-
-
-def generate_init():
-    """Generate a pyi file for the main __init__.py."""
-    from reflex import _MAPPING  # type: ignore
-
-    imports = [
-        f"from {path if mod != path.rsplit('.')[-1] or mod == 'page' else '.'.join(path.rsplit('.')[:-1])} import {mod} as {mod}"
-        for mod, path in _MAPPING.items()
-    ]
-    imports.append("")
-    with contextlib.suppress(Exception):
-        INIT_FILE.write_text("\n".join(imports))

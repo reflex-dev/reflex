@@ -488,3 +488,7 @@ class HStack(Stack):
             The stack component.
         """
         ...
+
+stack = Stack.create
+hstack = HStack.create
+vstack = VStack.create

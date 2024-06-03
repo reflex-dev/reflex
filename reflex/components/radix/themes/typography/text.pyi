@@ -8,8 +8,8 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
-from reflex import el
 from reflex.components.component import ComponentNamespace
+from reflex.components.el import elements
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextAlign, LiteralTextSize, LiteralTextTrim, LiteralTextWeight
@@ -35,7 +35,7 @@ LiteralType = Literal[
     "sup",
 ]
 
-class Text(el.Span, RadixThemesComponent):
+class Text(elements.Span, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -589,7 +589,7 @@ class Span(Text):
         """
         ...
 
-class Em(el.Em, RadixThemesComponent):
+class Em(elements.Em, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -724,7 +724,7 @@ class Em(el.Em, RadixThemesComponent):
         """
         ...
 
-class Kbd(el.Kbd, RadixThemesComponent):
+class Kbd(elements.Kbd, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -866,7 +866,7 @@ class Kbd(el.Kbd, RadixThemesComponent):
         """
         ...
 
-class Quote(el.Q, RadixThemesComponent):
+class Quote(elements.Q, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -1003,7 +1003,7 @@ class Quote(el.Q, RadixThemesComponent):
         """
         ...
 
-class Strong(el.Strong, RadixThemesComponent):
+class Strong(elements.Strong, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
