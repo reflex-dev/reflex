@@ -92,6 +92,7 @@ class ComponentName(Enum):
 
     def zip(self):
         """Give the zip filename for the component.
+
         Returns:
             The lower-case filename with zip extension.
         """
