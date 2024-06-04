@@ -35,7 +35,7 @@ from typing import (
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import console, format, imports, serializers, types
+from reflex.utils import console, imports, serializers, types
 from reflex.utils.exceptions import VarAttributeError, VarTypeError, VarValueError
 
 # This module used to export ImportVar itself, so we still import it for export here
@@ -364,6 +364,8 @@ class Var:
         Raises:
             VarTypeError: If the value is JSON-unserializable.
         """
+        from reflex.utils import format
+
         # Check for none values.
         if value is None:
             return None
@@ -543,6 +545,8 @@ class Var:
         Returns:
             The wrapped var, i.e. {state.var}.
         """
+        from reflex.utils import format
+
         out = (
             self._var_full_name
             if self._var_is_local
@@ -600,6 +604,8 @@ class Var:
         Raises:
             VarTypeError: If the var is not indexable.
         """
+        from reflex.utils import format
+
         # Indexing is only supported for strings, lists, tuples, dicts, and dataframes.
         if not (
             types._issubclass(self._var_type, Union[List, Dict, Tuple, str])
@@ -793,6 +799,8 @@ class Var:
             VarTypeError: If the operation between two operands is invalid.
             VarValueError: If flip is set to true and value of operand is not provided
         """
+        from reflex.utils import format
+
         if isinstance(other, str):
             other = Var.create(json.dumps(other))
         else:
@@ -1671,6 +1679,8 @@ class Var:
         Returns:
             The full name of the var.
         """
+        from reflex.utils import format
+
         if not self._var_full_name_needs_state_prefix:
             return self._var_name
         return (
@@ -1690,6 +1700,8 @@ class Var:
         Returns:
             The var with the set state.
         """
+        from reflex.utils import format
+
         state_name = state if isinstance(state, str) else state.get_full_name()
         new_var_data = VarData(
             state=state_name,

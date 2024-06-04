@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_
 
 from reflex.base import Base
 from reflex.constants.colors import Color, format_color
-from reflex.utils import exceptions, format, types
+from reflex.utils import exceptions, types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
@@ -154,6 +154,8 @@ def serialize_primitive(value: Union[bool, int, float, None]) -> str:
     Returns:
         The serialized number/bool/None.
     """
+    from reflex.utils import format
+
     return format.json_dumps(value)
 
 
@@ -180,6 +182,8 @@ def serialize_list(value: Union[List, Tuple, Set]) -> str:
     Returns:
         The serialized list.
     """
+    from reflex.utils import format
+
     # Dump the list to a string.
     fprop = format.json_dumps(list(value))
 
@@ -202,6 +206,7 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
     """
     # Import here to avoid circular imports.
     from reflex.event import EventHandler
+    from reflex.utils import format
 
     prop_dict = {}
 
