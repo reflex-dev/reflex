@@ -526,9 +526,6 @@ class RadarChart(ChartBase):
         on_mouse_leave: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
         **props
     ) -> "RadarChart":
         """Create a chart component.
@@ -613,9 +610,6 @@ class RadialBarChart(ChartBase):
         on_mouse_leave: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
         **props
     ) -> "RadialBarChart":
         """Create a chart component.
@@ -688,6 +682,9 @@ class ScatterChart(ChartBase):
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_mouse_enter: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -701,6 +698,9 @@ class ScatterChart(ChartBase):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
@@ -731,7 +731,6 @@ class ScatterChart(ChartBase):
         ...
 
 class FunnelChart(RechartsCharts):
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -756,7 +755,25 @@ class FunnelChart(RechartsCharts):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_enter: Optional[
@@ -766,6 +783,21 @@ class FunnelChart(RechartsCharts):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
@@ -821,49 +853,10 @@ class Treemap(RechartsCharts):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
+        on_animation_end: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_unmount: Optional[
+        on_animation_start: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
@@ -893,6 +886,7 @@ class Treemap(RechartsCharts):
             The Treemap component wrapped in a responsive container.
         """
         ...
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
 
 area_chart = AreaChart.create
 bar_chart = BarChart.create

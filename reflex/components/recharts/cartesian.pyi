@@ -9,6 +9,7 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
+from reflex.constants.colors import Color
 from reflex.vars import Var
 from .recharts import (
     LiteralAnimationEasing,
@@ -519,7 +520,7 @@ class Brush(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         x: Optional[Union[Var[int], int]] = None,
         y: Optional[Union[Var[int], int]] = None,
@@ -638,9 +639,9 @@ class Area(Cartesian):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         stroke_width: Optional[Union[Var[int], int]] = None,
-        fill: Optional[Union[Var[str], str]] = None,
+        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         type_: Optional[
             Union[
                 Var[
@@ -755,9 +756,9 @@ class Bar(Cartesian):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         stroke_width: Optional[Union[Var[int], int]] = None,
-        fill: Optional[Union[Var[str], str]] = None,
+        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         background: Optional[Union[Var[bool], bool]] = None,
         label: Optional[Union[Var[bool], bool]] = None,
         stack_id: Optional[Union[Var[str], str]] = None,
@@ -873,7 +874,7 @@ class Line(Cartesian):
                 ],
             ]
         ] = None,
-        stroke: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         stoke_width: Optional[Union[Var[int], int]] = None,
         dot: Optional[Union[Var[bool], bool]] = None,
         active_dot: Optional[Union[Var[bool], bool]] = None,
@@ -974,7 +975,7 @@ class Scatter(Cartesian):
         line_type: Optional[
             Union[Var[Literal["joint", "fitting"]], Literal["joint", "fitting"]]
         ] = None,
-        fill: Optional[Union[Var[str], str]] = None,
+        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         layout: Optional[
             Union[
@@ -1125,7 +1126,7 @@ class ErrorBar(Recharts):
         ] = None,
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         width: Optional[Union[Var[int], int]] = None,
-        stroke: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         stroke_width: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1463,8 +1464,8 @@ class ReferenceArea(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[Var[str], str]] = None,
-        fill: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
+        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         fill_opacity: Optional[Union[Var[float], float]] = None,
         x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
@@ -1652,7 +1653,7 @@ class CartesianGrid(Grid):
         *children,
         horizontal: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         vertical: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        fill: Optional[Union[Var[str], str]] = None,
+        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         fill_opacity: Optional[Union[Var[float], float]] = None,
         stroke_dasharray: Optional[Union[Var[str], str]] = None,
         x: Optional[Union[Var[int], int]] = None,

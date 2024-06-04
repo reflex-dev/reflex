@@ -15,10 +15,6 @@ from types import SimpleNamespace
 from platformdirs import PlatformDirs
 
 IS_WINDOWS = platform.system() == "Windows"
-IS_WINDOWS_BUN_SUPPORTED_MACHINE = IS_WINDOWS and platform.machine() in [
-    "AMD64",
-    "x86_64",
-]
 
 class Dirs(SimpleNamespace):
     WEB = ".web"
