@@ -322,11 +322,16 @@ class Config(Base):
             GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN = os.getenv(
                 "GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN"
             )
+            # If running on Replit.com interactively, override API_URL to ensure we maintain the backend_port
+            replit_dev_domain = os.getenv("REPLIT_DEV_DOMAIN")
+            backend_port = kwargs.get("backend_port", self.backend_port)
             if codespace_name and GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:
                 self.api_url = (
                     f"https://{codespace_name}-{kwargs.get('backend_port', self.backend_port)}"
                     f".{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
                 )
+            elif replit_dev_domain and backend_port:
+                self.api_url = f"https://{replit_dev_domain}:{backend_port}"
 
     def _set_persistent(self, **kwargs):
         """Set values in this config and in the environment so they persist into subprocess.
