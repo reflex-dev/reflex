@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Union, Callable
+from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.vars import Var
@@ -48,12 +48,6 @@ class Axis(Recharts):
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
-        padding: Optional[
-            Union[
-                Var[Union[Dict[str, int], Literal["gap", "no-gap"]]],
-                Union[Dict[str, int], Literal["gap", "no-gap"]],
-            ]
-        ] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
         scale: Optional[
@@ -138,7 +132,6 @@ class Axis(Recharts):
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
             axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
-            padding: Specify the padding of x-axis.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
             reversed: Reverse the ticks or not.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
@@ -163,6 +156,7 @@ class XAxis(Axis):
     def create(  # type: ignore
         cls,
         *children,
+        include_hidden: Optional[Union[Var[bool], bool]] = None,
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
@@ -177,12 +171,6 @@ class XAxis(Axis):
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
-        padding: Optional[
-            Union[
-                Var[Union[Dict[str, int], Literal["gap", "no-gap"]]],
-                Union[Dict[str, int], Literal["gap", "no-gap"]],
-            ]
-        ] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
         scale: Optional[
@@ -257,6 +245,7 @@ class XAxis(Axis):
 
         Args:
             *children: The children of the component.
+            include_hidden: Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
             data_key: The key of a group of data which should be unique in an area chart.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
@@ -267,7 +256,6 @@ class XAxis(Axis):
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
             axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
-            padding: Specify the padding of x-axis.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
             reversed: Reverse the ticks or not.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
@@ -306,12 +294,6 @@ class YAxis(Axis):
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
-        padding: Optional[
-            Union[
-                Var[Union[Dict[str, int], Literal["gap", "no-gap"]]],
-                Union[Dict[str, int], Literal["gap", "no-gap"]],
-            ]
-        ] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
         scale: Optional[
@@ -396,7 +378,6 @@ class YAxis(Axis):
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
             axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
-            padding: Specify the padding of x-axis.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
             reversed: Reverse the ticks or not.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
@@ -622,6 +603,9 @@ class Cartesian(Recharts):
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_mouse_enter: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -635,6 +619,9 @@ class Cartesian(Recharts):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
@@ -731,6 +718,9 @@ class Area(Cartesian):
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_mouse_enter: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -744,6 +734,9 @@ class Area(Cartesian):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
@@ -809,6 +802,9 @@ class Bar(Cartesian):
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_mouse_enter: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -822,6 +818,9 @@ class Bar(Cartesian):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
@@ -926,6 +925,9 @@ class Line(Cartesian):
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_mouse_enter: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -939,6 +941,9 @@ class Line(Cartesian):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
@@ -1022,6 +1027,9 @@ class Scatter(Cartesian):
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_mouse_enter: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -1035,6 +1043,9 @@ class Scatter(Cartesian):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
@@ -1100,6 +1111,9 @@ class Funnel(Cartesian):
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_mouse_enter: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -1113,6 +1127,9 @@ class Funnel(Cartesian):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props

@@ -211,6 +211,8 @@ class Cartesian(Recharts):
         return {
             EventTriggers.ON_CLICK: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
