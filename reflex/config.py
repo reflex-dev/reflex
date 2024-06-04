@@ -352,6 +352,10 @@ def get_config(reload: bool = False) -> Config:
         The app config.
     """
     sys.path.insert(0, os.getcwd())
+    if constants.REFLEX_TEST_CONFIG_ENV in os.environ:
+        # we need this condition to ensure that an import error is not thrown when
+        # running unit/integration tests.
+        return Config(app_name="")
     rxconfig = __import__(constants.Config.MODULE)
     if reload:
         importlib.reload(rxconfig)

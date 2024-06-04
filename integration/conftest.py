@@ -6,7 +6,13 @@ from pathlib import Path
 
 import pytest
 
-from reflex.testing import AppHarness, AppHarnessProd
+from reflex import constants
+
+# set config env here to return an empty config than import from
+# rxconfig when get_config is called
+os.environ[constants.REFLEX_TEST_CONFIG_ENV] = "1"
+
+from reflex.testing import AppHarness, AppHarnessProd  # noqa: E402
 
 DISPLAY = None
 XVFB_DIMENSIONS = (800, 600)

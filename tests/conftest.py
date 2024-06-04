@@ -9,6 +9,7 @@ from unittest import mock
 
 import pytest
 
+from reflex import constants
 from reflex.app import App
 from reflex.event import EventSpec
 from reflex.utils import prerequisites
@@ -20,6 +21,9 @@ from .states import (
     SubUploadState,
     UploadState,
 )
+
+# set config env here to return an empty config than import from rxconfig
+os.environ[constants.REFLEX_TEST_CONFIG_ENV] = "1"
 
 
 @pytest.fixture

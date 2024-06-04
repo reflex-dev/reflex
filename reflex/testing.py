@@ -246,6 +246,8 @@ class AppHarness:
             before_decorated_pages = reflex.app.DECORATED_PAGES[self.app_name].copy()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
+            # Remove REFLEX_TEST_CONFIG_ENV to ensure that AppHarness test imports Config from the rxconfig file
+            os.environ.pop(reflex.constants.REFLEX_TEST_CONFIG_ENV, None)
             self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
             # Save the pages that were added during testing
             self._decorated_pages = [

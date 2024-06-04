@@ -190,6 +190,7 @@ ENV_MODE_ENV_VAR = "REFLEX_ENV_MODE"
 # Testing variables.
 # Testing os env set by pytest when running a test case.
 PYTEST_CURRENT_TEST = "PYTEST_CURRENT_TEST"
+REFLEX_TEST_CONFIG_ENV = "REFLEX_TEST_CONFIG_ENV"
 RELOAD_CONFIG = "__REFLEX_RELOAD_CONFIG"
 
 REFLEX_VAR_OPENING_TAG = "<reflex.Var>"
