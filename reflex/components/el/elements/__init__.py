@@ -102,7 +102,7 @@ _MAPPING = {
         "th",
         "thead",
         "tr",
-        "Tbody",
+        "tbody",
     ],
     "typography": [
         "blockquote",

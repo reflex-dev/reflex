@@ -42,7 +42,7 @@ from sqlalchemy.orm import (
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import console, serializers
+from reflex.utils import console
 
 if sys.version_info >= (3, 12):
     from typing import override
@@ -392,6 +392,7 @@ def is_valid_var_type(type_: Type) -> bool:
     Returns:
         Whether the type is a valid prop type.
     """
+    from reflex.utils import serializers
     if is_union(type_):
         return all((is_valid_var_type(arg) for arg in get_args(type_)))
     return _issubclass(type_, StateVar) or serializers.has_serializer(type_)
