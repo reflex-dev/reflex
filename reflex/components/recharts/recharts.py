@@ -117,4 +117,3 @@ LiteralAreaType = Literal[
 LiteralDirection = Literal["x", "y", "both"]
 LiteralInterval = Literal["preserveStart", "preserveEnd", "preserveStartEnd"]
 LiteralSyncMethod = Literal["index", "value"]
-LiteralGap = Literal["gap", "no-gap"]

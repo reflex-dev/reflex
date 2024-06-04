@@ -24,7 +24,6 @@ from .recharts import (
     LiteralPolarRadiusType,
     LiteralScale,
     LiteralShape,
-    LiteralGap,
     Recharts,
 )
 

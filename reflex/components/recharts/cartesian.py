@@ -1,7 +1,7 @@
 """Cartesian charts in Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union, Callable
+from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
@@ -20,7 +20,6 @@ from .recharts import (
     LiteralPolarRadiusType,
     LiteralScale,
     LiteralShape,
-    LiteralGap,
     Recharts,
 )
 
@@ -57,9 +56,6 @@ class Axis(Recharts):
 
     # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
     axis_line: Var[bool]
-
-    # Specify the padding of x-axis.
-    padding: Var[Union[Dict[str, int], LiteralGap]]
 
     # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
     mirror: Var[bool]
@@ -98,6 +94,9 @@ class XAxis(Axis):
     tag = "XAxis"
 
     alias = "RechartsXAxis"
+
+    # Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
+    include_hidden: Var[bool] = Var.create_safe(False)
 
 
 class YAxis(Axis):
