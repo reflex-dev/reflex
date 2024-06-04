@@ -1,7 +1,7 @@
 import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Tuple, Type
 
 import pytest
 
@@ -238,7 +238,7 @@ class FooToStringType:
 
 
 @serializers.serializer(to=str)
-def serialize_FooToStringType(foo: FooToStringType) -> tuple[int, Type]:
+def serialize_FooToStringType(foo: FooToStringType) -> Tuple[int, Type]:
     return 42, int
 
 
