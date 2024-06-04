@@ -39,6 +39,7 @@ from .config import (
     Expiration,
     GitIgnore,
     RequirementsTxt,
+    DefaultPorts,
 )
 from .custom_components import (
     CustomComponents,
@@ -72,6 +73,7 @@ __ALL__ = [
     ComponentName,
     CustomComponents,
     DefaultPage,
+    DefaultPorts,
     Dirs,
     Endpoint,
     Env,
