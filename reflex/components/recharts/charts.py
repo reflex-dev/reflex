@@ -126,9 +126,6 @@ class AreaChart(ChartBase):
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
     base_value: Var[Union[int, LiteralComposedChartBaseValue]]
 
-    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape.
-    stack_offset: Var[LiteralStackOffset]
-
     # Valid children components
     _valid_children: List[str] = [
         "XAxis",
@@ -152,10 +149,10 @@ class BarChart(ChartBase):
     alias = "RechartsBarChart"
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-    bar_category_gap: Var[Union[str, int]]  # type: ignore
+    bar_category_gap: Var[Union[str, int]] = Var.create_safe("10%")  # type: ignore
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[Union[str, int]]  # type: ignore
+    bar_gap: Var[Union[str, int]] = Var.create_safe(4)  # type: ignore
 
     # The width of all the bars in the chart. Number
     bar_size: Var[int]
