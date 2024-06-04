@@ -314,7 +314,7 @@ except ImportError:
     pass
 
 try:
-    from plotly.graph_objects import Figure
+    from plotly.graph_objects import Figure, layout
     from plotly.io import to_json
 
     @serializer
@@ -328,6 +328,21 @@ try:
             The serialized figure.
         """
         return json.loads(str(to_json(figure)))
+
+    @serializer
+    def serialize_template(template: layout.Template) -> dict:
+        """Serialize a plotly template.
+
+        Args:
+            template: The template to serialize.
+
+        Returns:
+            The serialized template.
+        """
+        return {
+            "data": json.loads(str(to_json(template.data))),
+            "layout": json.loads(str(to_json(template.layout))),
+        }
 
 except ImportError:
     pass

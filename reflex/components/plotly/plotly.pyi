@@ -9,14 +9,18 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List
 from reflex.base import Base
-from reflex.components.component import NoSSRComponent
+from reflex.components.component import Component, NoSSRComponent
+from reflex.components.core.cond import color_mode_cond
 from reflex.event import EventHandler
 from reflex.vars import Var
 
 try:
-    from plotly.graph_objects import Figure  # type: ignore
+    from plotly.graph_objects import Figure, layout  # type: ignore
+
+    Template = layout.Template  # type: ignore
 except ImportError:
     Figure = Any  # type: ignore
+    Template = Any  # type: ignore
 
 class _ButtonClickData(Base):
     menu: Any
@@ -100,6 +104,7 @@ class PlotlyLib(NoSSRComponent):
         ...
 
 class Plotly(PlotlyLib):
+    def add_imports(self) -> dict[str, str]: ...
     def add_custom_code(self) -> list[str]: ...
     @overload
     @classmethod
@@ -108,6 +113,7 @@ class Plotly(PlotlyLib):
         *children,
         data: Optional[Union[Var[Figure], Figure]] = None,  # type: ignore
         layout: Optional[Union[Var[Dict], Dict]] = None,
+        template: Optional[Union[Var[Template], Template]] = None,  # type: ignore
         config: Optional[Union[Var[Dict], Dict]] = None,
         use_resize_handler: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
@@ -217,12 +223,13 @@ class Plotly(PlotlyLib):
         ] = None,
         **props
     ) -> "Plotly":
-        """Create the component.
+        """Create the Plotly component.
 
         Args:
             *children: The children of the component.
             data: The figure to display. This can be a plotly figure or a plotly data json.
             layout: The layout of the graph.
+            template: The template for visual appearance of the graph.
             config: The config of the graph.
             use_resize_handler: If true, the graph will resize when the window is resized.
             style: The style of the component.
@@ -231,9 +238,9 @@ class Plotly(PlotlyLib):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the component.
 
         Returns:
-            The component.
+            The Plotly component.
         """
         ...
