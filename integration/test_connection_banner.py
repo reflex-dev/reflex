@@ -11,13 +11,27 @@ from reflex.testing import AppHarness, WebDriver
 
 def ConnectionBanner():
     """App with a connection banner."""
+    import asyncio
+
     import reflex as rx
 
     class State(rx.State):
         foo: int = 0
 
+        async def delay(self):
+            await asyncio.sleep(2)
+
     def index():
-        return rx.text("Hello World")
+        return rx.vstack(
+            rx.text("Hello World"),
+            rx.input(value=State.foo, read_only=True, id="counter"),
+            rx.button(
+                "Increment",
+                id="increment",
+                on_click=State.set_foo(State.foo + 1),  # type: ignore
+            ),
+            rx.button("Delay", id="delay", on_click=State.delay),
+        )
 
     app = rx.App(state=rx.State)
     app.add_page(index)
@@ -40,7 +54,7 @@ def connection_banner(tmp_path) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-CONNECTION_ERROR_XPATH = "//*[ text() = 'Connection Error' ]"
+CONNECTION_ERROR_XPATH = "//*[ contains(text(), 'Cannot connect to server') ]"
 
 
 def has_error_modal(driver: WebDriver) -> bool:
@@ -69,7 +83,18 @@ def test_connection_banner(connection_banner: AppHarness):
     assert connection_banner.backend is not None
     driver = connection_banner.frontend()
 
-    connection_banner._poll_for(lambda: not has_error_modal(driver))
+    assert connection_banner._poll_for(lambda: not has_error_modal(driver))
+
+    delay_button = driver.find_element(By.ID, "delay")
+    increment_button = driver.find_element(By.ID, "increment")
+    counter_element = driver.find_element(By.ID, "counter")
+
+    # Increment the counter
+    increment_button.click()
+    assert connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
+
+    # Start an long event before killing the backend, to mark event_processing=true
+    delay_button.click()
 
     # Get the backend port
     backend_port = connection_banner._poll_for_servers().getsockname()[1]
@@ -80,10 +105,17 @@ def test_connection_banner(connection_banner: AppHarness):
         connection_banner.backend_thread.join()
 
     # Error modal should now be displayed
-    connection_banner._poll_for(lambda: has_error_modal(driver))
+    assert connection_banner._poll_for(lambda: has_error_modal(driver))
+
+    # Increment the counter with backend down
+    increment_button.click()
+    assert connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
 
     # Bring the backend back up
     connection_banner._start_backend(port=backend_port)
 
     # Banner should be gone now
-    connection_banner._poll_for(lambda: not has_error_modal(driver))
+    assert connection_banner._poll_for(lambda: not has_error_modal(driver))
+
+    # Count should have incremented after coming back up
+    assert connection_banner.poll_for_value(counter_element, exp_not_equal="1") == "2"
