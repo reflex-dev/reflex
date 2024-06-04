@@ -39,7 +39,7 @@ class ToastAction(Base):
 
 
 @serializer
-def serialize_action(action: ToastAction) -> dict[str, Any]:
+def serialize_action(action: ToastAction) -> dict:
     """Serialize a toast action.
 
     Args:

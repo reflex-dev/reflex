@@ -34,7 +34,7 @@ class ToastAction(Base):
     on_click: Any
 
 @serializer
-def serialize_action(action: ToastAction) -> dict[str, Any]: ...
+def serialize_action(action: ToastAction) -> dict: ...
 
 class ToastProps(PropsBase):
     description: Optional[Union[str, Var]]
