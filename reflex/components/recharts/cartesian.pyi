@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Callable
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.vars import Var
@@ -24,6 +24,7 @@ from .recharts import (
     LiteralPolarRadiusType,
     LiteralScale,
     LiteralShape,
+    LiteralGap,
     Recharts,
 )
 
@@ -36,6 +37,8 @@ class Axis(Recharts):
         *children,
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
+        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         orientation: Optional[
             Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
         ] = None,
@@ -46,7 +49,12 @@ class Axis(Recharts):
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
-        tick_line: Optional[Union[Var[bool], bool]] = None,
+        padding: Optional[
+            Union[
+                Var[Union[Dict[str, int], Literal["gap", "no-gap"]]],
+                Union[Dict[str, int], Literal["gap", "no-gap"]],
+            ]
+        ] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
         scale: Optional[
@@ -123,13 +131,15 @@ class Axis(Recharts):
             *children: The children of the component.
             data_key: The key of a group of data which should be unique in an area chart.
             hide: If set true, the axis do not display in the chart.
+            width: The width of axis which is usually calculated internally.
+            height: The height of axis, which can be setted by user.
             orientation: The orientation of axis 'top' | 'bottom'
             type_: The type of axis 'number' | 'category'
             allow_decimals: Allow the ticks of XAxis to be decimals or not.
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
             axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
-            tick_line: If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines.
+            padding: Specify the padding of x-axis.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
             reversed: Reverse the ticks or not.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
@@ -156,6 +166,8 @@ class XAxis(Axis):
         *children,
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
+        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         orientation: Optional[
             Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
         ] = None,
@@ -166,7 +178,12 @@ class XAxis(Axis):
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
-        tick_line: Optional[Union[Var[bool], bool]] = None,
+        padding: Optional[
+            Union[
+                Var[Union[Dict[str, int], Literal["gap", "no-gap"]]],
+                Union[Dict[str, int], Literal["gap", "no-gap"]],
+            ]
+        ] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
         scale: Optional[
@@ -243,13 +260,15 @@ class XAxis(Axis):
             *children: The children of the component.
             data_key: The key of a group of data which should be unique in an area chart.
             hide: If set true, the axis do not display in the chart.
+            width: The width of axis which is usually calculated internally.
+            height: The height of axis, which can be setted by user.
             orientation: The orientation of axis 'top' | 'bottom'
             type_: The type of axis 'number' | 'category'
             allow_decimals: Allow the ticks of XAxis to be decimals or not.
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
             axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
-            tick_line: If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines.
+            padding: Specify the padding of x-axis.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
             reversed: Reverse the ticks or not.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
@@ -276,6 +295,8 @@ class YAxis(Axis):
         *children,
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
+        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         orientation: Optional[
             Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
         ] = None,
@@ -286,7 +307,12 @@ class YAxis(Axis):
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
-        tick_line: Optional[Union[Var[bool], bool]] = None,
+        padding: Optional[
+            Union[
+                Var[Union[Dict[str, int], Literal["gap", "no-gap"]]],
+                Union[Dict[str, int], Literal["gap", "no-gap"]],
+            ]
+        ] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
         scale: Optional[
@@ -363,13 +389,15 @@ class YAxis(Axis):
             *children: The children of the component.
             data_key: The key of a group of data which should be unique in an area chart.
             hide: If set true, the axis do not display in the chart.
+            width: The width of axis which is usually calculated internally.
+            height: The height of axis, which can be setted by user.
             orientation: The orientation of axis 'top' | 'bottom'
             type_: The type of axis 'number' | 'category'
             allow_decimals: Allow the ticks of XAxis to be decimals or not.
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
             axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
-            tick_line: If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines.
+            padding: Specify the padding of x-axis.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
             reversed: Reverse the ticks or not.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
