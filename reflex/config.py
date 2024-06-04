@@ -354,12 +354,12 @@ def get_config(reload: bool = False) -> Config:
     sys.path.insert(0, os.getcwd())
     # only import the module if it exists. If a module spec exists then
     # the module exists.
-    spec = importlib.util.find_spec(constants.Config.MODULE)
+    spec = importlib.util.find_spec(constants.Config.MODULE)  # type: ignore
     if not spec:
-        # we need this condition to ensure that an import error is not thrown when
+        # we need this condition to ensure that a ModuleNotFound error is not thrown when
         # running unit/integration tests.
         return Config(app_name="")
-    rxconfig = __import__(constants.Config.MODULE)
+    rxconfig = importlib.import_module(constants.Config.MODULE)
     if reload:
         importlib.reload(rxconfig)
     return rxconfig.config
