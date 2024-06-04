@@ -121,12 +121,14 @@ from reflex.event import EventHandler as EventHandler
 from reflex.event import background as background
 from reflex.event import call_script as call_script
 from reflex.event import clear_local_storage as clear_local_storage
+from reflex.event import clear_session_storage as clear_session_storage
 from reflex.event import console_log as console_log
 from reflex.event import download as download
 from reflex.event import prevent_default as prevent_default
 from reflex.event import redirect as redirect
 from reflex.event import remove_cookie as remove_cookie
 from reflex.event import remove_local_storage as remove_local_storage
+from reflex.event import remove_session_storage as remove_session_storage
 from reflex.event import set_clipboard as set_clipboard
 from reflex.event import set_focus as set_focus
 from reflex.event import scroll_to as scroll_to
@@ -145,7 +147,8 @@ from reflex import state as state
 from reflex.state import var as var
 from reflex.state import Cookie as Cookie
 from reflex.state import LocalStorage as LocalStorage
-from reflex.state import SessionStorageComponentState as SessionStorageComponentState
+from reflex.state import SessionStorage as SessionStorage
+from reflex.state import ComponentState as ComponentState
 from reflex.state import State as State
 from reflex import style as style
 from reflex.style import toggle_color_mode as toggle_color_mode

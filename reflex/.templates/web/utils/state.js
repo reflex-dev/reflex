@@ -518,7 +518,18 @@ export const hydrateClientStorage = (client_storage) => {
       }
     }
   }
-  if (client_storage.cookies || client_storage.local_storage) {
+  if (client_storage.sessionStorage && typeof window != "undefined") {
+    for (const state_key in client_storage.sessionStorage) {
+      const session_options = client_storage.sessionStorage[state_key];
+      const session_storage_value = sessionStorage.getItem(
+        session_options.name || state_key
+      );
+      if (session_storage_value != null) {
+        client_storage_values[state_key] = session_storage_value;
+      }
+    }
+  }
+  if (client_storage.cookies || client_storage.local_storage || client_storage.sessionStorage) {
     return client_storage_values;
   }
   return {};
@@ -558,7 +569,15 @@ const applyClientStorageDelta = (client_storage, delta) => {
       ) {
         const options = client_storage.local_storage[state_key];
         localStorage.setItem(options.name || state_key, delta[substate][key]);
+      } else if(
+        client_storage.sessionStorage &&
+        state_key in client_storage.sessionStorage &&
+        typeof window !== "undefined"
+      ) {
+        const session_options = client_storage.sessionStorage[state_key];
+        sessionStorage.setItem(session_options.name || state_key, delta[substate][key]);
       }
+
     }
   }
 };

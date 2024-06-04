@@ -2810,10 +2810,6 @@ class SessionStorage(ClientStorageBase, str):
     """Represents a state Var that is stored in sessionStorage in the browser."""
 
     name: str | None
-    sync: bool = False
-    session_id: str | None
-    auth: bool = False
-    timeout: int | None
 
     def __new__(
         cls,
@@ -2822,22 +2818,14 @@ class SessionStorage(ClientStorageBase, str):
         errors: str | None = None,
         /,
         name: str | None = None,
-        sync: bool = False,
-        session_id: str | None = None,
-        auth: bool = False,
-        timeout: int | None = None,
     ) -> "SessionStorage":
         """Create a client-side sessionStorage (str).
 
         Args:
             object: The initial object.
             encoding: The encoding to use.
-            errors: The error handling scheme to use.
-            name: The name of the storage key on the client side
-            sync: Whether changes should be propagated to other tabs.
-            session_id: The unique identifier for the session.
-            auth: Whether the user is authenticated or not.
-            timeout: A time limit after which the session expires due to inactivity.
+            errors: The error handling scheme to use
+            name: The name of the storage on the client side
 
         Returns:
             The client-side sessionStorage object.
@@ -2847,10 +2835,6 @@ class SessionStorage(ClientStorageBase, str):
         else:
             inst = super().__new__(cls, object)
         inst.name = name
-        inst.sync = sync
-        inst.session_id = session_id
-        inst.auth = auth
-        inst.timeout = timeout
         return inst
 
 

@@ -178,6 +178,7 @@ class Ping(SimpleNamespace):
 # Keys in the client_side_storage dict
 COOKIES = "cookies"
 LOCAL_STORAGE = "local_storage"
+SESSION_STORAGE = "session_storage"
 
 # If this env var is set to "yes", App.compile will be a no-op
 SKIP_COMPILE_ENV_VAR = "__REFLEX_SKIP_COMPILE"

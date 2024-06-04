@@ -179,7 +179,7 @@ def _compile_client_storage_field(
 
 def _compile_client_storage_recursive(
     state: Type[BaseState],
-) -> tuple[dict[str, dict], dict[str, dict[str, str]]]:
+) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict]]:
     """Compile the client-side storage for the given state recursively.
 
     Args:
@@ -191,7 +191,7 @@ def _compile_client_storage_recursive(
                 cookies: dict[str, dict],
                 local_storage: dict[str, dict[str, str]]
                 session_storage: dict[str, dict[str, str]]
-            )
+            ).
     """
     cookies = {}
     local_storage = {}
