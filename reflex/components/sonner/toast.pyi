@@ -34,7 +34,7 @@ class ToastAction(Base):
     on_click: Any
 
 @serializer
-def serialize_action(action: ToastAction) -> dict: ...
+def serialize_action(action: ToastAction) -> dict[str, Any]: ...
 
 class ToastProps(PropsBase):
     description: Optional[Union[str, Var]]
@@ -46,7 +46,7 @@ class ToastProps(PropsBase):
     dismissible: Optional[bool]
     action: Optional[ToastAction]
     cancel: Optional[ToastAction]
-    id: Optional[str]
+    id: Optional[str | Var]
     unstyled: Optional[bool]
     style: Optional[Style]
     action_button_styles: Optional[Style]
@@ -54,9 +54,10 @@ class ToastProps(PropsBase):
     on_dismiss: Optional[Any]
     on_auto_close: Optional[Any]
 
-    def dict(self, *args, **kwargs) -> dict: ...
+    def dict(self, *args, **kwargs) -> dict[str, Any]: ...
 
 class Toaster(Component):
+    def add_hooks(self) -> list[Var | str]: ...
     @staticmethod
     def send_toast(message: str, level: str | None = None, **props) -> EventSpec: ...
     @staticmethod
