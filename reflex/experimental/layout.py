@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, List
 
 from reflex import color, cond
 from reflex.components.base.fragment import Fragment
@@ -65,8 +65,13 @@ class Sidebar(Box, MemoizationLeaf):
             }
         )
 
-    def _get_hooks(self) -> Var | None:
-        return hooks.useState("open", "true") if not self.State else None
+    def add_hooks(self) -> List[Var]:
+        """Get the hooks to render.
+
+        Returns:
+            The hooks for the sidebar.
+        """
+        return [hooks.useState("open", "true")] if not self.State else []
 
 
 class StatefulSidebar(ComponentState):

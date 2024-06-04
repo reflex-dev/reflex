@@ -81,6 +81,7 @@ class DataEditorTheme(Base):
 
 class DataEditor(NoSSRComponent):
     def get_event_triggers(self) -> Dict[str, Callable]: ...
+    def add_hooks(self) -> list[str]: ...
     @overload
     @classmethod
     def create(  # type: ignore
