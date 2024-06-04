@@ -185,7 +185,7 @@ from .elements.tables import tfoot as tfoot
 from .elements.tables import th as th
 from .elements.tables import thead as thead
 from .elements.tables import tr as tr
-from .elements.tables import Tbody as Tbody
+from .elements.tables import tbody as tbody
 from .elements.tables import Caption as Caption
 from .elements.tables import Col as Col
 from .elements.tables import Colgroup as Colgroup
@@ -195,6 +195,7 @@ from .elements.tables import Tfoot as Tfoot
 from .elements.tables import Th as Th
 from .elements.tables import Thead as Thead
 from .elements.tables import Tr as Tr
+from .elements.tables import Tbody as Tbody
 from .elements.typography import blockquote as blockquote
 from .elements.typography import dd as dd
 from .elements.typography import div as div
