@@ -17,10 +17,10 @@ from reflex.vars import Var
 try:
     from plotly.graph_objects import Figure, layout  # type: ignore
 
-    Template = layout.Template  # type: ignore
+    Template = layout.Template
 except ImportError:
     Figure = Any  # type: ignore
-    Template = Any  # type: ignore
+    Template = Any
 
 class _ButtonClickData(Base):
     menu: Any

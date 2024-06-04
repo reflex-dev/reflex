@@ -859,7 +859,7 @@ class PyiGenerator:
                 if (
                     "def create(" in formatted_line
                     or "Figure" in formatted_line
-                    or "Template" in formatted_line
+                    or "Var[Template]" in formatted_line
                 ):
                     pyi_content.append(formatted_line + "  # type: ignore")
                 else:
