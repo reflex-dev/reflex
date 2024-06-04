@@ -353,6 +353,7 @@ export const connect = async (
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
     setConnectErrors([]);
+    event_processing = false;
   });
 
   socket.current.on("connect_error", (error) => {
