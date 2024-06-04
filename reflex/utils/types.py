@@ -393,6 +393,7 @@ def is_valid_var_type(type_: Type) -> bool:
         Whether the type is a valid prop type.
     """
     from reflex.utils import serializers
+
     if is_union(type_):
         return all((is_valid_var_type(arg) for arg in get_args(type_)))
     return _issubclass(type_, StateVar) or serializers.has_serializer(type_)

@@ -688,6 +688,7 @@ def format_state(value: Any, key: Optional[str] = None) -> Any:
         TypeError: If the given value is not a valid state.
     """
     from reflex.utils import serializers
+
     # Handle dicts.
     if isinstance(value, dict):
         return {k: format_state(v, k) for k, v in value.items()}
@@ -805,6 +806,7 @@ def json_dumps(obj: Any) -> str:
         A string
     """
     from reflex.utils import serializers
+
     return json.dumps(obj, ensure_ascii=False, default=serializers.serialize)
 
 
