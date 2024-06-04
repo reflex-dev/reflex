@@ -8,13 +8,13 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
-from reflex import el
+from reflex.components.el import elements
 from reflex.vars import Var
 from ..base import RadixThemesComponent
 
 LiteralSectionSize = Literal["1", "2", "3"]
 
-class Section(el.Section, RadixThemesComponent):
+class Section(elements.Section, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -123,7 +123,7 @@ class Section(el.Section, RadixThemesComponent):
 
         Args:
             *children: Child components.
-            size: The size of the section: "1" - "3" (default "3")
+            size: The size of the section: "1" - "3" (default "2")
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -152,3 +152,5 @@ class Section(el.Section, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+section = Section.create

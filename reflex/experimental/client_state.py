@@ -2,7 +2,7 @@
 
 import dataclasses
 import sys
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type, Union
 
 from reflex import constants
 from reflex.event import EventChain, EventHandler, EventSpec, call_script
@@ -171,7 +171,9 @@ class ClientStateVar(Var):
             )
         )
 
-    def retrieve(self, callback: EventHandler | Callable | None = None) -> EventSpec:
+    def retrieve(
+        self, callback: Union[EventHandler, Callable, None] = None
+    ) -> EventSpec:
         """Pass the value of the client state variable to a backend EventHandler.
 
         The event handler must `yield` or `return` the EventSpec to trigger the event.

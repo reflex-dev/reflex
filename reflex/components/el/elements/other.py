@@ -59,3 +59,12 @@ class Html(BaseHTML):
 
     # Specifies the URL of the document's cache manifest (obsolete in HTML5)
     manifest: Var[Union[str, int, bool]]
+
+
+details = Details.create
+dialog = Dialog.create
+summary = Summary.create
+slot = Slot.create
+template = Template.create
+math = Math.create
+html = Html.create

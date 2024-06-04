@@ -1,8 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
-from reflex import el
 from reflex.components.component import ComponentNamespace
+from reflex.components.el import elements
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -41,7 +41,7 @@ class PopoverTrigger(RadixThemesTriggerComponent):
     tag = "Popover.Trigger"
 
 
-class PopoverContent(el.Div, RadixThemesComponent):
+class PopoverContent(elements.Div, RadixThemesComponent):
     """Contains content to be rendered in the open popover."""
 
     tag = "Popover.Content"

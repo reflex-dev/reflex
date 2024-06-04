@@ -36,7 +36,6 @@ from .compiler import (
 )
 from .config import (
     ALEMBIC_CONFIG,
-    PRODUCTION_BACKEND_URL,
     Config,
     Expiration,
     GitIgnore,
@@ -101,7 +100,6 @@ __ALL__ = [
     Ping,
     POLLING_MAX_HTTP_BUFFER_SIZE,
     PYTEST_CURRENT_TEST,
-    PRODUCTION_BACKEND_URL,
     Reflex,
     RELOAD_CONFIG,
     RequirementsTxt,

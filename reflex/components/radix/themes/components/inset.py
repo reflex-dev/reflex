@@ -1,7 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Literal, Union
 
-from reflex import el
+from reflex.components.el import elements
 from reflex.vars import Var
 
 from ..base import (
@@ -11,7 +11,7 @@ from ..base import (
 LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 
-class Inset(el.Div, RadixThemesComponent):
+class Inset(elements.Div, RadixThemesComponent):
     """Applies a negative margin to allow content to bleed into the surrounding container."""
 
     tag = "Inset"

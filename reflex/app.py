@@ -7,10 +7,12 @@ import concurrent.futures
 import contextlib
 import copy
 import functools
+import inspect
 import io
 import multiprocessing
 import os
 import platform
+import sys
 from typing import (
     Any,
     AsyncIterator,
@@ -48,7 +50,7 @@ from reflex.components.component import (
     ComponentStyle,
     evaluate_style_namespaces,
 )
-from reflex.components.core import connection_pulser, connection_toaster
+from reflex.components.core.banner import connection_pulser, connection_toaster
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
@@ -100,7 +102,50 @@ class OverlayFragment(Fragment):
     pass
 
 
-class App(Base):
+class LifespanMixin(Base):
+    """A Mixin that allow tasks to run during the whole app lifespan."""
+
+    # Lifespan tasks that are planned to run.
+    lifespan_tasks: Set[Union[asyncio.Task, Callable]] = set()
+
+    @contextlib.asynccontextmanager
+    async def _run_lifespan_tasks(self, app: FastAPI):
+        running_tasks = []
+        try:
+            async with contextlib.AsyncExitStack() as stack:
+                for task in self.lifespan_tasks:
+                    if isinstance(task, asyncio.Task):
+                        running_tasks.append(task)
+                    else:
+                        signature = inspect.signature(task)
+                        if "app" in signature.parameters:
+                            task = functools.partial(task, app=app)
+                        _t = task()
+                        if isinstance(_t, contextlib._AsyncGeneratorContextManager):
+                            await stack.enter_async_context(_t)
+                        elif isinstance(_t, Coroutine):
+                            running_tasks.append(asyncio.create_task(_t))
+                yield
+        finally:
+            cancel_kwargs = (
+                {"msg": "lifespan_cleanup"} if sys.version_info >= (3, 9) else {}
+            )
+            for task in running_tasks:
+                task.cancel(**cancel_kwargs)
+
+    def register_lifespan_task(self, task: Callable | asyncio.Task, **task_kwargs):
+        """Register a task to run during the lifespan of the app.
+
+        Args:
+            task: The task to register.
+            task_kwargs: The kwargs of the task.
+        """
+        if task_kwargs:
+            task = functools.partial(task, **task_kwargs)  # type: ignore
+        self.lifespan_tasks.add(task)  # type: ignore
+
+
+class App(LifespanMixin, Base):
     """The main Reflex app that encapsulates the backend and frontend.
 
     Every Reflex app needs an app defined in its main module.
@@ -203,7 +248,7 @@ class App(Base):
         self.middleware.append(HydrateMiddleware())
 
         # Set up the API.
-        self.api = FastAPI()
+        self.api = FastAPI(lifespan=self._run_lifespan_tasks)
         self._add_cors()
         self._add_default_endpoints()
 
@@ -1068,13 +1113,12 @@ async def process(
         client_ip: The client_ip.
 
     Raises:
-        ReflexError: If a reflex specific error occurs during processing the event.
+        Exception: If a reflex specific error occurs during processing the event.
 
     Yields:
         The state updates after processing the event.
     """
     from reflex.utils import telemetry
-    from reflex.utils.exceptions import ReflexError
 
     try:
         # Add request data to the state.
@@ -1118,8 +1162,8 @@ async def process(
 
                     # Yield the update.
                     yield update
-    except ReflexError as ex:
-        telemetry.send("error", context="backend", detail=str(ex))
+    except Exception as ex:
+        telemetry.send_error(ex, context="backend")
         raise
 
 
@@ -1258,6 +1302,12 @@ class EventNamespace(AsyncNamespace):
     # The application object.
     app: App
 
+    # Keep a mapping between socket ID and client token.
+    token_to_sid: dict[str, str] = {}
+
+    # Keep a mapping between client token and socket ID.
+    sid_to_token: dict[str, str] = {}
+
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
 
@@ -1283,7 +1333,9 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id.
         """
-        pass
+        disconnect_token = self.sid_to_token.pop(sid, None)
+        if disconnect_token:
+            self.token_to_sid.pop(disconnect_token, None)
 
     async def emit_update(self, update: StateUpdate, sid: str) -> None:
         """Emit an update to the client.
@@ -1306,6 +1358,9 @@ class EventNamespace(AsyncNamespace):
         """
         # Get the event.
         event = Event.parse_raw(data)
+
+        self.token_to_sid[event.token] = sid
+        self.sid_to_token[sid] = event.token
 
         # Get the event environment.
         assert self.app.sio is not None

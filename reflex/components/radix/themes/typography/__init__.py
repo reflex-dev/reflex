@@ -1,20 +1,15 @@
 """Typographic components."""
+from __future__ import annotations
 
-from .blockquote import Blockquote
-from .code import Code
-from .heading import Heading
-from .link import Link
-from .text import text
+from reflex import RADIX_THEMES_TYPOGRAPHY_MAPPING
+from reflex.utils import lazy_loader
 
-blockquote = Blockquote.create
-code = Code.create
-heading = Heading.create
-link = Link.create
+_SUBMOD_ATTRS: dict[str, list[str]] = {
+    "".join(k.split("components.radix.themes.typography.")[-1]): v
+    for k, v in RADIX_THEMES_TYPOGRAPHY_MAPPING.items()
+}
 
-__all__ = [
-    "blockquote",
-    "code",
-    "heading",
-    "link",
-    "text",
-]
+__getattr__, __dir__, __all__ = lazy_loader.attach(
+    __name__,
+    submod_attrs=_SUBMOD_ATTRS,
+)

@@ -438,3 +438,7 @@ class Script(BaseHTML):
             The component.
         """
         ...
+
+canvas = Canvas.create
+noscript = Noscript.create
+script = Script.create

@@ -70,3 +70,6 @@ class Script(Component):
             "on_ready": lambda: [],
             "on_error": lambda: [],
         }
+
+
+script = Script.create

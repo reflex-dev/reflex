@@ -136,3 +136,6 @@ class DebounceInput(Component):
 
     def _render(self):
         return super()._render().remove_props("ref")
+
+
+debounce_input = DebounceInput.create

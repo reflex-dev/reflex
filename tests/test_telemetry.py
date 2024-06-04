@@ -29,7 +29,7 @@ def test_telemetry():
 
 def test_disable():
     """Test that disabling telemetry works."""
-    assert not telemetry.send("test", telemetry_enabled=False)
+    assert not telemetry._send("test", telemetry_enabled=False)
 
 
 @pytest.mark.parametrize("event", ["init", "reinit", "run-dev", "run-prod", "export"])
@@ -43,7 +43,7 @@ def test_send(mocker, event):
     )
     mocker.patch("platform.platform", return_value="Mocked Platform")
 
-    telemetry.send(event, telemetry_enabled=True)
+    telemetry._send(event, telemetry_enabled=True)
     httpx.post.assert_called_once()
     if telemetry.get_os() == "Windows":
         open.assert_called_with(".web\\reflex.json", "r")

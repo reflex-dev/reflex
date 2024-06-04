@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex import el
+from reflex.components.el import elements
 from reflex.vars import Var
 
 from ..base import (
@@ -16,7 +16,7 @@ from ..base import (
 LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 
-class Button(el.Button, RadixLoadingProp, RadixThemesComponent):
+class Button(elements.Button, RadixLoadingProp, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Button"

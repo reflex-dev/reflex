@@ -1,5 +1,6 @@
 **/.DS_Store
 **/*.pyc
+assets/external/*
 dist/*
 examples/
 .idea

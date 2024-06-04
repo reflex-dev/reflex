@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 from dataclasses import dataclass
 from _typeshed import Incomplete
 from reflex import constants as constants
@@ -141,6 +142,7 @@ class ComputedVar(Var):
     def _deps(self, objclass: Type, obj: Optional[FunctionType] = ...) -> Set[str]: ...
     def _replace(self, merge_var_data=None, **kwargs: Any) -> ComputedVar: ...
     def mark_dirty(self, instance) -> None: ...
+    def needs_update(self, instance) -> bool: ...
     def _determine_var_type(self) -> Type: ...
     @overload
     def __init__(
@@ -155,10 +157,24 @@ class ComputedVar(Var):
 def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
     initial_value: Any | None = None,
+    cache: bool = False,
+    deps: Optional[List[Union[str, Var]]] = None,
+    auto_deps: bool = True,
+    interval: Optional[Union[datetime.timedelta, int]] = None,
     **kwargs,
 ) -> Callable[[Callable[[Any], Any]], ComputedVar]: ...
 @overload
 def computed_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
+@overload
+def cached_var(
+    fget: Callable[[BaseState], Any] | None = None,
+    initial_value: Any | None = None,
+    deps: Optional[List[Union[str, Var]]] = None,
+    auto_deps: bool = True,
+    interval: Optional[Union[datetime.timedelta, int]] = None,
+    **kwargs,
+) -> Callable[[Callable[[Any], Any]], ComputedVar]: ...
+@overload
 def cached_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
 
 class CallableVar(BaseVar):

@@ -8,7 +8,6 @@ from reflex.components.component import ComponentNamespace
 from reflex.components.el.elements.forms import Form as HTMLForm
 from reflex.components.radix.themes.components.text_field import TextFieldRoot
 from reflex.constants.event import EventTriggers
-from reflex.style import Style
 from reflex.vars import Var
 
 from .base import RadixPrimitiveComponentWithClassName
@@ -38,13 +37,13 @@ class FormRoot(FormComponent, HTMLForm):
             EventTriggers.ON_CLEAR_SERVER_ERRORS: lambda: [],
         }
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style({"width": "100%"})
+        return {"width": "100%"}
 
 
 class FormField(FormComponent):
@@ -60,13 +59,13 @@ class FormField(FormComponent):
     # Flag to mark the form field as invalid, for server side validation.
     server_invalid: Var[bool]
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style({"display": "grid", "margin_bottom": "10px"})
+        return {"display": "grid", "margin_bottom": "10px"}
 
 
 class FormLabel(FormComponent):
@@ -76,13 +75,13 @@ class FormLabel(FormComponent):
 
     alias = "RadixFormLabel"
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style({"font_size": "15px", "font_weight": "500", "line_height": "35px"})
+        return {"font_size": "15px", "font_weight": "500", "line_height": "35px"}
 
 
 class FormControl(FormComponent):
@@ -149,13 +148,13 @@ class FormMessage(FormComponent):
     # Forces the message to be shown. This is useful when using server-side validation.
     force_match: Var[bool]
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style({"font_size": "13px", "opacity": "0.8", "color": "white"})
+        return {"font_size": "13px", "opacity": "0.8", "color": "white"}
 
 
 class FormValidityState(FormComponent):
