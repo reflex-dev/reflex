@@ -101,7 +101,6 @@ export const getBackendURL = (url_str) => {
       } else if (endpoint.protocol === "http:") {
         endpoint.protocol = "https:";
       }
-      endpoint.port = ""; // Assume websocket is on https port via load balancer.
     }
   }
   return endpoint;
