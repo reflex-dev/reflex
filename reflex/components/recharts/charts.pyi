@@ -105,12 +105,6 @@ class AreaChart(ChartBase):
                 Union[int, Literal["dataMin", "dataMax", "auto"]],
             ]
         ] = None,
-        stack_offset: Optional[
-            Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
-                Literal["expand", "none", "wiggle", "silhouette"],
-            ]
-        ] = None,
         data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
@@ -125,6 +119,12 @@ class AreaChart(ChartBase):
             ]
         ] = None,
         margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        stack_offset: Optional[
+            Union[
+                Var[Literal["expand", "none", "wiggle", "silhouette"]],
+                Literal["expand", "none", "wiggle", "silhouette"],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -150,7 +150,6 @@ class AreaChart(ChartBase):
         Args:
             *children: The children of the chart component.
             base_value: The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
-            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             data: The source data, in which each element is an object.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
@@ -158,6 +157,7 @@ class AreaChart(ChartBase):
             height: The height of chart container.
             layout: The layout of area in the chart. 'horizontal' | 'vertical'
             margin: The sizes of whitespace around the chart.
+            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
