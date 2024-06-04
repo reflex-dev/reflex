@@ -106,7 +106,7 @@ class ToastProps(PropsBase):
     cancel: Optional[ToastAction]
 
     # Custom id for the toast.
-    id: Optional[str | Var]
+    id: Optional[Union[str, Var]]
 
     # Removes the default styling, which allows for easier customization.
     unstyled: Optional[bool]

@@ -46,7 +46,7 @@ class ToastProps(PropsBase):
     dismissible: Optional[bool]
     action: Optional[ToastAction]
     cancel: Optional[ToastAction]
-    id: Optional[str | Var]
+    id: Optional[Union[str, Var]]
     unstyled: Optional[bool]
     style: Optional[Style]
     action_button_styles: Optional[Style]
@@ -204,7 +204,9 @@ class ToastNamespace(ComponentNamespace):
     dismiss = staticmethod(Toaster.toast_dismiss)
 
     @staticmethod
-    def __call__(message: str, level: Optional[str], **props) -> "Optional[EventSpec]":
+    def __call__(
+        message: str, level: Optional[str] = None, **props
+    ) -> "Optional[EventSpec]":
         """Send a toast message.
 
         Args:
