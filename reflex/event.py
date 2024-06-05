@@ -611,6 +611,7 @@ def remove_local_storage(key: str) -> EventSpec:
         key=key,
     )
 
+
 def clear_session_storage() -> EventSpec:
     """Set a value in the session storage on the frontend.
 
@@ -621,6 +622,7 @@ def clear_session_storage() -> EventSpec:
         "_clear_session_storage",
         get_fn_signature(clear_session_storage),
     )
+
 
 def remove_session_storage(key: str) -> EventSpec:
     """Set a value in the session storage on the frontend.
@@ -636,6 +638,7 @@ def remove_session_storage(key: str) -> EventSpec:
         get_fn_signature(remove_session_storage),
         key=key,
     )
+
 
 def set_clipboard(content: str) -> EventSpec:
     """Set the text in content in the clipboard.
