@@ -21,7 +21,7 @@ def ConnectionBanner():
         foo: int = 0
 
         async def delay(self):
-            await asyncio.sleep(2)
+            await asyncio.sleep(5)
 
     def index():
         return rx.vstack(
