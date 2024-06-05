@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Union
 from reflex.components.component import Component
 from reflex.components.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from .recharts import (
@@ -488,6 +489,12 @@ class Treemap(RechartsCharts):
 
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
     animation_easing: Var[LiteralAnimationEasing]
+
+    # The customized event handler of animation start
+    on_animation_start: EventHandler[lambda: []]
+
+    # The customized event handler of animation end
+    on_animation_end: EventHandler[lambda: []]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
