@@ -229,7 +229,7 @@ class Markdown(Component):
         Returns:
             The formatted component.
         """
-        return str(self.get_component(tag, **props)).replace("\n", " ")
+        return str(self.get_component(tag, **props)).replace("\n", "")
 
     def format_component_map(self) -> dict[str, str]:
         """Format the component map for rendering.
