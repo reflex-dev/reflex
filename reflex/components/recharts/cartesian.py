@@ -15,6 +15,7 @@ from .recharts import (
     LiteralLayout,
     LiteralLineType,
     LiteralOrientationTopBottom,
+    LiteralOrientationLeftRight,
     LiteralOrientationTopBottomLeftRight,
     LiteralPolarRadiusType,
     LiteralScale,
@@ -98,6 +99,9 @@ class YAxis(Axis):
     tag = "YAxis"
 
     alias = "RechartsYAxis"
+
+    # The orientation of axis 'left' | 'right'
+    orientation: Var[LiteralOrientationLeftRight]
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]

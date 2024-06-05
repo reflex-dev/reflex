@@ -25,6 +25,7 @@ LiteralLineType = Literal["joint", "fitting"]
 LiteralOrientation = Literal["top", "bottom", "left", "right", "middle"]
 LiteralOrientationLeftRightMiddle = Literal["left", "right", "middle"]
 LiteralOrientationTopBottom = Literal["top", "bottom"]
+LiteralOrientationLeftRight = Literal["left", "right"]
 LiteralOrientationTopBottomLeftRight = Literal["top", "bottom", "left", "right"]
 LiteralScale = Literal[
     "auto",
