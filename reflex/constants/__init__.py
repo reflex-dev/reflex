@@ -36,10 +36,10 @@ from .compiler import (
 from .config import (
     ALEMBIC_CONFIG,
     Config,
+    DefaultPorts,
     Expiration,
     GitIgnore,
     RequirementsTxt,
-    DefaultPorts,
 )
 from .custom_components import (
     CustomComponents,

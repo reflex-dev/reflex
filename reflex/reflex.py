@@ -157,18 +157,17 @@ def _run(
     if prerequisites.needs_reinit(frontend=frontend):
         _init(name=config.app_name, loglevel=loglevel)
 
-    # Find the next available open port.
-    if frontend and processes.is_process_on_port(frontend_port):
-        if frontend_port == constants.DefaultPorts.FRONTEND_PORT:
-            frontend_port = processes.change_port(frontend_port, "frontend")
-        else:
-            console.error(f"Frontend port: {frontend_port} is already in use")
+    # Find the next available open port if applicable.
+    if frontend:
+        frontend_port = processes.handle_port(
+            "frontend", frontend_port, str(constants.DefaultPorts.FRONTEND_PORT)
+        )
 
-    if backend and processes.is_process_on_port(backend_port):
-        if backend_port == constants.DefaultPorts.BACKEND_PORT:
-            backend_port = processes.change_port(backend_port, "backend")
-        else:
-            console.error((f"Backend port: {backend_port} is already in use"))
+    if backend:
+        backend_port = processes.handle_port(
+            "backend", backend_port, str(constants.DefaultPorts.BACKEND_PORT)
+        )
+
     # Apply the new ports to the config.
     if frontend_port != str(config.frontend_port):
         config._set_persistent(frontend_port=frontend_port)

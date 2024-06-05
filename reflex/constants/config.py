@@ -51,6 +51,8 @@ class RequirementsTxt(SimpleNamespace):
 
 
 class DefaultPorts(SimpleNamespace):
+    """Default port constants."""
+
     FRONTEND_PORT = 3000
     BACKEND_PORT = 8000
 
