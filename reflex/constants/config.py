@@ -50,5 +50,12 @@ class RequirementsTxt(SimpleNamespace):
     DEFAULTS_STUB = f"{Reflex.MODULE_NAME}=="
 
 
+class DefaultPorts(SimpleNamespace):
+    """Default port constants."""
+
+    FRONTEND_PORT = 3000
+    BACKEND_PORT = 8000
+
+
 # The deployment URL.
 PRODUCTION_BACKEND_URL = "https://{username}-{app_name}.api.pynecone.app"
