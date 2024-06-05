@@ -275,8 +275,8 @@ class Bar(Cartesian):
     # The stack id of bar, when two bars have the same value axis and same stack_id, then the two bars are stacked in order.
     stack_id: Var[str]
 
-    # Size of the bar
-    bar_size: Var[int]
+    # Size of the bar (if one bar_size is set then a bar_size must be set for all bars)
+    bar_size: Var[int] 
 
     # Max size of the bar
     max_bar_size: Var[int]

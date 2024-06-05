@@ -220,7 +220,7 @@ class ComposedChart(ChartBase):
     bar_category_gap: Var[Union[str, int]]  # type: ignore
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[int]
+    bar_gap: Var[Union[str, int]]  # type: ignore
 
     # The width of all the bars in the chart. Number
     bar_size: Var[int]
