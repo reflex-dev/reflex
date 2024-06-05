@@ -243,7 +243,7 @@ class Area(Cartesian):
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
     label: Var[bool]
 
-    # The stack id of area, when two areas have the same value axis and same stackId, then the two areas area stacked in order.
+    # The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
     stack_id: Var[str]
 
     # Valid children components
@@ -272,7 +272,7 @@ class Bar(Cartesian):
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
     label: Var[bool]
 
-    # The stack id of bar, when two areas have the same value axis and same stackId, then the two areas area stacked in order.
+    # The stack id of bar, when two bars have the same value axis and same stack_id, then the two bars are stacked in order.
     stack_id: Var[str]
 
     # Size of the bar
