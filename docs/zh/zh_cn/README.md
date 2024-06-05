@@ -148,7 +148,7 @@ app.add_page(index, title="Reflex:DALL-E")
 ## 让我们分解以上步骤.
 
 <div align="center">
-<img src="../../docs/images/dalle_colored_code_example.png" alt="解释 DALL-E app 的前端和后端部分的区别。" width="900" />
+<img src="../../images/dalle_colored_code_example.png" alt="解释 DALL-E app 的前端和后端部分的区别。" width="900" />
 </div>
 
 
