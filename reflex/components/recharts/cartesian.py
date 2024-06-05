@@ -68,6 +68,7 @@ class Axis(Recharts):
 
     # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
     name: Var[Union[str, int]]
+    
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -92,6 +93,9 @@ class XAxis(Axis):
 
     alias = "RechartsXAxis"
 
+    # The id of x-axis which is corresponding to the data.
+    x_axis_id: Var[Union[str, int]]
+
 
 class YAxis(Axis):
     """A YAxis component in Recharts."""
@@ -105,6 +109,9 @@ class YAxis(Axis):
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
+
+    # The id of y-axis which is corresponding to the data.
+    y_axis_id: Var[Union[str, int]]
 
 
 class ZAxis(Recharts):
