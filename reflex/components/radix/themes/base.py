@@ -209,13 +209,13 @@ class Theme(RadixThemesComponent):
             children = [ThemePanel.create(), *children]
         return super().create(*children, **props)
 
-    def add_imports(self) -> dict[str, list[ImportVar] | ImportVar]:
+    def add_imports(self) -> dict[str, str | ImportVar | list[str | ImportVar]]:
         """Add imports for the Theme component.
 
         Returns:
             The import dict.
         """
-        _imports: dict[str, list[ImportVar] | ImportVar] = {
+        _imports: dict[str, str | ImportVar | list[str | ImportVar]] = {
             "/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
         }
         if get_config().tailwind is None:

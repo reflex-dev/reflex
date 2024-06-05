@@ -11,8 +11,8 @@ from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain
-from reflex.utils import imports
 from reflex.utils.format import format_event_chain
+from reflex.utils.imports import ImportDict
 from reflex.vars import BaseVar, Var
 
 from .base import BaseHTML
@@ -169,17 +169,16 @@ class Form(BaseHTML):
         ).hexdigest()
         return form
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
-                "react": {imports.ImportVar(tag="useCallback")},
-                f"/{Dirs.STATE_PATH}": {
-                    imports.ImportVar(tag="getRefValue"),
-                    imports.ImportVar(tag="getRefValues"),
-                },
-            },
-        )
+    def add_imports(self) -> ImportDict:
+        """Add imports needed by the form component.
+
+        Returns:
+            The imports for the form component.
+        """
+        return {
+            "react": "useCallback",
+            f"/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues"],
+        }
 
     def _get_hooks(self) -> str | None:
         if EventTriggers.ON_SUBMIT not in self.event_triggers:

@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict
 from reflex.vars import Var
 
 
@@ -90,14 +90,15 @@ class Moment(NoSSRComponent):
     # Display the date in the given timezone.
     tz: Var[str]
 
-    def _get_imports(self) -> imports.ImportDict:
-        merged_imports = super()._get_imports()
+    def add_imports(self) -> ImportDict:
+        """Add the imports for the Moment component.
+
+        Returns:
+            The import dict for the component.
+        """
         if self.tz is not None:
-            merged_imports = imports.merge_imports(
-                merged_imports,
-                {"moment-timezone": {imports.ImportVar(tag="")}},
-            )
-        return merged_imports
+            return {"moment-timezone": ""}
+        return {}
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.

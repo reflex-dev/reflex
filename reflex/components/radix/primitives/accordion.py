@@ -413,7 +413,7 @@ class AccordionContent(AccordionComponent):
 
     alias = "RadixAccordionContent"
 
-    def add_imports(self) -> imports.ImportDict:
+    def add_imports(self) -> dict:
         """Add imports to the component.
 
         Returns:

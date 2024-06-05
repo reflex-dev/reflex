@@ -90,4 +90,4 @@ class ImportVar(Base):
         )
 
 
-ImportDict = Dict[str, List[ImportVar]]
+ImportDict = Dict[str, str | ImportVar | List[str | ImportVar]]
