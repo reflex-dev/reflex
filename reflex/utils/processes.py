@@ -123,6 +123,9 @@ def handle_port(service_name: str, port: str, default_port: str) -> str:
 
     Returns:
         The port to run the service on.
+
+    Raises:
+        Exit:when the port is in use.
     """
     if is_process_on_port(port):
         if int(port) == int(default_port):
