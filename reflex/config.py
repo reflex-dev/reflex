@@ -161,13 +161,13 @@ class Config(Base):
     loglevel: constants.LogLevel = constants.LogLevel.INFO
 
     # The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
-    frontend_port: int = 3000
+    frontend_port: int = constants.DefaultPorts.FRONTEND_PORT
 
     # The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
     frontend_path: str = ""
 
     # The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
-    backend_port: int = 8000
+    backend_port: int = constants.DefaultPorts.BACKEND_PORT
 
     # The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
     api_url: str = f"http://localhost:{backend_port}"
@@ -352,11 +352,14 @@ def get_config(reload: bool = False) -> Config:
         The app config.
     """
     sys.path.insert(0, os.getcwd())
-    try:
-        rxconfig = __import__(constants.Config.MODULE)
-        if reload:
-            importlib.reload(rxconfig)
-        return rxconfig.config
-
-    except ImportError:
-        return Config(app_name="")  # type: ignore
+    # only import the module if it exists. If a module spec exists then
+    # the module exists.
+    spec = importlib.util.find_spec(constants.Config.MODULE)  # type: ignore
+    if not spec:
+        # we need this condition to ensure that a ModuleNotFound error is not thrown when
+        # running unit/integration tests.
+        return Config(app_name="")
+    rxconfig = importlib.import_module(constants.Config.MODULE)
+    if reload:
+        importlib.reload(rxconfig)
+    return rxconfig.config

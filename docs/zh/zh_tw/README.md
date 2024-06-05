@@ -148,7 +148,7 @@ app.add_page(index, title="Reflex:DALL-E")
 ## 讓我們來拆解一下。
 
 <div align="center">
-<img src="docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
+<img src="../../images/dalle_colored_code_example.png" alt="解釋 DALL-E app 的前端和後端部分的區別。" width="900" />
 </div>
 
 

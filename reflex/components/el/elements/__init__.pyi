@@ -183,7 +183,7 @@ from .tables import tfoot as tfoot
 from .tables import th as th
 from .tables import thead as thead
 from .tables import tr as tr
-from .tables import Tbody as Tbody
+from .tables import tbody as tbody
 from .tables import Caption as Caption
 from .tables import Col as Col
 from .tables import Colgroup as Colgroup
@@ -193,6 +193,7 @@ from .tables import Tfoot as Tfoot
 from .tables import Th as Th
 from .tables import Thead as Thead
 from .tables import Tr as Tr
+from .tables import Tbody as Tbody
 from .typography import blockquote as blockquote
 from .typography import dd as dd
 from .typography import div as div
@@ -316,7 +317,7 @@ _MAPPING = {
         "th",
         "thead",
         "tr",
-        "Tbody",
+        "tbody",
     ],
     "typography": [
         "blockquote",
