@@ -297,6 +297,27 @@ class AppHarness:
         self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
 
+    async def _reset_backend_state_manager(self):
+        """Reset the StateManagerRedis event loop affinity.
+
+        This is necessary when the backend is restarted and the state manager is a
+        StateManagerRedis instance.
+        """
+        if (
+            self.app_instance is not None
+            and isinstance(
+                self.app_instance.state_manager,
+                StateManagerRedis,
+            )
+            and self.app_instance.state is not None
+        ):
+            with contextlib.suppress(RuntimeError):
+                await self.app_instance.state_manager.close()
+            self.app_instance._state_manager = StateManagerRedis.create(
+                state=self.app_instance.state,
+            )
+            assert isinstance(self.app_instance.state_manager, StateManagerRedis)
+
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):

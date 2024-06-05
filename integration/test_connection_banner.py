@@ -75,7 +75,8 @@ def has_error_modal(driver: WebDriver) -> bool:
         return False
 
 
-def test_connection_banner(connection_banner: AppHarness):
+@pytest.mark.asyncio
+async def test_connection_banner(connection_banner: AppHarness):
     """Test that the connection banner is displayed when the websocket drops.
 
     Args:
@@ -120,6 +121,9 @@ def test_connection_banner(connection_banner: AppHarness):
 
     # Bring the backend back up
     connection_banner._start_backend(port=backend_port)
+
+    # Create a new StateManager to avoid async loop affinity issues w/ redis
+    await connection_banner._reset_backend_state_manager()
 
     # Banner should be gone now
     assert connection_banner._poll_for(lambda: not has_error_modal(driver))
