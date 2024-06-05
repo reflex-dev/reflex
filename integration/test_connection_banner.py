@@ -8,6 +8,8 @@ from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness, WebDriver
 
+from .utils import SessionStorage
+
 
 def ConnectionBanner():
     """App with a connection banner."""
@@ -82,6 +84,11 @@ def test_connection_banner(connection_banner: AppHarness):
     assert connection_banner.app_instance is not None
     assert connection_banner.backend is not None
     driver = connection_banner.frontend()
+
+    ss = SessionStorage(driver)
+    assert connection_banner._poll_for(
+        lambda: ss.get("token") is not None
+    ), "token not found"
 
     assert connection_banner._poll_for(lambda: not has_error_modal(driver))
 
