@@ -388,6 +388,7 @@ class Funnel(Cartesian):
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
+            EventTriggers.ON_CLICK: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_UP: lambda: [],
             EventTriggers.ON_MOUSE_DOWN: lambda: [],
