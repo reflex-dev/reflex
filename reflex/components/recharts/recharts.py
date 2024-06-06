@@ -79,7 +79,7 @@ LiteralIconType = Literal[
     "triangle",
     "wye",
 ]
-LiteralLegendType = [
+LiteralLegendType = Literal[
     "line",
     "plainline",
     "square",

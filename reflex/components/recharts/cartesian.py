@@ -374,7 +374,7 @@ class Funnel(Recharts):
     data_key: Var[Union[str, int]]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered.
-    #legend_type: Var[LiteralLegendType]
+    legend_type: Var[LiteralLegendType]
 
     # If set false, animation of line will be disabled.
     is_animation_active: Var[bool]

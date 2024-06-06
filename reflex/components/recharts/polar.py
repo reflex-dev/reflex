@@ -11,6 +11,7 @@ from .recharts import (
     LiteralGridType,
     LiteralPolarRadiusType,
     LiteralScale,
+    LiteralLegendType,
     Recharts,
 )
 
@@ -56,7 +57,7 @@ class Pie(Recharts):
     name_key: Var[str]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered.
-    legend_type: Var[str]
+    legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn.
     label: Var[bool] = False  # type: ignore
