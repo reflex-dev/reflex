@@ -182,7 +182,9 @@ class Editor(NoSSRComponent):
         Returns:
             The import dict.
         """
-        return {"": ImportVar(tag="suneditor/dist/js/suneditor.min.js", install=False)}
+        return {
+            "": ImportVar(tag="suneditor/dist/css/suneditor.min.css", install=False)
+        }
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
