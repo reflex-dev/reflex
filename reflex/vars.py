@@ -39,7 +39,7 @@ from reflex.utils import console, imports, serializers, types
 from reflex.utils.exceptions import VarAttributeError, VarTypeError, VarValueError
 
 # This module used to export ImportVar itself, so we still import it for export here
-from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.utils.types import override
 
 if TYPE_CHECKING:
@@ -120,7 +120,7 @@ class VarData(Base):
     state: str = ""
 
     # Imports needed to render this var
-    imports: ImportDict = {}
+    imports: Union[ImportDict, ParsedImportDict] = {}
 
     # Hooks that need to be present in the component to render this var
     hooks: Dict[str, None] = {}
@@ -187,8 +187,8 @@ class VarData(Base):
         return (
             self.state == other.state
             and self.hooks.keys() == other.hooks.keys()
-            and imports.collapse_imports(self.imports)
-            == imports.collapse_imports(other.imports)
+            and imports.collapse_imports(parse_imports(self.imports))
+            == imports.collapse_imports(parse_imports(other.imports))
         )
 
     def dict(self) -> dict:
@@ -201,7 +201,10 @@ class VarData(Base):
             "state": self.state,
             "interpolations": list(self.interpolations),
             "imports": {
-                lib: [import_var.dict() for import_var in import_vars]
+                lib: [
+                    import_var.dict() if isinstance(import_var, ImportVar) else {}
+                    for import_var in import_vars
+                ]
                 for lib, import_vars in self.imports.items()
             },
             "hooks": self.hooks,

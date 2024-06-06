@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 from reflex.base import Base
 
 
-def merge_imports(*imports) -> ImportDict:
+def merge_imports(*imports) -> ParsedImportDict:
     """Merge multiple import dicts together.
 
     Args:
@@ -24,7 +24,33 @@ def merge_imports(*imports) -> ImportDict:
     return all_imports
 
 
-def collapse_imports(imports: ImportDict) -> ImportDict:
+def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
+    """Parse the import dict into a standard format.
+
+    Args:
+        imports: The import dict to parse.
+
+    Returns:
+        The parsed import dict.
+    """
+
+    def _make_list(
+        value: str | ImportVar | list[str | ImportVar],
+    ) -> list[str | ImportVar]:
+        if isinstance(value, (str, ImportVar)):
+            return [value]
+        return value
+
+    return {
+        lib: [
+            ImportVar(tag=tag) if isinstance(tag, str) else tag
+            for tag in _make_list(tags)  # type: ignore
+        ]
+        for lib, tags in imports.items()
+    }
+
+
+def collapse_imports(imports: ParsedImportDict) -> ParsedImportDict:
     """Remove all duplicate ImportVar within an ImportDict.
 
     Args:
@@ -33,7 +59,10 @@ def collapse_imports(imports: ImportDict) -> ImportDict:
     Returns:
         The collapsed import dict.
     """
-    return {lib: list(set(import_vars)) for lib, import_vars in imports.items()}
+    return {
+        lib: list(set(import_vars)) if isinstance(import_vars, list) else import_vars
+        for lib, import_vars in imports.items()
+    }
 
 
 class ImportVar(Base):
@@ -91,3 +120,4 @@ class ImportVar(Base):
 
 
 ImportDict = Dict[str, str | ImportVar | List[str | ImportVar]]
+ParsedImportDict = Dict[str, List[ImportVar]]

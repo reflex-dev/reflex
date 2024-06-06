@@ -35,7 +35,7 @@ has_connection_errors: Var
 has_too_many_connection_errors: Var
 
 class WebsocketTargetURL(Bare):
-    def add_imports(self) -> dict[str, str | ImportVar | list[str | ImportVar]]: ...
+    def add_imports(self) -> ImportDict: ...
     @overload
     @classmethod
     def create(  # type: ignore

@@ -4,7 +4,7 @@
 from reflex.components.chakra import ChakraComponent
 from reflex.components.component import Component
 from reflex.components.next.link import NextLink
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict
 from reflex.vars import BaseVar, Var
 
 next_link = NextLink.create()
@@ -30,8 +30,13 @@ class Link(ChakraComponent):
     # If true, the link will open in new tab.
     is_external: Var[bool]
 
-    def _get_imports(self) -> imports.ImportDict:
-        return {**super()._get_imports(), **next_link._get_imports()}
+    def add_imports(self) -> ImportDict:
+        """Add imports for the link component.
+
+        Returns:
+            The import dict.
+        """
+        return next_link._get_imports()  # type: ignore
 
     @classmethod
     def create(cls, *children, **props) -> Component:

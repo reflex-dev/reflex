@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Any, Dict, List, Optional
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict
 from reflex.vars import Var
 
 class MomentDelta(Base):
@@ -25,6 +25,7 @@ class MomentDelta(Base):
     milliseconds: Optional[int]
 
 class Moment(NoSSRComponent):
+    def add_imports(self) -> ImportDict: ...
     def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod

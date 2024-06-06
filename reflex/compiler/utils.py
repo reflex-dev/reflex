@@ -28,13 +28,14 @@ from reflex.components.component import Component, ComponentStyle, CustomCompone
 from reflex.state import BaseState, Cookie, LocalStorage
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
+from reflex.utils.imports import ImportVar, ParsedImportDict
 from reflex.vars import Var
 
 # To re-export this function.
 merge_imports = imports.merge_imports
 
 
-def compile_import_statement(fields: list[imports.ImportVar]) -> tuple[str, list[str]]:
+def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
     """Compile an import statement.
 
     Args:
@@ -59,7 +60,7 @@ def compile_import_statement(fields: list[imports.ImportVar]) -> tuple[str, list
     return default, list(rest)
 
 
-def validate_imports(import_dict: imports.ImportDict):
+def validate_imports(import_dict: ParsedImportDict):
     """Verify that the same Tag is not used in multiple import.
 
     Args:
@@ -82,7 +83,7 @@ def validate_imports(import_dict: imports.ImportDict):
                 used_tags[import_name] = lib
 
 
-def compile_imports(import_dict: imports.ImportDict) -> list[dict]:
+def compile_imports(import_dict: imports.ParsedImportDict) -> list[dict]:
     """Compile an import dict.
 
     Args:
@@ -231,7 +232,7 @@ def compile_client_storage(state: Type[BaseState]) -> dict[str, dict]:
 
 def compile_custom_component(
     component: CustomComponent,
-) -> tuple[dict, imports.ImportDict]:
+) -> tuple[dict, ParsedImportDict]:
     """Compile a custom component.
 
     Args:
@@ -244,7 +245,7 @@ def compile_custom_component(
     render = component.get_component(component)
 
     # Get the imports.
-    imports = {
+    imports: ParsedImportDict = {
         lib: fields
         for lib, fields in render._get_all_imports().items()
         if lib != component.library

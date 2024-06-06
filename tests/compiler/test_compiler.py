@@ -93,7 +93,7 @@ def test_compile_import_statement(
         ),
     ],
 )
-def test_compile_imports(import_dict: imports.ImportDict, test_dicts: List[dict]):
+def test_compile_imports(import_dict: imports.ParsedImportDict, test_dicts: List[dict]):
     """Test the compile_imports function.
 
     Args:

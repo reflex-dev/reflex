@@ -59,11 +59,13 @@ class Input(ChakraComponent):
     # The name of the form field
     name: Var[str]
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {"/utils/state": {imports.ImportVar(tag="set_val")}},
-        )
+    def add_imports(self) -> imports.ImportDict:
+        """Add imports for the Input component.
+
+        Returns:
+            The import dict.
+        """
+        return {"/utils/state": "set_val"}
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.

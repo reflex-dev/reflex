@@ -65,7 +65,7 @@ has_too_many_connection_errors: Var = Var.create_safe(
 class WebsocketTargetURL(Bare):
     """A component that renders the websocket target URL."""
 
-    def add_imports(self) -> dict[str, str | ImportVar | list[str | ImportVar]]:
+    def add_imports(self) -> ImportDict:
         """Add imports for the websocket target URL component.
 
         Returns:
@@ -121,7 +121,7 @@ class ConnectionToaster(Toaster):
             duration=120000,
             id=toast_id,
         )
-        hook = Var.create(
+        hook = Var.create_safe(
             f"""
 const toast_props = {serialize(props)};
 const [userDismissed, setUserDismissed] = useState(false);
@@ -141,15 +141,15 @@ useEffect(() => {{
         )
         imports: ImportDict = {
             "react": ["useEffect", "useState"],
-            **target_url._get_imports(),
+            **target_url._get_imports(),  # type: ignore
         }
-        hook._var_data = VarData.merge(  # type: ignore
+        hook._var_data = VarData.merge(
             connect_errors._var_data,
             VarData(imports=imports),
         )
         return [
             Hooks.EVENTS,
-            hook,  # type: ignore
+            hook,
         ]
 
 

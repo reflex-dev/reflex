@@ -21,6 +21,7 @@ from reflex.utils import imports
 from reflex.vars import Var
 
 class Input(ChakraComponent):
+    def add_imports(self) -> imports.ImportDict: ...
     def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod

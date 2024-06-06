@@ -65,7 +65,7 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
         Returns:
             The import dict.
         """
-        return next_link._get_imports()
+        return next_link._get_imports()  # type: ignore
 
     @classmethod
     def create(cls, *children, **props) -> Component:

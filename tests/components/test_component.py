@@ -1784,7 +1784,7 @@ def test_component_add_imports(tags):
             return {}
 
     class Reference(Component):
-        def _get_imports(self) -> imports.ImportDict:
+        def _get_imports(self) -> imports.ParsedImportDict:
             return imports.merge_imports(
                 super()._get_imports(),
                 {"react": _list_to_import_vars(tags)},

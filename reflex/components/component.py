@@ -44,7 +44,7 @@ from reflex.event import (
 )
 from reflex.style import Style, format_as_emotion
 from reflex.utils import console, format, imports, types
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.utils.serializers import serializer
 from reflex.vars import BaseVar, Var, VarData
 
@@ -95,7 +95,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def _get_all_imports(self) -> imports.ImportDict:
+    def _get_all_imports(self) -> imports.ParsedImportDict:
         """Get all the libraries and fields that are used by the component.
 
         Returns:
@@ -213,7 +213,7 @@ class Component(BaseComponent, ABC):
     # State class associated with this component instance
     State: Optional[Type[reflex.state.State]] = None
 
-    def add_imports(self) -> dict[str, str | ImportVar | list[str | ImportVar]]:
+    def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the component.
 
         This method should be implemented by subclasses to add new imports for the component.
@@ -1222,7 +1222,7 @@ class Component(BaseComponent, ABC):
             or format.format_library_name(dep or "") in self.transpile_packages
         )
 
-    def _get_dependencies_imports(self) -> imports.ImportDict:
+    def _get_dependencies_imports(self) -> imports.ParsedImportDict:
         """Get the imports from lib_dependencies for installing.
 
         Returns:
@@ -1239,7 +1239,7 @@ class Component(BaseComponent, ABC):
             for dep in self.lib_dependencies
         }
 
-    def _get_hooks_imports(self) -> imports.ImportDict:
+    def _get_hooks_imports(self) -> imports.ParsedImportDict:
         """Get the imports required by certain hooks.
 
         Returns:
@@ -1280,7 +1280,7 @@ class Component(BaseComponent, ABC):
 
         return imports.merge_imports(_imports, *other_imports)
 
-    def _get_imports(self) -> imports.ImportDict:
+    def _get_imports(self) -> ParsedImportDict:
         """Get all the libraries and fields that are used by the component.
 
         Returns:
@@ -1301,24 +1301,29 @@ class Component(BaseComponent, ABC):
         ]
 
         # If any subclass implements add_imports, merge the imports.
-        def _make_list(
-            value: str | ImportVar | list[str | ImportVar],
-        ) -> list[str | ImportVar]:
-            if isinstance(value, (str, ImportVar)):
-                return [value]
-            return value
+        # def _make_list(
+        #     value: str | ImportVar | list[str | ImportVar],
+        # ) -> list[str | ImportVar]:
+        #     if isinstance(value, (str, ImportVar)):
+        #         return [value]
+        #     return value
 
-        _added_import_dicts = []
+        _added_import_dicts: list[ParsedImportDict] = []
         for clz in self._iter_parent_classes_with_method("add_imports"):
-            _added_import_dicts.append(
-                {
-                    package: [
-                        ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
-                        for tag in _make_list(maybe_tags)
-                    ]
-                    for package, maybe_tags in clz.add_imports(self).items()
-                }
-            )
+            added_imports_ = clz.add_imports(self)
+            if not isinstance(added_imports_, list):
+                added_imports_ = [added_imports_]
+            for added_imports in added_imports_:
+                _added_import_dicts.append(parse_imports(added_imports))
+                # {
+                #     package: [
+                #         ImportVar(tag=tag)
+                #         if not isinstance(tag, ImportVar)
+                #         else tag
+                #         for tag in _make_list(maybe_tags)
+                #     ]
+                #     for package, maybe_tags in added_imports.items()
+                # }
 
         return imports.merge_imports(
             *self._get_props_imports(),
@@ -1330,7 +1335,7 @@ class Component(BaseComponent, ABC):
             *_added_import_dicts,
         )
 
-    def _get_all_imports(self, collapse: bool = False) -> imports.ImportDict:
+    def _get_all_imports(self, collapse: bool = False) -> ParsedImportDict:
         """Get all the libraries and fields that are used by the component and its children.
 
         Args:
@@ -1814,7 +1819,7 @@ memo = custom_component
 class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
-    def _get_imports(self) -> imports.ImportDict:
+    def _get_imports(self) -> ParsedImportDict:
         """Get the imports for the component.
 
         Returns:
@@ -2157,7 +2162,7 @@ class StatefulComponent(BaseComponent):
         """
         return {}
 
-    def _get_all_imports(self) -> imports.ImportDict:
+    def _get_all_imports(self) -> ParsedImportDict:
         """Get all the libraries and fields that are used by the component.
 
         Returns:
