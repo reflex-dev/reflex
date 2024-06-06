@@ -353,12 +353,17 @@ export const connect = async (
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
     setConnectErrors([]);
-    event_processing = false;
   });
 
   socket.current.on("connect_error", (error) => {
     setConnectErrors((connectErrors) => [connectErrors.slice(-9), error]);
   });
+
+  // When the socket disconnects reset the event_processing flag
+  socket.current.on("disconnect", () => {
+    event_processing = false;
+  });
+
   // On each received message, queue the updates and events.
   socket.current.on("event", (message) => {
     const update = JSON5.parse(message);
