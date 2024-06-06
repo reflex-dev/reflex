@@ -181,18 +181,25 @@ class Form(BaseHTML):
             },
         )
 
-    def _get_hooks(self) -> str | None:
+    def add_hooks(self) -> list[str]:
+        """Add hooks for the form.
+
+        Returns:
+            The hooks for the form.
+        """
         if EventTriggers.ON_SUBMIT not in self.event_triggers:
-            return
-        return HANDLE_SUBMIT_JS_JINJA2.render(
-            handle_submit_unique_name=self.handle_submit_unique_name,
-            form_data=FORM_DATA,
-            field_ref_mapping=str(Var.create_safe(self._get_form_refs())),
-            on_submit_event_chain=format_event_chain(
-                self.event_triggers[EventTriggers.ON_SUBMIT]
-            ),
-            reset_on_submit=self.reset_on_submit,
-        )
+            return []
+        return [
+            HANDLE_SUBMIT_JS_JINJA2.render(
+                handle_submit_unique_name=self.handle_submit_unique_name,
+                form_data=FORM_DATA,
+                field_ref_mapping=str(Var.create_safe(self._get_form_refs())),
+                on_submit_event_chain=format_event_chain(
+                    self.event_triggers[EventTriggers.ON_SUBMIT]
+                ),
+                reset_on_submit=self.reset_on_submit,
+            )
+        ]
 
     def _render(self) -> Tag:
         render_tag = super()._render()
