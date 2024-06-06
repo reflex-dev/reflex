@@ -230,7 +230,7 @@ class Upload(MemoizationLeaf):
             key: value for key, value in props.items() if key in supported_props
         }
         # The file input to use.
-        upload = Input.create(type_="file")
+        upload = Input.create(type="file")
         upload.special_props = {
             BaseVar(_var_name="{...getInputProps()}", _var_type=None)
         }
