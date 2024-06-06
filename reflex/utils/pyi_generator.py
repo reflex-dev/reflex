@@ -488,7 +488,9 @@ def _generate_staticmethod_call_functiondef(
         kwonlyargs=[],
         kw_defaults=[],
         kwarg=ast.arg(arg="props"),
-        defaults=[],
+        defaults=[ast.Constant(value=default) for default in fullspec.defaults]
+        if fullspec.defaults
+        else [],
     )
     definition = ast.FunctionDef(
         name="__call__",

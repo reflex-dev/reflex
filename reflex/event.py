@@ -742,7 +742,7 @@ def _callback_arg_spec(eval_result):
 
 
 def call_script(
-    javascript_code: str,
+    javascript_code: str | Var[str],
     callback: EventSpec
     | EventHandler
     | Callable

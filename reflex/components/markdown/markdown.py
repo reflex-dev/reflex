@@ -98,8 +98,8 @@ class Markdown(Component):
         Returns:
             The markdown component.
         """
-        assert len(children) == 1 and types._isinstance(
-            children[0], Union[str, Var]
+        assert (
+            len(children) == 1 and types._isinstance(children[0], Union[str, Var])
         ), "Markdown component must have exactly one child containing the markdown source."
 
         # Update the base component map with the custom component map.
@@ -229,7 +229,7 @@ class Markdown(Component):
         Returns:
             The formatted component.
         """
-        return str(self.get_component(tag, **props)).replace("\n", " ")
+        return str(self.get_component(tag, **props)).replace("\n", "")
 
     def format_component_map(self) -> dict[str, str]:
         """Format the component map for rendering.
@@ -243,9 +243,7 @@ class Markdown(Component):
         }
 
         # Separate out inline code and code blocks.
-        components[
-            "code"
-        ] = f"""{{({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
+        components["code"] = f"""{{({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
     if (language) {{
@@ -263,9 +261,7 @@ class Markdown(Component):
     ) : (
         {self.format_component("codeblock", language=Var.create_safe("language", _var_is_local=False))}
     );
-      }}}}""".replace(
-            "\n", " "
-        )
+      }}}}""".replace("\n", " ")
 
         return components
 

@@ -17,7 +17,28 @@ warn(
     "`rx._x` contains experimental features and might be removed at any time in the future .",
 )
 
-_x = SimpleNamespace(
+_EMITTED_PROMOTION_WARNINGS = set()
+
+
+class ExperimentalNamespace(SimpleNamespace):
+    """Namespace for experimental features."""
+
+    @property
+    def toast(self):
+        """Temporary property returning the toast namespace.
+
+        Remove this property when toast is fully promoted.
+
+        Returns:
+            The toast namespace.
+        """
+        if "toast" not in _EMITTED_PROMOTION_WARNINGS:
+            _EMITTED_PROMOTION_WARNINGS.add("toast")
+            warn(f"`rx._x.toast` was promoted to `rx.toast`.")
+        return toast
+
+
+_x = ExperimentalNamespace(
     asset=asset,
     client_state=ClientStateVar.create,
     hooks=hooks,
@@ -25,5 +46,4 @@ _x = SimpleNamespace(
     progress=progress,
     PropsBase=PropsBase,
     run_in_thread=run_in_thread,
-    toast=toast,
 )

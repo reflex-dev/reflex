@@ -9,7 +9,7 @@ class Html(Div):
     """Render the html.
 
     Returns:
-        The code to render the  html component.
+        The code to render the html component.
     """
 
     # The HTML to render.
