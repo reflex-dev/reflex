@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, List
 
 from reflex import color, cond
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.components.radix.primitives.drawer import DrawerRoot, drawer
 from reflex.components.radix.themes.components.icon_button import IconButton
-from reflex.components.radix.themes.layout import Box, Container, HStack
+from reflex.components.radix.themes.layout.box import Box
+from reflex.components.radix.themes.layout.container import Container
+from reflex.components.radix.themes.layout.stack import HStack
 from reflex.event import call_script
 from reflex.experimental import hooks
 from reflex.state import ComponentState
@@ -63,8 +65,13 @@ class Sidebar(Box, MemoizationLeaf):
             }
         )
 
-    def _get_hooks(self) -> Var | None:
-        return hooks.useState("open", "true") if not self.State else None
+    def add_hooks(self) -> List[Var]:
+        """Get the hooks to render.
+
+        Returns:
+            The hooks for the sidebar.
+        """
+        return [hooks.useState("open", "true")] if not self.State else []
 
 
 class StatefulSidebar(ComponentState):

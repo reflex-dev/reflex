@@ -492,6 +492,7 @@ class PolarRadiusAxis(Recharts):
                 ],
             ]
         ] = None,
+        domain: Optional[List[int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -533,6 +534,7 @@ class PolarRadiusAxis(Recharts):
             tick: The width or height of tick.
             tick_count: The count of ticks.
             scale: If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'
+            domain: The domain of the polar radius axis, specifying the minimum and maximum values.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -545,3 +547,10 @@ class PolarRadiusAxis(Recharts):
             The component.
         """
         ...
+
+pie = Pie.create
+radar = Radar.create
+radial_bar = RadialBar.create
+polar_angle_axis = PolarAngleAxis.create
+polar_grid = PolarGrid.create
+polar_radius_axis = PolarRadiusAxis.create

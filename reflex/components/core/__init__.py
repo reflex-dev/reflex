@@ -1,40 +1,54 @@
 """Core Reflex components."""
+from __future__ import annotations
 
-from . import layout as layout
-from .banner import (
-    ConnectionBanner,
-    ConnectionModal,
-    ConnectionPulser,
-    ConnectionToaster,
-)
-from .colors import color
-from .cond import Cond, color_mode_cond, cond
-from .debounce import DebounceInput
-from .foreach import Foreach
-from .html import Html
-from .match import Match
-from .responsive import (
-    desktop_only,
-    mobile_and_tablet,
-    mobile_only,
-    tablet_and_desktop,
-    tablet_only,
-)
-from .upload import (
-    UploadNamespace,
-    cancel_upload,
-    clear_selected_files,
-    get_upload_dir,
-    get_upload_url,
-    selected_files,
-)
+from reflex.utils import lazy_loader
 
-connection_banner = ConnectionBanner.create
-connection_modal = ConnectionModal.create
-connection_toaster = ConnectionToaster.create
-connection_pulser = ConnectionPulser.create
-debounce_input = DebounceInput.create
-foreach = Foreach.create
-html = Html.create
-match = Match.create
-upload = UploadNamespace()
+_SUBMODULES: set[str] = {"layout"}
+
+_SUBMOD_ATTRS: dict[str, list[str]] = {
+    "banner": [
+        "ConnectionBanner",
+        "ConnectionModal",
+        "ConnectionPulser",
+        "ConnectionToaster",
+        "connection_banner",
+        "connection_modal",
+        "connection_toaster",
+        "connection_pulser",
+    ],
+    "colors": [
+        "color",
+    ],
+    "cond": ["Cond", "color_mode_cond", "cond"],
+    "debounce": ["DebounceInput", "debounce_input"],
+    "foreach": [
+        "foreach",
+        "Foreach",
+    ],
+    "html": ["html", "Html"],
+    "match": [
+        "match",
+        "Match",
+    ],
+    "responsive": [
+        "desktop_only",
+        "mobile_and_tablet",
+        "mobile_only",
+        "tablet_and_desktop",
+        "tablet_only",
+    ],
+    "upload": [
+        "upload",
+        "cancel_upload",
+        "clear_selected_files",
+        "get_upload_dir",
+        "get_upload_url",
+        "selected_files",
+    ],
+}
+
+__getattr__, __dir__, __all__ = lazy_loader.attach(
+    __name__,
+    submodules=_SUBMODULES,
+    submod_attrs=_SUBMOD_ATTRS,
+)

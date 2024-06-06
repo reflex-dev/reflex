@@ -4,7 +4,7 @@ https://www.radix-ui.com/themes/docs/theme/typography
 """
 from __future__ import annotations
 
-from reflex import el
+from reflex.components.el import elements
 from reflex.vars import Var
 
 from ..base import (
@@ -17,7 +17,7 @@ from .base import (
 )
 
 
-class Blockquote(el.Blockquote, RadixThemesComponent):
+class Blockquote(elements.Blockquote, RadixThemesComponent):
     """A block level extended quotation."""
 
     tag = "Blockquote"
@@ -33,3 +33,6 @@ class Blockquote(el.Blockquote, RadixThemesComponent):
 
     # Whether to render the text with higher contrast color
     high_contrast: Var[bool]
+
+
+blockquote = Blockquote.create

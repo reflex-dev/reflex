@@ -8,11 +8,11 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
-from reflex import el
+from reflex.components.el import elements
 from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
-class Badge(el.Span, RadixThemesComponent):
+class Badge(elements.Span, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore

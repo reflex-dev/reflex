@@ -252,7 +252,12 @@ class DataEditor(NoSSRComponent):
             "on_column_resize": lambda col, width: [col, width],
         }
 
-    def _get_hooks(self) -> str | None:
+    def add_hooks(self) -> list[str]:
+        """Get the hooks to render.
+
+        Returns:
+            The hooks to render.
+        """
         # Define the id of the component in case multiple are used in the same page.
         editor_id = get_unique_variable_name()
 
@@ -272,7 +277,7 @@ class DataEditor(NoSSRComponent):
             ]
         )
 
-        return "\n".join(code)
+        return ["\n".join(code)]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -410,3 +415,7 @@ def serialize_dataeditortheme(theme: DataEditorTheme):
     return format.json_dumps(
         {format.to_camel_case(k): v for k, v in theme.__dict__.items() if v is not None}
     )
+
+
+data_editor = DataEditor.create
+data_editor_theme = DataEditorTheme

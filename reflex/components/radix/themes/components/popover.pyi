@@ -8,8 +8,8 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, Literal
-from reflex import el
 from reflex.components.component import ComponentNamespace
+from reflex.components.el import elements
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import RadixThemesComponent, RadixThemesTriggerComponent
@@ -171,7 +171,7 @@ class PopoverTrigger(RadixThemesTriggerComponent):
         """
         ...
 
-class PopoverContent(el.Div, RadixThemesComponent):
+class PopoverContent(elements.Div, RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod

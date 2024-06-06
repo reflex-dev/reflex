@@ -1989,3 +1989,19 @@ class Section(BaseHTML):
             The component.
         """
         ...
+
+address = Address.create
+article = Article.create
+aside = Aside.create
+body = Body.create
+header = Header.create
+footer = Footer.create
+h1 = H1.create
+h2 = H2.create
+h3 = H3.create
+h4 = H4.create
+h5 = H5.create
+h6 = H6.create
+main = Main.create
+nav = Nav.create
+section = Section.create

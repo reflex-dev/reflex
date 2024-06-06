@@ -8,16 +8,17 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, Literal, Union
-from reflex import el
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
+from reflex.components.el import elements
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import LiteralAccentColor, RadixThemesComponent
+from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 LiteralTextAreaSize = Literal["1", "2", "3"]
+LiteralTextAreaResize = Literal["none", "vertical", "horizontal", "both"]
 
-class TextArea(RadixThemesComponent, el.Textarea):
+class TextArea(RadixThemesComponent, elements.Textarea):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -30,6 +31,12 @@ class TextArea(RadixThemesComponent, el.Textarea):
             Union[
                 Var[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
+            ]
+        ] = None,
+        resize: Optional[
+            Union[
+                Var[Literal["none", "vertical", "horizontal", "both"]],
+                Literal["none", "vertical", "horizontal", "both"],
             ]
         ] = None,
         color_scheme: Optional[
@@ -92,6 +99,12 @@ class TextArea(RadixThemesComponent, el.Textarea):
                     "bronze",
                     "gray",
                 ],
+            ]
+        ] = None,
+        radius: Optional[
+            Union[
+                Var[Literal["none", "small", "medium", "large", "full"]],
+                Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
         auto_complete: Optional[Union[Var[bool], bool]] = None,
@@ -219,7 +232,9 @@ class TextArea(RadixThemesComponent, el.Textarea):
             *children: The children of the component.
             size: The size of the text area: "1" | "2" | "3"
             variant: The variant of the text area
+            resize: The resize behavior of the text area: "none" | "vertical" | "horizontal" | "both"
             color_scheme: The color of the text area
+            radius: The radius of the text area: "none" | "small" | "medium" | "large" | "full"
             auto_complete: Whether the form control should have autocomplete enabled
             auto_focus: Automatically focuses the textarea when the page loads
             dirname: Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted

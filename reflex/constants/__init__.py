@@ -35,8 +35,8 @@ from .compiler import (
 )
 from .config import (
     ALEMBIC_CONFIG,
-    PRODUCTION_BACKEND_URL,
     Config,
+    DefaultPorts,
     Expiration,
     GitIgnore,
     RequirementsTxt,
@@ -73,6 +73,7 @@ __ALL__ = [
     ComponentName,
     CustomComponents,
     DefaultPage,
+    DefaultPorts,
     Dirs,
     Endpoint,
     Env,
@@ -99,7 +100,6 @@ __ALL__ = [
     Ping,
     POLLING_MAX_HTTP_BUFFER_SIZE,
     PYTEST_CURRENT_TEST,
-    PRODUCTION_BACKEND_URL,
     Reflex,
     RELOAD_CONFIG,
     RequirementsTxt,
