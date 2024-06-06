@@ -72,7 +72,12 @@ def test_upload_root_component_render(upload_root_component):
     assert upload["props"] == [
         "id={`default`}",
         "multiple={true}",
-        "onDrop={e => setFilesById(filesById => ({...filesById, default: e}))}",
+        "onDrop={e => setFilesById(filesById => {\n"
+        "    const updatedFilesById = Object.assign({}, filesById);\n"
+        "    updatedFilesById[`default`] = e;\n"
+        "    return updatedFilesById;\n"
+        "  })\n"
+        "    }",
         "ref={ref_default}",
     ]
     assert upload["args"] == ("getRootProps", "getInputProps")
@@ -114,7 +119,12 @@ def test_upload_component_render(upload_component):
     assert upload["props"] == [
         "id={`default`}",
         "multiple={true}",
-        "onDrop={e => setFilesById(filesById => ({...filesById, default: e}))}",
+        "onDrop={e => setFilesById(filesById => {\n"
+        "    const updatedFilesById = Object.assign({}, filesById);\n"
+        "    updatedFilesById[`default`] = e;\n"
+        "    return updatedFilesById;\n"
+        "  })\n"
+        "    }",
         "ref={ref_default}",
     ]
     assert upload["args"] == ("getRootProps", "getInputProps")
@@ -156,6 +166,11 @@ def test_upload_component_with_props_render(upload_component_with_props):
         "maxFiles={2}",
         "multiple={true}",
         "noDrag={true}",
-        "onDrop={e => setFilesById(filesById => ({...filesById, default: e}))}",
+        "onDrop={e => setFilesById(filesById => {\n"
+        "    const updatedFilesById = Object.assign({}, filesById);\n"
+        "    updatedFilesById[`default`] = e;\n"
+        "    return updatedFilesById;\n"
+        "  })\n"
+        "    }",
         "ref={ref_default}",
     ]
