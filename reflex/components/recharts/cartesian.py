@@ -20,6 +20,7 @@ from .recharts import (
     LiteralPolarRadiusType,
     LiteralScale,
     LiteralShape,
+    LiteralLegendType,
     Recharts,
 )
 
@@ -359,7 +360,7 @@ class Scatter(Cartesian):
     _valid_children: List[str] = ["LabelList", "ErrorBar"]
 
 
-class Funnel(Cartesian):
+class Funnel(Recharts):
     """A Funnel component in Recharts."""
 
     tag = "Funnel"
@@ -368,6 +369,15 @@ class Funnel(Cartesian):
 
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
+
+    # The key of a group of data which should be unique in an area chart.
+    data_key: Var[Union[str, int]]
+
+    # The type of icon in legend. If set to 'none', no legend item will be rendered.
+    #legend_type: Var[LiteralLegendType]
+
+    # If set false, animation of line will be disabled.
+    is_animation_active: Var[bool]
 
     # Specifies when the animation should begin, the unit of this option is ms.
     animation_begin: Var[int]
@@ -380,6 +390,21 @@ class Funnel(Cartesian):
 
     # Valid children components
     _valid_children: List[str] = ["LabelList", "Cell"]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
 
 
 class ErrorBar(Recharts):
