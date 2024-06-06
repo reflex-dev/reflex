@@ -8,7 +8,6 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 import os
-import re
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 from reflex import constants
@@ -30,11 +29,8 @@ from reflex.vars import BaseVar, CallableVar, Var, VarData
 DEFAULT_UPLOAD_ID: str
 upload_files_context_var_data: VarData
 
-def validate_upload_id(id_: str, fn_name): ...
 @CallableVar
-def upload_file(
-    id_: str = DEFAULT_UPLOAD_ID, fn_name: str = "upload_file"
-) -> BaseVar: ...
+def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
 @CallableVar
 def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
 @CallableEventSpec

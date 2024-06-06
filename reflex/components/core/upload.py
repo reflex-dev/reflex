@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import re
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 
@@ -38,25 +37,8 @@ upload_files_context_var_data: VarData = VarData(
 )
 
 
-def validate_upload_id(id_: str, fn_name):
-    """Check that only alphanumeric characters and underscores are present in an upload id.
-
-    Args:
-        id_: The upload id.
-        fn_name: Name of caller to show when validation fails.
-
-    Raises:
-        ValueError: If the string is not valid.
-    """
-    pattern = re.compile(r"^[a-zA-Z0-9_]+$")
-    if not pattern.match(id_):
-        raise ValueError(
-            f"Invalid upload ID: '{id_}'. The upload id for `rx.{fn_name}` should contain only alphanumeric characters and underscores."
-        )
-
-
 @CallableVar
-def upload_file(id_: str = DEFAULT_UPLOAD_ID, fn_name: str = "upload_file") -> BaseVar:
+def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     """Get the file upload drop trigger.
 
     This var is passed to the dropzone component to update the file list when a
@@ -64,14 +46,19 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID, fn_name: str = "upload_file") -> B
 
     Args:
         id_: The id of the upload to get the drop trigger for.
-        fn_name: Name of the caller to use in validation error message when the id string is invalid.
 
     Returns:
         A var referencing the file upload drop trigger.
     """
-    validate_upload_id(id_, fn_name)
+    var_name = f"""e => setFilesById(filesById => {{
+    const updatedFilesById = Object.assign({{}}, filesById);
+    updatedFilesById[`{id_}`] = e;
+    return updatedFilesById;
+  }})
+    """
+
     return BaseVar(
-        _var_name=f"e => setFilesById(filesById => ({{...filesById, {id_}: e}}))",
+        _var_name=var_name,
         _var_type=EventChain,
         _var_data=upload_files_context_var_data,
     )
@@ -87,7 +74,6 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     Returns:
         A var referencing the list of selected file paths.
     """
-    validate_upload_id(id_, "selected_files")
     return BaseVar(
         _var_name=f"(filesById[`{id_}`] ? filesById[`{id_}`].map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
@@ -105,7 +91,6 @@ def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
     Returns:
         An event spec that clears the list of selected files when triggered.
     """
-    validate_upload_id(id_, "clear_selected_files")
     # UploadFilesProvider assigns a special function to clear selected files
     # into the shared global refs object to make it accessible outside a React
     # component via `call_script` (otherwise backend could never clear files).
@@ -121,7 +106,6 @@ def cancel_upload(upload_id: str) -> EventSpec:
     Returns:
         An event spec that cancels the upload when triggered.
     """
-    validate_upload_id(upload_id, "cancel_upload")
     return call_script(f"upload_controllers[{upload_id!r}]?.abort()")
 
 
@@ -272,9 +256,7 @@ class Upload(MemoizationLeaf):
 
         if upload_props.get("on_drop") is None:
             # If on_drop is not provided, save files to be uploaded later.
-            upload_props["on_drop"] = upload_file(
-                upload_props["id"], fn_name="upload_files"
-            )
+            upload_props["on_drop"] = upload_file(upload_props["id"])
         else:
             on_drop = upload_props["on_drop"]
             if isinstance(on_drop, Callable):
