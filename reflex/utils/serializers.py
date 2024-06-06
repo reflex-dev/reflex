@@ -33,12 +33,11 @@ from reflex.utils import exceptions, format, types
 SerializedType = Union[str, bool, int, float, list, dict]
 
 
-Serializer = Callable[
-    [Type], Union[SerializedType, Tuple[SerializedType, types.GenericType]]
-]
+Serializer = Callable[[Type], SerializedType]
 
 
 SERIALIZERS: dict[Type, Serializer] = {}
+SERIALIZER_TYPES: dict[Type, Type] = {}
 
 
 def serializer(
@@ -61,9 +60,6 @@ def serializer(
         # If the function is not provided, return a partial that acts as a decorator.
         return functools.partial(serializer, to=to)  # type: ignore
 
-    # Get the global serializers.
-    global SERIALIZERS
-
     # Check the type hints to get the type of the argument.
     type_hints = get_type_hints(fn)
     args = [arg for arg in type_hints if arg != "return"]
@@ -84,28 +80,12 @@ def serializer(
 
     # Apply type transformation if requested
     if to is not None:
+        SERIALIZER_TYPES[type_] = to
 
-        def wrapper(value: Any) -> tuple[SerializedType, Type]:
-            rval = fn(value)
-            if isinstance(rval, tuple):
-                if rval[1] != to:
-                    raise ValueError(
-                        f"Serializer for type {type_} returned a tuple with a different type than "
-                        f"expected. Expected {to}, got {rval[1]}"
-                    )
-                serialized_value = rval[0]
-            else:
-                serialized_value = rval
-            return serialized_value, to
-
-        SERIALIZERS[type_] = wrapper
-        # Return the function.
-        return wrapper
-    else:
-        # Register the serializer.
-        SERIALIZERS[type_] = fn
-        # Return the function.
-        return fn
+    # Register the serializer.
+    SERIALIZERS[type_] = fn
+    # Return the function.
+    return fn
 
 
 @overload
@@ -152,19 +132,14 @@ def serialize(
     # Serialize the value.
     serialized = serializer(value)
 
-    # If the serializer returns a tuple, return the type as well.
-    # return_type_annotation = get_type_hints(serializer).get("return", None)
-    return_type = None
-    if isinstance(serialized, tuple):
-        serialized, return_type = serialized
-
     # Return the serialized value and the type.
     if get_type:
-        return serialized, return_type
+        return serialized, get_serializer_type(type(value))
     else:
         return serialized
 
 
+@functools.lru_cache
 def get_serializer(type_: Type) -> Optional[Serializer]:
     """Get the serializer for the type.
 
@@ -183,6 +158,30 @@ def get_serializer(type_: Type) -> Optional[Serializer]:
 
     # If the type is not registered, check if it is a subclass of a registered type.
     for registered_type, serializer in reversed(SERIALIZERS.items()):
+        if types._issubclass(type_, registered_type):
+            return serializer
+
+    # If there is no serializer, return None.
+    return None
+
+
+@functools.lru_cache
+def get_serializer_type(type_: Type) -> Optional[Type]:
+    """Get the converted type for the type after serializing.
+
+    Args:
+        type_: The type to get the serializer type for.
+
+    Returns:
+        The serialized type for the type, or None if there is no type conversion registered.
+    """
+    # First, check if the type is registered.
+    serializer = SERIALIZER_TYPES.get(type_)
+    if serializer is not None:
+        return serializer
+
+    # If the type is not registered, check if it is a subclass of a registered type.
+    for registered_type, serializer in reversed(SERIALIZER_TYPES.items()):
         if types._issubclass(type_, registered_type):
             return serializer
 

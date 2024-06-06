@@ -1,7 +1,7 @@
 import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any, Dict, List, Type
 
 import pytest
 
@@ -231,21 +231,3 @@ def test_serialize_var_to_str(value: Any, expected: str, exp_var_is_string: bool
     v = Var.create_safe(value)
     assert v._var_full_name == expected
     assert v._var_is_string == exp_var_is_string
-
-
-class FooToStringType:
-    """For testing mismatched serializer type."""
-
-
-@serializers.serializer(to=str)
-def serialize_FooToStringType(foo: FooToStringType) -> Tuple[int, Type]:
-    return 42, int
-
-
-def test_serializer_returns_wrong_type():
-    with pytest.raises(ValueError) as errctx:
-        serializers.serialize(FooToStringType())
-
-    errctx.match(
-        "Serializer for .*FooToStringType.* returned a tuple with a different type than expected.*"
-    )
