@@ -535,10 +535,10 @@ class CartesianGrid(Grid):
     alias = "RechartsCartesianGrid"
 
     # The horizontal line configuration.
-    horizontal: Var[Dict[str, Any]]
+    horizontal: Var[bool]
 
     # The vertical line configuration.
-    vertical: Var[Dict[str, Any]]
+    vertical: Var[bool]
 
     # The background of grid.
     fill: Var[str]
