@@ -215,8 +215,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     attr = getattr(cls, name, None)
     if hint := get_property_hint(attr):
         return hint
-    if hasattr(cls, "__fields__") and name in cls.__fields__ and \
-            hasattr(cls.__fields__[name], "outer_type_"):
+    if (
+        hasattr(cls, "__fields__")
+        and name in cls.__fields__
+        and hasattr(cls.__fields__[name], "outer_type_")
+    ):
         # pydantic models
         field = cls.__fields__[name]
         type_ = field.outer_type_
