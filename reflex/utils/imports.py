@@ -57,8 +57,6 @@ def collapse_imports(imports: ParsedImportDict) -> ParsedImportDict:
     Returns:
         The collapsed import dict.
     """
-    if "/utils/theme.js" in imports:
-        print(imports)
     return {
         lib: list(set(import_vars)) if isinstance(import_vars, list) else import_vars
         for lib, import_vars in imports.items()
