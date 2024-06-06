@@ -257,10 +257,16 @@ class ThemePanel(RadixThemesComponent):
         """
         return {"react": "useEffect"}
 
-    def _get_hooks(self) -> str | None:
+    def add_hooks(self) -> list[str]:
+        """Add a hook on the ThemePanel to clear chakra-ui-color-mode.
+
+        Returns:
+            The hooks to render.
+        """
         # The panel freezes the tab if the user color preference differs from the
         # theme "appearance", so clear it out when theme panel is used.
-        return """
+        return [
+            """
             useEffect(() => {
                 if (typeof window !== 'undefined') {
                     window.onbeforeunload = () => {
@@ -269,6 +275,7 @@ class ThemePanel(RadixThemesComponent):
                     window.onbeforeunload();
                 }
             }, [])"""
+        ]
 
 
 class RadixThemesColorModeProvider(Component):

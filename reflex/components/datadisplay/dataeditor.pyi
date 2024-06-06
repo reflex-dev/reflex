@@ -82,6 +82,7 @@ class DataEditorTheme(Base):
 
 class DataEditor(NoSSRComponent):
     def add_imports(self) -> ImportDict: ...
+    def add_hooks(self) -> list[str]: ...
     @overload
     @classmethod
     def create(  # type: ignore

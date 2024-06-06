@@ -584,6 +584,7 @@ class Theme(RadixThemesComponent):
 
 class ThemePanel(RadixThemesComponent):
     def add_imports(self) -> dict[str, str]: ...
+    def add_hooks(self) -> list[str]: ...
     @overload
     @classmethod
     def create(  # type: ignore
