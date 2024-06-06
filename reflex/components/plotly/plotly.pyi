@@ -12,6 +12,7 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
 from reflex.event import EventHandler
+from reflex.utils import console
 from reflex.vars import Var
 
 try:
@@ -19,6 +20,7 @@ try:
 
     Template = layout.Template
 except ImportError:
+    console.warn("Plotly is not installed. Please run `pip install plotly`.")
     Figure = Any  # type: ignore
     Template = Any
 
