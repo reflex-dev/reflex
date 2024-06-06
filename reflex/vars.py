@@ -39,7 +39,12 @@ from reflex.utils import console, imports, serializers, types
 from reflex.utils.exceptions import VarAttributeError, VarTypeError, VarValueError
 
 # This module used to export ImportVar itself, so we still import it for export here
-from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
+from reflex.utils.imports import (
+    ImportDict,
+    ImportVar,
+    ParsedImportDict,
+    parse_imports,
+)
 from reflex.utils.types import override
 
 if TYPE_CHECKING:
@@ -129,6 +134,16 @@ class VarData(Base):
     # out where the interpolations are and only escape the non-interpolated
     # segments.
     interpolations: List[Tuple[int, int]] = []
+
+    def __init__(self, **kwargs: Any):
+        """Initialize the var data.
+
+        Args:
+            **kwargs: The var data fields.
+        """
+        if "imports" in kwargs:
+            kwargs["imports"] = parse_imports(kwargs["imports"])
+        super().__init__(**kwargs)
 
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None:

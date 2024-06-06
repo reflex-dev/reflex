@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from reflex.base import Base
 
@@ -34,19 +34,17 @@ def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
         The parsed import dict.
     """
 
-    def _make_list(
-        value: str | ImportVar | list[str | ImportVar],
-    ) -> list[str | ImportVar]:
+    def _make_list(value: ImportTypes) -> list[str | ImportVar]:
         if isinstance(value, (str, ImportVar)):
             return [value]
         return value
 
     return {
-        lib: [
+        package: [
             ImportVar(tag=tag) if isinstance(tag, str) else tag
-            for tag in _make_list(tags)  # type: ignore
+            for tag in _make_list(maybe_tags)  # type: ignore
         ]
-        for lib, tags in imports.items()
+        for package, maybe_tags in imports.items()
     }
 
 
@@ -59,6 +57,8 @@ def collapse_imports(imports: ParsedImportDict) -> ParsedImportDict:
     Returns:
         The collapsed import dict.
     """
+    if "/utils/theme.js" in imports:
+        print(imports)
     return {
         lib: list(set(import_vars)) if isinstance(import_vars, list) else import_vars
         for lib, import_vars in imports.items()
@@ -119,5 +119,6 @@ class ImportVar(Base):
         )
 
 
-ImportDict = Dict[str, str | ImportVar | List[str | ImportVar]]
+ImportTypes = Union[str, ImportVar, List[Union[str, ImportVar]]]
+ImportDict = Dict[str, ImportTypes]
 ParsedImportDict = Dict[str, List[ImportVar]]
