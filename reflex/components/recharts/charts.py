@@ -28,9 +28,6 @@ class ChartBase(RechartsCharts):
     # The height of chart container.
     height: Var[Union[str, int]] = "100%"  # type: ignore
 
-    # The sizes of whitespace around the chart.
-    margin: Var[Dict[str, Any]]
-
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
@@ -107,6 +104,9 @@ class CategoricalChartBase(ChartBase):
 
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
+
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
 
     # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
     sync_id: Var[str]
@@ -254,6 +254,9 @@ class PieChart(ChartBase):
 
     alias = "RechartsPieChart"
 
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
+
     # Valid children components
     _valid_children: List[str] = [
         "PolarAngleAxis",
@@ -283,6 +286,9 @@ class RadarChart(ChartBase):
     tag = "RadarChart"
 
     alias = "RechartsRadarChart"
+
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
     cx: Var[Union[int, str]]
@@ -331,6 +337,9 @@ class RadialBarChart(ChartBase):
     tag = "RadialBarChart"
 
     alias = "RechartsRadialBarChart"
+
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
     cx: Var[Union[int, str]]
@@ -389,6 +398,9 @@ class ScatterChart(ChartBase):
 
     alias = "RechartsScatterChart"
 
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
+
     # Valid children components
     _valid_children: List[str] = [
         "XAxis",
@@ -422,18 +434,12 @@ class ScatterChart(ChartBase):
         }
 
 
-class FunnelChart(RechartsCharts):
+class FunnelChart(ChartBase):
     """A Funnel chart component in Recharts."""
 
     tag = "FunnelChart"
 
     alias = "RechartsFunnelChart"
-
-    # The width of chart container. String or Integer
-    width: Var[Union[str, int]] = "100%"  # type: ignore
-
-    # The height of chart container.
-    height: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The layout of bars in the chart. centeric
     layout: Var[str]

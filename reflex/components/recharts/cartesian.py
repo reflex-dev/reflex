@@ -338,7 +338,7 @@ class Line(Cartesian):
     _valid_children: List[str] = ["LabelList", "ErrorBar"]
 
 
-class Scatter(Cartesian):
+class Scatter(Recharts):
     """A Scatter component in Recharts."""
 
     tag = "Scatter"
@@ -347,6 +347,15 @@ class Scatter(Cartesian):
 
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
+
+    # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'
+    legend_type: Var[LiteralLegendType]
+
+    # The id of x-axis which is corresponding to the data.
+    x_axis_id: Var[Union[str, int]]
+
+    # The id of y-axis which is corresponding to the data.
+    y_axis_id: Var[Union[str, int]]
 
     # The id of z-axis which is corresponding to the data.
     z_axis_id: Var[str]
@@ -368,6 +377,23 @@ class Scatter(Cartesian):
 
     # Valid children components.
     _valid_children: List[str] = ["LabelList", "ErrorBar"]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
 
 
 class Funnel(Recharts):
