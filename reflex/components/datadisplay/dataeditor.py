@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
+from reflex.event import EventHandler
 from reflex.utils import console, format, imports, types
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serializer
@@ -101,6 +102,10 @@ class DataEditorTheme(Base):
     text_header_selected: Optional[str] = None
     text_light: Optional[str] = None
     text_medium: Optional[str] = None
+
+
+def _on_edit_spec(pos, data: dict[str, Any]):
+    return [pos, data]
 
 
 class DataEditor(NoSSRComponent):
@@ -205,6 +210,54 @@ class DataEditor(NoSSRComponent):
     # global theme
     theme: Var[Union[DataEditorTheme, Dict]]
 
+    # Fired when a cell is activated.
+    on_cell_activated: EventHandler[lambda pos: [pos]]
+
+    # Fired when a cell is clicked.
+    on_cell_clicked: EventHandler[lambda pos: [pos]]
+
+    # Fired when a cell is right-clicked.
+    on_cell_context_menu: EventHandler[lambda pos: [pos]]
+
+    # Fired when a cell is edited.
+    on_cell_edited: EventHandler[_on_edit_spec]
+
+    # Fired when a group header is clicked.
+    on_group_header_clicked: EventHandler[_on_edit_spec]
+
+    # Fired when a group header is right-clicked.
+    on_group_header_context_menu: EventHandler[lambda grp_idx, data: [grp_idx, data]]
+
+    # Fired when a group header is renamed.
+    on_group_header_renamed: EventHandler[lambda idx, val: [idx, val]]
+
+    # Fired when a header is clicked.
+    on_header_clicked: EventHandler[lambda pos: [pos]]
+
+    # Fired when a header is right-clicked.
+    on_header_context_menu: EventHandler[lambda pos: [pos]]
+
+    # Fired when a header menu item is clicked.
+    on_header_menu_click: EventHandler[lambda col, pos: [col, pos]]
+
+    # Fired when an item is hovered.
+    on_item_hovered: EventHandler[lambda pos: [pos]]
+
+    # Fired when a selection is deleted.
+    on_delete: EventHandler[lambda selection: [selection]]
+
+    # Fired when editing is finished.
+    on_finished_editing: EventHandler[lambda new_value, movement: [new_value, movement]]
+
+    # Fired when a row is appended.
+    on_row_appended: EventHandler[lambda: []]
+
+    # Fired when the selection is cleared.
+    on_selection_cleared: EventHandler[lambda: []]
+
+    # Fired when a column is resized.
+    on_column_resize: EventHandler[lambda col, width: [col, width]]
+
     def _get_imports(self):
         return imports.merge_imports(
             super()._get_imports(),
@@ -222,35 +275,6 @@ class DataEditor(NoSSRComponent):
                 },
             },
         )
-
-    def get_event_triggers(self) -> Dict[str, Callable]:
-        """The event triggers of the component.
-
-        Returns:
-            The dict describing the event triggers.
-        """
-
-        def edit_sig(pos, data: dict[str, Any]):
-            return [pos, data]
-
-        return {
-            "on_cell_activated": lambda pos: [pos],
-            "on_cell_clicked": lambda pos: [pos],
-            "on_cell_context_menu": lambda pos: [pos],
-            "on_cell_edited": edit_sig,
-            "on_group_header_clicked": edit_sig,
-            "on_group_header_context_menu": lambda grp_idx, data: [grp_idx, data],
-            "on_group_header_renamed": lambda idx, val: [idx, val],
-            "on_header_clicked": lambda pos: [pos],
-            "on_header_context_menu": lambda pos: [pos],
-            "on_header_menu_click": lambda col, pos: [col, pos],
-            "on_item_hovered": lambda pos: [pos],
-            "on_delete": lambda selection: [selection],
-            "on_finished_editing": lambda new_value, movement: [new_value, movement],
-            "on_row_appended": lambda: [],
-            "on_selection_cleared": lambda: [],
-            "on_column_resize": lambda col, width: [col, width],
-        }
 
     def add_hooks(self) -> list[str]:
         """Get the hooks to render.

@@ -1,13 +1,13 @@
 """Interactive components provided by @radix-ui/themes."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import List, Literal, Optional, Union
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from ..base import (
@@ -54,16 +54,8 @@ class RadioGroupRoot(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0],
-        }
+    # Fired when the value of the radio group changes.
+    on_change: EventHandler[lambda e0: [e0]]
 
 
 class RadioGroupItem(RadixThemesComponent):

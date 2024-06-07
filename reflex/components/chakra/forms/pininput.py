@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Optional
 
 from reflex.components.chakra import ChakraComponent, LiteralInputVariant
 from reflex.components.component import Component
 from reflex.components.tags.tag import Tag
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.utils import format
 from reflex.utils.imports import ImportDict, merge_imports
 from reflex.vars import Var
@@ -63,6 +63,12 @@ class PinInput(ChakraComponent):
     # The name of the form field
     name: Var[str]
 
+    # Fired when the pin input is changed.
+    on_change: EventHandler[lambda e0: [e0]]
+
+    # Fired when the pin input is completed.
+    on_complete: EventHandler[lambda e0: [e0]]
+
     def _get_imports(self) -> ImportDict:
         """Include PinInputField explicitly because it may not be a child component at compile time.
 
@@ -75,18 +81,6 @@ class PinInput(ChakraComponent):
             PinInputField()._get_all_imports(),  # type: ignore
             range_var._var_data.imports if range_var._var_data is not None else {},
         )
-
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0],
-            EventTriggers.ON_COMPLETE: lambda e0: [e0],
-        }
 
     def get_ref(self) -> str | None:
         """Override ref handling to handle array refs.

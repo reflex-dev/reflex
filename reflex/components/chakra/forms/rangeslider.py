@@ -1,11 +1,11 @@
 """A range slider component."""
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union
+from typing import List, Optional
 
 from reflex.components.chakra import ChakraComponent, LiteralChakraDirection
 from reflex.components.component import Component
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.utils import format
 from reflex.vars import Var
 
@@ -48,18 +48,14 @@ class RangeSlider(ChakraComponent):
     # The name of the form field
     name: Var[str]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # Fired when the value changes.
+    on_change: EventHandler[lambda e0: [e0]]
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0],
-            EventTriggers.ON_CHANGE_END: lambda e0: [e0],
-            EventTriggers.ON_CHANGE_START: lambda e0: [e0],
-        }
+    # Fired when the value starts changing.
+    on_change_start: EventHandler[lambda e0: [e0]]
+
+    # Fired when the value stops changing.
+    on_change_end: EventHandler[lambda e0: [e0]]
 
     def get_ref(self):
         """Get the ref of the component.

@@ -7,15 +7,13 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Literal, Union
+from typing import List, Literal, Union
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 class SelectRoot(RadixThemesComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -277,7 +275,6 @@ class SelectTrigger(RadixThemesComponent):
         ...
 
 class SelectContent(RadixThemesComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore

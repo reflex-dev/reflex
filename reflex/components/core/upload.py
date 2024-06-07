@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
+from typing import Callable, ClassVar, Dict, List, Optional
 
-from reflex import constants
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.components.el.elements.forms import Input
 from reflex.components.radix.themes.layout.box import Box
@@ -14,6 +13,7 @@ from reflex.constants import Dirs
 from reflex.event import (
     CallableEventSpec,
     EventChain,
+    EventHandler,
     EventSpec,
     call_event_fn,
     call_script,
@@ -204,6 +204,9 @@ class Upload(MemoizationLeaf):
     # Marked True when any Upload component is created.
     is_used: ClassVar[bool] = False
 
+    # Fired when files are dropped.
+    on_drop: EventHandler[_on_drop_spec]
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create an upload component.
@@ -267,17 +270,6 @@ class Upload(MemoizationLeaf):
             zone,
             **upload_props,
         )
-
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            constants.EventTriggers.ON_DROP: _on_drop_spec,
-        }
 
     @classmethod
     def _update_arg_tuple_for_on_drop(cls, arg_value: tuple[Var, Var]):
