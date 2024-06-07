@@ -108,7 +108,14 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                         url = match.group(1)
                         if get_config().frontend_path != "":
                             url = urljoin(url, get_config().frontend_path)
-                        console.print(f"App running at: [bold green]{url}")
+                        if backend_present:
+                            console.print(
+                                f"App running at: [bold green]{url}[/bold green] (Backend at: [bold green]{get_config().api_url})[/bold green]"
+                            )
+                        else:
+                            console.print(
+                                f"App running at: [bold green]{url}[/bold green] (Frontend-only mode)"
+                            )
                         first_run = False
                     else:
                         console.print("New packages detected: Updating app...")
