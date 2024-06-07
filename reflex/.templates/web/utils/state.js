@@ -518,7 +518,7 @@ export const hydrateClientStorage = (client_storage) => {
       }
     }
   }
-  if (client_storage.sessionStorage && typeof window != "undefined") {
+  if (client_storage.session_storage && typeof window != "undefined") {
     for (const state_key in client_storage.sessionStorage) {
       const session_options = client_storage.sessionStorage[state_key];
       const session_storage_value = sessionStorage.getItem(
