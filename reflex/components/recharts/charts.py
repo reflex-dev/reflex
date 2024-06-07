@@ -443,7 +443,6 @@ class FunnelChart(RechartsCharts):
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]
 
-
     # Valid children components
     _valid_children: List[str] = ["Legend", "GraphingTooltip", "Funnel"]
 

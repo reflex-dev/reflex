@@ -13,6 +13,7 @@ from reflex.vars import Var
 from .recharts import (
     LiteralAnimationEasing,
     LiteralGridType,
+    LiteralLegendType,
     LiteralPolarRadiusType,
     LiteralScale,
     Recharts,
@@ -36,7 +37,38 @@ class Pie(Recharts):
         min_angle: Optional[Union[Var[int], int]] = None,
         padding_angle: Optional[Union[Var[int], int]] = None,
         name_key: Optional[Union[Var[str], str]] = None,
-        legend_type: Optional[Union[Var[str], str]] = None,
+        legend_type: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "line",
+                        "plainline",
+                        "square",
+                        "rect",
+                        "circle",
+                        "cross",
+                        "diamond",
+                        "star",
+                        "triangle",
+                        "wye",
+                        "none",
+                    ]
+                ],
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
+            ]
+        ] = None,
         label: Optional[Union[Var[bool], bool]] = None,
         label_line: Optional[Union[Var[bool], bool]] = None,
         fill: Optional[Union[Var[str], str]] = None,

@@ -13,14 +13,14 @@ from .recharts import (
     LiteralIfOverflow,
     LiteralInterval,
     LiteralLayout,
+    LiteralLegendType,
     LiteralLineType,
-    LiteralOrientationTopBottom,
     LiteralOrientationLeftRight,
+    LiteralOrientationTopBottom,
     LiteralOrientationTopBottomLeftRight,
     LiteralPolarRadiusType,
     LiteralScale,
     LiteralShape,
-    LiteralLegendType,
     Recharts,
 )
 
@@ -69,7 +69,6 @@ class Axis(Recharts):
 
     # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
     name: Var[Union[str, int]]
-    
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -284,7 +283,7 @@ class Bar(Cartesian):
     stack_id: Var[str]
 
     # Size of the bar (if one bar_size is set then a bar_size must be set for all bars)
-    bar_size: Var[int] 
+    bar_size: Var[int]
 
     # Max size of the bar
     max_bar_size: Var[int]

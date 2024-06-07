@@ -9,9 +9,9 @@ from reflex.vars import Var
 from .recharts import (
     LiteralAnimationEasing,
     LiteralGridType,
+    LiteralLegendType,
     LiteralPolarRadiusType,
     LiteralScale,
-    LiteralLegendType,
     Recharts,
 )
 
