@@ -12,6 +12,7 @@ logger = logging.getLogger("pyi_generator")
 LAST_RUN_COMMIT_SHA_FILE = Path(".pyi_generator_last_run").resolve()
 GENERATOR_FILE = Path(__file__).resolve()
 GENERATOR_DIFF_FILE = Path(".pyi_generator_diff").resolve()
+DEFAULT_TARGETS = ["reflex/components", "reflex/__init__.py"]
 
 
 def _git_diff(args: list[str]) -> str:
@@ -92,8 +93,16 @@ if __name__ == "__main__":
     targets = (
         [arg for arg in sys.argv[1:] if not arg.startswith("tests")]
         if len(sys.argv) > 1
-        else ["reflex/components", "reflex/__init__.py"]
+        else DEFAULT_TARGETS
     )
+
+    # Only include targets that have a prefix in the default target list
+    targets = [
+        target
+        for target in targets
+        if any(str(target).startswith(prefix) for prefix in DEFAULT_TARGETS)
+    ]
+
     logger.info(f"Running .pyi generator for {targets}")
 
     changed_files = _get_changed_files()
