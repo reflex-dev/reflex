@@ -10,19 +10,19 @@ from reflex.components.radix.themes.typography.text import Text
 def test_websocket_target_url():
     url = WebsocketTargetURL.create()
     _imports = url._get_all_imports(collapse=True)
-    assert list(_imports.keys()) == ["/utils/state", "/env.json"]
+    assert tuple(_imports) == ("/utils/state", "/env.json")
 
 
 def test_connection_banner():
     banner = ConnectionBanner.create()
     _imports = banner._get_all_imports(collapse=True)
-    assert list(_imports.keys()) == [
+    assert tuple(_imports) == (
         "react",
         "/utils/context",
         "/utils/state",
         "@radix-ui/themes@^3.0.0",
         "/env.json",
-    ]
+    )
 
     msg = "Connection error"
     custom_banner = ConnectionBanner.create(Text.create(msg))
@@ -32,13 +32,13 @@ def test_connection_banner():
 def test_connection_modal():
     modal = ConnectionModal.create()
     _imports = modal._get_all_imports(collapse=True)
-    assert list(_imports.keys()) == [
+    assert tuple(_imports) == (
         "react",
         "/utils/context",
         "/utils/state",
         "@radix-ui/themes@^3.0.0",
         "/env.json",
-    ]
+    )
 
     msg = "Connection error"
     custom_modal = ConnectionModal.create(Text.create(msg))

@@ -424,7 +424,7 @@ def _generate_component_create_functiondef(
             ),
             ast.Constant(value=None),
         )
-        for trigger in sorted(clz().get_event_triggers().keys())
+        for trigger in sorted(clz().get_event_triggers())
     )
     logger.debug(f"Generated {clz.__name__}.create method with {len(kwargs)} kwargs")
     create_args = ast.arguments(
