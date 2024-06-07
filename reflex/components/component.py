@@ -360,7 +360,6 @@ class Component(BaseComponent, ABC):
         # Get the component fields, triggers, and props.
         fields = self.get_fields()
         component_specific_triggers = self.get_event_triggers()
-        triggers = component_specific_triggers.keys()
         props = self.get_props()
 
         # Add any events triggers.
@@ -370,13 +369,17 @@ class Component(BaseComponent, ABC):
 
         # Iterate through the kwargs and set the props.
         for key, value in kwargs.items():
-            if key.startswith("on_") and key not in triggers and key not in props:
+            if (
+                key.startswith("on_")
+                and key not in component_specific_triggers
+                and key not in props
+            ):
                 raise ValueError(
                     f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. If {comp_name}"
                     f" is a third party component make sure to add `{key}` to the component's event triggers. "
                     f"visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info."
                 )
-            if key in triggers:
+            if key in component_specific_triggers:
                 # Event triggers are bound to event chains.
                 field_type = EventChain
             elif key in props:
@@ -436,7 +439,7 @@ class Component(BaseComponent, ABC):
                     )
 
             # Check if the key is an event trigger.
-            if key in triggers:
+            if key in component_specific_triggers:
                 # Temporarily disable full control for event triggers.
                 kwargs["event_triggers"][key] = self._create_event_chain(
                     value=value, args_spec=component_specific_triggers[key]

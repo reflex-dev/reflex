@@ -707,11 +707,8 @@ class App(LifespanMixin, Base):
         page_imports = {
             i
             for i, tags in imports.items()
-            if i
-            not in [
-                *constants.PackageJson.DEPENDENCIES.keys(),
-                *constants.PackageJson.DEV_DEPENDENCIES.keys(),
-            ]
+            if i not in constants.PackageJson.DEPENDENCIES
+            and i not in constants.PackageJson.DEV_DEPENDENCIES
             and not any(i.startswith(prefix) for prefix in ["/", ".", "next/"])
             and i != ""
             and any(tag.install for tag in tags)

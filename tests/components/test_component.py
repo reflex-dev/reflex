@@ -566,7 +566,7 @@ def test_get_event_triggers(component1, component2):
         EventTriggers.ON_MOUNT,
         EventTriggers.ON_UNMOUNT,
     }
-    assert set(component1().get_event_triggers().keys()) == default_triggers
+    assert component1().get_event_triggers().keys() == default_triggers
     assert (
         component2().get_event_triggers().keys()
         == {"on_open", "on_close"} | default_triggers
