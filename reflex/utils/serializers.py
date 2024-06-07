@@ -81,9 +81,12 @@ def serializer(
     # Apply type transformation if requested
     if to is not None:
         SERIALIZER_TYPES[type_] = to
+        get_serializer_type.cache_clear()
 
     # Register the serializer.
     SERIALIZERS[type_] = fn
+    get_serializer.cache_clear()
+
     # Return the function.
     return fn
 
@@ -149,8 +152,6 @@ def get_serializer(type_: Type) -> Optional[Serializer]:
     Returns:
         The serializer for the type, or None if there is no serializer.
     """
-    global SERIALIZERS
-
     # First, check if the type is registered.
     serializer = SERIALIZERS.get(type_)
     if serializer is not None:

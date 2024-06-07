@@ -91,6 +91,9 @@ def test_add_serializer():
 
     # Remove the serializer.
     serializers.SERIALIZERS.pop(Foo)
+    # LRU cache will still have the serializer, so we need to clear it.
+    assert serializers.has_serializer(Foo)
+    serializers.get_serializer.cache_clear()
     assert not serializers.has_serializer(Foo)
 
 
