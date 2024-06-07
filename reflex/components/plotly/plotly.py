@@ -90,16 +90,12 @@ def _null_signature() -> List[Any]:
     return []
 
 
-class PlotlyLib(NoSSRComponent):
-    """A component that wraps a plotly lib."""
+class Plotly(NoSSRComponent):
+    """Display a plotly graph."""
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: List[str] = ["plotly.js@2.22.0", "mergician@2.0.2"]
-
-
-class Plotly(PlotlyLib):
-    """Display a plotly graph."""
+    lib_dependencies: List[str] = ["plotly.js@2.22.0"]
 
     tag = "Plot"
 
