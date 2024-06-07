@@ -4,8 +4,7 @@ from typing import List
 import pytest
 
 from reflex.compiler import compiler, utils
-from reflex.utils import imports
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportVar, ParsedImportDict
 
 
 @pytest.mark.parametrize(
@@ -93,7 +92,7 @@ def test_compile_import_statement(
         ),
     ],
 )
-def test_compile_imports(import_dict: imports.ParsedImportDict, test_dicts: List[dict]):
+def test_compile_imports(import_dict: ParsedImportDict, test_dicts: List[dict]):
     """Test the compile_imports function.
 
     Args:

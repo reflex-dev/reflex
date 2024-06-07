@@ -11,7 +11,7 @@ from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.literals import LiteralInputType
 from reflex.constants import EventTriggers, MemoizationMode
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict
 from reflex.vars import Var
 
 
@@ -59,7 +59,7 @@ class Input(ChakraComponent):
     # The name of the form field
     name: Var[str]
 
-    def add_imports(self) -> imports.ImportDict:
+    def add_imports(self) -> ImportDict:
         """Add imports for the Input component.
 
         Returns:

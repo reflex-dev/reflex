@@ -125,7 +125,7 @@ class VarData(Base):
     state: str = ""
 
     # Imports needed to render this var
-    imports: Union[ImportDict, ParsedImportDict] = {}
+    imports: ParsedImportDict = {}
 
     # Hooks that need to be present in the component to render this var
     hooks: Dict[str, None] = {}
@@ -135,14 +135,17 @@ class VarData(Base):
     # segments.
     interpolations: List[Tuple[int, int]] = []
 
-    def __init__(self, **kwargs: Any):
+    def __init__(
+        self, imports: Union[ImportDict, ParsedImportDict] | None = None, **kwargs: Any
+    ):
         """Initialize the var data.
 
         Args:
+            imports: The imports needed to render this var.
             **kwargs: The var data fields.
         """
-        if "imports" in kwargs:
-            kwargs["imports"] = parse_imports(kwargs["imports"])
+        if imports:
+            kwargs["imports"] = parse_imports(imports)
         super().__init__(**kwargs)
 
     @classmethod
@@ -202,8 +205,8 @@ class VarData(Base):
         return (
             self.state == other.state
             and self.hooks.keys() == other.hooks.keys()
-            and imports.collapse_imports(parse_imports(self.imports))
-            == imports.collapse_imports(parse_imports(other.imports))
+            and imports.collapse_imports(self.imports)
+            == imports.collapse_imports(other.imports)
         )
 
     def dict(self) -> dict:

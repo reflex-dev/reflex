@@ -95,7 +95,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def _get_all_imports(self) -> imports.ParsedImportDict:
+    def _get_all_imports(self) -> ParsedImportDict:
         """Get all the libraries and fields that are used by the component.
 
         Returns:
@@ -1196,7 +1196,7 @@ class Component(BaseComponent, ABC):
         # Return the dynamic imports
         return dynamic_imports
 
-    def _get_props_imports(self) -> List[str]:
+    def _get_props_imports(self) -> List[ParsedImportDict]:
         """Get the imports needed for components props.
 
         Returns:
@@ -1222,7 +1222,7 @@ class Component(BaseComponent, ABC):
             or format.format_library_name(dep or "") in self.transpile_packages
         )
 
-    def _get_dependencies_imports(self) -> imports.ParsedImportDict:
+    def _get_dependencies_imports(self) -> ParsedImportDict:
         """Get the imports from lib_dependencies for installing.
 
         Returns:
@@ -1239,7 +1239,7 @@ class Component(BaseComponent, ABC):
             for dep in self.lib_dependencies
         }
 
-    def _get_hooks_imports(self) -> imports.ParsedImportDict:
+    def _get_hooks_imports(self) -> ParsedImportDict:
         """Get the imports required by certain hooks.
 
         Returns:
@@ -1430,7 +1430,7 @@ class Component(BaseComponent, ABC):
             **self._get_special_hooks(),
         }
 
-    def _get_added_hooks(self) -> dict[str, imports.ImportDict]:
+    def _get_added_hooks(self) -> dict[str, ImportDict]:
         """Get the hooks added via `add_hooks` method.
 
         Returns:

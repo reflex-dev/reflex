@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Union
 from reflex.base import Base
 
 
-def merge_imports(*imports) -> ParsedImportDict:
+def merge_imports(*imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
     """Merge multiple import dicts together.
 
     Args:
@@ -34,7 +34,7 @@ def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
         The parsed import dict.
     """
 
-    def _make_list(value: ImportTypes) -> list[str | ImportVar]:
+    def _make_list(value: ImportTypes) -> list[str | ImportVar] | list[ImportVar]:
         if isinstance(value, (str, ImportVar)):
             return [value]
         return value
@@ -42,7 +42,7 @@ def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
     return {
         package: [
             ImportVar(tag=tag) if isinstance(tag, str) else tag
-            for tag in _make_list(maybe_tags)  # type: ignore
+            for tag in _make_list(maybe_tags)
         ]
         for package, maybe_tags in imports.items()
     }
@@ -117,6 +117,6 @@ class ImportVar(Base):
         )
 
 
-ImportTypes = Union[str, ImportVar, List[Union[str, ImportVar]]]
+ImportTypes = Union[str, ImportVar, List[Union[str, ImportVar]], List[ImportVar]]
 ImportDict = Dict[str, ImportTypes]
 ParsedImportDict = Dict[str, List[ImportVar]]

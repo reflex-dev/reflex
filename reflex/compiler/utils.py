@@ -83,7 +83,7 @@ def validate_imports(import_dict: ParsedImportDict):
                 used_tags[import_name] = lib
 
 
-def compile_imports(import_dict: imports.ParsedImportDict) -> list[dict]:
+def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     """Compile an import dict.
 
     Args:
@@ -92,7 +92,7 @@ def compile_imports(import_dict: imports.ParsedImportDict) -> list[dict]:
     Returns:
         The list of import dict.
     """
-    collapsed_import_dict = imports.collapse_imports(import_dict)
+    collapsed_import_dict: ParsedImportDict = imports.collapse_imports(import_dict)
     validate_imports(collapsed_import_dict)
     import_dicts = []
     for lib, fields in collapsed_import_dict.items():

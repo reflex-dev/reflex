@@ -20,7 +20,7 @@ from reflex.event import EventChain, EventHandler, parse_args_spec
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import BaseVar, Var, VarData
 
 
@@ -56,7 +56,7 @@ def component1() -> Type[Component]:
         # A test string/number prop.
         text_or_number: Var[Union[int, str]]
 
-        def _get_imports(self) -> imports.ImportDict:
+        def _get_imports(self) -> ParsedImportDict:
             return {"react": [ImportVar(tag="Component")]}
 
         def _get_custom_code(self) -> str:
@@ -89,7 +89,7 @@ def component2() -> Type[Component]:
                 "on_close": lambda e0: [e0],
             }
 
-        def _get_imports(self) -> imports.ImportDict:
+        def _get_imports(self) -> ParsedImportDict:
             return {"react-redux": [ImportVar(tag="connect")]}
 
         def _get_custom_code(self) -> str:
@@ -1773,21 +1773,15 @@ def test_invalid_event_trigger():
     ),
 )
 def test_component_add_imports(tags):
-    def _list_to_import_vars(tags: List[str]) -> List[ImportVar]:
-        return [
-            ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
-            for tag in tags
-        ]
-
     class BaseComponent(Component):
-        def _get_imports(self) -> imports.ImportDict:
+        def _get_imports(self) -> ImportDict:
             return {}
 
     class Reference(Component):
-        def _get_imports(self) -> imports.ParsedImportDict:
+        def _get_imports(self) -> ParsedImportDict:
             return imports.merge_imports(
                 super()._get_imports(),
-                {"react": _list_to_import_vars(tags)},
+                parse_imports({"react": tags}),
                 {"foo": [ImportVar(tag="bar")]},
             )
 
@@ -1806,10 +1800,12 @@ def test_component_add_imports(tags):
     baseline = Reference.create()
     test = Test.create()
 
-    assert baseline._get_all_imports() == {
-        "react": _list_to_import_vars(tags),
-        "foo": [ImportVar(tag="bar")],
-    }
+    assert baseline._get_all_imports() == parse_imports(
+        {
+            "react": tags,
+            "foo": [ImportVar(tag="bar")],
+        }
+    )
     assert test._get_all_imports() == baseline._get_all_imports()
 
 

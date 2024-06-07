@@ -17,11 +17,11 @@ from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.literals import LiteralInputType
 from reflex.constants import EventTriggers, MemoizationMode
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict
 from reflex.vars import Var
 
 class Input(ChakraComponent):
-    def add_imports(self) -> imports.ImportDict: ...
+    def add_imports(self) -> ImportDict: ...
     def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
