@@ -415,6 +415,8 @@ class FileUpload(Base):
                 )  # type: ignore
             else:
                 raise ValueError(f"{on_upload_progress} is not a valid event handler.")
+            if isinstance(events, Var):
+                raise ValueError(f"{on_upload_progress} cannot return a var {events}.")
             on_upload_progress_chain = EventChain(
                 events=events,
                 args_spec=self.on_upload_progress_args_spec,
@@ -714,7 +716,7 @@ def _callback_arg_spec(eval_result):
 
 
 def call_script(
-    javascript_code: str,
+    javascript_code: str | Var[str],
     callback: EventSpec
     | EventHandler
     | Callable
@@ -831,19 +833,19 @@ def parse_args_spec(arg_spec: ArgsSpec):
     )
 
 
-def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec]:
+def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec] | Var:
     """Call a function to a list of event specs.
 
-    The function should return either a single EventSpec or a list of EventSpecs.
-    If the function takes in an arg, the arg will be passed to the function.
-    Otherwise, the function will be called with no args.
+    The function should return a single EventSpec, a list of EventSpecs, or a
+    single Var. If the function takes in an arg, the arg will be passed to the
+    function. Otherwise, the function will be called with no args.
 
     Args:
         fn: The function to call.
         arg: The argument to pass to the function.
 
     Returns:
-        The event specs from calling the function.
+        The event specs from calling the function or a Var.
 
     Raises:
         EventHandlerValueError: If the lambda has an invalid signature.
@@ -865,6 +867,10 @@ def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec]:
             out = fn(arg)
         else:
             raise EventHandlerValueError(f"Lambda {fn} must have 0 or 1 arguments.")
+
+    # If the function returns a Var, assume it's an EventChain and render it directly.
+    if isinstance(out, Var):
+        return out
 
     # Convert the output to a list.
     if not isinstance(out, List):

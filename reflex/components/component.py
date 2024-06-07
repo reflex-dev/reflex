@@ -519,13 +519,23 @@ class Component(BaseComponent, ABC):
                     events.append(event)
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
-                    events.extend(call_event_fn(v, args_spec))
+                    result = call_event_fn(v, args_spec)
+                    if isinstance(result, Var):
+                        raise ValueError(
+                            f"Invalid event chain: {v}. Cannot use a Var-returning "
+                            "lambda inside an EventChain list."
+                        )
+                    events.extend(result)
                 else:
                     raise ValueError(f"Invalid event: {v}")
 
         # If the input is a callable, create an event chain.
         elif isinstance(value, Callable):
-            events = call_event_fn(value, args_spec)
+            result = call_event_fn(value, args_spec)
+            if isinstance(result, Var):
+                # Recursively call this function if the lambda returned an EventChain Var.
+                return self._create_event_chain(args_spec, result)
+            events = result
 
         # Otherwise, raise an error.
         else:

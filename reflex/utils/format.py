@@ -612,6 +612,9 @@ def format_queue_events(
 
     Returns:
         The compiled javascript callback to queue the given events on the frontend.
+
+    Raises:
+        ValueError: If a lambda function is given which returns a Var.
     """
     from reflex.event import (
         EventChain,
@@ -648,7 +651,11 @@ def format_queue_events(
         if isinstance(spec, (EventHandler, EventSpec)):
             specs = [call_event_handler(spec, args_spec or _default_args_spec)]
         elif isinstance(spec, type(lambda: None)):
-            specs = call_event_fn(spec, args_spec or _default_args_spec)
+            specs = call_event_fn(spec, args_spec or _default_args_spec)  # type: ignore
+            if isinstance(specs, Var):
+                raise ValueError(
+                    f"Invalid event spec: {specs}. Expected a list of EventSpecs."
+                )
         payloads.extend(format_event(s) for s in specs)
 
     # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.

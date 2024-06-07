@@ -2,13 +2,27 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import types as builtin_types
 import warnings
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_hints
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    get_type_hints,
+    overload,
+)
 
 from reflex.base import Base
 from reflex.constants.colors import Color, format_color
@@ -17,15 +31,24 @@ from reflex.utils import exceptions, types
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
 SerializedType = Union[str, bool, int, float, list, dict]
+
+
 Serializer = Callable[[Type], SerializedType]
+
+
 SERIALIZERS: dict[Type, Serializer] = {}
+SERIALIZER_TYPES: dict[Type, Type] = {}
 
 
-def serializer(fn: Serializer) -> Serializer:
+def serializer(
+    fn: Serializer | None = None,
+    to: Type | None = None,
+) -> Serializer:
     """Decorator to add a serializer for a given type.
 
     Args:
         fn: The function to decorate.
+        to: The type returned by the serializer. If this is `str`, then any Var created from this type will be treated as a string.
 
     Returns:
         The decorated function.
@@ -33,8 +56,9 @@ def serializer(fn: Serializer) -> Serializer:
     Raises:
         ValueError: If the function does not take a single argument.
     """
-    # Get the global serializers.
-    global SERIALIZERS
+    if fn is None:
+        # If the function is not provided, return a partial that acts as a decorator.
+        return functools.partial(serializer, to=to)  # type: ignore
 
     # Check the type hints to get the type of the argument.
     type_hints = get_type_hints(fn)
@@ -54,18 +78,47 @@ def serializer(fn: Serializer) -> Serializer:
             f"Serializer for type {type_} is already registered as {registered_fn.__qualname__}."
         )
 
+    # Apply type transformation if requested
+    if to is not None:
+        SERIALIZER_TYPES[type_] = to
+        get_serializer_type.cache_clear()
+
     # Register the serializer.
     SERIALIZERS[type_] = fn
+    get_serializer.cache_clear()
 
     # Return the function.
     return fn
 
 
-def serialize(value: Any) -> SerializedType | None:
+@overload
+def serialize(
+    value: Any, get_type: Literal[True]
+) -> Tuple[Optional[SerializedType], Optional[types.GenericType]]:
+    ...
+
+
+@overload
+def serialize(value: Any, get_type: Literal[False]) -> Optional[SerializedType]:
+    ...
+
+
+@overload
+def serialize(value: Any) -> Optional[SerializedType]:
+    ...
+
+
+def serialize(
+    value: Any, get_type: bool = False
+) -> Union[
+    Optional[SerializedType],
+    Tuple[Optional[SerializedType], Optional[types.GenericType]],
+]:
     """Serialize the value to a JSON string.
 
     Args:
         value: The value to serialize.
+        get_type: Whether to return the type of the serialized value.
 
     Returns:
         The serialized value, or None if a serializer is not found.
@@ -75,13 +128,22 @@ def serialize(value: Any) -> SerializedType | None:
 
     # If there is no serializer, return None.
     if serializer is None:
+        if get_type:
+            return None, None
         return None
 
     # Serialize the value.
-    return serializer(value)
+    serialized = serializer(value)
+
+    # Return the serialized value and the type.
+    if get_type:
+        return serialized, get_serializer_type(type(value))
+    else:
+        return serialized
 
 
-def get_serializer(type_: Type) -> Serializer | None:
+@functools.lru_cache
+def get_serializer(type_: Type) -> Optional[Serializer]:
     """Get the serializer for the type.
 
     Args:
@@ -90,8 +152,6 @@ def get_serializer(type_: Type) -> Serializer | None:
     Returns:
         The serializer for the type, or None if there is no serializer.
     """
-    global SERIALIZERS
-
     # First, check if the type is registered.
     serializer = SERIALIZERS.get(type_)
     if serializer is not None:
@@ -99,6 +159,30 @@ def get_serializer(type_: Type) -> Serializer | None:
 
     # If the type is not registered, check if it is a subclass of a registered type.
     for registered_type, serializer in reversed(SERIALIZERS.items()):
+        if types._issubclass(type_, registered_type):
+            return serializer
+
+    # If there is no serializer, return None.
+    return None
+
+
+@functools.lru_cache
+def get_serializer_type(type_: Type) -> Optional[Type]:
+    """Get the converted type for the type after serializing.
+
+    Args:
+        type_: The type to get the serializer type for.
+
+    Returns:
+        The serialized type for the type, or None if there is no type conversion registered.
+    """
+    # First, check if the type is registered.
+    serializer = SERIALIZER_TYPES.get(type_)
+    if serializer is not None:
+        return serializer
+
+    # If the type is not registered, check if it is a subclass of a registered type.
+    for registered_type, serializer in reversed(SERIALIZER_TYPES.items()):
         if types._issubclass(type_, registered_type):
             return serializer
 
@@ -118,7 +202,7 @@ def has_serializer(type_: Type) -> bool:
     return get_serializer(type_) is not None
 
 
-@serializer
+@serializer(to=str)
 def serialize_type(value: type) -> str:
     """Serialize a python type.
 
@@ -226,7 +310,7 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
     return format.unwrap_vars(fprop)
 
 
-@serializer
+@serializer(to=str)
 def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
     """Serialize a datetime to a JSON string.
 
@@ -239,8 +323,8 @@ def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
     return str(dt)
 
 
-@serializer
-def serialize_path(path: Path):
+@serializer(to=str)
+def serialize_path(path: Path) -> str:
     """Serialize a pathlib.Path to a JSON string.
 
     Args:
@@ -265,7 +349,7 @@ def serialize_enum(en: Enum) -> str:
     return en.value
 
 
-@serializer
+@serializer(to=str)
 def serialize_color(color: Color) -> str:
     """Serialize a color.
 
@@ -314,7 +398,7 @@ except ImportError:
     pass
 
 try:
-    from plotly.graph_objects import Figure
+    from plotly.graph_objects import Figure, layout
     from plotly.io import to_json
 
     @serializer
@@ -328,6 +412,21 @@ try:
             The serialized figure.
         """
         return json.loads(str(to_json(figure)))
+
+    @serializer
+    def serialize_template(template: layout.Template) -> dict:
+        """Serialize a plotly template.
+
+        Args:
+            template: The template to serialize.
+
+        Returns:
+            The serialized template.
+        """
+        return {
+            "data": json.loads(str(to_json(template.data))),
+            "layout": json.loads(str(to_json(template.layout))),
+        }
 
 except ImportError:
     pass

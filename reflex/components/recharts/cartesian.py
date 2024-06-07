@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
+from reflex.constants.colors import Color
 from reflex.vars import Var
 
 from .recharts import (
@@ -34,6 +35,12 @@ class Axis(Recharts):
     # If set true, the axis do not display in the chart.
     hide: Var[bool]
 
+    # The width of axis which is usually calculated internally.
+    width: Var[Union[str, int]]
+
+    # The height of axis, which can be setted by user.
+    height: Var[Union[str, int]]
+
     # The orientation of axis 'top' | 'bottom'
     orientation: Var[LiteralOrientationTopBottom]
 
@@ -51,9 +58,6 @@ class Axis(Recharts):
 
     # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
     axis_line: Var[bool]
-
-    # If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines.
-    tick_line: Var[bool]
 
     # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
     mirror: Var[bool]
@@ -78,6 +82,8 @@ class Axis(Recharts):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
@@ -95,6 +101,9 @@ class XAxis(Axis):
 
     # The id of x-axis which is corresponding to the data.
     x_axis_id: Var[Union[str, int]]
+
+    # Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
+    include_hidden: Var[bool] = Var.create_safe(False)
 
 
 class YAxis(Axis):
@@ -145,7 +154,7 @@ class Brush(Recharts):
     alias = "RechartsBrush"
 
     # Stroke color
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
@@ -215,6 +224,8 @@ class Cartesian(Recharts):
         return {
             EventTriggers.ON_CLICK: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
@@ -230,13 +241,13 @@ class Area(Cartesian):
     alias = "RechartsArea"
 
     # The color of the line stroke.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The width of the line stroke.
     stroke_width: Var[int]
 
     # The color of the area fill.
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
     type_: Var[LiteralAreaType]
@@ -265,13 +276,13 @@ class Bar(Cartesian):
     alias = "RechartsBar"
 
     # The color of the line stroke.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The width of the line stroke.
     stroke_width: Var[int]
 
     # The width of the line stroke.
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
     background: Var[bool]
@@ -303,7 +314,7 @@ class Line(Cartesian):
     type_: Var[LiteralAreaType]
 
     # The color of the line stroke.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The width of the line stroke.
     stoke_width: Var[int]
@@ -350,7 +361,7 @@ class Scatter(Cartesian):
     line_type: Var[LiteralLineType]
 
     # The fill
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # the name
     name: Var[Union[str, int]]
@@ -399,6 +410,8 @@ class Funnel(Recharts):
         return {
             EventTriggers.ON_CLICK: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
@@ -423,7 +436,7 @@ class ErrorBar(Recharts):
     width: Var[int]
 
     # The stroke color of error bar.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The stroke width of error bar.
     stroke_width: Var[int]
@@ -499,10 +512,10 @@ class ReferenceArea(Recharts):
     alias = "RechartsReferenceArea"
 
     # Stroke color
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # Fill color
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # The opacity of area.
     fill_opacity: Var[float]
@@ -565,7 +578,7 @@ class CartesianGrid(Grid):
     vertical: Var[bool]
 
     # The background of grid.
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # The opacity of the background used to fill the space between grid lines
     fill_opacity: Var[float]

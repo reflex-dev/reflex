@@ -297,6 +297,27 @@ class AppHarness:
         self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
 
+    async def _reset_backend_state_manager(self):
+        """Reset the StateManagerRedis event loop affinity.
+
+        This is necessary when the backend is restarted and the state manager is a
+        StateManagerRedis instance.
+        """
+        if (
+            self.app_instance is not None
+            and isinstance(
+                self.app_instance.state_manager,
+                StateManagerRedis,
+            )
+            and self.app_instance.state is not None
+        ):
+            with contextlib.suppress(RuntimeError):
+                await self.app_instance.state_manager.close()
+            self.app_instance._state_manager = StateManagerRedis.create(
+                state=self.app_instance.state,
+            )
+            assert isinstance(self.app_instance.state_manager, StateManagerRedis)
+
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
@@ -520,7 +541,9 @@ class AppHarness:
         self,
         driver_clz: Optional[Type["WebDriver"]] = None,
         driver_kwargs: dict[str, Any] | None = None,
+        driver_options: ArgOptions | None = None,
         driver_option_args: List[str] | None = None,
+        driver_option_capabilities: dict[str, Any] | None = None,
     ) -> "WebDriver":
         """Get a selenium webdriver instance pointed at the app.
 
@@ -528,7 +551,9 @@ class AppHarness:
             driver_clz: webdriver.Chrome (default), webdriver.Firefox, webdriver.Safari,
                 webdriver.Edge, etc
             driver_kwargs: additional keyword arguments to pass to the webdriver constructor
+            driver_options: selenium ArgOptions instance to pass to the webdriver constructor
             driver_option_args: additional arguments for the webdriver options
+            driver_option_capabilities: additional capabilities for the webdriver options
 
         Returns:
             Instance of the given webdriver navigated to the frontend url of the app.
@@ -544,37 +569,43 @@ class AppHarness:
         if self.frontend_url is None:
             raise RuntimeError("Frontend is not running.")
         want_headless = False
-        options: ArgOptions | None = None
         if os.environ.get("APP_HARNESS_HEADLESS"):
             want_headless = True
         if driver_clz is None:
             requested_driver = os.environ.get("APP_HARNESS_DRIVER", "Chrome")
             driver_clz = getattr(webdriver, requested_driver)
-            options = getattr(webdriver, f"{requested_driver}Options")()
+            if driver_options is None:
+                driver_options = getattr(webdriver, f"{requested_driver}Options")()
         if driver_clz is webdriver.Chrome:
-            options = webdriver.ChromeOptions()
-            options.add_argument("--class=AppHarness")
+            if driver_options is None:
+                driver_options = webdriver.ChromeOptions()
+            driver_options.add_argument("--class=AppHarness")
             if want_headless:
-                options.add_argument("--headless=new")
+                driver_options.add_argument("--headless=new")
         elif driver_clz is webdriver.Firefox:
-            options = webdriver.FirefoxOptions()
+            if driver_options is None:
+                driver_options = webdriver.FirefoxOptions()
             if want_headless:
-                options.add_argument("-headless")
+                driver_options.add_argument("-headless")
         elif driver_clz is webdriver.Edge:
-            options = webdriver.EdgeOptions()
+            if driver_options is None:
+                driver_options = webdriver.EdgeOptions()
             if want_headless:
-                options.add_argument("headless")
-        if options is None:
+                driver_options.add_argument("headless")
+        if driver_options is None:
             raise RuntimeError(f"Could not determine options for {driver_clz}")
         if args := os.environ.get("APP_HARNESS_DRIVER_ARGS"):
             for arg in args.split(","):
-                options.add_argument(arg)
+                driver_options.add_argument(arg)
         if driver_option_args is not None:
             for arg in driver_option_args:
-                options.add_argument(arg)
+                driver_options.add_argument(arg)
+        if driver_option_capabilities is not None:
+            for key, value in driver_option_capabilities.items():
+                driver_options.set_capability(key, value)
         if driver_kwargs is None:
             driver_kwargs = {}
-        driver = driver_clz(options=options, **driver_kwargs)  # type: ignore
+        driver = driver_clz(options=driver_options, **driver_kwargs)  # type: ignore
         driver.get(self.frontend_url)
         self._frontends.append(driver)
         return driver
