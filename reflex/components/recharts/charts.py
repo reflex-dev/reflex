@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Union
 from reflex.components.component import Component
 from reflex.components.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from .recharts import (
@@ -126,9 +127,6 @@ class AreaChart(ChartBase):
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
     base_value: Var[Union[int, LiteralComposedChartBaseValue]]
 
-    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape.
-    stack_offset: Var[LiteralStackOffset]
-
     # Valid children components
     _valid_children: List[str] = [
         "XAxis",
@@ -152,10 +150,10 @@ class BarChart(ChartBase):
     alias = "RechartsBarChart"
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-    bar_category_gap: Var[Union[str, int]]  # type: ignore
+    bar_category_gap: Var[Union[str, int]] = Var.create_safe("10%")  # type: ignore
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[Union[str, int]]  # type: ignore
+    bar_gap: Var[Union[str, int]] = Var.create_safe(4)  # type: ignore
 
     # The width of all the bars in the chart. Number
     bar_size: Var[int]
@@ -319,7 +317,6 @@ class RadarChart(ChartBase):
         return {
             EventTriggers.ON_CLICK: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
@@ -377,7 +374,6 @@ class RadialBarChart(ChartBase):
         return {
             EventTriggers.ON_CLICK: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
@@ -412,10 +408,12 @@ class ScatterChart(ChartBase):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
@@ -457,19 +455,6 @@ class FunnelChart(RechartsCharts):
     # Valid children components
     _valid_children: List[str] = ["Legend", "GraphingTooltip", "Funnel"]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
-
 
 class Treemap(RechartsCharts):
     """A Treemap chart component in Recharts."""
@@ -504,6 +489,12 @@ class Treemap(RechartsCharts):
 
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
     animation_easing: Var[LiteralAnimationEasing]
+
+    # The customized event handler of animation start
+    on_animation_start: EventHandler[lambda: []]
+
+    # The customized event handler of animation end
+    on_animation_end: EventHandler[lambda: []]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
