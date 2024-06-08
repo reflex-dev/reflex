@@ -18,7 +18,9 @@ from .recharts import (
     LiteralIfOverflow,
     LiteralInterval,
     LiteralLayout,
+    LiteralLegendType,
     LiteralLineType,
+    LiteralOrientationLeftRight,
     LiteralOrientationTopBottom,
     LiteralOrientationTopBottomLeftRight,
     LiteralPolarRadiusType,
@@ -162,6 +164,7 @@ class XAxis(Axis):
     def create(  # type: ignore
         cls,
         *children,
+        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         include_hidden: Optional[Union[Var[bool], bool]] = None,
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
@@ -257,6 +260,7 @@ class XAxis(Axis):
 
         Args:
             *children: The children of the component.
+            x_axis_id: The id of x-axis which is corresponding to the data.
             include_hidden: Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
             data_key: The key of a group of data which should be unique in an area chart.
             hide: If set true, the axis do not display in the chart.
@@ -292,13 +296,14 @@ class YAxis(Axis):
     def create(  # type: ignore
         cls,
         *children,
+        orientation: Optional[
+            Union[Var[Literal["left", "right"]], Literal["left", "right"]]
+        ] = None,
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        orientation: Optional[
-            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
-        ] = None,
         type_: Optional[
             Union[Var[Literal["number", "category"]], Literal["number", "category"]]
         ] = None,
@@ -386,11 +391,12 @@ class YAxis(Axis):
 
         Args:
             *children: The children of the component.
+            orientation: The orientation of axis 'top' | 'bottom'
             data_key: The key of a group of data which should be unique in an area chart.
+            y_axis_id: The id of y-axis which is corresponding to the data.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
             height: The height of axis, which can be setted by user.
-            orientation: The orientation of axis 'top' | 'bottom'
             type_: The type of axis 'number' | 'category'
             allow_decimals: Allow the ticks of XAxis to be decimals or not.
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
@@ -770,7 +776,7 @@ class Area(Cartesian):
             dot: If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
             active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
             label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
-            stack_id: The stack id of area, when two areas have the same value axis and same stackId, then the two areas area stacked in order.
+            stack_id: The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
             x_axis_id: The id of x-axis which is corresponding to the data.
@@ -852,8 +858,8 @@ class Bar(Cartesian):
             fill: The width of the line stroke.
             background: If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
             label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
-            stack_id: The stack id of bar, when two areas have the same value axis and same stackId, then the two areas area stacked in order.
-            bar_size: Size of the bar
+            stack_id: The stack id of bar, when two bars have the same value axis and same stack_id, then the two bars are stacked in order.
+            bar_size: Size of the bar (if one bar_size is set then a bar_size must be set for all bars)
             max_bar_size: Max size of the bar
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
@@ -995,13 +1001,48 @@ class Line(Cartesian):
         """
         ...
 
-class Scatter(Cartesian):
+class Scatter(Recharts):
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
         data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        legend_type: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "line",
+                        "plainline",
+                        "square",
+                        "rect",
+                        "circle",
+                        "cross",
+                        "diamond",
+                        "star",
+                        "triangle",
+                        "wye",
+                        "none",
+                    ]
+                ],
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
+            ]
+        ] = None,
+        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         z_axis_id: Optional[Union[Var[str], str]] = None,
         line: Optional[Union[Var[bool], bool]] = None,
         shape: Optional[
@@ -1027,15 +1068,6 @@ class Scatter(Cartesian):
         ] = None,
         fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        layout: Optional[
-            Union[
-                Var[Literal["horizontal", "vertical"]],
-                Literal["horizontal", "vertical"],
-            ]
-        ] = None,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1073,17 +1105,16 @@ class Scatter(Cartesian):
         Args:
             *children: The children of the component.
             data: The source data, in which each element is an object.
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'
+            x_axis_id: The id of x-axis which is corresponding to the data.
+            y_axis_id: The id of y-axis which is corresponding to the data.
             z_axis_id: The id of z-axis which is corresponding to the data.
             line: If false set, line will not be drawn. If true set, line will be drawn which have the props calculated internally.
             shape: If a string set, specified symbol will be used to show scatter item. 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye'
             line_type: If 'joint' set, line will generated by just jointing all the points. If 'fitting' set, line will be generated by fitting algorithm. 'joint' | 'fitting'
             fill: The fill
             name: the name
-            layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
-            data_key: The key of a group of data which should be unique in an area chart.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            style: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional  legend_type: Var[LiteralLegendType]  The style of the component.
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
@@ -1096,7 +1127,7 @@ class Scatter(Cartesian):
         """
         ...
 
-class Funnel(Cartesian):
+class Funnel(Recharts):
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
@@ -1104,6 +1135,40 @@ class Funnel(Cartesian):
         cls,
         *children,
         data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        legend_type: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "line",
+                        "plainline",
+                        "square",
+                        "rect",
+                        "circle",
+                        "cross",
+                        "diamond",
+                        "star",
+                        "triangle",
+                        "wye",
+                        "none",
+                    ]
+                ],
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
+            ]
+        ] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
         animation_begin: Optional[Union[Var[int], int]] = None,
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
@@ -1112,15 +1177,6 @@ class Funnel(Cartesian):
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
-        layout: Optional[
-            Union[
-                Var[Literal["horizontal", "vertical"]],
-                Literal["horizontal", "vertical"],
-            ]
-        ] = None,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1158,14 +1214,13 @@ class Funnel(Cartesian):
         Args:
             *children: The children of the component.
             data: The source data, in which each element is an object.
+            data_key: The key of a group of data which should be unique in an area chart.
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered.
+            is_animation_active: If set false, animation of line will be disabled.
             animation_begin: Specifies when the animation should begin, the unit of this option is ms.
             animation_duration: Specifies the duration of animation, the unit of this option is ms.
             animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
-            layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
-            data_key: The key of a group of data which should be unique in an area chart.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            style: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional  legend_type: Var[LiteralLegendType]  The style of the component.
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
@@ -1714,8 +1769,8 @@ class CartesianGrid(Grid):
     def create(  # type: ignore
         cls,
         *children,
-        horizontal: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        vertical: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        horizontal: Optional[Union[Var[bool], bool]] = None,
+        vertical: Optional[Union[Var[bool], bool]] = None,
         fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         fill_opacity: Optional[Union[Var[float], float]] = None,
         stroke_dasharray: Optional[Union[Var[str], str]] = None,

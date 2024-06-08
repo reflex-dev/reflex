@@ -29,26 +29,8 @@ class ChartBase(RechartsCharts):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        sync_id: Optional[Union[Var[str], str]] = None,
-        sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
-        ] = None,
         width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        layout: Optional[
-            Union[
-                Var[Literal["horizontal", "vertical"]],
-                Literal["horizontal", "vertical"],
-            ]
-        ] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        stack_offset: Optional[
-            Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
-                Literal["expand", "none", "wiggle", "silhouette"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -73,14 +55,8 @@ class ChartBase(RechartsCharts):
 
         Args:
             *children: The children of the chart component.
-            data: The source data, in which each element is an object.
-            sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
             width: The width of chart container. String or Integer
             height: The height of chart container.
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
-            margin: The sizes of whitespace around the chart.
-            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -94,7 +70,78 @@ class ChartBase(RechartsCharts):
         """
         ...
 
-class AreaChart(ChartBase):
+class CategoricalChartBase(ChartBase):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        sync_id: Optional[Union[Var[str], str]] = None,
+        sync_method: Optional[
+            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
+        ] = None,
+        layout: Optional[
+            Union[
+                Var[Literal["horizontal", "vertical"]],
+                Literal["horizontal", "vertical"],
+            ]
+        ] = None,
+        stack_offset: Optional[
+            Union[
+                Var[Literal["expand", "none", "wiggle", "silhouette"]],
+                Literal["expand", "none", "wiggle", "silhouette"],
+            ]
+        ] = None,
+        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        **props
+    ) -> "CategoricalChartBase":
+        """Create a chart component.
+
+        Args:
+            *children: The children of the chart component.
+            data: The source data, in which each element is an object.
+            margin: The sizes of whitespace around the chart.
+            sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
+            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
+            layout: The layout of area in the chart. 'horizontal' | 'vertical'
+            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
+            width: The width of chart container. String or Integer
+            height: The height of chart container.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the chart component.
+
+        Returns:
+            The chart component wrapped in a responsive container.
+        """
+        ...
+
+class AreaChart(CategoricalChartBase):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -107,25 +154,25 @@ class AreaChart(ChartBase):
             ]
         ] = None,
         data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
             Union[Var[Literal["index", "value"]], Literal["index", "value"]]
         ] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         layout: Optional[
             Union[
                 Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         stack_offset: Optional[
             Union[
                 Var[Literal["expand", "none", "wiggle", "silhouette"]],
                 Literal["expand", "none", "wiggle", "silhouette"],
             ]
         ] = None,
+        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -152,13 +199,13 @@ class AreaChart(ChartBase):
             *children: The children of the chart component.
             base_value: The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
             data: The source data, in which each element is an object.
+            margin: The sizes of whitespace around the chart.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
+            layout: The layout of area in the chart. 'horizontal' | 'vertical'
+            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             width: The width of chart container. String or Integer
             height: The height of chart container.
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
-            margin: The sizes of whitespace around the chart.
-            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -172,7 +219,7 @@ class AreaChart(ChartBase):
         """
         ...
 
-class BarChart(ChartBase):
+class BarChart(CategoricalChartBase):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -190,19 +237,19 @@ class BarChart(ChartBase):
         ] = None,
         reverse_stack_order: Optional[Union[Var[bool], bool]] = None,
         data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
             Union[Var[Literal["index", "value"]], Literal["index", "value"]]
         ] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         layout: Optional[
             Union[
                 Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -234,12 +281,12 @@ class BarChart(ChartBase):
             stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             reverse_stack_order: If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
             data: The source data, in which each element is an object.
+            margin: The sizes of whitespace around the chart.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
+            layout: The layout of area in the chart. 'horizontal' | 'vertical'
             width: The width of chart container. String or Integer
             height: The height of chart container.
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
-            margin: The sizes of whitespace around the chart.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -253,32 +300,32 @@ class BarChart(ChartBase):
         """
         ...
 
-class LineChart(ChartBase):
+class LineChart(CategoricalChartBase):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
         data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
             Union[Var[Literal["index", "value"]], Literal["index", "value"]]
         ] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         layout: Optional[
             Union[
                 Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         stack_offset: Optional[
             Union[
                 Var[Literal["expand", "none", "wiggle", "silhouette"]],
                 Literal["expand", "none", "wiggle", "silhouette"],
             ]
         ] = None,
+        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -304,13 +351,13 @@ class LineChart(ChartBase):
         Args:
             *children: The children of the chart component.
             data: The source data, in which each element is an object.
+            margin: The sizes of whitespace around the chart.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
+            layout: The layout of area in the chart. 'horizontal' | 'vertical'
+            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             width: The width of chart container. String or Integer
             height: The height of chart container.
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
-            margin: The sizes of whitespace around the chart.
-            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -324,7 +371,7 @@ class LineChart(ChartBase):
         """
         ...
 
-class ComposedChart(ChartBase):
+class ComposedChart(CategoricalChartBase):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -337,29 +384,29 @@ class ComposedChart(ChartBase):
             ]
         ] = None,
         bar_category_gap: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        bar_gap: Optional[Union[Var[int], int]] = None,
+        bar_gap: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
         reverse_stack_order: Optional[Union[Var[bool], bool]] = None,
         data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
             Union[Var[Literal["index", "value"]], Literal["index", "value"]]
         ] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         layout: Optional[
             Union[
                 Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         stack_offset: Optional[
             Union[
                 Var[Literal["expand", "none", "wiggle", "silhouette"]],
                 Literal["expand", "none", "wiggle", "silhouette"],
             ]
         ] = None,
+        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -390,13 +437,13 @@ class ComposedChart(ChartBase):
             bar_size: The width of all the bars in the chart. Number
             reverse_stack_order: If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
             data: The source data, in which each element is an object.
+            margin: The sizes of whitespace around the chart.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
+            layout: The layout of area in the chart. 'horizontal' | 'vertical'
+            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             width: The width of chart container. String or Integer
             height: The height of chart container.
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
-            margin: The sizes of whitespace around the chart.
-            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -417,26 +464,9 @@ class PieChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        sync_id: Optional[Union[Var[str], str]] = None,
-        sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
-        ] = None,
+        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        layout: Optional[
-            Union[
-                Var[Literal["horizontal", "vertical"]],
-                Literal["horizontal", "vertical"],
-            ]
-        ] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        stack_offset: Optional[
-            Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
-                Literal["expand", "none", "wiggle", "silhouette"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -458,14 +488,9 @@ class PieChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
-            data: The source data, in which each element is an object.
-            sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
+            margin: The sizes of whitespace around the chart.
             width: The width of chart container. String or Integer
             height: The height of chart container.
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
-            margin: The sizes of whitespace around the chart.
-            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -486,32 +511,15 @@ class RadarChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
+        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         cx: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         cy: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         start_angle: Optional[Union[Var[int], int]] = None,
         end_angle: Optional[Union[Var[int], int]] = None,
         inner_radius: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         outer_radius: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        sync_id: Optional[Union[Var[str], str]] = None,
-        sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
-        ] = None,
         width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        layout: Optional[
-            Union[
-                Var[Literal["horizontal", "vertical"]],
-                Literal["horizontal", "vertical"],
-            ]
-        ] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        stack_offset: Optional[
-            Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
-                Literal["expand", "none", "wiggle", "silhouette"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -533,20 +541,15 @@ class RadarChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
+            margin: The sizes of whitespace around the chart.
             cx: The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
             cy: The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage
             start_angle: The angle of first radial direction line.
             end_angle: The angle of last point in the circle which should be startAngle - 360 or startAngle + 360. We'll calculate the direction of chart by 'startAngle' and 'endAngle'.
             inner_radius: The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
             outer_radius: The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
-            data: The source data, in which each element is an object.
-            sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
             width: The width of chart container. String or Integer
             height: The height of chart container.
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
-            margin: The sizes of whitespace around the chart.
-            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -567,6 +570,7 @@ class RadialBarChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
+        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         cx: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         cy: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         start_angle: Optional[Union[Var[int], int]] = None,
@@ -576,26 +580,8 @@ class RadialBarChart(ChartBase):
         bar_category_gap: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         bar_gap: Optional[Union[Var[str], str]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        sync_id: Optional[Union[Var[str], str]] = None,
-        sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
-        ] = None,
         width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        layout: Optional[
-            Union[
-                Var[Literal["horizontal", "vertical"]],
-                Literal["horizontal", "vertical"],
-            ]
-        ] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        stack_offset: Optional[
-            Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
-                Literal["expand", "none", "wiggle", "silhouette"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -617,6 +603,7 @@ class RadialBarChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
+            margin: The sizes of whitespace around the chart.
             cx: The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
             cy: The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage
             start_angle: The angle of first radial direction line.
@@ -626,14 +613,8 @@ class RadialBarChart(ChartBase):
             bar_category_gap: The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
             bar_gap: The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
             bar_size: The size of each bar. If the barSize is not specified, the size of bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups.
-            data: The source data, in which each element is an object.
-            sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
             width: The width of chart container. String or Integer
             height: The height of chart container.
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
-            margin: The sizes of whitespace around the chart.
-            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -654,26 +635,9 @@ class ScatterChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        sync_id: Optional[Union[Var[str], str]] = None,
-        sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
-        ] = None,
+        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        layout: Optional[
-            Union[
-                Var[Literal["horizontal", "vertical"]],
-                Literal["horizontal", "vertical"],
-            ]
-        ] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        stack_offset: Optional[
-            Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
-                Literal["expand", "none", "wiggle", "silhouette"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -710,14 +674,9 @@ class ScatterChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
-            data: The source data, in which each element is an object.
-            sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
+            margin: The sizes of whitespace around the chart.
             width: The width of chart container. String or Integer
             height: The height of chart container.
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
-            margin: The sizes of whitespace around the chart.
-            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -731,50 +690,23 @@ class ScatterChart(ChartBase):
         """
         ...
 
-class FunnelChart(RechartsCharts):
+class FunnelChart(ChartBase):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        sync_id: Optional[Union[Var[str], str]] = None,
-        sync_method: Optional[Union[Var[str], str]] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         layout: Optional[Union[Var[str], str]] = None,
         margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        stack_offset: Optional[
-            Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
-                Literal["expand", "none", "wiggle", "silhouette"],
-            ]
-        ] = None,
+        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
         on_click: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_down: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_enter: Optional[
@@ -786,45 +718,26 @@ class FunnelChart(RechartsCharts):
         on_mouse_move: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
-        on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
         **props
     ) -> "FunnelChart":
-        """Create a new memoization leaf component.
+        """Create a chart component.
 
         Args:
-            *children: The children of the component.
-            data: The source data, in which each element is an object.
-            sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
-            width: The width of chart container. String or Integer
-            height: The height of chart container.
+            *children: The children of the chart component.
             layout: The layout of bars in the chart. centeric
             margin: The sizes of whitespace around the chart.
-            stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
+            width: The width of chart container. String or Integer
+            height: The height of chart container.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the chart component.
 
         Returns:
-            The memoization leaf
+            The chart component wrapped in a responsive container.
         """
         ...
 
