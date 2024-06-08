@@ -55,7 +55,7 @@ def generate_sitemap_config(deploy_url: str, export=False):
 
     config = json.dumps(config)
 
-    with open(constants.Next.SITEMAP_CONFIG_FILE, "w") as f:
+    with open(constants.Next.SITEMAP_CONFIG_FILE_EXPORT, "w") as f:
         f.write(templates.SITEMAP_CONFIG(config=config))
 
 
@@ -129,6 +129,26 @@ def _zip(
             zipf.write(file, os.path.relpath(file, root_dir))
 
 
+def _setup_export_workdir():
+    """Set up the export work directory."""
+    path_ops.mkdir(constants.Dirs.WEB_EXPORT)
+    path_ops.cp(constants.Dirs.WEB, constants.Dirs.WEB_EXPORT)
+    path_ops.rm(constants.Dirs.WEB_EXPORT_STATIC)
+
+    command = [prerequisites.get_package_manager(), "rebuild"]
+
+    # Rebuild dependencies because hard copy broke the symlinks.
+    for line in processes.stream_logs(
+        "Rebuild",
+        process=processes.new_process(
+            command,
+            cwd=constants.Dirs.WEB_EXPORT,
+            shell=constants.IS_WINDOWS,
+        ),
+    ):
+        console.debug(line)
+
+
 def export(
     backend: bool = True,
     frontend: bool = True,
@@ -147,8 +167,7 @@ def export(
         deploy_url: The URL of the deployed app.
         upload_db_file: Whether to include local sqlite db files from the backend zip.
     """
-    # Remove the static folder.
-    path_ops.rm(constants.Dirs.WEB_STATIC)
+    _setup_export_workdir()
 
     # The export command to run.
     command = "export"
@@ -174,7 +193,7 @@ def export(
         # Start the subprocess with the progress bar.
         process = processes.new_process(
             [prerequisites.get_package_manager(), "run", command],
-            cwd=constants.Dirs.WEB,
+            cwd=constants.Dirs.WEB_EXPORT,
             shell=constants.IS_WINDOWS,
         )
         processes.show_progress("Creating Production Build", process, checkpoints)

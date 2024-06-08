@@ -19,6 +19,8 @@ class Dirs(SimpleNamespace):
     # The frontend directories in a project.
     # The web folder where the NextJS app is compiled to.
     WEB = ".web"
+    # The web folder where the NextJS app is exported to.
+    WEB_EXPORT = ".web_export"
     # The name of the assets directory.
     APP_ASSETS = "assets"
     # The name of the assets directory for external ressource (a subfolder of APP_ASSETS).
@@ -39,6 +41,8 @@ class Dirs(SimpleNamespace):
     WEB_PAGES = os.path.join(WEB, "pages")
     # The directory where the static build is located.
     WEB_STATIC = os.path.join(WEB, STATIC)
+    # The directory where the static build is located (export folder).
+    WEB_EXPORT_STATIC = os.path.join(WEB_EXPORT, STATIC)
     # The directory where the utils file is located.
     WEB_UTILS = os.path.join(WEB, UTILS)
     # The directory where the assets are located.
@@ -118,6 +122,8 @@ class Next(SimpleNamespace):
     CONFIG_FILE = "next.config.js"
     # The sitemap config file.
     SITEMAP_CONFIG_FILE = os.path.join(Dirs.WEB, "next-sitemap.config.js")
+    # The sitemap config file for export.
+    SITEMAP_CONFIG_FILE_EXPORT = os.path.join(Dirs.WEB_EXPORT, "next-sitemap.config.js")
     # The node modules directory.
     NODE_MODULES = "node_modules"
     # The package lock file.
