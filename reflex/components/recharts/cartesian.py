@@ -22,7 +22,7 @@ from .recharts import (
     LiteralLineType,
     LiteralOrientationLeftRight,
     LiteralOrientationTopBottom,
-    # LiteralOrientationLeftRight,
+    LiteralOrientationLeftRight,
     LiteralOrientationTopBottomLeftRight,
     LiteralPolarRadiusType,
     LiteralScale,
@@ -129,7 +129,6 @@ class XAxis(Axis):
     # Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
     include_hidden: Var[bool] = Var.create_safe(False)
 
-
 class YAxis(Axis):
     """A YAxis component in Recharts."""
 
@@ -147,8 +146,7 @@ class YAxis(Axis):
     y_axis_id: Var[Union[str, int]]
 
     # The orientation of axis 'left' | 'right'
-    # orientation: Var[LiteralOrientationLeftRight]
-
+    orientation: Var[LiteralOrientationLeftRight]
 
 class ZAxis(Recharts):
     """A ZAxis component in Recharts."""
@@ -619,6 +617,10 @@ class CartesianGrid(Grid):
 
     # The pattern of dashes and gaps used to paint the lines of the grid
     stroke_dasharray: Var[str]
+
+    vertical_points: Var[List[int]]
+
+    horizontal_points: Var[List[int]]
 
 
 class CartesianAxis(Grid):
