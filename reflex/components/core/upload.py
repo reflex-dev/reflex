@@ -50,9 +50,10 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     Returns:
         A var referencing the file upload drop trigger.
     """
+    id_var = Var.create_safe(id_, _var_is_string=True)
     var_name = f"""e => setFilesById(filesById => {{
     const updatedFilesById = Object.assign({{}}, filesById);
-    updatedFilesById[`{id_}`] = e;
+    updatedFilesById[{id_var._var_name_unwrapped}] = e;
     return updatedFilesById;
   }})
     """
@@ -60,7 +61,7 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     return BaseVar(
         _var_name=var_name,
         _var_type=EventChain,
-        _var_data=upload_files_context_var_data,
+        _var_data=VarData.merge(upload_files_context_var_data, id_var._var_data),
     )
 
 
@@ -74,10 +75,11 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     Returns:
         A var referencing the list of selected file paths.
     """
+    id_var = Var.create_safe(id_, _var_is_string=True)
     return BaseVar(
-        _var_name=f"(filesById[`{id_}`] ? filesById[`{id_}`].map((f) => (f.path || f.name)) : [])",
+        _var_name=f"(filesById[{id_var._var_name_unwrapped}] ? filesById[{id_var._var_name_unwrapped}].map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
-        _var_data=upload_files_context_var_data,
+        _var_data=VarData.merge(upload_files_context_var_data, id_var._var_data),
     )
 
 
@@ -94,7 +96,9 @@ def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
     # UploadFilesProvider assigns a special function to clear selected files
     # into the shared global refs object to make it accessible outside a React
     # component via `call_script` (otherwise backend could never clear files).
-    return call_script(f"refs['__clear_selected_files']({id_!r})")
+    return call_script(
+        f"refs['__clear_selected_files']({Var.create_safe(id_, _var_is_string=True)._var_name_unwrapped!r})"
+    )
 
 
 def cancel_upload(upload_id: str) -> EventSpec:
@@ -106,7 +110,9 @@ def cancel_upload(upload_id: str) -> EventSpec:
     Returns:
         An event spec that cancels the upload when triggered.
     """
-    return call_script(f"upload_controllers[{upload_id!r}]?.abort()")
+    return call_script(
+        f"upload_controllers[{Var.create_safe(upload_id, _var_is_string=True)._var_name_unwrapped!r}]?.abort()"
+    )
 
 
 def get_upload_dir() -> Path:

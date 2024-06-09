@@ -386,7 +386,6 @@ class FileUpload(Base):
         )
 
         upload_id = self.upload_id or DEFAULT_UPLOAD_ID
-
         spec_args = [
             (
                 Var.create_safe("files", _var_is_string=False),

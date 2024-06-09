@@ -46,7 +46,7 @@ def upload_component_id_special():
             rx.button("select file"),
             rx.text("Drag and drop files here or click to select files"),
             border="1px dotted black",
-            id="#spec!al-&%@)(*^&+_98ID",
+            id="#spec!`al-_98ID",
         )
 
     return upload_component()
@@ -193,11 +193,11 @@ def test_upload_component_id_with_special_chars(upload_component_id_special):
     upload = upload_component_id_special.render()
 
     assert upload["props"] == [
-        "id={`#spec!al-&%@)(*^&+_98ID`}",
+        r"id={`#spec!\`al-_98ID`}",
         "multiple={true}",
         "onDrop={e => setFilesById(filesById => {\n"
         "    const updatedFilesById = Object.assign({}, filesById);\n"
-        "    updatedFilesById[`#spec!al-&%@)(*^&+_98ID`] = e;\n"
+        "    updatedFilesById[`#spec!\\`al-_98ID`] = e;\n"
         "    return updatedFilesById;\n"
         "  })\n"
         "    }",
