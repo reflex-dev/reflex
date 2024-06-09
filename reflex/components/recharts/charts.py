@@ -38,7 +38,7 @@ class ChartBase(RechartsCharts):
     height: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The layout of area in the chart. 'horizontal' | 'vertical'
-    layout: Var[LiteralLayout]
+    layout: Var[LiteralLayout] = "horizontal" # type: ignore
 
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]

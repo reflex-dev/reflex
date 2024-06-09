@@ -4,8 +4,12 @@ from __future__ import annotations
 from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
-from reflex.constants.colors import Color
 from reflex.vars import Var
+
+from reflex.constants.colors import Color
+from reflex.event import EventHandler
+from . import recharts
+recharts
 
 from .recharts import (
     LiteralAnimationEasing,
@@ -16,13 +20,13 @@ from .recharts import (
     LiteralLayout,
     LiteralLineType,
     LiteralOrientationTopBottom,
+    # LiteralOrientationLeftRight,
     LiteralOrientationTopBottomLeftRight,
     LiteralPolarRadiusType,
     LiteralScale,
     LiteralShape,
     Recharts,
 )
-
 
 class Axis(Recharts):
     """A base class for axes in Recharts."""
@@ -32,12 +36,6 @@ class Axis(Recharts):
 
     # If set true, the axis do not display in the chart.
     hide: Var[bool]
-
-    # The width of axis which is usually calculated internally.
-    width: Var[Union[str, int]]
-
-    # The height of axis, which can be setted by user.
-    height: Var[Union[str, int]]
 
     # The orientation of axis 'top' | 'bottom'
     orientation: Var[LiteralOrientationTopBottom]
@@ -57,6 +55,9 @@ class Axis(Recharts):
     # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
     axis_line: Var[bool]
 
+    # If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines.
+    tick_line: Var[bool]
+
     # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
     mirror: Var[bool]
 
@@ -72,22 +73,45 @@ class Axis(Recharts):
     # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
     name: Var[Union[str, int]]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # Set the values of axis ticks manually.
+    ticks: Var[List[Union[str, int]]]
+    
+    # If set false, no ticks will be drawn.
+    tick: Var[bool]
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_OVER: lambda: [],
-            EventTriggers.ON_MOUSE_OUT: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
+    # The count of axis ticks.
+    tick_count: Var[int] 
+
+    # If set false, no axis tick lines will be drawn.
+    tick_line: Var[bool]
+
+    # The length of tick line.
+    tick_size: Var[int] 
+
+    # The minimum gap between two adjacent labels
+    min_tick_gap: Var[int]  
+
+    # The customized event handler of click on the ticks of this axis
+    on_click: EventHandler[lambda: []]
+
+    # The customized event handler of mousedown on the ticks of this axis
+    on_mouse_down: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseup on the ticks of this axis
+    on_mouse_up: EventHandler[lambda: []] = None
+
+    # The customized event handler of mousemove on the ticks of this axis
+    on_mouse_move: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseout on the ticks of this axis
+    on_mouse_out: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseenter on the ticks of this axis
+    on_mouse_enter: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseleave on the ticks of this axis
+    on_mouse_leave: EventHandler[lambda: []] = None
+
 
 
 class XAxis(Axis):
@@ -97,8 +121,8 @@ class XAxis(Axis):
 
     alias = "RechartsXAxis"
 
-    # Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
-    include_hidden: Var[bool] = Var.create_safe(False)
+    # The id of x-axis which is corresponding to the data.
+    x_axis_id: Var[Union[str, int]]
 
 
 class YAxis(Axis):
@@ -111,6 +135,11 @@ class YAxis(Axis):
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
 
+    # The id of y-axis which is corresponding to the data.
+    y_axis_id: Var[Union[str, int]]
+
+    # The orientation of axis 'left' | 'right'
+    # orientation: Var[LiteralOrientationLeftRight]
 
 class ZAxis(Recharts):
     """A ZAxis component in Recharts."""
@@ -213,8 +242,6 @@ class Cartesian(Recharts):
         return {
             EventTriggers.ON_CLICK: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
@@ -381,23 +408,6 @@ class Funnel(Cartesian):
     # Valid children components
     _valid_children: List[str] = ["LabelList", "Cell"]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_OVER: lambda: [],
-            EventTriggers.ON_MOUSE_OUT: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
-
 
 class ErrorBar(Recharts):
     """An ErrorBar component in Recharts."""
@@ -552,10 +562,10 @@ class CartesianGrid(Grid):
     alias = "RechartsCartesianGrid"
 
     # The horizontal line configuration.
-    horizontal: Var[Dict[str, Any]]
+    horizontal: Var[bool]
 
     # The vertical line configuration.
-    vertical: Var[Dict[str, Any]]
+    vertical: Var[bool]
 
     # The background of grid.
     fill: Var[Union[str, Color]]
