@@ -55,7 +55,12 @@ def generate_sitemap_config(deploy_url: str, export=False):
 
     config = json.dumps(config)
 
-    with open(constants.Next.SITEMAP_CONFIG_FILE_EXPORT, "w") as f:
+    sitemap_path = (
+        constants.Next.SITEMAP_CONFIG_FILE_EXPORT
+        if export
+        else constants.Next.SITEMAP_CONFIG_FILE
+    )
+    with open(sitemap_path, "w") as f:
         f.write(templates.SITEMAP_CONFIG(config=config))
 
 
@@ -129,8 +134,16 @@ def _zip(
             zipf.write(file, os.path.relpath(file, root_dir))
 
 
-def _setup_export_workdir():
-    """Set up the export work directory."""
+def _setup_export_workdir(standalone_export: bool = False):
+    """Set up the export work directory.
+
+    Args:
+        standalone_export: Whether to export the app as a standalone app.
+    """
+    if not standalone_export:
+        path_ops.rm(constants.Dirs.WEB_STATIC)
+        return
+
     path_ops.mkdir(constants.Dirs.WEB_EXPORT)
     path_ops.cp(constants.Dirs.WEB, constants.Dirs.WEB_EXPORT)
     path_ops.rm(constants.Dirs.WEB_EXPORT_STATIC)
@@ -167,7 +180,7 @@ def export(
         deploy_url: The URL of the deployed app.
         upload_db_file: Whether to include local sqlite db files from the backend zip.
     """
-    _setup_export_workdir()
+    _setup_export_workdir(standalone_export=zip)
 
     # The export command to run.
     command = "export"
@@ -190,10 +203,12 @@ def export(
 
             checkpoints.extend(["Loading next-sitemap", "Generation completed"])
 
+        workdir = constants.Dirs.WEB_EXPORT if zip else constants.Dirs.WEB
+
         # Start the subprocess with the progress bar.
         process = processes.new_process(
             [prerequisites.get_package_manager(), "run", command],
-            cwd=constants.Dirs.WEB_EXPORT,
+            cwd=workdir,
             shell=constants.IS_WINDOWS,
         )
         processes.show_progress("Creating Production Build", process, checkpoints)
