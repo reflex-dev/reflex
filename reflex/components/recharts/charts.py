@@ -22,15 +22,6 @@ from .recharts import (
 class ChartBase(RechartsCharts):
     """A component that wraps a Recharts charts."""
 
-    # The source data, in which each element is an object.
-    data: Var[List[Dict[str, Any]]]
-
-    # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-    sync_id: Var[str]
-
-    # When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
-    sync_method: Var[LiteralSyncMethod]
-
     # The width of chart container. String or Integer
     width: Var[Union[str, int]] = "100%"  # type: ignore
 
@@ -117,7 +108,29 @@ class ChartBase(RechartsCharts):
         )
 
 
-class AreaChart(ChartBase):
+class CategoricalChartBase(ChartBase):
+    """A component that wraps a Categorical Recharts charts."""
+
+    # The source data, in which each element is an object.
+    data: Var[List[Dict[str, Any]]]
+
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
+
+    # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
+    sync_id: Var[str]
+
+    # When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
+    sync_method: Var[LiteralSyncMethod]
+
+    # The layout of area in the chart. 'horizontal' | 'vertical'
+    layout: Var[LiteralLayout]
+
+    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
+    stack_offset: Var[LiteralStackOffset]
+
+
+class AreaChart(CategoricalChartBase):
     """An Area chart component in Recharts."""
 
     tag = "AreaChart"
@@ -142,7 +155,7 @@ class AreaChart(ChartBase):
     ]
 
 
-class BarChart(ChartBase):
+class BarChart(CategoricalChartBase):
     """A Bar chart component in Recharts."""
 
     tag = "BarChart"
@@ -182,7 +195,7 @@ class BarChart(ChartBase):
     ]
 
 
-class LineChart(ChartBase):
+class LineChart(CategoricalChartBase):
     """A Line chart component in Recharts."""
 
     tag = "LineChart"
@@ -204,7 +217,7 @@ class LineChart(ChartBase):
     ]
 
 
-class ComposedChart(ChartBase):
+class ComposedChart(CategoricalChartBase):
     """A Composed chart component in Recharts."""
 
     tag = "ComposedChart"
@@ -218,7 +231,7 @@ class ComposedChart(ChartBase):
     bar_category_gap: Var[Union[str, int]]  # type: ignore
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[int]
+    bar_gap: Var[Union[str, int]]  # type: ignore
 
     # The width of all the bars in the chart. Number
     bar_size: Var[int]
@@ -250,6 +263,9 @@ class PieChart(ChartBase):
 
     alias = "RechartsPieChart"
 
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
+
     # Valid children components
     _valid_children: List[str] = [
         "PolarAngleAxis",
@@ -279,6 +295,9 @@ class RadarChart(ChartBase):
     tag = "RadarChart"
 
     alias = "RechartsRadarChart"
+
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
     cx: Var[Union[int, str]]
@@ -327,6 +346,9 @@ class RadialBarChart(ChartBase):
     tag = "RadialBarChart"
 
     alias = "RechartsRadialBarChart"
+
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
     cx: Var[Union[int, str]]
@@ -385,6 +407,9 @@ class ScatterChart(ChartBase):
 
     alias = "RechartsScatterChart"
 
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
+
     # Valid children components
     _valid_children: List[str] = [
         "XAxis",
@@ -418,39 +443,18 @@ class ScatterChart(ChartBase):
         }
 
 
-class FunnelChart(RechartsCharts):
+class FunnelChart(ChartBase):
     """A Funnel chart component in Recharts."""
 
     tag = "FunnelChart"
 
     alias = "RechartsFunnelChart"
 
-    # The source data, in which each element is an object.
-    data: Var[List[Dict[str, Any]]]
-
-    # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-    sync_id: Var[str]
-
-    # When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
-    sync_method: Var[str]
-
-    # The width of chart container. String or Integer
-    width: Var[Union[str, int]] = "100%"  # type: ignore
-
-    # The height of chart container.
-    height: Var[Union[str, int]] = "100%"  # type: ignore
-
-    # The layout of area in the chart. 'horizontal' | 'vertical'
-    layout: Var[LiteralLayout]
+    # The layout of bars in the chart. centeric
+    layout: Var[str]
 
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]
-
-    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
-    stack_offset: Var[LiteralStackOffset]
-
-    # The layout of bars in the chart. centeric
-    layout: Var[str]
 
     # Valid children components
     _valid_children: List[str] = ["Legend", "GraphingTooltip", "Funnel"]

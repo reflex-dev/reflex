@@ -552,6 +552,14 @@ class Var:
         fn = "JSON.stringify" if json else "String"
         return self.operation(fn=fn, type_=str)
 
+    def to_int(self) -> Var:
+        """Convert a var to an int.
+
+        Returns:
+            The parseInt var.
+        """
+        return self.operation(fn="parseInt", type_=int)
+
     def __hash__(self) -> int:
         """Define a hash function for a var.
 
@@ -868,19 +876,19 @@ class Var:
                 if invoke_fn:
                     # invoke the function on left operand.
                     operation_name = (
-                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
-                    )
+                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"
+                    )  # type: ignore
                 else:
                     # pass the operands as arguments to the function.
                     operation_name = (
-                        f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
-                    )
+                        f"{left_operand_full_name} {op} {right_operand_full_name}"
+                    )  # type: ignore
                     operation_name = f"{fn}({operation_name})"
             else:
                 # apply operator to operands (left operand <operator> right_operand)
                 operation_name = (
-                    f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
-                )
+                    f"{left_operand_full_name} {op} {right_operand_full_name}"
+                )  # type: ignore
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
