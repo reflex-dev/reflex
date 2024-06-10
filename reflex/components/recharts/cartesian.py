@@ -238,7 +238,7 @@ class Cartesian(Recharts):
     y_axis_id: Var[Union[str, int]]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
-    # legend_type: Var[LiteralLegendType]
+    legend_type: Var[LiteralLegendType]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -325,6 +325,20 @@ class Bar(Cartesian):
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]
 
+    # The customized event handler of animation start
+    on_animation_start: EventHandler[lambda: []] = None
+
+    # The customized event handler of animation end
+    on_animation_end: EventHandler[lambda: []] = None
+
+    # The customized event handler of click on the bars in this group
+    on_click: EventHandler[lambda: []] = None
+
+    # The customized event handler of mousedown on the bars in this group
+    on_mouse_down: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseup on the bars in this group
+    on_mouse_up: EventHandler[lambda: []] = None
 
 class Line(Cartesian):
     """A Line component in Recharts."""
@@ -401,23 +415,6 @@ class Grid(Cartesian):
 
     # Valid children components.
     _valid_children: List[str] = ["LabelList", "ErrorBar"]
-
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_OVER: lambda: [],
-            EventTriggers.ON_MOUSE_OUT: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
 
 
 class Scatter(Recharts):
@@ -681,6 +678,7 @@ class CartesianGrid(Grid):
 
     # The x-coordinates in pixel values of all vertical lines.
     horizontal_points: Var[List[Union[str, int]]]
+
 
 class CartesianAxis(Grid):
     """A CartesianAxis component in Recharts."""

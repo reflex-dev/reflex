@@ -177,6 +177,9 @@ class BarChart(CategoricalChartBase):
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape.
     stack_offset: Var[LiteralStackOffset]
 
+    # The layout of the chart: 'horizontal' | 'vertical'.
+    layout: Var[LiteralLayout]
+
     # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
     reverse_stack_order: Var[bool]
 
