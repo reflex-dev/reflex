@@ -150,7 +150,7 @@ class BarChart(ChartBase):
     alias = "RechartsBarChart"
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-    bar_category_gap: Var[Union[str, int]] = Var.create_safe("10%")  # type: ignore
+    bar_category_gap: Var[Union[str, int]] = Var.create_safe("10%", _var_is_string=True)  # type: ignore
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
     bar_gap: Var[Union[str, int]] = Var.create_safe(4)  # type: ignore

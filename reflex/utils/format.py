@@ -916,4 +916,7 @@ def format_data_editor_cell(cell: Any):
     Returns:
         The formatted cell.
     """
-    return {"kind": Var.create(value="GridCellKind.Text"), "data": cell}
+    return {
+        "kind": Var.create(value="GridCellKind.Text", _var_is_string=False),
+        "data": cell,
+    }

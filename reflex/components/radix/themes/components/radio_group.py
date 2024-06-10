@@ -91,10 +91,10 @@ class HighLevelRadioGroup(RadixThemesComponent):
     direction: Var[LiteralFlexDirection]
 
     # The gap between the items of the radio group.
-    spacing: Var[LiteralSpacing] = Var.create_safe("2")
+    spacing: Var[LiteralSpacing] = Var.create_safe("2", _var_is_string=True)
 
     # The size of the radio group.
-    size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
+    size: Var[Literal["1", "2", "3"]] = Var.create_safe("2", _var_is_string=True)
 
     # The variant of the radio group
     variant: Var[Literal["classic", "surface", "soft"]]
@@ -151,11 +151,13 @@ class HighLevelRadioGroup(RadixThemesComponent):
             default_value = Var.create(default_value, _var_is_string=True)  # type: ignore
         else:
             default_value = (
-                Var.create(default_value).to_string()._replace(_var_is_local=False)  # type: ignore
+                Var.create(default_value, _var_is_string=False)
+                .to_string()  # type: ignore
+                ._replace(_var_is_local=False)
             )
 
         def radio_group_item(value: str | Var) -> Component:
-            item_value = Var.create(value)  # type: ignore
+            item_value = Var.create(value, _var_is_string=False)  # type: ignore
             item_value = rx.cond(
                 item_value._type() == str,  # type: ignore
                 item_value,

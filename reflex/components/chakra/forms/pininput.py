@@ -122,7 +122,7 @@ class PinInput(ChakraComponent):
             if ref:
                 return (
                     f"const {ref} = {str(refs_declaration)}; "
-                    f"{str(Var.create_safe(ref).as_ref())} = {ref}"
+                    f"{str(Var.create_safe(ref, _var_is_string=False).as_ref())} = {ref}"
                 )
             return super()._get_ref_hook()
 

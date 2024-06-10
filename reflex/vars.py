@@ -535,7 +535,7 @@ class Var:
         if other is None:
             return self._replace()
         if not isinstance(other, Var):
-            other = Var.create(other)
+            other = Var.create(other, _var_is_string=False)
         return self._replace(
             _var_name=f"{{...{self._var_name}, ...{other._var_name}}}"  # type: ignore
         )
@@ -831,9 +831,9 @@ class Var:
         from reflex.utils import format
 
         if isinstance(other, str):
-            other = Var.create(json.dumps(other))
+            other = Var.create(json.dumps(other), _var_is_string=False)
         else:
-            other = Var.create(other)
+            other = Var.create(other, _var_is_string=False)
 
         type_ = type_ or self._var_type
 
@@ -1416,7 +1416,7 @@ class Var:
         if isinstance(other, str):
             other = Var.create(json.dumps(other), _var_is_string=True)
         elif not isinstance(other, Var):
-            other = Var.create(other)
+            other = Var.create(other, _var_is_string=False)
         if types._issubclass(self._var_type, Dict):
             return self._replace(
                 _var_name=f"{self._var_name}.{method}({other._var_full_name})",
@@ -1520,7 +1520,11 @@ class Var:
         if not types._issubclass(self._var_type, str):
             raise VarTypeError(f"Cannot strip non-string var {self._var_full_name}.")
 
-        other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
+        other = (
+            Var.create_safe(json.dumps(other), _var_is_string=False)
+            if isinstance(other, str)
+            else other
+        )
 
         return self._replace(
             _var_name=f"{self._var_name}.replace(/^${other._var_full_name}|${other._var_full_name}$/g, '')",
@@ -1543,7 +1547,11 @@ class Var:
         if not types._issubclass(self._var_type, str):
             raise VarTypeError(f"Cannot split non-string var {self._var_full_name}.")
 
-        other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
+        other = (
+            Var.create_safe(json.dumps(other), _var_is_string=False)
+            if isinstance(other, str)
+            else other
+        )
 
         return self._replace(
             _var_name=f"{self._var_name}.split({other._var_full_name})",
@@ -1568,11 +1576,11 @@ class Var:
             raise VarTypeError(f"Cannot join non-list var {self._var_full_name}.")
 
         if other is None:
-            other = Var.create_safe('""')
+            other = Var.create_safe('""', _var_is_string=False)
         if isinstance(other, str):
-            other = Var.create_safe(json.dumps(other))
+            other = Var.create_safe(json.dumps(other), _var_is_string=False)
         else:
-            other = Var.create_safe(other)
+            other = Var.create_safe(other, _var_is_string=False)
 
         return self._replace(
             _var_name=f"{self._var_name}.join({other._var_full_name})",
@@ -1641,7 +1649,7 @@ class Var:
         if not isinstance(v2, Var):
             v2 = Var.create(v2)
         if v2 is None:
-            v2 = Var.create_safe("undefined")
+            v2 = Var.create_safe("undefined", _var_is_string=False)
         elif v2._var_type != int:
             raise VarTypeError(f"Cannot get range on non-int var {v2._var_full_name}.")
 
