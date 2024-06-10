@@ -511,6 +511,7 @@ class RadarChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
+        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
         margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         cx: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         cy: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
@@ -541,6 +542,7 @@ class RadarChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
+            data: The source data, in which each element is an object.
             margin: The sizes of whitespace around the chart.
             cx: The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
             cy: The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage
@@ -570,6 +572,7 @@ class RadialBarChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
+        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
         margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         cx: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         cy: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
@@ -603,6 +606,7 @@ class RadialBarChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
+            data: The source data which each element is an object.
             margin: The sizes of whitespace around the chart.
             cx: The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
             cy: The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage

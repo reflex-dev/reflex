@@ -141,8 +141,8 @@ class RadialBar(Recharts):
 
     alias = "RechartsRadialBar"
 
-    # The source data which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    # The key of a group of data which should be unique to show the meaning of angle axis.
+    data_key: Var[Union[str, int]]
 
     # Min angle of each bar. A positive value between 0 and 360.
     min_angle: Var[int]
@@ -151,7 +151,7 @@ class RadialBar(Recharts):
     legend_type: Var[str]
 
     # If false set, labels will not be drawn.
-    label: Var[bool]
+    label: Var[Union[bool, Dict[str, Any]]]
 
     # If false set, background sector will not be drawn.
     background: Var[bool]

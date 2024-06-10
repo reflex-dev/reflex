@@ -287,6 +287,9 @@ class RadarChart(ChartBase):
 
     alias = "RechartsRadarChart"
 
+    # The source data, in which each element is an object.
+    data: Var[List[Dict[str, Any]]]
+
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]
 
@@ -337,6 +340,9 @@ class RadialBarChart(ChartBase):
     tag = "RadialBarChart"
 
     alias = "RechartsRadialBarChart"
+
+    # The source data which each element is an object.
+    data: Var[List[Dict[str, Any]]]
 
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]
