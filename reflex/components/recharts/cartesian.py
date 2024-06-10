@@ -213,7 +213,7 @@ class Cartesian(Recharts):
     y_axis_id: Var[Union[str, int]]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
-    # legend_type: Var[LiteralLegendType]
+    legend_type: Var[LiteralLegendType]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -602,6 +602,12 @@ class CartesianGrid(Grid):
 
     # The vertical line configuration.
     vertical: Var[bool]
+
+    # The x-coordinates in pixel values of all vertical lines. 
+    vertical_points: Var[List[Union[str, int]]]
+
+    # The x-coordinates in pixel values of all vertical lines.
+    horizontal_points: Var[List[Union[str, int]]]
 
     # The background of grid.
     fill: Var[Union[str, Color]]
