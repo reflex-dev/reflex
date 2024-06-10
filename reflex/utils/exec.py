@@ -114,7 +114,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                         )
                         if backend_present:
                             console.print(
-                                f"Backend running at: [bold green]{get_config().api_url}[/bold green]"
+                                f"Backend running at: [bold green]http://0.0.0.0:{get_config().backend_port}[/bold green]"
                             )
                         first_run = False
                     else:
