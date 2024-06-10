@@ -132,7 +132,8 @@ useEffect(() => {{
         toast.dismiss("{toast_id}");
         setUserDismissed(false);  // after reconnection reset dismissed state
     }}
-}}, [{connect_errors}]);"""
+}}, [{connect_errors}]);""",
+            _var_is_string=False,
         )
 
         hook._var_data = VarData.merge(  # type: ignore

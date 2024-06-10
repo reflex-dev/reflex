@@ -130,7 +130,9 @@ class HighLevelCheckbox(RadixThemesComponent):
         }
 
     @classmethod
-    def create(cls, text: Var[str] = Var.create_safe(""), **props) -> Component:
+    def create(
+        cls, text: Var[str] = Var.create_safe("", _var_is_string=True), **props
+    ) -> Component:
         """Create a checkbox with a label.
 
         Args:

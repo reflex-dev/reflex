@@ -19,7 +19,7 @@ from reflex.utils.format import format_event_chain
 from reflex.vars import BaseVar, Var
 from .base import BaseHTML
 
-FORM_DATA = Var.create("form_data")
+FORM_DATA = Var.create("form_data", _var_is_string=False)
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     "\n    const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {\n        const $form = ev.target\n        ev.preventDefault()\n        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}\n\n        {{ on_submit_event_chain }}\n\n        if ({{ reset_on_submit }}) {\n            $form.reset()\n        }\n    })\n    "
 )

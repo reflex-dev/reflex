@@ -51,7 +51,7 @@ class Checkbox(ChakraComponent):
     name: Var[str]
 
     # The value of the input field when checked (use is_checked prop for a bool)
-    value: Var[str] = Var.create("true")  # type: ignore
+    value: Var[str] = Var.create("true", _var_is_string=True)  # type: ignore
 
     # The spacing between the checkbox and its label text (0.5rem)
     spacing: Var[str]
