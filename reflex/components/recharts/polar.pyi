@@ -242,10 +242,12 @@ class RadialBar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         min_angle: Optional[Union[Var[int], int]] = None,
         legend_type: Optional[Union[Var[str], str]] = None,
-        label: Optional[Union[Var[bool], bool]] = None,
+        label: Optional[
+            Union[Var[Union[bool, Dict[str, Any]]], Union[bool, Dict[str, Any]]]
+        ] = None,
         background: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -277,7 +279,7 @@ class RadialBar(Recharts):
 
         Args:
             *children: The children of the component.
-            data: The source data which each element is an object.
+            data_key: The key of a group of data which should be unique to show the meaning of angle axis.
             min_angle: Min angle of each bar. A positive value between 0 and 360.
             legend_type: Type of legend
             label: If false set, labels will not be drawn.
