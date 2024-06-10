@@ -352,7 +352,7 @@ class Component(BaseComponent, ABC):
             **{
                 prop: Var.create(
                     kwargs[prop],
-                    _var_is_string=False,
+                    _var_is_string=False if isinstance(kwargs[prop], str) else None,
                 )
                 for prop in self.get_initial_props()
                 if prop in kwargs
@@ -400,7 +400,10 @@ class Component(BaseComponent, ABC):
                 passed_types = None
                 try:
                     # Try to create a var from the value.
-                    kwargs[key] = Var.create(value, _var_is_string=False)
+                    kwargs[key] = Var.create(
+                        value,
+                        _var_is_string=False if isinstance(value, str) else None,
+                    )
 
                     # Check that the var type is not None.
                     if kwargs[key] is None:
