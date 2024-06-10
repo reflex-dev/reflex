@@ -44,4 +44,5 @@ class Switch(ChakraComponent):
     # The color scheme of the switch (e.g. "blue", "green", "red", etc.)
     color_scheme: Var[LiteralColorScheme]
 
+    # Fired when the switch value changes
     on_change: EventHandler[lambda e0: [e0.target.checked]]
