@@ -141,6 +141,7 @@ class AreaChart(ChartBase):
         "Legend",
         "GraphingTooltip",
         "Area",
+        "Defs",
     ]
 
 
