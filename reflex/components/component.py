@@ -428,7 +428,9 @@ class Component(BaseComponent, ABC):
                 if types.is_union(passed_type):
                     # We need to check all possible types in the union.
                     passed_types = (
-                        arg for arg in passed_type.__args__ if arg is not type(None)
+                        arg
+                        for arg in passed_type.__args__  # type: ignore
+                        if arg is not type(None)
                     )
                 if (
                     # If the passed var is a union, check if all possible types are valid.
@@ -450,7 +452,8 @@ class Component(BaseComponent, ABC):
             if key in component_specific_triggers:
                 # Temporarily disable full control for event triggers.
                 kwargs["event_triggers"][key] = self._create_event_chain(
-                    value=value, args_spec=component_specific_triggers[key]
+                    value=value,  # type: ignore
+                    args_spec=component_specific_triggers[key],
                 )
 
         # Remove any keys that were added as events.
