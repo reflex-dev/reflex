@@ -233,6 +233,7 @@ class Theme(RadixThemesComponent):
             css=Var.create(
                 "{{...theme.styles.global[':root'], ...theme.styles.global.body}}",
                 _var_is_local=False,
+                _var_is_string=False,
             ),
         )
         return tag

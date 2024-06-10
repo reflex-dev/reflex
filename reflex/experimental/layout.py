@@ -52,7 +52,11 @@ class Sidebar(Box, MemoizationLeaf):
         """
         sidebar: Component = self.children[-2]  # type: ignore
         spacer: Component = self.children[-1]  # type: ignore
-        open = self.State.open if self.State else Var.create("open")  # type: ignore
+        open = (
+            self.State.open  # type: ignore
+            if self.State
+            else Var.create_safe("open", _var_is_string=False)
+        )
         sidebar.style["display"] = spacer.style["display"] = cond(open, "block", "none")
 
         return Style(
@@ -167,7 +171,10 @@ class SidebarTrigger(Fragment):
         if sidebar.State:
             open, toggle = sidebar.State.open, sidebar.State.toggle  # type: ignore
         else:
-            open, toggle = Var.create("open"), call_script(Var.create("setOpen(!open)"))  # type: ignore
+            open, toggle = (
+                Var.create_safe("open", _var_is_string=False),
+                call_script(Var.create_safe("setOpen(!open)", _var_is_string=False)),
+            )
 
         trigger_props["left"] = cond(open, f"calc({sidebar_width} - 32px)", "0")
 

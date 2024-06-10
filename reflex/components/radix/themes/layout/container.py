@@ -21,7 +21,7 @@ class Container(elements.Div, RadixThemesComponent):
     tag = "Container"
 
     # The size of the container: "1" - "4" (default "3")
-    size: Var[LiteralContainerSize] = Var.create_safe("3")
+    size: Var[LiteralContainerSize] = Var.create_safe("3", _var_is_string=True)
 
     @classmethod
     def create(

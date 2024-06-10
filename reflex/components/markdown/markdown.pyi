@@ -26,15 +26,19 @@ from reflex.utils import imports, types
 from reflex.utils.imports import ImportVar
 from reflex.vars import Var
 
-_CHILDREN = Var.create_safe("children", _var_is_local=False)
-_PROPS = Var.create_safe("...props", _var_is_local=False)
-_MOCK_ARG = Var.create_safe("")
-_REMARK_MATH = Var.create_safe("remarkMath", _var_is_local=False)
-_REMARK_GFM = Var.create_safe("remarkGfm", _var_is_local=False)
-_REMARK_UNWRAP_IMAGES = Var.create_safe("remarkUnwrapImages", _var_is_local=False)
+_CHILDREN = Var.create_safe("children", _var_is_local=False, _var_is_string=False)
+_PROPS = Var.create_safe("...props", _var_is_local=False, _var_is_string=False)
+_MOCK_ARG = Var.create_safe("", _var_is_string=False)
+_REMARK_MATH = Var.create_safe("remarkMath", _var_is_local=False, _var_is_string=False)
+_REMARK_GFM = Var.create_safe("remarkGfm", _var_is_local=False, _var_is_string=False)
+_REMARK_UNWRAP_IMAGES = Var.create_safe(
+    "remarkUnwrapImages", _var_is_local=False, _var_is_string=False
+)
 _REMARK_PLUGINS = Var.create_safe([_REMARK_MATH, _REMARK_GFM, _REMARK_UNWRAP_IMAGES])
-_REHYPE_KATEX = Var.create_safe("rehypeKatex", _var_is_local=False)
-_REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False)
+_REHYPE_KATEX = Var.create_safe(
+    "rehypeKatex", _var_is_local=False, _var_is_string=False
+)
+_REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False, _var_is_string=False)
 _REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
 NO_PROPS_TAGS = ("ul", "ol", "li")
 

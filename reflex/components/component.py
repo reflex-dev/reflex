@@ -319,7 +319,9 @@ class Component(BaseComponent, ABC):
             # Set default values for any props.
             if types._issubclass(field.type_, Var):
                 field.required = False
-                field.default = Var.create(field.default)
+                field.default = Var.create(
+                    field.default, _var_is_string=isinstance(field.default, str)
+                )
             elif types._issubclass(field.type_, EventHandler):
                 field.required = False
 
@@ -348,7 +350,10 @@ class Component(BaseComponent, ABC):
             "id": kwargs.get("id"),
             "children": children,
             **{
-                prop: Var.create(kwargs[prop])
+                prop: Var.create(
+                    kwargs[prop],
+                    _var_is_string=False,
+                )
                 for prop in self.get_initial_props()
                 if prop in kwargs
             },
@@ -395,7 +400,7 @@ class Component(BaseComponent, ABC):
                 passed_types = None
                 try:
                     # Try to create a var from the value.
-                    kwargs[key] = Var.create(value)
+                    kwargs[key] = Var.create(value, _var_is_string=False)
 
                     # Check that the var type is not None.
                     if kwargs[key] is None:
@@ -672,7 +677,9 @@ class Component(BaseComponent, ABC):
             # Add ref to element if `id` is not None.
             ref = self.get_ref()
             if ref is not None:
-                props["ref"] = Var.create(ref, _var_is_local=False)
+                props["ref"] = Var.create(
+                    ref, _var_is_local=False, _var_is_string=False
+                )
         else:
             props = props.copy()
 
@@ -1091,7 +1098,9 @@ class Component(BaseComponent, ABC):
                 vars.append(comp_prop)
             elif isinstance(comp_prop, str):
                 # Collapse VarData encoded in f-strings.
-                var = Var.create_safe(comp_prop)
+                var = Var.create_safe(
+                    comp_prop, _var_is_string=isinstance(comp_prop, str)
+                )
                 if var._var_data is not None:
                     vars.append(var)
 
@@ -1388,7 +1397,7 @@ class Component(BaseComponent, ABC):
         """
         ref = self.get_ref()
         if ref is not None:
-            return f"const {ref} = useRef(null); {str(Var.create_safe(ref).as_ref())} = {ref};"
+            return f"const {ref} = useRef(null); {str(Var.create_safe(ref, _var_is_string=False).as_ref())} = {ref};"
 
     def _get_vars_hooks(self) -> dict[str, None]:
         """Get the hooks required by vars referenced in this component.
@@ -2147,7 +2156,7 @@ class StatefulComponent(BaseComponent):
 
             # Store the memoized function name and hook code for this event trigger.
             trigger_memo[event_trigger] = (
-                Var.create_safe(memo_name)._replace(
+                Var.create_safe(memo_name, _var_is_string=False)._replace(
                     _var_type=EventChain, merge_var_data=memo_var_data
                 ),
                 f"const {memo_name} = useCallback({rendered_chain}, [{', '.join(var_deps)}])",

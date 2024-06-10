@@ -119,6 +119,7 @@ def get_upload_dir() -> Path:
 
 uploaded_files_url_prefix: Var = Var.create_safe(
     "${getBackendURL(env.UPLOAD)}",
+    _var_is_string=False,
     _var_data=VarData(
         imports={
             f"/{Dirs.STATE_PATH}": [imports.ImportVar(tag="getBackendURL")],

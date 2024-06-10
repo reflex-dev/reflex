@@ -263,7 +263,9 @@ class DataEditor(NoSSRComponent):
 
         # Define the name of the getData callback associated with this component and assign to get_cell_content.
         data_callback = f"getData_{editor_id}"
-        self.get_cell_content = Var.create(data_callback, _var_is_local=False)  # type: ignore
+        self.get_cell_content = Var.create(
+            data_callback, _var_is_local=False, _var_is_string=False
+        )  # type: ignore
 
         code = [f"function {data_callback}([col, row])" "{"]
 
@@ -301,11 +303,7 @@ class DataEditor(NoSSRComponent):
 
         # If rows is not provided, determine from data.
         if rows is None:
-            props["rows"] = (
-                data.length()  # BaseVar.create(value=f"{data}.length()", is_local=False)
-                if isinstance(data, Var)
-                else len(data)
-            )
+            props["rows"] = data.length() if isinstance(data, Var) else len(data)
 
         if not isinstance(columns, Var) and len(columns):
             if (

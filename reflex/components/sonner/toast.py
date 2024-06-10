@@ -28,7 +28,7 @@ LiteralPosition = Literal[
 ]
 
 
-toast_ref = Var.create_safe("refs['__toast']")
+toast_ref = Var.create_safe("refs['__toast']", _var_is_string=False)
 
 
 class ToastAction(Base):
@@ -65,7 +65,8 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
     """
     return [
         Var.create_safe(
-            f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {toast}; return rest}})()"
+            f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {toast}; return rest}})()",
+            _var_is_string=False,
         )
     ]
 
@@ -179,7 +180,9 @@ class Toaster(Component):
     visible_toasts: Var[int]
 
     # the position of the toast
-    position: Var[LiteralPosition] = Var.create_safe("bottom-right")
+    position: Var[LiteralPosition] = Var.create_safe(
+        "bottom-right", _var_is_string=True
+    )
 
     # whether to show the close button
     close_button: Var[bool] = Var.create_safe(False)
@@ -217,6 +220,7 @@ class Toaster(Component):
         hook = Var.create_safe(
             f"{toast_ref} = toast",
             _var_is_local=True,
+            _var_is_string=False,
             _var_data=VarData(
                 imports={
                     "/utils/state": [ImportVar(tag="refs")],

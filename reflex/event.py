@@ -186,7 +186,7 @@ class EventHandler(EventActionsMixin):
 
         # Get the function args.
         fn_args = inspect.getfullargspec(self.fn).args[1:]
-        fn_args = (Var.create_safe(arg) for arg in fn_args)
+        fn_args = (Var.create_safe(arg, _var_is_string=False) for arg in fn_args)
 
         # Construct the payload.
         values = []
@@ -264,7 +264,7 @@ class EventSpec(EventActionsMixin):
 
         # Get the remaining unfilled function args.
         fn_args = inspect.getfullargspec(self.handler.fn).args[1 + len(self.args) :]
-        fn_args = (Var.create_safe(arg) for arg in fn_args)
+        fn_args = (Var.create_safe(arg, _var_is_string=False) for arg in fn_args)
 
         # Construct the payload.
         values = []
@@ -389,13 +389,13 @@ class FileUpload(Base):
 
         spec_args = [
             (
-                Var.create_safe("files"),
-                Var.create_safe(f"filesById.{upload_id}")._replace(
-                    _var_data=upload_files_context_var_data
-                ),
+                Var.create_safe("files", _var_is_string=False),
+                Var.create_safe(
+                    f"filesById.{upload_id}", _var_is_string=False
+                )._replace(_var_data=upload_files_context_var_data),
             ),
             (
-                Var.create_safe("upload_id"),
+                Var.create_safe("upload_id", _var_is_string=False),
                 Var.create_safe(upload_id, _var_is_string=True),
             ),
         ]
@@ -424,7 +424,7 @@ class FileUpload(Base):
             formatted_chain = str(format.format_prop(on_upload_progress_chain))
             spec_args.append(
                 (
-                    Var.create_safe("on_upload_progress"),
+                    Var.create_safe("on_upload_progress", _var_is_string=False),
                     BaseVar(
                         _var_name=formatted_chain.strip("{}"),
                         _var_type=EventChain,
@@ -464,7 +464,10 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     return EventSpec(
         handler=EventHandler(fn=fn),
         args=tuple(
-            (Var.create_safe(k), Var.create_safe(v, _var_is_string=isinstance(v, str)))
+            (
+                Var.create_safe(k, _var_is_string=False),
+                Var.create_safe(v, _var_is_string=isinstance(v, str)),
+            )
             for k, v in kwargs.items()
         ),
     )

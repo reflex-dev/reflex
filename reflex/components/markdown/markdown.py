@@ -23,19 +23,23 @@ from reflex.utils.imports import ImportVar
 from reflex.vars import Var
 
 # Special vars used in the component map.
-_CHILDREN = Var.create_safe("children", _var_is_local=False)
-_PROPS = Var.create_safe("...props", _var_is_local=False)
-_MOCK_ARG = Var.create_safe("")
+_CHILDREN = Var.create_safe("children", _var_is_local=False, _var_is_string=False)
+_PROPS = Var.create_safe("...props", _var_is_local=False, _var_is_string=False)
+_MOCK_ARG = Var.create_safe("", _var_is_string=False)
 
 # Special remark plugins.
-_REMARK_MATH = Var.create_safe("remarkMath", _var_is_local=False)
-_REMARK_GFM = Var.create_safe("remarkGfm", _var_is_local=False)
-_REMARK_UNWRAP_IMAGES = Var.create_safe("remarkUnwrapImages", _var_is_local=False)
+_REMARK_MATH = Var.create_safe("remarkMath", _var_is_local=False, _var_is_string=False)
+_REMARK_GFM = Var.create_safe("remarkGfm", _var_is_local=False, _var_is_string=False)
+_REMARK_UNWRAP_IMAGES = Var.create_safe(
+    "remarkUnwrapImages", _var_is_local=False, _var_is_string=False
+)
 _REMARK_PLUGINS = Var.create_safe([_REMARK_MATH, _REMARK_GFM, _REMARK_UNWRAP_IMAGES])
 
 # Special rehype plugins.
-_REHYPE_KATEX = Var.create_safe("rehypeKatex", _var_is_local=False)
-_REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False)
+_REHYPE_KATEX = Var.create_safe(
+    "rehypeKatex", _var_is_local=False, _var_is_string=False
+)
+_REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False, _var_is_string=False)
 _REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
 
 # These tags do NOT get props passed to them
@@ -210,7 +214,9 @@ class Markdown(Component):
         # If the children are set as a prop, don't pass them as children.
         children_prop = props.pop("children", None)
         if children_prop is not None:
-            special_props.add(Var.create_safe(f"children={str(children_prop)}"))
+            special_props.add(
+                Var.create_safe(f"children={str(children_prop)}", _var_is_string=False)
+            )
             children = []
 
         # Get the component.
@@ -259,7 +265,7 @@ class Markdown(Component):
     return inline ? (
         {self.format_component("code")}
     ) : (
-        {self.format_component("codeblock", language=Var.create_safe("language", _var_is_local=False))}
+        {self.format_component("codeblock", language=Var.create_safe("language", _var_is_local=False, _var_is_string=False))}
     );
       }}}}""".replace("\n", " ")
 

@@ -105,7 +105,7 @@ class AccordionRoot(AccordionComponent):
     duration: Var[int] = Var.create_safe(DEFAULT_ANIMATION_DURATION)
 
     # The easing function to use for the animation.
-    easing: Var[str] = Var.create_safe(DEFAULT_ANIMATION_EASING)
+    easing: Var[str] = Var.create_safe(DEFAULT_ANIMATION_EASING, _var_is_string=True)
 
     # Whether to show divider lines between items.
     show_dividers: Var[bool]

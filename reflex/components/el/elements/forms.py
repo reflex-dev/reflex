@@ -17,7 +17,7 @@ from reflex.vars import BaseVar, Var
 
 from .base import BaseHTML
 
-FORM_DATA = Var.create("form_data")
+FORM_DATA = Var.create("form_data", _var_is_string=False)
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     """
     const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
@@ -221,17 +221,19 @@ class Form(BaseHTML):
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
-                ref_var = Var.create_safe(ref[:-3]).as_ref()
+                ref_var = Var.create_safe(ref[:-3], _var_is_string=False).as_ref()
                 form_refs[ref[5:-3]] = Var.create_safe(
                     f"getRefValues({str(ref_var)})",
                     _var_is_local=False,
+                    _var_is_string=False,
                     _var_data=ref_var._var_data,
                 )
             else:
-                ref_var = Var.create_safe(ref).as_ref()
+                ref_var = Var.create_safe(ref, _var_is_string=False).as_ref()
                 form_refs[ref[4:]] = Var.create_safe(
                     f"getRefValue({str(ref_var)})",
                     _var_is_local=False,
+                    _var_is_string=False,
                     _var_data=ref_var._var_data,
                 )
         return form_refs
@@ -630,6 +632,7 @@ class Textarea(BaseHTML):
                 on_key_down=Var.create_safe(
                     f"(e) => enterKeySubmitOnKeyDown(e, {self.enter_key_submit._var_name_unwrapped})",
                     _var_is_local=False,
+                    _var_is_string=False,
                     _var_data=self.enter_key_submit._var_data,
                 )
             )
@@ -638,6 +641,7 @@ class Textarea(BaseHTML):
                 on_input=Var.create_safe(
                     f"(e) => autoHeightOnInput(e, {self.auto_height._var_name_unwrapped})",
                     _var_is_local=False,
+                    _var_is_string=False,
                     _var_data=self.auto_height._var_data,
                 )
             )

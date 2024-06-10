@@ -504,10 +504,13 @@ class CodeBlock(Component):
             style=Var.create(
                 format.to_camel_case(f"{predicate}{qmark}{value.replace('`', '')}"),
                 _var_is_local=False,
+                _var_is_string=False,
             )
         ).remove_props("theme", "code")
         if self.code is not None:
-            out.special_props.add(Var.create_safe(f"children={str(self.code)}"))
+            out.special_props.add(
+                Var.create_safe(f"children={str(self.code)}", _var_is_string=False)
+            )
         return out
 
     @staticmethod
