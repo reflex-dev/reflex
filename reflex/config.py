@@ -462,8 +462,12 @@ class Config(Base):
 
             # Check if the return type is valid for backend exception handler
             if handler_domain == "backend":
-                sig = inspect.signature(self.backend_exception_handler, eval_str=True)
-                return_type = sig.return_annotation
+                sig = inspect.signature(self.backend_exception_handler)
+                return_type = (
+                    eval(sig.return_annotation)
+                    if isinstance(sig.return_annotation, str)
+                    else sig.return_annotation
+                )
 
                 valid = bool(
                     return_type == EventSpec
