@@ -1128,7 +1128,7 @@ class Component(BaseComponent, ABC):
             exclude_event_trigger_values = []
         if self.event_triggers and not any(
             [
-                trigger_value._var_name in exclude_event_trigger_values
+                Var.create_safe(trigger_value)._var_name in exclude_event_trigger_values
                 for trigger_value in self.event_triggers.values()
             ]
         ):
