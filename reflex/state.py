@@ -8,7 +8,6 @@ import copy
 import functools
 import inspect
 import os
-import traceback
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -40,13 +39,13 @@ from redis.exceptions import ResponseError
 
 from reflex import constants
 from reflex.base import Base
+from reflex.config import get_config
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
     EventHandler,
     EventSpec,
     fix_events,
-    window_alert,
 )
 from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
@@ -1517,12 +1516,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # If an error occurs, throw a window alert.
         except Exception as ex:
-            error = traceback.format_exc()
-            print(error)
             telemetry.send_error(ex, context="backend")
+
+            config = get_config()
+
+            events = config.backend_exception_handler(ex)
+
             yield state._as_state_update(
                 handler,
-                window_alert("An error occurred. See logs for details."),
+                events,
                 final=True,
             )
 
@@ -1811,6 +1813,20 @@ class State(BaseState):
 
     # The hydrated bool.
     is_hydrated: bool = False
+
+    def handle_frontend_exception(self, stack: str) -> None:
+        """Handle frontend exceptions.
+
+        If a frontend exception handler is provided, it will be called.
+        Otherwise, the default frontend exception handler will be called.
+
+        Args:
+            stack: The stack trace of the exception.
+
+        """
+        config = get_config()
+
+        config.frontend_exception_handler(Exception(stack))
 
 
 class UpdateVarsInternalState(State):
