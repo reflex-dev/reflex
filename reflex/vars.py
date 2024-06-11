@@ -219,10 +219,7 @@ class VarData(Base):
             "state": self.state,
             "interpolations": list(self.interpolations),
             "imports": {
-                lib: [
-                    import_var.dict() if isinstance(import_var, ImportVar) else {}
-                    for import_var in import_vars
-                ]
+                lib: [import_var.dict() for import_var in import_vars]
                 for lib, import_vars in self.imports.items()
             },
             "hooks": self.hooks,

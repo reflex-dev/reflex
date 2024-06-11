@@ -1300,30 +1300,15 @@ class Component(BaseComponent, ABC):
             var._var_data.imports for var in self._get_vars() if var._var_data
         ]
 
-        # If any subclass implements add_imports, merge the imports.
-        # def _make_list(
-        #     value: str | ImportVar | list[str | ImportVar],
-        # ) -> list[str | ImportVar]:
-        #     if isinstance(value, (str, ImportVar)):
-        #         return [value]
-        #     return value
-
-        _added_import_dicts: list[ParsedImportDict] = []
+        added_import_dicts: list[ParsedImportDict] = []
         for clz in self._iter_parent_classes_with_method("add_imports"):
-            added_imports_ = clz.add_imports(self)
-            if not isinstance(added_imports_, list):
-                added_imports_ = [added_imports_]
-            for added_imports in added_imports_:
-                _added_import_dicts.append(parse_imports(added_imports))
-                # {
-                #     package: [
-                #         ImportVar(tag=tag)
-                #         if not isinstance(tag, ImportVar)
-                #         else tag
-                #         for tag in _make_list(maybe_tags)
-                #     ]
-                #     for package, maybe_tags in added_imports.items()
-                # }
+            list_of_import_dict = clz.add_imports(self)
+
+            if not isinstance(list_of_import_dict, list):
+                list_of_import_dict = [list_of_import_dict]
+
+            for import_dict in list_of_import_dict:
+                added_import_dicts.append(parse_imports(import_dict))
 
         return imports.merge_imports(
             *self._get_props_imports(),
@@ -1332,7 +1317,7 @@ class Component(BaseComponent, ABC):
             _imports,
             event_imports,
             *var_imports,
-            *_added_import_dicts,
+            *added_import_dicts,
         )
 
     def _get_all_imports(self, collapse: bool = False) -> ParsedImportDict:
