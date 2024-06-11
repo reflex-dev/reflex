@@ -1119,7 +1119,6 @@ async def process(
     """
     from reflex.utils import telemetry
 
-    print(f"Event: {event}\n ==================\n")
     try:
         # Add request data to the state.
         router_data = event.router_data
