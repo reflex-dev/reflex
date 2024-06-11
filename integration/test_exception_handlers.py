@@ -4,9 +4,9 @@ from __future__ import annotations
 import asyncio
 import time
 from typing import Generator
-from unittest.mock import AsyncMock
 
 import pytest
+import pytest_asyncio
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
@@ -59,7 +59,7 @@ def TestApp():
         )
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 def event_loop(request):
     """Create an instance of the default event loop for each test case.
 
@@ -141,11 +141,10 @@ def test_frontend_exception_handler_during_runtime(
 
 
 @pytest.mark.asyncio
-async def test_backend_exception_handler_during_runtime(mocker, capsys, test_app):
+async def test_backend_exception_handler_during_runtime(capsys, test_app):
     """Test calling backend exception handler during runtime.
 
     Args:
-        mocker: mocker object.
         capsys: capsys fixture.
         test_app: harness for CallScript app.
 
@@ -162,7 +161,6 @@ async def test_backend_exception_handler_during_runtime(mocker, capsys, test_app
     }
 
     app = test_app.app_instance
-    mocker.patch.object(app, "_postprocess", AsyncMock())
 
     payload = {"c": "5"}  # should be an int
 
