@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
-from reflex.vars import Var
 from reflex.event import EventHandler
+from reflex.vars import Var
 
 from .recharts import (
     LiteralAnimationEasing,
@@ -75,44 +75,45 @@ class Axis(Recharts):
     # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
     name: Var[Union[str, int]]
 
-        # Set the values of axis ticks manually.
+    # Set the values of axis ticks manually.
     ticks: Var[List[Union[str, int]]]
 
     # If set false, no ticks will be drawn.
     tick: Var[bool]
 
     # The count of axis ticks.
-    tick_count: Var[int] 
+    tick_count: Var[int]
 
     # If set false, no axis tick lines will be drawn.
     tick_line: Var[bool]
 
     # The length of tick line.
-    tick_size: Var[int] 
+    tick_size: Var[int]
 
     # The minimum gap between two adjacent labels
-    min_tick_gap: Var[int]  
+    min_tick_gap: Var[int]
 
     # The customized event handler of click on the ticks of this axis
     on_click: EventHandler[lambda: []]
 
     # The customized event handler of mousedown on the ticks of this axis
-    on_mouse_down: EventHandler[lambda: []] = None
+    on_mouse_down: EventHandler[lambda: []]
 
     # The customized event handler of mouseup on the ticks of this axis
-    on_mouse_up: EventHandler[lambda: []] = None
+    on_mouse_up: EventHandler[lambda: []]
 
     # The customized event handler of mousemove on the ticks of this axis
-    on_mouse_move: EventHandler[lambda: []] = None
+    on_mouse_move: EventHandler[lambda: []]
 
     # The customized event handler of mouseout on the ticks of this axis
-    on_mouse_out: EventHandler[lambda: []] = None
+    on_mouse_out: EventHandler[lambda: []]
 
     # The customized event handler of mouseenter on the ticks of this axis
-    on_mouse_enter: EventHandler[lambda: []] = None
+    on_mouse_enter: EventHandler[lambda: []]
 
     # The customized event handler of mouseleave on the ticks of this axis
-    on_mouse_leave: EventHandler[lambda: []] = None
+    on_mouse_leave: EventHandler[lambda: []]
+
 
 class XAxis(Axis):
     """An XAxis component in Recharts."""
@@ -238,28 +239,28 @@ class Cartesian(Recharts):
     legend_type: Var[LiteralLegendType]
 
     # The customized event handler of click on the component in this group
-    on_click: EventHandler[lambda: []] = None
+    on_click: EventHandler[lambda: []]
 
     # The customized event handler of mousedown on the component in this group
-    on_mouse_down: EventHandler[lambda: []] = None
+    on_mouse_down: EventHandler[lambda: []]
 
     # The customized event handler of mouseup on the component in this group
-    on_mouse_up: EventHandler[lambda: []] = None
+    on_mouse_up: EventHandler[lambda: []]
 
     # The customized event handler of mousemove on the component in this group
-    on_mouse_move: EventHandler[lambda: []] = None
+    on_mouse_move: EventHandler[lambda: []]
 
     # The customized event handler of mouseover on the component in this group
-    on_mouse_over: EventHandler[lambda: []] = None
+    on_mouse_over: EventHandler[lambda: []]
 
     # The customized event handler of mouseout on the component in this group
-    on_mouse_out: EventHandler[lambda: []] = None
+    on_mouse_out: EventHandler[lambda: []]
 
     # The customized event handler of mouseenter on the component in this group
-    on_mouse_enter: EventHandler[lambda: []] = None
+    on_mouse_enter: EventHandler[lambda: []]
 
     # The customized event handler of mouseleave on the component in this group
-    on_mouse_leave: EventHandler[lambda: []] = None
+    on_mouse_leave: EventHandler[lambda: []]
 
 
 class Area(Cartesian):
@@ -346,26 +347,24 @@ class Bar(Cartesian):
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]
 
-    # The unique id of this component, which will be used to generate unique clip path id internally. This props is suggested to be set in SSR.
-    id: Var[str]
-
     # If set false, animation of bar will be disabled.
     is_animation_active: Var[bool]
 
-    # Specifies when the animation should begin, the unit of this option is ms, default 0. 
+    # Specifies when the animation should begin, the unit of this option is ms, default 0.
     animation_begin: Var[int]
 
-    # Specifies the duration of animation, the unit of this option is ms, default 1500. 
+    # Specifies the duration of animation, the unit of this option is ms, default 1500.
     animation_duration: Var[int]
 
     # The type of easing function, default 'ease'
     animation_easing: Var[LiteralAnimationEasing]
 
     # The customized event handler of animation start
-    on_animation_begin: EventHandler[lambda: []] = None
+    on_animation_begin: EventHandler[lambda: []]
 
     # The customized event handler of animation end
-    on_animation_end: EventHandler[lambda: []] = None
+    on_animation_end: EventHandler[lambda: []]
+
 
 class Line(Cartesian):
     """A Line component in Recharts."""
@@ -451,42 +450,38 @@ class Scatter(Recharts):
     # If set false, animation of bar will be disabled.
     is_animation_active: Var[bool]
 
-    # Specifies when the animation should begin, the unit of this option is ms, default 0. 
+    # Specifies when the animation should begin, the unit of this option is ms, default 0.
     animation_begin: Var[int]
 
-    # Specifies the duration of animation, the unit of this option is ms, default 1500. 
+    # Specifies the duration of animation, the unit of this option is ms, default 1500.
     animation_duration: Var[int]
 
     # The type of easing function, default 'ease'
     animation_easing: Var[LiteralAnimationEasing]
 
-    # The unique id of this component, which will be used to generate unique clip path id internally. This props is suggested to be set in SSR.
-    id: Var[str]
-
     # The customized event handler of click on the component in this group
-    on_click: EventHandler[lambda: []] = None
+    on_click: EventHandler[lambda: []]
 
     # The customized event handler of mousedown on the component in this group
-    on_mouse_down: EventHandler[lambda: []] = None
+    on_mouse_down: EventHandler[lambda: []]
 
     # The customized event handler of mouseup on the component in this group
-    on_mouse_up: EventHandler[lambda: []] = None
+    on_mouse_up: EventHandler[lambda: []]
 
     # The customized event handler of mousemove on the component in this group
-    on_mouse_move: EventHandler[lambda: []] = None
+    on_mouse_move: EventHandler[lambda: []]
 
     # The customized event handler of mouseover on the component in this group
-    on_mouse_over: EventHandler[lambda: []] = None
+    on_mouse_over: EventHandler[lambda: []]
 
     # The customized event handler of mouseout on the component in this group
-    on_mouse_out: EventHandler[lambda: []] = None
+    on_mouse_out: EventHandler[lambda: []]
 
     # The customized event handler of mouseenter on the component in this group
-    on_mouse_enter: EventHandler[lambda: []] = None
+    on_mouse_enter: EventHandler[lambda: []]
 
     # The customized event handler of mouseleave on the component in this group
-    on_mouse_leave: EventHandler[lambda: []] = None
-
+    on_mouse_leave: EventHandler[lambda: []]
 
 
 class Funnel(Recharts):
@@ -524,34 +519,34 @@ class Funnel(Recharts):
     _valid_children: List[str] = ["LabelList", "Cell"]
 
     # The customized event handler of animation start
-    on_animation_start: EventHandler[lambda: []] = None
+    on_animation_start: EventHandler[lambda: []]
 
     # The customized event handler of animation end
-    on_animation_end: EventHandler[lambda: []] = None
+    on_animation_end: EventHandler[lambda: []]
 
     # The customized event handler of click on the component in this group
-    on_click: EventHandler[lambda: []] = None
+    on_click: EventHandler[lambda: []]
 
     # The customized event handler of mousedown on the component in this group
-    on_mouse_down: EventHandler[lambda: []] = None
+    on_mouse_down: EventHandler[lambda: []]
 
     # The customized event handler of mouseup on the component in this group
-    on_mouse_up: EventHandler[lambda: []] = None
+    on_mouse_up: EventHandler[lambda: []]
 
     # The customized event handler of mousemove on the component in this group
-    on_mouse_move: EventHandler[lambda: []] = None
+    on_mouse_move: EventHandler[lambda: []]
 
     # The customized event handler of mouseover on the component in this group
-    on_mouse_over: EventHandler[lambda: []] = None
+    on_mouse_over: EventHandler[lambda: []]
 
     # The customized event handler of mouseout on the component in this group
-    on_mouse_out: EventHandler[lambda: []] = None
+    on_mouse_out: EventHandler[lambda: []]
 
     # The customized event handler of mouseenter on the component in this group
-    on_mouse_enter: EventHandler[lambda: []] = None
+    on_mouse_enter: EventHandler[lambda: []]
 
     # The customized event handler of mouseleave on the component in this group
-    on_mouse_leave: EventHandler[lambda: []] = None
+    on_mouse_leave: EventHandler[lambda: []]
 
 
 class ErrorBar(Recharts):
@@ -624,28 +619,28 @@ class ReferenceDot(Reference):
     _valid_children: List[str] = ["Label"]
 
     # The customized event handler of click on the component in this chart
-    on_click: EventHandler[lambda: []] = None
+    on_click: EventHandler[lambda: []]
 
     # The customized event handler of mousedown on the component in this chart
-    on_mouse_down: EventHandler[lambda: []] = None
+    on_mouse_down: EventHandler[lambda: []]
 
     # The customized event handler of mouseup on the component in this chart
-    on_mouse_up: EventHandler[lambda: []] = None
+    on_mouse_up: EventHandler[lambda: []]
 
     # The customized event handler of mouseover on the component in this chart
-    on_mouse_over: EventHandler[lambda: []] = None
+    on_mouse_over: EventHandler[lambda: []]
 
     # The customized event handler of mouseout on the component in this chart
-    on_mouse_out: EventHandler[lambda: []] = None
+    on_mouse_out: EventHandler[lambda: []]
 
     # The customized event handler of mouseenter on the component in this chart
-    on_mouse_enter: EventHandler[lambda: []] = None
+    on_mouse_enter: EventHandler[lambda: []]
 
     # The customized event handler of mousemove on the component in this chart
-    on_mouse_move: EventHandler[lambda: []] = None
+    on_mouse_move: EventHandler[lambda: []]
 
     # The customized event handler of mouseleave on the component in this chart
-    on_mouse_leave: EventHandler[lambda: []] = None
+    on_mouse_leave: EventHandler[lambda: []]
 
 
 class ReferenceArea(Recharts):
@@ -721,7 +716,7 @@ class CartesianGrid(Grid):
     # The vertical line configuration.
     vertical: Var[bool]
 
-    # The x-coordinates in pixel values of all vertical lines. 
+    # The x-coordinates in pixel values of all vertical lines.
     vertical_points: Var[List[Union[str, int]]]
 
     # The x-coordinates in pixel values of all vertical lines.

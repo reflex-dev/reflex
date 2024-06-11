@@ -29,16 +29,16 @@ class ChartBase(RechartsCharts):
     height: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The customized event handler of click on the component in this chart
-    on_click: EventHandler[lambda: []] = None
+    on_click: EventHandler[lambda: []]
 
     # The customized event handler of mouseenter on the component in this chart
-    on_mouse_enter: EventHandler[lambda: []] = None
+    on_mouse_enter: EventHandler[lambda: []]
 
     # The customized event handler of mousemove on the component in this chart
-    on_mouse_move: EventHandler[lambda: []] = None
+    on_mouse_move: EventHandler[lambda: []]
 
     # The customized event handler of mouseleave on the component in this chart
-    on_mouse_leave: EventHandler[lambda: []] = None
+    on_mouse_leave: EventHandler[lambda: []]
 
     @staticmethod
     def _ensure_valid_dimension(name: str, value: Any) -> None:
@@ -268,16 +268,16 @@ class PieChart(ChartBase):
     ]
 
     # The customized event handler of mousedown on the sectors in this group
-    on_mouse_down: EventHandler[lambda: []] = None
+    on_mouse_down: EventHandler[lambda: []]
 
     # The customized event handler of mouseup on the sectors in this group
-    on_mouse_up: EventHandler[lambda: []] = None
+    on_mouse_up: EventHandler[lambda: []]
 
     # The customized event handler of mouseover on the sectors in this group
-    on_mouse_over: EventHandler[lambda: []] = None
+    on_mouse_over: EventHandler[lambda: []]
 
     # The customized event handler of mouseout on the sectors in this group
-    on_mouse_out: EventHandler[lambda: []] = None
+    on_mouse_out: EventHandler[lambda: []]
 
 
 class RadarChart(ChartBase):
