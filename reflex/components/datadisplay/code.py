@@ -1,4 +1,6 @@
 """A code component."""
+from __future__ import annotations
+
 import re
 from typing import Dict, Literal, Optional, Union
 
@@ -7,6 +9,7 @@ from reflex.components.chakra.layout import Box
 from reflex.components.chakra.media import Icon
 from reflex.components.component import Component
 from reflex.components.core.cond import color_mode_cond
+from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils import format, imports
@@ -373,7 +376,7 @@ class CodeBlock(Component):
     wrap_long_lines: Var[bool]
 
     # A custom style for the code block.
-    custom_style: Dict[str, str] = {}
+    custom_style: Dict[str, Union[str, Var, Color]] = {}
 
     # Props passed down to the code tag.
     code_tag_props: Var[Dict[str, str]]
@@ -387,9 +390,9 @@ class CodeBlock(Component):
         merged_imports = imports.merge_imports(
             merged_imports,
             {
-                f"react-syntax-highlighter/dist/cjs/styles/prism/{theme}": {
+                f"react-syntax-highlighter/dist/cjs/styles/prism/{self.convert_theme_name(theme)}": {
                     ImportVar(
-                        tag=format.to_camel_case(theme),
+                        tag=format.to_camel_case(self.convert_theme_name(theme)),
                         is_default=True,
                         install=False,
                     )
@@ -451,13 +454,7 @@ class CodeBlock(Component):
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
         if "theme" in props and not isinstance(props["theme"], Var):
-            props["theme"] = (
-                "one-light"
-                if props["theme"] == "light"
-                else "one-dark"
-                if props["theme"] == "dark"
-                else props["theme"]
-            )
+            props["theme"] = cls.convert_theme_name(props["theme"])
 
         if can_copy:
             code = children[0]
@@ -496,8 +493,9 @@ class CodeBlock(Component):
         else:
             return code_block
 
-    def _add_style(self, style):
-        self.custom_style.update(style)  # type: ignore
+    def add_style(self):
+        """Add style to the component."""
+        self.custom_style.update(self.style)
 
     def _render(self):
         out = super()._render()
@@ -506,8 +504,28 @@ class CodeBlock(Component):
             style=Var.create(
                 format.to_camel_case(f"{predicate}{qmark}{value.replace('`', '')}"),
                 _var_is_local=False,
+                _var_is_string=False,
             )
         ).remove_props("theme", "code")
         if self.code is not None:
-            out.special_props.add(Var.create_safe(f"children={str(self.code)}"))
+            out.special_props.add(
+                Var.create_safe(f"children={str(self.code)}", _var_is_string=False)
+            )
         return out
+
+    @staticmethod
+    def convert_theme_name(theme) -> str:
+        """Convert theme names to appropriate names.
+
+        Args:
+            theme: The theme name.
+
+        Returns:
+            The right theme name.
+        """
+        if theme in ["light", "dark"]:
+            return f"one-{theme}"
+        return theme
+
+
+code_block = CodeBlock.create

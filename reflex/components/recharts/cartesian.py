@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
+from reflex.constants.colors import Color
 from reflex.vars import Var
 
 from .recharts import (
@@ -13,7 +14,9 @@ from .recharts import (
     LiteralIfOverflow,
     LiteralInterval,
     LiteralLayout,
+    LiteralLegendType,
     LiteralLineType,
+    LiteralOrientationLeftRight,
     LiteralOrientationTopBottom,
     LiteralOrientationTopBottomLeftRight,
     LiteralPolarRadiusType,
@@ -32,6 +35,12 @@ class Axis(Recharts):
     # If set true, the axis do not display in the chart.
     hide: Var[bool]
 
+    # The width of axis which is usually calculated internally.
+    width: Var[Union[str, int]]
+
+    # The height of axis, which can be setted by user.
+    height: Var[Union[str, int]]
+
     # The orientation of axis 'top' | 'bottom'
     orientation: Var[LiteralOrientationTopBottom]
 
@@ -49,9 +58,6 @@ class Axis(Recharts):
 
     # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
     axis_line: Var[bool]
-
-    # If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines.
-    tick_line: Var[bool]
 
     # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
     mirror: Var[bool]
@@ -76,6 +82,8 @@ class Axis(Recharts):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
@@ -91,6 +99,12 @@ class XAxis(Axis):
 
     alias = "RechartsXAxis"
 
+    # The id of x-axis which is corresponding to the data.
+    x_axis_id: Var[Union[str, int]]
+
+    # Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
+    include_hidden: Var[bool] = Var.create_safe(False)
+
 
 class YAxis(Axis):
     """A YAxis component in Recharts."""
@@ -99,8 +113,14 @@ class YAxis(Axis):
 
     alias = "RechartsYAxis"
 
+    # The orientation of axis 'left' | 'right'
+    orientation: Var[LiteralOrientationLeftRight]
+
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
+
+    # The id of y-axis which is corresponding to the data.
+    y_axis_id: Var[Union[str, int]]
 
 
 class ZAxis(Recharts):
@@ -134,7 +154,7 @@ class Brush(Recharts):
     alias = "RechartsBrush"
 
     # Stroke color
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
@@ -204,6 +224,8 @@ class Cartesian(Recharts):
         return {
             EventTriggers.ON_CLICK: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
@@ -219,13 +241,13 @@ class Area(Cartesian):
     alias = "RechartsArea"
 
     # The color of the line stroke.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The width of the line stroke.
     stroke_width: Var[int]
 
     # The color of the area fill.
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
     type_: Var[LiteralAreaType]
@@ -239,7 +261,7 @@ class Area(Cartesian):
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
     label: Var[bool]
 
-    # The stack id of area, when two areas have the same value axis and same stackId, then the two areas area stacked in order.
+    # The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
     stack_id: Var[str]
 
     # Valid children components
@@ -254,13 +276,13 @@ class Bar(Cartesian):
     alias = "RechartsBar"
 
     # The color of the line stroke.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The width of the line stroke.
     stroke_width: Var[int]
 
     # The width of the line stroke.
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
     background: Var[bool]
@@ -268,10 +290,10 @@ class Bar(Cartesian):
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
     label: Var[bool]
 
-    # The stack id of bar, when two areas have the same value axis and same stackId, then the two areas area stacked in order.
+    # The stack id of bar, when two bars have the same value axis and same stack_id, then the two bars are stacked in order.
     stack_id: Var[str]
 
-    # Size of the bar
+    # Size of the bar (if one bar_size is set then a bar_size must be set for all bars)
     bar_size: Var[int]
 
     # Max size of the bar
@@ -292,7 +314,7 @@ class Line(Cartesian):
     type_: Var[LiteralAreaType]
 
     # The color of the line stroke.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The width of the line stroke.
     stoke_width: Var[int]
@@ -316,7 +338,7 @@ class Line(Cartesian):
     _valid_children: List[str] = ["LabelList", "ErrorBar"]
 
 
-class Scatter(Cartesian):
+class Scatter(Recharts):
     """A Scatter component in Recharts."""
 
     tag = "Scatter"
@@ -325,6 +347,15 @@ class Scatter(Cartesian):
 
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
+
+    # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'
+    legend_type: Var[LiteralLegendType]
+
+    # The id of x-axis which is corresponding to the data.
+    x_axis_id: Var[Union[str, int]]
+
+    # The id of y-axis which is corresponding to the data.
+    y_axis_id: Var[Union[str, int]]
 
     # The id of z-axis which is corresponding to the data.
     z_axis_id: Var[str]
@@ -339,7 +370,7 @@ class Scatter(Cartesian):
     line_type: Var[LiteralLineType]
 
     # The fill
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # the name
     name: Var[Union[str, int]]
@@ -347,8 +378,25 @@ class Scatter(Cartesian):
     # Valid children components.
     _valid_children: List[str] = ["LabelList", "ErrorBar"]
 
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
 
-class Funnel(Cartesian):
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
+
+
+class Funnel(Recharts):
     """A Funnel component in Recharts."""
 
     tag = "Funnel"
@@ -357,6 +405,15 @@ class Funnel(Cartesian):
 
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
+
+    # The key of a group of data which should be unique in an area chart.
+    data_key: Var[Union[str, int]]
+
+    # The type of icon in legend. If set to 'none', no legend item will be rendered.
+    legend_type: Var[LiteralLegendType]
+
+    # If set false, animation of line will be disabled.
+    is_animation_active: Var[bool]
 
     # Specifies when the animation should begin, the unit of this option is ms.
     animation_begin: Var[int]
@@ -369,6 +426,23 @@ class Funnel(Cartesian):
 
     # Valid children components
     _valid_children: List[str] = ["LabelList", "Cell"]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
 
 
 class ErrorBar(Recharts):
@@ -388,7 +462,7 @@ class ErrorBar(Recharts):
     width: Var[int]
 
     # The stroke color of error bar.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The stroke width of error bar.
     stroke_width: Var[int]
@@ -464,10 +538,10 @@ class ReferenceArea(Recharts):
     alias = "RechartsReferenceArea"
 
     # Stroke color
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # Fill color
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # The opacity of area.
     fill_opacity: Var[float]
@@ -524,13 +598,13 @@ class CartesianGrid(Grid):
     alias = "RechartsCartesianGrid"
 
     # The horizontal line configuration.
-    horizontal: Var[Dict[str, Any]]
+    horizontal: Var[bool]
 
     # The vertical line configuration.
-    vertical: Var[Dict[str, Any]]
+    vertical: Var[bool]
 
     # The background of grid.
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # The opacity of the background used to fill the space between grid lines
     fill_opacity: Var[float]
@@ -572,3 +646,20 @@ class CartesianAxis(Grid):
 
     # The margin between tick line and tick.
     tick_margin: Var[int]
+
+
+area = Area.create
+bar = Bar.create
+line = Line.create
+scatter = Scatter.create
+x_axis = XAxis.create
+y_axis = YAxis.create
+z_axis = ZAxis.create
+brush = Brush.create
+cartesian_axis = CartesianAxis.create
+cartesian_grid = CartesianGrid.create
+reference_line = ReferenceLine.create
+reference_dot = ReferenceDot.create
+reference_area = ReferenceArea.create
+error_bar = ErrorBar.create
+funnel = Funnel.create

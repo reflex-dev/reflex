@@ -1,9 +1,10 @@
 """Compiler for the reflex apps."""
+
 from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Iterable, Optional, Type
+from typing import Dict, Iterable, Optional, Type, Union
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -16,8 +17,10 @@ from reflex.components.component import (
 )
 from reflex.config import get_config
 from reflex.state import BaseState
-from reflex.style import LIGHT_COLOR_MODE
+from reflex.style import SYSTEM_COLOR_MODE
+from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
+from reflex.vars import Var
 
 
 def _compile_document_root(root: Component) -> str:
@@ -30,7 +33,7 @@ def _compile_document_root(root: Component) -> str:
         The compiled document root.
     """
     return templates.DOCUMENT_ROOT.render(
-        imports=utils.compile_imports(root.get_imports()),
+        imports=utils.compile_imports(root._get_all_imports()),
         document=root.render(),
     )
 
@@ -45,9 +48,9 @@ def _compile_app(app_root: Component) -> str:
         The compiled app.
     """
     return templates.APP_ROOT.render(
-        imports=utils.compile_imports(app_root.get_imports()),
-        custom_codes=app_root.get_custom_code(),
-        hooks=app_root.get_hooks(),
+        imports=utils.compile_imports(app_root._get_all_imports()),
+        custom_codes=app_root._get_all_custom_code(),
+        hooks={**app_root._get_all_hooks_internal(), **app_root._get_all_hooks()},
         render=app_root.render(),
     )
 
@@ -64,11 +67,7 @@ def _compile_theme(theme: dict) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _is_dev_mode() -> bool:
-    return os.environ.get("REFLEX_ENV_MODE", "dev") == "dev"
-
-
-def _compile_contexts(state: Optional[Type[BaseState]], theme: Component) -> str:
+def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None) -> str:
     """Compile the initial state and contexts.
 
     Args:
@@ -78,18 +77,21 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component) -> str
     Returns:
         The compiled context file.
     """
+    appearance = getattr(theme, "appearance", None)
+    if appearance is None:
+        appearance = SYSTEM_COLOR_MODE
     return (
         templates.CONTEXT.render(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
-            is_dev_mode=_is_dev_mode(),
-            default_color_mode=getattr(theme, "appearance", LIGHT_COLOR_MODE),
+            is_dev_mode=not is_prod_mode(),
+            default_color_mode=appearance,
         )
         if state
         else templates.CONTEXT.render(
-            is_dev_mode=_is_dev_mode(),
-            default_color_mode=getattr(theme, "appearance", LIGHT_COLOR_MODE),
+            is_dev_mode=not is_prod_mode(),
+            default_color_mode=appearance,
         )
     )
 
@@ -107,7 +109,7 @@ def _compile_page(
     Returns:
         The compiled component.
     """
-    imports = component.get_imports()
+    imports = component._get_all_imports()
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
@@ -115,9 +117,9 @@ def _compile_page(
 
     return templates.PAGE.render(
         imports=imports,
-        dynamic_imports=component.get_dynamic_imports(),
-        custom_codes=component.get_custom_code(),
-        hooks=component.get_hooks(),
+        dynamic_imports=component._get_all_dynamic_imports(),
+        custom_codes=component._get_all_custom_code(),
+        hooks={**component._get_all_hooks_internal(), **component._get_all_hooks()},
         render=component.render(),
         **kwargs,
     )
@@ -167,12 +169,12 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
                 raise FileNotFoundError(
                     f"The stylesheet file {stylesheet_full_path} does not exist."
                 )
-            stylesheet = f"@/{stylesheet.strip('/')}"
+            stylesheet = f"../{constants.Dirs.PUBLIC}/{stylesheet.strip('/')}"
         sheets.append(stylesheet) if stylesheet not in sheets else None
     return templates.STYLE.render(stylesheets=sheets)
 
 
-def _compile_component(component: Component) -> str:
+def _compile_component(component: Component | StatefulComponent) -> str:
     """Compile a single component.
 
     Args:
@@ -184,7 +186,9 @@ def _compile_component(component: Component) -> str:
     return templates.COMPONENT.render(component=component)
 
 
-def _compile_components(components: set[CustomComponent]) -> str:
+def _compile_components(
+    components: set[CustomComponent],
+) -> tuple[str, Dict[str, list[ImportVar]]]:
     """Compile the components.
 
     Args:
@@ -206,9 +210,12 @@ def _compile_components(components: set[CustomComponent]) -> str:
         imports = utils.merge_imports(imports, component_imports)
 
     # Compile the components page.
-    return templates.COMPONENTS.render(
-        imports=utils.compile_imports(imports),
-        components=component_renders,
+    return (
+        templates.COMPONENTS.render(
+            imports=utils.compile_imports(imports),
+            components=component_renders,
+        ),
+        imports,
     )
 
 
@@ -251,15 +258,24 @@ def _compile_stateful_components(
         if (
             isinstance(component, StatefulComponent)
             and component.references > 1
-            and not _is_dev_mode()
+            and is_prod_mode()
         ):
             # Reset this flag to render the actual component.
             component.rendered_as_shared = False
 
+            # Include dynamic imports in the shared component.
+            if dynamic_imports := component._get_all_dynamic_imports():
+                rendered_components.update(
+                    {dynamic_import: None for dynamic_import in dynamic_imports}
+                )
+
+            # Include custom code in the shared component.
             rendered_components.update(
-                {code: None for code in component.get_custom_code()},
+                {code: None for code in component._get_all_custom_code()},
             )
-            all_import_dicts.append(component.get_imports())
+
+            # Include all imports in the shared component.
+            all_import_dicts.append(component._get_all_imports())
 
             # Indicate that this component now imports from the shared file.
             component.rendered_as_shared = True
@@ -295,11 +311,17 @@ def _compile_tailwind(
     )
 
 
-def compile_document_root(head_components: list[Component]) -> tuple[str, str]:
+def compile_document_root(
+    head_components: list[Component],
+    html_lang: Optional[str] = None,
+    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+) -> tuple[str, str]:
     """Compile the document root.
 
     Args:
         head_components: The components to include in the head.
+        html_lang: The language of the document, will be added to the html root element.
+        html_custom_attrs: custom attributes added to the html root element.
 
     Returns:
         The path and code of the compiled document root.
@@ -308,7 +330,9 @@ def compile_document_root(head_components: list[Component]) -> tuple[str, str]:
     output_path = utils.get_page_path(constants.PageNames.DOCUMENT_ROOT)
 
     # Create the document root.
-    document_root = utils.create_document_root(head_components)
+    document_root = utils.create_document_root(
+        head_components, html_lang=html_lang, html_custom_attrs=html_custom_attrs
+    )
 
     # Compile the document root.
     code = _compile_document_root(document_root)
@@ -353,7 +377,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 
 def compile_contexts(
     state: Optional[Type[BaseState]],
-    theme: Component,
+    theme: Component | None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
@@ -391,7 +415,9 @@ def compile_page(
     return output_path, code
 
 
-def compile_components(components: set[CustomComponent]):
+def compile_components(
+    components: set[CustomComponent],
+) -> tuple[str, str, Dict[str, list[ImportVar]]]:
     """Compile the custom components.
 
     Args:
@@ -404,8 +430,8 @@ def compile_components(components: set[CustomComponent]):
     output_path = utils.get_components_path()
 
     # Compile the components.
-    code = _compile_components(components)
-    return output_path, code
+    code, imports = _compile_components(components)
+    return output_path, code, imports
 
 
 def compile_stateful_components(
@@ -471,9 +497,94 @@ def remove_tailwind_from_postcss() -> tuple[str, str]:
 
 def purge_web_pages_dir():
     """Empty out .web/pages directory."""
-    if _is_dev_mode() and os.environ.get("REFLEX_PERSIST_WEB_DIR"):
+    if not is_prod_mode() and os.environ.get("REFLEX_PERSIST_WEB_DIR"):
         # Skip purging the web directory in dev mode if REFLEX_PERSIST_WEB_DIR is set.
         return
 
     # Empty out the web pages directory.
     utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+
+
+class ExecutorSafeFunctions:
+    """Helper class to allow parallelisation of parts of the compilation process.
+
+    This class (and its class attributes) are available at global scope.
+
+    In a multiprocessing context (like when using a ProcessPoolExecutor), the content of this
+    global class is logically replicated to any FORKED process.
+
+    How it works:
+    * Before the child process is forked, ensure that we stash any input data required by any future
+      function call in the child process.
+    * After the child process is forked, the child process will have a copy of the global class, which
+      includes the previously stashed input data.
+    * Any task submitted to the child process simply needs a way to communicate which input data the
+      requested function call requires.
+
+    Why do we need this? Passing input data directly to child process often not possible because the input data is not picklable.
+    The mechanic described here removes the need to pickle the input data at all.
+
+    Limitations:
+    * This can never support returning unpicklable OUTPUT data.
+    * Any object mutations done by the child process will not propagate back to the parent process (fork goes one way!).
+
+    """
+
+    COMPILE_PAGE_ARGS_BY_ROUTE = {}
+    COMPILE_APP_APP_ROOT: Component | None = None
+    CUSTOM_COMPONENTS: set[CustomComponent] | None = None
+    STYLE: ComponentStyle | None = None
+
+    @classmethod
+    def compile_page(cls, route: str):
+        """Compile a page.
+
+        Args:
+            route: The route of the page to compile.
+
+        Returns:
+            The path and code of the compiled page.
+        """
+        return compile_page(*cls.COMPILE_PAGE_ARGS_BY_ROUTE[route])
+
+    @classmethod
+    def compile_app(cls):
+        """Compile the app.
+
+        Returns:
+            The path and code of the compiled app.
+
+        Raises:
+            ValueError: If the app root is not set.
+        """
+        if cls.COMPILE_APP_APP_ROOT is None:
+            raise ValueError("COMPILE_APP_APP_ROOT should be set")
+        return compile_app(cls.COMPILE_APP_APP_ROOT)
+
+    @classmethod
+    def compile_custom_components(cls):
+        """Compile the custom components.
+
+        Returns:
+            The path and code of the compiled custom components.
+
+        Raises:
+            ValueError: If the custom components are not set.
+        """
+        if cls.CUSTOM_COMPONENTS is None:
+            raise ValueError("CUSTOM_COMPONENTS should be set")
+        return compile_components(cls.CUSTOM_COMPONENTS)
+
+    @classmethod
+    def compile_theme(cls):
+        """Compile the theme.
+
+        Returns:
+            The path and code of the compiled theme.
+
+        Raises:
+            ValueError: If the style is not set.
+        """
+        if cls.STYLE is None:
+            raise ValueError("STYLE should be set")
+        return compile_theme(cls.STYLE)

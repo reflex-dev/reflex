@@ -23,6 +23,7 @@ from reflex.state import (
     ImmutableStateError,
     LockExpiredError,
     MutableProxy,
+    OnLoadInternalState,
     RouterData,
     State,
     StateManager,
@@ -30,8 +31,9 @@ from reflex.state import (
     StateManagerRedis,
     StateProxy,
     StateUpdate,
+    _substate_key,
 )
-from reflex.utils import prerequisites, types
+from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
 from reflex.vars import BaseVar, ComputedVar
 
@@ -139,6 +141,12 @@ class ChildState2(TestState):
     value: str
 
 
+class ChildState3(TestState):
+    """A child state fixture."""
+
+    value: str
+
+
 class GrandchildState(ChildState):
     """A grandchild state fixture."""
 
@@ -147,6 +155,32 @@ class GrandchildState(ChildState):
     def do_nothing(self):
         """Do something."""
         pass
+
+
+class GrandchildState2(ChildState2):
+    """A grandchild state fixture."""
+
+    @rx.cached_var
+    def cached(self) -> str:
+        """A cached var.
+
+        Returns:
+            The value.
+        """
+        return self.value
+
+
+class GrandchildState3(ChildState3):
+    """A great grandchild state fixture."""
+
+    @rx.var
+    def computed(self) -> str:
+        """A computed var.
+
+        Returns:
+            The value.
+        """
+        return self.value
 
 
 class DateTimeState(BaseState):
@@ -253,7 +287,7 @@ def test_class_vars(test_state):
         test_state: A state.
     """
     cls = type(test_state)
-    assert set(cls.vars.keys()) == {
+    assert cls.vars.keys() == {
         "router",
         "num1",
         "num2",
@@ -276,7 +310,7 @@ def test_event_handlers(test_state):
     Args:
         test_state: A state.
     """
-    expected = {
+    expected_keys = (
         "do_something",
         "set_array",
         "set_complex",
@@ -286,10 +320,10 @@ def test_event_handlers(test_state):
         "set_num1",
         "set_num2",
         "set_obj",
-    }
+    )
 
     cls = type(test_state)
-    assert set(cls.event_handlers.keys()).intersection(expected) == expected
+    assert all(key in cls.event_handlers for key in expected_keys)
 
 
 def test_default_value(test_state):
@@ -329,6 +363,9 @@ def test_dict(test_state):
         "test_state.child_state",
         "test_state.child_state.grandchild_state",
         "test_state.child_state2",
+        "test_state.child_state2.grandchild_state2",
+        "test_state.child_state3",
+        "test_state.child_state3.grandchild_state3",
     }
     test_state_dict = test_state.dict()
     assert set(test_state_dict) == substates
@@ -380,10 +417,11 @@ def test_get_parent_state():
 
 def test_get_substates():
     """Test getting the substates."""
-    assert TestState.get_substates() == {ChildState, ChildState2}
+    assert TestState.get_substates() == {ChildState, ChildState2, ChildState3}
     assert ChildState.get_substates() == {GrandchildState}
-    assert ChildState2.get_substates() == set()
+    assert ChildState2.get_substates() == {GrandchildState2}
     assert GrandchildState.get_substates() == set()
+    assert GrandchildState2.get_substates() == set()
 
 
 def test_get_name():
@@ -469,8 +507,8 @@ def test_set_parent_and_substates(test_state, child_state, grandchild_state):
         child_state: A child state.
         grandchild_state: A grandchild state.
     """
-    assert len(test_state.substates) == 2
-    assert set(test_state.substates) == {"child_state", "child_state2"}
+    assert len(test_state.substates) == 3
+    assert set(test_state.substates) == {"child_state", "child_state2", "child_state3"}
 
     assert child_state.parent_state == test_state
     assert len(child_state.substates) == 1
@@ -655,7 +693,7 @@ def test_reset(test_state, child_state):
     assert child_state.dirty_vars == {"count", "value"}
 
     # The dirty substates should be reset.
-    assert test_state.dirty_substates == {"child_state", "child_state2"}
+    assert test_state.dirty_substates == {"child_state", "child_state2", "child_state3"}
 
 
 @pytest.mark.asyncio
@@ -675,7 +713,10 @@ async def test_process_event_simple(test_state):
 
     # The delta should contain the changes, including computed vars.
     # assert update.delta == {"test_state": {"num1": 69, "sum": 72.14}}
-    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14, "upper": ""}}
+    assert update.delta == {
+        "test_state": {"num1": 69, "sum": 72.14, "upper": ""},
+        "test_state.child_state3.grandchild_state3": {"computed": ""},
+    }
     assert update.events == []
 
 
@@ -700,6 +741,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     assert update.delta == {
         "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state": {"value": "HI", "count": 24},
+        "test_state.child_state3.grandchild_state3": {"computed": ""},
     }
     test_state._clean()
 
@@ -715,6 +757,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     assert update.delta == {
         "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state.grandchild_state": {"value2": "new"},
+        "test_state.child_state3.grandchild_state3": {"computed": ""},
     }
 
 
@@ -745,94 +788,69 @@ async def test_process_event_generator():
     assert count == 6
 
 
-def test_get_token(test_state, mocker, router_data):
+def test_get_client_token(test_state, router_data):
     """Test that the token obtained from the router_data is correct.
 
     Args:
         test_state: The test state.
-        mocker: Pytest Mocker object.
         router_data: The router data fixture.
     """
-    mocker.patch.object(test_state, "router_data", router_data)
+    test_state.router = RouterData(router_data)
+    assert (
+        test_state.router.session.client_token == "b181904c-3953-4a79-dc18-ae9518c22f05"
+    )
 
-    assert test_state.get_token() == "b181904c-3953-4a79-dc18-ae9518c22f05"
 
-
-def test_get_sid(test_state, mocker, router_data):
+def test_get_sid(test_state, router_data):
     """Test getting session id.
 
     Args:
         test_state: A state.
-        mocker: Pytest Mocker object.
         router_data: The router data fixture.
     """
-    mocker.patch.object(test_state, "router_data", router_data)
+    test_state.router = RouterData(router_data)
+    assert test_state.router.session.session_id == "9fpxSzPb9aFMb4wFAAAH"
 
-    assert test_state.get_sid() == "9fpxSzPb9aFMb4wFAAAH"
 
-
-def test_get_headers(test_state, mocker, router_data, router_data_headers):
+def test_get_headers(test_state, router_data, router_data_headers):
     """Test getting client headers.
 
     Args:
         test_state: A state.
-        mocker: Pytest Mocker object.
         router_data: The router data fixture.
         router_data_headers: The expected headers.
     """
-    mocker.patch.object(test_state, "router_data", router_data)
+    test_state.router = RouterData(router_data)
+    assert test_state.router.headers.dict() == {
+        format.to_snake_case(k): v for k, v in router_data_headers.items()
+    }
 
-    assert test_state.get_headers() == router_data_headers
 
-
-def test_get_client_ip(test_state, mocker, router_data):
+def test_get_client_ip(test_state, router_data):
     """Test getting client IP.
 
     Args:
         test_state: A state.
-        mocker: Pytest Mocker object.
         router_data: The router data fixture.
     """
-    mocker.patch.object(test_state, "router_data", router_data)
-
-    assert test_state.get_client_ip() == "127.0.0.1"
-
-
-def test_get_cookies(test_state, mocker, router_data):
-    """Test getting client cookies.
-
-    Args:
-        test_state: A state.
-        mocker: Pytest Mocker object.
-        router_data: The router data fixture.
-    """
-    mocker.patch.object(test_state, "router_data", router_data)
-
-    assert test_state.get_cookies() == {
-        "csrftoken": "mocktoken",
-        "name": "reflex",
-        "list_cookies": ["some", "random", "cookies"],
-        "dict_cookies": {"name": "reflex"},
-        "val": True,
-    }
+    test_state.router = RouterData(router_data)
+    assert test_state.router.session.client_ip == "127.0.0.1"
 
 
 def test_get_current_page(test_state):
-    assert test_state.get_current_page() == ""
+    assert test_state.router.page.path == ""
 
     route = "mypage/subpage"
     test_state.router = RouterData({RouteVar.PATH: route})
-
-    assert test_state.get_current_page() == route
+    assert test_state.router.page.path == route
 
 
 def test_get_query_params(test_state):
-    assert test_state.get_query_params() == {}
+    assert test_state.router.page.params == {}
 
     params = {"p1": "a", "p2": "b"}
-    test_state.router_data = {RouteVar.QUERY: params}
-
-    assert test_state.get_query_params() == params
+    test_state.router = RouterData({RouteVar.QUERY: params})
+    assert dict(test_state.router.page.params) == params
 
 
 def test_add_var():
@@ -912,6 +930,24 @@ class InterdependentState(BaseState):
         """
         return self.v1x2 * 2  # type: ignore
 
+    @rx.cached_var
+    def _v3(self) -> int:
+        """Depends on backend var _v2.
+
+        Returns:
+            The value of the backend variable.
+        """
+        return self._v2
+
+    @rx.cached_var
+    def v3x2(self) -> int:
+        """Depends on ComputedVar _v3.
+
+        Returns:
+            ComputedVar _v3 multiplied by 2
+        """
+        return self._v3 * 2
+
 
 @pytest.fixture
 def interdependent_state() -> BaseState:
@@ -960,8 +996,9 @@ def test_dirty_computed_var_from_backend_var(interdependent_state):
     """
     interdependent_state._v2 = 2
     assert interdependent_state.get_delta() == {
-        interdependent_state.get_full_name(): {"v2x2": 4},
+        interdependent_state.get_full_name(): {"v2x2": 4, "v3x2": 4},
     }
+    assert "_v3" in InterdependentState.backend_vars
 
 
 def test_per_state_backend_var(interdependent_state):
@@ -1063,6 +1100,10 @@ def test_event_handlers_call_other_handlers():
         def set_v3(self, v: int):
             self.set_v2(v)
 
+    class SubSubState(SubState):
+        def set_v4(self, v: int):
+            self.set_v(v)
+
     ms = MainState()
     ms.set_v2(1)
     assert ms.v == 1
@@ -1070,6 +1111,10 @@ def test_event_handlers_call_other_handlers():
     # ensure handler can be called from substate
     ms.substates[SubState.get_name()].set_v3(2)
     assert ms.v == 2
+
+    # ensure handler can be called from substate (referencing grandparent handler)
+    ms.get_substate(tuple(SubSubState.get_full_name().split("."))).set_v4(3)
+    assert ms.v == 3
 
 
 def test_computed_var_cached():
@@ -1443,7 +1488,7 @@ def substate_token(state_manager, token):
     Returns:
         Token concatenated with the state_manager's state full_name.
     """
-    return f"{token}_{state_manager.state.get_full_name()}"
+    return _substate_key(token, state_manager.state)
 
 
 @pytest.mark.asyncio
@@ -1545,7 +1590,7 @@ def substate_token_redis(state_manager_redis, token):
     Returns:
         Token concatenated with the state_manager's state full_name.
     """
-    return f"{token}_{state_manager_redis.state.get_full_name()}"
+    return _substate_key(token, state_manager_redis.state)
 
 
 @pytest.mark.asyncio
@@ -1653,7 +1698,9 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     parent_state = child_state.parent_state
     assert parent_state is not None
     if isinstance(mock_app.state_manager, StateManagerMemory):
-        mock_app.state_manager.states[parent_state.get_token()] = parent_state
+        mock_app.state_manager.states[
+            parent_state.router.session.client_token
+        ] = parent_state
 
     sp = StateProxy(grandchild_state)
     assert sp.__wrapped__ == grandchild_state
@@ -1668,7 +1715,23 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
 
     with pytest.raises(ImmutableStateError):
         # cannot directly modify state proxy outside of async context
-        sp.value2 = 16
+        sp.value2 = "16"
+
+    with pytest.raises(ImmutableStateError):
+        # Cannot get_state
+        await sp.get_state(ChildState)
+
+    with pytest.raises(ImmutableStateError):
+        # Cannot access get_substate
+        sp.get_substate([])
+
+    with pytest.raises(ImmutableStateError):
+        # Cannot access parent state
+        sp.parent_state.get_name()
+
+    with pytest.raises(ImmutableStateError):
+        # Cannot access substates
+        sp.substates[""]
 
     async with sp:
         assert sp._self_actx is not None
@@ -1679,14 +1742,15 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
         else:
             # When redis is used, a new+updated instance is assigned to the proxy
             assert sp.__wrapped__ is not grandchild_state
-        sp.value2 = 42
+        sp.value2 = "42"
     assert not sp._self_mutable  # proxy is not mutable after exiting context
     assert sp._self_actx is None
-    assert sp.value2 == 42
+    assert sp.value2 == "42"
 
     # Get the state from the state manager directly and check that the value is updated
-    gc_token = f"{grandchild_state.get_token()}_{grandchild_state.get_full_name()}"
-    gotten_state = await mock_app.state_manager.get_state(gc_token)
+    gotten_state = await mock_app.state_manager.get_state(
+        _substate_key(grandchild_state.router.session.client_token, grandchild_state)
+    )
     if isinstance(mock_app.state_manager, StateManagerMemory):
         # For in-process store, only one instance of the state exists
         assert gotten_state is parent_state
@@ -1694,7 +1758,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
         assert gotten_state is not parent_state
     gotten_grandchild_state = gotten_state.get_substate(sp._self_substate_path)
     assert gotten_grandchild_state is not None
-    assert gotten_grandchild_state.value2 == 42
+    assert gotten_grandchild_state.value2 == "42"
 
     # ensure state update was emitted
     assert mock_app.event_namespace is not None
@@ -1708,11 +1772,14 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
                 "sum": 3.14,
             },
             grandchild_state.get_full_name(): {
-                "value2": 42,
+                "value2": "42",
+            },
+            GrandchildState3.get_full_name(): {
+                "computed": "",
             },
         }
     )
-    assert mcall.kwargs["to"] == grandchild_state.get_sid()
+    assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
 
 
 class BackgroundTaskState(BaseState):
@@ -1879,8 +1946,11 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         "private",
     ]
 
-    substate_token = f"{token}_{BackgroundTaskState.get_name()}"
-    assert (await mock_app.state_manager.get_state(substate_token)).order == exp_order
+    assert (
+        await mock_app.state_manager.get_state(
+            _substate_key(token, BackgroundTaskState)
+        )
+    ).order == exp_order
 
     assert mock_app.event_namespace is not None
     emit_mock = mock_app.event_namespace.emit
@@ -1957,8 +2027,11 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
         await task
     assert not mock_app.background_tasks
 
-    substate_token = f"{token}_{BackgroundTaskState.get_name()}"
-    assert (await mock_app.state_manager.get_state(substate_token)).order == [
+    assert (
+        await mock_app.state_manager.get_state(
+            _substate_key(token, BackgroundTaskState)
+        )
+    ).order == [
         "reset",
     ]
 
@@ -2246,7 +2319,7 @@ def test_mutable_copy_vars(mutable_state, copy_func):
 
 
 def test_duplicate_substate_class(mocker):
-    mocker.patch("reflex.state.os.environ", {})
+    mocker.patch("reflex.state.is_testing_env", lambda: False)
     with pytest.raises(ValueError):
 
         class TestState(BaseState):
@@ -2319,12 +2392,36 @@ class Custom1(Base):
 
     foo: str
 
+    def set_foo(self, val: str):
+        """Set the attribute foo.
+
+        Args:
+            val: The value to set.
+        """
+        self.foo = val
+
+    def double_foo(self) -> str:
+        """Concantenate foo with foo.
+
+        Returns:
+            foo + foo
+        """
+        return self.foo + self.foo
+
 
 class Custom2(Base):
     """A custom class with a Custom1 field."""
 
     c1: Optional[Custom1] = None
     c1r: Custom1
+
+    def set_c1r_foo(self, val: str):
+        """Set the foo attribute of the c1 field.
+
+        Args:
+            val: The value to set.
+        """
+        self.c1r.set_foo(val)
 
 
 class Custom3(Base):
@@ -2361,6 +2458,47 @@ def test_state_union_optional():
     assert UnionState.custom_union.c2r is not None  # type: ignore
     assert types.is_optional(UnionState.opt_int._var_type)  # type: ignore
     assert types.is_union(UnionState.int_float._var_type)  # type: ignore
+
+
+def test_set_base_field_via_setter():
+    """When calling a setter on a Base instance, also track changes."""
+
+    class BaseFieldSetterState(BaseState):
+        c1: Custom1 = Custom1(foo="")
+        c2: Custom2 = Custom2(c1r=Custom1(foo=""))
+
+    bfss = BaseFieldSetterState()
+    assert "c1" not in bfss.dirty_vars
+
+    # Non-mutating function, not dirty
+    bfss.c1.double_foo()
+    assert "c1" not in bfss.dirty_vars
+
+    # Mutating function, dirty
+    bfss.c1.set_foo("bar")
+    assert "c1" in bfss.dirty_vars
+    bfss.dirty_vars.clear()
+    assert "c1" not in bfss.dirty_vars
+
+    # Mutating function from Base, dirty
+    bfss.c1.set(foo="bar")
+    assert "c1" in bfss.dirty_vars
+    bfss.dirty_vars.clear()
+    assert "c1" not in bfss.dirty_vars
+
+    # Assert identity of MutableProxy
+    mp = bfss.c1
+    assert isinstance(mp, MutableProxy)
+    mp2 = mp.set()
+    assert mp is mp2
+    mp3 = bfss.c1.set()
+    assert mp is not mp3
+    # Since none of these set calls had values, the state should not be dirty
+    assert not bfss.dirty_vars
+
+    # Chained Mutating function, dirty
+    bfss.c2.set_c1r_foo("baz")
+    assert "c2" in bfss.dirty_vars
 
 
 def exp_is_hydrated(state: State, is_hydrated: bool = True) -> Dict[str, Any]:
@@ -2435,7 +2573,9 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
         expected: Expected delta.
         mocker: pytest mock object.
     """
-    mocker.patch("reflex.state.State.class_subclasses", {test_state})
+    mocker.patch(
+        "reflex.state.State.class_subclasses", {test_state, OnLoadInternalState}
+    )
     app = app_module_mock.app = App(
         state=State, load_events={"index": [test_state.test_handler]}
     )
@@ -2476,7 +2616,9 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         token: A token.
         mocker: pytest mock object.
     """
-    mocker.patch("reflex.state.State.class_subclasses", {OnLoadState})
+    mocker.patch(
+        "reflex.state.State.class_subclasses", {OnLoadState, OnLoadInternalState}
+    )
     app = app_module_mock.app = App(
         state=State,
         load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},
@@ -2510,3 +2652,276 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         OnLoadState.get_full_name(): {"num": 2}
     }
     assert (await state._process(events[2]).__anext__()).delta == exp_is_hydrated(state)
+
+
+@pytest.mark.asyncio
+async def test_get_state(mock_app: rx.App, token: str):
+    """Test that a get_state populates the top level state and delta calculation is correct.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+    mock_app.state_manager.state = mock_app.state = TestState
+
+    # Get instance of ChildState2.
+    test_state = await mock_app.state_manager.get_state(
+        _substate_key(token, ChildState2)
+    )
+    assert isinstance(test_state, TestState)
+    if isinstance(mock_app.state_manager, StateManagerMemory):
+        # All substates are available
+        assert tuple(sorted(test_state.substates)) == (
+            "child_state",
+            "child_state2",
+            "child_state3",
+        )
+    else:
+        # Sibling states are only populated if they have computed vars
+        assert tuple(sorted(test_state.substates)) == ("child_state2", "child_state3")
+
+    # Because ChildState3 has a computed var, it is always dirty, and always populated.
+    assert (
+        test_state.substates["child_state3"].substates["grandchild_state3"].computed
+        == ""
+    )
+
+    # Get the child_state2 directly.
+    child_state2_direct = test_state.get_substate(["child_state2"])
+    child_state2_get_state = await test_state.get_state(ChildState2)
+    # These should be the same object.
+    assert child_state2_direct is child_state2_get_state
+
+    # Get arbitrary GrandchildState.
+    grandchild_state = await child_state2_get_state.get_state(GrandchildState)
+    assert isinstance(grandchild_state, GrandchildState)
+
+    # Now the original root should have all substates populated.
+    assert tuple(sorted(test_state.substates)) == (
+        "child_state",
+        "child_state2",
+        "child_state3",
+    )
+
+    # ChildState should be retrievable
+    child_state_direct = test_state.get_substate(["child_state"])
+    child_state_get_state = await test_state.get_state(ChildState)
+    # These should be the same object.
+    assert child_state_direct is child_state_get_state
+
+    # GrandchildState instance should be the same as the one retrieved from the child_state2.
+    assert grandchild_state is child_state_direct.get_substate(["grandchild_state"])
+    grandchild_state.value2 = "set_value"
+
+    assert test_state.get_delta() == {
+        TestState.get_full_name(): {
+            "sum": 3.14,
+            "upper": "",
+        },
+        GrandchildState.get_full_name(): {
+            "value2": "set_value",
+        },
+        GrandchildState3.get_full_name(): {
+            "computed": "",
+        },
+    }
+
+    # Get a fresh instance
+    new_test_state = await mock_app.state_manager.get_state(
+        _substate_key(token, ChildState2)
+    )
+    assert isinstance(new_test_state, TestState)
+    if isinstance(mock_app.state_manager, StateManagerMemory):
+        # In memory, it's the same instance
+        assert new_test_state is test_state
+        test_state._clean()
+        # All substates are available
+        assert tuple(sorted(new_test_state.substates)) == (
+            "child_state",
+            "child_state2",
+            "child_state3",
+        )
+    else:
+        # With redis, we get a whole new instance
+        assert new_test_state is not test_state
+        # Sibling states are only populated if they have computed vars
+        assert tuple(sorted(new_test_state.substates)) == (
+            "child_state2",
+            "child_state3",
+        )
+
+    # Set a value on child_state2, should update cached var in grandchild_state2
+    child_state2 = new_test_state.get_substate(("child_state2",))
+    child_state2.value = "set_c2_value"
+
+    assert new_test_state.get_delta() == {
+        TestState.get_full_name(): {
+            "sum": 3.14,
+            "upper": "",
+        },
+        ChildState2.get_full_name(): {
+            "value": "set_c2_value",
+        },
+        GrandchildState2.get_full_name(): {
+            "cached": "set_c2_value",
+        },
+        GrandchildState3.get_full_name(): {
+            "computed": "",
+        },
+    }
+
+
+@pytest.mark.asyncio
+async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
+    """A test simulating update_vars_internal when setting cookies with computed vars.
+
+    In that case, a sibling state, UpdateVarsInternalState handles the fetching
+    of states that need to have values set. Only the states that have a computed
+    var are pre-fetched (like Child3 in this test), so `get_state` needs to
+    avoid refetching those already-cached states when getting substates,
+    otherwise the set values will be overridden by the freshly deserialized
+    version and lost.
+
+    Explicit regression test for https://github.com/reflex-dev/reflex/issues/2851.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+
+    class Parent(BaseState):
+        """A root state like rx.State."""
+
+        parent_var: int = 0
+
+    class Child(Parent):
+        """A state simulating UpdateVarsInternalState."""
+
+        pass
+
+    class Child2(Parent):
+        """An unconnected child state."""
+
+        pass
+
+    class Child3(Parent):
+        """A child state with a computed var causing it to be pre-fetched.
+
+        If child3_var gets set to a value, and `get_state` erroneously
+        re-fetches it from redis, the value will be lost.
+        """
+
+        child3_var: int = 0
+
+        @rx.var
+        def v(self):
+            pass
+
+    class Grandchild3(Child3):
+        """An extra layer of substate to catch an issue discovered in
+        _determine_missing_parent_states while writing the regression test where
+        invalid parent state names were being constructed.
+        """
+
+        pass
+
+    class GreatGrandchild3(Grandchild3):
+        """Fetching this state wants to also fetch Child3 as a missing parent.
+        However, Child3 should already be cached in the state tree because it
+        has a computed var.
+        """
+
+        pass
+
+    mock_app.state_manager.state = mock_app.state = Parent
+
+    # Get the top level state via unconnected sibling.
+    root = await mock_app.state_manager.get_state(_substate_key(token, Child))
+    # Set value in parent_var to assert it does not get refetched later.
+    root.parent_var = 1
+
+    if isinstance(mock_app.state_manager, StateManagerRedis):
+        # When redis is used, only states with computed vars are pre-fetched.
+        assert "child2" not in root.substates
+        assert "child3" in root.substates  # (due to @rx.var)
+
+    # Get the unconnected sibling state, which will be used to `get_state` other instances.
+    child = root.get_substate(Child.get_full_name().split("."))
+
+    # Get an uncached child state.
+    child2 = await child.get_state(Child2)
+    assert child2.parent_var == 1
+
+    # Set value on already-cached Child3 state (prefetched because it has a Computed Var).
+    child3 = await child.get_state(Child3)
+    child3.child3_var = 1
+
+    # Get uncached great_grandchild3 state.
+    great_grandchild3 = await child.get_state(GreatGrandchild3)
+
+    # Assert that we didn't re-fetch the parent and child3 state from redis
+    assert great_grandchild3.parent_var == 1
+    assert great_grandchild3.child3_var == 1
+
+
+# Save a reference to the rx.State to shadow the name State for testing.
+RxState = State
+
+
+def test_potentially_dirty_substates():
+    """Test that potentially_dirty_substates returns the correct substates.
+
+    Even if the name "State" is shadowed, it should still work correctly.
+    """
+
+    class State(RxState):
+        @ComputedVar
+        def foo(self) -> str:
+            return ""
+
+    class C1(State):
+        @ComputedVar
+        def bar(self) -> str:
+            return ""
+
+    assert RxState._potentially_dirty_substates() == {State}
+    assert State._potentially_dirty_substates() == {C1}
+    assert C1._potentially_dirty_substates() == set()
+
+
+@pytest.mark.asyncio
+async def test_setvar(mock_app: rx.App, token: str):
+    """Test that setvar works correctly.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+    state = await mock_app.state_manager.get_state(_substate_key(token, TestState))
+
+    # Set Var in same state (with Var type casting)
+    for event in rx.event.fix_events(
+        [TestState.setvar("num1", 42), TestState.setvar("num2", "4.2")], token
+    ):
+        async for update in state._process(event):
+            print(update)
+    assert state.num1 == 42
+    assert state.num2 == 4.2
+
+    # Set Var in parent state
+    for event in rx.event.fix_events([GrandchildState.setvar("array", [43])], token):
+        async for update in state._process(event):
+            print(update)
+    assert state.array == [43]
+
+    # Cannot setvar for non-existant var
+    with pytest.raises(AttributeError):
+        TestState.setvar("non_existant_var")
+
+    # Cannot setvar for computed vars
+    with pytest.raises(AttributeError):
+        TestState.setvar("sum")
+
+    # Cannot setvar with non-string
+    with pytest.raises(ValueError):
+        TestState.setvar(42, 42)

@@ -1,7 +1,8 @@
 """Wrapper around react-debounce-input."""
+
 from __future__ import annotations
 
-from typing import Any, Type
+from typing import Any, Type, Union
 
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
@@ -34,7 +35,7 @@ class DebounceInput(Component):
     force_notify_on_blur: Var[bool]
 
     # If provided, create a fully-controlled input
-    value: Var[str]
+    value: Var[Union[str, int, float]]
 
     # The ref to attach to the created input
     input_ref: Var[str]
@@ -79,7 +80,9 @@ class DebounceInput(Component):
             for p in cls.get_props()
             if getattr(child, p, None) is not None
         }
-        props_from_child.update(child.event_triggers)
+        props[EventTriggers.ON_CHANGE] = child.event_triggers.pop(
+            EventTriggers.ON_CHANGE
+        )
         props = {**props_from_child, **props}
 
         # Carry all other child props directly via custom_attrs
@@ -96,7 +99,9 @@ class DebounceInput(Component):
             props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
         child_ref = child.get_ref()
         if props.get("input_ref") is None and child_ref:
-            props["input_ref"] = Var.create_safe(child_ref, _var_is_local=False)
+            props["input_ref"] = Var.create_safe(
+                child_ref, _var_is_local=False, _var_is_string=False
+            )
             props["id"] = child.id
 
         # Set the child element to wrap, including any imports/hooks from the child.
@@ -106,17 +111,18 @@ class DebounceInput(Component):
                 "{%s}" % (child.alias or child.tag),
                 _var_is_local=False,
                 _var_is_string=False,
-            )._replace(
-                _var_type=Type[Component],
-                merge_var_data=VarData(  # type: ignore
+                _var_data=VarData(
                     imports=child._get_imports(),
                     hooks=child._get_hooks_internal(),
                 ),
-            ),
+            ).to(Type[Component]),
         )
 
         component = super().create(**props)
         component._get_style = child._get_style
+        component.event_triggers.update(child.event_triggers)
+        component.children = child.children
+        component._rename_props = child._rename_props
         return component
 
     def get_event_triggers(self) -> dict[str, Any]:
@@ -132,3 +138,6 @@ class DebounceInput(Component):
 
     def _render(self):
         return super()._render().remove_props("ref")
+
+
+debounce_input = DebounceInput.create

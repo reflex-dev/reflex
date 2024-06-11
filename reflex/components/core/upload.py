@@ -1,30 +1,38 @@
 """A file upload component."""
+
 from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 
 from reflex import constants
-from reflex.components.chakra.forms.input import Input
-from reflex.components.chakra.layout.box import Box
-from reflex.components.component import Component, MemoizationLeaf
+from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
+from reflex.components.el.elements.forms import Input
+from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import Dirs
-from reflex.event import CallableEventSpec, EventChain, EventSpec, call_script
+from reflex.event import (
+    CallableEventSpec,
+    EventChain,
+    EventSpec,
+    call_event_fn,
+    call_script,
+    parse_args_spec,
+)
 from reflex.utils import imports
 from reflex.vars import BaseVar, CallableVar, Var, VarData
 
 DEFAULT_UPLOAD_ID: str = "default"
 
-upload_files_context_var_data: VarData = VarData(  # type: ignore
+upload_files_context_var_data: VarData = VarData(
     imports={
-        "react": {imports.ImportVar(tag="useContext")},
-        f"/{Dirs.CONTEXTS_PATH}": {
+        "react": [imports.ImportVar(tag="useContext")],
+        f"/{Dirs.CONTEXTS_PATH}": [
             imports.ImportVar(tag="UploadFilesContext"),
-        },
+        ],
     },
     hooks={
-        "const [filesById, setFilesById] = useContext(UploadFilesContext);",
+        "const [filesById, setFilesById] = useContext(UploadFilesContext);": None,
     },
 )
 
@@ -100,6 +108,8 @@ def get_upload_dir() -> Path:
     Returns:
         The directory where uploaded files are stored.
     """
+    Upload.is_used = True
+
     uploaded_files_dir = Path(
         os.environ.get("REFLEX_UPLOADED_FILES_DIR", "./uploaded_files")
     )
@@ -108,18 +118,18 @@ def get_upload_dir() -> Path:
 
 
 uploaded_files_url_prefix: Var = Var.create_safe(
-    "${getBackendURL(env.UPLOAD)}"
-)._replace(
-    merge_var_data=VarData(  # type: ignore
+    "${getBackendURL(env.UPLOAD)}",
+    _var_is_string=False,
+    _var_data=VarData(
         imports={
-            f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="getBackendURL")},
-            "/env.json": {imports.ImportVar(tag="env", is_default=True)},
+            f"/{Dirs.STATE_PATH}": [imports.ImportVar(tag="getBackendURL")],
+            "/env.json": [imports.ImportVar(tag="env", is_default=True)],
         }
-    )
+    ),
 )
 
 
-def get_upload_url(file_path: str) -> str:
+def get_upload_url(file_path: str) -> Var[str]:
     """Get the URL of an uploaded file.
 
     Args:
@@ -128,7 +138,23 @@ def get_upload_url(file_path: str) -> str:
     Returns:
         The URL of the uploaded file to be rendered from the frontend (as a str-encoded Var).
     """
-    return f"{uploaded_files_url_prefix}/{file_path}"
+    Upload.is_used = True
+
+    return Var.create_safe(
+        f"{uploaded_files_url_prefix}/{file_path}", _var_is_string=True
+    )
+
+
+def _on_drop_spec(files: Var):
+    """Args spec for the on_drop event trigger.
+
+    Args:
+        files: The files to upload.
+
+    Returns:
+        Signature for on_drop handler including the files to upload.
+    """
+    return [files]
 
 
 class UploadFilesProvider(Component):
@@ -193,13 +219,19 @@ class Upload(MemoizationLeaf):
         # Mark the Upload component as used in the app.
         cls.is_used = True
 
+        # Apply the default classname
+        given_class_name = props.pop("class_name", [])
+        if isinstance(given_class_name, str):
+            given_class_name = [given_class_name]
+        props["class_name"] = ["rx-Upload", *given_class_name]
+
         # get only upload component props
-        supported_props = cls.get_props()
+        supported_props = cls.get_props().union({"on_drop"})
         upload_props = {
             key: value for key, value in props.items() if key in supported_props
         }
         # The file input to use.
-        upload = Input.create(type_="file")
+        upload = Input.create(type="file")
         upload.special_props = {
             BaseVar(_var_name="{...getInputProps()}", _var_type=None)
         }
@@ -214,8 +246,27 @@ class Upload(MemoizationLeaf):
 
         # Create the component.
         upload_props["id"] = props.get("id", DEFAULT_UPLOAD_ID)
+
+        if upload_props.get("on_drop") is None:
+            # If on_drop is not provided, save files to be uploaded later.
+            upload_props["on_drop"] = upload_file(upload_props["id"])
+        else:
+            on_drop = upload_props["on_drop"]
+            if isinstance(on_drop, Callable):
+                # Call the lambda to get the event chain.
+                on_drop = call_event_fn(on_drop, _on_drop_spec)  # type: ignore
+            if isinstance(on_drop, EventSpec):
+                # Update the provided args for direct use with on_drop.
+                on_drop = on_drop.with_args(
+                    args=tuple(
+                        cls._update_arg_tuple_for_on_drop(arg_value)
+                        for arg_value in on_drop.args
+                    ),
+                )
+            upload_props["on_drop"] = on_drop
         return super().create(
-            zone, on_drop=upload_file(upload_props["id"]), **upload_props
+            zone,
+            **upload_props,
         )
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
@@ -226,8 +277,23 @@ class Upload(MemoizationLeaf):
         """
         return {
             **super().get_event_triggers(),
-            constants.EventTriggers.ON_DROP: lambda e0: [e0],
+            constants.EventTriggers.ON_DROP: _on_drop_spec,
         }
+
+    @classmethod
+    def _update_arg_tuple_for_on_drop(cls, arg_value: tuple[Var, Var]):
+        """Helper to update caller-provided EventSpec args for direct use with on_drop.
+
+        Args:
+            arg_value: The arg tuple to update (if necessary).
+
+        Returns:
+            The updated arg_value tuple when arg is "files", otherwise the original arg_value.
+        """
+        if arg_value[0]._var_name == "files":
+            placeholder = parse_args_spec(_on_drop_spec)[0]
+            return (arg_value[0], placeholder)
+        return arg_value
 
     def _render(self):
         out = super()._render()
@@ -239,3 +305,41 @@ class Upload(MemoizationLeaf):
         return {
             (5, "UploadFilesProvider"): UploadFilesProvider.create(),
         }
+
+
+class StyledUpload(Upload):
+    """The styled Upload Component."""
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the styled upload component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The styled upload component.
+        """
+        # Set default props.
+        props.setdefault("border", "1px dashed var(--accent-12)")
+        props.setdefault("padding", "5em")
+        props.setdefault("textAlign", "center")
+
+        # Mark the Upload component as used in the app.
+        Upload.is_used = True
+
+        return super().create(
+            *children,
+            **props,
+        )
+
+
+class UploadNamespace(ComponentNamespace):
+    """Upload component namespace."""
+
+    root = Upload.create
+    __call__ = StyledUpload.create
+
+
+upload = UploadNamespace()

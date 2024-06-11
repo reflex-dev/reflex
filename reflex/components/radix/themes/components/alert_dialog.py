@@ -1,12 +1,12 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
-from reflex import el
 from reflex.components.component import ComponentNamespace
+from reflex.components.el import elements
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from ..base import RadixThemesComponent
+from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
 LiteralContentSize = Literal["1", "2", "3", "4"]
 
@@ -31,13 +31,13 @@ class AlertDialogRoot(RadixThemesComponent):
         }
 
 
-class AlertDialogTrigger(RadixThemesComponent):
+class AlertDialogTrigger(RadixThemesTriggerComponent):
     """Wraps the control that will open the dialog."""
 
     tag = "AlertDialog.Trigger"
 
 
-class AlertDialogContent(el.Div, RadixThemesComponent):
+class AlertDialogContent(elements.Div, RadixThemesComponent):
     """Contains the content of the dialog. This component is based on the div element."""
 
     tag = "AlertDialog.Content"
@@ -79,7 +79,7 @@ class AlertDialogDescription(RadixThemesComponent):
     tag = "AlertDialog.Description"
 
 
-class AlertDialogAction(RadixThemesComponent):
+class AlertDialogAction(RadixThemesTriggerComponent):
     """Wraps the control that will close the dialog. This should be distinguished
     visually from the Cancel control.
     """
@@ -87,7 +87,7 @@ class AlertDialogAction(RadixThemesComponent):
     tag = "AlertDialog.Action"
 
 
-class AlertDialogCancel(RadixThemesComponent):
+class AlertDialogCancel(RadixThemesTriggerComponent):
     """Wraps the control that will close the dialog. This should be distinguished
     visually from the Action control.
     """

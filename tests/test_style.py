@@ -8,7 +8,7 @@ import reflex as rx
 from reflex import style
 from reflex.components.component import evaluate_style_namespaces
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars import Var, VarData
 
 test_style = [
     ({"a": 1}, {"a": 1}),
@@ -503,3 +503,25 @@ def test_evaluate_style_namespaces():
     assert rx.text.__call__ not in style_dict
     style_dict = evaluate_style_namespaces(style_dict)  # type: ignore
     assert rx.text.__call__ in style_dict
+
+
+def test_style_update_with_var_data():
+    """Test that .update with a Style containing VarData works."""
+    red_var = Var.create_safe("red")._replace(
+        merge_var_data=VarData(hooks={"const red = true": None}),  # type: ignore
+    )
+    blue_var = Var.create_safe("blue", _var_is_local=False)._replace(
+        merge_var_data=VarData(hooks={"const blue = true": None}),  # type: ignore
+    )
+
+    s1 = Style(
+        {
+            "color": red_var,
+        }
+    )
+    s2 = Style()
+    s2.update(s1, background_color=f"{blue_var}ish")
+    assert s2 == {"color": "red", "backgroundColor": "`${blue}ish`"}
+    assert s2._var_data is not None
+    assert "const red = true" in s2._var_data.hooks
+    assert "const blue = true" in s2._var_data.hooks

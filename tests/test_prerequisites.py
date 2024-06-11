@@ -1,3 +1,5 @@
+import json
+import re
 import tempfile
 from unittest.mock import Mock, mock_open
 
@@ -6,8 +8,10 @@ import pytest
 from reflex import constants
 from reflex.config import Config
 from reflex.utils.prerequisites import (
+    CpuInfo,
     _update_next_config,
     cached_procedure,
+    get_cpu_info,
     initialize_requirements_txt,
 )
 
@@ -59,6 +63,30 @@ from reflex.utils.prerequisites import (
 def test_update_next_config(config, export, expected_output):
     output = _update_next_config(config, export=export)
     assert output == expected_output
+
+
+@pytest.mark.parametrize(
+    ("transpile_packages", "expected_transpile_packages"),
+    (
+        (
+            ["foo", "@bar/baz"],
+            ["@bar/baz", "foo"],
+        ),
+        (
+            ["foo", "@bar/baz", "foo", "@bar/baz@3.2.1"],
+            ["@bar/baz", "foo"],
+        ),
+    ),
+)
+def test_transpile_packages(transpile_packages, expected_transpile_packages):
+    output = _update_next_config(
+        Config(app_name="test"),
+        transpile_packages=transpile_packages,
+    )
+    transpile_packages_match = re.search(r"transpilePackages: (\[.*?\])", output)
+    transpile_packages_json = transpile_packages_match.group(1)  # type: ignore
+    actual_transpile_packages = sorted(json.loads(transpile_packages_json))
+    assert actual_transpile_packages == expected_transpile_packages
 
 
 def test_initialize_requirements_txt_no_op(mocker):
@@ -177,3 +205,14 @@ def test_cached_procedure():
     assert call_count == 2
     _function_with_some_args(100, y=300)
     assert call_count == 2
+
+
+def test_get_cpu_info():
+    cpu_info = get_cpu_info()
+    assert cpu_info is not None
+    assert isinstance(cpu_info, CpuInfo)
+    assert cpu_info.model_name is not None
+
+    for attr in ("manufacturer_id", "model_name", "address_width"):
+        value = getattr(cpu_info, attr)
+        assert value.strip() if attr != "address_width" else value

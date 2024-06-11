@@ -20,23 +20,33 @@ def FullyControlledInput():
     @app.add_page
     def index():
         return rx.fragment(
-            rx.chakra.input(
+            rx.input(
                 value=State.router.session.client_token, is_read_only=True, id="token"
             ),
-            rx.chakra.input(
+            rx.input(
                 id="debounce_input_input",
                 on_change=State.set_text,  # type: ignore
                 value=State.text,
             ),
-            rx.chakra.input(value=State.text, id="value_input", is_read_only=True),
-            rx.chakra.input(on_change=State.set_text, id="on_change_input"),  # type: ignore
+            rx.input(value=State.text, id="value_input", is_read_only=True),
+            rx.input(on_change=State.set_text, id="on_change_input"),  # type: ignore
             rx.el.input(
                 value=State.text,
                 id="plain_value_input",
                 disabled=True,
-                _disabled={"background_color": "#EEE"},
+                _disabled={"width": "42px"},
             ),
-            rx.button("CLEAR", on_click=rx.set_value("on_change_input", "")),
+            rx.input(default_value="default", id="default_input"),
+            rx.el.input(
+                type="text", default_value="default plain", id="plain_default_input"
+            ),
+            rx.checkbox(default_checked=True, id="default_checkbox"),
+            rx.el.input(
+                type="checkbox", default_checked=True, id="plain_default_checkbox"
+            ),
+            rx.button(
+                "CLEAR", on_click=rx.set_value("on_change_input", ""), id="clear"
+            ),
         )
 
 
@@ -79,22 +89,45 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
         state = await fully_controlled_input.get_state(f"{token}_state.state")
         return state.substates["state"].text
 
+    # ensure defaults are set correctly
+    assert (
+        fully_controlled_input.poll_for_value(
+            driver.find_element(By.ID, "default_input")
+        )
+        == "default"
+    )
+    assert (
+        fully_controlled_input.poll_for_value(
+            driver.find_element(By.ID, "plain_default_input")
+        )
+        == "default plain"
+    )
+    assert (
+        fully_controlled_input.poll_for_value(
+            driver.find_element(By.ID, "default_checkbox")
+        )
+        == "on"
+    )
+    assert (
+        fully_controlled_input.poll_for_value(
+            driver.find_element(By.ID, "plain_default_checkbox")
+        )
+        == "on"
+    )
+
     # find the input and wait for it to have the initial state value
     debounce_input = driver.find_element(By.ID, "debounce_input_input")
     value_input = driver.find_element(By.ID, "value_input")
     on_change_input = driver.find_element(By.ID, "on_change_input")
     plain_value_input = driver.find_element(By.ID, "plain_value_input")
-    clear_button = driver.find_element(By.TAG_NAME, "button")
+    clear_button = driver.find_element(By.ID, "clear")
     assert fully_controlled_input.poll_for_value(debounce_input) == "initial"
     assert fully_controlled_input.poll_for_value(value_input) == "initial"
     assert fully_controlled_input.poll_for_value(plain_value_input) == "initial"
-    assert (
-        plain_value_input.value_of_css_property("background-color")
-        == "rgba(238, 238, 238, 1)"
-    )
+    assert plain_value_input.value_of_css_property("width") == "42px"
 
     # move cursor to home, then to the right and type characters
-    debounce_input.send_keys(Keys.HOME, Keys.ARROW_RIGHT)
+    debounce_input.send_keys(*([Keys.ARROW_LEFT] * len("initial")), Keys.ARROW_RIGHT)
     debounce_input.send_keys("foo")
     assert AppHarness._poll_for(
         lambda: fully_controlled_input.poll_for_value(value_input) == "ifoonitial"

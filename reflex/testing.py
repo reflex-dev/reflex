@@ -1,4 +1,5 @@
 """reflex.testing - tools for testing reflex apps."""
+
 from __future__ import annotations
 
 import asyncio
@@ -25,6 +26,7 @@ from typing import (
     AsyncIterator,
     Callable,
     Coroutine,
+    List,
     Optional,
     Type,
     TypeVar,
@@ -40,7 +42,12 @@ import reflex.utils.build
 import reflex.utils.exec
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.state import BaseState, State, StateManagerMemory, StateManagerRedis
+from reflex.state import (
+    BaseState,
+    StateManagerMemory,
+    StateManagerRedis,
+    reload_state_module,
+)
 
 try:
     from selenium import webdriver  # pyright: ignore [reportMissingImports]
@@ -49,6 +56,9 @@ try:
     )
 
     if TYPE_CHECKING:
+        from selenium.webdriver.common.options import (
+            ArgOptions,  # pyright: ignore [reportMissingImports]
+        )
         from selenium.webdriver.remote.webelement import (  # pyright: ignore [reportMissingImports]
             WebElement,
         )
@@ -64,8 +74,9 @@ FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
 TimeoutType = Optional[Union[int, float]]
 
-if platform.system == "Windows":
+if platform.system() == "Windows":
     FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
+    FRONTEND_POPEN_ARGS["shell"] = True
 else:
     FRONTEND_POPEN_ARGS["start_new_session"] = True
 
@@ -102,7 +113,9 @@ class AppHarness:
     """AppHarness executes a reflex app in-process for testing."""
 
     app_name: str
-    app_source: Optional[types.FunctionType | types.ModuleType] | str
+    app_source: Optional[
+        types.FunctionType | types.ModuleType | str | functools.partial
+    ]
     app_path: pathlib.Path
     app_module_path: pathlib.Path
     app_module: Optional[types.ModuleType] = None
@@ -114,6 +127,7 @@ class AppHarness:
     backend: Optional[uvicorn.Server] = None
     state_manager: Optional[StateManagerMemory | StateManagerRedis] = None
     _frontends: list["WebDriver"] = dataclasses.field(default_factory=list)
+    _decorated_pages: list = dataclasses.field(default_factory=list)
 
     @classmethod
     def create(
@@ -139,15 +153,23 @@ class AppHarness:
         """
         if app_name is None:
             if app_source is None:
-                app_name = root.name.lower()
+                app_name = root.name
             elif isinstance(app_source, functools.partial):
-                app_name = app_source.func.__name__.lower()
+                keywords = app_source.keywords
+                slug_suffix = "_".join([str(v) for v in keywords.values()])
+                func_name = app_source.func.__name__
+                app_name = f"{func_name}_{slug_suffix}"
+                app_name = re.sub(r"[^a-zA-Z0-9_]", "_", app_name)
             elif isinstance(app_source, str):
                 raise ValueError(
                     "app_name must be provided when app_source is a string."
                 )
             else:
-                app_name = app_source.__name__.lower()
+                app_name = app_source.__name__
+
+            app_name = app_name.lower()
+            while "__" in app_name:
+                app_name = app_name.replace("__", "_")
         return cls(
             app_name=app_name,
             app_source=app_source,
@@ -204,33 +226,43 @@ class AppHarness:
             # get the source from a function or module object
             source_code = "\n".join(
                 [
-                    "\n".join(f"{k} = {v!r}" for k, v in app_globals.items()),
+                    "\n".join(
+                        self.get_app_global_source(k, v) for k, v in app_globals.items()
+                    ),
                     self._get_source_from_app_source(self.app_source),
                 ]
             )
             with chdir(self.app_path):
                 reflex.reflex._init(
                     name=self.app_name,
-                    template=reflex.constants.Templates.Kind.BLANK,
+                    template=reflex.constants.Templates.DEFAULT,
                     loglevel=reflex.constants.LogLevel.INFO,
                 )
                 self.app_module_path.write_text(source_code)
         with chdir(self.app_path):
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
-            # reset rx.State subclasses
-            State.class_subclasses.clear()
-            State.get_class_substate.cache_clear()
+            # Save decorated pages before importing the test app module
+            before_decorated_pages = reflex.app.DECORATED_PAGES[self.app_name].copy()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
-            # self.app_module.app.
             self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
+            # Save the pages that were added during testing
+            self._decorated_pages = [
+                p
+                for p in reflex.app.DECORATED_PAGES[self.app_name]
+                if p not in before_decorated_pages
+            ]
         self.app_instance = self.app_module.app
         if isinstance(self.app_instance._state_manager, StateManagerRedis):
             # Create our own redis connection for testing.
             self.state_manager = StateManagerRedis.create(self.app_instance.state)
         else:
             self.state_manager = self.app_instance._state_manager
+
+    def _reload_state_module(self):
+        """Reload the rx.State module to avoid conflict when reloading."""
+        reload_state_module(module=f"{self.app_name}.{self.app_name}")
 
     def _get_backend_shutdown_handler(self):
         if self.backend is None:
@@ -265,6 +297,27 @@ class AppHarness:
         self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
 
+    async def _reset_backend_state_manager(self):
+        """Reset the StateManagerRedis event loop affinity.
+
+        This is necessary when the backend is restarted and the state manager is a
+        StateManagerRedis instance.
+        """
+        if (
+            self.app_instance is not None
+            and isinstance(
+                self.app_instance.state_manager,
+                StateManagerRedis,
+            )
+            and self.app_instance.state is not None
+        ):
+            with contextlib.suppress(RuntimeError):
+                await self.app_instance.state_manager.close()
+            self.app_instance._state_manager = StateManagerRedis.create(
+                state=self.app_instance.state,
+            )
+            assert isinstance(self.app_instance.state_manager, StateManagerRedis)
+
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
@@ -293,6 +346,8 @@ class AppHarness:
             m = re.search(reflex.constants.Next.FRONTEND_LISTENING_REGEX, line)
             if m is not None:
                 self.frontend_url = m.group(1)
+                config = reflex.config.get_config()
+                config.deploy_url = self.frontend_url
                 break
         if self.frontend_url is None:
             raise RuntimeError("Frontend did not start")
@@ -321,6 +376,24 @@ class AppHarness:
         self._wait_frontend()
         return self
 
+    @staticmethod
+    def get_app_global_source(key, value):
+        """Get the source code of a global object.
+        If value is a function or class we render the actual
+        source of value otherwise we assign value to key.
+
+        Args:
+            key: variable name to assign value to.
+            value: value of the global variable.
+
+        Returns:
+            The rendered app global code.
+
+        """
+        if not inspect.isclass(value) and not inspect.isfunction(value):
+            return f"{key} = {value!r}"
+        return inspect.getsource(value)
+
     def __enter__(self) -> "AppHarness":
         """Contextmanager protocol for `start()`.
 
@@ -331,6 +404,8 @@ class AppHarness:
 
     def stop(self) -> None:
         """Stop the frontend and backend servers."""
+        self._reload_state_module()
+
         if self.backend is not None:
             self.backend.should_exit = True
         if self.frontend_process is not None:
@@ -361,6 +436,10 @@ class AppHarness:
             self.frontend_output_thread.join()
         for driver in self._frontends:
             driver.quit()
+
+        # Cleanup decorated pages added during testing
+        for page in self._decorated_pages:
+            reflex.app.DECORATED_PAGES[self.app_name].remove(page)
 
     def __exit__(self, *excinfo) -> None:
         """Contextmanager protocol for `stop()`.
@@ -458,12 +537,23 @@ class AppHarness:
             raise TimeoutError("Backend is not listening.")
         return backend.servers[0].sockets[0]
 
-    def frontend(self, driver_clz: Optional[Type["WebDriver"]] = None) -> "WebDriver":
+    def frontend(
+        self,
+        driver_clz: Optional[Type["WebDriver"]] = None,
+        driver_kwargs: dict[str, Any] | None = None,
+        driver_options: ArgOptions | None = None,
+        driver_option_args: List[str] | None = None,
+        driver_option_capabilities: dict[str, Any] | None = None,
+    ) -> "WebDriver":
         """Get a selenium webdriver instance pointed at the app.
 
         Args:
             driver_clz: webdriver.Chrome (default), webdriver.Firefox, webdriver.Safari,
                 webdriver.Edge, etc
+            driver_kwargs: additional keyword arguments to pass to the webdriver constructor
+            driver_options: selenium ArgOptions instance to pass to the webdriver constructor
+            driver_option_args: additional arguments for the webdriver options
+            driver_option_capabilities: additional capabilities for the webdriver options
 
         Returns:
             Instance of the given webdriver navigated to the frontend url of the app.
@@ -479,22 +569,43 @@ class AppHarness:
         if self.frontend_url is None:
             raise RuntimeError("Frontend is not running.")
         want_headless = False
-        options = None
         if os.environ.get("APP_HARNESS_HEADLESS"):
             want_headless = True
         if driver_clz is None:
             requested_driver = os.environ.get("APP_HARNESS_DRIVER", "Chrome")
             driver_clz = getattr(webdriver, requested_driver)
-        if driver_clz is webdriver.Chrome and want_headless:
-            options = webdriver.ChromeOptions()
-            options.add_argument("--headless=new")
-        elif driver_clz is webdriver.Firefox and want_headless:
-            options = webdriver.FirefoxOptions()
-            options.add_argument("-headless")
-        elif driver_clz is webdriver.Edge and want_headless:
-            options = webdriver.EdgeOptions()
-            options.add_argument("headless")
-        driver = driver_clz(options=options)  # type: ignore
+            if driver_options is None:
+                driver_options = getattr(webdriver, f"{requested_driver}Options")()
+        if driver_clz is webdriver.Chrome:
+            if driver_options is None:
+                driver_options = webdriver.ChromeOptions()
+            driver_options.add_argument("--class=AppHarness")
+            if want_headless:
+                driver_options.add_argument("--headless=new")
+        elif driver_clz is webdriver.Firefox:
+            if driver_options is None:
+                driver_options = webdriver.FirefoxOptions()
+            if want_headless:
+                driver_options.add_argument("-headless")
+        elif driver_clz is webdriver.Edge:
+            if driver_options is None:
+                driver_options = webdriver.EdgeOptions()
+            if want_headless:
+                driver_options.add_argument("headless")
+        if driver_options is None:
+            raise RuntimeError(f"Could not determine options for {driver_clz}")
+        if args := os.environ.get("APP_HARNESS_DRIVER_ARGS"):
+            for arg in args.split(","):
+                driver_options.add_argument(arg)
+        if driver_option_args is not None:
+            for arg in driver_option_args:
+                driver_options.add_argument(arg)
+        if driver_option_capabilities is not None:
+            for key, value in driver_option_capabilities.items():
+                driver_options.set_capability(key, value)
+        if driver_kwargs is None:
+            driver_kwargs = {}
+        driver = driver_clz(options=driver_options, **driver_kwargs)  # type: ignore
         driver.get(self.frontend_url)
         self._frontends.append(driver)
         return driver
@@ -541,7 +652,7 @@ class AppHarness:
                 await self.state_manager.close()
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[State]:
+    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
         """Modify the state associated with the given token and send update to frontend.
 
         Args:

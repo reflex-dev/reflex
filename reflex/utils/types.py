@@ -4,15 +4,18 @@ from __future__ import annotations
 
 import contextlib
 import inspect
+import sys
 import types
 from functools import wraps
 from typing import (
     Any,
     Callable,
+    Dict,
     Iterable,
     List,
     Literal,
     Optional,
+    Tuple,
     Type,
     Union,
     _GenericAlias,  # type: ignore
@@ -22,13 +25,60 @@ from typing import (
 )
 
 import sqlalchemy
-from pydantic.fields import ModelField
+
+try:
+    from pydantic.v1.fields import ModelField
+except ModuleNotFoundError:
+    from pydantic.fields import ModelField  # type: ignore
+
+from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    QueryableAttribute,
+    Relationship,
+)
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import serializers
+from reflex.utils import console
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+
+    def override(func: Callable) -> Callable:
+        """Fallback for @override decorator.
+
+        Args:
+            func: The function to decorate.
+
+        Returns:
+            The unmodified function.
+        """
+        return func
+
+
+# Potential GenericAlias types for isinstance checks.
+GenericAliasTypes = [_GenericAlias]
+
+with contextlib.suppress(ImportError):
+    # For newer versions of Python.
+    from types import GenericAlias  # type: ignore
+
+    GenericAliasTypes.append(GenericAlias)
+
+with contextlib.suppress(ImportError):
+    # For older versions of Python.
+    from typing import _SpecialGenericAlias  # type: ignore
+
+    GenericAliasTypes.append(_SpecialGenericAlias)
+
+GenericAliasTypes = tuple(GenericAliasTypes)
+
+# Potential Union types for isinstance checks (UnionType added in py3.10).
+UnionTypes = (Union, types.UnionType) if hasattr(types, "UnionType") else (Union,)
 
 # Union of generic types.
 GenericType = Union[Type, _GenericAlias]
@@ -43,6 +93,36 @@ StateIterVar = Union[list, set, tuple]
 ArgsSpec = Callable
 
 
+PrimitiveToAnnotation = {
+    list: List,
+    tuple: Tuple,
+    dict: Dict,
+}
+
+
+class Unset:
+    """A class to represent an unset value.
+
+    This is used to differentiate between a value that is not set and a value that is set to None.
+    """
+
+    def __repr__(self) -> str:
+        """Return the string representation of the class.
+
+        Returns:
+            The string representation of the class.
+        """
+        return "Unset"
+
+    def __bool__(self) -> bool:
+        """Return False when the class is used in a boolean context.
+
+        Returns:
+            False
+        """
+        return False
+
+
 def is_generic_alias(cls: GenericType) -> bool:
     """Check whether the class is a generic alias.
 
@@ -52,22 +132,19 @@ def is_generic_alias(cls: GenericType) -> bool:
     Returns:
         Whether the class is a generic alias.
     """
-    # For older versions of Python.
-    if isinstance(cls, _GenericAlias):
-        return True
+    return isinstance(cls, GenericAliasTypes)
 
-    with contextlib.suppress(ImportError):
-        from typing import _SpecialGenericAlias  # type: ignore
 
-        if isinstance(cls, _SpecialGenericAlias):
-            return True
-    # For newer versions of Python.
-    try:
-        from types import GenericAlias  # type: ignore
+def is_none(cls: GenericType) -> bool:
+    """Check if a class is None.
 
-        return isinstance(cls, GenericAlias)
-    except ImportError:
-        return False
+    Args:
+        cls: The class to check.
+
+    Returns:
+        Whether the class is None.
+    """
+    return cls is type(None) or cls is None
 
 
 def is_union(cls: GenericType) -> bool:
@@ -79,11 +156,7 @@ def is_union(cls: GenericType) -> bool:
     Returns:
         Whether the class is a Union.
     """
-    # UnionType added in py3.10
-    if not hasattr(types, "UnionType"):
-        return get_origin(cls) is Union
-
-    return get_origin(cls) in [Union, types.UnionType]
+    return get_origin(cls) in UnionTypes
 
 
 def is_literal(cls: GenericType) -> bool:
@@ -142,7 +215,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     attr = getattr(cls, name, None)
     if hint := get_property_hint(attr):
         return hint
-    if hasattr(cls, "__fields__") and name in cls.__fields__:
+    if (
+        hasattr(cls, "__fields__")
+        and name in cls.__fields__
+        and hasattr(cls.__fields__[name], "outer_type_")
+    ):
         # pydantic models
         field = cls.__fields__[name]
         type_ = field.outer_type_
@@ -155,8 +232,20 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     elif isinstance(cls, type) and issubclass(cls, DeclarativeBase):
         insp = sqlalchemy.inspect(cls)
         if name in insp.columns:
-            return insp.columns[name].type.python_type
-        if name not in insp.all_orm_descriptors.keys():
+            # check for list types
+            column = insp.columns[name]
+            column_type = column.type
+            type_ = insp.columns[name].type.python_type
+            if hasattr(column_type, "item_type") and (
+                item_type := column_type.item_type.python_type  # type: ignore
+            ):
+                if type_ in PrimitiveToAnnotation:
+                    type_ = PrimitiveToAnnotation[type_]  # type: ignore
+                type_ = type_[item_type]  # type: ignore
+            if column.nullable:
+                type_ = Optional[type_]
+            return type_
+        if name not in insp.all_orm_descriptors:
             return None
         descriptor = insp.all_orm_descriptors[name]
         if hint := get_property_hint(descriptor):
@@ -165,12 +254,18 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             prop = descriptor.property
             if not isinstance(prop, Relationship):
                 return None
-            class_ = prop.mapper.class_
-            if prop.uselist:
-                return List[class_]
-            else:
-                return class_
-    elif isinstance(cls, type) and issubclass(cls, Model):
+            type_ = prop.mapper.class_
+            # TODO: check for nullable?
+            type_ = List[type_] if prop.uselist else Optional[type_]
+            return type_
+        if isinstance(attr, AssociationProxyInstance):
+            return List[
+                get_attribute_access_type(
+                    attr.target_class,
+                    attr.remote_attr.key,  # type: ignore[attr-defined]
+                )
+            ]
+    elif isinstance(cls, type) and not is_generic_alias(cls) and issubclass(cls, Model):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)
         if name in hints:
@@ -188,6 +283,19 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             if type_ is not None:
                 # Return the first attribute type that is accessible.
                 return type_
+    elif isinstance(cls, type):
+        # Bare class
+        if sys.version_info >= (3, 10):
+            exceptions = NameError
+        else:
+            exceptions = (NameError, TypeError)
+        try:
+            hints = get_type_hints(cls)
+            if name in hints:
+                return hints[name]
+        except exceptions as e:
+            console.warn(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
+            pass
     return None  # Attribute is not accessible.
 
 
@@ -288,6 +396,8 @@ def is_valid_var_type(type_: Type) -> bool:
     Returns:
         Whether the type is a valid prop type.
     """
+    from reflex.utils import serializers
+
     if is_union(type_):
         return all((is_valid_var_type(arg) for arg in get_args(type_)))
     return _issubclass(type_, StateVar) or serializers.has_serializer(type_)
@@ -372,11 +482,12 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
     ):
         allowed_values = expected_type.__args__
         if value not in allowed_values:
-            value_str = ",".join(
+            allowed_value_str = ",".join(
                 [str(v) if not isinstance(v, str) else f"'{v}'" for v in allowed_values]
             )
+            value_str = f"'{value}'" if isinstance(value, str) else value
             raise ValueError(
-                f"prop value for {str(key)} of the `{comp_name}` component should be one of the following: {value_str}. Got '{value}' instead"
+                f"prop value for {str(key)} of the `{comp_name}` component should be one of the following: {allowed_value_str}. Got {value_str} instead"
             )
 
 
@@ -398,7 +509,7 @@ def validate_parameter_literals(func):
         annotations = {param[0]: param[1].annotation for param in func_params}
 
         # validate args
-        for param, arg in zip(annotations.keys(), args):
+        for param, arg in zip(annotations, args):
             if annotations[param] is inspect.Parameter.empty:
                 continue
             validate_literal(param, arg, annotations[param], func.__name__)

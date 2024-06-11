@@ -46,17 +46,12 @@ def export(
     # Show system info
     exec.output_system_info()
 
-    # Check that the app is initialized.
-    prerequisites.check_initialized(frontend=frontend)
-
     # Compile the app in production mode and export it.
     console.rule("[bold]Compiling production app and preparing for export.")
 
     if frontend:
-        # Update some parameters for export
-        prerequisites.update_next_config(export=True)
         # Ensure module can be imported and app.compile() is called.
-        prerequisites.get_compiled_app()
+        prerequisites.get_compiled_app(export=True)
         # Set up .web directory and install frontend dependencies.
         build.setup_frontend(Path.cwd())
 

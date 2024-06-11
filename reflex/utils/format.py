@@ -6,17 +6,15 @@ import inspect
 import json
 import os
 import re
-import sys
-from typing import TYPE_CHECKING, Any, List, Union
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from reflex import constants
-from reflex.utils import exceptions, serializers, types
-from reflex.utils.serializers import serialize
+from reflex.utils import exceptions, types
 from reflex.vars import BaseVar, Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
-    from reflex.event import EventChain, EventHandler, EventSpec
+    from reflex.event import ArgsSpec, EventChain, EventHandler, EventSpec
 
 WRAP_MAP = {
     "{": "}",
@@ -161,16 +159,17 @@ def to_camel_case(text: str, allow_hyphens: bool = False) -> str:
     return leading_underscores_or_hyphens + converted_word
 
 
-def to_title_case(text: str) -> str:
+def to_title_case(text: str, sep: str = "") -> str:
     """Convert a string from snake case to title case.
 
     Args:
         text: The string to convert.
+        sep: The separator to use to join the words.
 
     Returns:
         The title case string.
     """
-    return "".join(word.capitalize() for word in text.split("_"))
+    return sep.join(word.title() for word in text.split("_"))
 
 
 def to_kebab_case(text: str) -> str:
@@ -186,6 +185,20 @@ def to_kebab_case(text: str) -> str:
         The title case string.
     """
     return to_snake_case(text).replace("_", "-")
+
+
+def make_default_page_title(app_name: str, route: str) -> str:
+    """Make a default page title from a route.
+
+    Args:
+        app_name: The name of the app owning the page.
+        route: The route to make the title from.
+
+    Returns:
+        The default page title.
+    """
+    title = constants.DefaultPage.TITLE.format(app_name, route)
+    return to_title_case(title, " ")
 
 
 def _escape_js_string(string: str) -> str:
@@ -316,7 +329,7 @@ def format_cond(
     cond = f"isTrue({cond})"
 
     def create_var(cond_part):
-        return Var.create_safe(cond_part, _var_is_string=type(cond_part) is str)
+        return Var.create_safe(cond_part, _var_is_string=isinstance(cond_part, str))
 
     # Format prop conds.
     if is_prop:
@@ -386,6 +399,7 @@ def format_prop(
     """
     # import here to avoid circular import.
     from reflex.event import EventChain
+    from reflex.utils import serializers
 
     try:
         # Handle var props.
@@ -470,18 +484,18 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     if len(parts) == 1:
         return ("", parts[-1])
 
-    # Get the state and the function name.
-    state_name, name = parts[-2:]
+    # Get the state full name
+    state_full_name = handler.state_full_name
 
-    # Construct the full event handler name.
-    try:
-        # Try to get the state from the module.
-        state = vars(sys.modules[handler.fn.__module__])[state_name]
-    except Exception:
-        # If the state isn't in the module, just return the function name.
+    # Get the function name
+    name = parts[-1]
+
+    from reflex.state import State
+
+    if state_full_name == "state" and name not in State.__dict__:
         return ("", to_snake_case(handler.fn.__qualname__))
 
-    return (state.get_full_name(), name)
+    return (state_full_name, name)
 
 
 def format_event_handler(handler: EventHandler) -> str:
@@ -513,9 +527,14 @@ def format_event(event_spec: EventSpec) -> str:
             ":".join(
                 (
                     name._var_name,
-                    wrap(json.dumps(val._var_name).strip('"').replace("`", "\\`"), "`")
-                    if val._var_is_string
-                    else val._var_full_name,
+                    (
+                        wrap(
+                            json.dumps(val._var_name).strip('"').replace("`", "\\`"),
+                            "`",
+                        )
+                        if val._var_is_string
+                        else val._var_full_name
+                    ),
                 )
             )
             for name, val in event_spec.args
@@ -571,6 +590,84 @@ def format_event_chain(
     )
 
 
+def format_queue_events(
+    events: EventSpec
+    | EventHandler
+    | Callable
+    | List[EventSpec | EventHandler | Callable]
+    | None = None,
+    args_spec: Optional[ArgsSpec] = None,
+) -> Var[EventChain]:
+    """Format a list of event handler / event spec as a javascript callback.
+
+    The resulting code can be passed to interfaces that expect a callback
+    function and when triggered it will directly call queueEvents.
+
+    It is intended to be executed in the rx.call_script context, where some
+    existing API needs a callback to trigger a backend event handler.
+
+    Args:
+        events: The events to queue.
+        args_spec: The argument spec for the callback.
+
+    Returns:
+        The compiled javascript callback to queue the given events on the frontend.
+
+    Raises:
+        ValueError: If a lambda function is given which returns a Var.
+    """
+    from reflex.event import (
+        EventChain,
+        EventHandler,
+        EventSpec,
+        call_event_fn,
+        call_event_handler,
+    )
+
+    if not events:
+        return Var.create_safe(
+            "() => null", _var_is_string=False, _var_is_local=False
+        ).to(EventChain)
+
+    # If no spec is provided, the function will take no arguments.
+    def _default_args_spec():
+        return []
+
+    # Construct the arguments that the function accepts.
+    sig = inspect.signature(args_spec or _default_args_spec)  # type: ignore
+    if sig.parameters:
+        arg_def = ",".join(f"_{p}" for p in sig.parameters)
+        arg_def = f"({arg_def})"
+    else:
+        arg_def = "()"
+
+    payloads = []
+    if not isinstance(events, list):
+        events = [events]
+
+    # Process each event/spec/lambda (similar to Component._create_event_chain).
+    for spec in events:
+        specs: list[EventSpec] = []
+        if isinstance(spec, (EventHandler, EventSpec)):
+            specs = [call_event_handler(spec, args_spec or _default_args_spec)]
+        elif isinstance(spec, type(lambda: None)):
+            specs = call_event_fn(spec, args_spec or _default_args_spec)  # type: ignore
+            if isinstance(specs, Var):
+                raise ValueError(
+                    f"Invalid event spec: {specs}. Expected a list of EventSpecs."
+                )
+        payloads.extend(format_event(s) for s in specs)
+
+    # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
+    # Typically this snippet will _only_ run from within an rx.call_script eval context.
+    return Var.create_safe(
+        f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}); "
+        f"processEvent({constants.CompileVars.SOCKET})}}",
+        _var_is_string=False,
+        _var_is_local=False,
+    ).to(EventChain)
+
+
 def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     """Convert back query params name to python-friendly case.
 
@@ -584,11 +681,12 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 
-def format_state(value: Any) -> Any:
+def format_state(value: Any, key: Optional[str] = None) -> Any:
     """Recursively format values in the given state.
 
     Args:
         value: The state to format.
+        key: The key associated with the value (optional).
 
     Returns:
         The formatted state.
@@ -596,9 +694,11 @@ def format_state(value: Any) -> Any:
     Raises:
         TypeError: If the given value is not a valid state.
     """
+    from reflex.utils import serializers
+
     # Handle dicts.
     if isinstance(value, dict):
-        return {k: format_state(v) for k, v in value.items()}
+        return {k: format_state(v, k) for k, v in value.items()}
 
     # Handle lists, sets, typles.
     if isinstance(value, types.StateIterBases):
@@ -609,11 +709,18 @@ def format_state(value: Any) -> Any:
         return value
 
     # Serialize the value.
-    serialized = serialize(value)
+    serialized = serializers.serialize(value)
     if serialized is not None:
         return serialized
 
-    raise TypeError(f"No JSON serializer found for var {value} of type {type(value)}.")
+    if key is None:
+        raise TypeError(
+            f"No JSON serializer found for var {value} of type {type(value)}."
+        )
+    else:
+        raise TypeError(
+            f"No JSON serializer found for State Var '{key}' of value {value} of type {type(value)}."
+        )
 
 
 def format_state_name(state_name: str) -> str:
@@ -705,7 +812,9 @@ def json_dumps(obj: Any) -> str:
     Returns:
         A string
     """
-    return json.dumps(obj, ensure_ascii=False, default=serialize)
+    from reflex.utils import serializers
+
+    return json.dumps(obj, ensure_ascii=False, default=serializers.serialize)
 
 
 def unwrap_vars(value: str) -> str:
@@ -807,4 +916,7 @@ def format_data_editor_cell(cell: Any):
     Returns:
         The formatted cell.
     """
-    return {"kind": Var.create(value="GridCellKind.Text"), "data": cell}
+    return {
+        "kind": Var.create(value="GridCellKind.Text", _var_is_string=False),
+        "data": cell,
+    }

@@ -6,7 +6,8 @@ from typing import Any, Dict, Literal
 
 from reflex.components import Component
 from reflex.components.tags import Tag
-from reflex.utils import imports
+from reflex.config import get_config
+from reflex.utils.imports import ImportVar
 from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
@@ -73,10 +74,17 @@ class CommonMarginProps(Component):
     ml: Var[LiteralSpacing]
 
 
+class RadixLoadingProp(Component):
+    """Base class for components that can be in a loading state."""
+
+    # If set, show an rx.spinner instead of the component children.
+    loading: Var[bool]
+
+
 class RadixThemesComponent(Component):
     """Base class for all @radix-ui/themes components."""
 
-    library = "@radix-ui/themes@^2.0.0"
+    library = "@radix-ui/themes@^3.0.0"
 
     # "Fake" prop color_scheme is used to avoid shadowing CSS prop "color".
     _rename_props: Dict[str, str] = {"colorScheme": "color"}
@@ -112,6 +120,35 @@ class RadixThemesComponent(Component):
         return {
             (45, "RadixThemesColorModeProvider"): RadixThemesColorModeProvider.create(),
         }
+
+
+class RadixThemesTriggerComponent(RadixThemesComponent):
+    """Base class for Trigger, Close, Cancel, and Accept components.
+
+    These components trigger some action in an overlay component that depends on the
+    on_click event, and thus if a child is provided and has on_click specified, it
+    will overtake the internal action, unless it is wrapped in some inert component,
+    in this case, a Flex.
+    """
+
+    @classmethod
+    def create(cls, *children: Any, **props: Any) -> Component:
+        """Create a new RadixThemesTriggerComponent instance.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+
+        Returns:
+            The new RadixThemesTriggerComponent instance.
+        """
+        from .layout.flex import Flex
+
+        for child in children:
+            if "on_click" in getattr(child, "event_triggers", {}):
+                children = (Flex.create(*children),)
+                break
+        return super().create(*children, **props)
 
 
 class Theme(RadixThemesComponent):
@@ -172,18 +209,23 @@ class Theme(RadixThemesComponent):
             children = [ThemePanel.create(), *children]
         return super().create(*children, **props)
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
-                "": [
-                    imports.ImportVar(tag="@radix-ui/themes/styles.css", install=False)
-                ],
-                "/utils/theme.js": [
-                    imports.ImportVar(tag="theme", is_default=True),
-                ],
-            },
-        )
+    def add_imports(self) -> dict[str, list[ImportVar] | ImportVar]:
+        """Add imports for the Theme component.
+
+        Returns:
+            The import dict.
+        """
+        _imports: dict[str, list[ImportVar] | ImportVar] = {
+            "/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
+        }
+        if get_config().tailwind is None:
+            # When tailwind is disabled, import the radix-ui styles directly because they will
+            # not be included in the tailwind.css file.
+            _imports[""] = ImportVar(
+                tag="@radix-ui/themes/styles.css",
+                install=False,
+            )
+        return _imports
 
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         tag = super()._render(props)
@@ -191,6 +233,7 @@ class Theme(RadixThemesComponent):
             css=Var.create(
                 "{{...theme.styles.global[':root'], ...theme.styles.global.body}}",
                 _var_is_local=False,
+                _var_is_string=False,
             ),
         )
         return tag
@@ -206,6 +249,34 @@ class ThemePanel(RadixThemesComponent):
 
     # Whether the panel is open. Defaults to False.
     default_open: Var[bool]
+
+    def add_imports(self) -> dict[str, str]:
+        """Add imports for the ThemePanel component.
+
+        Returns:
+            The import dict.
+        """
+        return {"react": "useEffect"}
+
+    def add_hooks(self) -> list[str]:
+        """Add a hook on the ThemePanel to clear chakra-ui-color-mode.
+
+        Returns:
+            The hooks to render.
+        """
+        # The panel freezes the tab if the user color preference differs from the
+        # theme "appearance", so clear it out when theme panel is used.
+        return [
+            """
+            useEffect(() => {
+                if (typeof window !== 'undefined') {
+                    window.onbeforeunload = () => {
+                        localStorage.removeItem('chakra-ui-color-mode');
+                    }
+                    window.onbeforeunload();
+                }
+            }, [])"""
+        ]
 
 
 class RadixThemesColorModeProvider(Component):

@@ -13,19 +13,21 @@ from reflex.testing import AppHarness, WebDriver
 
 def UploadFile():
     """App for testing dynamic routes."""
+    from typing import Dict, List
+
     import reflex as rx
 
     class UploadState(rx.State):
-        _file_data: dict[str, str] = {}
-        event_order: list[str] = []
-        progress_dicts: list[dict] = []
+        _file_data: Dict[str, str] = {}
+        event_order: List[str] = []
+        progress_dicts: List[dict] = []
 
-        async def handle_upload(self, files: list[rx.UploadFile]):
+        async def handle_upload(self, files: List[rx.UploadFile]):
             for file in files:
                 upload_data = await file.read()
                 self._file_data[file.filename or ""] = upload_data.decode("utf-8")
 
-        async def handle_upload_secondary(self, files: list[rx.UploadFile]):
+        async def handle_upload_secondary(self, files: List[rx.UploadFile]):
             for file in files:
                 upload_data = await file.read()
                 self._file_data[file.filename or ""] = upload_data.decode("utf-8")
@@ -47,7 +49,7 @@ def UploadFile():
                 id="token",
             ),
             rx.heading("Default Upload"),
-            rx.upload(
+            rx.upload.root(
                 rx.vstack(
                     rx.button("Select File"),
                     rx.text("Drag and drop files here or click to select files"),
@@ -71,7 +73,7 @@ def UploadFile():
                 id="clear_button",
             ),
             rx.heading("Secondary Upload"),
-            rx.upload(
+            rx.upload.root(
                 rx.vstack(
                     rx.button("Select File"),
                     rx.text("Drag and drop files here or click to select files"),
@@ -117,7 +119,7 @@ def UploadFile():
     app.add_page(index)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def upload_file(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start UploadFile app at tmp_path via AppHarness.
 

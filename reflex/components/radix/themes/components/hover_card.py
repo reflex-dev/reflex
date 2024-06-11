@@ -1,13 +1,14 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
-from reflex import el
 from reflex.components.component import ComponentNamespace
+from reflex.components.el import elements
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     RadixThemesComponent,
+    RadixThemesTriggerComponent,
 )
 
 
@@ -40,13 +41,13 @@ class HoverCardRoot(RadixThemesComponent):
         }
 
 
-class HoverCardTrigger(RadixThemesComponent):
+class HoverCardTrigger(RadixThemesTriggerComponent):
     """Wraps the link that will open the hover card."""
 
     tag = "HoverCard.Trigger"
 
 
-class HoverCardContent(el.Div, RadixThemesComponent):
+class HoverCardContent(elements.Div, RadixThemesComponent):
     """Contains the content of the open hover card."""
 
     tag = "HoverCard.Content"

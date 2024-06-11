@@ -184,6 +184,9 @@ class HighLevelSelect(SelectRoot):
     # The width of the select.
     width: Var[str]
 
+    # The positioning mode to use. Default is "item-aligned".
+    position: Var[Literal["item-aligned", "popper"]]
+
     @classmethod
     def create(cls, items: Union[List[str], Var[List[str]]], **props) -> Component:
         """Create a select component.
@@ -195,21 +198,30 @@ class HighLevelSelect(SelectRoot):
         Returns:
             The select component.
         """
-        content_props = {
-            prop: props.pop(prop) for prop in ["high_contrast"] if prop in props
-        }
+        trigger_prop_list = [
+            "placeholder",
+            "variant",
+            "radius",
+            "width",
+            "flex_shrink",
+            "custom_attrs",
+        ]
 
-        trigger_props = {
+        content_props = {
             prop: props.pop(prop)
-            for prop in ["placeholder", "variant", "radius", "width"]
+            for prop in ["high_contrast", "position"]
             if prop in props
         }
 
-        color = props.pop("color", None)
+        trigger_props = {
+            prop: props.pop(prop) for prop in trigger_prop_list if prop in props
+        }
 
-        if color is not None:
-            content_props["color_scheme"] = color
-            trigger_props["color_scheme"] = color
+        color_scheme = props.pop("color_scheme", None)
+
+        if color_scheme is not None:
+            content_props["color_scheme"] = color_scheme
+            trigger_props["color_scheme"] = color_scheme
 
         label = props.pop("label", None)
 

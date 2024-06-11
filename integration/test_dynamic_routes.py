@@ -1,4 +1,6 @@
 """Integration tests for dynamic route page behavior."""
+from __future__ import annotations
+
 from typing import Callable, Coroutine, Generator, Type
 from urllib.parse import urlsplit
 
@@ -12,10 +14,12 @@ from .utils import poll_for_navigation
 
 def DynamicRoute():
     """App for testing dynamic routes."""
+    from typing import List
+
     import reflex as rx
 
     class DynamicState(rx.State):
-        order: list[str] = []
+        order: List[str] = []
         page_id: str = ""
 
         def on_load(self):
@@ -51,11 +55,16 @@ def DynamicRoute():
             rx.link("index", href="/", id="link_index"),
             rx.link("page_X", href="/static/x", id="link_page_x"),
             rx.link(
-                "next", href="/page/" + DynamicState.next_page, id="link_page_next"  # type: ignore
+                "next",
+                href="/page/" + DynamicState.next_page,
+                id="link_page_next",  # type: ignore
             ),
             rx.link("missing", href="/missing", id="link_missing"),
             rx.chakra.list(
-                rx.foreach(DynamicState.order, lambda i: rx.chakra.list_item(rx.text(i))),  # type: ignore
+                rx.foreach(
+                    DynamicState.order,  # type: ignore
+                    lambda i: rx.chakra.list_item(rx.text(i)),
+                ),
             ),
         )
 
@@ -70,7 +79,7 @@ def DynamicRoute():
     app.add_custom_404_page(on_load=DynamicState.on_load)  # type: ignore
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def dynamic_route(
     app_harness_env: Type[AppHarness], tmp_path_factory
 ) -> Generator[AppHarness, None, None]:

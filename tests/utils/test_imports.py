@@ -72,7 +72,7 @@ def test_merge_imports(input_1, input_2, output):
 
     """
     res = merge_imports(input_1, input_2)
-    assert set(res.keys()) == set(output.keys())
+    assert res.keys() == output.keys()
 
     for key in output:
         assert set(res[key]) == set(output[key])

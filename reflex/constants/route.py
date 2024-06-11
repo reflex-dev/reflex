@@ -44,15 +44,19 @@ class RouteRegex(SimpleNamespace):
     STRICT_CATCHALL = re.compile(r"\[\.{3}([a-zA-Z_][\w]*)\]")
     # group return the arg name (i.e. "slug") (optional arg can be empty)
     OPT_CATCHALL = re.compile(r"\[\[\.{3}([a-zA-Z_][\w]*)\]\]")
+    SINGLE_SEGMENT = "__SINGLE_SEGMENT__"
+    DOUBLE_SEGMENT = "__DOUBLE_SEGMENT__"
+    SINGLE_CATCHALL_SEGMENT = "__SINGLE_CATCHALL_SEGMENT__"
+    DOUBLE_CATCHALL_SEGMENT = "__DOUBLE_CATCHALL_SEGMENT__"
 
 
 class DefaultPage(SimpleNamespace):
     """Default page constants."""
 
     # The default title to show for Reflex apps.
-    TITLE = "Reflex App"
+    TITLE = "{} | {}"
     # The default description to show for Reflex apps.
-    DESCRIPTION = "A Reflex app."
+    DESCRIPTION = ""
     # The default image to show for Reflex apps.
     IMAGE = "favicon.ico"
     # The default meta list to show for Reflex apps.

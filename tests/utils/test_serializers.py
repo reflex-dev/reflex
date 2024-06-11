@@ -1,5 +1,6 @@
 import datetime
 from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List, Type
 
 import pytest
@@ -12,11 +13,7 @@ from reflex.vars import Var
 
 @pytest.mark.parametrize(
     "type_,expected",
-    [
-        (str, True),
-        (dict, True),
-        (Dict[int, int], True),
-    ],
+    [(str, True), (dict, True), (Dict[int, int], True), (Enum, True)],
 )
 def test_has_serializer(type_: Type, expected: bool):
     """Test that has_serializer returns the correct value.
@@ -46,6 +43,7 @@ def test_has_serializer(type_: Type, expected: bool):
         (int, serializers.serialize_primitive),
         (float, serializers.serialize_primitive),
         (bool, serializers.serialize_primitive),
+        (Enum, serializers.serialize_enum),
     ],
 )
 def test_get_serializer(type_: Type, expected: serializers.Serializer):
@@ -93,11 +91,21 @@ def test_add_serializer():
 
     # Remove the serializer.
     serializers.SERIALIZERS.pop(Foo)
+    # LRU cache will still have the serializer, so we need to clear it.
+    assert serializers.has_serializer(Foo)
+    serializers.get_serializer.cache_clear()
     assert not serializers.has_serializer(Foo)
 
 
 class StrEnum(str, Enum):
     """An enum also inheriting from str."""
+
+    FOO = "foo"
+    BAR = "bar"
+
+
+class TestEnum(Enum):
+    """A lone enum class."""
 
     FOO = "foo"
     BAR = "bar"
@@ -145,6 +153,12 @@ class BaseSubclass(Base):
             {"key1": EnumWithPrefix.FOO, "key2": EnumWithPrefix.BAR},
             '{"key1": "prefix_foo", "key2": "prefix_bar"}',
         ),
+        (TestEnum.FOO, "foo"),
+        ([TestEnum.FOO, TestEnum.BAR], '["foo", "bar"]'),
+        (
+            {"key1": TestEnum.FOO, "key2": TestEnum.BAR},
+            '{"key1": "foo", "key2": "bar"}',
+        ),
         (
             BaseSubclass(ts=datetime.timedelta(1, 1, 1)),
             '{"ts": "1 day, 0:00:01.000001"}',
@@ -172,6 +186,7 @@ class BaseSubclass(Base):
         ),
         (Color(color="slate", shade=1), "var(--slate-1)"),
         (Color(color="orange", shade=1, alpha=True), "var(--orange-a1)"),
+        (Color(color="accent", shade=1, alpha=True), "var(--accent-a1)"),
     ],
 )
 def test_serialize(value: Any, expected: str):
@@ -183,3 +198,39 @@ def test_serialize(value: Any, expected: str):
         expected: The expected result.
     """
     assert serializers.serialize(value) == expected
+
+
+@pytest.mark.parametrize(
+    "value,expected,exp_var_is_string",
+    [
+        ("test", "test", False),
+        (1, "1", False),
+        (1.0, "1.0", False),
+        (True, "true", False),
+        (False, "false", False),
+        ([1, 2, 3], "[1, 2, 3]", False),
+        ([{"key": 1}, {"key": 2}], '[{"key": 1}, {"key": 2}]', False),
+        (StrEnum.FOO, "foo", False),
+        ([StrEnum.FOO, StrEnum.BAR], '["foo", "bar"]', False),
+        (
+            BaseSubclass(ts=datetime.timedelta(1, 1, 1)),
+            '{"ts": "1 day, 0:00:01.000001"}',
+            False,
+        ),
+        (datetime.datetime(2021, 1, 1, 1, 1, 1, 1), "2021-01-01 01:01:01.000001", True),
+        (Color(color="slate", shade=1), "var(--slate-1)", True),
+        (BaseSubclass, "BaseSubclass", True),
+        (Path("."), ".", True),
+    ],
+)
+def test_serialize_var_to_str(value: Any, expected: str, exp_var_is_string: bool):
+    """Test that serialize with `to=str` passed to a Var is marked with _var_is_string.
+
+    Args:
+        value: The value to serialize.
+        expected: The expected result.
+        exp_var_is_string: The expected value of _var_is_string.
+    """
+    v = Var.create_safe(value)
+    assert v._var_full_name == expected
+    assert v._var_is_string == exp_var_is_string

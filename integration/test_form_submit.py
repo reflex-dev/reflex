@@ -1,4 +1,5 @@
 """Integration tests for forms."""
+import functools
 import time
 from typing import Generator
 
@@ -10,16 +11,22 @@ from reflex.testing import AppHarness
 from reflex.utils import format
 
 
-def FormSubmit():
-    """App with a form using on_submit."""
+def FormSubmit(form_component):
+    """App with a form using on_submit.
+
+    Args:
+        form_component: The str name of the form component to use.
+    """
+    from typing import Dict, List
+
     import reflex as rx
 
     class FormState(rx.State):
-        form_data: dict = {}
+        form_data: Dict = {}
 
-        var_options: list[str] = ["option3", "option4"]
+        var_options: List[str] = ["option3", "option4"]
 
-        def form_submit(self, form_data: dict):
+        def form_submit(self, form_data: Dict):
             self.form_data = form_data
 
     app = rx.App(state=rx.State)
@@ -32,7 +39,7 @@ def FormSubmit():
                 is_read_only=True,
                 id="token",
             ),
-            rx.form.root(
+            eval(form_component)(
                 rx.vstack(
                     rx.chakra.input(id="name_input"),
                     rx.hstack(rx.chakra.pin_input(length=4, id="pin_input")),
@@ -63,16 +70,22 @@ def FormSubmit():
         )
 
 
-def FormSubmitName():
-    """App with a form using on_submit."""
+def FormSubmitName(form_component):
+    """App with a form using on_submit.
+
+    Args:
+        form_component: The str name of the form component to use.
+    """
+    from typing import Dict, List
+
     import reflex as rx
 
     class FormState(rx.State):
-        form_data: dict = {}
+        form_data: Dict = {}
         val: str = "foo"
-        options: list[str] = ["option1", "option2"]
+        options: List[str] = ["option1", "option2"]
 
-        def form_submit(self, form_data: dict):
+        def form_submit(self, form_data: Dict):
             self.form_data = form_data
 
     app = rx.App(state=rx.State)
@@ -85,7 +98,7 @@ def FormSubmitName():
                 is_read_only=True,
                 id="token",
             ),
-            rx.form.root(
+            eval(form_component)(
                 rx.vstack(
                     rx.chakra.input(name="name_input"),
                     rx.hstack(rx.chakra.pin_input(length=4, name="pin_input")),
@@ -128,7 +141,23 @@ def FormSubmitName():
 
 
 @pytest.fixture(
-    scope="session", params=[FormSubmit, FormSubmitName], ids=["id", "name"]
+    scope="module",
+    params=[
+        functools.partial(FormSubmit, form_component="rx.form.root"),
+        functools.partial(FormSubmitName, form_component="rx.form.root"),
+        functools.partial(FormSubmit, form_component="rx.el.form"),
+        functools.partial(FormSubmitName, form_component="rx.el.form"),
+        functools.partial(FormSubmit, form_component="rx.chakra.form"),
+        functools.partial(FormSubmitName, form_component="rx.chakra.form"),
+    ],
+    ids=[
+        "id-radix",
+        "name-radix",
+        "id-html",
+        "name-html",
+        "id-chakra",
+        "name-chakra",
+    ],
 )
 def form_submit(request, tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start FormSubmit app at tmp_path via AppHarness.
@@ -140,9 +169,11 @@ def form_submit(request, tmp_path_factory) -> Generator[AppHarness, None, None]:
     Yields:
         running AppHarness instance
     """
+    param_id = request._pyfuncitem.callspec.id.replace("-", "_")
     with AppHarness.create(
         root=tmp_path_factory.mktemp("form_submit"),
         app_source=request.param,  # type: ignore
+        app_name=request.param.func.__name__ + f"_{param_id}",
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness

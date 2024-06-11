@@ -1,11 +1,38 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
-from typing import Any, Dict, Union
+
+from __future__ import annotations
+
+from hashlib import md5
+from typing import Any, Dict, Iterator, Set, Union
+
+from jinja2 import Environment
 
 from reflex.components.el.element import Element
-from reflex.constants.event import EventTriggers
-from reflex.vars import Var
+from reflex.components.tags.tag import Tag
+from reflex.constants import Dirs, EventTriggers
+from reflex.event import EventChain
+from reflex.utils import imports
+from reflex.utils.format import format_event_chain
+from reflex.vars import BaseVar, Var
 
 from .base import BaseHTML
+
+FORM_DATA = Var.create("form_data", _var_is_string=False)
+HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
+    """
+    const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
+        const $form = ev.target
+        ev.preventDefault()
+        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}
+
+        {{ on_submit_event_chain }}
+
+        if ({{ reset_on_submit }}) {
+            $form.reset()
+        }
+    })
+    """
+)
 
 
 class Button(BaseHTML):
@@ -101,6 +128,126 @@ class Form(BaseHTML):
     # Where to display the response after submitting the form
     target: Var[Union[str, int, bool]]
 
+    # If true, the form will be cleared after submit.
+    reset_on_submit: Var[bool] = False  # type: ignore
+
+    # The name used to make this form's submit handler function unique.
+    handle_submit_unique_name: Var[str]
+
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Event triggers for radix form root.
+
+        Returns:
+            The triggers for event supported by Root.
+        """
+        return {
+            **super().get_event_triggers(),
+            EventTriggers.ON_SUBMIT: lambda e0: [FORM_DATA],
+        }
+
+    @classmethod
+    def create(cls, *children, **props):
+        """Create a form component.
+
+        Args:
+            *children: The children of the form.
+            **props: The properties of the form.
+
+        Returns:
+            The form component.
+        """
+        if "handle_submit_unique_name" in props:
+            return super().create(*children, **props)
+
+        # Render the form hooks and use the hash of the resulting code to create a unique name.
+        props["handle_submit_unique_name"] = ""
+        form = super().create(*children, **props)
+        form.handle_submit_unique_name = md5(
+            str({**form._get_all_hooks_internal(), **form._get_all_hooks()}).encode(
+                "utf-8"
+            )
+        ).hexdigest()
+        return form
+
+    def _get_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
+            super()._get_imports(),
+            {
+                "react": {imports.ImportVar(tag="useCallback")},
+                f"/{Dirs.STATE_PATH}": {
+                    imports.ImportVar(tag="getRefValue"),
+                    imports.ImportVar(tag="getRefValues"),
+                },
+            },
+        )
+
+    def add_hooks(self) -> list[str]:
+        """Add hooks for the form.
+
+        Returns:
+            The hooks for the form.
+        """
+        if EventTriggers.ON_SUBMIT not in self.event_triggers:
+            return []
+        return [
+            HANDLE_SUBMIT_JS_JINJA2.render(
+                handle_submit_unique_name=self.handle_submit_unique_name,
+                form_data=FORM_DATA,
+                field_ref_mapping=str(Var.create_safe(self._get_form_refs())),
+                on_submit_event_chain=format_event_chain(
+                    self.event_triggers[EventTriggers.ON_SUBMIT]
+                ),
+                reset_on_submit=self.reset_on_submit,
+            )
+        ]
+
+    def _render(self) -> Tag:
+        render_tag = super()._render()
+        if EventTriggers.ON_SUBMIT in self.event_triggers:
+            render_tag.add_props(
+                **{
+                    EventTriggers.ON_SUBMIT: BaseVar(
+                        _var_name=f"handleSubmit_{self.handle_submit_unique_name}",
+                        _var_type=EventChain,
+                    )
+                }
+            )
+        return render_tag
+
+    def _get_form_refs(self) -> Dict[str, Any]:
+        # Send all the input refs to the handler.
+        form_refs = {}
+        for ref in self._get_all_refs():
+            # when ref start with refs_ it's an array of refs, so we need different method
+            # to collect data
+            if ref.startswith("refs_"):
+                ref_var = Var.create_safe(ref[:-3], _var_is_string=False).as_ref()
+                form_refs[ref[5:-3]] = Var.create_safe(
+                    f"getRefValues({str(ref_var)})",
+                    _var_is_local=False,
+                    _var_is_string=False,
+                    _var_data=ref_var._var_data,
+                )
+            else:
+                ref_var = Var.create_safe(ref, _var_is_string=False).as_ref()
+                form_refs[ref[4:]] = Var.create_safe(
+                    f"getRefValue({str(ref_var)})",
+                    _var_is_local=False,
+                    _var_is_string=False,
+                    _var_data=ref_var._var_data,
+                )
+        return form_refs
+
+    def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
+        yield from super()._get_vars(include_children=include_children)
+        yield from self._get_form_refs().values()
+
+    def _exclude_props(self) -> list[str]:
+        return super()._exclude_props() + [
+            "reset_on_submit",
+            "handle_submit_unique_name",
+        ]
+
 
 class Input(BaseHTML):
     """Display the input element."""
@@ -124,6 +271,12 @@ class Input(BaseHTML):
 
     # Indicates whether the input is checked (for checkboxes and radio buttons)
     checked: Var[Union[str, int, bool]]
+
+    # The initial value (for checkboxes and radio buttons)
+    default_checked: Var[bool]
+
+    # The initial value for a text field
+    default_value: Var[str]
 
     # Name part of the input to submit in 'dir' and 'name' pair when form is submitted
     dirname: Var[Union[str, int, bool]]
@@ -198,7 +351,7 @@ class Input(BaseHTML):
     use_map: Var[Union[str, int, bool]]
 
     # Value of the input
-    value: Var[Union[str, int, bool]]
+    value: Var[Union[str, int, float]]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
@@ -363,6 +516,36 @@ class Select(BaseHTML):
         }
 
 
+AUTO_HEIGHT_JS = """
+const autoHeightOnInput = (e, is_enabled) => {
+    if (is_enabled) {
+        const el = e.target;
+        el.style.overflowY = "hidden";
+        el.style.height = "auto";
+        el.style.height = (e.target.scrollHeight) + "px";
+        if (el.form && !el.form.data_resize_on_reset) {
+            el.form.addEventListener("reset", () => window.setTimeout(() => autoHeightOnInput(e, is_enabled), 0))
+            el.form.data_resize_on_reset = true;
+        }
+    }
+}
+"""
+
+
+ENTER_KEY_SUBMIT_JS = """
+const enterKeySubmitOnKeyDown = (e, is_enabled) => {
+    if (is_enabled && e.which === 13 && !e.shiftKey) {
+        e.preventDefault();
+        if (!e.repeat) {
+            if (e.target.form) {
+                e.target.form.requestSubmit();
+            }
+        }
+    }
+}
+"""
+
+
 class Textarea(BaseHTML):
     """Display the textarea element."""
 
@@ -374,6 +557,9 @@ class Textarea(BaseHTML):
     # Automatically focuses the textarea when the page loads
     auto_focus: Var[Union[str, int, bool]]
 
+    # Automatically fit the content height to the text (use min-height with this prop)
+    auto_height: Var[bool]
+
     # Visible width of the text control, in average character widths
     cols: Var[Union[str, int, bool]]
 
@@ -382,6 +568,9 @@ class Textarea(BaseHTML):
 
     # Disables the textarea
     disabled: Var[Union[str, int, bool]]
+
+    # Enter key submits form (shift-enter adds new line)
+    enter_key_submit: Var[bool]
 
     # Associates the textarea with a form (by id)
     form: Var[Union[str, int, bool]]
@@ -413,6 +602,51 @@ class Textarea(BaseHTML):
     # How the text in the textarea is to be wrapped when submitting the form
     wrap: Var[Union[str, int, bool]]
 
+    def _exclude_props(self) -> list[str]:
+        return super()._exclude_props() + [
+            "auto_height",
+            "enter_key_submit",
+        ]
+
+    def _get_all_custom_code(self) -> Set[str]:
+        """Include the custom code for auto_height and enter_key_submit functionality.
+
+        Returns:
+            The custom code for the component.
+        """
+        custom_code = super()._get_all_custom_code()
+        if self.auto_height is not None:
+            custom_code.add(AUTO_HEIGHT_JS)
+        if self.enter_key_submit is not None:
+            custom_code.add(ENTER_KEY_SUBMIT_JS)
+        return custom_code
+
+    def _render(self) -> Tag:
+        tag = super()._render()
+        if self.enter_key_submit is not None:
+            if "on_key_down" in self.event_triggers:
+                raise ValueError(
+                    "Cannot combine `enter_key_submit` with `on_key_down`.",
+                )
+            tag.add_props(
+                on_key_down=Var.create_safe(
+                    f"(e) => enterKeySubmitOnKeyDown(e, {self.enter_key_submit._var_name_unwrapped})",
+                    _var_is_local=False,
+                    _var_is_string=False,
+                    _var_data=self.enter_key_submit._var_data,
+                )
+            )
+        if self.auto_height is not None:
+            tag.add_props(
+                on_input=Var.create_safe(
+                    f"(e) => autoHeightOnInput(e, {self.auto_height._var_name_unwrapped})",
+                    _var_is_local=False,
+                    _var_is_string=False,
+                    _var_data=self.auto_height._var_data,
+                )
+            )
+        return tag
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
 
@@ -427,3 +661,18 @@ class Textarea(BaseHTML):
             EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
             EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
         }
+
+
+button = Button.create
+fieldset = Fieldset.create
+form = Form.create
+input = Input.create
+label = Label.create
+legend = Legend.create
+meter = Meter.create
+optgroup = Optgroup.create
+option = Option.create
+output = Output.create
+progress = Progress.create
+select = Select.create
+textarea = Textarea.create

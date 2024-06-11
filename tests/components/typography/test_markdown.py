@@ -14,9 +14,9 @@ from reflex.components.markdown import Markdown
         ("h5", "Heading"),
         ("h6", "Heading"),
         ("p", "Text"),
-        ("ul", "UnorderedList"),
-        ("ol", "OrderedList"),
-        ("li", "ListItem"),
+        ("ul", "ul"),
+        ("ol", "ol"),
+        ("li", "li"),
         ("a", "Link"),
         ("code", "Code"),
     ],
@@ -49,15 +49,3 @@ def test_set_component_map():
 
     # Make sure the old tags are still there.
     assert md.get_component("h2").tag == "Heading"  # type: ignore
-
-
-def test_pass_custom_styles():
-    """Test that passing custom styles works."""
-    md = Markdown.create("# Hello", custom_styles={"h1": {"color": "red"}})
-
-    comp = md.get_component("h1")  # type: ignore
-    assert comp.style == {
-        "color": "red",
-        "marginBottom": "0.5em",
-        "marginTop": "0.5em",
-    }

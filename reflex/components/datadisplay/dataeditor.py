@@ -252,13 +252,20 @@ class DataEditor(NoSSRComponent):
             "on_column_resize": lambda col, width: [col, width],
         }
 
-    def _get_hooks(self) -> str | None:
+    def add_hooks(self) -> list[str]:
+        """Get the hooks to render.
+
+        Returns:
+            The hooks to render.
+        """
         # Define the id of the component in case multiple are used in the same page.
         editor_id = get_unique_variable_name()
 
         # Define the name of the getData callback associated with this component and assign to get_cell_content.
         data_callback = f"getData_{editor_id}"
-        self.get_cell_content = Var.create(data_callback, _var_is_local=False)  # type: ignore
+        self.get_cell_content = Var.create(
+            data_callback, _var_is_local=False, _var_is_string=False
+        )  # type: ignore
 
         code = [f"function {data_callback}([col, row])" "{"]
 
@@ -272,7 +279,7 @@ class DataEditor(NoSSRComponent):
             ]
         )
 
-        return "\n".join(code)
+        return ["\n".join(code)]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -296,11 +303,7 @@ class DataEditor(NoSSRComponent):
 
         # If rows is not provided, determine from data.
         if rows is None:
-            props["rows"] = (
-                data.length()  # BaseVar.create(value=f"{data}.length()", is_local=False)
-                if isinstance(data, Var)
-                else len(data)
-            )
+            props["rows"] = data.length() if isinstance(data, Var) else len(data)
 
         if not isinstance(columns, Var) and len(columns):
             if (
@@ -410,3 +413,7 @@ def serialize_dataeditortheme(theme: DataEditorTheme):
     return format.json_dumps(
         {format.to_camel_case(k): v for k, v in theme.__dict__.items() if v is not None}
     )
+
+
+data_editor = DataEditor.create
+data_editor_theme = DataEditorTheme

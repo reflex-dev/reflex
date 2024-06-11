@@ -2,6 +2,7 @@ import numpy as np
 import plotly.graph_objects as go
 import pytest
 
+import reflex as rx
 from reflex.utils.serializers import serialize, serialize_figure
 
 
@@ -29,5 +30,15 @@ def test_serialize_plotly(plotly_fig: go.Figure):
         plotly_fig: The figure to serialize.
     """
     value = serialize(plotly_fig)
-    assert isinstance(value, list)
+    assert isinstance(value, dict)
     assert value == serialize_figure(plotly_fig)
+
+
+def test_plotly_config_option(plotly_fig: go.Figure):
+    """Test that the plotly component can be created with a config option.
+
+    Args:
+        plotly_fig: The figure to display.
+    """
+    # This tests just confirm that the component can be created with a config option.
+    _ = rx.plotly(data=plotly_fig, config={"showLink": True})

@@ -2,13 +2,14 @@
 
 from typing import Any, Dict, Literal
 
-from reflex import el
 from reflex.components.component import ComponentNamespace
+from reflex.components.el import elements
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     RadixThemesComponent,
+    RadixThemesTriggerComponent,
 )
 
 
@@ -32,7 +33,7 @@ class DialogRoot(RadixThemesComponent):
         }
 
 
-class DialogTrigger(RadixThemesComponent):
+class DialogTrigger(RadixThemesTriggerComponent):
     """Trigger an action or event, to open a Dialog modal."""
 
     tag = "Dialog.Trigger"
@@ -44,7 +45,7 @@ class DialogTitle(RadixThemesComponent):
     tag = "Dialog.Title"
 
 
-class DialogContent(el.Div, RadixThemesComponent):
+class DialogContent(elements.Div, RadixThemesComponent):
     """Content component to display inside a Dialog modal."""
 
     tag = "Dialog.Content"
@@ -74,7 +75,7 @@ class DialogDescription(RadixThemesComponent):
     tag = "Dialog.Description"
 
 
-class DialogClose(RadixThemesComponent):
+class DialogClose(RadixThemesTriggerComponent):
     """Close button component to close an open Dialog modal."""
 
     tag = "Dialog.Close"

@@ -41,7 +41,8 @@ class Tag(Base):
         # Convert any props to vars.
         if "props" in kwargs:
             kwargs["props"] = {
-                name: Var.create(value) for name, value in kwargs["props"].items()
+                name: Var.create(value, _var_is_string=False)
+                for name, value in kwargs["props"].items()
             }
         super().__init__(*args, **kwargs)
 

@@ -5,6 +5,7 @@ import time
 from typing import Generator
 
 import pytest
+from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
@@ -111,7 +112,7 @@ def ClientSide():
     app.add_page(index, route="/foo")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def client_side(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start ClientSide app at tmp_path via AppHarness.
 
@@ -374,9 +375,12 @@ async def test_client_side_state(
         "value": "c3%20value",
     }
     time.sleep(2)  # wait for c3 to expire
-    assert "state.client_side_state.client_side_sub_state.c3" not in cookie_info_map(
-        driver
-    )
+    if not isinstance(driver, Firefox):
+        # Note: Firefox does not remove expired cookies Bug 576347
+        assert (
+            "state.client_side_state.client_side_sub_state.c3"
+            not in cookie_info_map(driver)
+        )
 
     local_storage_items = local_storage.items()
     local_storage_items.pop("chakra-ui-color-mode", None)
@@ -518,8 +522,8 @@ async def test_client_side_state(
     set_sub("l6", "l6 value")
     l5 = driver.find_element(By.ID, "l5")
     l6 = driver.find_element(By.ID, "l6")
+    assert AppHarness._poll_for(lambda: l6.text == "l6 value")
     assert l5.text == "l5 value"
-    assert l6.text == "l6 value"
 
     # Switch back to main window.
     driver.switch_to.window(main_tab)
@@ -527,8 +531,8 @@ async def test_client_side_state(
     # The values should have updated automatically.
     l5 = driver.find_element(By.ID, "l5")
     l6 = driver.find_element(By.ID, "l6")
+    assert AppHarness._poll_for(lambda: l6.text == "l6 value")
     assert l5.text == "l5 value"
-    assert l6.text == "l6 value"
 
     # clear the cookie jar and local storage, ensure state reset to default
     driver.delete_all_cookies()

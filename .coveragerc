@@ -1,11 +1,17 @@
 [run]
 source = reflex
 branch = true
+omit =
+    */pyi_generator.py
+    reflex/__main__.py
+    reflex/app_module_for_backend.py
+    reflex/components/chakra/*
+    reflex/experimental/*
 
 [report]
 show_missing = true
 # TODO bump back to 79
-fail_under = 69
+fail_under = 66
 precision = 2
 
 # Regexes for lines to exclude from consideration
@@ -24,6 +30,9 @@ exclude_also =
 
     # Don't complain about abstract methods, they aren't run:
     @(abc\.)?abstractmethod
+    
+    # Don't complain about overloaded methods:
+    @overload
 
 ignore_errors = True
 

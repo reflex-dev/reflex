@@ -2,14 +2,23 @@
 from __future__ import annotations
 
 import inspect
-from hashlib import md5
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Callable, Iterable
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
+from reflex.state import ComponentState
+from reflex.utils import console
 from reflex.vars import Var
+
+
+class ForeachVarError(TypeError):
+    """Raised when the iterable type is Any."""
+
+
+class ForeachRenderError(TypeError):
+    """Raised when there is an error with the foreach render function."""
 
 
 class Foreach(Component):
@@ -23,68 +32,95 @@ class Foreach(Component):
     # A function from the render args to the component.
     render_fn: Callable = Fragment.create
 
-    # The theme if set.
-    theme: Optional[Component] = None
-
-    def _apply_theme(self, theme: Component):
-        """Apply the theme to this component.
-
-        Args:
-            theme: The theme to apply.
-        """
-        self.theme = theme
-
     @classmethod
-    def create(cls, iterable: Var[Iterable], render_fn: Callable, **props) -> Foreach:
+    def create(
+        cls,
+        iterable: Var[Iterable] | Iterable,
+        render_fn: Callable,
+        **props,
+    ) -> Foreach:
         """Create a foreach component.
 
         Args:
             iterable: The iterable to create components from.
             render_fn: A function from the render args to the component.
-            **props: The attributes to pass to each child component.
+            **props: The attributes to pass to each child component (deprecated).
 
         Returns:
             The foreach component.
 
         Raises:
-            TypeError: If the iterable is of type Any.
+            ForeachVarError: If the iterable is of type Any.
+            TypeError: If the render function is a ComponentState.
         """
-        iterable = Var.create(iterable)  # type: ignore
-        if iterable._var_type == Any:
-            raise TypeError(
-                f"Could not foreach over var of type Any. (If you are trying to foreach over a state var, add a type annotation to the var.)"
+        if props:
+            console.deprecate(
+                feature_name="Passing props to rx.foreach",
+                reason="it does not have the intended effect and may be confusing",
+                deprecation_version="0.5.0",
+                removal_version="0.6.0",
             )
+        iterable = Var.create_safe(iterable, _var_is_string=False)
+        if iterable._var_type == Any:
+            raise ForeachVarError(
+                f"Could not foreach over var `{iterable._var_full_name}` of type Any. "
+                "(If you are trying to foreach over a state var, add a type annotation to the var). "
+                "See https://reflex.dev/docs/library/layout/foreach/"
+            )
+
+        if (
+            hasattr(render_fn, "__qualname__")
+            and render_fn.__qualname__ == ComponentState.create.__qualname__
+        ):
+            raise TypeError(
+                "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported yet."
+            )
+
         component = cls(
             iterable=iterable,
             render_fn=render_fn,
-            **props,
         )
-        # Keep a ref to a rendered component to determine correct imports.
-        component.children = [
-            component._render(props=dict(index_var_name="i")).render_component()
-        ]
+        # Keep a ref to a rendered component to determine correct imports/hooks/styles.
+        component.children = [component._render().render_component()]
         return component
 
-    def _render(self, props: dict[str, Any] | None = None) -> IterTag:
-        props = {} if props is None else props.copy()
+    def _render(self) -> IterTag:
+        props = {}
 
-        # Determine the arg var name based on the params accepted by render_fn.
         render_sig = inspect.signature(self.render_fn)
         params = list(render_sig.parameters.values())
-        if len(params) >= 1:
-            props.setdefault("arg_var_name", params[0].name)
 
-        if len(params) >= 2:
+        # Validate the render function signature.
+        if len(params) == 0 or len(params) > 2:
+            raise ForeachRenderError(
+                "Expected 1 or 2 parameters in foreach render function, got "
+                f"{[p.name for p in params]}. See https://reflex.dev/docs/library/layout/foreach/"
+            )
+
+        if len(params) >= 1:
+            # Determine the arg var name based on the params accepted by render_fn.
+            props["arg_var_name"] = params[0].name
+
+        if len(params) == 2:
             # Determine the index var name based on the params accepted by render_fn.
-            props.setdefault("index_var_name", params[1].name)
-        elif "index_var_name" not in props:
-            # Otherwise, use a deterministic index, based on the rendered code.
-            code_hash = md5(str(self.children[0].render()).encode("utf-8")).hexdigest()
-            props.setdefault("index_var_name", f"index_{code_hash}")
+            props["index_var_name"] = params[1].name
+        else:
+            # Otherwise, use a deterministic index, based on the render function bytecode.
+            code_hash = (
+                hash(self.render_fn.__code__)
+                .to_bytes(
+                    length=8,
+                    byteorder="big",
+                    signed=True,
+                )
+                .hex()
+            )
+            props["index_var_name"] = f"index_{code_hash}"
 
         return IterTag(
             iterable=self.iterable,
             render_fn=self.render_fn,
+            children=self.children,
             **props,
         )
 
@@ -95,25 +131,14 @@ class Foreach(Component):
             The dictionary for template of component.
         """
         tag = self._render()
-        component = tag.render_component()
-
-        # Apply the theme to the children.
-        if self.theme is not None:
-            component.apply_theme(self.theme)
 
         return dict(
-            tag.add_props(
-                **self.event_triggers,
-                key=self.key,
-                sx=self.style,
-                id=self.id,
-                class_name=self.class_name,
-            ).set(
-                children=[component.render()],
-                props=tag.format_props(),
-            ),
+            tag,
             iterable_state=tag.iterable._var_full_name,
             arg_name=tag.arg_var_name,
             arg_index=tag.get_index_var_arg(),
             iterable_type=tag.iterable._var_type.mro()[0].__name__,
         )
+
+
+foreach = Foreach.create

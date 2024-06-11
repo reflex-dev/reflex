@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Optional, Union
 
@@ -90,10 +91,10 @@ class HighLevelRadioGroup(RadixThemesComponent):
     direction: Var[LiteralFlexDirection]
 
     # The gap between the items of the radio group.
-    spacing: Var[LiteralSpacing] = Var.create_safe("2")
+    spacing: Var[LiteralSpacing] = Var.create_safe("2", _var_is_string=True)
 
     # The size of the radio group.
-    size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
+    size: Var[Literal["1", "2", "3"]] = Var.create_safe("2", _var_is_string=True)
 
     # The variant of the radio group
     variant: Var[Literal["classic", "surface", "soft"]]
@@ -126,7 +127,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
     def create(
         cls,
         items: Var[List[Optional[Union[str, int, float, list, dict, bool]]]],
-        **props
+        **props,
     ) -> Component:
         """Create a radio group component.
 
@@ -144,19 +145,19 @@ class HighLevelRadioGroup(RadixThemesComponent):
 
         # convert only non-strings to json(JSON.stringify) so quotes are not rendered
         # for string literal types.
-        if (
-            type(default_value) is str
-            or isinstance(default_value, Var)
-            and default_value._var_type is str
+        if isinstance(default_value, str) or (
+            isinstance(default_value, Var) and default_value._var_type is str
         ):
             default_value = Var.create(default_value, _var_is_string=True)  # type: ignore
         else:
             default_value = (
-                Var.create(default_value).to_string()._replace(_var_is_local=False)  # type: ignore
+                Var.create(default_value, _var_is_string=False)
+                .to_string()  # type: ignore
+                ._replace(_var_is_local=False)
             )
 
         def radio_group_item(value: str | Var) -> Component:
-            item_value = Var.create(value)  # type: ignore
+            item_value = Var.create(value, _var_is_string=False)  # type: ignore
             item_value = rx.cond(
                 item_value._type() == str,  # type: ignore
                 item_value,

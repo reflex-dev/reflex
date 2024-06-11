@@ -35,15 +35,21 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.0.13"
+    VERSION = "1.1.10"
     # Min Bun Version
     MIN_VERSION = "0.7.0"
     # The directory to store the bun.
     ROOT_PATH = os.path.join(Reflex.DIR, "bun")
     # Default bun path.
-    DEFAULT_PATH = os.path.join(ROOT_PATH, "bin", "bun")
+    DEFAULT_PATH = os.path.join(
+        ROOT_PATH, "bin", "bun" if not IS_WINDOWS else "bun.exe"
+    )
     # URL to bun install script.
     INSTALL_URL = "https://bun.sh/install"
+    # URL to windows install script.
+    WINDOWS_INSTALL_URL = (
+        "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/install.ps1"
+    )
 
 
 # FNM config.
@@ -71,7 +77,7 @@ class Node(SimpleNamespace):
     # The Node version.
     VERSION = "18.17.0"
     # The minimum required node version.
-    MIN_VERSION = "16.8.0"
+    MIN_VERSION = "18.17.0"
 
     # The node bin path.
     BIN_PATH = os.path.join(
@@ -103,17 +109,19 @@ class PackageJson(SimpleNamespace):
 
     DEPENDENCIES = {
         "@emotion/react": "11.11.1",
-        "axios": "1.4.0",
+        "axios": "1.6.0",
         "json5": "2.2.3",
         "next": "14.0.1",
         "next-sitemap": "4.1.8",
         "next-themes": "0.2.1",
         "react": "18.2.0",
         "react-dom": "18.2.0",
+        "react-focus-lock": "2.11.3",
         "socket.io-client": "4.6.1",
         "universal-cookie": "4.0.4",
     }
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.14",
         "postcss": "8.4.31",
+        "postcss-import": "16.1.0",
     }

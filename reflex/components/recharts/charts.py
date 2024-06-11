@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Union
 from reflex.components.component import Component
 from reflex.components.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from .recharts import (
@@ -21,29 +22,11 @@ from .recharts import (
 class ChartBase(RechartsCharts):
     """A component that wraps a Recharts charts."""
 
-    # The source data, in which each element is an object.
-    data: Var[List[Dict[str, Any]]]
-
-    # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-    sync_id: Var[str]
-
-    # When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
-    sync_method: Var[LiteralSyncMethod]
-
     # The width of chart container. String or Integer
     width: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The height of chart container.
     height: Var[Union[str, int]] = "100%"  # type: ignore
-
-    # The layout of area in the chart. 'horizontal' | 'vertical'
-    layout: Var[LiteralLayout]
-
-    # The sizes of whitespace around the chart.
-    margin: Var[Dict[str, Any]]
-
-    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
-    stack_offset: Var[LiteralStackOffset]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -116,7 +99,29 @@ class ChartBase(RechartsCharts):
         )
 
 
-class AreaChart(ChartBase):
+class CategoricalChartBase(ChartBase):
+    """A component that wraps a Categorical Recharts charts."""
+
+    # The source data, in which each element is an object.
+    data: Var[List[Dict[str, Any]]]
+
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
+
+    # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
+    sync_id: Var[str]
+
+    # When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
+    sync_method: Var[LiteralSyncMethod]
+
+    # The layout of area in the chart. 'horizontal' | 'vertical'
+    layout: Var[LiteralLayout]
+
+    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
+    stack_offset: Var[LiteralStackOffset]
+
+
+class AreaChart(CategoricalChartBase):
     """An Area chart component in Recharts."""
 
     tag = "AreaChart"
@@ -125,9 +130,6 @@ class AreaChart(ChartBase):
 
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
     base_value: Var[Union[int, LiteralComposedChartBaseValue]]
-
-    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape.
-    stack_offset: Var[LiteralStackOffset]
 
     # Valid children components
     _valid_children: List[str] = [
@@ -144,7 +146,7 @@ class AreaChart(ChartBase):
     ]
 
 
-class BarChart(ChartBase):
+class BarChart(CategoricalChartBase):
     """A Bar chart component in Recharts."""
 
     tag = "BarChart"
@@ -152,10 +154,10 @@ class BarChart(ChartBase):
     alias = "RechartsBarChart"
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-    bar_category_gap: Var[Union[str, int]]  # type: ignore
+    bar_category_gap: Var[Union[str, int]] = Var.create_safe("10%", _var_is_string=True)  # type: ignore
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[Union[str, int]]  # type: ignore
+    bar_gap: Var[Union[str, int]] = Var.create_safe(4)  # type: ignore
 
     # The width of all the bars in the chart. Number
     bar_size: Var[int]
@@ -184,7 +186,7 @@ class BarChart(ChartBase):
     ]
 
 
-class LineChart(ChartBase):
+class LineChart(CategoricalChartBase):
     """A Line chart component in Recharts."""
 
     tag = "LineChart"
@@ -206,7 +208,7 @@ class LineChart(ChartBase):
     ]
 
 
-class ComposedChart(ChartBase):
+class ComposedChart(CategoricalChartBase):
     """A Composed chart component in Recharts."""
 
     tag = "ComposedChart"
@@ -220,7 +222,7 @@ class ComposedChart(ChartBase):
     bar_category_gap: Var[Union[str, int]]  # type: ignore
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[int]
+    bar_gap: Var[Union[str, int]]  # type: ignore
 
     # The width of all the bars in the chart. Number
     bar_size: Var[int]
@@ -252,6 +254,9 @@ class PieChart(ChartBase):
 
     alias = "RechartsPieChart"
 
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
+
     # Valid children components
     _valid_children: List[str] = [
         "PolarAngleAxis",
@@ -281,6 +286,12 @@ class RadarChart(ChartBase):
     tag = "RadarChart"
 
     alias = "RechartsRadarChart"
+
+    # The source data, in which each element is an object.
+    data: Var[List[Dict[str, Any]]]
+
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
     cx: Var[Union[int, str]]
@@ -319,7 +330,6 @@ class RadarChart(ChartBase):
         return {
             EventTriggers.ON_CLICK: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
@@ -330,6 +340,12 @@ class RadialBarChart(ChartBase):
     tag = "RadialBarChart"
 
     alias = "RechartsRadialBarChart"
+
+    # The source data which each element is an object.
+    data: Var[List[Dict[str, Any]]]
+
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
     cx: Var[Union[int, str]]
@@ -377,7 +393,6 @@ class RadialBarChart(ChartBase):
         return {
             EventTriggers.ON_CLICK: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
@@ -388,6 +403,9 @@ class ScatterChart(ChartBase):
     tag = "ScatterChart"
 
     alias = "RechartsScatterChart"
+
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
 
     # Valid children components
     _valid_children: List[str] = [
@@ -412,63 +430,31 @@ class ScatterChart(ChartBase):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
 
-class FunnelChart(RechartsCharts):
+class FunnelChart(ChartBase):
     """A Funnel chart component in Recharts."""
 
     tag = "FunnelChart"
 
     alias = "RechartsFunnelChart"
 
-    # The source data, in which each element is an object.
-    data: Var[List[Dict[str, Any]]]
-
-    # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-    sync_id: Var[str]
-
-    # When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
-    sync_method: Var[str]
-
-    # The width of chart container. String or Integer
-    width: Var[Union[str, int]] = "100%"  # type: ignore
-
-    # The height of chart container.
-    height: Var[Union[str, int]] = "100%"  # type: ignore
-
-    # The layout of area in the chart. 'horizontal' | 'vertical'
-    layout: Var[LiteralLayout]
+    # The layout of bars in the chart. centeric
+    layout: Var[str]
 
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]
 
-    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
-    stack_offset: Var[LiteralStackOffset]
-
-    # The layout of bars in the chart. centeric
-    layout: Var[str]
-
     # Valid children components
     _valid_children: List[str] = ["Legend", "GraphingTooltip", "Funnel"]
-
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
 
 
 class Treemap(RechartsCharts):
@@ -505,6 +491,12 @@ class Treemap(RechartsCharts):
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
     animation_easing: Var[LiteralAnimationEasing]
 
+    # The customized event handler of animation start
+    on_animation_start: EventHandler[lambda: []]
+
+    # The customized event handler of animation end
+    on_animation_end: EventHandler[lambda: []]
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create a chart component.
@@ -521,3 +513,15 @@ class Treemap(RechartsCharts):
             width=props.pop("width", "100%"),
             height=props.pop("height", "100%"),
         )
+
+
+area_chart = AreaChart.create
+bar_chart = BarChart.create
+line_chart = LineChart.create
+composed_chart = ComposedChart.create
+pie_chart = PieChart.create
+radar_chart = RadarChart.create
+radial_bar_chart = RadialBarChart.create
+scatter_chart = ScatterChart.create
+funnel_chart = FunnelChart.create
+treemap = Treemap.create

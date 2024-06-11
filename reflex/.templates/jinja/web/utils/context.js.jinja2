@@ -25,11 +25,31 @@ export const clientStorage = {}
 
 {% if state_name %}
 export const state_name = "{{state_name}}"
-export const onLoadInternalEvent = () => [
-    Event('{{state_name}}.{{const.update_vars_internal}}', {vars: hydrateClientStorage(clientStorage)}),
-    Event('{{state_name}}.{{const.on_load_internal}}')
-]
 
+// Theses events are triggered on initial load and each page navigation.
+export const onLoadInternalEvent = () => {
+    const internal_events = [];
+
+    // Get tracked cookie and local storage vars to send to the backend.
+    const client_storage_vars = hydrateClientStorage(clientStorage);
+    // But only send the vars if any are actually set in the browser.
+    if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {
+        internal_events.push(
+            Event(
+                '{{state_name}}.{{const.update_vars_internal}}',
+                {vars: client_storage_vars},
+            ),
+        );
+    }
+
+    // `on_load_internal` triggers the correct on_load event(s) for the current page.
+    // If the page does not define any on_load event, this will just set `is_hydrated = true`.
+    internal_events.push(Event('{{state_name}}.{{const.on_load_internal}}'));
+
+    return internal_events;
+}
+
+// The following events are sent when the websocket connects or reconnects.
 export const initialEvents = () => [
     Event('{{state_name}}.{{const.hydrate}}'),
     ...onLoadInternalEvent()
@@ -60,13 +80,13 @@ export function UploadFilesProvider({ children }) {
 
 export function EventLoopProvider({ children }) {
   const dispatch = useContext(DispatchContext)
-  const [addEvents, connectError] = useEventLoop(
+  const [addEvents, connectErrors] = useEventLoop(
     dispatch,
     initialEvents,
     clientStorage,
   )
   return (
-    <EventLoopContext.Provider value={[addEvents, connectError]}>
+    <EventLoopContext.Provider value={[addEvents, connectErrors]}>
       {children}
     </EventLoopContext.Provider>
   )
