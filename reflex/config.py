@@ -259,7 +259,7 @@ class Config(Base):
 
     # Backend Error Handler Function
     backend_exception_handler: Callable[
-        [Exception], Union[EventSpec, list[EventSpec], None]
+        [Exception], Union[EventSpec, List[EventSpec], None]
     ] = default_backend_exception_handler
 
     def __init__(self, *args, **kwargs):
@@ -434,7 +434,12 @@ class Config(Base):
                 )
 
             # Check if the function has the necessary annotations and types in the right order
-            arg_annotations = inspect.get_annotations(handler_fn, eval_str=True)
+            argspec = inspect.getfullargspec(handler_fn)
+            arg_annotations = {
+                k: eval(v) if isinstance(v, str) else v
+                for k, v in argspec.annotations.items()
+                if k not in ["args", "kwargs", "return"]
+            }
 
             for required_arg_index, required_arg in enumerate(handler_spec):
                 if required_arg not in arg_annotations:
@@ -463,14 +468,14 @@ class Config(Base):
                 valid = bool(
                     return_type == EventSpec
                     or return_type == Optional[EventSpec]
-                    or return_type == list[EventSpec]
+                    or return_type == List[EventSpec]
                     or return_type == inspect.Signature.empty
                 )
 
                 if not valid:
                     raise ValueError(
                         f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong return type."
-                        f"Expected `EventSpec | list[EventSpec] | None` but got `{return_type}`"
+                        f"Expected `Union[EventSpec, List[EventSpec], None]` but got `{return_type}`"
                     )
 
 
