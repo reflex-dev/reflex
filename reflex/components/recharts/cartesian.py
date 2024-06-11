@@ -448,6 +448,18 @@ class Scatter(Recharts):
     # Valid children components.
     _valid_children: List[str] = ["LabelList", "ErrorBar"]
 
+    # If set false, animation of bar will be disabled.
+    is_animation_active: Var[bool]
+
+    # Specifies when the animation should begin, the unit of this option is ms, default 0. 
+    animation_begin: Var[int]
+
+    # Specifies the duration of animation, the unit of this option is ms, default 1500. 
+    animation_duration: Var[int]
+
+    # The type of easing function, default 'ease'
+    animation_easing: Var[LiteralAnimationEasing]
+
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
