@@ -131,7 +131,6 @@ async def test_backend_exception_handler_during_runtime(mocker, capsys, test_app
         mocker: mocker object.
         capsys: capsys fixture.
         test_app: harness for CallScript app.
-        driver: WebDriver instance.
 
     """
     token = "mock_token"
