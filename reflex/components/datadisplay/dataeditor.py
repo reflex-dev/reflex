@@ -104,7 +104,16 @@ class DataEditorTheme(Base):
     text_medium: Optional[str] = None
 
 
-def _on_edit_spec(pos, data: dict[str, Any]):
+def on_edit_spec(pos, data: dict[str, Any]):
+    """The on edit spec function.
+
+    Args:
+        pos: The position of the edit event.
+        data: The data of the edit event.
+
+    Returns:
+        The position and data.
+    """
     return [pos, data]
 
 
@@ -220,10 +229,10 @@ class DataEditor(NoSSRComponent):
     on_cell_context_menu: EventHandler[lambda pos: [pos]]
 
     # Fired when a cell is edited.
-    on_cell_edited: EventHandler[_on_edit_spec]
+    on_cell_edited: EventHandler[on_edit_spec]
 
     # Fired when a group header is clicked.
-    on_group_header_clicked: EventHandler[_on_edit_spec]
+    on_group_header_clicked: EventHandler[on_edit_spec]
 
     # Fired when a group header is right-clicked.
     on_group_header_context_menu: EventHandler[lambda grp_idx, data: [grp_idx, data]]
@@ -387,6 +396,14 @@ class DataEditor(NoSSRComponent):
                 top=0,
             )
         }
+
+    def get_event_triggers(self) -> dict[str, Any]:
+        """Remove the default event triggers from Component.
+
+        Returns:
+            An empty dictionary.
+        """
+        return {}
 
 
 # try:
