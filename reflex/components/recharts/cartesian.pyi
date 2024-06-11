@@ -10,6 +10,7 @@ from reflex.style import Style
 from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
+from reflex.event import EventHandler
 from reflex.vars import Var
 from .recharts import (
     LiteralAnimationEasing,
@@ -30,7 +31,6 @@ from .recharts import (
 )
 
 class Axis(Recharts):
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -94,13 +94,36 @@ class Axis(Recharts):
         ] = None,
         unit: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        ticks: Optional[
+            Union[Var[List[Union[str, int]]], List[Union[str, int]]]
+        ] = None,
+        tick: Optional[Union[Var[bool], bool]] = None,
+        tick_count: Optional[Union[Var[int], int]] = None,
+        tick_line: Optional[Union[Var[bool], bool]] = None,
+        tick_size: Optional[Union[Var[int], int]] = None,
+        min_tick_gap: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_down: Optional[
@@ -124,6 +147,12 @@ class Axis(Recharts):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         **props
     ) -> "Axis":
         """Create the component.
@@ -145,6 +174,12 @@ class Axis(Recharts):
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
+            ticks: Set the values of axis ticks manually.
+            tick: If set false, no ticks will be drawn.
+            tick_count: The count of axis ticks.
+            tick_line: If set false, no axis tick lines will be drawn.
+            tick_size: The length of tick line.
+            min_tick_gap: The minimum gap between two adjacent labels
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -224,13 +259,36 @@ class XAxis(Axis):
         ] = None,
         unit: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        ticks: Optional[
+            Union[Var[List[Union[str, int]]], List[Union[str, int]]]
+        ] = None,
+        tick: Optional[Union[Var[bool], bool]] = None,
+        tick_count: Optional[Union[Var[int], int]] = None,
+        tick_line: Optional[Union[Var[bool], bool]] = None,
+        tick_size: Optional[Union[Var[int], int]] = None,
+        min_tick_gap: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_down: Optional[
@@ -252,6 +310,12 @@ class XAxis(Axis):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
@@ -277,6 +341,12 @@ class XAxis(Axis):
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
+            ticks: Set the values of axis ticks manually.
+            tick: If set false, no ticks will be drawn.
+            tick_count: The count of axis ticks.
+            tick_line: If set false, no axis tick lines will be drawn.
+            tick_size: The length of tick line.
+            min_tick_gap: The minimum gap between two adjacent labels
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -355,13 +425,36 @@ class YAxis(Axis):
         ] = None,
         unit: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        ticks: Optional[
+            Union[Var[List[Union[str, int]]], List[Union[str, int]]]
+        ] = None,
+        tick: Optional[Union[Var[bool], bool]] = None,
+        tick_count: Optional[Union[Var[int], int]] = None,
+        tick_line: Optional[Union[Var[bool], bool]] = None,
+        tick_size: Optional[Union[Var[int], int]] = None,
+        min_tick_gap: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_down: Optional[
@@ -383,6 +476,12 @@ class YAxis(Axis):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
@@ -407,6 +506,12 @@ class YAxis(Axis):
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
+            ticks: Set the values of axis ticks manually.
+            tick: If set false, no ticks will be drawn.
+            tick_count: The count of axis ticks.
+            tick_line: If set false, no axis tick lines will be drawn.
+            tick_size: The length of tick line.
+            min_tick_gap: The minimum gap between two adjacent labels
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -603,7 +708,6 @@ class Brush(Recharts):
         ...
 
 class Cartesian(Recharts):
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -618,13 +722,60 @@ class Cartesian(Recharts):
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        legend_type: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "line",
+                        "plainline",
+                        "square",
+                        "rect",
+                        "circle",
+                        "cross",
+                        "diamond",
+                        "star",
+                        "triangle",
+                        "wye",
+                        "none",
+                    ]
+                ],
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_down: Optional[
@@ -648,6 +799,12 @@ class Cartesian(Recharts):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         **props
     ) -> "Cartesian":
         """Create the component.
@@ -658,7 +815,8 @@ class Cartesian(Recharts):
             data_key: The key of a group of data which should be unique in an area chart.
             x_axis_id: The id of x-axis which is corresponding to the data.
             y_axis_id: The id of y-axis which is corresponding to the data.
-            style: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional  legend_type: Var[LiteralLegendType]  The style of the component.
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
@@ -723,7 +881,9 @@ class Area(Cartesian):
         dot: Optional[Union[Var[bool], bool]] = None,
         active_dot: Optional[Union[Var[bool], bool]] = None,
         label: Optional[Union[Var[bool], bool]] = None,
-        stack_id: Optional[Union[Var[str], str]] = None,
+        stack_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        unit: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         layout: Optional[
             Union[
                 Var[Literal["horizontal", "vertical"]],
@@ -733,13 +893,60 @@ class Area(Cartesian):
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        legend_type: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "line",
+                        "plainline",
+                        "square",
+                        "rect",
+                        "circle",
+                        "cross",
+                        "diamond",
+                        "star",
+                        "triangle",
+                        "wye",
+                        "none",
+                    ]
+                ],
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_down: Optional[
@@ -763,6 +970,12 @@ class Area(Cartesian):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         **props
     ) -> "Area":
         """Create the component.
@@ -777,11 +990,14 @@ class Area(Cartesian):
             active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
             label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
             stack_id: The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
+            unit: The unit of data. This option will be used in tooltip.
+            name: The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
             x_axis_id: The id of x-axis which is corresponding to the data.
             y_axis_id: The id of y-axis which is corresponding to the data.
-            style: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional  legend_type: Var[LiteralLegendType]  The style of the component.
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
@@ -806,8 +1022,20 @@ class Bar(Cartesian):
         background: Optional[Union[Var[bool], bool]] = None,
         label: Optional[Union[Var[bool], bool]] = None,
         stack_id: Optional[Union[Var[str], str]] = None,
+        unit: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        min_point_size: Optional[Union[Var[int], int]] = None,
+        name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
         max_bar_size: Optional[Union[Var[int], int]] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
+        animation_easing: Optional[
+            Union[
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
+            ]
+        ] = None,
         layout: Optional[
             Union[
                 Var[Literal["horizontal", "vertical"]],
@@ -817,13 +1045,66 @@ class Bar(Cartesian):
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        legend_type: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "line",
+                        "plainline",
+                        "square",
+                        "rect",
+                        "circle",
+                        "cross",
+                        "diamond",
+                        "star",
+                        "triangle",
+                        "wye",
+                        "none",
+                    ]
+                ],
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_begin: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_animation_end: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_down: Optional[
@@ -847,6 +1128,12 @@ class Bar(Cartesian):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         **props
     ) -> "Bar":
         """Create the component.
@@ -859,13 +1146,21 @@ class Bar(Cartesian):
             background: If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
             label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
             stack_id: The stack id of bar, when two bars have the same value axis and same stack_id, then the two bars are stacked in order.
+            unit: The unit of data. This option will be used in tooltip.
+            min_point_size: The minimal height of a bar in a horizontal BarChart, or the minimal width of a bar in a vertical BarChart. By default, 0 values are not shown. To visualize a 0 (or close to zero) point, set the minimal point size to a pixel value like 3. In stacked bar charts, minPointSize might not be respected for tightly packed values. So we strongly recommend not using this prop in stacked BarCharts.
+            name: The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
             bar_size: Size of the bar (if one bar_size is set then a bar_size must be set for all bars)
             max_bar_size: Max size of the bar
+            is_animation_active: If set false, animation of bar will be disabled.
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms, default 0.
+            animation_duration: Specifies the duration of animation, the unit of this option is ms, default 1500.
+            animation_easing: The type of easing function, default 'ease'
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
             x_axis_id: The id of x-axis which is corresponding to the data.
             y_axis_id: The id of y-axis which is corresponding to the data.
-            style: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional  legend_type: Var[LiteralLegendType]  The style of the component.
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
@@ -931,6 +1226,8 @@ class Line(Cartesian):
         label: Optional[Union[Var[bool], bool]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         connect_nulls: Optional[Union[Var[bool], bool]] = None,
+        unit: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         layout: Optional[
             Union[
                 Var[Literal["horizontal", "vertical"]],
@@ -940,13 +1237,60 @@ class Line(Cartesian):
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        legend_type: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "line",
+                        "plainline",
+                        "square",
+                        "rect",
+                        "circle",
+                        "cross",
+                        "diamond",
+                        "star",
+                        "triangle",
+                        "wye",
+                        "none",
+                    ]
+                ],
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_down: Optional[
@@ -970,6 +1314,12 @@ class Line(Cartesian):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         **props
     ) -> "Line":
         """Create the component.
@@ -984,11 +1334,14 @@ class Line(Cartesian):
             label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
             hide: Hides the line when true, useful when toggling visibility state via legend.
             connect_nulls: Whether to connect a graph line across null points.
+            unit: The unit of data. This option will be used in tooltip.
+            name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
             x_axis_id: The id of x-axis which is corresponding to the data.
             y_axis_id: The id of y-axis which is corresponding to the data.
-            style: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional  legend_type: Var[LiteralLegendType]  The style of the component.
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
+            style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
@@ -1002,7 +1355,6 @@ class Line(Cartesian):
         ...
 
 class Scatter(Recharts):
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -1068,13 +1420,37 @@ class Scatter(Recharts):
         ] = None,
         fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
+        animation_easing: Optional[
+            Union[
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_down: Optional[
@@ -1098,6 +1474,12 @@ class Scatter(Recharts):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         **props
     ) -> "Scatter":
         """Create the component.
@@ -1114,6 +1496,10 @@ class Scatter(Recharts):
             line_type: If 'joint' set, line will generated by just jointing all the points. If 'fitting' set, line will be generated by fitting algorithm. 'joint' | 'fitting'
             fill: The fill
             name: the name
+            is_animation_active: If set false, animation of bar will be disabled.
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms, default 0.
+            animation_duration: Specifies the duration of animation, the unit of this option is ms, default 1500.
+            animation_easing: The type of easing function, default 'ease'
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1128,7 +1514,6 @@ class Scatter(Recharts):
         ...
 
 class Funnel(Recharts):
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -1136,6 +1521,7 @@ class Funnel(Recharts):
         *children,
         data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        name_key: Optional[Union[Var[str], str]] = None,
         legend_type: Optional[
             Union[
                 Var[
@@ -1183,7 +1569,28 @@ class Funnel(Recharts):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_animation_start: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_down: Optional[
@@ -1207,6 +1614,12 @@ class Funnel(Recharts):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         **props
     ) -> "Funnel":
         """Create the component.
@@ -1215,6 +1628,7 @@ class Funnel(Recharts):
             *children: The children of the component.
             data: The source data, in which each element is an object.
             data_key: The key of a group of data which should be unique in an area chart.
+            name_key: The key or getter of a group of data which should be unique in a LineChart.
             legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered.
             is_animation_active: If set false, animation of line will be disabled.
             animation_begin: Specifies when the animation should begin, the unit of this option is ms.
@@ -1510,7 +1924,6 @@ class ReferenceLine(Reference):
         ...
 
 class ReferenceDot(Reference):
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -1533,7 +1946,25 @@ class ReferenceDot(Reference):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_enter: Optional[
@@ -1549,6 +1980,15 @@ class ReferenceDot(Reference):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
@@ -1771,6 +2211,12 @@ class CartesianGrid(Grid):
         *children,
         horizontal: Optional[Union[Var[bool], bool]] = None,
         vertical: Optional[Union[Var[bool], bool]] = None,
+        vertical_points: Optional[
+            Union[Var[List[Union[str, int]]], List[Union[str, int]]]
+        ] = None,
+        horizontal_points: Optional[
+            Union[Var[List[Union[str, int]]], List[Union[str, int]]]
+        ] = None,
         fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         fill_opacity: Optional[Union[Var[float], float]] = None,
         stroke_dasharray: Optional[Union[Var[str], str]] = None,
@@ -1837,6 +2283,8 @@ class CartesianGrid(Grid):
             *children: The children of the component.
             horizontal: The horizontal line configuration.
             vertical: The vertical line configuration.
+            vertical_points: The x-coordinates in pixel values of all vertical lines.
+            horizontal_points: The x-coordinates in pixel values of all vertical lines.
             fill: The background of grid.
             fill_opacity: The opacity of the background used to fill the space between grid lines
             stroke_dasharray: The pattern of dashes and gaps used to paint the lines of the grid
