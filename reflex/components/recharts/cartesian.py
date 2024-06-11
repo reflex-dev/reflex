@@ -291,7 +291,7 @@ class Area(Cartesian):
     label: Var[bool]
 
     # The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
-    stack_id: Var[str]
+    stack_id: Var[Union[str, int]]
 
     # The unit of data. This option will be used in tooltip.
     unit: Var[Union[str, int]]
