@@ -623,20 +623,29 @@ class ReferenceDot(Reference):
     # Valid children components
     _valid_children: List[str] = ["Label"]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # The customized event handler of click on the component in this chart
+    on_click: EventHandler[lambda: []] = None
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_OVER: lambda: [],
-            EventTriggers.ON_MOUSE_OUT: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
+    # The customized event handler of mousedown on the component in this chart
+    on_mouse_down: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseup on the component in this chart
+    on_mouse_up: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseover on the component in this chart
+    on_mouse_over: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseout on the component in this chart
+    on_mouse_out: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseenter on the component in this chart
+    on_mouse_enter: EventHandler[lambda: []] = None
+
+    # The customized event handler of mousemove on the component in this chart
+    on_mouse_move: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseleave on the component in this chart
+    on_mouse_leave: EventHandler[lambda: []] = None
 
 
 class ReferenceArea(Recharts):

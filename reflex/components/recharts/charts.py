@@ -28,18 +28,17 @@ class ChartBase(RechartsCharts):
     # The height of chart container.
     height: Var[Union[str, int]] = "100%"  # type: ignore
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # The customized event handler of click on the component in this chart
+    on_click: EventHandler[lambda: []] = None
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
+    # The customized event handler of mouseenter on the component in this chart
+    on_mouse_enter: EventHandler[lambda: []] = None
+
+    # The customized event handler of mousemove on the component in this chart
+    on_mouse_move: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseleave on the component in this chart
+    on_mouse_leave: EventHandler[lambda: []] = None
 
     @staticmethod
     def _ensure_valid_dimension(name: str, value: Any) -> None:
@@ -268,17 +267,17 @@ class PieChart(ChartBase):
         "Pie",
     ]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # The customized event handler of mousedown on the sectors in this group
+    on_mouse_down: EventHandler[lambda: []] = None
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
+    # The customized event handler of mouseup on the sectors in this group
+    on_mouse_up: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseover on the sectors in this group
+    on_mouse_over: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseout on the sectors in this group
+    on_mouse_out: EventHandler[lambda: []] = None
 
 
 class RadarChart(ChartBase):
