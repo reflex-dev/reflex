@@ -196,21 +196,25 @@ def test_reflex_dir_env_var(monkeypatch, tmp_path):
     with mp_ctx.Pool(processes=1) as pool:
         assert pool.apply(reflex_dir_constant) == str(tmp_path)
 
+
 # Test custom exception handlers
+
 
 def valid_custom_handler(exception: Exception, logger: str = "test"):
     print("Custom Backend Exception")
     print(exception)
 
+
 def custom_exception_handler_with_wrong_arg_order(
-        logger: str, 
-        exception: Exception # Should be first
-    ):
+    logger: str,
+    exception: Exception,  # Should be first
+):
     print("Custom Backend Exception")
     print(exception)
 
+
 def custom_exception_handler_with_wrong_argspec(
-    exception: str  # Should be Exception
+    exception: str,  # Should be Exception
 ):
     print("Custom Backend Exception")
     print(exception)
@@ -238,6 +242,7 @@ custom_exception_handlers = {
     "partial": functools.partial(valid_custom_handler, logger="test"),
     "method": DummyExceptionHandler().handle,
 }
+
 
 @pytest.mark.parametrize(
     "handler_fn, expected",
