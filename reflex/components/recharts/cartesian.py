@@ -460,22 +460,33 @@ class Scatter(Recharts):
     # The type of easing function, default 'ease'
     animation_easing: Var[LiteralAnimationEasing]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # The unique id of this component, which will be used to generate unique clip path id internally. This props is suggested to be set in SSR.
+    id: Var[str]
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_OVER: lambda: [],
-            EventTriggers.ON_MOUSE_OUT: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
+    # The customized event handler of click on the component in this group
+    on_click: EventHandler[lambda: []] = None
+
+    # The customized event handler of mousedown on the component in this group
+    on_mouse_down: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseup on the component in this group
+    on_mouse_up: EventHandler[lambda: []] = None
+
+    # The customized event handler of mousemove on the component in this group
+    on_mouse_move: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseover on the component in this group
+    on_mouse_over: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseout on the component in this group
+    on_mouse_out: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseenter on the component in this group
+    on_mouse_enter: EventHandler[lambda: []] = None
+
+    # The customized event handler of mouseleave on the component in this group
+    on_mouse_leave: EventHandler[lambda: []] = None
+
 
 
 class Funnel(Recharts):
