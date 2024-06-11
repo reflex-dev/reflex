@@ -1,6 +1,7 @@
 """Integration tests for event exception handlers."""
 from __future__ import annotations
 
+import asyncio
 import time
 from typing import Generator
 from unittest.mock import AsyncMock
@@ -56,6 +57,22 @@ def TestApp():
                 id="induce-frontend-error-btn",
             ),
         )
+
+
+@pytest.fixture(scope="session")
+def event_loop(request):
+    """Create an instance of the default event loop for each test case.
+
+    Args:
+        request: The pytest fixture request object.
+
+    Yields:
+        The event loop object.
+
+    """
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.fixture(scope="module")
