@@ -293,6 +293,12 @@ class Area(Cartesian):
     # The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
     stack_id: Var[str]
 
+    # The unit of data. This option will be used in tooltip.
+    unit: Var[Union[str, int]]
+
+    # The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
+    name: Var[Union[str, int]]
+
     # Valid children components
     _valid_children: List[str] = ["LabelList"]
 
@@ -321,6 +327,15 @@ class Bar(Cartesian):
 
     # The stack id of bar, when two bars have the same value axis and same stack_id, then the two bars are stacked in order.
     stack_id: Var[str]
+
+    # The unit of data. This option will be used in tooltip.
+    unit: Var[Union[str, int]]
+
+    # The minimal height of a bar in a horizontal BarChart, or the minimal width of a bar in a vertical BarChart. By default, 0 values are not shown. To visualize a 0 (or close to zero) point, set the minimal point size to a pixel value like 3. In stacked bar charts, minPointSize might not be respected for tightly packed values. So we strongly recommend not using this prop in stacked BarCharts.
+    min_point_size: Var[int]
+
+    # The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
+    name: Var[Union[str, int]]
 
     # Size of the bar (if one bar_size is set then a bar_size must be set for all bars)
     bar_size: Var[int]
@@ -382,6 +397,12 @@ class Line(Cartesian):
 
     # Whether to connect a graph line across null points.
     connect_nulls: Var[bool]
+
+    # The unit of data. This option will be used in tooltip.
+    unit: Var[Union[str, int]]
+
+    # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
+    name: Var[Union[str, int]]
 
     # Valid children components
     _valid_children: List[str] = ["LabelList", "ErrorBar"]
