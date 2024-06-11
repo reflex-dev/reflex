@@ -541,7 +541,9 @@ class App(LifespanMixin, Base):
 
         # Ensure state is enabled if this page uses state.
         if self.state is None:
-            if on_load or component._has_event_triggers():
+            if on_load or component._has_event_triggers(
+                exclude_event_trigger_values=[constants.ColorMode.TOGGLE]
+            ):
                 self._enable_state()
             else:
                 for var in component._get_vars(include_children=True):
@@ -1117,6 +1119,7 @@ async def process(
     """
     from reflex.utils import telemetry
 
+    print(f"Event: {event}\n ==================\n")
     try:
         # Add request data to the state.
         router_data = event.router_data

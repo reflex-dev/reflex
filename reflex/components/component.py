@@ -1113,17 +1113,31 @@ class Component(BaseComponent, ABC):
 
         return vars
 
-    def _has_event_triggers(self) -> bool:
+    def _has_event_triggers(
+        self, exclude_event_trigger_values: list[str] | None = None
+    ) -> bool:
         """Check if the component or children have any event triggers.
+
+        Args:
+            exclude_event_trigger_values: Event trigger var names to exclude from this check.
 
         Returns:
             True if the component or children have any event triggers.
         """
-        if self.event_triggers:
+        if exclude_event_trigger_values is None:
+            exclude_event_trigger_values = []
+        if self.event_triggers and not any(
+            [
+                trigger_value._var_name in exclude_event_trigger_values
+                for trigger_value in self.event_triggers.values()
+            ]
+        ):
             return True
         else:
             for child in self.children:
-                if isinstance(child, Component) and child._has_event_triggers():
+                if isinstance(child, Component) and child._has_event_triggers(
+                    exclude_event_trigger_values
+                ):
                     return True
         return False
 
