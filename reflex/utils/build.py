@@ -172,11 +172,13 @@ def zip_app(
 
 def build(
     deploy_url: str | None = None,
+    for_export: bool = False,
 ):
     """Build the app for deployment.
 
     Args:
         deploy_url: The deployment URL.
+        for_export: Whether the build is for export.
     """
     wdir = prerequisites.get_web_dir()
 
@@ -198,7 +200,7 @@ def build(
 
     # Generate a sitemap if a deploy URL is provided.
     if deploy_url is not None:
-        generate_sitemap_config(deploy_url, export=True)
+        generate_sitemap_config(deploy_url, export=for_export)
         command = "export-sitemap"
 
         checkpoints.extend(["Loading next-sitemap", "Generation completed"])
@@ -210,8 +212,6 @@ def build(
         shell=constants.IS_WINDOWS,
     )
     processes.show_progress("Creating Production Build", process, checkpoints)
-
-    command = "export"
 
 
 def setup_frontend(
