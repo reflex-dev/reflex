@@ -23,7 +23,7 @@ from reflex.event import (
     call_script,
     parse_args_spec,
 )
-from reflex.utils import imports
+from reflex.utils.imports import ImportVar
 from reflex.vars import BaseVar, CallableVar, Var, VarData
 
 DEFAULT_UPLOAD_ID: str

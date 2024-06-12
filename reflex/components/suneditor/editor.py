@@ -8,7 +8,7 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.constants import EventTriggers
 from reflex.utils.format import to_camel_case
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 
@@ -176,12 +176,15 @@ class Editor(NoSSRComponent):
     # default: False
     disable_toolbar: Var[bool]
 
-    def _get_imports(self):
-        imports = super()._get_imports()
-        imports[""] = [
-            ImportVar(tag="suneditor/dist/css/suneditor.min.css", install=False)
-        ]
-        return imports
+    def add_imports(self) -> ImportDict:
+        """Add imports for the Editor component.
+
+        Returns:
+            The import dict.
+        """
+        return {
+            "": ImportVar(tag="suneditor/dist/css/suneditor.min.css", install=False)
+        }
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.

@@ -19,17 +19,15 @@ from reflex.event import (
     call_script,
     parse_args_spec,
 )
-from reflex.utils import imports
+from reflex.utils.imports import ImportVar
 from reflex.vars import BaseVar, CallableVar, Var, VarData
 
 DEFAULT_UPLOAD_ID: str = "default"
 
 upload_files_context_var_data: VarData = VarData(
     imports={
-        "react": [imports.ImportVar(tag="useContext")],
-        f"/{Dirs.CONTEXTS_PATH}": [
-            imports.ImportVar(tag="UploadFilesContext"),
-        ],
+        "react": "useContext",
+        f"/{Dirs.CONTEXTS_PATH}": "UploadFilesContext",
     },
     hooks={
         "const [filesById, setFilesById] = useContext(UploadFilesContext);": None,
@@ -133,8 +131,8 @@ uploaded_files_url_prefix: Var = Var.create_safe(
     _var_is_string=False,
     _var_data=VarData(
         imports={
-            f"/{Dirs.STATE_PATH}": [imports.ImportVar(tag="getBackendURL")],
-            "/env.json": [imports.ImportVar(tag="env", is_default=True)],
+            f"/{Dirs.STATE_PATH}": "getBackendURL",
+            "/env.json": ImportVar(tag="env", is_default=True),
         }
     ),
 )

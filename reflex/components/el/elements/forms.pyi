@@ -14,8 +14,8 @@ from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain
-from reflex.utils import imports
 from reflex.utils.format import format_event_chain
+from reflex.utils.imports import ImportDict
 from reflex.vars import BaseVar, Var
 from .base import BaseHTML
 
@@ -581,6 +581,7 @@ class Form(BaseHTML):
             The form component.
         """
         ...
+    def add_imports(self) -> ImportDict: ...
     def add_hooks(self) -> list[str]: ...
 
 class Input(BaseHTML):

@@ -13,7 +13,7 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.constants import EventTriggers
 from reflex.utils.format import to_camel_case
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 class EditorButtonList(list, enum.Enum):
@@ -48,6 +48,7 @@ class EditorOptions(Base):
     button_list: Optional[List[Union[List[str], str]]]
 
 class Editor(NoSSRComponent):
+    def add_imports(self) -> ImportDict: ...
     def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod

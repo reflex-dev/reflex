@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
-from reflex.utils import console, format, imports, types
-from reflex.utils.imports import ImportVar
+from reflex.event import EventHandler
+from reflex.utils import console, format, types
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
 from reflex.vars import Var, get_unique_variable_name
 
@@ -205,51 +206,66 @@ class DataEditor(NoSSRComponent):
     # global theme
     theme: Var[Union[DataEditorTheme, Dict]]
 
-    def _get_imports(self):
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
-                "": {
-                    ImportVar(
-                        tag=f"{format.format_library_name(self.library)}/dist/index.css"
-                    )
-                },
-                self.library: {ImportVar(tag="GridCellKind")},
-                "/utils/helpers/dataeditor.js": {
-                    ImportVar(
-                        tag=f"formatDataEditorCells", is_default=False, install=False
-                    ),
-                },
-            },
-        )
+    # Triggered when a cell is activated.
+    on_cell_activated: EventHandler[lambda pos: [pos]]
 
-    def get_event_triggers(self) -> Dict[str, Callable]:
-        """The event triggers of the component.
+    # Triggered when a cell is clicked.
+    on_cell_clicked: EventHandler[lambda pos: [pos]]
+
+    # Triggered when a cell is right-clicked.
+    on_cell_context_menu: EventHandler[lambda pos: [pos]]
+
+    # Triggered when a cell is edited.
+    on_cell_edited: EventHandler[lambda pos, data: [pos, data]]
+
+    # Triggered when a group header is clicked.
+    on_group_header_clicked: EventHandler[lambda pos, data: [pos, data]]
+
+    # Triggered when a group header is right-clicked.
+    on_group_header_context_menu: EventHandler[lambda grp_idx, data: [grp_idx, data]]
+
+    # Triggered when a group header is renamed.
+    on_group_header_renamed: EventHandler[lambda idx, val: [idx, val]]
+
+    # Triggered when a header is clicked.
+    on_header_clicked: EventHandler[lambda pos: [pos]]
+
+    # Triggered when a header is right-clicked.
+    on_header_context_menu: EventHandler[lambda pos: [pos]]
+
+    # Triggered when a header menu is clicked.
+    on_header_menu_click: EventHandler[lambda col, pos: [col, pos]]
+
+    # Triggered when an item is hovered.
+    on_item_hovered: EventHandler[lambda pos: [pos]]
+
+    # Triggered when a selection is deleted.
+    on_delete: EventHandler[lambda selection: [selection]]
+
+    # Triggered when editing is finished.
+    on_finished_editing: EventHandler[lambda new_value, movement: [new_value, movement]]
+
+    # Triggered when a row is appended.
+    on_row_appended: EventHandler[lambda: []]
+
+    # Triggered when the selection is cleared.
+    on_selection_cleared: EventHandler[lambda: []]
+
+    # Triggered when a column is resized.
+    on_column_resize: EventHandler[lambda col, width: [col, width]]
+
+    def add_imports(self) -> ImportDict:
+        """Add imports for the component.
 
         Returns:
-            The dict describing the event triggers.
+            The import dict.
         """
-
-        def edit_sig(pos, data: dict[str, Any]):
-            return [pos, data]
-
         return {
-            "on_cell_activated": lambda pos: [pos],
-            "on_cell_clicked": lambda pos: [pos],
-            "on_cell_context_menu": lambda pos: [pos],
-            "on_cell_edited": edit_sig,
-            "on_group_header_clicked": edit_sig,
-            "on_group_header_context_menu": lambda grp_idx, data: [grp_idx, data],
-            "on_group_header_renamed": lambda idx, val: [idx, val],
-            "on_header_clicked": lambda pos: [pos],
-            "on_header_context_menu": lambda pos: [pos],
-            "on_header_menu_click": lambda col, pos: [col, pos],
-            "on_item_hovered": lambda pos: [pos],
-            "on_delete": lambda selection: [selection],
-            "on_finished_editing": lambda new_value, movement: [new_value, movement],
-            "on_row_appended": lambda: [],
-            "on_selection_cleared": lambda: [],
-            "on_column_resize": lambda col, width: [col, width],
+            "": f"{format.format_library_name(self.library)}/dist/index.css",
+            self.library: "GridCellKind",
+            "/utils/helpers/dataeditor.js": ImportVar(
+                tag="formatDataEditorCells", is_default=False, install=False
+            ),
         }
 
     def add_hooks(self) -> list[str]:

@@ -10,12 +10,13 @@ from reflex.style import Style
 from reflex.components.chakra import ChakraComponent
 from reflex.components.component import Component
 from reflex.components.next.link import NextLink
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict
 from reflex.vars import BaseVar, Var
 
 next_link = NextLink.create()
 
 class Link(ChakraComponent):
+    def add_imports(self) -> ImportDict: ...
     @overload
     @classmethod
     def create(  # type: ignore
