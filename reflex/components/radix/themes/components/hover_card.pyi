@@ -7,15 +7,14 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal
+from typing import Literal
 from reflex.components.component import ComponentNamespace
 from reflex.components.el import elements
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
 class HoverCardRoot(RadixThemesComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore

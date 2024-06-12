@@ -1,10 +1,10 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Any, Dict, Literal
+from typing import Literal
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.el import elements
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from ..base import (
@@ -21,16 +21,8 @@ class DialogRoot(RadixThemesComponent):
     # The controlled open state of the dialog.
     open: Var[bool]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
-        }
+    # Fired when the open state changes.
+    on_open_change: EventHandler[lambda e0: [e0]]
 
 
 class DialogTrigger(RadixThemesTriggerComponent):
@@ -53,20 +45,20 @@ class DialogContent(elements.Div, RadixThemesComponent):
     # DialogContent size "1" - "4"
     size: Var[Literal["1", "2", "3", "4"]]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
+    # Fired when the dialog is opened.
+    on_open_auto_focus: EventHandler[lambda e0: [e0]]
 
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_OPEN_AUTO_FOCUS: lambda e0: [e0],
-            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0],
-            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
-            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
-            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
-        }
+    # Fired when the dialog is closed.
+    on_close_auto_focus: EventHandler[lambda e0: [e0]]
+
+    # Fired when the escape key is pressed.
+    on_escape_key_down: EventHandler[lambda e0: [e0]]
+
+    # Fired when the pointer is down outside the dialog.
+    on_pointer_down_outside: EventHandler[lambda e0: [e0]]
+
+    # Fired when the pointer interacts outside the dialog.
+    on_interact_outside: EventHandler[lambda e0: [e0]]
 
 
 class DialogDescription(RadixThemesComponent):

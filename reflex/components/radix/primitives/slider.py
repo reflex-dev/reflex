@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal
+from typing import Any, List, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 LiteralSliderOrientation = Literal["horizontal", "vertical"]
@@ -46,17 +47,11 @@ class SliderRoot(SliderComponent):
 
     min_steps_between_thumbs: Var[int]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Event triggers for radix slider primitive.
+    # Fired when the value of a thumb changes.
+    on_value_change: EventHandler[lambda e0: [e0]]
 
-        Returns:
-            The triggers for event supported by radix primitives.
-        """
-        return {
-            **super().get_event_triggers(),
-            "on_value_change": lambda e0: [e0],  # trigger for all change of a thumb
-            "on_value_commit": lambda e0: [e0],  # trigger when thumb is released
-        }
+    # Fired when a thumb is released.
+    on_value_commit: EventHandler[lambda e0: [e0]]
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.

@@ -7,9 +7,10 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
+from reflex.event import EventHandler
 from reflex.utils.imports import ImportDict
 from reflex.vars import Var
 
@@ -26,7 +27,6 @@ class MomentDelta(Base):
 
 class Moment(NoSSRComponent):
     def add_imports(self) -> ImportDict: ...
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore

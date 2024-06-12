@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from ..base import (
@@ -33,16 +33,8 @@ class TabsRoot(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0],
-        }
+    # Fired when the value of the tabs changes.
+    on_change: EventHandler[lambda e0: [e0]]
 
     def add_style(self) -> Dict[str, Any] | None:
         """Add style for the component.

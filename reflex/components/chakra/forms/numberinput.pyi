@@ -8,18 +8,16 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from numbers import Number
-from typing import Any, Dict
 from reflex.components.chakra import (
     ChakraComponent,
     LiteralButtonSize,
     LiteralInputVariant,
 )
 from reflex.components.component import Component
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 class NumberInput(ChakraComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore

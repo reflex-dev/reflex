@@ -104,6 +104,19 @@ class DataEditorTheme(Base):
     text_medium: Optional[str] = None
 
 
+def on_edit_spec(pos, data: dict[str, Any]):
+    """The on edit spec function.
+
+    Args:
+        pos: The position of the edit event.
+        data: The data of the edit event.
+
+    Returns:
+        The position and data.
+    """
+    return [pos, data]
+
+
 class DataEditor(NoSSRComponent):
     """The DataEditor Component."""
 
@@ -206,52 +219,52 @@ class DataEditor(NoSSRComponent):
     # global theme
     theme: Var[Union[DataEditorTheme, Dict]]
 
-    # Triggered when a cell is activated.
+    # Fired when a cell is activated.
     on_cell_activated: EventHandler[lambda pos: [pos]]
 
-    # Triggered when a cell is clicked.
+    # Fired when a cell is clicked.
     on_cell_clicked: EventHandler[lambda pos: [pos]]
 
-    # Triggered when a cell is right-clicked.
+    # Fired when a cell is right-clicked.
     on_cell_context_menu: EventHandler[lambda pos: [pos]]
 
-    # Triggered when a cell is edited.
-    on_cell_edited: EventHandler[lambda pos, data: [pos, data]]
+    # Fired when a cell is edited.
+    on_cell_edited: EventHandler[on_edit_spec]
 
-    # Triggered when a group header is clicked.
-    on_group_header_clicked: EventHandler[lambda pos, data: [pos, data]]
+    # Fired when a group header is clicked.
+    on_group_header_clicked: EventHandler[on_edit_spec]
 
-    # Triggered when a group header is right-clicked.
+    # Fired when a group header is right-clicked.
     on_group_header_context_menu: EventHandler[lambda grp_idx, data: [grp_idx, data]]
 
-    # Triggered when a group header is renamed.
+    # Fired when a group header is renamed.
     on_group_header_renamed: EventHandler[lambda idx, val: [idx, val]]
 
-    # Triggered when a header is clicked.
+    # Fired when a header is clicked.
     on_header_clicked: EventHandler[lambda pos: [pos]]
 
-    # Triggered when a header is right-clicked.
+    # Fired when a header is right-clicked.
     on_header_context_menu: EventHandler[lambda pos: [pos]]
 
-    # Triggered when a header menu is clicked.
+    # Fired when a header menu item is clicked.
     on_header_menu_click: EventHandler[lambda col, pos: [col, pos]]
 
-    # Triggered when an item is hovered.
+    # Fired when an item is hovered.
     on_item_hovered: EventHandler[lambda pos: [pos]]
 
-    # Triggered when a selection is deleted.
+    # Fired when a selection is deleted.
     on_delete: EventHandler[lambda selection: [selection]]
 
-    # Triggered when editing is finished.
+    # Fired when editing is finished.
     on_finished_editing: EventHandler[lambda new_value, movement: [new_value, movement]]
 
-    # Triggered when a row is appended.
+    # Fired when a row is appended.
     on_row_appended: EventHandler[lambda: []]
 
-    # Triggered when the selection is cleared.
+    # Fired when the selection is cleared.
     on_selection_cleared: EventHandler[lambda: []]
 
-    # Triggered when a column is resized.
+    # Fired when a column is resized.
     on_column_resize: EventHandler[lambda col, width: [col, width]]
 
     def add_imports(self) -> ImportDict:
@@ -378,42 +391,13 @@ class DataEditor(NoSSRComponent):
             )
         }
 
+    def get_event_triggers(self) -> dict[str, Any]:
+        """Remove the default event triggers from Component.
 
-# try:
-#     pass
-
-#     # def format_dataframe_values(df: DataFrame) -> list[list[Any]]:
-#     #     """Format dataframe values to a list of lists.
-
-#     #     Args:
-#     #         df: The dataframe to format.
-
-#     #     Returns:
-#     #         The dataframe as a list of lists.
-#     #     """
-#     # return [
-#     #     [str(d) if isinstance(d, (list, tuple)) else d for d in data]
-#     #     for data in list(df.values.tolist())
-#     # ]
-#     # ...
-
-#     # @serializer
-#     # def serialize_dataframe(df: DataFrame) -> dict:
-#     #     """Serialize a pandas dataframe.
-
-#     #     Args:
-#     #         df: The dataframe to serialize.
-
-#     #     Returns:
-#     #         The serialized dataframe.
-#     #     """
-#     # return {
-#     #     "columns": df.columns.tolist(),
-#     #     "data": format_dataframe_values(df),
-#     # }
-
-# except ImportError:
-#     pass
+        Returns:
+            An empty dictionary.
+        """
+        return {}
 
 
 @serializer
