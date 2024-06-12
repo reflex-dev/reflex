@@ -35,12 +35,11 @@ def set_os_env(**kwargs):
         os.environ[key.upper()] = value
 
 
-def generate_sitemap_config(deploy_url: str, export=False):
+def generate_sitemap_config(deploy_url: str) -> None:
     """Generate the sitemap config file.
 
     Args:
         deploy_url: The URL of the deployed app.
-        export: If the sitemap are generated for an export.
     """
     # Import here to avoid circular imports.
     from reflex.compiler import templates
@@ -48,10 +47,8 @@ def generate_sitemap_config(deploy_url: str, export=False):
     config = {
         "siteUrl": deploy_url,
         "generateRobotsTxt": True,
+        "outDir": constants.Dirs.STATIC,
     }
-
-    if export:
-        config["outDir"] = constants.Dirs.STATIC
 
     config = json.dumps(config)
 
@@ -166,7 +163,7 @@ def export(
 
         # Generate a sitemap if a deploy URL is provided.
         if deploy_url is not None:
-            generate_sitemap_config(deploy_url, export=True)
+            generate_sitemap_config(deploy_url)
             command = "export-sitemap"
 
             checkpoints.extend(["Loading next-sitemap", "Generation completed"])
