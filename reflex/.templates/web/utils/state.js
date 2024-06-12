@@ -614,14 +614,14 @@ export const useEventLoop = (
     }
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
-      addEvents([Event("state.handle_frontend_exception", {
+      addEvents([Event("frontend_event_exception_state.handle_frontend_exception", {
         stack: error.stack,
       })])
       return false;
     }
 
     window.onunhandledrejection = function (event) {
-        addEvents([Event("state.handle_frontend_exception", {
+        addEvents([Event("frontend_event_exception_state.handle_frontend_exception", {
           stack: event.reason.stack,
         })])
         return false;

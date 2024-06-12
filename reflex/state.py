@@ -1814,6 +1814,10 @@ class State(BaseState):
     # The hydrated bool.
     is_hydrated: bool = False
 
+
+class FrontendEventExceptionState(State):
+    """Substate for handling frontend exceptions."""
+
     def handle_frontend_exception(self, stack: str) -> None:
         """Handle frontend exceptions.
 
@@ -1825,7 +1829,6 @@ class State(BaseState):
 
         """
         config = get_config()
-
         config.frontend_exception_handler(Exception(stack))
 
 
