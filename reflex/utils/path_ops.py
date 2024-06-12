@@ -192,9 +192,9 @@ def find_replace(directory: str | Path, find: str, replace: str):
         replace: The text to replace.
     """
     directory = Path(directory)
-    for root, _dirs, files in directory.walk():
+    for root, _dirs, files in os.walk(directory):
         for file in files:
-            filepath = root / file
+            filepath = Path(root, file)
             text = filepath.read_text(encoding="utf-8")
             text = re.sub(find, replace, text)
             filepath.write_text(text)
