@@ -2146,6 +2146,17 @@ class TriggerState(rx.State):
             ["_console", "_alert"],
             False,
         ),
+(
+            rx.box(
+                rx.text(
+                    "random text",
+                    on_click=lambda x: x,
+                ),
+            ),
+            ["_console", "_alert"],
+            False,
+        ),
+
     ],
 )
 def test_has_event_triggers(component, exclude_event_trigger_values, output):

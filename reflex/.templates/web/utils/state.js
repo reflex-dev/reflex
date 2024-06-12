@@ -213,6 +213,10 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
+   // Only proceed if the socket is up, otherwise we throw the event into the void
+   if (!socket) {
+    return false;
+  }
   // Update token and router data (if missing).
   event.token = getToken();
   if (
@@ -246,6 +250,10 @@ export const applyEvent = async (event, socket) => {
  * @returns Whether the event was sent.
  */
 export const applyRestEvent = async (event, socket) => {
+   // Only proceed if the socket is up, otherwise we throw the event into the void
+   if (!socket) {
+    return false;
+  }
   let eventSent = false;
   if (event.handler === "uploadFiles") {
 
@@ -282,11 +290,6 @@ export const queueEvents = async (events, socket) => {
  * @param socket The socket object to send the event on.
  */
 export const processEvent = async (socket) => {
-  // Only proceed if the socket is up, otherwise we throw the event into the void
-  if (!socket) {
-    return;
-  }
-
   // Only proceed if we're not already processing an event.
   if (event_queue.length === 0 || event_processing) {
     return;

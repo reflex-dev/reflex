@@ -541,9 +541,7 @@ class App(LifespanMixin, Base):
 
         # Ensure state is enabled if this page uses state.
         if self.state is None:
-            if on_load or component._has_event_triggers(
-                exclude_event_trigger_values=[constants.ColorMode.TOGGLE]
-            ):
+            if on_load or component._has_stateful_event_triggers():
                 self._enable_state()
             else:
                 for var in component._get_vars(include_children=True):

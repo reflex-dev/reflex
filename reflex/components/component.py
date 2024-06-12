@@ -7,7 +7,7 @@ import typing
 from abc import ABC, abstractmethod
 from functools import lru_cache, wraps
 from hashlib import md5
-from types import SimpleNamespace
+from types import SimpleNamespace, LambdaType
 from typing import (
     Any,
     Callable,
@@ -1113,65 +1113,38 @@ class Component(BaseComponent, ABC):
 
         return vars
 
-    def _event_triggers_contains_excluded_values(
-        self, exclude_event_trigger_values: list[str]
-    ) -> bool:
-        """Check if the component's event triggers contain excluded value names.
-        When an event trigger value is a Var, we check the var name else, if the value is
-        an EventChain, we go through all the events comparing the function names (or qualname for non-state
-        event handlers).
 
-        Args:
-            exclude_event_trigger_values: excluded values to check for.
-
-        Returns:
-            If the component's event triggers contain any excluded value
-
-        """
+    def _event_trigger_values_use_state(self) -> bool:
         for trigger in self.event_triggers.values():
             if isinstance(trigger, EventChain):
                 for event in trigger.events:
-                    if (
-                        (
-                            event.handler.state_full_name
-                            and event.handler.fn.__name__
-                            in exclude_event_trigger_values
-                        )
-                        or not event.handler.state_full_name
-                        and event.handler.fn.__qualname__
-                        in exclude_event_trigger_values
-                    ):
+                    if event.handler.state_full_name or isinstance(event.handler.fn, LambdaType) and event.handler.fn.__name__== (lambda: None).__name__:
                         return True
-            elif (
-                isinstance(trigger, Var)
-                and trigger._var_name in exclude_event_trigger_values
-            ):
+            elif isinstance(trigger, Var) and trigger._var_state:
                 return True
         return False
 
-    def _has_event_triggers(
-        self, exclude_event_trigger_values: list[str] | None = None
-    ) -> bool:
-        """Check if the component or children have any event triggers.
+    def _has_stateful_event_triggers(self):
 
-        Args:
-            exclude_event_trigger_values: Event trigger var names to exclude from this check.
+        if self.event_triggers and self._event_trigger_values_use_state():
+            return True
+        else:
+            for child in self.children:
+                if isinstance(child, Component) and child._has_stateful_event_triggers():
+                    return True
+        return False
+
+    def _has_event_triggers(self) -> bool:
+        """Check if the component or children have any event triggers.
 
         Returns:
             True if the component or children have any event triggers.
         """
-        if exclude_event_trigger_values is None:
-            exclude_event_trigger_values = []
-
-        if self.event_triggers and not self._event_triggers_contains_excluded_values(
-            exclude_event_trigger_values
-        ):
+        if self.event_triggers:
             return True
         else:
             for child in self.children:
-                if isinstance(child, Component) and child._has_event_triggers(
-                    exclude_event_trigger_values
-                ):
+                if isinstance(child, Component) and child._has_event_triggers():
                     return True
         return False
 
