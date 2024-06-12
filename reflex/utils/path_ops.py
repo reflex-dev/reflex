@@ -78,7 +78,7 @@ def mkdir(path: str | Path):
     Args:
         path: The path to the directory.
     """
-    Path(path).mkdir(exist_ok=True)
+    Path(path).mkdir(parents=True, exist_ok=True)
 
 
 def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
