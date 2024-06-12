@@ -143,6 +143,7 @@ class AreaChart(CategoricalChartBase):
         "Legend",
         "GraphingTooltip",
         "Area",
+        "Defs",
     ]
 
 

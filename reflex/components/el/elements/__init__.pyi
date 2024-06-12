@@ -99,6 +99,9 @@ from .media import picture as picture
 from .media import portal as portal
 from .media import source as source
 from .media import svg as svg
+from .media import defs as defs
+from .media import lineargradient as lineargradient
+from .media import stop as stop
 from .media import path as path
 from .media import Area as Area
 from .media import Audio as Audio
@@ -113,6 +116,9 @@ from .media import Picture as Picture
 from .media import Portal as Portal
 from .media import Source as Source
 from .media import Svg as Svg
+from .media import Defs as Defs
+from .media import Lineargradient as Lineargradient
+from .media import Stop as Stop
 from .media import Path as Path
 from .metadata import base as base
 from .metadata import head as head
@@ -285,6 +291,9 @@ _MAPPING = {
         "portal",
         "source",
         "svg",
+        "defs",
+        "lineargradient",
+        "stop",
         "path",
     ],
     "metadata": ["base", "head", "link", "meta", "title"],
