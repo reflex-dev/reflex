@@ -12,6 +12,7 @@ from reflex.vars import BaseVar, Var, VarData
 
 VarData.update_forward_refs()  # Ensure all type definitions are resolved
 
+SYSTEM_COLOR_MODE: str = "system"
 LIGHT_COLOR_MODE: str = "light"
 DARK_COLOR_MODE: str = "dark"
 
@@ -78,7 +79,7 @@ def convert_item(style_item: str | Var) -> tuple[str, VarData | None]:
         return str(style_item), style_item._var_data
 
     # Otherwise, convert to Var to collapse VarData encoded in f-string.
-    new_var = Var.create(style_item)
+    new_var = Var.create(style_item, _var_is_string=False)
     if new_var is not None and new_var._var_data:
         # The wrapped backtick is used to identify the Var for interpolation.
         return f"`{str(new_var)}`", new_var._var_data
@@ -203,7 +204,7 @@ class Style(dict):
             value: The value to set.
         """
         # Create a Var to collapse VarData encoded in f-string.
-        _var = Var.create(value)
+        _var = Var.create(value, _var_is_string=False)
         if _var is not None:
             # Carry the imports/hooks when setting a Var as a value.
             self._var_data = VarData.merge(self._var_data, _var._var_data)

@@ -13,8 +13,8 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
 from reflex.event import EventHandler
-from reflex.utils import console, format, imports, types
-from reflex.utils.imports import ImportVar
+from reflex.utils import console, format, types
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
 from reflex.vars import Var, get_unique_variable_name
 
@@ -83,6 +83,7 @@ class DataEditorTheme(Base):
 def on_edit_spec(pos, data: dict[str, Any]): ...
 
 class DataEditor(NoSSRComponent):
+    def add_imports(self) -> ImportDict: ...
     def add_hooks(self) -> list[str]: ...
     @overload
     @classmethod

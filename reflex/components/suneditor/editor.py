@@ -8,7 +8,7 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.event import EventHandler
 from reflex.utils.format import to_camel_case
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 
@@ -208,12 +208,15 @@ class Editor(NoSSRComponent):
     # Fired when the full screen mode is toggled.
     toggle_full_screen: EventHandler[lambda is_full_screen: [is_full_screen]]
 
-    def _get_imports(self):
-        imports = super()._get_imports()
-        imports[""] = [
-            ImportVar(tag="suneditor/dist/css/suneditor.min.css", install=False)
-        ]
-        return imports
+    def add_imports(self) -> ImportDict:
+        """Add imports for the Editor component.
+
+        Returns:
+            The import dict.
+        """
+        return {
+            "": ImportVar(tag="suneditor/dist/css/suneditor.min.css", install=False)
+        }
 
     @classmethod
     def create(cls, set_options: Optional[EditorOptions] = None, **props) -> Component:

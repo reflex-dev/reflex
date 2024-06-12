@@ -114,7 +114,9 @@ class HighLevelCheckbox(RadixThemesComponent):
     on_change: EventHandler[lambda e0: [e0]]
 
     @classmethod
-    def create(cls, text: Var[str] = Var.create_safe(""), **props) -> Component:
+    def create(
+        cls, text: Var[str] = Var.create_safe("", _var_is_string=True), **props
+    ) -> Component:
         """Create a checkbox with a label.
 
         Args:

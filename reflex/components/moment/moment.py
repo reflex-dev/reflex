@@ -5,7 +5,7 @@ from typing import List, Optional
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.event import EventHandler
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict
 from reflex.vars import Var
 
 
@@ -94,14 +94,15 @@ class Moment(NoSSRComponent):
     # Fires when the date changes.
     on_change: EventHandler[lambda date: [date]]
 
-    def _get_imports(self) -> imports.ImportDict:
-        merged_imports = super()._get_imports()
+    def add_imports(self) -> ImportDict:
+        """Add the imports for the Moment component.
+
+        Returns:
+            The import dict for the component.
+        """
         if self.tz is not None:
-            merged_imports = imports.merge_imports(
-                merged_imports,
-                {"moment-timezone": {imports.ImportVar(tag="")}},
-            )
-        return merged_imports
+            return {"moment-timezone": ""}
+        return {}
 
     @classmethod
     def create(cls, *children, **props) -> Component:

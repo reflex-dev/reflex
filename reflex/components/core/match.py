@@ -8,8 +8,9 @@ from reflex.components.component import BaseComponent, Component, MemoizationLea
 from reflex.components.core.colors import Color
 from reflex.components.tags import MatchTag, Tag
 from reflex.style import Style
-from reflex.utils import format, imports, types
+from reflex.utils import format, types
 from reflex.utils.exceptions import MatchTypeError
+from reflex.utils.imports import ImportDict
 from reflex.vars import BaseVar, Var, VarData
 
 
@@ -268,11 +269,13 @@ class Match(MemoizationLeaf):
         tag.name = "match"
         return dict(tag)
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            getattr(self.cond._var_data, "imports", {}),
-        )
+    def add_imports(self) -> ImportDict:
+        """Add imports for the Match component.
+
+        Returns:
+            The import dict.
+        """
+        return getattr(self.cond._var_data, "imports", {})
 
 
 match = Match.create

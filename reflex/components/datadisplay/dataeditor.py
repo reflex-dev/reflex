@@ -8,8 +8,8 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
 from reflex.event import EventHandler
-from reflex.utils import console, format, imports, types
-from reflex.utils.imports import ImportVar
+from reflex.utils import console, format, types
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
 from reflex.vars import Var, get_unique_variable_name
 
@@ -267,23 +267,19 @@ class DataEditor(NoSSRComponent):
     # Fired when a column is resized.
     on_column_resize: EventHandler[lambda col, width: [col, width]]
 
-    def _get_imports(self):
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
-                "": {
-                    ImportVar(
-                        tag=f"{format.format_library_name(self.library)}/dist/index.css"
-                    )
-                },
-                self.library: {ImportVar(tag="GridCellKind")},
-                "/utils/helpers/dataeditor.js": {
-                    ImportVar(
-                        tag=f"formatDataEditorCells", is_default=False, install=False
-                    ),
-                },
-            },
-        )
+    def add_imports(self) -> ImportDict:
+        """Add imports for the component.
+
+        Returns:
+            The import dict.
+        """
+        return {
+            "": f"{format.format_library_name(self.library)}/dist/index.css",
+            self.library: "GridCellKind",
+            "/utils/helpers/dataeditor.js": ImportVar(
+                tag="formatDataEditorCells", is_default=False, install=False
+            ),
+        }
 
     def add_hooks(self) -> list[str]:
         """Get the hooks to render.
@@ -296,7 +292,9 @@ class DataEditor(NoSSRComponent):
 
         # Define the name of the getData callback associated with this component and assign to get_cell_content.
         data_callback = f"getData_{editor_id}"
-        self.get_cell_content = Var.create(data_callback, _var_is_local=False)  # type: ignore
+        self.get_cell_content = Var.create(
+            data_callback, _var_is_local=False, _var_is_string=False
+        )  # type: ignore
 
         code = [f"function {data_callback}([col, row])" "{"]
 
@@ -334,11 +332,7 @@ class DataEditor(NoSSRComponent):
 
         # If rows is not provided, determine from data.
         if rows is None:
-            props["rows"] = (
-                data.length()  # BaseVar.create(value=f"{data}.length()", is_local=False)
-                if isinstance(data, Var)
-                else len(data)
-            )
+            props["rows"] = data.length() if isinstance(data, Var) else len(data)
 
         if not isinstance(columns, Var) and len(columns):
             if (
@@ -404,43 +398,6 @@ class DataEditor(NoSSRComponent):
             An empty dictionary.
         """
         return {}
-
-
-# try:
-#     pass
-
-#     # def format_dataframe_values(df: DataFrame) -> list[list[Any]]:
-#     #     """Format dataframe values to a list of lists.
-
-#     #     Args:
-#     #         df: The dataframe to format.
-
-#     #     Returns:
-#     #         The dataframe as a list of lists.
-#     #     """
-#     # return [
-#     #     [str(d) if isinstance(d, (list, tuple)) else d for d in data]
-#     #     for data in list(df.values.tolist())
-#     # ]
-#     # ...
-
-#     # @serializer
-#     # def serialize_dataframe(df: DataFrame) -> dict:
-#     #     """Serialize a pandas dataframe.
-
-#     #     Args:
-#     #         df: The dataframe to serialize.
-
-#     #     Returns:
-#     #         The serialized dataframe.
-#     #     """
-#     # return {
-#     #     "columns": df.columns.tolist(),
-#     #     "data": format_dataframe_values(df),
-#     # }
-
-# except ImportError:
-#     pass
 
 
 @serializer
