@@ -114,7 +114,7 @@ def which(program: str | Path) -> str | Path | None:
     Returns:
         The path to the executable.
     """
-    return shutil.which(Path(program))
+    return shutil.which(str(program))
 
 
 def get_node_bin_path() -> str | None:
