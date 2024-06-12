@@ -166,7 +166,7 @@ def export(
 
         # Generate a sitemap if a deploy URL is provided.
         if deploy_url is not None:
-            generate_sitemap_config(deploy_url, export=zip)
+            generate_sitemap_config(deploy_url, export=True)
             command = "export-sitemap"
 
             checkpoints.extend(["Loading next-sitemap", "Generation completed"])
