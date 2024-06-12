@@ -2073,3 +2073,85 @@ def test_add_style_foreach():
 
     # Expect only one instance of this CSS dict in the rendered page
     assert str(page).count('css={{"color": "red"}}') == 1
+
+
+class TriggerState(rx.State):
+    """Test state with event handlers."""
+
+    def do_something(self):
+        """Sample event handler."""
+        pass
+
+
+@pytest.mark.parametrize(
+    "component, exclude_event_trigger_values, output",
+    [
+        (rx.box(rx.text("random text")), None, False),
+        (rx.box(rx.text("random text", on_click=rx.console_log("log"))), None, True),
+        (
+            rx.box(rx.text("random text", on_click=rx.console_log("log"))),
+            ["_console"],
+            False,
+        ),
+        (
+            rx.box(
+                rx.text("random text", on_click=rx.console_log("log")),
+                rx.text(
+                    "random text",
+                    on_click=BaseVar(_var_name="toggleColorMode", _var_type=EventChain),
+                ),
+            ),
+            ["_console", "toggleColorMode"],
+            False,
+        ),
+        (
+            rx.box(
+                rx.text("random text", on_click=rx.console_log("log")),
+                rx.text(
+                    "random text",
+                    on_click=BaseVar(_var_name="toggleColorMode", _var_type=EventChain),
+                ),
+            ),
+            ["_console"],
+            True,
+        ),
+        (
+            rx.box(
+                rx.text("random text", on_click=rx.console_log("log")),
+                rx.text(
+                    "random text",
+                    on_click=BaseVar(_var_name="toggleColorMode", _var_type=EventChain),
+                ),
+            ),
+            ["toggleColorMode"],
+            True,
+        ),
+        (
+            rx.box(rx.text("random text", on_click=TriggerState.do_something)),
+            ["do_something"],
+            False,
+        ),
+        (
+            rx.box(rx.text("random text", on_click=TriggerState.do_something)),
+            ["non_existent"],
+            True,
+        ),
+        (
+            rx.box(
+                rx.text(
+                    "random text",
+                    on_click=[rx.console_log("log"), rx.window_alert("alert")],
+                ),
+            ),
+            ["_console", "_alert"],
+            False,
+        ),
+    ],
+)
+def test_has_event_triggers(component, exclude_event_trigger_values, output):
+    assert (
+        component._has_event_triggers(
+            exclude_event_trigger_values=exclude_event_trigger_values
+        )
+        == output
+    )

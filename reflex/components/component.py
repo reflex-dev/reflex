@@ -1113,6 +1113,42 @@ class Component(BaseComponent, ABC):
 
         return vars
 
+    def _event_triggers_contains_excluded_values(
+        self, exclude_event_trigger_values: list[str]
+    ) -> bool:
+        """Check if the component's event triggers contain excluded value names.
+        When an event trigger value is a Var, we check the var name else, if the value is
+        an EventChain, we go through all the events comparing the function names (or qualname for non-state
+        event handlers).
+
+        Args:
+            exclude_event_trigger_values: excluded values to check for.
+
+        Returns:
+            If the component's event triggers contain any excluded value
+
+        """
+        for trigger in self.event_triggers.values():
+            if isinstance(trigger, EventChain):
+                for event in trigger.events:
+                    if (
+                        (
+                            event.handler.state_full_name
+                            and event.handler.fn.__name__
+                            in exclude_event_trigger_values
+                        )
+                        or not event.handler.state_full_name
+                        and event.handler.fn.__qualname__
+                        in exclude_event_trigger_values
+                    ):
+                        return True
+            elif (
+                isinstance(trigger, Var)
+                and trigger._var_name in exclude_event_trigger_values
+            ):
+                return True
+        return False
+
     def _has_event_triggers(
         self, exclude_event_trigger_values: list[str] | None = None
     ) -> bool:
@@ -1126,11 +1162,9 @@ class Component(BaseComponent, ABC):
         """
         if exclude_event_trigger_values is None:
             exclude_event_trigger_values = []
-        if self.event_triggers and not any(
-            [
-                Var.create_safe(trigger_value)._var_name in exclude_event_trigger_values
-                for trigger_value in self.event_triggers.values()
-            ]
+
+        if self.event_triggers and not self._event_triggers_contains_excluded_values(
+            exclude_event_trigger_values
         ):
             return True
         else:
