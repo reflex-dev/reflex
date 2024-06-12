@@ -21,6 +21,11 @@ def pydantic_v1_patch():
     try:
         import pydantic.v1  # type: ignore
 
+        if pydantic.__version__.startswith("1."):
+            # pydantic v1 is already installed
+            yield
+            return
+
         sys.modules["pydantic.fields"] = pydantic.v1.fields  # type: ignore
         sys.modules["pydantic.main"] = pydantic.v1.main  # type: ignore
         sys.modules["pydantic.errors"] = pydantic.v1.errors  # type: ignore
