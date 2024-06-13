@@ -29,6 +29,8 @@ from typing import (
 
 import dill
 
+from reflex.config import get_config
+
 try:
     import pydantic.v1 as pydantic
 except ModuleNotFoundError:
@@ -1517,14 +1519,31 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # If an error occurs, throw a window alert.
         except Exception as ex:
+
+            def error_handler(ex: Exception):
+                from reflex.components.sonner.toast import Toaster, toast
+
+                error_message = (
+                    [f"{type(ex).__name__}: {ex}.", "See logs for details."]
+                    if get_config().debug is True
+                    else ["Contact the website administrator."]
+                )
+                if Toaster.is_used:
+                    return toast(
+                        level="error",
+                        title="An error occurred.",
+                        description="<br/>".join(error_message),
+                        position="top-center",
+                        style={"width": "500px"},
+                    )
+                else:
+                    error_message.insert(0, "An error occurred.")
+                    return window_alert("\n".join(error_message))
+
             error = traceback.format_exc()
             print(error)
             telemetry.send_error(ex, context="backend")
-            yield state._as_state_update(
-                handler,
-                window_alert("An error occurred. See logs for details."),
-                final=True,
-            )
+            yield state._as_state_update(handler, error_handler(ex), final=True)
 
     def _mark_dirty_computed_vars(self) -> None:
         """Mark ComputedVars that need to be recalculated based on dirty_vars."""

@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Literal, Optional, Union
+from typing import Any, ClassVar, Literal, Optional, Union
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
@@ -57,9 +57,13 @@ class ToastProps(PropsBase):
     def dict(self, *args, **kwargs) -> dict[str, Any]: ...
 
 class Toaster(Component):
+    is_used: ClassVar[bool] = False
+
     def add_hooks(self) -> list[Var | str]: ...
     @staticmethod
-    def send_toast(message: str, level: str | None = None, **props) -> EventSpec: ...
+    def send_toast(
+        message: str = "", level: str | None = None, **props
+    ) -> EventSpec: ...
     @staticmethod
     def toast_info(message: str, **kwargs): ...
     @staticmethod
@@ -163,10 +167,10 @@ class Toaster(Component):
         ] = None,
         **props
     ) -> "Toaster":
-        """Create the component.
+        """Create a toaster component.
 
         Args:
-            *children: The children of the component.
+            *children: The children of the toaster.
             theme: the theme of the toast
             rich_colors: whether to show rich colors
             expand: whether to expand the toast
@@ -187,10 +191,10 @@ class Toaster(Component):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the toaster.
 
         Returns:
-            The component.
+            The toaster component.
         """
         ...
 
@@ -205,7 +209,7 @@ class ToastNamespace(ComponentNamespace):
 
     @staticmethod
     def __call__(
-        message: str, level: Optional[str] = None, **props
+        message: str = "", level: Optional[str] = None, **props
     ) -> "Optional[EventSpec]":
         """Send a toast message.
 
@@ -213,6 +217,9 @@ class ToastNamespace(ComponentNamespace):
             message: The message to display.
             level: The level of the toast.
             **props: The options for the toast.
+
+        Raises:
+            ValueError: If the Toaster component is not created.
 
         Returns:
             The toast event.
