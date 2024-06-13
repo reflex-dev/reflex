@@ -23,9 +23,13 @@ def TestApp():
     class TestAppState(rx.State):
         """State for the TestApp app."""
 
-        def divide_by_zero(self):
-            """Divide by zero to induce backend error."""
-            1 / 0  # noqa: B018
+        def divide_by_number(self, number: int):
+            """Divide by number and print the result.
+
+            Args:
+                number: number to divide by
+            """
+            print(1 / number)
 
     app = rx.App(state=rx.State)
 
@@ -39,7 +43,7 @@ def TestApp():
             ),
             rx.button(
                 "induce_backend_error",
-                on_click=lambda: TestAppState.divide_by_zero(),
+                on_click=lambda: TestAppState.divide_by_number(0),  # type: ignore
                 id="induce-backend-error-btn",
             ),
         )
@@ -133,6 +137,6 @@ def test_backend_exception_handler_during_runtime(
 
     captured_default_handler_output = capsys.readouterr()
     assert (
-        "divide_by_zero" in captured_default_handler_output.out
+        "divide_by_number" in captured_default_handler_output.out
         and "ZeroDivisionError" in captured_default_handler_output.out
     )
