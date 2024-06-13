@@ -108,6 +108,18 @@ export const getBackendURL = (url_str) => {
 };
 
 /**
+ * Determine if any event in the event queue is stateful.
+ *
+ * @returns True if there's any event that requires state and False if none of them do.
+ */
+export const isStateful = () => {
+  if (event_queue.length === 0) {
+    return false;
+  }
+  return event_queue.some(event => event.name.startsWith("state"));
+}
+
+/**
  * Apply a delta to the state.
  * @param state The state to apply the delta to.
  * @param delta The delta to apply.
@@ -115,6 +127,20 @@ export const getBackendURL = (url_str) => {
 export const applyDelta = (state, delta) => {
   return { ...state, ...delta };
 };
+
+/**
+ * Only Queue and process events when websocket connection exists.
+ * @param event The event to queue.
+ * @param socket The socket object to send the event on.
+ *
+ * @returns Adds event to queue and processes it if websocket exits, does nothing otherwise.
+ */
+export const queueEventIfSocketExists = (events, socket) => {
+  if (!socket) {
+    return;
+  }
+  queueEvents(events, socket);
+}
 
 /**
  * Handle frontend event or send the event to the backend via Websocket.
@@ -143,19 +169,19 @@ export const applyEvent = async (event, socket) => {
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    queueEvents(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket);
     return false;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
-    queueEvents(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket);
     return false;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
-    queueEvents(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket);
     return false;
   }
 
@@ -213,10 +239,6 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
-   // Only proceed if the socket is up, otherwise we throw the event into the void
-   if (!socket) {
-    return false;
-  }
   // Update token and router data (if missing).
   event.token = getToken();
   if (
@@ -250,14 +272,10 @@ export const applyEvent = async (event, socket) => {
  * @returns Whether the event was sent.
  */
 export const applyRestEvent = async (event, socket) => {
-   // Only proceed if the socket is up, otherwise we throw the event into the void
-   if (!socket) {
-    return false;
-  }
   let eventSent = false;
   if (event.handler === "uploadFiles") {
 
-    if (event.payload.files === undefined || event.payload.files.length === 0){
+    if (event.payload.files === undefined || event.payload.files.length === 0) {
       // Submit the event over the websocket to trigger the event handler.
       return await applyEvent(Event(event.name), socket)
     }
@@ -281,12 +299,6 @@ export const applyRestEvent = async (event, socket) => {
  * @param socket The socket object to send the event on.
  */
 export const queueEvents = async (events, socket) => {
-
-  // Only proceed if the socket is up, otherwise we throw the event into the void
-  if (!socket) {
-    return;
-  }
-
   event_queue.push(...events);
   await processEvent(socket.current);
 };
@@ -296,6 +308,11 @@ export const queueEvents = async (events, socket) => {
  * @param socket The socket object to send the event on.
  */
 export const processEvent = async (socket) => {
+  // Only proceed if the socket is up and no event in the queue uses state, otherwise we throw the event into the void
+  if (!socket && isStateful()) {
+    return;
+  }
+
   // Only proceed if we're not already processing an event.
   if (event_queue.length === 0 || event_processing) {
     return;
@@ -693,7 +710,7 @@ export const useEventLoop = (
     const change_start = () => {
       const main_state_dispatch = dispatch["state"]
       if (main_state_dispatch !== undefined) {
-        main_state_dispatch({is_hydrated: false})
+        main_state_dispatch({ is_hydrated: false })
       }
     }
     const change_complete = () => addEvents(onLoadInternalEvent());
