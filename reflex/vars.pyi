@@ -10,7 +10,7 @@ from reflex.base import Base as Base
 from reflex.state import State as State
 from reflex.state import BaseState as BaseState
 from reflex.utils import console as console, format as format, types as types
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportVar, ImportDict, ParsedImportDict
 from types import FunctionType
 from typing import (
     Any,
@@ -36,7 +36,7 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]: ...
 
 class VarData(Base):
     state: str = ""
-    imports: dict[str, List[ImportVar]] = {}
+    imports: Union[ImportDict, ParsedImportDict] = {}
     hooks: Dict[str, None] = {}
     interpolations: List[Tuple[int, int]] = []
     @classmethod
@@ -51,11 +51,11 @@ class Var:
     _var_data: VarData | None = None
     @classmethod
     def create(
-        cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False, _var_data: VarData | None = None,
+        cls, value: Any, _var_is_local: bool = True, _var_is_string: bool | None = None, _var_data: VarData | None = None,
     ) -> Optional[Var]: ...
     @classmethod
     def create_safe(
-        cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False, _var_data: VarData | None = None,
+        cls, value: Any, _var_is_local: bool = True, _var_is_string: bool | None = None, _var_data: VarData | None = None,
     ) -> Var: ...
     @classmethod
     def __class_getitem__(cls, type_: Type) -> _GenericAlias: ...

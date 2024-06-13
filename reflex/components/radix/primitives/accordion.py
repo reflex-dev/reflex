@@ -12,7 +12,6 @@ from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
 from reflex.event import EventHandler
 from reflex.style import Style
-from reflex.utils import imports
 from reflex.vars import Var, get_uuid_string_var
 
 LiteralAccordionType = Literal["single", "multiple"]
@@ -106,7 +105,7 @@ class AccordionRoot(AccordionComponent):
     duration: Var[int] = Var.create_safe(DEFAULT_ANIMATION_DURATION)
 
     # The easing function to use for the animation.
-    easing: Var[str] = Var.create_safe(DEFAULT_ANIMATION_EASING)
+    easing: Var[str] = Var.create_safe(DEFAULT_ANIMATION_EASING, _var_is_string=True)
 
     # Whether to show divider lines between items.
     show_dividers: Var[bool]
@@ -406,13 +405,13 @@ class AccordionContent(AccordionComponent):
 
     alias = "RadixAccordionContent"
 
-    def add_imports(self) -> imports.ImportDict:
+    def add_imports(self) -> dict:
         """Add imports to the component.
 
         Returns:
             The imports of the component.
         """
-        return {"@emotion/react": [imports.ImportVar(tag="keyframes")]}
+        return {"@emotion/react": "keyframes"}
 
     @classmethod
     def create(cls, *children, **props) -> Component:

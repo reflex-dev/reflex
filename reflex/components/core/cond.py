@@ -10,11 +10,12 @@ from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.constants.colors import Color
 from reflex.style import LIGHT_COLOR_MODE, color_mode
-from reflex.utils import format, imports
+from reflex.utils import format
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var, VarData
 
-_IS_TRUE_IMPORT = {
-    f"/{Dirs.STATE_PATH}": [imports.ImportVar(tag="isTrue")],
+_IS_TRUE_IMPORT: ImportDict = {
+    f"/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
 }
 
 
@@ -96,12 +97,16 @@ class Cond(MemoizationLeaf):
             cond_state=f"isTrue({self.cond._var_full_name})",
         )
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            getattr(self.cond._var_data, "imports", {}),
-            _IS_TRUE_IMPORT,
+    def add_imports(self) -> ImportDict:
+        """Add imports for the Cond component.
+
+        Returns:
+            The import dict for the component.
+        """
+        cond_imports: dict[str, str | ImportVar | list[str | ImportVar]] = getattr(
+            self.cond._var_data, "imports", {}
         )
+        return {**cond_imports, **_IS_TRUE_IMPORT}
 
 
 @overload

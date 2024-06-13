@@ -4,14 +4,20 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from reflex.base import Base
-from reflex.components.component import NoSSRComponent
+from reflex.components.component import Component, NoSSRComponent
+from reflex.components.core.cond import color_mode_cond
 from reflex.event import EventHandler
+from reflex.utils import console
 from reflex.vars import Var
 
 try:
-    from plotly.graph_objects import Figure
+    from plotly.graph_objects import Figure, layout
+
+    Template = layout.Template
 except ImportError:
+    console.warn("Plotly is not installed. Please run `pip install plotly`.")
     Figure = Any  # type: ignore
+    Template = Any  # type: ignore
 
 
 def _event_data_signature(e0: Var) -> List[Any]:
@@ -23,7 +29,7 @@ def _event_data_signature(e0: Var) -> List[Any]:
     Returns:
         The event key extracted from the event data (if defined).
     """
-    return [Var.create_safe(f"{e0}?.event")]
+    return [Var.create_safe(f"{e0}?.event", _var_is_string=False)]
 
 
 def _event_points_data_signature(e0: Var) -> List[Any]:
@@ -36,9 +42,10 @@ def _event_points_data_signature(e0: Var) -> List[Any]:
         The event data and the extracted points.
     """
     return [
-        Var.create_safe(f"{e0}?.event"),
+        Var.create_safe(f"{e0}?.event", _var_is_string=False),
         Var.create_safe(
             f"extractPoints({e0}?.points)",
+            _var_is_string=False,
         ),
     ]
 
@@ -84,16 +91,12 @@ def _null_signature() -> List[Any]:
     return []
 
 
-class PlotlyLib(NoSSRComponent):
-    """A component that wraps a plotly lib."""
+class Plotly(NoSSRComponent):
+    """Display a plotly graph."""
 
     library = "react-plotly.js@2.6.0"
 
     lib_dependencies: List[str] = ["plotly.js@2.22.0"]
-
-
-class Plotly(PlotlyLib):
-    """Display a plotly graph."""
 
     tag = "Plot"
 
@@ -104,6 +107,9 @@ class Plotly(PlotlyLib):
 
     # The layout of the graph.
     layout: Var[Dict]
+
+    # The template for visual appearance of the graph.
+    template: Var[Template]
 
     # The config of the graph.
     config: Var[Dict]
@@ -171,6 +177,17 @@ class Plotly(PlotlyLib):
     # Fired when a hovered element is no longer hovered.
     on_unhover: EventHandler[_event_points_data_signature]
 
+    def add_imports(self) -> dict[str, str]:
+        """Add imports for the plotly component.
+
+        Returns:
+            The imports for the plotly component.
+        """
+        return {
+            # For merging plotly data/layout/templates.
+            "mergician@v2.0.2": "mergician"
+        }
+
     def add_custom_code(self) -> list[str]:
         """Add custom codes for processing the plotly points data.
 
@@ -210,14 +227,65 @@ const extractPoints = (points) => {
 """,
         ]
 
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the Plotly component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The Plotly component.
+        """
+        from plotly.io import templates
+
+        responsive_template = color_mode_cond(
+            light=Var.create_safe(templates["plotly"]).to(dict),
+            dark=Var.create_safe(templates["plotly_dark"]).to(dict),
+        )
+        if isinstance(responsive_template, Var):
+            # Mark the conditional Var as a Template to avoid type mismatch
+            responsive_template = responsive_template.to(Template)
+        props.setdefault("template", responsive_template)
+        return super().create(*children, **props)
+
+    def _exclude_props(self) -> set[str]:
+        # These props are handled specially in the _render function
+        return {"data", "layout", "template"}
+
     def _render(self):
         tag = super()._render()
         figure = self.data.to(dict)
-        if self.layout is None:
-            tag.remove_props("data", "layout")
+        merge_dicts = []  # Data will be merged and spread from these dict Vars
+        if self.layout is not None:
+            # Why is this not a literal dict? Great question... it didn't work
+            # reliably because of how _var_name_unwrapped strips the outer curly
+            # brackets if any of the contained Vars depend on state.
+            layout_dict = Var.create_safe(
+                f"{{'layout': {self.layout.to(dict)._var_name_unwrapped}}}"
+            ).to(dict)
+            merge_dicts.append(layout_dict)
+        if self.template is not None:
+            template_dict = Var.create_safe(
+                {"layout": {"template": self.template.to(dict)}}
+            )
+            template_dict._var_data = None  # To avoid stripping outer curly brackets
+            merge_dicts.append(template_dict)
+        if merge_dicts:
             tag.special_props.add(
-                Var.create_safe(f"{{...{figure._var_name_unwrapped}}}")
+                # Merge all dictionaries and spread the result over props.
+                Var.create_safe(
+                    f"{{...mergician({figure._var_name_unwrapped},"
+                    f"{','.join(md._var_name_unwrapped for md in merge_dicts)})}}",
+                    _var_is_string=False,
+                ),
             )
         else:
-            tag.add_props(data=figure["data"])
+            # Spread the figure dict over props, nothing to merge.
+            tag.special_props.add(
+                Var.create_safe(
+                    f"{{...{figure._var_name_unwrapped}}}", _var_is_string=False
+                )
+            )
         return tag

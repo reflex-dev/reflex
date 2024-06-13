@@ -11,7 +11,7 @@ from reflex.components.core.debounce import DebounceInput
 from reflex.components.literals import LiteralInputType
 from reflex.constants import MemoizationMode
 from reflex.event import EventHandler
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict
 from reflex.vars import Var
 
 
@@ -74,11 +74,13 @@ class Input(ChakraComponent):
     # Fired when a key is released.
     on_key_up: EventHandler[lambda e0: [e0.key]]
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {"/utils/state": {imports.ImportVar(tag="set_val")}},
-        )
+    def add_imports(self) -> ImportDict:
+        """Add imports for the Input component.
+
+        Returns:
+            The import dict.
+        """
+        return {"/utils/state": "set_val"}
 
     @classmethod
     def create(cls, *children, **props) -> Component:

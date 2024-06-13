@@ -7,13 +7,13 @@ from reflex.components.component import Component, MemoizationLeaf, NoSSRCompone
 class Recharts(Component):
     """A component that wraps a recharts lib."""
 
-    library = "recharts@2.8.0"
+    library = "recharts@2.12.7"
 
 
 class RechartsCharts(NoSSRComponent, MemoizationLeaf):
     """A component that wraps a recharts lib."""
 
-    library = "recharts@2.8.0"
+    library = "recharts@2.12.7"
 
 
 LiteralAnimationEasing = Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
@@ -25,6 +25,7 @@ LiteralLineType = Literal["joint", "fitting"]
 LiteralOrientation = Literal["top", "bottom", "left", "right", "middle"]
 LiteralOrientationLeftRightMiddle = Literal["left", "right", "middle"]
 LiteralOrientationTopBottom = Literal["top", "bottom"]
+LiteralOrientationLeftRight = Literal["left", "right"]
 LiteralOrientationTopBottomLeftRight = Literal["top", "bottom", "left", "right"]
 LiteralScale = Literal[
     "auto",
@@ -78,7 +79,7 @@ LiteralIconType = Literal[
     "triangle",
     "wye",
 ]
-LiteralLegendType = [
+LiteralLegendType = Literal[
     "line",
     "plainline",
     "square",

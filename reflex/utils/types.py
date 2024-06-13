@@ -215,7 +215,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     attr = getattr(cls, name, None)
     if hint := get_property_hint(attr):
         return hint
-    if hasattr(cls, "__fields__") and name in cls.__fields__:
+    if (
+        hasattr(cls, "__fields__")
+        and name in cls.__fields__
+        and hasattr(cls.__fields__[name], "outer_type_")
+    ):
         # pydantic models
         field = cls.__fields__[name]
         type_ = field.outer_type_
@@ -505,7 +509,7 @@ def validate_parameter_literals(func):
         annotations = {param[0]: param[1].annotation for param in func_params}
 
         # validate args
-        for param, arg in zip(annotations.keys(), args):
+        for param, arg in zip(annotations, args):
             if annotations[param] is inspect.Parameter.empty:
                 continue
             validate_literal(param, arg, annotations[param], func.__name__)

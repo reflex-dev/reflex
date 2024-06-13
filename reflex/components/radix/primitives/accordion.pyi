@@ -16,7 +16,6 @@ from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
 from reflex.event import EventHandler
 from reflex.style import Style
-from reflex.utils import imports
 from reflex.vars import Var, get_uuid_string_var
 
 LiteralAccordionType = Literal["single", "multiple"]
@@ -899,7 +898,7 @@ class AccordionIcon(Icon):
         ...
 
 class AccordionContent(AccordionComponent):
-    def add_imports(self) -> imports.ImportDict: ...
+    def add_imports(self) -> dict: ...
     @overload
     @classmethod
     def create(  # type: ignore

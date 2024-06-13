@@ -53,6 +53,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
         "ScatterChart",
         "Treemap",
         "ComposedChart",
+        "FunnelChart",
     ]
 
 
