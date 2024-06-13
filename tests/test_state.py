@@ -4,12 +4,12 @@ import asyncio
 import copy
 import datetime
 import functools
-import json
 import os
 import sys
 from typing import Any, Dict, Generator, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
 
+import dill
 import pytest
 from plotly.graph_objects import Figure
 
@@ -1765,7 +1765,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     mock_app.event_namespace.emit.assert_called_once()
     mcall = mock_app.event_namespace.emit.mock_calls[0]
     assert mcall.args[0] == str(SocketEvent.EVENT)
-    assert json.loads(mcall.args[1]) == StateUpdate(
+    assert dill.loads(mcall.args[1]) == StateUpdate(
         delta={
             parent_state.get_full_name(): {
                 "upper": "",
@@ -1955,7 +1955,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     assert mock_app.event_namespace is not None
     emit_mock = mock_app.event_namespace.emit
 
-    first_ws_message = json.loads(emit_mock.mock_calls[0].args[1])
+    first_ws_message = dill.loads(emit_mock.mock_calls[0].args[1])
     assert first_ws_message["delta"]["background_task_state"].pop("router") is not None
     assert first_ws_message == {
         "delta": {
@@ -1968,14 +1968,14 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         "final": True,
     }
     for call in emit_mock.mock_calls[1:5]:
-        assert json.loads(call.args[1]) == {
+        assert dill.loads(call.args[1]) == {
             "delta": {
                 "background_task_state": {"computed_order": ["background_task:start"]}
             },
             "events": [],
             "final": True,
         }
-    assert json.loads(emit_mock.mock_calls[-2].args[1]) == {
+    assert dill.loads(emit_mock.mock_calls[-2].args[1]) == {
         "delta": {
             "background_task_state": {
                 "order": exp_order,
@@ -1986,7 +1986,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         "events": [],
         "final": True,
     }
-    assert json.loads(emit_mock.mock_calls[-1].args[1]) == {
+    assert dill.loads(emit_mock.mock_calls[-1].args[1]) == {
         "delta": {
             "background_task_state": {
                 "computed_order": exp_order,

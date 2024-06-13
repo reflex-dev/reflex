@@ -1,5 +1,9 @@
 """Templates to use in the reflex compiler."""
 
+import base64
+from functools import partial
+
+import dill
 from jinja2 import Environment, FileSystemLoader, Template
 
 from reflex import constants
@@ -18,6 +22,8 @@ class ReflexJinjaEnvironment(Environment):
             lstrip_blocks=True,
         )
         self.filters["json_dumps"] = json_dumps
+        self.filters["b64encode"] = lambda x: base64.b64encode(x).decode()
+        self.filters["dill_dumps"] = partial(dill.dumps, byref=True)
         self.filters["react_setter"] = lambda state: f"set{state.capitalize()}"
         self.filters["var_name"] = format_state_name
         self.loader = FileSystemLoader(constants.Templates.Dirs.JINJA_TEMPLATE)

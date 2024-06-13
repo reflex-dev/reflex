@@ -2,7 +2,14 @@ import { createContext, useContext, useMemo, useReducer, useState } from "react"
 import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "/utils/state.js"
 
 {% if initial_state %}
-export const initialState = {{ initial_state|json_dumps }}
+import { Parser } from "pickleparser";
+import { Buffer } from "buffer";
+
+const b64_pkl = "{{ initial_state|dill_dumps|b64encode }}"
+const pkl = atob(b64_pkl);
+const buffer = Buffer.from(pkl, "binary");
+const parser = new Parser();
+export const initialState = parser.parse(buffer);
 {% else %}
 export const initialState = {}
 {% endif %}
