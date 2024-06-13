@@ -99,7 +99,7 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
             The component.
         """
         component = super().create(*children, **props)
-        if props.get("value") is not None and props.get("on_change"):
+        if props.get("value") is not None and props.get("on_change") is not None:
             # create a debounced input if the user requests full control to avoid typing jank
             return DebounceInput.create(component)
         return component
