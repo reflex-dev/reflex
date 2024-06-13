@@ -193,7 +193,7 @@ class ClientStateVar(Var):
             # This is a hack to make it work like an EventSpec taking an arg
             value = Var.create_safe(value, _var_is_string=isinstance(value, str))
             if not value._var_is_string and value._var_full_name.startswith("_"):
-                arg = value._var_name_unwrapped
+                arg = value._var_name_unwrapped.partition(".")[0]
             else:
                 arg = ""
             setter = f"({arg}) => {setter}({value._var_name_unwrapped})"
