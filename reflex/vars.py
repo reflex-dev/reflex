@@ -1792,18 +1792,16 @@ class Var:
         """
         from reflex.style import Style
 
-        type_ = (
-            get_origin(self._var_type)
-            if types.is_generic_alias(self._var_type)
-            else self._var_type
-        )
+        generic_alias = types.is_generic_alias(self._var_type)
+
+        type_ = get_origin(self._var_type) if generic_alias else self._var_type
         wrapped_var = str(self)
 
         return (
             wrapped_var
             if not self._var_state
-            and types._issubclass(type_, dict)
-            or types._issubclass(type_, Style)
+            and not generic_alias
+            and (types._issubclass(type_, dict) or types._issubclass(type_, Style))
             else wrapped_var.strip("{}")
         )
 
