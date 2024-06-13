@@ -281,6 +281,12 @@ export const applyRestEvent = async (event, socket) => {
  * @param socket The socket object to send the event on.
  */
 export const queueEvents = async (events, socket) => {
+
+  // Only proceed if the socket is up, otherwise we throw the event into the void
+  if (!socket) {
+    return;
+  }
+
   event_queue.push(...events);
   await processEvent(socket.current);
 };
