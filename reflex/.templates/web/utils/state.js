@@ -169,19 +169,19 @@ export const applyEvent = async (event, socket) => {
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    await queueEventIfSocketExists(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket);
     return false;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
-    await queueEventIfSocketExists(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket);
     return false;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
-    await queueEventIfSocketExists(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket);
     return false;
   }
 
