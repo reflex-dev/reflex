@@ -8,7 +8,7 @@ from typing import Any, Callable, Optional, Type, Union
 from reflex import constants
 from reflex.event import EventChain, EventHandler, EventSpec, call_script
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import Var, VarData, get_unique_variable_name
 
 NoValue = object()
 
@@ -74,7 +74,10 @@ class ClientStateVar(Var):
 
     @classmethod
     def create(
-        cls, var_name: str, default: Any = NoValue, global_ref: bool = True
+        cls,
+        var_name: str | None = None,
+        default: Any = NoValue,
+        global_ref: bool = True,
     ) -> "ClientStateVar":
         """Create a local_state Var that can be accessed and updated on the client.
 
@@ -101,6 +104,8 @@ class ClientStateVar(Var):
         Returns:
             ClientStateVar
         """
+        if var_name is None:
+            var_name = get_unique_variable_name()
         assert isinstance(var_name, str), "var_name must be a string."
         if default is NoValue:
             default_var = Var.create_safe("", _var_is_local=False, _var_is_string=False)
