@@ -19,7 +19,7 @@ from reflex.components.radix.themes.typography.text import Text
 from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serialize
 from reflex.vars import Var, VarData
 
@@ -65,10 +65,15 @@ has_too_many_connection_errors: Var = Var.create_safe(
 class WebsocketTargetURL(Bare):
     """A component that renders the websocket target URL."""
 
-    def _get_imports(self) -> imports.ImportDict:
+    def add_imports(self) -> ImportDict:
+        """Add imports for the websocket target URL component.
+
+        Returns:
+            The import dict.
+        """
         return {
-            f"/{Dirs.STATE_PATH}": [imports.ImportVar(tag="getBackendURL")],
-            "/env.json": [imports.ImportVar(tag="env", is_default=True)],
+            f"/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
+            "/env.json": [ImportVar(tag="env", is_default=True)],
         }
 
     @classmethod
@@ -98,7 +103,7 @@ def default_connection_error() -> list[str | Var | Component]:
 class ConnectionToaster(Toaster):
     """A connection toaster component."""
 
-    def add_hooks(self) -> list[str]:
+    def add_hooks(self) -> list[str | Var]:
         """Add the hooks for the connection toaster.
 
         Returns:
@@ -116,7 +121,7 @@ class ConnectionToaster(Toaster):
             duration=120000,
             id=toast_id,
         )
-        hook = Var.create(
+        hook = Var.create_safe(
             f"""
 const toast_props = {serialize(props)};
 const [userDismissed, setUserDismissed] = useState(false);
@@ -135,22 +140,17 @@ useEffect(() => {{
 }}, [{connect_errors}]);""",
             _var_is_string=False,
         )
-
-        hook._var_data = VarData.merge(  # type: ignore
+        imports: ImportDict = {
+            "react": ["useEffect", "useState"],
+            **target_url._get_imports(),  # type: ignore
+        }
+        hook._var_data = VarData.merge(
             connect_errors._var_data,
-            VarData(
-                imports={
-                    "react": [
-                        imports.ImportVar(tag="useEffect"),
-                        imports.ImportVar(tag="useState"),
-                    ],
-                    **target_url._get_imports(),
-                }
-            ),
+            VarData(imports=imports),
         )
         return [
             Hooks.EVENTS,
-            hook,  # type: ignore
+            hook,
         ]
 
 
@@ -216,10 +216,11 @@ class WifiOffPulse(Icon):
     """A wifi_off icon with an animated opacity pulse."""
 
     @classmethod
-    def create(cls, **props) -> Component:
+    def create(cls, *children, **props) -> Icon:
         """Create a wifi_off icon with an animated opacity pulse.
 
         Args:
+            *children: The children of the component.
             **props: The properties of the component.
 
         Returns:
@@ -237,11 +238,13 @@ class WifiOffPulse(Icon):
             **props,
         )
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {"@emotion/react": [imports.ImportVar(tag="keyframes")]},
-        )
+    def add_imports(self) -> dict[str, str | ImportVar | list[str | ImportVar]]:
+        """Add imports for the WifiOffPulse component.
+
+        Returns:
+            The import dict.
+        """
+        return {"@emotion/react": [ImportVar(tag="keyframes")]}
 
     def _get_custom_code(self) -> str | None:
         return """

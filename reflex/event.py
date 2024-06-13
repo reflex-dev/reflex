@@ -386,12 +386,12 @@ class FileUpload(Base):
         )
 
         upload_id = self.upload_id or DEFAULT_UPLOAD_ID
-
         spec_args = [
             (
                 Var.create_safe("files", _var_is_string=False),
                 Var.create_safe(
-                    f"filesById.{upload_id}", _var_is_string=False
+                    f"filesById[{Var.create_safe(upload_id, _var_is_string=True)._var_name_unwrapped}]",
+                    _var_is_string=False,
                 )._replace(_var_data=upload_files_context_var_data),
             ),
             (

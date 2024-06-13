@@ -1,13 +1,13 @@
 """Interactive components provided by @radix-ui/themes."""
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, Union
+from typing import Literal, Union
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.style import Style, format_as_emotion
 from reflex.utils import console
 from reflex.vars import Var
@@ -71,6 +71,21 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
 
     # Value of the input
     value: Var[Union[str, int, float]]
+
+    # Fired when the value of the textarea changes.
+    on_change: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when the textarea is focused.
+    on_focus: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when the textarea is blurred.
+    on_blur: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when a key is pressed down.
+    on_key_down: EventHandler[lambda e0: [e0.key]]
+
+    # Fired when a key is released.
+    on_key_up: EventHandler[lambda e0: [e0.key]]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -162,21 +177,6 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
             removal_version="0.6.0",
         )
         return cls.create(*children, **props)
-
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
-            EventTriggers.ON_FOCUS: lambda e0: [e0.target.value],
-            EventTriggers.ON_BLUR: lambda e0: [e0.target.value],
-            EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
-            EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
-        }
 
 
 class TextFieldSlot(RadixThemesComponent):

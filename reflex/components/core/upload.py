@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
+from typing import Callable, ClassVar, Dict, List, Optional
 
-from reflex import constants
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.components.el.elements.forms import Input
 from reflex.components.radix.themes.layout.box import Box
@@ -14,22 +13,21 @@ from reflex.constants import Dirs
 from reflex.event import (
     CallableEventSpec,
     EventChain,
+    EventHandler,
     EventSpec,
     call_event_fn,
     call_script,
     parse_args_spec,
 )
-from reflex.utils import imports
+from reflex.utils.imports import ImportVar
 from reflex.vars import BaseVar, CallableVar, Var, VarData
 
 DEFAULT_UPLOAD_ID: str = "default"
 
 upload_files_context_var_data: VarData = VarData(
     imports={
-        "react": [imports.ImportVar(tag="useContext")],
-        f"/{Dirs.CONTEXTS_PATH}": [
-            imports.ImportVar(tag="UploadFilesContext"),
-        ],
+        "react": "useContext",
+        f"/{Dirs.CONTEXTS_PATH}": "UploadFilesContext",
     },
     hooks={
         "const [filesById, setFilesById] = useContext(UploadFilesContext);": None,
@@ -50,10 +48,18 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     Returns:
         A var referencing the file upload drop trigger.
     """
+    id_var = Var.create_safe(id_, _var_is_string=True)
+    var_name = f"""e => setFilesById(filesById => {{
+    const updatedFilesById = Object.assign({{}}, filesById);
+    updatedFilesById[{id_var._var_name_unwrapped}] = e;
+    return updatedFilesById;
+  }})
+    """
+
     return BaseVar(
-        _var_name=f"e => setFilesById(filesById => ({{...filesById, {id_}: e}}))",
+        _var_name=var_name,
         _var_type=EventChain,
-        _var_data=upload_files_context_var_data,
+        _var_data=VarData.merge(upload_files_context_var_data, id_var._var_data),
     )
 
 
@@ -67,10 +73,11 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     Returns:
         A var referencing the list of selected file paths.
     """
+    id_var = Var.create_safe(id_, _var_is_string=True)
     return BaseVar(
-        _var_name=f"(filesById.{id_} ? filesById.{id_}.map((f) => (f.path || f.name)) : [])",
+        _var_name=f"(filesById[{id_var._var_name_unwrapped}] ? filesById[{id_var._var_name_unwrapped}].map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
-        _var_data=upload_files_context_var_data,
+        _var_data=VarData.merge(upload_files_context_var_data, id_var._var_data),
     )
 
 
@@ -99,7 +106,9 @@ def cancel_upload(upload_id: str) -> EventSpec:
     Returns:
         An event spec that cancels the upload when triggered.
     """
-    return call_script(f"upload_controllers[{upload_id!r}]?.abort()")
+    return call_script(
+        f"upload_controllers[{Var.create_safe(upload_id, _var_is_string=True)._var_name_unwrapped!r}]?.abort()"
+    )
 
 
 def get_upload_dir() -> Path:
@@ -122,8 +131,8 @@ uploaded_files_url_prefix: Var = Var.create_safe(
     _var_is_string=False,
     _var_data=VarData(
         imports={
-            f"/{Dirs.STATE_PATH}": [imports.ImportVar(tag="getBackendURL")],
-            "/env.json": [imports.ImportVar(tag="env", is_default=True)],
+            f"/{Dirs.STATE_PATH}": "getBackendURL",
+            "/env.json": ImportVar(tag="env", is_default=True),
         }
     ),
 )
@@ -205,6 +214,9 @@ class Upload(MemoizationLeaf):
     # Marked True when any Upload component is created.
     is_used: ClassVar[bool] = False
 
+    # Fired when files are dropped.
+    on_drop: EventHandler[_on_drop_spec]
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create an upload component.
@@ -268,17 +280,6 @@ class Upload(MemoizationLeaf):
             zone,
             **upload_props,
         )
-
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            constants.EventTriggers.ON_DROP: _on_drop_spec,
-        }
 
     @classmethod
     def _update_arg_tuple_for_on_drop(cls, arg_value: tuple[Var, Var]):

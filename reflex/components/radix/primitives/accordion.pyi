@@ -7,15 +7,15 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
+from reflex.event import EventHandler
 from reflex.style import Style
-from reflex.utils import imports
 from reflex.vars import Var, get_uuid_string_var
 
 LiteralAccordionType = Literal["single", "multiple"]
@@ -175,7 +175,6 @@ class AccordionComponent(RadixPrimitiveComponent):
         ...
 
 class AccordionRoot(AccordionComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     def add_style(self): ...
     @overload
     @classmethod
@@ -899,7 +898,7 @@ class AccordionIcon(Icon):
         ...
 
 class AccordionContent(AccordionComponent):
-    def add_imports(self) -> imports.ImportDict: ...
+    def add_imports(self) -> dict: ...
     @overload
     @classmethod
     def create(  # type: ignore

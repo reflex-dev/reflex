@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
@@ -10,8 +10,8 @@ from reflex.components.core.cond import cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
+from reflex.event import EventHandler
 from reflex.style import Style
-from reflex.utils import imports
 from reflex.vars import Var, get_uuid_string_var
 
 LiteralAccordionType = Literal["single", "multiple"]
@@ -112,6 +112,9 @@ class AccordionRoot(AccordionComponent):
 
     _valid_children: List[str] = ["AccordionItem"]
 
+    # Fired when the opened the accordions changes.
+    on_value_change: EventHandler[lambda e0: [e0]]
+
     def _exclude_props(self) -> list[str]:
         return super()._exclude_props() + [
             "radius",
@@ -119,17 +122,6 @@ class AccordionRoot(AccordionComponent):
             "easing",
             "show_dividers",
         ]
-
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            "on_value_change": lambda e0: [e0],
-        }
 
     def add_style(self):
         """Add style to the component.
@@ -413,13 +405,13 @@ class AccordionContent(AccordionComponent):
 
     alias = "RadixAccordionContent"
 
-    def add_imports(self) -> imports.ImportDict:
+    def add_imports(self) -> dict:
         """Add imports to the component.
 
         Returns:
             The imports of the component.
         """
-        return {"@emotion/react": [imports.ImportVar(tag="keyframes")]}
+        return {"@emotion/react": "keyframes"}
 
     @classmethod
     def create(cls, *children, **props) -> Component:

@@ -1,11 +1,11 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Any, Dict, Literal
+from typing import Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from ..base import (
@@ -59,16 +59,8 @@ class Checkbox(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0],
-        }
+    # Fired when the checkbox is checked or unchecked.
+    on_change: EventHandler[lambda e0: [e0]]
 
 
 class HighLevelCheckbox(RadixThemesComponent):
@@ -118,16 +110,8 @@ class HighLevelCheckbox(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0],
-        }
+    # Fired when the checkbox is checked or unchecked.
+    on_change: EventHandler[lambda e0: [e0]]
 
     @classmethod
     def create(

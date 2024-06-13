@@ -7,12 +7,12 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
 from reflex.components.radix.themes.layout.flex import Flex
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 class DrawerComponent(RadixPrimitiveComponent):
@@ -96,7 +96,6 @@ class DrawerComponent(RadixPrimitiveComponent):
 LiteralDirectionType = Literal["top", "bottom", "left", "right"]
 
 class DrawerRoot(DrawerComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -350,7 +349,6 @@ class DrawerPortal(DrawerComponent):
         ...
 
 class DrawerContent(DrawerComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore

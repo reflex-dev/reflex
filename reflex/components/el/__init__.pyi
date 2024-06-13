@@ -101,6 +101,9 @@ from .elements.media import picture as picture
 from .elements.media import portal as portal
 from .elements.media import source as source
 from .elements.media import svg as svg
+from .elements.media import defs as defs
+from .elements.media import lineargradient as lineargradient
+from .elements.media import stop as stop
 from .elements.media import path as path
 from .elements.media import Area as Area
 from .elements.media import Audio as Audio
@@ -115,6 +118,9 @@ from .elements.media import Picture as Picture
 from .elements.media import Portal as Portal
 from .elements.media import Source as Source
 from .elements.media import Svg as Svg
+from .elements.media import Defs as Defs
+from .elements.media import Lineargradient as Lineargradient
+from .elements.media import Stop as Stop
 from .elements.media import Path as Path
 from .elements.metadata import base as base
 from .elements.metadata import head as head
