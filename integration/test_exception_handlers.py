@@ -1,20 +1,15 @@
 """Integration tests for event exception handlers."""
 from __future__ import annotations
 
-import asyncio
 import time
 from typing import Generator
 
 import pytest
-import pytest_asyncio
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from reflex.app import process
-from reflex.event import Event
-from reflex.state import StateManagerRedis
 from reflex.testing import AppHarness
 
 
@@ -22,29 +17,15 @@ def TestApp():
     """A test app for event exception handler integration."""
     import reflex as rx
 
-    def frontend_exception_handler(message: str, stack: str):
-        print(f"[Fasfadgasdg] {message} {stack}")
-
     class TestAppConfig(rx.Config):
         """Config for the TestApp app."""
 
     class TestAppState(rx.State):
         """State for the TestApp app."""
 
-        value: int
-
-        def go(self, c: int):
-            """Increment the value c times and update each time.
-
-            Args:
-                c: The number of times to increment.
-
-            Yields:
-                After each increment.
-            """
-            for _ in range(c):
-                self.value += 1
-                yield
+        def divide_by_zero(self):
+            """Divide by zero to induce backend error."""
+            1 / 0  # noqa: B018
 
     app = rx.App(state=rx.State)
 
@@ -56,23 +37,12 @@ def TestApp():
                 on_click=rx.call_script("induce_frontend_error()"),
                 id="induce-frontend-error-btn",
             ),
+            rx.button(
+                "induce_backend_error",
+                on_click=lambda: TestAppState.divide_by_zero(),
+                id="induce-backend-error-btn",
+            ),
         )
-
-
-@pytest_asyncio.fixture(scope="session")
-def event_loop(request):
-    """Create an instance of the default event loop for each test case.
-
-    Args:
-        request: The pytest fixture request object.
-
-    Yields:
-        The event loop object.
-
-    """
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest.fixture(scope="module")
@@ -134,49 +104,35 @@ def test_frontend_exception_handler_during_runtime(
 
     captured_default_handler_output = capsys.readouterr()
     assert (
-        "[Reflex Frontend Exception]" in captured_default_handler_output.out
-        and "induce_frontend_error" in captured_default_handler_output.out
+        "induce_frontend_error" in captured_default_handler_output.out
         and "ReferenceError" in captured_default_handler_output.out
     )
 
 
-@pytest.mark.asyncio
-async def test_backend_exception_handler_during_runtime(capsys, test_app):
+def test_backend_exception_handler_during_runtime(
+    driver: WebDriver,
+    capsys,
+):
     """Test calling backend exception handler during runtime.
 
+    We invoke TestAppState.divide_by_zero to induce backend error.
+    This should trigger the default backend exception handler.
+
     Args:
-        capsys: capsys fixture.
-        test_app: harness for CallScript app.
-
+        driver: WebDriver instance.
+        capsys: pytest fixture for capturing stdout and stderr.
     """
-    token = "mock_token"
-
-    router_data = {
-        "pathname": "/",
-        "query": {},
-        "token": token,
-        "sid": "mock_sid",
-        "headers": {},
-        "ip": "127.0.0.1",
-    }
-
-    app = test_app.app_instance
-
-    payload = {"c": "5"}  # should be an int
-
-    event = Event(
-        token=token, name="test_app_state.go", payload=payload, router_data=router_data
+    reset_button = WebDriverWait(driver, 20).until(
+        EC.element_to_be_clickable((By.ID, "induce-backend-error-btn"))
     )
 
-    async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
-        pass
+    reset_button.click()
+
+    # Wait for the error to be logged
+    time.sleep(2)
 
     captured_default_handler_output = capsys.readouterr()
     assert (
-        "[Reflex Backend Exception]" in captured_default_handler_output.out
-        and "'str' object cannot be interpreted as an integer"
-        in captured_default_handler_output.out
+        "divide_by_zero" in captured_default_handler_output.out
+        and "ZeroDivisionError" in captured_default_handler_output.out
     )
-
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()

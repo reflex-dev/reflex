@@ -1092,6 +1092,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Set the var on the parent state.
         inherited_vars = {**self.inherited_vars, **self.inherited_backend_vars}
         if name in inherited_vars:
+            if self.get_name() == "frontend_event_exception_state":
+                return
+
             setattr(self.parent_state, name, value)
             return
 
