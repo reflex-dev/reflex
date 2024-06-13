@@ -2082,10 +2082,6 @@ class TriggerState(rx.State):
         """Sample event handler."""
         pass
 
-    def do_another_thing(self, value):
-        """Sample event handler with arg."""
-        pass
-
 
 @pytest.mark.parametrize(
     "component, output",
@@ -2141,7 +2137,7 @@ class TriggerState(rx.State):
             rx.box(
                 rx.text(
                     "random text",
-                    on_click=lambda val: TriggerState.do_another_thing(val),  # type: ignore
+                    on_blur=lambda: TriggerState.do_something,
                 ),
             ),
             True,
