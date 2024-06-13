@@ -135,11 +135,11 @@ export const applyDelta = (state, delta) => {
  *
  * @returns Adds event to queue and processes it if websocket exits, does nothing otherwise.
  */
-export const queueEventIfSocketExists = (events, socket) => {
+export const queueEventIfSocketExists = async (events, socket) => {
   if (!socket) {
     return;
   }
-  queueEvents(events, socket);
+  await queueEvents(events, socket);
 }
 
 /**
