@@ -99,6 +99,7 @@ class WebsocketTargetURL(Bare):
 
         Returns:
             The websocket target URL component.
+
         """
         ...
 
@@ -296,6 +297,7 @@ class ConnectionBanner(Component):
 
         Returns:
             The connection banner component.
+
         """
         ...
 
@@ -365,6 +367,7 @@ class ConnectionModal(Component):
 
         Returns:
             The connection banner component.
+
         """
         ...
 
@@ -443,6 +446,7 @@ class WifiOffPulse(Icon):
 
         Returns:
             The icon component with default props applied.
+
         """
         ...
     def add_imports(self) -> dict[str, str | ImportVar | list[str | ImportVar]]: ...
@@ -575,6 +579,7 @@ class ConnectionPulser(Div):
 
         Returns:
             The connection pulser component.
+
         """
         ...
 

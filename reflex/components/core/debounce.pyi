@@ -104,6 +104,7 @@ class DebounceInput(Component):
         Raises:
             RuntimeError: unless exactly one child element is provided.
             ValueError: if the child element does not have an on_change handler.
+
         """
         ...
 

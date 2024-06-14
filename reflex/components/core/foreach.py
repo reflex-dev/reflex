@@ -52,6 +52,7 @@ class Foreach(Component):
         Raises:
             ForeachVarError: If the iterable is of type Any.
             TypeError: If the render function is a ComponentState.
+
         """
         if props:
             console.deprecate(
@@ -129,6 +130,7 @@ class Foreach(Component):
 
         Returns:
             The dictionary for template of component.
+
         """
         tag = self._render()
 

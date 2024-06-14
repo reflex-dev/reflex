@@ -47,6 +47,7 @@ class Cond(MemoizationLeaf):
 
         Returns:
             The conditional component.
+
         """
         # Wrap everything in fragments.
         if comp1.__class__.__name__ != "Fragment":
@@ -67,6 +68,7 @@ class Cond(MemoizationLeaf):
 
         Returns:
             The imports for the component's props of the component.
+
         """
         return []
 
@@ -82,6 +84,7 @@ class Cond(MemoizationLeaf):
 
         Returns:
             The dictionary for template of component.
+
         """
         tag = self._render()
         return dict(
@@ -102,6 +105,7 @@ class Cond(MemoizationLeaf):
 
         Returns:
             The import dict for the component.
+
         """
         cond_imports: dict[str, str | ImportVar | list[str | ImportVar]] = getattr(
             self.cond._var_data, "imports", {}
@@ -137,6 +141,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
 
     Raises:
         ValueError: If the arguments are invalid.
+
     """
     var_datas: list[VarData | None] = [
         VarData(  # type: ignore
@@ -206,6 +211,7 @@ def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
 
     Returns:
         The conditional component or prop.
+
     """
     return cond(
         color_mode == Var.create(LIGHT_COLOR_MODE, _var_is_string=True),

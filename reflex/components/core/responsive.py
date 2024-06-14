@@ -13,6 +13,7 @@ def mobile_only(*children, **props):
 
     Returns:
         The component.
+
     """
     return Box.create(*children, **props, display=["block", "none", "none", "none"])
 
@@ -26,6 +27,7 @@ def tablet_only(*children, **props):
 
     Returns:
         The component.
+
     """
     return Box.create(*children, **props, display=["none", "block", "block", "none"])
 
@@ -39,6 +41,7 @@ def desktop_only(*children, **props):
 
     Returns:
         The component.
+
     """
     return Box.create(*children, **props, display=["none", "none", "none", "block"])
 
@@ -52,6 +55,7 @@ def tablet_and_desktop(*children, **props):
 
     Returns:
         The component.
+
     """
     return Box.create(*children, **props, display=["none", "block", "block", "block"])
 
@@ -65,5 +69,6 @@ def mobile_and_tablet(*children, **props):
 
     Returns:
         The component.
+
     """
     return Box.create(*children, **props, display=["block", "block", "block", "none"])

@@ -37,6 +37,7 @@ class Tag(Base):
         Args:
             *args: Args to initialize the tag.
             **kwargs: Kwargs to initialize the tag.
+
         """
         # Convert any props to vars.
         if "props" in kwargs:
@@ -51,6 +52,7 @@ class Tag(Base):
 
         Returns:
             The formatted props list.
+
         """
         return format.format_props(*self.special_props, **self.props)
 
@@ -62,6 +64,7 @@ class Tag(Base):
 
         Returns:
             The tag with the props added.
+
         """
         from reflex.components.core.colors import Color
 
@@ -86,6 +89,7 @@ class Tag(Base):
 
         Returns:
             The tag with the props removed.
+
         """
         for name in args:
             prop_name = format.to_camel_case(name)
@@ -102,5 +106,6 @@ class Tag(Base):
 
         Returns:
             Whether the prop is valid.
+
         """
         return prop is not None and not (isinstance(prop, dict) and len(prop) == 0)

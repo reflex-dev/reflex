@@ -216,6 +216,7 @@ class Upload(MemoizationLeaf):
 
         Returns:
             The upload component.
+
         """
         ...
 
@@ -315,6 +316,7 @@ class StyledUpload(Upload):
 
         Returns:
             The styled upload component.
+
         """
         ...
 
@@ -414,6 +416,7 @@ class UploadNamespace(ComponentNamespace):
 
         Returns:
             The styled upload component.
+
         """
         ...
 

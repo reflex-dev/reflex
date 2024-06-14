@@ -70,6 +70,7 @@ class WebsocketTargetURL(Bare):
 
         Returns:
             The import dict.
+
         """
         return {
             f"/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
@@ -82,6 +83,7 @@ class WebsocketTargetURL(Bare):
 
         Returns:
             The websocket target URL component.
+
         """
         return super().create(contents="{getBackendURL(env.EVENT).href}")
 
@@ -91,6 +93,7 @@ def default_connection_error() -> list[str | Var | Component]:
 
     Returns:
         The default connection error message.
+
     """
     return [
         "Cannot connect to server: ",
@@ -108,6 +111,7 @@ class ConnectionToaster(Toaster):
 
         Returns:
             The hooks for the connection toaster.
+
         """
         toast_id = "websocket-error"
         target_url = WebsocketTargetURL.create()
@@ -166,6 +170,7 @@ class ConnectionBanner(Component):
 
         Returns:
             The connection banner component.
+
         """
         if not comp:
             comp = Flex.create(
@@ -196,6 +201,7 @@ class ConnectionModal(Component):
 
         Returns:
             The connection banner component.
+
         """
         if not comp:
             comp = Text.create(*default_connection_error())
@@ -225,6 +231,7 @@ class WifiOffPulse(Icon):
 
         Returns:
             The icon component with default props applied.
+
         """
         return super().create(
             "wifi_off",
@@ -243,6 +250,7 @@ class WifiOffPulse(Icon):
 
         Returns:
             The import dict.
+
         """
         return {"@emotion/react": [ImportVar(tag="keyframes")]}
 
@@ -271,6 +279,7 @@ class ConnectionPulser(Div):
 
         Returns:
             The connection pulser component.
+
         """
         return super().create(
             cond(

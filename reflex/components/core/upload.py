@@ -47,6 +47,7 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
 
     Returns:
         A var referencing the file upload drop trigger.
+
     """
     id_var = Var.create_safe(id_, _var_is_string=True)
     var_name = f"""e => setFilesById(filesById => {{
@@ -72,6 +73,7 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
 
     Returns:
         A var referencing the list of selected file paths.
+
     """
     id_var = Var.create_safe(id_, _var_is_string=True)
     return BaseVar(
@@ -90,6 +92,7 @@ def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
 
     Returns:
         An event spec that clears the list of selected files when triggered.
+
     """
     # UploadFilesProvider assigns a special function to clear selected files
     # into the shared global refs object to make it accessible outside a React
@@ -105,6 +108,7 @@ def cancel_upload(upload_id: str) -> EventSpec:
 
     Returns:
         An event spec that cancels the upload when triggered.
+
     """
     return call_script(
         f"upload_controllers[{Var.create_safe(upload_id, _var_is_string=True)._var_name_unwrapped!r}]?.abort()"
@@ -116,6 +120,7 @@ def get_upload_dir() -> Path:
 
     Returns:
         The directory where uploaded files are stored.
+
     """
     Upload.is_used = True
 
@@ -146,6 +151,7 @@ def get_upload_url(file_path: str) -> Var[str]:
 
     Returns:
         The URL of the uploaded file to be rendered from the frontend (as a str-encoded Var).
+
     """
     Upload.is_used = True
 
@@ -162,6 +168,7 @@ def _on_drop_spec(files: Var):
 
     Returns:
         Signature for on_drop handler including the files to upload.
+
     """
     return [files]
 
@@ -227,6 +234,7 @@ class Upload(MemoizationLeaf):
 
         Returns:
             The upload component.
+
         """
         # Mark the Upload component as used in the app.
         cls.is_used = True
@@ -290,6 +298,7 @@ class Upload(MemoizationLeaf):
 
         Returns:
             The updated arg_value tuple when arg is "files", otherwise the original arg_value.
+
         """
         if arg_value[0]._var_name == "files":
             placeholder = parse_args_spec(_on_drop_spec)[0]
@@ -321,6 +330,7 @@ class StyledUpload(Upload):
 
         Returns:
             The styled upload component.
+
         """
         # Set default props.
         props.setdefault("border", "1px dashed var(--accent-12)")

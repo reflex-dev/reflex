@@ -28,6 +28,7 @@ class ClientSideRouting(Component):
 
         Returns:
             The useClientSideRouting hook.
+
         """
         return [f"const {constants.ROUTE_NOT_FOUND} = {self.tag}()"]
 
@@ -36,6 +37,7 @@ class ClientSideRouting(Component):
 
         Returns:
             Empty string, because this component is only used for its hooks.
+
         """
         return ""
 
@@ -50,6 +52,7 @@ def wait_for_client_redirect(component) -> Component:
 
     Returns:
         The conditionally rendered component.
+
     """
     return cond(
         condition=route_not_found,

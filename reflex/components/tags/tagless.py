@@ -12,6 +12,7 @@ class Tagless(Tag):
 
         Returns:
             The string representation of the tag.
+
         """
         out = self.contents
         space = format.wrap(" ", "{")
