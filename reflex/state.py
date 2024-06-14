@@ -153,12 +153,8 @@ class SessionData(Base):
         self.client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
         self.client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
         new_session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
-        print(
-            f"current_session_id: {self.session_id}, new_session_id: {new_session_id}"
-        )
         if self.session_id and new_session_id and self.session_id != new_session_id:
             self.status = SessionStatus.RECONNECTED
-            print("Reconnected")
         else:
             self.status = SessionStatus.CONNECTED
         self.session_id = new_session_id
