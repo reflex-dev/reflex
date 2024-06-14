@@ -1,4 +1,5 @@
 """A class that holds props to be passed or applied to a component."""
+
 from __future__ import annotations
 
 from reflex.base import Base

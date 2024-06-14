@@ -273,7 +273,7 @@ def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
 
 
 def convert_dict_to_style_and_format_emotion(
-    raw_dict: dict[str, Any]
+    raw_dict: dict[str, Any],
 ) -> dict[str, Any] | None:
     """Convert a dict to a style dict and then format as emotion.
 

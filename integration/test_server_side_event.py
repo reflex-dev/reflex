@@ -1,4 +1,5 @@
 """Integration tests for special server side events."""
+
 import time
 from typing import Generator
 

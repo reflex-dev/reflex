@@ -7,6 +7,7 @@ setting a reactive state var "routeNotFound" to true if the redirect fails.  The
 `wait_for_client_redirect` function will render the component only after
 routeNotFound becomes true.
 """
+
 from __future__ import annotations
 
 from reflex import constants

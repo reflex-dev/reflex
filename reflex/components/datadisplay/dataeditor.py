@@ -1,4 +1,5 @@
 """Data Editor component from glide-data-grid."""
+
 from __future__ import annotations
 
 from enum import Enum

@@ -1,4 +1,5 @@
 """The settings page for the template."""
+
 from typing import Any
 
 import reflex as rx
