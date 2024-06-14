@@ -90,6 +90,7 @@ class TagLabel(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -166,6 +167,7 @@ class TagLeftIcon(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -242,6 +244,7 @@ class TagRightIcon(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -318,6 +321,7 @@ class TagCloseButton(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -433,5 +437,6 @@ class Tag(ChakraComponent):
 
         Returns:
             The `create()` method returns a Tag object.
+
         """
         ...

@@ -123,6 +123,7 @@ class RangeSlider(ChakraComponent):
 
         Returns:
             The RangeSlider component.
+
         """
         ...
 
@@ -199,6 +200,7 @@ class RangeSliderTrack(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -275,6 +277,7 @@ class RangeSliderFilledTrack(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -354,5 +357,6 @@ class RangeSliderThumb(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

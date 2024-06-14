@@ -84,6 +84,7 @@ class ChakraIconComponent(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -166,6 +167,7 @@ class Icon(ChakraIconComponent):
 
         Returns:
             The created component.
+
         """
         ...
 

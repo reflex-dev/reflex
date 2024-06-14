@@ -150,6 +150,7 @@ class Popover(ChakraComponent):
 
         Returns:
             The popover component.
+
         """
         ...
 
@@ -226,6 +227,7 @@ class PopoverContent(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -302,6 +304,7 @@ class PopoverHeader(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -378,6 +381,7 @@ class PopoverFooter(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -454,6 +458,7 @@ class PopoverBody(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -530,6 +535,7 @@ class PopoverArrow(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -606,6 +612,7 @@ class PopoverCloseButton(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -682,6 +689,7 @@ class PopoverAnchor(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -758,5 +766,6 @@ class PopoverTrigger(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

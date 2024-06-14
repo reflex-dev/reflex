@@ -66,6 +66,7 @@ class Image(ChakraComponent):
 
         Returns:
             The Image component.
+
         """
         src = props.get("src", None)
         if src is not None and not isinstance(src, (Var)):

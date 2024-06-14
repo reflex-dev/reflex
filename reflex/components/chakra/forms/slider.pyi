@@ -142,6 +142,7 @@ class Slider(ChakraComponent):
 
         Returns:
             The slider component.
+
         """
         ...
 
@@ -218,6 +219,7 @@ class SliderTrack(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -294,6 +296,7 @@ class SliderFilledTrack(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -372,6 +375,7 @@ class SliderThumb(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -448,5 +452,6 @@ class SliderMark(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

@@ -93,6 +93,7 @@ class Modal(ChakraComponent):
 
         Returns:
             The modal component.
+
         """
         if len(children) == 0:
             contents = []

@@ -94,6 +94,7 @@ class Breadcrumb(ChakraComponent):
 
         Returns:
             The breadcrumb component.
+
         """
         ...
 
@@ -182,6 +183,7 @@ class BreadcrumbItem(ChakraComponent):
 
         Returns:
             The BreadcrumbItem component
+
         """
         ...
 
@@ -258,6 +260,7 @@ class BreadcrumbSeparator(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -349,5 +352,6 @@ class BreadcrumbLink(Link):
 
         Returns:
             Component: The link component
+
         """
         ...

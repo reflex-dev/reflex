@@ -52,6 +52,7 @@ class CircularProgress(ChakraComponent):
 
         Returns:
             The circular progress component.
+
         """
         if len(children) == 0:
             children = []

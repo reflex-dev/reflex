@@ -148,6 +148,7 @@ class Stepper(ChakraComponent):
 
         Returns:
             The stepper component.
+
         """
         ...
 
@@ -224,6 +225,7 @@ class Step(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -300,6 +302,7 @@ class StepDescription(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -376,6 +379,7 @@ class StepIcon(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -452,6 +456,7 @@ class StepIndicator(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -528,6 +533,7 @@ class StepNumber(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -604,6 +610,7 @@ class StepSeparator(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -684,6 +691,7 @@ class StepStatus(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -760,5 +768,6 @@ class StepTitle(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

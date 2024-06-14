@@ -143,6 +143,7 @@ class Modal(ChakraComponent):
 
         Returns:
             The modal component.
+
         """
         ...
 
@@ -219,6 +220,7 @@ class ModalOverlay(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -295,6 +297,7 @@ class ModalHeader(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -371,6 +374,7 @@ class ModalFooter(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -447,6 +451,7 @@ class ModalContent(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -523,6 +528,7 @@ class ModalBody(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -599,5 +605,6 @@ class ModalCloseButton(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

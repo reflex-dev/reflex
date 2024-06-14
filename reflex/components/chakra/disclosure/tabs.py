@@ -60,6 +60,7 @@ class Tabs(ChakraComponent):
 
         Returns:
             The tab component
+
         """
         if len(children) == 0:
             tabs = []

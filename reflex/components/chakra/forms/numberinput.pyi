@@ -138,6 +138,7 @@ class NumberInput(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -214,6 +215,7 @@ class NumberInputField(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -290,6 +292,7 @@ class NumberInputStepper(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -366,6 +369,7 @@ class NumberIncrementStepper(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -442,5 +446,6 @@ class NumberDecrementStepper(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

@@ -62,6 +62,7 @@ class RangeSlider(ChakraComponent):
 
         Returns:
             The ref of the component.
+
         """
         return None
 
@@ -70,6 +71,7 @@ class RangeSlider(ChakraComponent):
 
         Returns:
             The overrided hooks.
+
         """
         if self.id:
             ref = format.format_array_ref(self.id, None)
@@ -92,6 +94,7 @@ class RangeSlider(ChakraComponent):
 
         Returns:
             The RangeSlider component.
+
         """
         if len(children) == 0:
             _id = props.get("id", None)
@@ -143,6 +146,7 @@ class RangeSliderThumb(ChakraComponent):
 
         Returns:
             The array ref.
+
         """
         if self.id:
             return format.format_array_ref(self.id, self.index)

@@ -197,6 +197,7 @@ class Drawer(ChakraComponent):
 
         Returns:
             The drawer component.
+
         """
         ...
 
@@ -273,6 +274,7 @@ class DrawerBody(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -349,6 +351,7 @@ class DrawerHeader(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -425,6 +428,7 @@ class DrawerFooter(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -501,6 +505,7 @@ class DrawerOverlay(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -577,6 +582,7 @@ class DrawerContent(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -653,5 +659,6 @@ class DrawerCloseButton(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

@@ -92,6 +92,7 @@ class Menu(ChakraComponent):
 
         Returns:
             The menu component.
+
         """
         if len(children) == 0:
             children = []
@@ -138,6 +139,7 @@ class MenuList(ChakraComponent):
 
         Returns:
             The MenuList component.
+
         """
         if len(children) == 0:
             if items is None:

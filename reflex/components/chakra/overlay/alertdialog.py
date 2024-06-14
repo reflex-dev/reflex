@@ -83,6 +83,7 @@ class AlertDialog(ChakraComponent):
 
         Returns:
             The alert dialog component.
+
         """
         if len(children) == 0:
             contents = []

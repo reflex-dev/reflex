@@ -189,6 +189,7 @@ class Input(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -265,6 +266,7 @@ class InputGroup(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -341,6 +343,7 @@ class InputLeftAddon(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -417,6 +420,7 @@ class InputRightAddon(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -493,6 +497,7 @@ class InputLeftElement(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -569,5 +574,6 @@ class InputRightElement(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

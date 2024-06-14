@@ -98,6 +98,7 @@ class RadioGroup(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -198,5 +199,6 @@ class Radio(Text):
 
         Returns:
             The radio component.
+
         """
         ...

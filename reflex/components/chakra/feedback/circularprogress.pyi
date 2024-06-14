@@ -107,6 +107,7 @@ class CircularProgress(ChakraComponent):
 
         Returns:
             The circular progress component.
+
         """
         ...
 
@@ -183,5 +184,6 @@ class CircularProgressLabel(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

@@ -39,6 +39,7 @@ class RadioGroup(ChakraComponent):
 
         Returns:
             The component.
+
         """
         if len(children) == 1 and isinstance(children[0], list):
             children = [Radio.create(child) for child in children[0]]
@@ -95,6 +96,7 @@ class Radio(Text):
 
         Returns:
             The radio component.
+
         """
         if "value" not in props:
             assert len(children) == 1

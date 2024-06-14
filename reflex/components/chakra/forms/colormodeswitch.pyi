@@ -88,6 +88,7 @@ class ColorModeIcon(Cond):
 
         Returns:
             The conditionally rendered component
+
         """
         ...
 
@@ -236,6 +237,7 @@ class ColorModeSwitch(Switch):
 
         Returns:
             The switch component.
+
         """
         ...
 
@@ -392,6 +394,7 @@ class ColorModeButton(Button):
 
         Returns:
             The switch component.
+
         """
         ...
 
@@ -468,5 +471,6 @@ class ColorModeScript(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

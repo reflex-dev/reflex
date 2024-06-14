@@ -279,6 +279,7 @@ class FormControl(ChakraComponent):
 
         Returns:
             The form control component.
+
         """
         ...
 
@@ -355,6 +356,7 @@ class FormHelperText(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -433,6 +435,7 @@ class FormLabel(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -509,5 +512,6 @@ class FormErrorMessage(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

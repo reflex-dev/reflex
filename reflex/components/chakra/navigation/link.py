@@ -37,6 +37,7 @@ class Link(ChakraComponent):
 
         Returns:
             The import dict.
+
         """
         return next_link._get_imports()  # type: ignore
 
@@ -53,6 +54,7 @@ class Link(ChakraComponent):
 
         Returns:
             Component: The link component
+
         """
         if props.get("href") is not None:
             if not len(children):

@@ -99,6 +99,7 @@ class Drawer(ChakraComponent):
 
         Returns:
             The drawer component.
+
         """
         if len(children) == 0:
             contents = []

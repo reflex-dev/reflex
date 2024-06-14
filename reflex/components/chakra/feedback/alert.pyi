@@ -104,6 +104,7 @@ class Alert(ChakraComponent):
 
         Returns:
             The alert component.
+
         """
         ...
 
@@ -180,6 +181,7 @@ class AlertIcon(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -256,6 +258,7 @@ class AlertTitle(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -332,5 +335,6 @@ class AlertDescription(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

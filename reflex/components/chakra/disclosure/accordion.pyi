@@ -103,6 +103,7 @@ class Accordion(ChakraComponent):
 
         Returns:
             The accordion component
+
         """
         ...
 
@@ -185,6 +186,7 @@ class AccordionItem(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -261,6 +263,7 @@ class AccordionButton(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -337,6 +340,7 @@ class AccordionPanel(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -413,5 +417,6 @@ class AccordionIcon(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

@@ -89,6 +89,7 @@ class NumberInput(ChakraComponent):
 
         Returns:
             The component.
+
         """
         if len(children) == 0:
             _id = props.pop("id", None)

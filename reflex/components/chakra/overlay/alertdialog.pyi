@@ -155,6 +155,7 @@ class AlertDialog(ChakraComponent):
 
         Returns:
             The alert dialog component.
+
         """
         ...
 
@@ -231,6 +232,7 @@ class AlertDialogBody(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -307,6 +309,7 @@ class AlertDialogHeader(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -383,6 +386,7 @@ class AlertDialogFooter(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -459,6 +463,7 @@ class AlertDialogContent(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -535,6 +540,7 @@ class AlertDialogOverlay(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -611,5 +617,6 @@ class AlertDialogCloseButton(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

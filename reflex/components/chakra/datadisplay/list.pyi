@@ -93,6 +93,7 @@ class List(ChakraComponent):
 
         Returns:
             The list component.
+
         """
         ...
 
@@ -169,6 +170,7 @@ class ListItem(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -253,6 +255,7 @@ class OrderedList(List):
 
         Returns:
             The list component.
+
         """
         ...
 
@@ -337,5 +340,6 @@ class UnorderedList(List):
 
         Returns:
             The list component.
+
         """
         ...

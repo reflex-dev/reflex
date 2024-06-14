@@ -116,5 +116,6 @@ class Image(ChakraComponent):
 
         Returns:
             The Image component.
+
         """
         ...

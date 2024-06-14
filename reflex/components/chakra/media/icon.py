@@ -32,6 +32,7 @@ class Icon(ChakraIconComponent):
 
         Returns:
             The created component.
+
         """
         if children:
             raise AttributeError(

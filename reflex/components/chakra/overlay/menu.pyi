@@ -138,6 +138,7 @@ class Menu(ChakraComponent):
 
         Returns:
             The menu component.
+
         """
         ...
 
@@ -218,6 +219,7 @@ class MenuButton(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -296,6 +298,7 @@ class MenuList(ChakraComponent):
 
         Returns:
             The MenuList component.
+
         """
         ...
 
@@ -382,6 +385,7 @@ class MenuItem(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -476,6 +480,7 @@ class MenuItemOption(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -552,6 +557,7 @@ class MenuGroup(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -634,6 +640,7 @@ class MenuOptionGroup(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -710,5 +717,6 @@ class MenuDivider(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

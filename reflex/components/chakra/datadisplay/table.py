@@ -41,6 +41,7 @@ class Table(ChakraComponent):
 
         Returns:
             The table component.
+
         """
         if len(children) == 0:
             children = []
@@ -130,6 +131,7 @@ class Tbody(ChakraComponent):
 
         Returns:
             Component: The table body component
+
         """
         if len(children) == 0:
             cls.validate_rows(rows) if rows is not None else None
@@ -155,6 +157,7 @@ class Tbody(ChakraComponent):
 
         Raises:
             TypeError: If rows are not lists or tuples containing inner lists or tuples.
+
         """
         allowed_subclasses = (List, Tuple)
         if isinstance(rows, Var):
@@ -204,6 +207,7 @@ class Tfoot(ChakraComponent):
 
         Returns:
             The table footer component.
+
         """
         if len(children) == 0:
             cls.validate_footers(footers)
@@ -219,6 +223,7 @@ class Tfoot(ChakraComponent):
 
         Raises:
             TypeError: If footers are not of type list.
+
         """
         allowed_types = (list, tuple)
         if (
@@ -254,6 +259,7 @@ class Tr(ChakraComponent):
 
         Returns:
             The table row component
+
         """
         types = {"header": Th, "data": Td}
         cell_cls = types.get(cell_type)

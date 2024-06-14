@@ -65,6 +65,7 @@ class Select(ChakraComponent):
 
         Returns:
             The component.
+
         """
         if len(children) == 1 and isinstance(children[0], list):
             children = [Option.create(child) for child in children[0]]
@@ -96,6 +97,7 @@ class Option(Text):
 
         Returns:
             The component.
+
         """
         if "value" not in props:
             assert len(children) == 1

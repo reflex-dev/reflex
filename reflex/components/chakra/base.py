@@ -30,6 +30,7 @@ class ChakraComponent(Component):
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
+
         """
         return {"sx": self.style}
 
@@ -40,6 +41,7 @@ class ChakraComponent(Component):
 
         Returns:
             The dependencies imports of the component.
+
         """
         return {
             dep: [ImportVar(tag=None, render=False)]
@@ -63,6 +65,7 @@ class ChakraProvider(ChakraComponent):
 
         Returns:
             A new ChakraProvider component.
+
         """
         return super().create(
             theme=Var.create(
@@ -75,6 +78,7 @@ class ChakraProvider(ChakraComponent):
 
         Returns:
             The import dict for the component.
+
         """
         return {
             self.library: ImportVar(tag="extendTheme", is_default=False),

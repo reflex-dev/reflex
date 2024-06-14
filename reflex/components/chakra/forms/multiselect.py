@@ -305,6 +305,7 @@ class Select(Component):
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
+
         """
         return {
             **super().get_event_triggers(),
@@ -323,6 +324,7 @@ class Select(Component):
 
         Returns:
             The initial props to set.
+
         """
         return super().get_initial_props() | {"is_multi"}
 
@@ -340,6 +342,7 @@ class Select(Component):
 
         Returns:
             The `create` method is returning an instance of the `Select` class.
+
         """
         converted_options: List[Option] = []
         if not isinstance(options, Var):

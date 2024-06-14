@@ -90,6 +90,7 @@ class CardHeader(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -166,6 +167,7 @@ class CardBody(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -242,6 +244,7 @@ class CardFooter(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -379,5 +382,6 @@ class Card(ChakraComponent):
 
         Returns:
             The `create()` method returns a Card object.
+
         """
         ...

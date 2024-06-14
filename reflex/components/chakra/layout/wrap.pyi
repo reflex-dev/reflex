@@ -100,6 +100,7 @@ class Wrap(ChakraComponent):
 
         Returns:
             The wrap component.
+
         """
         ...
 
@@ -176,5 +177,6 @@ class WrapItem(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

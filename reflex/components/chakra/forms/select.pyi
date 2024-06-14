@@ -122,6 +122,7 @@ class Select(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -205,5 +206,6 @@ class Option(Text):
 
         Returns:
             The component.
+
         """
         ...

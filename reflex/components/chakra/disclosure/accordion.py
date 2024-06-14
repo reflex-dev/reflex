@@ -49,6 +49,7 @@ class Accordion(ChakraComponent):
 
         Returns:
             The accordion component
+
         """
         if len(children) == 0:
             children = []

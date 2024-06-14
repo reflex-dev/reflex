@@ -31,6 +31,7 @@ class Breadcrumb(ChakraComponent):
 
         Returns:
             The breadcrumb component.
+
         """
         if len(children) == 0:
             if isinstance(items, Var):
@@ -77,6 +78,7 @@ class BreadcrumbItem(ChakraComponent):
 
         Returns:
             The BreadcrumbItem component
+
         """
         if len(children) == 0:
             children = [BreadcrumbLink.create(label or "", href=href or "")]  # type: ignore

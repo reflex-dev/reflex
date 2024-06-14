@@ -185,6 +185,7 @@ class Tabs(ChakraComponent):
 
         Returns:
             The tab component
+
         """
         ...
 
@@ -269,6 +270,7 @@ class Tab(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -345,6 +347,7 @@ class TabList(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -421,6 +424,7 @@ class TabPanels(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -497,5 +501,6 @@ class TabPanel(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

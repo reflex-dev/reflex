@@ -134,6 +134,7 @@ class PinInput(ChakraComponent):
 
         Returns:
             The pin input component.
+
         """
         ...
 
@@ -217,5 +218,6 @@ class PinInputField(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

@@ -91,6 +91,7 @@ class Slider(ChakraComponent):
 
         Returns:
             The slider component.
+
         """
         if len(children) == 0:
             children = [

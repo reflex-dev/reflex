@@ -46,6 +46,7 @@ class ColorModeIcon(Cond):
 
         Returns:
             The conditionally rendered component
+
         """
         return color_mode_cond(
             light=light_component or DEFAULT_LIGHT_ICON,
@@ -66,6 +67,7 @@ class ColorModeSwitch(Switch):
 
         Returns:
             The switch component.
+
         """
         return Switch.create(
             *children,
@@ -88,6 +90,7 @@ class ColorModeButton(Button):
 
         Returns:
             The switch component.
+
         """
         return Button.create(
             *children,

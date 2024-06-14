@@ -33,6 +33,7 @@ class List(ChakraComponent):
 
         Returns:
             The list component.
+
         """
         if len(children) == 0:
             if isinstance(items, Var):

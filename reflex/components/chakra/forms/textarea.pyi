@@ -122,5 +122,6 @@ class TextArea(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

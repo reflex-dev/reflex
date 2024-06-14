@@ -110,6 +110,7 @@ class Popover(ChakraComponent):
 
         Returns:
             The popover component.
+
         """
         if len(children) == 0:
             contents = []

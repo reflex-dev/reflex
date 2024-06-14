@@ -92,6 +92,7 @@ class Stat(ChakraComponent):
 
         Returns:
             The stat component.
+
         """
         ...
 
@@ -168,6 +169,7 @@ class StatLabel(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -244,6 +246,7 @@ class StatNumber(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -320,6 +323,7 @@ class StatHelpText(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -398,6 +402,7 @@ class StatArrow(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -474,5 +479,6 @@ class StatGroup(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

@@ -102,5 +102,6 @@ class Link(ChakraComponent):
 
         Returns:
             Component: The link component
+
         """
         ...

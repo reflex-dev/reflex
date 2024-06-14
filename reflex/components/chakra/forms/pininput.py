@@ -74,6 +74,7 @@ class PinInput(ChakraComponent):
 
         Returns:
             The merged import dict.
+
         """
         range_var = Var.range(0)
         return merge_imports(
@@ -94,6 +95,7 @@ class PinInput(ChakraComponent):
 
         Returns:
             None.
+
         """
         if any(isinstance(c, PinInputField) for c in self.children):
             return None
@@ -106,6 +108,7 @@ class PinInput(ChakraComponent):
 
         Returns:
             The overrided hooks.
+
         """
         if self.id:
             ref = format.format_array_ref(self.id, None)
@@ -125,6 +128,7 @@ class PinInput(ChakraComponent):
 
         Returns:
             The rendered component.
+
         """
         return super()._render().remove_props("ref")
 
@@ -141,6 +145,7 @@ class PinInput(ChakraComponent):
 
         Returns:
             The pin input component.
+
         """
         if children:
             props.pop("length", None)
@@ -178,6 +183,7 @@ class PinInputField(ChakraComponent):
 
         Returns:
             The PinInputField.
+
         """
         name = props.get("name")
 
@@ -196,6 +202,7 @@ class PinInputField(ChakraComponent):
 
         Returns:
             The array ref.
+
         """
         if self.id:
             return format.format_array_ref(self.id, self.index)

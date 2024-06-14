@@ -86,6 +86,7 @@ class ChakraComponent(Component):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -153,6 +154,7 @@ class ChakraProvider(ChakraComponent):
 
         Returns:
             A new ChakraProvider component.
+
         """
         ...
     def add_imports(self) -> ImportDict: ...
@@ -232,6 +234,7 @@ class ChakraColorModeProvider(Component):
 
         Returns:
             The component.
+
         """
         ...
 

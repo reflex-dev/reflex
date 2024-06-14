@@ -103,6 +103,7 @@ class Table(ChakraComponent):
 
         Returns:
             The table component.
+
         """
         ...
 
@@ -262,6 +263,7 @@ class Tbody(ChakraComponent):
 
         Returns:
             Component: The table body component
+
         """
         ...
     @staticmethod
@@ -342,6 +344,7 @@ class Tfoot(ChakraComponent):
 
         Returns:
             The table footer component.
+
         """
         ...
     @staticmethod
@@ -424,6 +427,7 @@ class Tr(ChakraComponent):
 
         Returns:
             The table row component
+
         """
         ...
 
@@ -502,6 +506,7 @@ class Th(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -580,6 +585,7 @@ class Td(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -658,6 +664,7 @@ class TableCaption(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -734,5 +741,6 @@ class TableContainer(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
