@@ -595,6 +595,7 @@ def var_operations(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("var_operations"),
@@ -613,6 +614,7 @@ def driver(var_operations: AppHarness):
 
     Yields:
         WebDriver instance.
+
     """
     driver = var_operations.frontend()
     try:
@@ -633,6 +635,7 @@ def test_var_operations(driver, var_operations: AppHarness):
     Args:
         driver: selenium WebDriver open to the app
         var_operations: AppHarness for the var operations app
+
     """
     tests = [
         # int, int

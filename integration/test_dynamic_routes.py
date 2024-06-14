@@ -91,6 +91,7 @@ def dynamic_route(
 
     Yields:
         running AppHarness instance
+
     """
     with app_harness_env.create(
         root=tmp_path_factory.mktemp(f"dynamic_route"),
@@ -109,6 +110,7 @@ def driver(dynamic_route: AppHarness) -> Generator[WebDriver, None, None]:
 
     Yields:
         WebDriver instance.
+
     """
     assert dynamic_route.app_instance is not None, "app is not running"
     driver = dynamic_route.frontend()
@@ -128,6 +130,7 @@ def token(dynamic_route: AppHarness, driver: WebDriver) -> str:
 
     Returns:
         The token visible in the driver browser.
+
     """
     assert dynamic_route.app_instance is not None
     token_input = driver.find_element(By.ID, "token")
@@ -152,6 +155,7 @@ def poll_for_order(
 
     Returns:
         An async function that polls for the order list to match the expected order.
+
     """
 
     async def _poll_for_order(exp_order: list[str]):
@@ -183,6 +187,7 @@ async def test_on_load_navigate(
         driver: WebDriver instance.
         token: The token visible in the driver browser.
         poll_for_order: function that polls for the order list to match the expected order.
+
     """
     assert dynamic_route.app_instance is not None
     is_prod = isinstance(dynamic_route, AppHarnessProd)
@@ -280,6 +285,7 @@ async def test_on_load_navigate_non_dynamic(
         dynamic_route: harness for DynamicRoute app.
         driver: WebDriver instance.
         poll_for_order: function that polls for the order list to match the expected order.
+
     """
     assert dynamic_route.app_instance is not None
     link = driver.find_element(By.ID, "link_page_x")

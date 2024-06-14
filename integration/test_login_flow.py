@@ -56,6 +56,7 @@ def login_sample(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("login_sample"),
@@ -73,6 +74,7 @@ def driver(login_sample: AppHarness) -> Generator[WebDriver, None, None]:
 
     Yields:
         WebDriver instance.
+
     """
     assert login_sample.app_instance is not None, "app is not running"
     driver = login_sample.frontend()
@@ -91,6 +93,7 @@ def local_storage(driver: WebDriver) -> Generator[utils.LocalStorage, None, None
 
     Yields:
         Local storage helper.
+
     """
     ls = utils.LocalStorage(driver)
     yield ls
@@ -106,6 +109,7 @@ def test_login_flow(
         login_sample: harness for LoginSample app.
         driver: WebDriver instance.
         local_storage: Local storage helper.
+
     """
     assert login_sample.frontend_url is not None
     local_storage.clear()

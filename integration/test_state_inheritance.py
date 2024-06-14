@@ -21,6 +21,7 @@ def get_alert_or_none(driver: WebDriver) -> Alert | None:
 
     Returns:
         The alert if present, otherwise None.
+
     """
     with suppress(NoAlertPresentException):
         return driver.switch_to.alert
@@ -32,6 +33,7 @@ def raises_alert(driver: WebDriver, element: str) -> None:
     Args:
         driver: WebDriver instance.
         element: The element to click.
+
     """
     btn = driver.find_element(By.ID, element)
     btn.click()
@@ -214,6 +216,7 @@ def state_inheritance(
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp(f"state_inheritance"),
@@ -231,6 +234,7 @@ def driver(state_inheritance: AppHarness) -> Generator[WebDriver, None, None]:
 
     Yields:
         WebDriver instance.
+
     """
     assert state_inheritance.app_instance is not None, "app is not running"
     driver = state_inheritance.frontend()
@@ -250,6 +254,7 @@ def token(state_inheritance: AppHarness, driver: WebDriver) -> str:
 
     Returns:
         The token for the connected client
+
     """
     assert state_inheritance.app_instance is not None
     token_input = driver.find_element(By.ID, "token")
@@ -273,6 +278,7 @@ def test_state_inheritance(
         state_inheritance: harness for StateInheritance app.
         driver: WebDriver instance.
         token: The token for the connected client.
+
     """
     assert state_inheritance.app_instance is not None
 

@@ -121,6 +121,7 @@ def client_side(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("client_side"),
@@ -138,6 +139,7 @@ def driver(client_side: AppHarness) -> Generator[WebDriver, None, None]:
 
     Yields:
         WebDriver instance.
+
     """
     assert client_side.app_instance is not None, "app is not running"
     driver = client_side.frontend()
@@ -156,6 +158,7 @@ def local_storage(driver: WebDriver) -> Generator[utils.LocalStorage, None, None
 
     Yields:
         Local storage helper.
+
     """
     ls = utils.LocalStorage(driver)
     yield ls
@@ -171,6 +174,7 @@ def delete_all_cookies(driver: WebDriver) -> Generator[None, None, None]:
 
     Yields:
         None
+
     """
     yield
     driver.delete_all_cookies()
@@ -184,6 +188,7 @@ def cookie_info_map(driver: WebDriver) -> dict[str, dict[str, str]]:
 
     Returns:
         A map of cookie names to cookie info.
+
     """
     return {cookie_info["name"]: cookie_info for cookie_info in driver.get_cookies()}
 
@@ -198,6 +203,7 @@ async def test_client_side_state(
         client_side: harness for ClientSide app.
         driver: WebDriver instance.
         local_storage: Local storage helper.
+
     """
     assert client_side.app_instance is not None
     assert client_side.frontend_url is not None

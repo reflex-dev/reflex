@@ -99,6 +99,7 @@ def computed_vars(
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp(f"computed_vars"),
@@ -116,6 +117,7 @@ def driver(computed_vars: AppHarness) -> Generator[WebDriver, None, None]:
 
     Yields:
         WebDriver instance.
+
     """
     assert computed_vars.app_instance is not None, "app is not running"
     driver = computed_vars.frontend()
@@ -135,6 +137,7 @@ def token(computed_vars: AppHarness, driver: WebDriver) -> str:
 
     Returns:
         The token for the connected client
+
     """
     assert computed_vars.app_instance is not None
     token_input = driver.find_element(By.ID, "token")
@@ -158,6 +161,7 @@ def test_computed_vars(
         computed_vars: harness for ComputedVars app.
         driver: WebDriver instance.
         token: The token for the connected client.
+
     """
     assert computed_vars.app_instance is not None
 

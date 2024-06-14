@@ -239,6 +239,7 @@ def call_script(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("call_script"),
@@ -256,6 +257,7 @@ def driver(call_script: AppHarness) -> Generator[WebDriver, None, None]:
 
     Yields:
         WebDriver instance.
+
     """
     assert call_script.app_instance is not None, "app is not running"
     driver = call_script.frontend()
@@ -274,6 +276,7 @@ def assert_token(call_script: AppHarness, driver: WebDriver) -> str:
 
     Returns:
         The token visible in the driver browser.
+
     """
     assert call_script.app_instance is not None
     token_input = driver.find_element(By.ID, "token")
@@ -298,6 +301,7 @@ def test_call_script(
         call_script: harness for CallScript app.
         driver: WebDriver instance.
         script: The type of script to test.
+
     """
     assert_token(call_script, driver)
     reset_button = driver.find_element(By.ID, "reset")

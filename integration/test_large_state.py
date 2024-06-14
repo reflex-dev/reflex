@@ -36,6 +36,7 @@ def get_driver(large_state) -> WebDriver:
 
     Returns:
         WebDriver instance.
+
     """
     assert large_state.app_instance is not None, "app is not running"
     return large_state.frontend()
@@ -52,6 +53,7 @@ def test_large_state(var_count: int, tmp_path_factory, benchmark):
 
     Raises:
         TimeoutError: if the state doesn't update within 30 seconds
+
     """
     template = jinja2.Template(LARGE_STATE_APP_TEMPLATE)
     large_state_rendered = template.render(var_count=var_count)

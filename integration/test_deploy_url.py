@@ -40,6 +40,7 @@ def deploy_url_sample(
 
     Yields:
         AppHarness: An AppHarness instance.
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("deploy_url_sample"),
@@ -57,6 +58,7 @@ def driver(deploy_url_sample: AppHarness) -> Generator[WebDriver, None, None]:
 
     Yields:
         WebDriver: A WebDriver instance.
+
     """
     assert deploy_url_sample.app_instance is not None, "app is not running"
     driver = deploy_url_sample.frontend()
@@ -72,6 +74,7 @@ def test_deploy_url(deploy_url_sample: AppHarness, driver: WebDriver) -> None:
     Args:
         deploy_url_sample: AppHarness fixture for testing deploy_url.
         driver: WebDriver fixture for testing deploy_url.
+
     """
     import reflex as rx
 
@@ -89,6 +92,7 @@ def test_deploy_url_in_app(deploy_url_sample: AppHarness, driver: WebDriver) -> 
     Args:
         deploy_url_sample: AppHarness fixture for testing deploy_url.
         driver: WebDriver fixture for testing deploy_url.
+
     """
     driver.implicitly_wait(10)
     driver.find_element(By.ID, "goto_self").click()

@@ -108,6 +108,7 @@ def background_task(
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp(f"background_task"),
@@ -125,6 +126,7 @@ def driver(background_task: AppHarness) -> Generator[WebDriver, None, None]:
 
     Yields:
         WebDriver instance.
+
     """
     assert background_task.app_instance is not None, "app is not running"
     driver = background_task.frontend()
@@ -144,6 +146,7 @@ def token(background_task: AppHarness, driver: WebDriver) -> str:
 
     Returns:
         The token for the connected client
+
     """
     assert background_task.app_instance is not None
     token_input = driver.find_element(By.ID, "token")
@@ -167,6 +170,7 @@ def test_background_task(
         background_task: harness for BackgroundTask app.
         driver: WebDriver instance.
         token: The token for the connected client.
+
     """
     assert background_task.app_instance is not None
 

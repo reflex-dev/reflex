@@ -121,6 +121,7 @@ def driver(table: AppHarness):
 
     Yields:
         WebDriver instance.
+
     """
     driver = table.frontend()
     try:
@@ -143,6 +144,7 @@ def test_table(driver, table: AppHarness, route):
         driver: Selenium WebDriver open to the app
         table: Harness for Table app
         route: Page route or path.
+
     """
     driver.get(f"{table.frontend_url}/{route}")
     assert table.app_instance is not None, "app is not running"

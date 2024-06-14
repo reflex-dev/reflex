@@ -256,6 +256,7 @@ def event_chain(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("event_chain"),
@@ -273,6 +274,7 @@ def driver(event_chain: AppHarness) -> Generator[WebDriver, None, None]:
 
     Yields:
         WebDriver instance.
+
     """
     assert event_chain.app_instance is not None, "app is not running"
     driver = event_chain.frontend()
@@ -291,6 +293,7 @@ def assert_token(event_chain: AppHarness, driver: WebDriver) -> str:
 
     Returns:
         The token visible in the driver browser.
+
     """
     assert event_chain.app_instance is not None
     token_input = driver.find_element(By.ID, "token")
@@ -397,6 +400,7 @@ async def test_event_chain_click(
         driver: selenium WebDriver open to the app
         button_id: the ID of the button to click
         exp_event_order: the expected events recorded in the State
+
     """
     token = assert_token(event_chain, driver)
     btn = driver.find_element(By.ID, button_id)
@@ -449,6 +453,7 @@ async def test_event_chain_on_load(
         driver: selenium WebDriver open to the app
         uri: the page to load
         exp_event_order: the expected events recorded in the State
+
     """
     assert event_chain.frontend_url is not None
     driver.get(event_chain.frontend_url + uri)
@@ -521,6 +526,7 @@ async def test_event_chain_on_mount(
         driver: selenium WebDriver open to the app
         uri: the page to load
         exp_event_order: the expected events recorded in the State
+
     """
     assert event_chain.frontend_url is not None
     driver.get(event_chain.frontend_url + uri)
@@ -554,6 +560,7 @@ def test_yield_state_update(event_chain: AppHarness, driver: WebDriver, button_i
         event_chain: AppHarness for the event_chain app
         driver: selenium WebDriver open to the app
         button_id: the ID of the button to click
+
     """
     interim_value_input = driver.find_element(By.ID, "interim_value")
     assert_token(event_chain, driver)

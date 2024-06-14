@@ -48,6 +48,7 @@ def connection_banner(tmp_path) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path,
@@ -67,6 +68,7 @@ def has_error_modal(driver: WebDriver) -> bool:
 
     Returns:
         True if the modal is displayed, False otherwise.
+
     """
     try:
         driver.find_element(By.XPATH, CONNECTION_ERROR_XPATH)
@@ -81,6 +83,7 @@ async def test_connection_banner(connection_banner: AppHarness):
 
     Args:
         connection_banner: AppHarness instance.
+
     """
     assert connection_banner.app_instance is not None
     assert connection_banner.backend is not None

@@ -20,6 +20,7 @@ def xvfb():
 
     Yields:
         the pyvirtualdisplay object that the browser will be open on
+
     """
     if os.environ.get("GITHUB_ACTIONS") and not os.environ.get("APP_HARNESS_HEADLESS"):
         from pyvirtualdisplay.smartdisplay import (  # pyright: ignore [reportMissingImports]
@@ -41,6 +42,7 @@ def pytest_exception_interact(node, call, report):
         node: The pytest item that failed.
         call: The pytest call describing when/where the test was invoked.
         report: The pytest log report object.
+
     """
     screenshot_dir = os.environ.get("SCREENSHOT_DIR")
     if DISPLAY is None or screenshot_dir is None:
@@ -73,5 +75,6 @@ def app_harness_env(request):
 
     Returns:
         The AppHarness class to use for the test.
+
     """
     return request.param
