@@ -27,6 +27,7 @@ class GenState(BaseState):
 
         Yields:
             After each increment.
+
         """
         for _ in range(c):
             self.value += 1

@@ -15,6 +15,7 @@ def pil_image() -> Img:
 
     Returns:
         A random PIL image.
+
     """
     imarray = np.random.rand(100, 100, 3) * 255
     return PIL.Image.fromarray(imarray.astype("uint8")).convert("RGBA")  # type: ignore
@@ -25,6 +26,7 @@ def test_serialize_image(pil_image: Img):
 
     Args:
         pil_image: The image to serialize.
+
     """
     data = serialize(pil_image)
     assert isinstance(data, str)
@@ -46,6 +48,7 @@ def test_set_src_img(pil_image: Img):
 
     Args:
         pil_image: The image to serialize.
+
     """
     image = Image.create(src=pil_image)
     assert str(image.src._var_name) == serialize_image(pil_image)  # type: ignore
@@ -56,6 +59,7 @@ def test_render(pil_image: Img):
 
     Args:
         pil_image: The image to serialize.
+
     """
     image = Image.create(src=pil_image)
     assert image.src._var_is_string  # type: ignore

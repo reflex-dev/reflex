@@ -22,6 +22,7 @@ def test_has_serializer(type_: Type, expected: bool):
     Args:
         type_: The type to check.
         expected: The expected result.
+
     """
     assert serializers.has_serializer(type_) == expected
 
@@ -53,6 +54,7 @@ def test_get_serializer(type_: Type, expected: serializers.Serializer):
     Args:
         type_: The type to check.
         expected: The expected result.
+
     """
     assert serializers.get_serializer(type_) == expected
 
@@ -74,6 +76,7 @@ def test_add_serializer():
 
         Returns:
             The serialized value.
+
         """
         return value.name
 
@@ -196,6 +199,7 @@ def test_serialize(value: Any, expected: str):
     Args:
         value: The value to serialize.
         expected: The expected result.
+
     """
     assert serializers.serialize(value) == expected
 
@@ -230,6 +234,7 @@ def test_serialize_var_to_str(value: Any, expected: str, exp_var_is_string: bool
         value: The value to serialize.
         expected: The expected result.
         exp_var_is_string: The expected value of _var_is_string.
+
     """
     v = Var.create_safe(value)
     assert v._var_full_name == expected

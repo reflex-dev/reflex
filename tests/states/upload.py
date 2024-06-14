@@ -14,6 +14,7 @@ class UploadState(BaseState):
 
         Args:
             files: The uploaded files.
+
         """
         pass
 
@@ -34,6 +35,7 @@ class SubUploadState(BaseState):
 
         Args:
             files: The uploaded files.
+
         """
         pass
 
@@ -49,6 +51,7 @@ class FileUploadState(State):
 
         Args:
             files: The uploaded files.
+
         """
         pass
 
@@ -57,6 +60,7 @@ class FileUploadState(State):
 
         Args:
             files: The uploaded files.
+
         """
         for file in files:
             upload_data = await file.read()
@@ -76,6 +80,7 @@ class FileUploadState(State):
 
         Args:
             files: The uploaded files.
+
         """
         pass
 
@@ -97,6 +102,7 @@ class ChildFileUploadState(FileStateBase1):
 
         Args:
             files: The uploaded files.
+
         """
         pass
 
@@ -105,6 +111,7 @@ class ChildFileUploadState(FileStateBase1):
 
         Args:
             files: The uploaded files.
+
         """
         for file in files:
             upload_data = await file.read()
@@ -124,6 +131,7 @@ class ChildFileUploadState(FileStateBase1):
 
         Args:
             files: The uploaded files.
+
         """
         pass
 
@@ -145,6 +153,7 @@ class GrandChildFileUploadState(FileStateBase2):
 
         Args:
             files: The uploaded files.
+
         """
         pass
 
@@ -153,6 +162,7 @@ class GrandChildFileUploadState(FileStateBase2):
 
         Args:
             files: The uploaded files.
+
         """
         for file in files:
             upload_data = await file.read()
@@ -172,5 +182,6 @@ class GrandChildFileUploadState(FileStateBase2):
 
         Args:
             files: The uploaded files.
+
         """
         pass

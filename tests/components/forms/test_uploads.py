@@ -9,6 +9,7 @@ def upload_root_component():
 
     Returns:
         A test upload component function.
+
     """
 
     def upload_root_component():
@@ -27,6 +28,7 @@ def upload_component():
 
     Returns:
         A test upload component function.
+
     """
 
     def upload_component():
@@ -58,6 +60,7 @@ def upload_component_with_props():
 
     Returns:
         A test upload component with props function.
+
     """
 
     def upload_component_with_props():
@@ -77,6 +80,7 @@ def test_upload_root_component_render(upload_root_component):
 
     Args:
         upload_root_component: component fixture
+
     """
     upload = upload_root_component.render()
 
@@ -124,6 +128,7 @@ def test_upload_component_render(upload_component):
 
     Args:
         upload_component: component fixture
+
     """
     upload = upload_component.render()
 
@@ -171,6 +176,7 @@ def test_upload_component_with_props_render(upload_component_with_props):
 
     Args:
         upload_component_with_props: component fixture
+
     """
     upload = upload_component_with_props.render()
 

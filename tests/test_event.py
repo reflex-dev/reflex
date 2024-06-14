@@ -18,6 +18,7 @@ def make_var(value) -> Var:
 
     Returns:
         The var.
+
     """
     var = Var.create(value)
     assert var is not None
@@ -140,6 +141,7 @@ def test_fix_events(arg1, arg2):
     Args:
         arg1: The first arg passed to the handler.
         arg2: The second arg passed to the handler.
+
     """
 
     def test_fn_with_args(_, arg1, arg2):
@@ -190,6 +192,7 @@ def test_event_redirect(input, output):
     Args:
         input: The input for running the test.
         output: The expected output to validate the test.
+
     """
     path, external, replace = input
     kwargs = {}

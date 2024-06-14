@@ -22,6 +22,7 @@ def test_format_props(props: Dict[str, Var], test_props: List):
     Args:
         props: The props to test.
         test_props: The expected props.
+
     """
     tag_props = Tag(props=props).format_props()
     for i, tag_prop in enumerate(tag_props):
@@ -46,6 +47,7 @@ def test_is_valid_prop(prop: Var, valid: bool):
     Args:
         prop: The prop to test.
         valid: The expected validity of the prop.
+
     """
     assert Tag.is_valid_prop(prop) == valid
 
@@ -97,6 +99,7 @@ def test_format_tag(tag: Tag, expected: Dict):
     Args:
         tag: The tag to test.
         expected: The expected tag dictionary.
+
     """
     tag_dict = dict(tag)
     assert tag_dict["name"] == expected["name"]

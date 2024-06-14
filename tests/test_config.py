@@ -19,6 +19,7 @@ def test_set_app_name(base_config_values):
 
     Args:
         base_config_values: Config values.
+
     """
     config = rx.Config(**base_config_values)
     assert config.app_name == base_config_values["app_name"]
@@ -49,6 +50,7 @@ def test_update_from_env(base_config_values, monkeypatch, env_var, value):
         monkeypatch: The pytest monkeypatch object.
         env_var: The environment variable name.
         value: The environment variable value.
+
     """
     monkeypatch.setenv(env_var, str(value))
     assert os.environ.get(env_var) == str(value)
@@ -76,6 +78,7 @@ def test_event_namespace(mocker, kwargs, expected):
         mocker: The pytest mock object.
         kwargs: The Config kwargs.
         expected: Expected namespace
+
     """
     conf = rx.Config(**kwargs)
     mocker.patch("reflex.config.get_config", return_value=conf)
@@ -167,6 +170,7 @@ def test_replace_defaults(
         env_vars: The environment variables.
         set_persistent_vars: The values passed to config._set_persistent variables.
         exp_config_values: The expected config values.
+
     """
     mock_os_env = os.environ.copy()
     monkeypatch.setattr(reflex.config.os, "environ", mock_os_env)  # type: ignore
@@ -187,6 +191,7 @@ def test_reflex_dir_env_var(monkeypatch, tmp_path):
     Args:
         monkeypatch: The pytest monkeypatch object.
         tmp_path: The pytest tmp_path object.
+
     """
     monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
 

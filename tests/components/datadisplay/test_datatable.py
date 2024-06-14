@@ -61,6 +61,7 @@ def test_invalid_props(props):
 
     Args:
         props: props to pass in component.
+
     """
     with pytest.raises(ValueError):
         DataTable.create(**props)
@@ -94,6 +95,7 @@ def test_computed_var_without_annotation(fixture, request, err_msg, is_data_fram
         request: fixture request.
         err_msg: expected error message.
         is_data_frame: whether data field is a pandas dataframe.
+
     """
     with pytest.raises(ValueError) as err:
         if is_data_frame:

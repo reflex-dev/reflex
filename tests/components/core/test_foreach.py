@@ -60,6 +60,7 @@ class TestComponentState(ComponentState):
 
         Returns:
             The component.
+
         """
         return el.div(*children, **props)
 
@@ -227,6 +228,7 @@ def test_foreach_render(state_var, render_fn, render_dict):
         state_var: the state var.
         render_fn: The render callable
         render_dict: return dict on calling `component.render`
+
     """
     component = Foreach.create(state_var, render_fn)
 

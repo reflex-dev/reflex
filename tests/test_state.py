@@ -101,6 +101,7 @@ class TestState(BaseState):
 
         Returns:
             The sum of the numbers.
+
         """
         return self.num1 + self.num2
 
@@ -110,6 +111,7 @@ class TestState(BaseState):
 
         Returns:
             The uppercased key.
+
         """
         return self.key.upper()
 
@@ -130,6 +132,7 @@ class ChildState(TestState):
         Args:
             value: The new value.
             count: The new count.
+
         """
         self.value = value.upper()
         self.count = count * 2
@@ -166,6 +169,7 @@ class GrandchildState2(ChildState2):
 
         Returns:
             The value.
+
         """
         return self.value
 
@@ -179,6 +183,7 @@ class GrandchildState3(ChildState3):
 
         Returns:
             The value.
+
         """
         return self.value
 
@@ -198,6 +203,7 @@ def test_state() -> TestState:
 
     Returns:
         A test state.
+
     """
     return TestState()  # type: ignore
 
@@ -211,6 +217,7 @@ def child_state(test_state) -> ChildState:
 
     Returns:
         A test child state.
+
     """
     child_state = test_state.get_substate(["child_state"])
     assert child_state is not None
@@ -226,6 +233,7 @@ def child_state2(test_state) -> ChildState2:
 
     Returns:
         A second test child state.
+
     """
     child_state2 = test_state.get_substate(["child_state2"])
     assert child_state2 is not None
@@ -241,6 +249,7 @@ def grandchild_state(child_state) -> GrandchildState:
 
     Returns:
         A test state.
+
     """
     grandchild_state = child_state.get_substate(["grandchild_state"])
     assert grandchild_state is not None
@@ -252,6 +261,7 @@ def test_base_class_vars(test_state):
 
     Args:
         test_state: A state.
+
     """
     fields = test_state.get_fields()
     cls = type(test_state)
@@ -273,6 +283,7 @@ def test_computed_class_var(test_state):
 
     Args:
         test_state: A state.
+
     """
     cls = type(test_state)
     vars = [(prop._var_name, prop._var_type) for prop in cls.computed_vars.values()]
@@ -285,6 +296,7 @@ def test_class_vars(test_state):
 
     Args:
         test_state: A state.
+
     """
     cls = type(test_state)
     assert cls.vars.keys() == {
@@ -309,6 +321,7 @@ def test_event_handlers(test_state):
 
     Args:
         test_state: A state.
+
     """
     expected_keys = (
         "do_something",
@@ -331,6 +344,7 @@ def test_default_value(test_state):
 
     Args:
         test_state: A state.
+
     """
     assert test_state.num1 == 0
     assert test_state.num2 == 3.14
@@ -344,6 +358,7 @@ def test_computed_vars(test_state):
 
     Args:
         test_state: A state.
+
     """
     test_state.num1 = 1
     test_state.num2 = 4
@@ -357,6 +372,7 @@ def test_dict(test_state):
 
     Args:
         test_state: A state.
+
     """
     substates = {
         "test_state",
@@ -380,6 +396,7 @@ def test_default_setters(test_state):
 
     Args:
         test_state: A state.
+
     """
     for prop_name in test_state.base_vars:
         # Each base var should have a default setter.
@@ -506,6 +523,7 @@ def test_set_parent_and_substates(test_state, child_state, grandchild_state):
         test_state: A state.
         child_state: A child state.
         grandchild_state: A grandchild state.
+
     """
     assert len(test_state.substates) == 3
     assert set(test_state.substates) == {"child_state", "child_state2", "child_state3"}
@@ -526,6 +544,7 @@ def test_get_child_attribute(test_state, child_state, child_state2, grandchild_s
         child_state: A child state.
         child_state2: A child state.
         grandchild_state: A grandchild state.
+
     """
     assert test_state.num1 == 0
     assert child_state.value == ""
@@ -547,6 +566,7 @@ def test_set_child_attribute(test_state, child_state, grandchild_state):
         test_state: A state.
         child_state: A child state.
         grandchild_state: A grandchild state.
+
     """
     test_state.num1 = 10
     assert test_state.num1 == 10
@@ -578,6 +598,7 @@ def test_get_substate(test_state, child_state, child_state2, grandchild_state):
         child_state: A child state.
         child_state2: A child state.
         grandchild_state: A grandchild state.
+
     """
     assert test_state.get_substate(("child_state",)) == child_state
     assert test_state.get_substate(("child_state2",)) == child_state2
@@ -598,6 +619,7 @@ def test_set_dirty_var(test_state):
 
     Args:
         test_state: A state.
+
     """
     # Initially there should be no dirty vars.
     assert test_state.dirty_vars == set()
@@ -623,6 +645,7 @@ def test_set_dirty_substate(test_state, child_state, child_state2, grandchild_st
         child_state: A child state.
         child_state2: A child state.
         grandchild_state: A grandchild state.
+
     """
     # Initially there should be no dirty vars.
     assert test_state.dirty_vars == set()
@@ -659,6 +682,7 @@ def test_reset(test_state, child_state):
     Args:
         test_state: A state.
         child_state: A child state.
+
     """
     # Set some values.
     test_state.num1 = 1
@@ -702,6 +726,7 @@ async def test_process_event_simple(test_state):
 
     Args:
         test_state: A state.
+
     """
     assert test_state.num1 == 0
 
@@ -728,6 +753,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
         test_state: A state.
         child_state: A child state.
         grandchild_state: A grandchild state.
+
     """
     # Events should bubble down to the substate.
     assert child_state.value == ""
@@ -794,6 +820,7 @@ def test_get_client_token(test_state, router_data):
     Args:
         test_state: The test state.
         router_data: The router data fixture.
+
     """
     test_state.router = RouterData(router_data)
     assert (
@@ -807,6 +834,7 @@ def test_get_sid(test_state, router_data):
     Args:
         test_state: A state.
         router_data: The router data fixture.
+
     """
     test_state.router = RouterData(router_data)
     assert test_state.router.session.session_id == "9fpxSzPb9aFMb4wFAAAH"
@@ -819,6 +847,7 @@ def test_get_headers(test_state, router_data, router_data_headers):
         test_state: A state.
         router_data: The router data fixture.
         router_data_headers: The expected headers.
+
     """
     test_state.router = RouterData(router_data)
     assert test_state.router.headers.dict() == {
@@ -832,6 +861,7 @@ def test_get_client_ip(test_state, router_data):
     Args:
         test_state: A state.
         router_data: The router data fixture.
+
     """
     test_state.router = RouterData(router_data)
     assert test_state.router.session.client_ip == "127.0.0.1"
@@ -909,6 +939,7 @@ class InterdependentState(BaseState):
 
         Returns:
             Var v1 multiplied by 2
+
         """
         return self.v1 * 2
 
@@ -918,6 +949,7 @@ class InterdependentState(BaseState):
 
         Returns:
             backend var _v2 multiplied by 2
+
         """
         return self._v2 * 2
 
@@ -927,6 +959,7 @@ class InterdependentState(BaseState):
 
         Returns:
             ComputedVar v1x2 multiplied by 2
+
         """
         return self.v1x2 * 2  # type: ignore
 
@@ -936,6 +969,7 @@ class InterdependentState(BaseState):
 
         Returns:
             The value of the backend variable.
+
         """
         return self._v2
 
@@ -945,6 +979,7 @@ class InterdependentState(BaseState):
 
         Returns:
             ComputedVar _v3 multiplied by 2
+
         """
         return self._v3 * 2
 
@@ -955,6 +990,7 @@ def interdependent_state() -> BaseState:
 
     Returns:
         instance of InterdependentState
+
     """
     s = InterdependentState()
     s.dict()  # prime initial relationships by accessing all ComputedVars
@@ -966,6 +1002,7 @@ def test_not_dirty_computed_var_from_var(interdependent_state):
 
     Args:
         interdependent_state: A state with varying Var dependencies.
+
     """
     interdependent_state.x = 5
     assert interdependent_state.get_delta() == {
@@ -981,6 +1018,7 @@ def test_dirty_computed_var_from_var(interdependent_state):
 
     Args:
         interdependent_state: A state with varying Var dependencies.
+
     """
     interdependent_state.v1 = 1
     assert interdependent_state.get_delta() == {
@@ -993,6 +1031,7 @@ def test_dirty_computed_var_from_backend_var(interdependent_state):
 
     Args:
         interdependent_state: A state with varying Var dependencies.
+
     """
     interdependent_state._v2 = 2
     assert interdependent_state.get_delta() == {
@@ -1006,6 +1045,7 @@ def test_per_state_backend_var(interdependent_state):
 
     Args:
         interdependent_state: A state with varying Var dependencies.
+
     """
     s2 = InterdependentState()
     assert s2._v2 == interdependent_state._v2
@@ -1071,6 +1111,7 @@ def test_event_handlers_convert_to_fns(test_state, child_state):
     Args:
         test_state: A state with event handlers.
         child_state: A child state with event handlers.
+
     """
     # The class instances should be event handlers.
     assert isinstance(TestState.do_something, EventHandler)
@@ -1233,6 +1274,7 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
 
     Args:
         use_partial: if true, replace the EventHandler with functools.partial
+
     """
     counter = 0
 
@@ -1280,6 +1322,7 @@ def test_computed_var_dependencies():
 
             Returns:
                 The value of self.v.
+
             """
             return self.v
 
@@ -1289,6 +1332,7 @@ def test_computed_var_dependencies():
 
             Returns:
                 A lambda that returns the value of self.w.
+
             """
             return lambda: self.w
 
@@ -1298,6 +1342,7 @@ def test_computed_var_dependencies():
 
             Returns:
                 A function that returns the value of self.x.
+
             """
 
             def _():
@@ -1311,6 +1356,7 @@ def test_computed_var_dependencies():
 
             Returns:
                 A list of the values of self.y.
+
             """
             return [round(y) for y in self.y]
 
@@ -1320,6 +1366,7 @@ def test_computed_var_dependencies():
 
             Returns:
                 A list of whether the values 0-4 are in self._z.
+
             """
             return [z in self._z for z in range(5)]
 
@@ -1351,6 +1398,7 @@ def test_setattr_of_mutable_types(mutable_state):
 
     Args:
         mutable_state: A test state.
+
     """
     array = mutable_state.array
     hashmap = mutable_state.hashmap
@@ -1426,6 +1474,7 @@ async def test_state_with_invalid_yield(capsys):
 
     Args:
         capsys: Pytest fixture for capture standard streams.
+
     """
 
     class StateWithInvalidYield(BaseState):
@@ -1436,6 +1485,7 @@ async def test_state_with_invalid_yield(capsys):
 
             Yields:
                 an invalid value.
+
             """
             yield 1
 
@@ -1461,6 +1511,7 @@ def state_manager(request) -> Generator[StateManager, None, None]:
 
     Yields:
         A state manager instance
+
     """
     state_manager = StateManager.create(state=TestState)
     if request.param == "redis":
@@ -1487,6 +1538,7 @@ def substate_token(state_manager, token):
 
     Returns:
         Token concatenated with the state_manager's state full_name.
+
     """
     return _substate_key(token, state_manager.state)
 
@@ -1501,6 +1553,7 @@ async def test_state_manager_modify_state(
         state_manager: A state manager instance.
         token: A token.
         substate_token: A token + substate name for looking up in state manager.
+
     """
     async with state_manager.modify_state(substate_token) as state:
         if isinstance(state_manager, StateManagerRedis):
@@ -1536,6 +1589,7 @@ async def test_state_manager_contend(
         state_manager: A state manager instance.
         token: A token.
         substate_token: A token + substate name for looking up in state manager.
+
     """
     n_coroutines = 10
     exp_num1 = 10
@@ -1568,6 +1622,7 @@ def state_manager_redis() -> Generator[StateManager, None, None]:
 
     Yields:
         A state manager instance
+
     """
     state_manager = StateManager.create(TestState)
 
@@ -1589,6 +1644,7 @@ def substate_token_redis(state_manager_redis, token):
 
     Returns:
         Token concatenated with the state_manager's state full_name.
+
     """
     return _substate_key(token, state_manager_redis.state)
 
@@ -1603,6 +1659,7 @@ async def test_state_manager_lock_expire(
         state_manager_redis: A state manager instance.
         token: A token.
         substate_token_redis: A token + substate name for looking up in state manager.
+
     """
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
 
@@ -1624,6 +1681,7 @@ async def test_state_manager_lock_expire_contend(
         state_manager_redis: A state manager instance.
         token: A token.
         substate_token_redis: A token + substate name for looking up in state manager.
+
     """
     exp_num1 = 4252
     unexp_num1 = 666
@@ -1668,6 +1726,7 @@ def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
 
     Returns:
         The app, after mocking out prerequisites.get_app()
+
     """
     app = App(state=TestState)
 
@@ -1692,6 +1751,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     Args:
         grandchild_state: A grandchild state.
         mock_app: An app that will be returned by `get_app()`
+
     """
     child_state = grandchild_state.parent_state
     assert child_state is not None
@@ -1794,6 +1854,7 @@ class BackgroundTaskState(BaseState):
 
         Returns:
             The value of 'order' var.
+
         """
         return self.order
 
@@ -1854,6 +1915,7 @@ class BackgroundTaskState(BaseState):
 
         Yields:
             None
+
         """
         yield
 
@@ -1882,6 +1944,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     Args:
         mock_app: An app that will be returned by `get_app()`
         token: A token.
+
     """
     router_data = {"query": {}}
     mock_app.state_manager.state = mock_app.state = BackgroundTaskState
@@ -2004,6 +2067,7 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
     Args:
         mock_app: An app that will be returned by `get_app()`
         token: A token.
+
     """
     router_data = {"query": {}}
     mock_app.state_manager.state = mock_app.state = BackgroundTaskState
@@ -2051,6 +2115,7 @@ def test_mutable_list(mutable_state):
 
     Args:
         mutable_state: A test state.
+
     """
     assert not mutable_state.dirty_vars
 
@@ -2105,6 +2170,7 @@ def test_mutable_dict(mutable_state):
 
     Args:
         mutable_state: A test state.
+
     """
     assert not mutable_state.dirty_vars
 
@@ -2181,6 +2247,7 @@ def test_mutable_set(mutable_state):
 
     Args:
         mutable_state: A test state.
+
     """
     assert not mutable_state.dirty_vars
 
@@ -2223,6 +2290,7 @@ def test_mutable_custom(mutable_state):
 
     Args:
         mutable_state: A test state.
+
     """
     assert not mutable_state.dirty_vars
 
@@ -2248,6 +2316,7 @@ def test_mutable_backend(mutable_state):
 
     Args:
         mutable_state: A test state.
+
     """
     assert not mutable_state.dirty_vars
 
@@ -2281,6 +2350,7 @@ def test_mutable_copy(mutable_state, copy_func):
     Args:
         mutable_state: A test state.
         copy_func: A copy function.
+
     """
     ms_copy = copy_func(mutable_state)
     assert ms_copy is not mutable_state
@@ -2308,6 +2378,7 @@ def test_mutable_copy_vars(mutable_state, copy_func):
     Args:
         mutable_state: A test state.
         copy_func: A copy function.
+
     """
     for attr in ("array", "hashmap", "test_set", "custom"):
         var_orig = getattr(mutable_state, attr)
@@ -2397,6 +2468,7 @@ class Custom1(Base):
 
         Args:
             val: The value to set.
+
         """
         self.foo = val
 
@@ -2405,6 +2477,7 @@ class Custom1(Base):
 
         Returns:
             foo + foo
+
         """
         return self.foo + self.foo
 
@@ -2420,6 +2493,7 @@ class Custom2(Base):
 
         Args:
             val: The value to set.
+
         """
         self.c1r.set_foo(val)
 
@@ -2510,6 +2584,7 @@ def exp_is_hydrated(state: State, is_hydrated: bool = True) -> Dict[str, Any]:
 
     Returns:
         dict similar to that returned by `State.get_delta` with IS_HYDRATED: is_hydrated
+
     """
     return {state.get_full_name(): {CompileVars.IS_HYDRATED: is_hydrated}}
 
@@ -2535,6 +2610,7 @@ class OnLoadState2(State):
 
         Returns:
             Chain of EventHandlers
+
         """
         self.num += 1
         return self.change_name
@@ -2572,6 +2648,7 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
         test_state: State to process event.
         expected: Expected delta.
         mocker: pytest mock object.
+
     """
     mocker.patch(
         "reflex.state.State.class_subclasses", {test_state, OnLoadInternalState}
@@ -2615,6 +2692,7 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         app_module_mock: The app module that will be returned by get_app().
         token: A token.
         mocker: pytest mock object.
+
     """
     mocker.patch(
         "reflex.state.State.class_subclasses", {OnLoadState, OnLoadInternalState}
@@ -2661,6 +2739,7 @@ async def test_get_state(mock_app: rx.App, token: str):
     Args:
         mock_app: An app that will be returned by `get_app()`
         token: A token.
+
     """
     mock_app.state_manager.state = mock_app.state = TestState
 
@@ -2787,6 +2866,7 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
     Args:
         mock_app: An app that will be returned by `get_app()`
         token: A token.
+
     """
 
     class Parent(BaseState):
@@ -2896,6 +2976,7 @@ async def test_setvar(mock_app: rx.App, token: str):
     Args:
         mock_app: An app that will be returned by `get_app()`
         token: A token.
+
     """
     state = await mock_app.state_manager.get_state(_substate_key(token, TestState))
 

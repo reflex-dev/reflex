@@ -59,6 +59,7 @@ class SQLAClass(SQLABase):
 
         Returns:
             Name attribute
+
         """
         return self.name
 
@@ -68,6 +69,7 @@ class SQLAClass(SQLABase):
 
         Returns:
             Name attribute
+
         """
         return self.name
 
@@ -89,6 +91,7 @@ class ModelClass(rx.Model):
 
         Returns:
             Name attribute
+
         """
         return self.name
 
@@ -98,6 +101,7 @@ class ModelClass(rx.Model):
 
         Returns:
             Name attribute
+
         """
         return self.name
 
@@ -119,6 +123,7 @@ class BaseClass(rx.Base):
 
         Returns:
             Name attribute
+
         """
         return self.name
 
@@ -128,6 +133,7 @@ class BaseClass(rx.Base):
 
         Returns:
             Name attribute
+
         """
         return self.name
 
@@ -149,6 +155,7 @@ class BareClass:
 
         Returns:
             Name attribute
+
         """
         return self.name
 
@@ -158,6 +165,7 @@ class BareClass:
 
         Returns:
             Name attribute
+
         """
         return self.name
 
@@ -180,6 +188,7 @@ class AttrClass:
 
         Returns:
             Name attribute
+
         """
         return self.name
 
@@ -189,6 +198,7 @@ class AttrClass:
 
         Returns:
             Name attribute
+
         """
         return self.name
 
@@ -202,6 +212,7 @@ def cls(request: pytest.FixtureRequest) -> type:
 
     Returns:
         Class to test.
+
     """
     return request.param
 
@@ -227,5 +238,6 @@ def test_get_attribute_access_type(cls: type, attr: str, expected: GenericType) 
         cls: Class to test.
         attr: Attribute to test.
         expected: Expected type.
+
     """
     assert get_attribute_access_type(cls, attr) == expected

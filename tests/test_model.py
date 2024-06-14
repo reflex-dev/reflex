@@ -16,6 +16,7 @@ def model_default_primary() -> Model:
 
     Returns:
         Model: Model object.
+
     """
 
     class ChildModel(Model):
@@ -30,6 +31,7 @@ def model_custom_primary() -> Model:
 
     Returns:
         Model: Model object.
+
     """
 
     class ChildModel(Model):
@@ -44,6 +46,7 @@ def test_default_primary_key(model_default_primary):
 
     Args:
         model_default_primary: Fixture.
+
     """
     assert "id" in model_default_primary.__class__.__fields__
 
@@ -53,6 +56,7 @@ def test_custom_primary_key(model_custom_primary):
 
     Args:
         model_custom_primary: Fixture.
+
     """
     assert "id" not in model_custom_primary.__class__.__fields__
 
@@ -66,6 +70,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
     Args:
         tmp_working_dir: directory where database and migrations are stored
         monkeypatch: pytest fixture to overwrite attributes
+
     """
     alembic_ini = tmp_working_dir / "alembic.ini"
     versions = tmp_working_dir / "alembic" / "versions"

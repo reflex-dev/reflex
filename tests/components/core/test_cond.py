@@ -39,6 +39,7 @@ def test_validate_cond(cond_state: Var):
 
     Args:
         cond_state: A fixture.
+
     """
     cond_component = cond(
         cond_state.value,
@@ -84,6 +85,7 @@ def test_prop_cond(c1: Any, c2: Any):
     Args:
         c1: truth condition value
         c2: false condition value
+
     """
     prop_cond = cond(
         True,

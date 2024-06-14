@@ -17,6 +17,7 @@ def data_table_state(request):
 
     Returns:
         The data table state class.
+
     """
 
     class DataTableState(BaseState):
@@ -32,6 +33,7 @@ def data_table_state2():
 
     Returns:
         The data table state class.
+
     """
 
     class DataTableState(BaseState):
@@ -50,6 +52,7 @@ def data_table_state3():
 
     Returns:
         The data table state class.
+
     """
 
     class DataTableState(BaseState):
@@ -73,6 +76,7 @@ def data_table_state4():
 
     Returns:
         The data table state class.
+
     """
 
     class DataTableState(BaseState):

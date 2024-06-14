@@ -70,6 +70,7 @@ def index_page():
 
     Returns:
         The index page.
+
     """
 
     def index():
@@ -84,6 +85,7 @@ def about_page():
 
     Returns:
         The about page.
+
     """
 
     def about():
@@ -104,6 +106,7 @@ def test_state() -> Type[BaseState]:
 
     Returns:
         A default state.
+
     """
     return ATestState
 
@@ -114,6 +117,7 @@ def redundant_test_state() -> Type[BaseState]:
 
     Returns:
         A default state.
+
     """
 
     class RedundantTestState(BaseState):
@@ -128,6 +132,7 @@ def test_model() -> Type[Model]:
 
     Returns:
         A default model.
+
     """
 
     class TestModel(Model, table=True):  # type: ignore
@@ -142,6 +147,7 @@ def test_model_auth() -> Type[Model]:
 
     Returns:
         A default model.
+
     """
 
     class TestModelAuth(Model, table=True):  # type: ignore
@@ -158,6 +164,7 @@ def test_get_engine():
 
     Returns:
         A default database engine.
+
     """
     enable_admin = True
     url = "sqlite:///test.db"
@@ -174,6 +181,7 @@ def test_custom_auth_admin() -> Type[AuthProvider]:
 
     Returns:
         A default default auth provider.
+
     """
 
     class TestAuthProvider(AuthProvider):
@@ -206,6 +214,7 @@ def test_default_app(app: App):
 
     Args:
         app: The app to test.
+
     """
     assert app.middleware == [HydrateMiddleware()]
     assert app.style == Style()
@@ -219,6 +228,7 @@ def test_multiple_states_error(monkeypatch, test_state, redundant_test_state):
         monkeypatch: Pytest monkeypatch object.
         test_state: A test state subclassing rx.BaseState.
         redundant_test_state: Another test state subclassing rx.BaseState.
+
     """
     monkeypatch.delenv(constants.PYTEST_CURRENT_TEST)
     with pytest.raises(ValueError):
@@ -232,6 +242,7 @@ def test_add_page_default_route(app: App, index_page, about_page):
         app: The app to test.
         index_page: The index page.
         about_page: The about page.
+
     """
     assert app.pages == {}
     app.add_page(index_page)
@@ -247,6 +258,7 @@ def test_add_page_set_route(app: App, index_page, windows_platform: bool):
         app: The app to test.
         index_page: The index page.
         windows_platform: Whether the system is windows.
+
     """
     route = "test" if windows_platform else "/test"
     assert app.pages == {}
@@ -260,6 +272,7 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     Args:
         index_page: The index page.
         windows_platform: Whether the system is windows.
+
     """
     app = App(state=EmptyState)
     assert app.state is not None
@@ -283,6 +296,7 @@ def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool)
         app: The app to test.
         index_page: The index page.
         windows_platform: Whether the system is windows.
+
     """
     route = "test\\nested" if windows_platform else "/test/nested"
     assert app.pages == {}
@@ -296,6 +310,7 @@ def test_add_page_invalid_api_route(app: App, index_page):
     Args:
         app: The app to test.
         index_page: The index page.
+
     """
     with pytest.raises(ValueError):
         app.add_page(index_page, route="api")
@@ -350,6 +365,7 @@ def test_initialize_with_admin_dashboard(test_model):
 
     Args:
         test_model: The default model.
+
     """
     app = App(admin_dash=AdminDash(models=[test_model]))
     assert app.admin_dash is not None
@@ -368,6 +384,7 @@ def test_initialize_with_custom_admin_dashboard(
         test_get_engine: The default database engine.
         test_model_auth: The default model for an auth admin dashboard.
         test_custom_auth_admin: The custom auth provider.
+
     """
     custom_auth_provider = test_custom_auth_admin()
     custom_admin = Admin(engine=test_get_engine, auth_provider=custom_auth_provider)
@@ -384,6 +401,7 @@ def test_initialize_admin_dashboard_with_view_overrides(test_model):
 
     Args:
         test_model: The default model.
+
     """
 
     class TestModelView(ModelView):
@@ -406,6 +424,7 @@ async def test_initialize_with_state(test_state: Type[ATestState], token: str):
     Args:
         test_state: The default state.
         token: a Token.
+
     """
     app = App(state=test_state)
     assert app.state == test_state
@@ -425,6 +444,7 @@ async def test_set_and_get_state(test_state):
 
     Args:
         test_state: The default state.
+
     """
     app = App(state=test_state)
 
@@ -462,6 +482,7 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
     Args:
         test_state: State Fixture.
         token: a Token.
+
     """
     state = test_state()  # type: ignore
     state.add_var("int_val", int, 0)
@@ -607,6 +628,7 @@ async def test_list_mutation_detection__plain_list(
         event_tuples: From parametrization.
         list_mutation_state: A state with list mutation features.
         token: a Token.
+
     """
     for event_name, expected_delta in event_tuples:
         result = await list_mutation_state._process(
@@ -757,6 +779,7 @@ async def test_dict_mutation_detection__plain_list(
         event_tuples: From parametrization.
         dict_mutation_state: A state with dict mutation features.
         token: a Token.
+
     """
     for event_name, expected_delta in event_tuples:
         result = await dict_mutation_state._process(
@@ -806,6 +829,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
         delta: Expected delta
         token: a Token.
         mocker: pytest mocker object.
+
     """
     mocker.patch(
         "reflex.state.State.class_subclasses",
@@ -867,6 +891,7 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         state: The state class.
         tmp_path: Temporary path.
         token: a Token.
+
     """
     state._tmp_path = tmp_path
     app = App(state=State)
@@ -901,6 +926,7 @@ async def test_upload_file_background(state, tmp_path, token):
         state: The state class.
         tmp_path: Temporary path.
         token: a Token.
+
     """
     state._tmp_path = tmp_path
     app = App(state=State)
@@ -957,6 +983,7 @@ class DynamicState(BaseState):
 
         Returns:
             same as self.dynamic
+
         """
         # self.side_effect_counter = self.side_effect_counter + 1
         return self.dynamic
@@ -983,6 +1010,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         token: a Token.
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
+
     """
     arg_name = "dynamic"
     route = f"/test/[{arg_name}]"
@@ -1174,6 +1202,7 @@ async def test_process_events(mocker, token: str):
     Args:
         mocker: mocker object.
         token: a Token.
+
     """
     router_data = {
         "pathname": "/",
@@ -1222,6 +1251,7 @@ def test_overlay_component(
         state: The state class to pass to App.
         overlay_component: The overlay_component to pass to App.
         exp_page_child: The type of the expected child in the page fragment.
+
     """
     app = App(state=state, overlay_component=overlay_component)
     app._setup_overlay_component()
@@ -1267,6 +1297,7 @@ def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
 
         The working directory is set to the app dir (parent of .web),
         allowing app.compile() to be called.
+
     """
     app_path = tmp_path / "app"
     web_dir = app_path / ".web"
@@ -1283,6 +1314,7 @@ def test_app_wrap_compile_theme(compilable_app):
 
     Args:
         compilable_app: compilable_app fixture.
+
     """
     app, web_dir = compilable_app
     app.theme = rx.theme(accent_color="plum")
@@ -1311,6 +1343,7 @@ def test_app_wrap_priority(compilable_app):
 
     Args:
         compilable_app: compilable_app fixture.
+
     """
     app, web_dir = compilable_app
 

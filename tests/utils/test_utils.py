@@ -72,6 +72,7 @@ def test_is_generic_alias(cls: type, expected: bool):
     Args:
         cls: The class to check.
         expected: Whether the class is a GenericAlias.
+
     """
     assert types.is_generic_alias(cls) == expected
 
@@ -82,6 +83,7 @@ def test_validate_invalid_bun_path(mocker):
 
     Args:
         mocker: Pytest mocker object.
+
     """
     mock = mocker.Mock()
     mocker.patch.object(mock, "bun_path", return_value="/mock/path")
@@ -97,6 +99,7 @@ def test_validate_bun_path_incompatible_version(mocker):
 
     Args:
         mocker: Pytest mocker object.
+
     """
     mock = mocker.Mock()
     mocker.patch.object(mock, "bun_path", return_value="/mock/path")
@@ -115,6 +118,7 @@ def test_remove_existing_bun_installation(mocker):
 
     Args:
         mocker: Pytest mocker.
+
     """
     mocker.patch("reflex.utils.prerequisites.os.path.exists", return_value=True)
     rm = mocker.patch("reflex.utils.prerequisites.path_ops.rm", mocker.Mock())
@@ -130,6 +134,7 @@ def test_setup_frontend(tmp_path, mocker):
     Args:
         tmp_path: root path of test case data directory
         mocker: mocker object to allow mocking
+
     """
     web_public_folder = tmp_path / ".web" / "public"
     assets = tmp_path / "assets"
@@ -215,6 +220,7 @@ def test_create_config(app_name, expected_config_name, mocker):
         app_name: App name.
         expected_config_name: Expected config name.
         mocker: Mocker object.
+
     """
     mocker.patch("builtins.open")
     tmpl_mock = mocker.patch("reflex.compiler.templates.RXCONFIG")
@@ -235,6 +241,7 @@ def tmp_working_dir(tmp_path):
 
     Yields:
         subdirectory of tmp_path which is now the current working directory.
+
     """
     old_pwd = Path(".").resolve()
     working_dir = tmp_path / "working_dir"
@@ -250,6 +257,7 @@ def test_create_config_e2e(tmp_working_dir):
     Args:
         tmp_working_dir: a new directory that is the current working directory
             for the duration of the test.
+
     """
     app_name = "e2e"
     prerequisites.create_config(app_name)
@@ -282,6 +290,7 @@ def test_is_dataframe(class_type, expected):
     Args:
         class_type: the class type.
         expected: whether type name is DataFrame
+
     """
     assert types.is_dataframe(class_type) == expected
 
@@ -295,6 +304,7 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
         tmp_path: The root test path.
         mocker: The mock object.
         gitignore_exists: Whether a gitignore file exists in the root dir.
+
     """
     expected = constants.GitIgnore.DEFAULTS.copy()
     mocker.patch("reflex.constants.GitIgnore.FILE", tmp_path / ".gitignore")
@@ -324,6 +334,7 @@ def test_validate_app_name(tmp_path, mocker):
     Args:
         tmp_path: Test working dir.
         mocker: Pytest mocker object.
+
     """
     reflex = tmp_path / "reflex"
     reflex.mkdir()
@@ -343,6 +354,7 @@ def test_node_install_windows(tmp_path, mocker):
     Args:
         tmp_path: Test working dir.
         mocker: Pytest mocker object.
+
     """
     fnm_root_path = tmp_path / "reflex" / "fnm"
     fnm_exe = fnm_root_path / "fnm.exe"
@@ -432,6 +444,7 @@ def test_bun_install_without_unzip(mocker):
 
     Args:
         mocker: Pytest mocker object.
+
     """
     mocker.patch("reflex.utils.path_ops.which", return_value=None)
     mocker.patch("os.path.exists", return_value=False)
@@ -475,6 +488,7 @@ def test_create_reflex_dir(mocker, is_windows):
     Args:
         mocker: Pytest mocker object.
         is_windows: Whether platform is windows.
+
     """
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", is_windows)
     mocker.patch("reflex.utils.prerequisites.processes.run_concurrently", mocker.Mock())
@@ -498,6 +512,7 @@ def test_output_system_info(mocker):
 
     This test makes no assertions about the output, other than it executes
     without crashing.
+
     """
     mocker.patch("reflex.utils.console._LOG_LEVEL", constants.LogLevel.DEBUG)
     utils_exec.output_system_info()

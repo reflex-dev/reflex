@@ -28,6 +28,7 @@ def app() -> App:
 
     Returns:
         The app.
+
     """
     return App()
 
@@ -45,6 +46,7 @@ def app_module_mock(monkeypatch) -> mock.Mock:
 
     Returns:
         The mock for the main app module.
+
     """
     app_module_mock = mock.Mock()
     get_app_mock = mock.Mock(return_value=app_module_mock)
@@ -58,6 +60,7 @@ def windows_platform() -> Generator:
 
     Yields:
         whether system is windows.
+
     """
     yield platform.system() == "Windows"
 
@@ -68,6 +71,7 @@ def list_mutation_state():
 
     Returns:
         A state with list mutation features.
+
     """
     return ListMutationTestState()
 
@@ -78,6 +82,7 @@ def dict_mutation_state():
 
     Returns:
         A state with dict mutation features.
+
     """
     return DictMutationTestState()
 
@@ -88,6 +93,7 @@ def upload_sub_state_event_spec():
 
     Returns:
         Event Spec.
+
     """
     return EventSpec(handler=SubUploadState.handle_upload, upload=True)  # type: ignore
 
@@ -98,6 +104,7 @@ def upload_event_spec():
 
     Returns:
         Event Spec.
+
     """
     return EventSpec(handler=UploadState.handle_upload1, upload=True)  # type: ignore
 
@@ -108,6 +115,7 @@ def base_config_values() -> Dict:
 
     Returns:
         Dictionary of base config values
+
     """
     return {"app_name": "app"}
 
@@ -118,6 +126,7 @@ def base_db_config_values() -> Dict:
 
     Returns:
         Dictionary of base db config values
+
     """
     return {"database": "db"}
 
@@ -131,6 +140,7 @@ def sqlite_db_config_values(base_db_config_values) -> Dict:
 
     Returns:
         Dictionary of sqlite DBConfig values
+
     """
     base_db_config_values["engine"] = "sqlite"
     return base_db_config_values
@@ -142,6 +152,7 @@ def router_data_headers() -> Dict[str, str]:
 
     Returns:
         client headers
+
     """
     return {
         "host": "localhost:8000",
@@ -172,6 +183,7 @@ def router_data(router_data_headers) -> Dict[str, str]:
 
     Returns:
         Dict of router data.
+
     """
     return {  # type: ignore
         "pathname": "/",
@@ -192,6 +204,7 @@ class chdir(contextlib.AbstractContextManager):
 
         Args:
             path: the path to change to
+
         """
         self.path = path
         self._old_cwd = []
@@ -206,6 +219,7 @@ class chdir(contextlib.AbstractContextManager):
 
         Args:
             excinfo: sys.exc_info captured in the context block
+
         """
         os.chdir(self._old_cwd.pop())
 
@@ -221,6 +235,7 @@ def tmp_working_dir(tmp_path):
 
     Yields:
         subdirectory of tmp_path which is now the current working directory.
+
     """
     working_dir = tmp_path / "working_dir"
     working_dir.mkdir()
@@ -234,6 +249,7 @@ def mutable_state():
 
     Returns:
         A state object.
+
     """
     return MutableTestState()
 
@@ -244,5 +260,6 @@ def token() -> str:
 
     Returns:
         A fresh/unique token string.
+
     """
     return str(uuid.uuid4())

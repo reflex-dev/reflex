@@ -45,6 +45,7 @@ def test_get_close_char(input: str, output: str):
     Args:
         input: The open character.
         output: The expected close character.
+
     """
     assert format.get_close_char(input) == output
 
@@ -66,6 +67,7 @@ def test_is_wrapped(text: str, open: str, expected: bool):
         text: The text to check.
         open: The open character.
         expected: Whether the text is wrapped.
+
     """
     assert format.is_wrapped(text, open) == expected
 
@@ -92,6 +94,7 @@ def test_wrap(text: str, open: str, expected: str, check_first: bool, num: int):
         expected: The expected output string.
         check_first: Whether to check if the text is already wrapped.
         num: The number of times to wrap the text.
+
     """
     assert format.wrap(text, open, check_first=check_first, num=num) == expected
 
@@ -114,6 +117,7 @@ def test_indent(text: str, indent_level: int, expected: str, windows_platform: b
         indent_level: The number of spaces to indent by.
         expected: The expected output string.
         windows_platform: Whether the system is windows.
+
     """
     assert format.indent(text, indent_level) == (
         expected.replace("\n", "\r\n") if windows_platform else expected
@@ -142,6 +146,7 @@ def test_to_snake_case(input: str, output: str):
     Args:
         input: The input string.
         output: The expected output string.
+
     """
     assert format.to_snake_case(input) == output
 
@@ -172,6 +177,7 @@ def test_to_camel_case(input: str, output: str):
     Args:
         input: The input string.
         output: The expected output string.
+
     """
     assert format.to_camel_case(input) == output
 
@@ -192,6 +198,7 @@ def test_to_title_case(input: str, output: str):
     Args:
         input: The input string.
         output: The expected output string.
+
     """
     assert format.to_title_case(input) == output
 
@@ -216,6 +223,7 @@ def test_to_kebab_case(input: str, output: str):
     Args:
         input: the input string.
         output: the output string.
+
     """
     assert format.to_kebab_case(input) == output
 
@@ -235,6 +243,7 @@ def test_format_string(input: str, output: str):
     Args:
         input: the input string.
         output: the output string.
+
     """
     assert format.format_string(input) == output
 
@@ -278,6 +287,7 @@ def test_format_route(route: str, format_case: bool, expected: bool):
         route: The route to format.
         format_case: Whether to change casing to snake_case.
         expected: The expected formatted route.
+
     """
     assert format.format_route(route, format_case=format_case) == expected
 
@@ -369,6 +379,7 @@ def test_format_cond(
         false_value: The value to return if the condition is false.
         is_prop: Whether the values are rendered as props or not.
         expected: The expected output string.
+
     """
     orig_true_value = (
         true_value._replace() if isinstance(true_value, Var) else Var.create_safe("")
@@ -418,6 +429,7 @@ def test_format_match(
         match_cases: List of match cases to be matched.
         default: Catchall case for the match statement.
         expected: The expected string output.
+
     """
     assert format.format_match(condition, match_cases, default) == expected
 
@@ -521,6 +533,7 @@ def test_format_prop(prop: Var, formatted: str):
     Args:
         prop: The prop to test.
         formatted: The expected formatted value.
+
     """
     assert format.format_prop(prop) == formatted
 
@@ -538,6 +551,7 @@ def test_format_props(single_props, key_value_props, output):
         single_props: the list of single props
         key_value_props: the dict of key value props
         output: the expected output
+
     """
     assert format.format_props(*single_props, **key_value_props) == output
 
@@ -569,6 +583,7 @@ def test_format_event_handler(input, output):
     Args:
         input: The event handler input.
         output: The expected output.
+
     """
     assert format.format_event_handler(input) == output  # type: ignore
 
@@ -705,6 +720,7 @@ def test_format_state(input, output):
     Args:
         input: The state to format.
         output: The expected formatted state.
+
     """
     assert format.format_state(input) == output
 
@@ -725,6 +741,7 @@ def test_format_ref(input, output):
     Args:
         input: The name to format.
         output: The expected formatted name.
+
     """
     assert format.format_ref(input) == output
 
@@ -771,6 +788,7 @@ def test_format_library_name(input: str, output: str):
     Args:
         input: the input string.
         output: the output string.
+
     """
     assert format.format_library_name(input) == output
 
