@@ -28,6 +28,7 @@ class HydrateMiddleware(Middleware):
 
         Returns:
             An optional delta or list of state updates to return.
+
         """
         # If this is not the hydrate event, return None
         if event.name != get_hydrate_event(state):

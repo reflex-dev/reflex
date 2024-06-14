@@ -9,6 +9,7 @@ def home_page() -> rx.Component:
 
     Returns:
         rx.Component: The UI for the home page.
+
     """
     return rx.chakra.box(
         rx.chakra.vstack(

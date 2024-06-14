@@ -27,6 +27,7 @@ class Middleware(Base, ABC):
 
         Returns:
             An optional state update to return.
+
         """
         return None
 
@@ -43,5 +44,6 @@ class Middleware(Base, ABC):
 
         Returns:
             An optional state to return.
+
         """
         return update

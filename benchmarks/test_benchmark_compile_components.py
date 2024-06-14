@@ -23,6 +23,7 @@ def render_component(num: int):
 
     Returns:
         The rendered number of components.
+
     """
     import reflex as rx
 
@@ -156,6 +157,7 @@ def app_with_10_components(
 
     Yields:
         running AppHarness instance
+
     """
     root = tmp_path_factory.mktemp("app10components")
 
@@ -179,6 +181,7 @@ def app_with_100_components(
 
     Yields:
         running AppHarness instance
+
     """
     root = tmp_path_factory.mktemp("app100components")
 
@@ -202,6 +205,7 @@ def app_with_1000_components(
 
     Yields:
         an AppHarness instance
+
     """
     root = tmp_path_factory.mktemp("app1000components")
 
@@ -227,6 +231,7 @@ def test_app_10_compile_time_cold(benchmark, app_with_10_components):
     Args:
         benchmark: The benchmark fixture.
         app_with_10_components: The app harness.
+
     """
 
     def setup():
@@ -255,6 +260,7 @@ def test_app_10_compile_time_warm(benchmark, app_with_10_components):
     Args:
         benchmark: The benchmark fixture.
         app_with_10_components: The app harness.
+
     """
     with chdir(app_with_10_components.app_path):
         app_with_10_components._initialize_app()
@@ -280,6 +286,7 @@ def test_app_100_compile_time_cold(benchmark, app_with_100_components):
     Args:
         benchmark: The benchmark fixture.
         app_with_100_components: The app harness.
+
     """
 
     def setup():
@@ -308,6 +315,7 @@ def test_app_100_compile_time_warm(benchmark, app_with_100_components):
     Args:
         benchmark: The benchmark fixture.
         app_with_100_components: The app harness.
+
     """
     with chdir(app_with_100_components.app_path):
         app_with_100_components._initialize_app()
@@ -333,6 +341,7 @@ def test_app_1000_compile_time_cold(benchmark, app_with_1000_components):
     Args:
         benchmark: The benchmark fixture.
         app_with_1000_components: The app harness.
+
     """
 
     def setup():
@@ -361,6 +370,7 @@ def test_app_1000_compile_time_warm(benchmark, app_with_1000_components):
     Args:
         benchmark: The benchmark fixture.
         app_with_1000_components: The app harness.
+
     """
     with chdir(app_with_1000_components.app_path):
         app_with_1000_components._initialize_app()

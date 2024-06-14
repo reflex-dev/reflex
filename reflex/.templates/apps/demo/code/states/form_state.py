@@ -13,6 +13,7 @@ class FormState(State):
 
         Args:
             form_data: The form data.
+
         """
         self.form_data = form_data
 
@@ -28,6 +29,7 @@ class UploadState(State):
 
         Args:
             files: The uploaded files.
+
         """
         for file in files:
             upload_data = await file.read()

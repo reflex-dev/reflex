@@ -105,6 +105,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
 
         Returns:
             The memoization leaf
+
         """
         ...
 
@@ -219,6 +220,7 @@ class Legend(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -311,6 +313,7 @@ class GraphingTooltip(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -440,6 +443,7 @@ class Label(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -571,6 +575,7 @@ class LabelList(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 

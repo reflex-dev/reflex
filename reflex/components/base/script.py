@@ -61,6 +61,7 @@ class Script(Component):
 
         Raises:
             ValueError: when neither children nor `src` are specified.
+
         """
         if not children and not props.get("src"):
             raise ValueError("Must provide inline script or `src` prop.")

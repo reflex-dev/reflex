@@ -11,6 +11,7 @@ def sidebar_header() -> rx.Component:
 
     Returns:
         rx.Component: The sidebar header component.
+
     """
     return rx.chakra.hstack(
         rx.chakra.image(
@@ -45,6 +46,7 @@ def sidebar_footer() -> rx.Component:
 
     Returns:
         rx.Component: The sidebar footer component.
+
     """
     return rx.chakra.hstack(
         rx.chakra.link(
@@ -94,6 +96,7 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
 
     Returns:
         rx.Component: The sidebar item component.
+
     """
     return rx.chakra.link(
         rx.chakra.hstack(
@@ -130,6 +133,7 @@ def sidebar() -> rx.Component:
 
     Returns:
         rx.Component: The sidebar component.
+
     """
     return rx.chakra.box(
         rx.chakra.vstack(

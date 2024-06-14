@@ -15,5 +15,6 @@ class Element(Component):
 
         Returns:
             True if the elements have the same tag, False otherwise.
+
         """
         return isinstance(other, Element) and self.tag == other.tag

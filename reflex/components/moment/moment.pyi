@@ -142,5 +142,6 @@ class Moment(NoSSRComponent):
 
         Returns:
             The Moment Component.
+
         """
         ...

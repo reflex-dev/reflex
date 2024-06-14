@@ -23,6 +23,7 @@ def _git_diff(args: list[str]) -> str:
 
     Returns:
         The output of the git diff command.
+
     """
     cmd = ["git", "diff", "--no-color", *args]
     return subprocess.run(cmd, capture_output=True, encoding="utf-8").stdout
@@ -36,6 +37,7 @@ def _git_changed_files(args: list[str] | None = None) -> list[Path]:
 
     Returns:
         The list of changed files.
+
     """
     if not args:
         args = []
@@ -52,6 +54,7 @@ def _get_changed_files() -> list[Path] | None:
 
     Returns:
         The list of changed files, or None if all files should be regenerated.
+
     """
     try:
         last_run_commit_sha = LAST_RUN_COMMIT_SHA_FILE.read_text().strip()

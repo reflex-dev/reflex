@@ -110,6 +110,7 @@ class Script(Component):
 
         Raises:
             ValueError: when neither children nor `src` are specified.
+
         """
         ...
 

@@ -18,6 +18,7 @@ def const(name, value) -> Var:
 
     Returns:
         The constant Var.
+
     """
     if isinstance(name, list):
         return Var.create_safe(
@@ -35,6 +36,7 @@ def useCallback(func, deps) -> Var:
 
     Returns:
         The useCallback hook.
+
     """
     return Var.create_safe(
         f"useCallback({func}, {deps})" if deps else f"useCallback({func})",
@@ -51,6 +53,7 @@ def useContext(context) -> Var:
 
     Returns:
         The useContext hook.
+
     """
     return Var.create_safe(
         f"useContext({context})",
@@ -67,6 +70,7 @@ def useRef(default) -> Var:
 
     Returns:
         The useRef hook.
+
     """
     return Var.create_safe(
         f"useRef({default})",
@@ -84,6 +88,7 @@ def useState(var_name, default=None) -> Var:
 
     Returns:
         A useState hook.
+
     """
     return const(
         [var_name, f"set{var_name.capitalize()}"],

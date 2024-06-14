@@ -99,6 +99,7 @@ class Moment(NoSSRComponent):
 
         Returns:
             The import dict for the component.
+
         """
         if self.tz is not None:
             return {"moment-timezone": ""}
@@ -114,6 +115,7 @@ class Moment(NoSSRComponent):
 
         Returns:
             The Moment Component.
+
         """
         comp = super().create(*children, **props)
         if "tz" in props:

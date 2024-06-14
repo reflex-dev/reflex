@@ -168,5 +168,6 @@ class Plotly(NoSSRComponent):
 
         Returns:
             The Plotly component.
+
         """
         ...

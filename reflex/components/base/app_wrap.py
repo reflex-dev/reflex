@@ -13,6 +13,7 @@ class AppWrap(Fragment):
 
         Returns:
             A new AppWrap component containing {children}.
+
         """
         return super().create(
             Var.create("{children}", _var_is_local=False, _var_is_string=False)

@@ -79,6 +79,7 @@ class Image(NextComponent):
 
         Returns:
             _type_: _description_
+
         """
         style = props.get("style", {})
         DEFAULT_W_H = "100%"

@@ -189,6 +189,7 @@ class Button(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -321,6 +322,7 @@ class Datalist(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -405,6 +407,7 @@ class Fieldset(Element):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -578,6 +581,7 @@ class Form(BaseHTML):
 
         Returns:
             The form component.
+
         """
         ...
     def add_imports(self) -> ImportDict: ...
@@ -829,6 +833,7 @@ class Input(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -967,6 +972,7 @@ class Label(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1099,6 +1105,7 @@ class Legend(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1249,6 +1256,7 @@ class Meter(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1389,6 +1397,7 @@ class Optgroup(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1537,6 +1546,7 @@ class Option(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1677,6 +1687,7 @@ class Output(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1817,6 +1828,7 @@ class Progress(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1978,6 +1990,7 @@ class Select(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2176,6 +2189,7 @@ class Textarea(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 

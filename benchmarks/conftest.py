@@ -16,5 +16,6 @@ def app_harness_env(request):
 
     Returns:
         The AppHarness class to use for the test.
+
     """
     return request.param

@@ -147,6 +147,7 @@ class Form(BaseHTML):
 
         Returns:
             The form component.
+
         """
         if "handle_submit_unique_name" in props:
             return super().create(*children, **props)
@@ -166,6 +167,7 @@ class Form(BaseHTML):
 
         Returns:
             The imports for the form component.
+
         """
         return {
             "react": "useCallback",
@@ -177,6 +179,7 @@ class Form(BaseHTML):
 
         Returns:
             The hooks for the form.
+
         """
         if EventTriggers.ON_SUBMIT not in self.event_triggers:
             return []
@@ -611,6 +614,7 @@ class Textarea(BaseHTML):
 
         Returns:
             The custom code for the component.
+
         """
         custom_code = super()._get_all_custom_code()
         if self.auto_height is not None:

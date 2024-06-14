@@ -26,6 +26,7 @@ def attr_to_prop(attr_name: str) -> str:
 
     Returns:
         A Reflex prop name that maps to the HTML attribute.
+
     """
     if attr_name in ATTR_TO_PROP_OVERRIDES:
         return ATTR_TO_PROP_OVERRIDES[attr_name]

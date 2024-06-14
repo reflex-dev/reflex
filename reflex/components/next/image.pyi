@@ -118,5 +118,6 @@ class Image(NextComponent):
 
         Returns:
             _type_: _description_
+
         """
         ...

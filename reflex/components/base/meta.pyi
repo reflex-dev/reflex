@@ -85,6 +85,7 @@ class Title(Component):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -171,6 +172,7 @@ class Meta(Component):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -257,6 +259,7 @@ class Description(Meta):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -343,5 +346,6 @@ class Image(Meta):
 
         Returns:
             The component.
+
         """
         ...

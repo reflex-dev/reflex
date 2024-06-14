@@ -59,6 +59,7 @@ class DataTable(Gridjs):
 
         Raises:
             ValueError: If a pandas dataframe is passed in and columns are also provided.
+
         """
         data = props.get("data")
         columns = props.get("columns")
@@ -108,6 +109,7 @@ class DataTable(Gridjs):
 
         Returns:
             The import dict for the component.
+
         """
         return {"": "gridjs/dist/theme/mermaid.css"}
 

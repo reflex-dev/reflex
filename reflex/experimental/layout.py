@@ -32,6 +32,7 @@ class Sidebar(Box, MemoizationLeaf):
 
         Returns:
             The sidebar component.
+
         """
         # props.setdefault("border_right", f"1px solid {color('accent', 12)}")
         # props.setdefault("background_color", color("accent", 1))
@@ -49,6 +50,7 @@ class Sidebar(Box, MemoizationLeaf):
 
         Returns:
             The style of the component.
+
         """
         sidebar: Component = self.children[-2]  # type: ignore
         spacer: Component = self.children[-1]  # type: ignore
@@ -74,6 +76,7 @@ class Sidebar(Box, MemoizationLeaf):
 
         Returns:
             The hooks for the sidebar.
+
         """
         return [hooks.useState("open", "true")] if not self.State else []
 
@@ -97,6 +100,7 @@ class StatefulSidebar(ComponentState):
 
         Returns:
             The stateful sidebar component.
+
         """
         return Sidebar.create(*children, **props)
 
@@ -114,6 +118,7 @@ class DrawerSidebar(DrawerRoot):
 
         Returns:
             The drawer sidebar component.
+
         """
         direction = props.pop("direction", "left")
         props.setdefault("border_right", f"1px solid {color('accent', 12)}")
@@ -162,6 +167,7 @@ class SidebarTrigger(Fragment):
 
         Returns:
             The sidebar trigger component.
+
         """
         trigger_props = {**props, **sidebar_trigger_style}
 
@@ -213,6 +219,7 @@ class Layout(Box):
 
         Returns:
             The layout component.
+
         """
         layout_root = HStack.create
 

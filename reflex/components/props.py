@@ -18,6 +18,7 @@ class PropsBase(Base):
 
         Returns:
             The object as a Javascript Object literal.
+
         """
         return format.unwrap_vars(
             self.__config__.json_dumps(

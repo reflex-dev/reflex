@@ -15,6 +15,7 @@ def get_directory_size(directory):
 
     Returns:
         The size of the dir in bytes.
+
     """
     total_size = 0
     for dirpath, _, filenames in os.walk(directory):
@@ -33,6 +34,7 @@ def get_python_version(venv_path, os_name):
 
     Returns:
         The python version.
+
     """
     python_executable = (
         os.path.join(venv_path, "bin", "python")
@@ -61,6 +63,7 @@ def get_package_size(venv_path, os_name):
 
     Raises:
         ValueError: when venv does not exist or python version is None.
+
     """
     python_version = get_python_version(venv_path, os_name)
     if python_version is None:
@@ -107,6 +110,7 @@ def insert_benchmarking_data(
         branch_name: The name of the branch.
         pr_id: The id of the PR.
         path: The path to the dir or file to check size.
+
     """
     if measurement_type == "reflex-package":
         size = get_package_size(path, os_type_version)

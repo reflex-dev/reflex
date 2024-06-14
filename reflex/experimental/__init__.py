@@ -31,6 +31,7 @@ class ExperimentalNamespace(SimpleNamespace):
 
         Returns:
             The toast namespace.
+
         """
         if "toast" not in _EMITTED_PROMOTION_WARNINGS:
             _EMITTED_PROMOTION_WARNINGS.add("toast")

@@ -269,6 +269,7 @@ def datatable_page() -> rx.Component:
 
     Returns:
         rx.Component: The UI for the settings page.
+
     """
     return rx.chakra.box(
         rx.chakra.vstack(

@@ -74,5 +74,6 @@ class AppWrap(Fragment):
 
         Returns:
             A new AppWrap component containing {children}.
+
         """
         ...

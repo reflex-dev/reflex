@@ -88,5 +88,6 @@ class Video(NextComponent):
 
         Returns:
             The Video component.
+
         """
         ...

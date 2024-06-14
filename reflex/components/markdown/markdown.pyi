@@ -121,6 +121,7 @@ class Markdown(Component):
 
         Returns:
             The markdown component.
+
         """
         ...
     def add_imports(self) -> ImportDict | list[ImportDict]: ...

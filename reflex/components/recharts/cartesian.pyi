@@ -190,6 +190,7 @@ class Axis(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -357,6 +358,7 @@ class XAxis(Axis):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -522,6 +524,7 @@ class YAxis(Axis):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -647,6 +650,7 @@ class ZAxis(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -704,6 +708,7 @@ class Brush(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -826,6 +831,7 @@ class Cartesian(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1007,6 +1013,7 @@ class Area(Cartesian):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1170,6 +1177,7 @@ class Bar(Cartesian):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1351,6 +1359,7 @@ class Line(Cartesian):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1510,6 +1519,7 @@ class Scatter(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1644,6 +1654,7 @@ class Funnel(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1732,6 +1743,7 @@ class ErrorBar(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1825,6 +1837,7 @@ class Reference(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1920,6 +1933,7 @@ class ReferenceLine(Reference):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2013,6 +2027,7 @@ class ReferenceDot(Reference):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2116,6 +2131,7 @@ class ReferenceArea(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2200,6 +2216,7 @@ class Grid(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2302,6 +2319,7 @@ class CartesianGrid(Grid):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2414,6 +2432,7 @@ class CartesianAxis(Grid):
 
         Returns:
             The component.
+
         """
         ...
 

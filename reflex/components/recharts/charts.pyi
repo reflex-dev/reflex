@@ -99,6 +99,7 @@ class ChartBase(RechartsCharts):
 
         Returns:
             The chart component wrapped in a responsive container.
+
         """
         ...
 
@@ -203,6 +204,7 @@ class CategoricalChartBase(ChartBase):
 
         Returns:
             The chart component wrapped in a responsive container.
+
         """
         ...
 
@@ -314,6 +316,7 @@ class AreaChart(CategoricalChartBase):
 
         Returns:
             The chart component wrapped in a responsive container.
+
         """
         ...
 
@@ -428,6 +431,7 @@ class BarChart(CategoricalChartBase):
 
         Returns:
             The chart component wrapped in a responsive container.
+
         """
         ...
 
@@ -532,6 +536,7 @@ class LineChart(CategoricalChartBase):
 
         Returns:
             The chart component wrapped in a responsive container.
+
         """
         ...
 
@@ -651,6 +656,7 @@ class ComposedChart(CategoricalChartBase):
 
         Returns:
             The chart component wrapped in a responsive container.
+
         """
         ...
 
@@ -733,6 +739,7 @@ class PieChart(ChartBase):
 
         Returns:
             The chart component wrapped in a responsive container.
+
         """
         ...
 
@@ -794,6 +801,7 @@ class RadarChart(ChartBase):
 
         Returns:
             The chart component wrapped in a responsive container.
+
         """
         ...
 
@@ -861,6 +869,7 @@ class RadialBarChart(ChartBase):
 
         Returns:
             The chart component wrapped in a responsive container.
+
         """
         ...
 
@@ -923,6 +932,7 @@ class ScatterChart(ChartBase):
 
         Returns:
             The chart component wrapped in a responsive container.
+
         """
         ...
 
@@ -1007,6 +1017,7 @@ class FunnelChart(ChartBase):
 
         Returns:
             The chart component wrapped in a responsive container.
+
         """
         ...
 
@@ -1112,6 +1123,7 @@ class Treemap(RechartsCharts):
 
         Returns:
             The Treemap component wrapped in a responsive container.
+
         """
         ...
 

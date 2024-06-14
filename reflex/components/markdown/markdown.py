@@ -52,6 +52,7 @@ def get_base_component_map() -> dict[str, Callable]:
 
     Returns:
         The base component map.
+
     """
     from reflex.components.datadisplay.code import CodeBlock
     from reflex.components.radix.themes.typography.code import Code
@@ -100,6 +101,7 @@ class Markdown(Component):
 
         Returns:
             The markdown component.
+
         """
         assert (
             len(children) == 1 and types._isinstance(children[0], Union[str, Var])
@@ -133,6 +135,7 @@ class Markdown(Component):
 
         Returns:
             The set of custom components.
+
         """
         custom_components = super()._get_all_custom_components(seen=seen)
 
@@ -149,6 +152,7 @@ class Markdown(Component):
 
         Returns:
             The imports for the markdown component.
+
         """
         from reflex.components.datadisplay.code import CodeBlock
         from reflex.components.radix.themes.typography.code import Code
@@ -192,6 +196,7 @@ class Markdown(Component):
 
         Raises:
             ValueError: If the tag is invalid.
+
         """
         # Check the tag is valid.
         if tag not in self.component_map:
@@ -227,6 +232,7 @@ class Markdown(Component):
 
         Returns:
             The formatted component.
+
         """
         return str(self.get_component(tag, **props)).replace("\n", "")
 
@@ -235,6 +241,7 @@ class Markdown(Component):
 
         Returns:
             The formatted component map.
+
         """
         components = {
             tag: f"{{({{node, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {self.format_component(tag)}}}"

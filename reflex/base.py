@@ -28,6 +28,7 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 
     Raises:
         VarNameError: If state var field shadows another in its parent state
+
     """
     from reflex.utils.exceptions import VarNameError
 
@@ -70,6 +71,7 @@ class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
 
         Returns:
             The object as a json string.
+
         """
         from reflex.utils.serializers import serialize
 
@@ -86,6 +88,7 @@ class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
 
         Returns:
             The object with the fields set.
+
         """
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -97,6 +100,7 @@ class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
 
         Returns:
             The fields of the object.
+
         """
         return cls.__fields__
 
@@ -109,6 +113,7 @@ class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
         Args:
             var: The variable to add a pydantic field for.
             default_value: The default value of the field
+
         """
         new_field = ModelField.infer(
             name=var._var_name,
@@ -127,6 +132,7 @@ class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
 
         Returns:
             The value of the field.
+
         """
         if isinstance(key, str) and key in self.__fields__:
             # Seems like this function signature was wrong all along?

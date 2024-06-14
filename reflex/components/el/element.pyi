@@ -82,5 +82,6 @@ class Element(Component):
 
         Returns:
             The component.
+
         """
         ...

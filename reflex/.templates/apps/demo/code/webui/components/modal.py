@@ -8,6 +8,7 @@ def modal() -> rx.Component:
 
     Returns:
         The modal component.
+
     """
     return rx.chakra.modal(
         rx.chakra.modal_overlay(

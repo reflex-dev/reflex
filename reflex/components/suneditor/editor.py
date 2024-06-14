@@ -213,6 +213,7 @@ class Editor(NoSSRComponent):
 
         Returns:
             The import dict.
+
         """
         return {
             "": ImportVar(tag="suneditor/dist/css/suneditor.min.css", install=False)
@@ -231,6 +232,7 @@ class Editor(NoSSRComponent):
 
         Raises:
             ValueError: If set_options is a state Var.
+
         """
         if set_options is not None:
             if isinstance(set_options, Var):

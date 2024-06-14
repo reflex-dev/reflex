@@ -129,6 +129,7 @@ class Pie(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -232,6 +233,7 @@ class Radar(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -294,6 +296,7 @@ class RadialBar(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -370,6 +373,7 @@ class PolarAngleAxis(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -462,6 +466,7 @@ class PolarGrid(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -579,6 +584,7 @@ class PolarRadiusAxis(Recharts):
 
         Returns:
             The component.
+
         """
         ...
 

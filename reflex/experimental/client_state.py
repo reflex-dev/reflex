@@ -26,6 +26,7 @@ def _client_state_ref(var_name: str) -> str:
 
     Returns:
         An accessor for ClientStateVar ref as a string.
+
     """
     return f"refs['_client_state_{var_name}']"
 
@@ -67,6 +68,7 @@ class ClientStateVar(Var):
 
         Returns:
             The hash of the var.
+
         """
         return hash(
             (self._var_name, str(self._var_type), self._getter_name, self._setter_name)
@@ -100,6 +102,7 @@ class ClientStateVar(Var):
 
         Returns:
             ClientStateVar
+
         """
         assert isinstance(var_name, str), "var_name must be a string."
         if default is NoValue:
@@ -149,6 +152,7 @@ class ClientStateVar(Var):
 
         Returns:
             an accessor for the client state variable.
+
         """
         return (
             Var.create_safe(
@@ -178,6 +182,7 @@ class ClientStateVar(Var):
 
         Returns:
             A special EventChain Var which will set the value when triggered.
+
         """
         setter = (
             _client_state_ref(self._setter_name)
@@ -216,6 +221,7 @@ class ClientStateVar(Var):
 
         Returns:
             A special EventChain Var which will set the value when triggered.
+
         """
         return self.set_value()
 
@@ -234,6 +240,7 @@ class ClientStateVar(Var):
 
         Raises:
             ValueError: If the ClientStateVar is not global.
+
         """
         if not self._global_ref:
             raise ValueError("ClientStateVar must be global to retrieve the value.")
@@ -252,6 +259,7 @@ class ClientStateVar(Var):
 
         Raises:
             ValueError: If the ClientStateVar is not global.
+
         """
         if not self._global_ref:
             raise ValueError("ClientStateVar must be global to push the value.")

@@ -13,6 +13,7 @@ def message(qa: QA) -> rx.Component:
 
     Returns:
         A component displaying the question/answer pair.
+
     """
     return rx.chakra.box(
         rx.chakra.box(
@@ -44,6 +45,7 @@ def chat() -> rx.Component:
 
     Returns:
         A component displaying all the messages in a single conversation.
+
     """
     return rx.chakra.vstack(
         rx.chakra.box(rx.foreach(State.chats[State.current_chat], message)),
@@ -64,6 +66,7 @@ def action_bar() -> rx.Component:
 
     Returns:
         The action bar to send a new message.
+
     """
     return rx.chakra.box(
         rx.chakra.vstack(

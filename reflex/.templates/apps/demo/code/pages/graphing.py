@@ -110,6 +110,7 @@ def graphing_page() -> rx.Component:
 
     Returns:
         rx.Component: The UI for the dashboard page.
+
     """
     return rx.chakra.box(
         rx.chakra.vstack(

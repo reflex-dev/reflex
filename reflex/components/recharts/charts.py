@@ -52,6 +52,7 @@ class ChartBase(RechartsCharts):
 
         Raises:
             ValueError: If the value is not an int type or str percentage.
+
         """
         if value is None:
             return
@@ -76,6 +77,7 @@ class ChartBase(RechartsCharts):
 
         Returns:
             The chart component wrapped in a responsive container.
+
         """
         width = props.pop("width", None)
         height = props.pop("height", None)
@@ -326,6 +328,7 @@ class RadarChart(ChartBase):
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
+
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
@@ -389,6 +392,7 @@ class RadialBarChart(ChartBase):
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
+
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
@@ -427,6 +431,7 @@ class ScatterChart(ChartBase):
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
+
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
@@ -507,6 +512,7 @@ class Treemap(RechartsCharts):
 
         Returns:
             The Treemap component wrapped in a responsive container.
+
         """
         return ResponsiveContainer.create(
             super().create(*children, **props),

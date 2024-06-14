@@ -61,6 +61,7 @@ def media_query(breakpoint_index: int):
 
     Returns:
         The media query selector used as a key in emotion css dict.
+
     """
     return f"@media screen and (min-width: {breakpoints[breakpoint_index]})"
 
@@ -73,6 +74,7 @@ def convert_item(style_item: str | Var) -> tuple[str, VarData | None]:
 
     Returns:
         The formatted style item and any associated VarData.
+
     """
     if isinstance(style_item, Var):
         # If the value is a Var, extract the var_data and cast as str.
@@ -97,6 +99,7 @@ def convert_list(
 
     Returns:
         The recursively converted responsive value list and any associated VarData.
+
     """
     converted_value = []
     item_var_datas = []
@@ -119,6 +122,7 @@ def convert(style_dict):
 
     Returns:
         The formatted style dictionary.
+
     """
     var_data = None  # Track import/hook data from any Vars in the style dict.
     out = {}
@@ -154,6 +158,7 @@ def format_style_key(key: str) -> Tuple[str, ...]:
 
     Returns:
         Tuple of css style names corresponding to the key provided.
+
     """
     key = format.to_camel_case(key, allow_hyphens=True)
     return STYLE_PROP_SHORTHAND_MAPPING.get(key, (key,))
@@ -168,6 +173,7 @@ class Style(dict):
         Args:
             style_dict: The style dictionary.
             kwargs: Other key value pairs to apply to the dict update.
+
         """
         if style_dict:
             style_dict.update(kwargs)
@@ -182,6 +188,7 @@ class Style(dict):
         Args:
             style_dict: The style dictionary.
             kwargs: Other key value pairs to apply to the dict update.
+
         """
         if not isinstance(style_dict, Style):
             converted_dict = type(self)(style_dict)
@@ -202,6 +209,7 @@ class Style(dict):
         Args:
             key: The key to set.
             value: The value to set.
+
         """
         # Create a Var to collapse VarData encoded in f-string.
         _var = Var.create(value, _var_is_string=False)
@@ -219,6 +227,7 @@ def _format_emotion_style_pseudo_selector(key: str) -> str:
 
     Returns:
         A self-referential pseudo selector key (&:hover).
+
     """
     prefix = None
     if key.startswith("_"):
@@ -241,6 +250,7 @@ def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
 
     Returns:
         The emotion style dict.
+
     """
     _var_data = style_dict._var_data if isinstance(style_dict, Style) else None
 

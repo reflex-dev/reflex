@@ -84,6 +84,7 @@ class LucideIconComponent(Component):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -168,6 +169,7 @@ class Icon(LucideIconComponent):
 
         Returns:
             The created component.
+
         """
         ...
 

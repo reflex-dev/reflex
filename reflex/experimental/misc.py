@@ -8,5 +8,6 @@ async def run_in_thread(func):
 
     Args:
         func (callable): The function to run.
+
     """
     await asyncio.get_event_loop().run_in_executor(None, func)
