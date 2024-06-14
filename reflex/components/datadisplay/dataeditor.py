@@ -392,14 +392,6 @@ class DataEditor(NoSSRComponent):
             )
         }
 
-    def get_event_triggers(self) -> dict[str, Any]:
-        """Remove the default event triggers from Component.
-
-        Returns:
-            An empty dictionary.
-        """
-        return {}
-
 
 @serializer
 def serialize_dataeditortheme(theme: DataEditorTheme):
