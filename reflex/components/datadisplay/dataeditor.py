@@ -1,4 +1,5 @@
 """Data Editor component from glide-data-grid."""
+
 from __future__ import annotations
 
 from enum import Enum
@@ -7,6 +8,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
+from reflex.constants.event import EventTriggers
 from reflex.event import EventHandler
 from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
@@ -391,13 +393,17 @@ class DataEditor(NoSSRComponent):
             )
         }
 
-    def get_event_triggers(self) -> dict[str, Any]:
-        """Remove the default event triggers from Component.
+    def get_default_event_triggers(self) -> dict[str, Any]:
+        """Remove most default event triggers from the DataEditor.
 
         Returns:
-            An empty dictionary.
+            The overriden default event triggers dictionary.
+
         """
-        return {}
+        return {
+            EventTriggers.ON_MOUNT: lambda: [],
+            EventTriggers.ON_UNMOUNT: lambda: [],
+        }
 
 
 @serializer

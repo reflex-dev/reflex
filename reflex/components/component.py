@@ -577,13 +577,16 @@ class Component(BaseComponent, ABC):
                 event_actions=event_actions,
             )
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers for the component.
+    def get_default_event_triggers(self) -> Dict[str, Any]:
+        """Get the default event triggers for the component.
+
+        Override this method if your component need to replace the default event triggers.
 
         Returns:
-            The event triggers.
+            The default event triggers.
+
         """
-        default_triggers = {
+        return {
             EventTriggers.ON_FOCUS: lambda: [],
             EventTriggers.ON_BLUR: lambda: [],
             EventTriggers.ON_CLICK: lambda: [],
@@ -600,6 +603,16 @@ class Component(BaseComponent, ABC):
             EventTriggers.ON_MOUNT: lambda: [],
             EventTriggers.ON_UNMOUNT: lambda: [],
         }
+
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the event triggers for the component.
+
+        Returns:
+            The event triggers.
+
+        """
+        default_triggers = self.get_default_event_triggers()
+
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
         for field in self.get_fields().values():
