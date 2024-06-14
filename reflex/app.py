@@ -1120,29 +1120,6 @@ async def process(
     """
     from reflex.utils import telemetry
 
-    # Add request data to the state.
-    router_data = event.router_data
-    router_data.update(
-        {
-            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
-            constants.RouteVar.CLIENT_TOKEN: event.token,
-            constants.RouteVar.SESSION_ID: sid,
-            constants.RouteVar.HEADERS: headers,
-            constants.RouteVar.CLIENT_IP: client_ip,
-        }
-    )
-    # Get the state for the session exclusively.
-    async with app.state_manager.modify_state(event.token) as state:
-        # re-assign only when the value is different
-        if state.router_data != router_data:
-            # assignment will recurse into substates and force recalculation of
-            # dependent ComputedVar (dynamic route variables)
-            state.router_data = router_data
-        if state.router:
-            state.router.update(router_data)
-        else:
-            state.router = RouterData(router_data)
-
     try:
         # Add request data to the state.
         router_data = event.router_data
@@ -1162,6 +1139,9 @@ async def process(
                 # assignment will recurse into substates and force recalculation of
                 # dependent ComputedVar (dynamic route variables)
                 state.router_data = router_data
+            if state.router:
+                state.router.update(router_data)
+            else:
                 state.router = RouterData(router_data)
 
             # Preprocess the event.
