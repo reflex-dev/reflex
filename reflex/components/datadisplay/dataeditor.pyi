@@ -229,6 +229,7 @@ class DataEditor(NoSSRComponent):
 
         Returns:
             The DataEditor component.&
+
         """
         ...
     def get_event_triggers(self) -> dict[str, Any]: ...

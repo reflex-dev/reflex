@@ -386,6 +386,7 @@ class CodeBlock(Component):
 
         Returns:
             The import dict.
+
         """
         imports_: ImportDict = {}
         themes = re.findall(r"`(.*?)`", self.theme._var_name)
@@ -446,6 +447,7 @@ class CodeBlock(Component):
 
         Returns:
             The text component.
+
         """
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
@@ -525,6 +527,7 @@ class CodeBlock(Component):
 
         Returns:
             The right theme name.
+
         """
         if theme in ["light", "dark"]:
             return f"one-{theme}"

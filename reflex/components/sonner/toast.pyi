@@ -191,6 +191,7 @@ class Toaster(Component):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -216,6 +217,7 @@ class ToastNamespace(ComponentNamespace):
 
         Returns:
             The toast event.
+
         """
         ...
 

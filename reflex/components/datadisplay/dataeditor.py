@@ -113,6 +113,7 @@ def on_edit_spec(pos, data: dict[str, Any]):
 
     Returns:
         The position and data.
+
     """
     return [pos, data]
 
@@ -272,6 +273,7 @@ class DataEditor(NoSSRComponent):
 
         Returns:
             The import dict.
+
         """
         return {
             "": f"{format.format_library_name(self.library)}/dist/index.css",
@@ -286,6 +288,7 @@ class DataEditor(NoSSRComponent):
 
         Returns:
             The hooks to render.
+
         """
         # Define the id of the component in case multiple are used in the same page.
         editor_id = get_unique_variable_name()
@@ -323,6 +326,7 @@ class DataEditor(NoSSRComponent):
 
         Returns:
             The DataEditor component.&
+
         """
         from reflex.components.el import Div
 
@@ -376,6 +380,7 @@ class DataEditor(NoSSRComponent):
 
         Returns:
             The app wrap components.
+
         """
         from reflex.components.el import Div
 
@@ -396,6 +401,7 @@ class DataEditor(NoSSRComponent):
 
         Returns:
             An empty dictionary.
+
         """
         return {}
 
@@ -409,6 +415,7 @@ def serialize_dataeditortheme(theme: DataEditorTheme):
 
     Returns:
         The serialized theme.
+
     """
     return format.json_dumps(
         {format.to_camel_case(k): v for k, v in theme.__dict__.items() if v is not None}

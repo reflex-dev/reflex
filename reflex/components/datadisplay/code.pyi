@@ -1110,6 +1110,7 @@ class CodeBlock(Component):
 
         Returns:
             The text component.
+
         """
         ...
     def add_style(self): ...

@@ -76,6 +76,7 @@ class BaseComponent(Base, ABC):
 
         Returns:
             The dictionary for template of the component.
+
         """
 
     @abstractmethod
@@ -84,6 +85,7 @@ class BaseComponent(Base, ABC):
 
         Returns:
             The code that should appear just before user-defined hooks.
+
         """
 
     @abstractmethod
@@ -92,6 +94,7 @@ class BaseComponent(Base, ABC):
 
         Returns:
             The code that should appear just before returning the rendered component.
+
         """
 
     @abstractmethod
@@ -100,6 +103,7 @@ class BaseComponent(Base, ABC):
 
         Returns:
             The import dict with the required imports.
+
         """
 
     @abstractmethod
@@ -108,6 +112,7 @@ class BaseComponent(Base, ABC):
 
         Returns:
             The dynamic imports.
+
         """
 
     @abstractmethod
@@ -116,6 +121,7 @@ class BaseComponent(Base, ABC):
 
         Returns:
             The custom code.
+
         """
 
     @abstractmethod
@@ -124,6 +130,7 @@ class BaseComponent(Base, ABC):
 
         Returns:
             The refs for the children.
+
         """
 
 
@@ -136,6 +143,7 @@ class ComponentNamespace(SimpleNamespace):
 
         Returns:
             The hash of the namespace.
+
         """
         return hash(self.__class__.__name__)
 
@@ -148,6 +156,7 @@ def evaluate_style_namespaces(style: ComponentStyle) -> dict:
 
     Returns:
         The evaluated style.
+
     """
     return {
         k.__call__ if isinstance(k, ComponentNamespace) else k: v
@@ -238,6 +247,7 @@ class Component(BaseComponent, ABC):
             "react-draggable": ["DraggableCore", rx.ImportVar(tag="Draggable", is_default=True)],
         }
         ```
+
         """
         return {}
 
@@ -269,6 +279,7 @@ class Component(BaseComponent, ABC):
             "useEffect(() => { setCount((prev) => prev + 1); console.log(`mounted ${count} times`); }, []);",
         ]
         ```
+
         """
         return []
 
@@ -295,6 +306,7 @@ class Component(BaseComponent, ABC):
             "const translatePoints = (event) => { return { x: event.clientX, y: event.clientY }; };",
         ]
         ```
+
         """
         return []
 
@@ -304,6 +316,7 @@ class Component(BaseComponent, ABC):
 
         Args:
             **kwargs: The kwargs to pass to the superclass.
+
         """
         super().__init_subclass__(**kwargs)
 
@@ -343,6 +356,7 @@ class Component(BaseComponent, ABC):
         Raises:
             TypeError: If an invalid prop is passed.
             ValueError: If an event trigger passed is not valid.
+
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
@@ -502,6 +516,7 @@ class Component(BaseComponent, ABC):
 
         Raises:
             ValueError: If the value is not a valid event chain.
+
         """
         # If it's an event chain var, return it.
         if isinstance(value, Var):
@@ -582,6 +597,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The event triggers.
+
         """
         default_triggers = {
             EventTriggers.ON_FOCUS: lambda: [],
@@ -616,6 +632,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The code to render the component.
+
         """
         return format.json_dumps(self.render())
 
@@ -624,6 +641,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The code to render the component.
+
         """
         from reflex.compiler.compiler import _compile_component
 
@@ -636,6 +654,7 @@ class Component(BaseComponent, ABC):
 
         Args:
             theme: The theme to apply.
+
         """
         pass
 
@@ -644,6 +663,7 @@ class Component(BaseComponent, ABC):
 
         Args:
             theme: The theme to apply.
+
         """
         self._apply_theme(theme)
         for child in self.children:
@@ -655,6 +675,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             A list of component props to exclude.
+
         """
         return []
 
@@ -666,6 +687,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The tag to render.
+
         """
         # Create the base tag.
         tag = Tag(
@@ -715,6 +737,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The unique fields.
+
         """
         return set(cls.get_fields()) - set(Component.get_fields())
 
@@ -725,6 +748,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The initial props to set.
+
         """
         return set()
 
@@ -735,6 +759,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The components props.
+
         """
         return {
             name
@@ -753,6 +778,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The component.
+
         """
         # Import here to avoid circular imports.
         from reflex.components.base.bare import Bare
@@ -816,6 +842,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The style to add.
+
         """
         return None
 
@@ -826,6 +853,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The style to add.
+
         """
         styles = []
 
@@ -848,6 +876,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The style of the component.
+
         """
         component_style = None
         if type(self) in styles:
@@ -876,6 +905,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The component with the additional style.
+
         """
         # 1. Default style from `_add_style`/`add_style`.
         if type(self)._add_style != Component._add_style:
@@ -924,6 +954,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
+
         """
         if isinstance(self.style, Var):
             return {"css": self.style}
@@ -934,6 +965,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The dictionary for template of component.
+
         """
         tag = self._render()
         rendered_dict = dict(
@@ -952,6 +984,7 @@ class Component(BaseComponent, ABC):
 
         Args:
             rendered_dict: The render dictionary with all the component props and event handlers.
+
         """
         # fast path
         if not self._rename_props:
@@ -1045,6 +1078,7 @@ class Component(BaseComponent, ABC):
 
         Yields:
             tuple of (event_name, event_vars)
+
         """
         for event_trigger, event in event_triggers.items():
             if isinstance(event, Var):
@@ -1064,6 +1098,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             Each var referenced by the component (props, styles, event handlers).
+
         """
         vars = getattr(self, "__vars", None)
         if vars is not None:
@@ -1124,6 +1159,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             True if the component or children have any event triggers.
+
         """
         if self.event_triggers:
             return True
@@ -1144,6 +1180,7 @@ class Component(BaseComponent, ABC):
 
         Yields:
             The parent classes that define the method (differently than the base).
+
         """
         seen_methods = set([getattr(Component, method)])
         for clz in cls.mro():
@@ -1162,6 +1199,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The custom code.
+
         """
         return None
 
@@ -1170,6 +1208,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The custom code.
+
         """
         # Store the code in a set to avoid duplicates.
         code = set()
@@ -1196,6 +1235,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The dynamic import.
+
         """
         return None
 
@@ -1204,6 +1244,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The dynamic imports.
+
         """
         # Store the import in a set to avoid duplicates.
         dynamic_imports = set()
@@ -1229,6 +1270,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The  imports for the components props of the component.
+
         """
         return [
             getattr(self, prop)._get_all_imports()
@@ -1244,6 +1286,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             True if the dependency should be transpiled.
+
         """
         return (
             dep in self.transpile_packages
@@ -1255,6 +1298,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The dependencies imports of the component.
+
         """
         return {
             dep: [
@@ -1272,6 +1316,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The imports required for all selected hooks.
+
         """
         _imports = {}
 
@@ -1313,6 +1358,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The imports needed by the component.
+
         """
         _imports = {}
 
@@ -1356,6 +1402,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The import dict with the required imports.
+
         """
         _imports = imports.merge_imports(
             self._get_imports(), *[child._get_all_imports() for child in self.children]
@@ -1367,6 +1414,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The useEffect hook for managing `on_mount` and `on_unmount` events.
+
         """
         # pop on_mount and on_unmount from event_triggers since these are handled by
         # hooks, not as actually props in the component
@@ -1390,6 +1438,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The useRef hook for managing refs.
+
         """
         ref = self.get_ref()
         if ref is not None:
@@ -1400,6 +1449,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The hooks for the vars.
+
         """
         vars_hooks = {}
         for var in self._get_vars():
@@ -1412,6 +1462,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The hooks for the events.
+
         """
         return {Hooks.EVENTS: None} if self.event_triggers else {}
 
@@ -1420,6 +1471,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The hooks for special actions.
+
         """
         return {Hooks.AUTOFOCUS: None} if self.autofocus else {}
 
@@ -1431,6 +1483,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The internally managed hooks.
+
         """
         return {
             **{
@@ -1448,6 +1501,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The deduplicated hooks and imports added by the component and parent components.
+
         """
         code = {}
 
@@ -1480,6 +1534,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The hooks for just this component.
+
         """
         return
 
@@ -1488,6 +1543,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The code that should appear just before user-defined hooks.
+
         """
         # Store the code in a set to avoid duplicates.
         code = self._get_hooks_internal()
@@ -1503,6 +1559,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The code that should appear just before returning the rendered component.
+
         """
         code = {}
 
@@ -1524,6 +1581,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The ref name.
+
         """
         # do not create a ref if the id is dynamic or unspecified
         if self.id is None or isinstance(self.id, BaseVar):
@@ -1535,6 +1593,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The refs for the children.
+
         """
         refs = set()
         ref = self.get_ref()
@@ -1554,6 +1613,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The set of custom components.
+
         """
         custom_components = set()
 
@@ -1573,6 +1633,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             An import var.
+
         """
         # If the tag is dot-qualified, only import the left-most name.
         tag = self.tag.partition(".")[0] if self.tag else None
@@ -1590,6 +1651,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The app wrap components.
+
         """
         return {}
 
@@ -1598,6 +1660,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The app wrap components.
+
         """
         # Store the components in a set to avoid duplicates.
         components = self._get_app_wrap_components()
@@ -1637,6 +1700,7 @@ class CustomComponent(Component):
         Args:
             *args: The args to pass to the component.
             **kwargs: The kwargs to pass to the component.
+
         """
         super().__init__(*args, **kwargs)
 
@@ -1699,6 +1763,7 @@ class CustomComponent(Component):
 
         Returns:
             Whether the component is equal to the other.
+
         """
         return isinstance(other, CustomComponent) and self.tag == other.tag
 
@@ -1707,6 +1772,7 @@ class CustomComponent(Component):
 
         Returns:
             The hash of the component.
+
         """
         return hash(self.tag)
 
@@ -1716,6 +1782,7 @@ class CustomComponent(Component):
 
         Returns:
             The set of component props.
+
         """
         return set()
 
@@ -1729,6 +1796,7 @@ class CustomComponent(Component):
 
         Returns:
             The set of custom components.
+
         """
         assert self.tag is not None, "The tag must be set."
 
@@ -1762,6 +1830,7 @@ class CustomComponent(Component):
 
         Returns:
             The tag to render.
+
         """
         return super()._render(props=self.props)
 
@@ -1770,6 +1839,7 @@ class CustomComponent(Component):
 
         Returns:
             The prop vars.
+
         """
         return [
             BaseVar(
@@ -1789,6 +1859,7 @@ class CustomComponent(Component):
 
         Returns:
             Each var referenced by the component (props, styles, event handlers).
+
         """
         return super()._get_vars(include_children=include_children) + [
             prop for prop in self.props.values() if isinstance(prop, Var)
@@ -1800,6 +1871,7 @@ class CustomComponent(Component):
 
         Returns:
             The code to render the component.
+
         """
         return self.component_fn(*self.get_prop_vars())
 
@@ -1814,6 +1886,7 @@ def custom_component(
 
     Returns:
         The decorated function.
+
     """
 
     @wraps(component_fn)
@@ -1837,6 +1910,7 @@ class NoSSRComponent(Component):
 
         Returns:
             The imports for dynamically importing the component at module load time.
+
         """
         # Next.js dynamic import mechanism.
         dynamic_import = {"next/dynamic": [ImportVar(tag="dynamic", is_default=True)]}
@@ -1886,6 +1960,7 @@ def serialize_component(comp: Component):
 
     Returns:
         The serialized component.
+
     """
     return str(comp)
 
@@ -1925,6 +2000,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             The stateful component or None if the component should not be memoized.
+
         """
         from reflex.components.core.foreach import Foreach
 
@@ -2007,6 +2083,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             The Var from the child component or the child itself (for regular cases).
+
         """
         from reflex.components.base.bare import Bare
         from reflex.components.core.cond import Cond
@@ -2029,6 +2106,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             The tag for the stateful component.
+
         """
         # Get the render dict for the component.
         rendered_code = component.render()
@@ -2058,6 +2136,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             The rendered code.
+
         """
         # Memoize event triggers useCallback to avoid unnecessary re-renders.
         memo_event_triggers = tuple(cls._get_memoized_event_triggers(component).items())
@@ -2093,6 +2172,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             A list of var names created by the hook declaration.
+
         """
         var_name = hook.partition("=")[0].strip().split(None, 1)[1].strip()
         if var_name.startswith("["):
@@ -2113,6 +2193,7 @@ class StatefulComponent(BaseComponent):
         Returns:
             A dict of event trigger name to a tuple of the memoized event trigger Var and
             the hook code that memoizes the event handler.
+
         """
         trigger_memo = {}
         for event_trigger, event_args in component._get_vars_from_event_triggers(
@@ -2164,6 +2245,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             The code that should appear just before user-defined hooks.
+
         """
         return {}
 
@@ -2172,6 +2254,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             The code that should appear just before returning the rendered component.
+
         """
         return {}
 
@@ -2180,6 +2263,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             The import dict with the required imports.
+
         """
         if self.rendered_as_shared:
             return {
@@ -2194,6 +2278,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             The dynamic imports.
+
         """
         if self.rendered_as_shared:
             return set()
@@ -2204,6 +2289,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             The custom code.
+
         """
         if self.rendered_as_shared:
             return set()
@@ -2214,6 +2300,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             The refs for the children.
+
         """
         if self.rendered_as_shared:
             return set()
@@ -2224,6 +2311,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             The tag to render.
+
         """
         return dict(Tag(name=self.tag))
 
@@ -2232,6 +2320,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             The code to render the component.
+
         """
         from reflex.compiler.compiler import _compile_component
 
@@ -2246,6 +2335,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             The memoized component tree.
+
         """
         if isinstance(component, Component):
             if component._memoization_mode.recursive:
@@ -2283,6 +2373,7 @@ class MemoizationLeaf(Component):
 
         Returns:
             The memoization leaf
+
         """
         comp = super().create(*children, **props)
         if comp._get_all_hooks() or comp._get_all_hooks_internal():
