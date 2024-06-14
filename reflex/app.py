@@ -541,7 +541,7 @@ class App(LifespanMixin, Base):
 
         # Ensure state is enabled if this page uses state.
         if self.state is None:
-            if on_load or component._has_event_triggers():
+            if on_load or component._has_stateful_event_triggers():
                 self._enable_state()
             else:
                 for var in component._get_vars(include_children=True):
@@ -707,11 +707,8 @@ class App(LifespanMixin, Base):
         page_imports = {
             i
             for i, tags in imports.items()
-            if i
-            not in [
-                *constants.PackageJson.DEPENDENCIES.keys(),
-                *constants.PackageJson.DEV_DEPENDENCIES.keys(),
-            ]
+            if i not in constants.PackageJson.DEPENDENCIES
+            and i not in constants.PackageJson.DEV_DEPENDENCIES
             and not any(i.startswith(prefix) for prefix in ["/", ".", "next/"])
             and i != ""
             and any(tag.install for tag in tags)

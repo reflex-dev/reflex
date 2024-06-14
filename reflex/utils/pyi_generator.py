@@ -32,7 +32,7 @@ logger = logging.getLogger("pyi_generator")
 PWD = Path(".").resolve()
 
 EXCLUDED_FILES = [
-    # "app.py",
+    "app.py",
     "component.py",
     "bare.py",
     "foreach.py",
@@ -424,7 +424,7 @@ def _generate_component_create_functiondef(
             ),
             ast.Constant(value=None),
         )
-        for trigger in sorted(clz().get_event_triggers().keys())
+        for trigger in sorted(clz().get_event_triggers())
     )
     logger.debug(f"Generated {clz.__name__}.create method with {len(kwargs)} kwargs")
     create_args = ast.arguments(
@@ -488,7 +488,9 @@ def _generate_staticmethod_call_functiondef(
         kwonlyargs=[],
         kw_defaults=[],
         kwarg=ast.arg(arg="props"),
-        defaults=[],
+        defaults=[ast.Constant(value=default) for default in fullspec.defaults]
+        if fullspec.defaults
+        else [],
     )
     definition = ast.FunctionDef(
         name="__call__",
@@ -854,7 +856,11 @@ class PyiGenerator:
                 mode=black.mode.Mode(is_pyi=True),
             ).splitlines():
                 # Bit of a hack here, since the AST cannot represent comments.
-                if "def create(" in formatted_line or "Figure" in formatted_line:
+                if (
+                    "def create(" in formatted_line
+                    or "Figure" in formatted_line
+                    or "Var[Template]" in formatted_line
+                ):
                     pyi_content.append(formatted_line + "  # type: ignore")
                 else:
                     pyi_content.append(formatted_line)
@@ -954,6 +960,7 @@ class PyiGenerator:
                 target_path.is_file()
                 and target_path.suffix == ".py"
                 and target_path.name not in EXCLUDED_FILES
+                and "reflex/components" in str(target_path)
             ):
                 file_targets.append(target_path)
                 continue

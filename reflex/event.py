@@ -186,7 +186,7 @@ class EventHandler(EventActionsMixin):
 
         # Get the function args.
         fn_args = inspect.getfullargspec(self.fn).args[1:]
-        fn_args = (Var.create_safe(arg) for arg in fn_args)
+        fn_args = (Var.create_safe(arg, _var_is_string=False) for arg in fn_args)
 
         # Construct the payload.
         values = []
@@ -264,7 +264,7 @@ class EventSpec(EventActionsMixin):
 
         # Get the remaining unfilled function args.
         fn_args = inspect.getfullargspec(self.handler.fn).args[1 + len(self.args) :]
-        fn_args = (Var.create_safe(arg) for arg in fn_args)
+        fn_args = (Var.create_safe(arg, _var_is_string=False) for arg in fn_args)
 
         # Construct the payload.
         values = []
@@ -386,16 +386,16 @@ class FileUpload(Base):
         )
 
         upload_id = self.upload_id or DEFAULT_UPLOAD_ID
-
         spec_args = [
             (
-                Var.create_safe("files"),
-                Var.create_safe(f"filesById.{upload_id}")._replace(
-                    _var_data=upload_files_context_var_data
-                ),
+                Var.create_safe("files", _var_is_string=False),
+                Var.create_safe(
+                    f"filesById[{Var.create_safe(upload_id, _var_is_string=True)._var_name_unwrapped}]",
+                    _var_is_string=False,
+                )._replace(_var_data=upload_files_context_var_data),
             ),
             (
-                Var.create_safe("upload_id"),
+                Var.create_safe("upload_id", _var_is_string=False),
                 Var.create_safe(upload_id, _var_is_string=True),
             ),
         ]
@@ -415,6 +415,8 @@ class FileUpload(Base):
                 )  # type: ignore
             else:
                 raise ValueError(f"{on_upload_progress} is not a valid event handler.")
+            if isinstance(events, Var):
+                raise ValueError(f"{on_upload_progress} cannot return a var {events}.")
             on_upload_progress_chain = EventChain(
                 events=events,
                 args_spec=self.on_upload_progress_args_spec,
@@ -422,7 +424,7 @@ class FileUpload(Base):
             formatted_chain = str(format.format_prop(on_upload_progress_chain))
             spec_args.append(
                 (
-                    Var.create_safe("on_upload_progress"),
+                    Var.create_safe("on_upload_progress", _var_is_string=False),
                     BaseVar(
                         _var_name=formatted_chain.strip("{}"),
                         _var_type=EventChain,
@@ -462,7 +464,10 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     return EventSpec(
         handler=EventHandler(fn=fn),
         args=tuple(
-            (Var.create_safe(k), Var.create_safe(v, _var_is_string=isinstance(v, str)))
+            (
+                Var.create_safe(k, _var_is_string=False),
+                Var.create_safe(v, _var_is_string=isinstance(v, str)),
+            )
             for k, v in kwargs.items()
         ),
     )
@@ -714,7 +719,7 @@ def _callback_arg_spec(eval_result):
 
 
 def call_script(
-    javascript_code: str,
+    javascript_code: str | Var[str],
     callback: EventSpec
     | EventHandler
     | Callable
@@ -831,19 +836,19 @@ def parse_args_spec(arg_spec: ArgsSpec):
     )
 
 
-def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec]:
+def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec] | Var:
     """Call a function to a list of event specs.
 
-    The function should return either a single EventSpec or a list of EventSpecs.
-    If the function takes in an arg, the arg will be passed to the function.
-    Otherwise, the function will be called with no args.
+    The function should return a single EventSpec, a list of EventSpecs, or a
+    single Var. If the function takes in an arg, the arg will be passed to the
+    function. Otherwise, the function will be called with no args.
 
     Args:
         fn: The function to call.
         arg: The argument to pass to the function.
 
     Returns:
-        The event specs from calling the function.
+        The event specs from calling the function or a Var.
 
     Raises:
         EventHandlerValueError: If the lambda has an invalid signature.
@@ -865,6 +870,10 @@ def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec]:
             out = fn(arg)
         else:
             raise EventHandlerValueError(f"Lambda {fn} must have 0 or 1 arguments.")
+
+    # If the function returns a Var, assume it's an EventChain and render it directly.
+    if isinstance(out, Var):
+        return out
 
     # Convert the output to a list.
     if not isinstance(out, List):

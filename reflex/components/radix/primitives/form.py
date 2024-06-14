@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal
+from typing import Any, Literal
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.el.elements.forms import Form as HTMLForm
 from reflex.components.radix.themes.components.text_field import TextFieldRoot
-from reflex.constants.event import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from .base import RadixPrimitiveComponentWithClassName
@@ -26,16 +26,8 @@ class FormRoot(FormComponent, HTMLForm):
 
     alias = "RadixFormRoot"
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Event triggers for radix form root.
-
-        Returns:
-            The triggers for event supported by Root.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CLEAR_SERVER_ERRORS: lambda: [],
-        }
+    # Fired when the errors are cleared.
+    on_clear_server_errors: EventHandler[lambda: []]
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.

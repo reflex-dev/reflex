@@ -118,4 +118,4 @@ def test_serialize_dataframe():
     value = serialize(df)
     assert value == serialize_dataframe(df)
     assert isinstance(value, dict)
-    assert list(value.keys()) == ["columns", "data"]
+    assert tuple(value) == ("columns", "data")

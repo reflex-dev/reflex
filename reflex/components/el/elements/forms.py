@@ -10,14 +10,14 @@ from jinja2 import Environment
 from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
-from reflex.event import EventChain
-from reflex.utils import imports
+from reflex.event import EventChain, EventHandler
 from reflex.utils.format import format_event_chain
+from reflex.utils.imports import ImportDict
 from reflex.vars import BaseVar, Var
 
 from .base import BaseHTML
 
-FORM_DATA = Var.create("form_data")
+FORM_DATA = Var.create("form_data", _var_is_string=False)
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     """
     const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
@@ -134,16 +134,8 @@ class Form(BaseHTML):
     # The name used to make this form's submit handler function unique.
     handle_submit_unique_name: Var[str]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Event triggers for radix form root.
-
-        Returns:
-            The triggers for event supported by Root.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_SUBMIT: lambda e0: [FORM_DATA],
-        }
+    # Fired when the form is submitted
+    on_submit: EventHandler[lambda e0: [FORM_DATA]]
 
     @classmethod
     def create(cls, *children, **props):
@@ -169,30 +161,36 @@ class Form(BaseHTML):
         ).hexdigest()
         return form
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
-                "react": {imports.ImportVar(tag="useCallback")},
-                f"/{Dirs.STATE_PATH}": {
-                    imports.ImportVar(tag="getRefValue"),
-                    imports.ImportVar(tag="getRefValues"),
-                },
-            },
-        )
+    def add_imports(self) -> ImportDict:
+        """Add imports needed by the form component.
 
-    def _get_hooks(self) -> str | None:
+        Returns:
+            The imports for the form component.
+        """
+        return {
+            "react": "useCallback",
+            f"/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues"],
+        }
+
+    def add_hooks(self) -> list[str]:
+        """Add hooks for the form.
+
+        Returns:
+            The hooks for the form.
+        """
         if EventTriggers.ON_SUBMIT not in self.event_triggers:
-            return
-        return HANDLE_SUBMIT_JS_JINJA2.render(
-            handle_submit_unique_name=self.handle_submit_unique_name,
-            form_data=FORM_DATA,
-            field_ref_mapping=str(Var.create_safe(self._get_form_refs())),
-            on_submit_event_chain=format_event_chain(
-                self.event_triggers[EventTriggers.ON_SUBMIT]
-            ),
-            reset_on_submit=self.reset_on_submit,
-        )
+            return []
+        return [
+            HANDLE_SUBMIT_JS_JINJA2.render(
+                handle_submit_unique_name=self.handle_submit_unique_name,
+                form_data=FORM_DATA,
+                field_ref_mapping=str(Var.create_safe(self._get_form_refs())),
+                on_submit_event_chain=format_event_chain(
+                    self.event_triggers[EventTriggers.ON_SUBMIT]
+                ),
+                reset_on_submit=self.reset_on_submit,
+            )
+        ]
 
     def _render(self) -> Tag:
         render_tag = super()._render()
@@ -214,17 +212,19 @@ class Form(BaseHTML):
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
-                ref_var = Var.create_safe(ref[:-3]).as_ref()
+                ref_var = Var.create_safe(ref[:-3], _var_is_string=False).as_ref()
                 form_refs[ref[5:-3]] = Var.create_safe(
                     f"getRefValues({str(ref_var)})",
                     _var_is_local=False,
+                    _var_is_string=False,
                     _var_data=ref_var._var_data,
                 )
             else:
-                ref_var = Var.create_safe(ref).as_ref()
+                ref_var = Var.create_safe(ref, _var_is_string=False).as_ref()
                 form_refs[ref[4:]] = Var.create_safe(
                     f"getRefValue({str(ref_var)})",
                     _var_is_local=False,
+                    _var_is_string=False,
                     _var_data=ref_var._var_data,
                 )
         return form_refs
@@ -344,20 +344,20 @@ class Input(BaseHTML):
     # Value of the input
     value: Var[Union[str, int, float]]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
+    # Fired when the input value changes
+    on_change: EventHandler[lambda e0: [e0.target.value]]
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
-            EventTriggers.ON_FOCUS: lambda e0: [e0.target.value],
-            EventTriggers.ON_BLUR: lambda e0: [e0.target.value],
-            EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
-            EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
-        }
+    # Fired when the input gains focus
+    on_focus: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when the input loses focus
+    on_blur: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when a key is pressed down
+    on_key_down: EventHandler[lambda e0: [e0.key]]
+
+    # Fired when a key is released
+    on_key_up: EventHandler[lambda e0: [e0.key]]
 
 
 class Label(BaseHTML):
@@ -495,16 +495,8 @@ class Select(BaseHTML):
     # Number of visible options in a drop-down list
     size: Var[Union[str, int, bool]]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
-        }
+    # Fired when the select value changes
+    on_change: EventHandler[lambda e0: [e0.target.value]]
 
 
 AUTO_HEIGHT_JS = """
@@ -593,6 +585,21 @@ class Textarea(BaseHTML):
     # How the text in the textarea is to be wrapped when submitting the form
     wrap: Var[Union[str, int, bool]]
 
+    # Fired when the input value changes
+    on_change: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when the input gains focus
+    on_focus: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when the input loses focus
+    on_blur: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when a key is pressed down
+    on_key_down: EventHandler[lambda e0: [e0.key]]
+
+    # Fired when a key is released
+    on_key_up: EventHandler[lambda e0: [e0.key]]
+
     def _exclude_props(self) -> list[str]:
         return super()._exclude_props() + [
             "auto_height",
@@ -623,6 +630,7 @@ class Textarea(BaseHTML):
                 on_key_down=Var.create_safe(
                     f"(e) => enterKeySubmitOnKeyDown(e, {self.enter_key_submit._var_name_unwrapped})",
                     _var_is_local=False,
+                    _var_is_string=False,
                     _var_data=self.enter_key_submit._var_data,
                 )
             )
@@ -631,25 +639,11 @@ class Textarea(BaseHTML):
                 on_input=Var.create_safe(
                     f"(e) => autoHeightOnInput(e, {self.auto_height._var_name_unwrapped})",
                     _var_is_local=False,
+                    _var_is_string=False,
                     _var_data=self.auto_height._var_data,
                 )
             )
         return tag
-
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
-            EventTriggers.ON_FOCUS: lambda e0: [e0.target.value],
-            EventTriggers.ON_BLUR: lambda e0: [e0.target.value],
-            EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
-            EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
-        }
 
 
 button = Button.create

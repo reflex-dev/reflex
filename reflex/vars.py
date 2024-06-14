@@ -35,11 +35,16 @@ from typing import (
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import console, format, imports, serializers, types
+from reflex.utils import console, imports, serializers, types
 from reflex.utils.exceptions import VarAttributeError, VarTypeError, VarValueError
 
 # This module used to export ImportVar itself, so we still import it for export here
-from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.imports import (
+    ImportDict,
+    ImportVar,
+    ParsedImportDict,
+    parse_imports,
+)
 from reflex.utils.types import override
 
 if TYPE_CHECKING:
@@ -120,7 +125,7 @@ class VarData(Base):
     state: str = ""
 
     # Imports needed to render this var
-    imports: ImportDict = {}
+    imports: ParsedImportDict = {}
 
     # Hooks that need to be present in the component to render this var
     hooks: Dict[str, None] = {}
@@ -129,6 +134,19 @@ class VarData(Base):
     # out where the interpolations are and only escape the non-interpolated
     # segments.
     interpolations: List[Tuple[int, int]] = []
+
+    def __init__(
+        self, imports: Union[ImportDict, ParsedImportDict] | None = None, **kwargs: Any
+    ):
+        """Initialize the var data.
+
+        Args:
+            imports: The imports needed to render this var.
+            **kwargs: The var data fields.
+        """
+        if imports:
+            kwargs["imports"] = parse_imports(imports)
+        super().__init__(**kwargs)
 
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None:
@@ -347,7 +365,7 @@ class Var:
         cls,
         value: Any,
         _var_is_local: bool = True,
-        _var_is_string: bool = False,
+        _var_is_string: bool | None = None,
         _var_data: Optional[VarData] = None,
     ) -> Var | None:
         """Create a var from a value.
@@ -364,6 +382,8 @@ class Var:
         Raises:
             VarTypeError: If the value is JSON-unserializable.
         """
+        from reflex.utils import format
+
         # Check for none values.
         if value is None:
             return None
@@ -378,18 +398,39 @@ class Var:
 
         # Try to serialize the value.
         type_ = type(value)
-        name = value if type_ in types.JSONType else serializers.serialize(value)
+        if type_ in types.JSONType:
+            name = value
+        else:
+            name, serialized_type = serializers.serialize(value, get_type=True)
+            if (
+                serialized_type is not None
+                and _var_is_string is None
+                and issubclass(serialized_type, str)
+            ):
+                _var_is_string = True
         if name is None:
             raise VarTypeError(
                 f"No JSON serializer found for var {value} of type {type_}."
             )
         name = name if isinstance(name, str) else format.json_dumps(name)
 
+        if _var_is_string is None and type_ is str:
+            console.deprecate(
+                feature_name="Creating a Var from a string without specifying _var_is_string",
+                reason=(
+                    "Specify _var_is_string=False to create a Var that is not a string literal. "
+                    "In the future, creating a Var from a string will be treated as a string literal "
+                    "by default."
+                ),
+                deprecation_version="0.5.4",
+                removal_version="0.6.0",
+            )
+
         return BaseVar(
             _var_name=name,
             _var_type=type_,
             _var_is_local=_var_is_local,
-            _var_is_string=_var_is_string,
+            _var_is_string=_var_is_string if _var_is_string is not None else False,
             _var_data=_var_data,
         )
 
@@ -398,7 +439,7 @@ class Var:
         cls,
         value: Any,
         _var_is_local: bool = True,
-        _var_is_string: bool = False,
+        _var_is_string: bool | None = None,
         _var_data: Optional[VarData] = None,
     ) -> Var:
         """Create a var from a value, asserting that it is not None.
@@ -512,7 +553,7 @@ class Var:
         if other is None:
             return self._replace()
         if not isinstance(other, Var):
-            other = Var.create(other)
+            other = Var.create(other, _var_is_string=False)
         return self._replace(
             _var_name=f"{{...{self._var_name}, ...{other._var_name}}}"  # type: ignore
         )
@@ -529,6 +570,14 @@ class Var:
         fn = "JSON.stringify" if json else "String"
         return self.operation(fn=fn, type_=str)
 
+    def to_int(self) -> Var:
+        """Convert a var to an int.
+
+        Returns:
+            The parseInt var.
+        """
+        return self.operation(fn="parseInt", type_=int)
+
     def __hash__(self) -> int:
         """Define a hash function for a var.
 
@@ -543,6 +592,8 @@ class Var:
         Returns:
             The wrapped var, i.e. {state.var}.
         """
+        from reflex.utils import format
+
         out = (
             self._var_full_name
             if self._var_is_local
@@ -600,6 +651,8 @@ class Var:
         Raises:
             VarTypeError: If the var is not indexable.
         """
+        from reflex.utils import format
+
         # Indexing is only supported for strings, lists, tuples, dicts, and dataframes.
         if not (
             types._issubclass(self._var_type, Union[List, Dict, Tuple, str])
@@ -793,10 +846,12 @@ class Var:
             VarTypeError: If the operation between two operands is invalid.
             VarValueError: If flip is set to true and value of operand is not provided
         """
+        from reflex.utils import format
+
         if isinstance(other, str):
-            other = Var.create(json.dumps(other))
+            other = Var.create(json.dumps(other), _var_is_string=False)
         else:
-            other = Var.create(other)
+            other = Var.create(other, _var_is_string=False)
 
         type_ = type_ or self._var_type
 
@@ -1379,7 +1434,7 @@ class Var:
         if isinstance(other, str):
             other = Var.create(json.dumps(other), _var_is_string=True)
         elif not isinstance(other, Var):
-            other = Var.create(other)
+            other = Var.create(other, _var_is_string=False)
         if types._issubclass(self._var_type, Dict):
             return self._replace(
                 _var_name=f"{self._var_name}.{method}({other._var_full_name})",
@@ -1483,7 +1538,11 @@ class Var:
         if not types._issubclass(self._var_type, str):
             raise VarTypeError(f"Cannot strip non-string var {self._var_full_name}.")
 
-        other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
+        other = (
+            Var.create_safe(json.dumps(other), _var_is_string=False)
+            if isinstance(other, str)
+            else other
+        )
 
         return self._replace(
             _var_name=f"{self._var_name}.replace(/^${other._var_full_name}|${other._var_full_name}$/g, '')",
@@ -1506,7 +1565,11 @@ class Var:
         if not types._issubclass(self._var_type, str):
             raise VarTypeError(f"Cannot split non-string var {self._var_full_name}.")
 
-        other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
+        other = (
+            Var.create_safe(json.dumps(other), _var_is_string=False)
+            if isinstance(other, str)
+            else other
+        )
 
         return self._replace(
             _var_name=f"{self._var_name}.split({other._var_full_name})",
@@ -1531,11 +1594,11 @@ class Var:
             raise VarTypeError(f"Cannot join non-list var {self._var_full_name}.")
 
         if other is None:
-            other = Var.create_safe('""')
+            other = Var.create_safe('""', _var_is_string=False)
         if isinstance(other, str):
-            other = Var.create_safe(json.dumps(other))
+            other = Var.create_safe(json.dumps(other), _var_is_string=False)
         else:
-            other = Var.create_safe(other)
+            other = Var.create_safe(other, _var_is_string=False)
 
         return self._replace(
             _var_name=f"{self._var_name}.join({other._var_full_name})",
@@ -1604,7 +1667,7 @@ class Var:
         if not isinstance(v2, Var):
             v2 = Var.create(v2)
         if v2 is None:
-            v2 = Var.create_safe("undefined")
+            v2 = Var.create_safe("undefined", _var_is_string=False)
         elif v2._var_type != int:
             raise VarTypeError(f"Cannot get range on non-int var {v2._var_full_name}.")
 
@@ -1671,6 +1734,8 @@ class Var:
         Returns:
             The full name of the var.
         """
+        from reflex.utils import format
+
         if not self._var_full_name_needs_state_prefix:
             return self._var_name
         return (
@@ -1690,6 +1755,8 @@ class Var:
         Returns:
             The var with the set state.
         """
+        from reflex.utils import format
+
         state_name = state if isinstance(state, str) else state.get_full_name()
         new_var_data = VarData(
             state=state_name,

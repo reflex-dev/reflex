@@ -15,6 +15,7 @@ from reflex.vars import Var
 route_not_found: Var
 
 class ClientSideRouting(Component):
+    def add_hooks(self) -> list[str]: ...
     def render(self) -> str: ...
     @overload
     @classmethod

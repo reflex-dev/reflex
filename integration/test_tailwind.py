@@ -25,6 +25,8 @@ def TailwindApp(
         paragraph_text: Text for the paragraph.
         paragraph_class_name: Tailwind class_name for the paragraph.
     """
+    from pathlib import Path
+
     import reflex as rx
 
     class UnusedState(rx.State):
@@ -35,10 +37,15 @@ def TailwindApp(
             rx.chakra.text(paragraph_text, class_name=paragraph_class_name),
             rx.el.p(paragraph_text, class_name=paragraph_class_name),
             rx.text(paragraph_text, as_="p", class_name=paragraph_class_name),
+            rx.el.div("Test external stylesheet", class_name="external"),
             id="p-content",
         )
 
-    app = rx.App(style={"font_family": "monospace"})
+    assets = Path(__file__).resolve().parent.parent / "assets"
+    assets.mkdir(exist_ok=True)
+    stylesheet = assets / "test_styles.css"
+    stylesheet.write_text(".external { color: rgba(0, 0, 255, 0.5) }")
+    app = rx.App(style={"font_family": "monospace"}, stylesheets=[stylesheet.name])
     app.add_page(index)
     if tailwind_disabled:
         config = rx.config.get_config()
@@ -107,3 +114,9 @@ def test_tailwind_app(tailwind_app: AppHarness, tailwind_disabled: bool):
         else:
             # expect "text-red-500" from tailwind utility class
             assert p.value_of_css_property("color") in TEXT_RED_500_COLOR
+
+    # Assert external stylesheet is applying rules
+    external = driver.find_elements(By.CLASS_NAME, "external")
+    assert len(external) == 1
+    for ext_div in external:
+        assert ext_div.value_of_css_property("color") == "rgba(0, 0, 255, 0.5)"

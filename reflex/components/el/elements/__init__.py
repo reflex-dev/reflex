@@ -64,6 +64,9 @@ _MAPPING = {
         "portal",
         "source",
         "svg",
+        "defs",
+        "lineargradient",
+        "stop",
         "path",
     ],
     "metadata": [
@@ -102,7 +105,7 @@ _MAPPING = {
         "th",
         "thead",
         "tr",
-        "Tbody",
+        "tbody",
     ],
     "typography": [
         "blockquote",

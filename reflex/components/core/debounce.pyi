@@ -10,6 +10,7 @@ from reflex.style import Style
 from typing import Any, Type, Union
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var, VarData
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
@@ -105,6 +106,5 @@ class DebounceInput(Component):
             ValueError: if the child element does not have an on_change handler.
         """
         ...
-    def get_event_triggers(self) -> dict[str, Any]: ...
 
 debounce_input = DebounceInput.create

@@ -36,6 +36,7 @@ from .compiler import (
 from .config import (
     ALEMBIC_CONFIG,
     Config,
+    DefaultPorts,
     Expiration,
     GitIgnore,
     RequirementsTxt,
@@ -72,6 +73,7 @@ __ALL__ = [
     ComponentName,
     CustomComponents,
     DefaultPage,
+    DefaultPorts,
     Dirs,
     Endpoint,
     Env,

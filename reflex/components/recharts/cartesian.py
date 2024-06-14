@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
+from reflex.constants.colors import Color
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from .recharts import (
@@ -13,7 +15,9 @@ from .recharts import (
     LiteralIfOverflow,
     LiteralInterval,
     LiteralLayout,
+    LiteralLegendType,
     LiteralLineType,
+    LiteralOrientationLeftRight,
     LiteralOrientationTopBottom,
     LiteralOrientationTopBottomLeftRight,
     LiteralPolarRadiusType,
@@ -31,6 +35,12 @@ class Axis(Recharts):
 
     # If set true, the axis do not display in the chart.
     hide: Var[bool]
+
+    # The width of axis which is usually calculated internally.
+    width: Var[Union[str, int]]
+
+    # The height of axis, which can be setted by user.
+    height: Var[Union[str, int]]
 
     # The orientation of axis 'top' | 'bottom'
     orientation: Var[LiteralOrientationTopBottom]
@@ -50,9 +60,6 @@ class Axis(Recharts):
     # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
     axis_line: Var[bool]
 
-    # If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines.
-    tick_line: Var[bool]
-
     # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
     mirror: Var[bool]
 
@@ -68,20 +75,44 @@ class Axis(Recharts):
     # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
     name: Var[Union[str, int]]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # Set the values of axis ticks manually.
+    ticks: Var[List[Union[str, int]]]
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_OVER: lambda: [],
-            EventTriggers.ON_MOUSE_OUT: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
+    # If set false, no ticks will be drawn.
+    tick: Var[bool]
+
+    # The count of axis ticks.
+    tick_count: Var[int]
+
+    # If set false, no axis tick lines will be drawn.
+    tick_line: Var[bool]
+
+    # The length of tick line.
+    tick_size: Var[int]
+
+    # The minimum gap between two adjacent labels
+    min_tick_gap: Var[int]
+
+    # The customized event handler of click on the ticks of this axis
+    on_click: EventHandler[lambda: []]
+
+    # The customized event handler of mousedown on the ticks of this axis
+    on_mouse_down: EventHandler[lambda: []]
+
+    # The customized event handler of mouseup on the ticks of this axis
+    on_mouse_up: EventHandler[lambda: []]
+
+    # The customized event handler of mousemove on the ticks of this axis
+    on_mouse_move: EventHandler[lambda: []]
+
+    # The customized event handler of mouseout on the ticks of this axis
+    on_mouse_out: EventHandler[lambda: []]
+
+    # The customized event handler of mouseenter on the ticks of this axis
+    on_mouse_enter: EventHandler[lambda: []]
+
+    # The customized event handler of mouseleave on the ticks of this axis
+    on_mouse_leave: EventHandler[lambda: []]
 
 
 class XAxis(Axis):
@@ -91,6 +122,12 @@ class XAxis(Axis):
 
     alias = "RechartsXAxis"
 
+    # The id of x-axis which is corresponding to the data.
+    x_axis_id: Var[Union[str, int]]
+
+    # Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
+    include_hidden: Var[bool] = Var.create_safe(False)
+
 
 class YAxis(Axis):
     """A YAxis component in Recharts."""
@@ -99,8 +136,14 @@ class YAxis(Axis):
 
     alias = "RechartsYAxis"
 
+    # The orientation of axis 'left' | 'right'
+    orientation: Var[LiteralOrientationLeftRight]
+
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
+
+    # The id of y-axis which is corresponding to the data.
+    y_axis_id: Var[Union[str, int]]
 
 
 class ZAxis(Recharts):
@@ -134,7 +177,7 @@ class Brush(Recharts):
     alias = "RechartsBrush"
 
     # Stroke color
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
@@ -193,22 +236,31 @@ class Cartesian(Recharts):
     y_axis_id: Var[Union[str, int]]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
-    # legend_type: Var[LiteralLegendType]
+    legend_type: Var[LiteralLegendType]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # The customized event handler of click on the component in this group
+    on_click: EventHandler[lambda: []]
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_OVER: lambda: [],
-            EventTriggers.ON_MOUSE_OUT: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
+    # The customized event handler of mousedown on the component in this group
+    on_mouse_down: EventHandler[lambda: []]
+
+    # The customized event handler of mouseup on the component in this group
+    on_mouse_up: EventHandler[lambda: []]
+
+    # The customized event handler of mousemove on the component in this group
+    on_mouse_move: EventHandler[lambda: []]
+
+    # The customized event handler of mouseover on the component in this group
+    on_mouse_over: EventHandler[lambda: []]
+
+    # The customized event handler of mouseout on the component in this group
+    on_mouse_out: EventHandler[lambda: []]
+
+    # The customized event handler of mouseenter on the component in this group
+    on_mouse_enter: EventHandler[lambda: []]
+
+    # The customized event handler of mouseleave on the component in this group
+    on_mouse_leave: EventHandler[lambda: []]
 
 
 class Area(Cartesian):
@@ -219,13 +271,13 @@ class Area(Cartesian):
     alias = "RechartsArea"
 
     # The color of the line stroke.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The width of the line stroke.
     stroke_width: Var[int]
 
     # The color of the area fill.
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
     type_: Var[LiteralAreaType]
@@ -239,8 +291,14 @@ class Area(Cartesian):
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
     label: Var[bool]
 
-    # The stack id of area, when two areas have the same value axis and same stackId, then the two areas area stacked in order.
-    stack_id: Var[str]
+    # The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
+    stack_id: Var[Union[str, int]]
+
+    # The unit of data. This option will be used in tooltip.
+    unit: Var[Union[str, int]]
+
+    # The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
+    name: Var[Union[str, int]]
 
     # Valid children components
     _valid_children: List[str] = ["LabelList"]
@@ -254,13 +312,13 @@ class Bar(Cartesian):
     alias = "RechartsBar"
 
     # The color of the line stroke.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The width of the line stroke.
     stroke_width: Var[int]
 
     # The width of the line stroke.
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
     background: Var[bool]
@@ -268,10 +326,19 @@ class Bar(Cartesian):
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
     label: Var[bool]
 
-    # The stack id of bar, when two areas have the same value axis and same stackId, then the two areas area stacked in order.
+    # The stack id of bar, when two bars have the same value axis and same stack_id, then the two bars are stacked in order.
     stack_id: Var[str]
 
-    # Size of the bar
+    # The unit of data. This option will be used in tooltip.
+    unit: Var[Union[str, int]]
+
+    # The minimal height of a bar in a horizontal BarChart, or the minimal width of a bar in a vertical BarChart. By default, 0 values are not shown. To visualize a 0 (or close to zero) point, set the minimal point size to a pixel value like 3. In stacked bar charts, minPointSize might not be respected for tightly packed values. So we strongly recommend not using this prop in stacked BarCharts.
+    min_point_size: Var[int]
+
+    # The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
+    name: Var[Union[str, int]]
+
+    # Size of the bar (if one bar_size is set then a bar_size must be set for all bars)
     bar_size: Var[int]
 
     # Max size of the bar
@@ -279,6 +346,24 @@ class Bar(Cartesian):
 
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]
+
+    # If set false, animation of bar will be disabled.
+    is_animation_active: Var[bool]
+
+    # Specifies when the animation should begin, the unit of this option is ms, default 0.
+    animation_begin: Var[int]
+
+    # Specifies the duration of animation, the unit of this option is ms, default 1500.
+    animation_duration: Var[int]
+
+    # The type of easing function, default 'ease'
+    animation_easing: Var[LiteralAnimationEasing]
+
+    # The customized event handler of animation start
+    on_animation_begin: EventHandler[lambda: []]
+
+    # The customized event handler of animation end
+    on_animation_end: EventHandler[lambda: []]
 
 
 class Line(Cartesian):
@@ -292,7 +377,7 @@ class Line(Cartesian):
     type_: Var[LiteralAreaType]
 
     # The color of the line stroke.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The width of the line stroke.
     stoke_width: Var[int]
@@ -312,11 +397,17 @@ class Line(Cartesian):
     # Whether to connect a graph line across null points.
     connect_nulls: Var[bool]
 
+    # The unit of data. This option will be used in tooltip.
+    unit: Var[Union[str, int]]
+
+    # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
+    name: Var[Union[str, int]]
+
     # Valid children components
     _valid_children: List[str] = ["LabelList", "ErrorBar"]
 
 
-class Scatter(Cartesian):
+class Scatter(Recharts):
     """A Scatter component in Recharts."""
 
     tag = "Scatter"
@@ -325,6 +416,15 @@ class Scatter(Cartesian):
 
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
+
+    # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'
+    legend_type: Var[LiteralLegendType]
+
+    # The id of x-axis which is corresponding to the data.
+    x_axis_id: Var[Union[str, int]]
+
+    # The id of y-axis which is corresponding to the data.
+    y_axis_id: Var[Union[str, int]]
 
     # The id of z-axis which is corresponding to the data.
     z_axis_id: Var[str]
@@ -339,7 +439,7 @@ class Scatter(Cartesian):
     line_type: Var[LiteralLineType]
 
     # The fill
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # the name
     name: Var[Union[str, int]]
@@ -347,8 +447,44 @@ class Scatter(Cartesian):
     # Valid children components.
     _valid_children: List[str] = ["LabelList", "ErrorBar"]
 
+    # If set false, animation of bar will be disabled.
+    is_animation_active: Var[bool]
 
-class Funnel(Cartesian):
+    # Specifies when the animation should begin, the unit of this option is ms, default 0.
+    animation_begin: Var[int]
+
+    # Specifies the duration of animation, the unit of this option is ms, default 1500.
+    animation_duration: Var[int]
+
+    # The type of easing function, default 'ease'
+    animation_easing: Var[LiteralAnimationEasing]
+
+    # The customized event handler of click on the component in this group
+    on_click: EventHandler[lambda: []]
+
+    # The customized event handler of mousedown on the component in this group
+    on_mouse_down: EventHandler[lambda: []]
+
+    # The customized event handler of mouseup on the component in this group
+    on_mouse_up: EventHandler[lambda: []]
+
+    # The customized event handler of mousemove on the component in this group
+    on_mouse_move: EventHandler[lambda: []]
+
+    # The customized event handler of mouseover on the component in this group
+    on_mouse_over: EventHandler[lambda: []]
+
+    # The customized event handler of mouseout on the component in this group
+    on_mouse_out: EventHandler[lambda: []]
+
+    # The customized event handler of mouseenter on the component in this group
+    on_mouse_enter: EventHandler[lambda: []]
+
+    # The customized event handler of mouseleave on the component in this group
+    on_mouse_leave: EventHandler[lambda: []]
+
+
+class Funnel(Recharts):
     """A Funnel component in Recharts."""
 
     tag = "Funnel"
@@ -357,6 +493,18 @@ class Funnel(Cartesian):
 
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
+
+    # The key of a group of data which should be unique in an area chart.
+    data_key: Var[Union[str, int]]
+
+    # The key or getter of a group of data which should be unique in a LineChart.
+    name_key: Var[str]
+
+    # The type of icon in legend. If set to 'none', no legend item will be rendered.
+    legend_type: Var[LiteralLegendType]
+
+    # If set false, animation of line will be disabled.
+    is_animation_active: Var[bool]
 
     # Specifies when the animation should begin, the unit of this option is ms.
     animation_begin: Var[int]
@@ -369,6 +517,36 @@ class Funnel(Cartesian):
 
     # Valid children components
     _valid_children: List[str] = ["LabelList", "Cell"]
+
+    # The customized event handler of animation start
+    on_animation_start: EventHandler[lambda: []]
+
+    # The customized event handler of animation end
+    on_animation_end: EventHandler[lambda: []]
+
+    # The customized event handler of click on the component in this group
+    on_click: EventHandler[lambda: []]
+
+    # The customized event handler of mousedown on the component in this group
+    on_mouse_down: EventHandler[lambda: []]
+
+    # The customized event handler of mouseup on the component in this group
+    on_mouse_up: EventHandler[lambda: []]
+
+    # The customized event handler of mousemove on the component in this group
+    on_mouse_move: EventHandler[lambda: []]
+
+    # The customized event handler of mouseover on the component in this group
+    on_mouse_over: EventHandler[lambda: []]
+
+    # The customized event handler of mouseout on the component in this group
+    on_mouse_out: EventHandler[lambda: []]
+
+    # The customized event handler of mouseenter on the component in this group
+    on_mouse_enter: EventHandler[lambda: []]
+
+    # The customized event handler of mouseleave on the component in this group
+    on_mouse_leave: EventHandler[lambda: []]
 
 
 class ErrorBar(Recharts):
@@ -388,7 +566,7 @@ class ErrorBar(Recharts):
     width: Var[int]
 
     # The stroke color of error bar.
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # The stroke width of error bar.
     stroke_width: Var[int]
@@ -440,20 +618,29 @@ class ReferenceDot(Reference):
     # Valid children components
     _valid_children: List[str] = ["Label"]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # The customized event handler of click on the component in this chart
+    on_click: EventHandler[lambda: []]
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_OVER: lambda: [],
-            EventTriggers.ON_MOUSE_OUT: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
+    # The customized event handler of mousedown on the component in this chart
+    on_mouse_down: EventHandler[lambda: []]
+
+    # The customized event handler of mouseup on the component in this chart
+    on_mouse_up: EventHandler[lambda: []]
+
+    # The customized event handler of mouseover on the component in this chart
+    on_mouse_over: EventHandler[lambda: []]
+
+    # The customized event handler of mouseout on the component in this chart
+    on_mouse_out: EventHandler[lambda: []]
+
+    # The customized event handler of mouseenter on the component in this chart
+    on_mouse_enter: EventHandler[lambda: []]
+
+    # The customized event handler of mousemove on the component in this chart
+    on_mouse_move: EventHandler[lambda: []]
+
+    # The customized event handler of mouseleave on the component in this chart
+    on_mouse_leave: EventHandler[lambda: []]
 
 
 class ReferenceArea(Recharts):
@@ -464,10 +651,10 @@ class ReferenceArea(Recharts):
     alias = "RechartsReferenceArea"
 
     # Stroke color
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]]
 
     # Fill color
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # The opacity of area.
     fill_opacity: Var[float]
@@ -524,13 +711,19 @@ class CartesianGrid(Grid):
     alias = "RechartsCartesianGrid"
 
     # The horizontal line configuration.
-    horizontal: Var[Dict[str, Any]]
+    horizontal: Var[bool]
 
     # The vertical line configuration.
-    vertical: Var[Dict[str, Any]]
+    vertical: Var[bool]
+
+    # The x-coordinates in pixel values of all vertical lines.
+    vertical_points: Var[List[Union[str, int]]]
+
+    # The x-coordinates in pixel values of all vertical lines.
+    horizontal_points: Var[List[Union[str, int]]]
 
     # The background of grid.
-    fill: Var[str]
+    fill: Var[Union[str, Color]]
 
     # The opacity of the background used to fill the space between grid lines
     fill_opacity: Var[float]

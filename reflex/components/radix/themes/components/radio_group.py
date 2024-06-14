@@ -1,13 +1,13 @@
 """Interactive components provided by @radix-ui/themes."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import List, Literal, Optional, Union
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from ..base import (
@@ -54,16 +54,8 @@ class RadioGroupRoot(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0],
-        }
+    # Fired when the value of the radio group changes.
+    on_change: EventHandler[lambda e0: [e0]]
 
 
 class RadioGroupItem(RadixThemesComponent):
@@ -91,10 +83,10 @@ class HighLevelRadioGroup(RadixThemesComponent):
     direction: Var[LiteralFlexDirection]
 
     # The gap between the items of the radio group.
-    spacing: Var[LiteralSpacing] = Var.create_safe("2")
+    spacing: Var[LiteralSpacing] = Var.create_safe("2", _var_is_string=True)
 
     # The size of the radio group.
-    size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
+    size: Var[Literal["1", "2", "3"]] = Var.create_safe("2", _var_is_string=True)
 
     # The variant of the radio group
     variant: Var[Literal["classic", "surface", "soft"]]
@@ -151,11 +143,13 @@ class HighLevelRadioGroup(RadixThemesComponent):
             default_value = Var.create(default_value, _var_is_string=True)  # type: ignore
         else:
             default_value = (
-                Var.create(default_value).to_string()._replace(_var_is_local=False)  # type: ignore
+                Var.create(default_value, _var_is_string=False)
+                .to_string()  # type: ignore
+                ._replace(_var_is_local=False)
             )
 
         def radio_group_item(value: str | Var) -> Component:
-            item_value = Var.create(value)  # type: ignore
+            item_value = Var.create(value, _var_is_string=False)  # type: ignore
             item_value = rx.cond(
                 item_value._type() == str,  # type: ignore
                 item_value,

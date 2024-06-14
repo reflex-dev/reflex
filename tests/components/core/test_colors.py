@@ -2,6 +2,7 @@ import pytest
 
 import reflex as rx
 from reflex.components.datadisplay.code import CodeBlock
+from reflex.constants.colors import Color
 from reflex.vars import Var
 
 
@@ -53,7 +54,12 @@ def create_color_var(color):
     ],
 )
 def test_color(color, expected):
-    assert str(color) == expected
+    assert color._var_is_string or color._var_type is str
+    assert color._var_full_name == expected
+    if color._var_type == Color:
+        assert str(color) == f"{{`{expected}`}}"
+    else:
+        assert str(color) == expected
 
 
 @pytest.mark.parametrize(
@@ -99,9 +105,9 @@ def test_color_with_conditionals(cond_var, expected):
 @pytest.mark.parametrize(
     "color, expected",
     [
-        (create_color_var(rx.color("red")), "var(--red-7)"),
-        (create_color_var(rx.color("green", shade=1)), "var(--green-1)"),
-        (create_color_var(rx.color("blue", alpha=True)), "var(--blue-a7)"),
+        (create_color_var(rx.color("red")), "{`var(--red-7)`}"),
+        (create_color_var(rx.color("green", shade=1)), "{`var(--green-1)`}"),
+        (create_color_var(rx.color("blue", alpha=True)), "{`var(--blue-a7)`}"),
         ("red", "red"),
         ("green", "green"),
         ("blue", "blue"),

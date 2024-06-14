@@ -287,7 +287,7 @@ def test_class_vars(test_state):
         test_state: A state.
     """
     cls = type(test_state)
-    assert set(cls.vars.keys()) == {
+    assert cls.vars.keys() == {
         "router",
         "num1",
         "num2",
@@ -310,7 +310,7 @@ def test_event_handlers(test_state):
     Args:
         test_state: A state.
     """
-    expected = {
+    expected_keys = (
         "do_something",
         "set_array",
         "set_complex",
@@ -320,10 +320,10 @@ def test_event_handlers(test_state):
         "set_num1",
         "set_num2",
         "set_obj",
-    }
+    )
 
     cls = type(test_state)
-    assert set(cls.event_handlers.keys()).intersection(expected) == expected
+    assert all(key in cls.event_handlers for key in expected_keys)
 
 
 def test_default_value(test_state):

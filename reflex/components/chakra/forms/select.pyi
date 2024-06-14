@@ -7,17 +7,16 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Union
+from typing import Any, List
 from reflex.components.chakra import ChakraComponent, LiteralInputVariant
 from reflex.components.chakra.typography.text import Text
 from reflex.components.component import Component
 from reflex.components.core.foreach import Foreach
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.utils.types import _issubclass
 from reflex.vars import Var
 
 class Select(ChakraComponent):
-    def get_event_triggers(self) -> Dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore

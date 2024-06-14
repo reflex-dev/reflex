@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal
 from reflex.components import Component
 from reflex.components.tags import Tag
 from reflex.config import get_config
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
@@ -209,13 +209,13 @@ class Theme(RadixThemesComponent):
             children = [ThemePanel.create(), *children]
         return super().create(*children, **props)
 
-    def add_imports(self) -> dict[str, list[ImportVar] | ImportVar]:
+    def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the Theme component.
 
         Returns:
             The import dict.
         """
-        _imports: dict[str, list[ImportVar] | ImportVar] = {
+        _imports: ImportDict = {
             "/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
         }
         if get_config().tailwind is None:
@@ -233,6 +233,7 @@ class Theme(RadixThemesComponent):
             css=Var.create(
                 "{{...theme.styles.global[':root'], ...theme.styles.global.body}}",
                 _var_is_local=False,
+                _var_is_string=False,
             ),
         )
         return tag
@@ -257,10 +258,16 @@ class ThemePanel(RadixThemesComponent):
         """
         return {"react": "useEffect"}
 
-    def _get_hooks(self) -> str | None:
+    def add_hooks(self) -> list[str]:
+        """Add a hook on the ThemePanel to clear chakra-ui-color-mode.
+
+        Returns:
+            The hooks to render.
+        """
         # The panel freezes the tab if the user color preference differs from the
         # theme "appearance", so clear it out when theme panel is used.
-        return """
+        return [
+            """
             useEffect(() => {
                 if (typeof window !== 'undefined') {
                     window.onbeforeunload = () => {
@@ -269,6 +276,7 @@ class ThemePanel(RadixThemesComponent):
                     window.onbeforeunload();
                 }
             }, [])"""
+        ]
 
 
 class RadixThemesColorModeProvider(Component):
