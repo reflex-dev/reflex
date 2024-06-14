@@ -512,6 +512,7 @@ class Var:
         Returns:
             A new BaseVar with the updated fields overwriting the corresponding fields in this Var.
         """
+        self._var_is_used = True
         field_values = dict(
             _var_name=kwargs.pop("_var_name", self._var_name),
             _var_type=kwargs.pop("_var_type", self._var_type),
@@ -2077,6 +2078,7 @@ class ComputedVar(Var, property):
         Returns:
             The new ComputedVar instance.
         """
+        self._var_is_used = True
         return ComputedVar(
             fget=kwargs.get("fget", self.fget),
             initial_value=kwargs.get("initial_value", self._initial_value),
@@ -2088,6 +2090,7 @@ class ComputedVar(Var, property):
             _var_type=kwargs.get("_var_type", self._var_type),
             _var_is_local=kwargs.get("_var_is_local", self._var_is_local),
             _var_is_string=kwargs.get("_var_is_string", self._var_is_string),
+            _var_is_used=kwargs.pop("_var_is_used", self._var_is_used),
             _var_full_name_needs_state_prefix=kwargs.get(
                 "_var_full_name_needs_state_prefix",
                 self._var_full_name_needs_state_prefix,
