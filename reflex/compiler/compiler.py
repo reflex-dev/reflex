@@ -31,6 +31,7 @@ def _compile_document_root(root: Component) -> str:
 
     Returns:
         The compiled document root.
+
     """
     return templates.DOCUMENT_ROOT.render(
         imports=utils.compile_imports(root._get_all_imports()),
@@ -46,6 +47,7 @@ def _compile_app(app_root: Component) -> str:
 
     Returns:
         The compiled app.
+
     """
     return templates.APP_ROOT.render(
         imports=utils.compile_imports(app_root._get_all_imports()),
@@ -63,6 +65,7 @@ def _compile_theme(theme: dict) -> str:
 
     Returns:
         The compiled theme.
+
     """
     return templates.THEME.render(theme=theme)
 
@@ -76,6 +79,7 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
 
     Returns:
         The compiled context file.
+
     """
     appearance = getattr(theme, "appearance", None)
     if appearance is None:
@@ -108,6 +112,7 @@ def _compile_page(
 
     Returns:
         The compiled component.
+
     """
     imports = component._get_all_imports()
     imports = utils.compile_imports(imports)
@@ -133,6 +138,7 @@ def compile_root_stylesheet(stylesheets: list[str]) -> tuple[str, str]:
 
     Returns:
         The path and code of the compiled root stylesheet.
+
     """
     output_path = utils.get_root_stylesheet_path()
 
@@ -152,6 +158,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
 
     Raises:
         FileNotFoundError: If a specified stylesheet in assets directory does not exist.
+
     """
     # Add tailwind css if enabled.
     sheets = (
@@ -182,6 +189,7 @@ def _compile_component(component: Component | StatefulComponent) -> str:
 
     Returns:
         The compiled component.
+
     """
     return templates.COMPONENT.render(component=component)
 
@@ -196,6 +204,7 @@ def _compile_components(
 
     Returns:
         The compiled components.
+
     """
     imports = {
         "react": [ImportVar(tag="memo")],
@@ -234,6 +243,7 @@ def _compile_stateful_components(
 
     Returns:
         The rendered stateful components code.
+
     """
     all_import_dicts = []
     rendered_components = {}
@@ -247,6 +257,7 @@ def _compile_stateful_components(
 
         Args:
             component: The component to collect shared StatefulComponents for.
+
         """
         for child in component.children:
             # Depth-first traversal.
@@ -305,6 +316,7 @@ def _compile_tailwind(
 
     Returns:
         The compiled Tailwind config.
+
     """
     return templates.TAILWIND_CONFIG.render(
         **config,
@@ -325,6 +337,7 @@ def compile_document_root(
 
     Returns:
         The path and code of the compiled document root.
+
     """
     # Get the path for the output file.
     output_path = utils.get_page_path(constants.PageNames.DOCUMENT_ROOT)
@@ -347,6 +360,7 @@ def compile_app(app_root: Component) -> tuple[str, str]:
 
     Returns:
         The path and code of the compiled app wrapper.
+
     """
     # Get the path for the output file.
     output_path = utils.get_page_path(constants.PageNames.APP_ROOT)
@@ -364,6 +378,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 
     Returns:
         The path and code of the compiled theme.
+
     """
     output_path = utils.get_theme_path()
 
@@ -387,6 +402,7 @@ def compile_contexts(
 
     Returns:
         The path and code of the compiled context.
+
     """
     # Get the path for the output file.
     output_path = utils.get_context_path()
@@ -406,6 +422,7 @@ def compile_page(
 
     Returns:
         The path and code of the compiled page.
+
     """
     # Get the path for the output file.
     output_path = utils.get_page_path(path)
@@ -425,6 +442,7 @@ def compile_components(
 
     Returns:
         The path and code of the compiled components.
+
     """
     # Get the path for the output file.
     output_path = utils.get_components_path()
@@ -448,6 +466,7 @@ def compile_stateful_components(
 
     Returns:
         The path and code of the compiled stateful components.
+
     """
     output_path = utils.get_stateful_components_path()
 
@@ -467,6 +486,7 @@ def compile_tailwind(
 
     Returns:
         The compiled Tailwind config.
+
     """
     # Get the path for the output file.
     output_path = constants.Tailwind.CONFIG
@@ -481,6 +501,7 @@ def remove_tailwind_from_postcss() -> tuple[str, str]:
 
     Returns:
         The path and code of the compiled postcss.config.js.
+
     """
     # Get the path for the output file.
     output_path = constants.Dirs.POSTCSS_JS
@@ -544,6 +565,7 @@ class ExecutorSafeFunctions:
 
         Returns:
             The path and code of the compiled page.
+
         """
         return compile_page(*cls.COMPILE_PAGE_ARGS_BY_ROUTE[route])
 
@@ -556,6 +578,7 @@ class ExecutorSafeFunctions:
 
         Raises:
             ValueError: If the app root is not set.
+
         """
         if cls.COMPILE_APP_APP_ROOT is None:
             raise ValueError("COMPILE_APP_APP_ROOT should be set")
@@ -570,6 +593,7 @@ class ExecutorSafeFunctions:
 
         Raises:
             ValueError: If the custom components are not set.
+
         """
         if cls.CUSTOM_COMPONENTS is None:
             raise ValueError("CUSTOM_COMPONENTS should be set")
@@ -584,6 +608,7 @@ class ExecutorSafeFunctions:
 
         Raises:
             ValueError: If the style is not set.
+
         """
         if cls.STYLE is None:
             raise ValueError("STYLE should be set")

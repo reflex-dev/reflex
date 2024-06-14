@@ -19,6 +19,7 @@ def rm(path: str):
 
     Args:
         path: The path to the file or directory.
+
     """
     if os.path.isdir(path):
         shutil.rmtree(path)
@@ -36,6 +37,7 @@ def cp(src: str, dest: str, overwrite: bool = True) -> bool:
 
     Returns:
         Whether the copy was successful.
+
     """
     if src == dest:
         return False
@@ -59,6 +61,7 @@ def mv(src: str, dest: str, overwrite: bool = True) -> bool:
 
     Returns:
         Whether the move was successful.
+
     """
     if src == dest:
         return False
@@ -74,6 +77,7 @@ def mkdir(path: str):
 
     Args:
         path: The path to the directory.
+
     """
     os.makedirs(path, exist_ok=True)
 
@@ -88,6 +92,7 @@ def ln(src: str, dest: str, overwrite: bool = False) -> bool:
 
     Returns:
         Whether the link was successful.
+
     """
     if src == dest:
         return False
@@ -109,6 +114,7 @@ def which(program: str) -> str | None:
 
     Returns:
         The path to the executable.
+
     """
     return shutil.which(program)
 
@@ -118,6 +124,7 @@ def get_node_bin_path() -> str | None:
 
     Returns:
         The path to the node bin folder.
+
     """
     if not os.path.exists(constants.Node.BIN_PATH):
         str_path = which("node")
@@ -130,6 +137,7 @@ def get_node_path() -> str | None:
 
     Returns:
         The path to the node binary file.
+
     """
     if not os.path.exists(constants.Node.PATH):
         return which("node")
@@ -141,6 +149,7 @@ def get_npm_path() -> str | None:
 
     Returns:
         The path to the npm binary file.
+
     """
     if not os.path.exists(constants.Node.PATH):
         return which("npm")
@@ -153,6 +162,7 @@ def update_json_file(file_path: str, update_dict: dict[str, int | str]):
     Args:
         file_path: the path to the JSON file.
         update_dict: object to update json.
+
     """
     fp = Path(file_path)
 
@@ -183,6 +193,7 @@ def find_replace(directory: str, find: str, replace: str):
         directory: The directory to search.
         find: The text to find.
         replace: The text to replace.
+
     """
     for root, _dirs, files in os.walk(directory):
         for file in files:

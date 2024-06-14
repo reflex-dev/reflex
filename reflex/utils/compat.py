@@ -10,6 +10,7 @@ def pydantic_v1_patch():
 
     Yields:
         None when the Pydantic module is patched.
+
     """
     patched_modules = [
         "pydantic",

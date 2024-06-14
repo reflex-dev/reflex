@@ -19,6 +19,7 @@ class AssetFolderWatch:
 
         Args:
             root: root path of the public.
+
         """
         self.path = str(root / Dirs.APP_ASSETS)
         self.event_handler = AssetFolderHandler(root)
@@ -38,6 +39,7 @@ class AssetFolderHandler(FileSystemEventHandler):
 
         Args:
             root: root path of the public.
+
         """
         super().__init__()
         self.root = root
@@ -49,6 +51,7 @@ class AssetFolderHandler(FileSystemEventHandler):
 
         Args:
             event: Event information.
+
         """
         dest_path = self.get_dest_path(event.src_path)
 
@@ -69,6 +72,7 @@ class AssetFolderHandler(FileSystemEventHandler):
 
         Args:
             event: Event infomation.
+
         """
         dest_path = self.get_dest_path(event.src_path)
 
@@ -88,6 +92,7 @@ class AssetFolderHandler(FileSystemEventHandler):
 
         Returns:
             The public file path.
+
         """
         return src_path.replace(
             str(self.root / Dirs.APP_ASSETS), str(self.root / Dirs.WEB_ASSETS)

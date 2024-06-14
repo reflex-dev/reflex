@@ -16,6 +16,7 @@ def merge_imports(*imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
 
     Returns:
         The merged import dicts.
+
     """
     all_imports = defaultdict(list)
     for import_dict in imports:
@@ -32,6 +33,7 @@ def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
 
     Returns:
         The parsed import dict.
+
     """
 
     def _make_list(value: ImportTypes) -> list[str | ImportVar] | list[ImportVar]:
@@ -56,6 +58,7 @@ def collapse_imports(imports: ParsedImportDict) -> ParsedImportDict:
 
     Returns:
         The collapsed import dict.
+
     """
     return {
         lib: list(set(import_vars)) if isinstance(import_vars, list) else import_vars
@@ -91,6 +94,7 @@ class ImportVar(Base):
 
         Returns:
             The name(tag name with alias) of tag.
+
         """
         if self.alias:
             return (
@@ -104,6 +108,7 @@ class ImportVar(Base):
 
         Returns:
             The hash of the var.
+
         """
         return hash(
             (

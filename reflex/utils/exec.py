@@ -28,6 +28,7 @@ def start_watching_assets_folder(root):
 
     Args:
         root: root path of the project.
+
     """
     asset_watch = AssetFolderWatch(root)
     asset_watch.start()
@@ -45,6 +46,7 @@ def detect_package_change(json_file_path: str) -> str:
     Example:
         >>> detect_package_change("package.json")
         'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2'
+
     """
     with open(json_file_path, "r") as file:
         json_data = json.load(file)
@@ -63,6 +65,7 @@ def kill(proc_pid: int):
 
     Example:
         >>> kill(1234)
+
     """
     process = psutil.Process(proc_pid)
     for proc in process.children(recursive=True):
@@ -79,6 +82,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
     Args:
         run_command: The command to run.
         backend_present: Whether the backend is present.
+
     """
     from reflex.utils import processes
 
@@ -138,6 +142,7 @@ def run_frontend(root: Path, port: str, backend_present=True):
         root: The root path of the project.
         port: The port to run the frontend on.
         backend_present: Whether the backend is present.
+
     """
     from reflex.utils import prerequisites
 
@@ -162,6 +167,7 @@ def run_frontend_prod(root: Path, port: str, backend_present=True):
         root: The root path of the project (to keep same API as run_frontend).
         port: The port to run the frontend on.
         backend_present: Whether the backend is present.
+
     """
     from reflex.utils import prerequisites
 
@@ -188,6 +194,7 @@ def run_backend(
         host: The app host
         port: The app port
         loglevel: The log level.
+
     """
     import uvicorn
 
@@ -222,6 +229,7 @@ def run_backend_prod(
         host: The app host
         port: The app port
         loglevel: The log level.
+
     """
     from reflex.utils import processes
 
@@ -333,6 +341,7 @@ def is_testing_env() -> bool:
 
     Returns:
         True if the app is running in under pytest.
+
     """
     return constants.PYTEST_CURRENT_TEST in os.environ
 
@@ -342,6 +351,7 @@ def is_prod_mode() -> bool:
 
     Returns:
         True if the app is running in production mode or False if running in dev mode.
+
     """
     current_mode = os.environ.get(
         constants.ENV_MODE_ENV_VAR,
@@ -355,5 +365,6 @@ def should_skip_compile() -> bool:
 
     Returns:
         True if the app should skip compile.
+
     """
     return os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes"

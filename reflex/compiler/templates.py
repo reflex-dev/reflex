@@ -53,6 +53,7 @@ def get_template(name: str) -> Template:
 
     Returns:
         A render function.
+
     """
     return ReflexJinjaEnvironment().get_template(name=name)
 

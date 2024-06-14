@@ -161,6 +161,7 @@ class LogLevel(str, Enum):
 
         Returns:
             True if the log level is less than or equal to the other log level.
+
         """
         levels = list(LogLevel)
         return levels.index(self) <= levels.index(other)

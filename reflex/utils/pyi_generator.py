@@ -80,6 +80,7 @@ def _walk_files(path):
 
     Yields:
         The next file in the path.
+
     """
     for p in Path(path).iterdir():
         if p.is_dir():
@@ -96,6 +97,7 @@ def _relative_to_pwd(path: Path) -> Path:
 
     Returns:
         The relative path.
+
     """
     if path.is_absolute():
         return path.relative_to(PWD)
@@ -112,6 +114,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
 
     Returns:
         The resolved type hint as a str.
+
     """
     res = ""
     args = get_args(value)
@@ -196,6 +199,7 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
 
     Returns:
         The list of import statements.
+
     """
     return [
         ast.ImportFrom(
@@ -226,6 +230,7 @@ def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
 
     Returns:
         The docstring for the create method.
+
     """
     props_comments = {}
     comments = []
@@ -281,6 +286,7 @@ def _extract_func_kwargs_as_ast_nodes(
 
     Returns:
         The list of kwargs as ast arg nodes.
+
     """
     spec = getfullargspec(func)
     kwargs = []
@@ -315,6 +321,7 @@ def _extract_class_props_as_ast_nodes(
 
     Returns:
         The list of props as ast arg nodes
+
     """
     spec = getfullargspec(func)
     all_props = []
@@ -389,6 +396,7 @@ def _generate_component_create_functiondef(
 
     Raises:
         TypeError: If clz is not a subclass of Component.
+
     """
     if not issubclass(clz, Component):
         raise TypeError(f"clz must be a subclass of Component, not {clz!r}")
@@ -529,6 +537,7 @@ def _generate_namespace_call_functiondef(
 
     Returns:
         The create functiondef node for the ast.
+
     """
     # add the imports needed by get_type_hint later
     type_hint_globals.update(
@@ -571,6 +580,7 @@ class StubGenerator(ast.NodeTransformer):
         Args:
             module: The actual module object module to generate stubs for.
             classes: The actual Component class objects to generate stubs for.
+
         """
         super().__init__()
         # Dict mapping class name to actual class object.
@@ -597,6 +607,7 @@ class StubGenerator(ast.NodeTransformer):
 
         Returns:
             The modified node.
+
         """
         if (
             node.body
@@ -611,6 +622,7 @@ class StubGenerator(ast.NodeTransformer):
 
         Returns:
             Whether the current class is a Component.
+
         """
         return (
             self.current_class is not None
@@ -626,6 +638,7 @@ class StubGenerator(ast.NodeTransformer):
 
         Returns:
             The modified Module node.
+
         """
         self.generic_visit(node)
         return self._remove_docstring(node)  # type: ignore
@@ -642,6 +655,7 @@ class StubGenerator(ast.NodeTransformer):
 
         Returns:
             The modified import node(s).
+
         """
         self.import_statements.append(ast.unparse(node))
         if not self.inserted_imports:
@@ -661,6 +675,7 @@ class StubGenerator(ast.NodeTransformer):
 
         Returns:
             The modified ImportFrom node.
+
         """
         if node.module == "__future__":
             return None  # ignore __future__ imports
@@ -677,6 +692,7 @@ class StubGenerator(ast.NodeTransformer):
 
         Returns:
             The modified ClassDef node.
+
         """
         exec("\n".join(self.import_statements), self.type_hint_globals)
         self.current_class = node.name
@@ -742,6 +758,7 @@ class StubGenerator(ast.NodeTransformer):
 
         Returns:
             The modified FunctionDef node (or None).
+
         """
         if node.name == "create" and self.current_class in self.classes:
             node = _generate_component_create_functiondef(
@@ -764,6 +781,7 @@ class StubGenerator(ast.NodeTransformer):
 
         Returns:
             The modified Assign node (or None).
+
         """
         # Special case for assignments to `typing.Any` as fallback.
         if (
@@ -796,6 +814,7 @@ class StubGenerator(ast.NodeTransformer):
 
         Returns:
             The modified AnnAssign node (or None).
+
         """
         # skip ClassVars
         if (
@@ -827,6 +846,7 @@ class InitStubGenerator(StubGenerator):
 
         Returns:
                 The modified import node(s).
+
         """
         return [node]
 
@@ -952,6 +972,7 @@ class PyiGenerator:
         Args:
             targets: the list of file/folders to scan.
             changed_files (optional): the list of changed files since the last run.
+
         """
         file_targets = []
         for target in targets:

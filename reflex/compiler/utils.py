@@ -45,6 +45,7 @@ def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
         The libraries for default and rest.
         default: default library. When install "import def from library".
         rest: rest of libraries. When install "import {rest1, rest2} from library"
+
     """
     # ignore the ImportVar fields with render=False during compilation
     fields_set = {field for field in fields if field.render}
@@ -68,6 +69,7 @@ def validate_imports(import_dict: ParsedImportDict):
 
     Raises:
         ValueError: if a conflict on "tag/alias" is detected for an import.
+
     """
     used_tags = {}
     for lib, _imports in import_dict.items():
@@ -91,6 +93,7 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
 
     Returns:
         The list of import dict.
+
     """
     collapsed_import_dict: ParsedImportDict = imports.collapse_imports(import_dict)
     validate_imports(collapsed_import_dict)
@@ -126,6 +129,7 @@ def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) 
 
     Returns:
         A dictionary for import template.
+
     """
     return {
         "lib": lib,
@@ -142,6 +146,7 @@ def compile_state(state: Type[BaseState]) -> dict:
 
     Returns:
         A dictionary of the compiled state.
+
     """
     try:
         initial_state = state(_reflex_internal_init=True).dict(initial=True)
@@ -163,6 +168,7 @@ def _compile_client_storage_field(
 
     Returns:
         A dictionary of the compiled cookie or None if the field is not cookie-like.
+
     """
     for field_type in (Cookie, LocalStorage):
         if isinstance(field.default, field_type):
@@ -189,6 +195,7 @@ def _compile_client_storage_recursive(
                 cookies: dict[str, dict],
                 local_storage: dict[str, dict[str, str]]
             )
+
     """
     cookies = {}
     local_storage = {}
@@ -222,6 +229,7 @@ def compile_client_storage(state: Type[BaseState]) -> dict[str, dict]:
 
     Returns:
         A dictionary of the compiled client-side storage info.
+
     """
     cookies, local_storage = _compile_client_storage_recursive(state)
     return {
@@ -240,6 +248,7 @@ def compile_custom_component(
 
     Returns:
         A tuple of the compiled component and the imports required by the component.
+
     """
     # Render the component.
     render = component.get_component(component)
@@ -281,6 +290,7 @@ def create_document_root(
 
     Returns:
         The document root.
+
     """
     head_components = head_components or []
     return Html.create(
@@ -302,6 +312,7 @@ def create_theme(style: ComponentStyle) -> dict:
 
     Returns:
         The base style for the app.
+
     """
     # Get the global style from the style dict.
     style_rules = Style({k: v for k, v in style.items() if not isinstance(k, Callable)})
@@ -329,6 +340,7 @@ def get_page_path(path: str) -> str:
 
     Returns:
         The path of the compiled JS file.
+
     """
     return os.path.join(constants.Dirs.WEB_PAGES, path + constants.Ext.JS)
 
@@ -338,6 +350,7 @@ def get_theme_path() -> str:
 
     Returns:
         The path of the theme style.
+
     """
     return os.path.join(
         constants.Dirs.WEB_UTILS, constants.PageNames.THEME + constants.Ext.JS
@@ -349,6 +362,7 @@ def get_root_stylesheet_path() -> str:
 
     Returns:
         The path of the app root file.
+
     """
     return os.path.join(
         constants.STYLES_DIR, constants.PageNames.STYLESHEET_ROOT + constants.Ext.CSS
@@ -360,6 +374,7 @@ def get_context_path() -> str:
 
     Returns:
         The path of the context module.
+
     """
     return os.path.join(
         constants.Dirs.WEB, constants.Dirs.CONTEXTS_PATH + constants.Ext.JS
@@ -371,6 +386,7 @@ def get_components_path() -> str:
 
     Returns:
         The path of the compiled components.
+
     """
     return os.path.join(constants.Dirs.WEB_UTILS, "components" + constants.Ext.JS)
 
@@ -380,6 +396,7 @@ def get_stateful_components_path() -> str:
 
     Returns:
         The path of the compiled stateful components.
+
     """
     return os.path.join(
         constants.Dirs.WEB_UTILS,
@@ -405,6 +422,7 @@ def add_meta(
 
     Returns:
         The component with the metadata added.
+
     """
     meta_tags = [Meta.create(**item) for item in meta]
 
@@ -431,6 +449,7 @@ def write_page(path: str, code: str):
     Args:
         path: The path to write the code to.
         code: The code to write.
+
     """
     path_ops.mkdir(os.path.dirname(path))
     with open(path, "w", encoding="utf-8") as f:
@@ -443,6 +462,7 @@ def empty_dir(path: str, keep_files: list[str] | None = None):
     Args:
         path: The path to the directory that will be emptied
         keep_files: List of filenames or foldernames that will not be deleted.
+
     """
     # If the directory does not exist, return.
     if not os.path.exists(path):
@@ -464,6 +484,7 @@ def is_valid_url(url) -> bool:
 
     Returns:
         Whether url is valid.
+
     """
     result = urlparse(url)
     return all([result.scheme, result.netloc])

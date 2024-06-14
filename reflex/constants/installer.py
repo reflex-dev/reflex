@@ -13,6 +13,7 @@ def get_fnm_name() -> str | None:
 
     Returns:
             The fnm executable name for the current platform.
+
     """
     platform_os = platform.system()
 

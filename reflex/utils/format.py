@@ -39,6 +39,7 @@ def get_close_char(open: str, close: str | None = None) -> str:
 
     Raises:
         ValueError: If the open character is not a valid brace.
+
     """
     if close is not None:
         return close
@@ -61,6 +62,7 @@ def is_wrapped(text: str, open: str, close: str | None = None) -> bool:
 
     Returns:
         Whether the text is wrapped.
+
     """
     close = get_close_char(open, close)
     if not (text.startswith(open) and text.endswith(close)):
@@ -95,6 +97,7 @@ def wrap(
 
     Returns:
         The wrapped text.
+
     """
     close = get_close_char(open, close)
 
@@ -115,6 +118,7 @@ def indent(text: str, indent_level: int = 2) -> str:
 
     Returns:
         The indented text.
+
     """
     lines = text.splitlines()
     if len(lines) < 2:
@@ -133,6 +137,7 @@ def to_snake_case(text: str) -> str:
 
     Returns:
         The snake case string.
+
     """
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", text)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower().replace("-", "_")
@@ -150,6 +155,7 @@ def to_camel_case(text: str, allow_hyphens: bool = False) -> str:
 
     Returns:
         The camel case string.
+
     """
     char = "_" if allow_hyphens else "-_"
     words = re.split(f"[{char}]", text.lstrip(char))
@@ -168,6 +174,7 @@ def to_title_case(text: str, sep: str = "") -> str:
 
     Returns:
         The title case string.
+
     """
     return sep.join(word.title() for word in text.split("_"))
 
@@ -183,6 +190,7 @@ def to_kebab_case(text: str) -> str:
 
     Returns:
         The title case string.
+
     """
     return to_snake_case(text).replace("_", "-")
 
@@ -196,6 +204,7 @@ def make_default_page_title(app_name: str, route: str) -> str:
 
     Returns:
         The default page title.
+
     """
     title = constants.DefaultPage.TITLE.format(app_name, route)
     return to_title_case(title, " ")
@@ -209,6 +218,7 @@ def _escape_js_string(string: str) -> str:
 
     Returns:
         The escaped string.
+
     """
     # Escape backticks.
     string = string.replace(r"\`", "`")
@@ -224,6 +234,7 @@ def _wrap_js_string(string: str) -> str:
 
     Returns:
         The wrapped string.
+
     """
     string = wrap(string, "`")
     string = wrap(string, "{")
@@ -238,6 +249,7 @@ def format_string(string: str) -> str:
 
     Returns:
         The formatted string.
+
     """
     return _wrap_js_string(_escape_js_string(string))
 
@@ -250,6 +262,7 @@ def format_f_string_prop(prop: BaseVar) -> str:
 
     Returns:
         The formatted string.
+
     """
     s = prop._var_full_name
     var_data = prop._var_data
@@ -276,6 +289,7 @@ def format_var(var: Var) -> str:
 
     Returns:
         The formatted Var.
+
     """
     if not var._var_is_local or var._var_is_string:
         return str(var)
@@ -295,6 +309,7 @@ def format_route(route: str, format_case=True) -> str:
 
     Returns:
         The formatted route.
+
     """
     route = route.strip("/")
     # Strip the route and format casing.
@@ -324,6 +339,7 @@ def format_cond(
 
     Returns:
         The formatted conditional expression.
+
     """
     # Use Python truthiness.
     cond = f"isTrue({cond})"
@@ -396,6 +412,7 @@ def format_prop(
     Raises:
         exceptions.InvalidStylePropError: If the style prop value is not a valid type.
         TypeError: If the prop is not valid.
+
     """
     # import here to avoid circular import.
     from reflex.event import EventChain
@@ -459,6 +476,7 @@ def format_props(*single_props, **key_value_props) -> list[str]:
 
     Returns:
         The formatted props list.
+
     """
     # Format all the props.
     return [
@@ -476,6 +494,7 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
 
     Returns:
         The state and function name.
+
     """
     # Get the class that defines the event handler.
     parts = handler.fn.__qualname__.split(".")
@@ -506,6 +525,7 @@ def format_event_handler(handler: EventHandler) -> str:
 
     Returns:
         The formatted function.
+
     """
     state, name = get_event_handler_parts(handler)
     if state == "":
@@ -521,6 +541,7 @@ def format_event(event_spec: EventSpec) -> str:
 
     Returns:
         The compiled event.
+
     """
     args = ",".join(
         [
@@ -565,6 +586,7 @@ def format_event_chain(
 
     Raises:
         ValueError: When the given event chain is not a valid event chain.
+
     """
     if isinstance(event_chain, Var):
         from reflex.event import EventChain
@@ -615,6 +637,7 @@ def format_queue_events(
 
     Raises:
         ValueError: If a lambda function is given which returns a Var.
+
     """
     from reflex.event import (
         EventChain,
@@ -676,6 +699,7 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
 
     Returns:
         The reformatted query params
+
     """
     params = router_data[constants.RouteVar.QUERY]
     return {k.replace("-", "_"): v for k, v in params.items()}
@@ -693,6 +717,7 @@ def format_state(value: Any, key: Optional[str] = None) -> Any:
 
     Raises:
         TypeError: If the given value is not a valid state.
+
     """
     from reflex.utils import serializers
 
@@ -734,6 +759,7 @@ def format_state_name(state_name: str) -> str:
 
     Returns:
         The formatted state name.
+
     """
     return state_name.replace(".", "__")
 
@@ -746,6 +772,7 @@ def format_ref(ref: str) -> str:
 
     Returns:
         The formatted ref.
+
     """
     # Replace all non-word characters with underscores.
     clean_ref = re.sub(r"[^\w]+", "_", ref)
@@ -761,6 +788,7 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
 
     Returns:
         The formatted ref.
+
     """
     clean_ref = re.sub(r"[^\w]+", "_", refs)
     if idx is not None:
@@ -777,6 +805,7 @@ def format_breadcrumbs(route: str) -> list[tuple[str, str]]:
 
     Returns:
         list[tuple[str, str]]: the list of tuples for the breadcrumb.
+
     """
     route_parts = route.lstrip("/").split("/")
 
@@ -795,6 +824,7 @@ def format_library_name(library_fullname: str):
 
     Returns:
         The name without the @version if it was part of the name
+
     """
     lib, at, version = library_fullname.rpartition("@")
     if not lib:
@@ -811,6 +841,7 @@ def json_dumps(obj: Any) -> str:
 
     Returns:
         A string
+
     """
     from reflex.utils import serializers
 
@@ -827,6 +858,7 @@ def unwrap_vars(value: str) -> str:
 
     Returns:
         The unwrapped JSON string.
+
     """
 
     def unescape_double_quotes_in_var(m: re.Match) -> str:
@@ -863,6 +895,7 @@ def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
 
     Returns:
         The collapsed dict.
+
     """
     ending_digit_regex = re.compile(r"^(.*?)[_-]?(\d+)$")
     collapsed = {}
@@ -886,6 +919,7 @@ def format_data_editor_column(col: str | dict):
 
     Returns:
         The formatted column.
+
     """
     if isinstance(col, str):
         return {"title": col, "id": col.lower(), "type": "str"}
@@ -915,6 +949,7 @@ def format_data_editor_cell(cell: Any):
 
     Returns:
         The formatted cell.
+
     """
     return {
         "kind": Var.create(value="GridCellKind.Text", _var_is_string=False),

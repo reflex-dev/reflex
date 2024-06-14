@@ -95,6 +95,7 @@ class ComponentName(Enum):
 
         Returns:
             The lower-case filename with zip extension.
+
         """
         return self.value.lower() + Ext.ZIP
 

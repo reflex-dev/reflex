@@ -19,6 +19,7 @@ def attach(package_name, submodules=None, submod_attrs=None):
 
     Returns:
         __getattr__, __dir__, __all__
+
     """
     _submod_attrs = copy.deepcopy(submod_attrs)
     if _submod_attrs:

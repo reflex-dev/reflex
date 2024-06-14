@@ -24,6 +24,7 @@ def kill(pid):
 
     Args:
         pid: The process ID.
+
     """
     os.kill(pid, signal.SIGTERM)
 
@@ -36,6 +37,7 @@ def get_num_workers() -> int:
 
     Returns:
         The number of backend worker processes.
+
     """
     if (redis_client := prerequisites.get_redis_sync()) is None:
         return 1
@@ -55,6 +57,7 @@ def get_process_on_port(port) -> Optional[psutil.Process]:
 
     Returns:
         The process on the given port.
+
     """
     for proc in psutil.process_iter(["pid", "name", "cmdline"]):
         try:
@@ -74,6 +77,7 @@ def is_process_on_port(port) -> bool:
 
     Returns:
         Whether a process is running on the given port.
+
     """
     return get_process_on_port(port) is not None
 
@@ -83,6 +87,7 @@ def kill_process_on_port(port):
 
     Args:
         port: The port.
+
     """
     if get_process_on_port(port) is not None:
         with contextlib.suppress(psutil.AccessDenied):
@@ -126,6 +131,7 @@ def handle_port(service_name: str, port: str, default_port: str) -> str:
 
     Raises:
         Exit:when the port is in use.
+
     """
     if is_process_on_port(port):
         if int(port) == int(default_port):
@@ -150,6 +156,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
 
     Raises:
         Exit: When attempting to run a command with a None value.
+
     """
     node_bin_path = path_ops.get_node_bin_path()
     if not node_bin_path and not prerequisites.CURRENTLY_INSTALLING_NODE:
@@ -194,6 +201,7 @@ def run_concurrently_context(
 
     Yields:
         The futures for the functions.
+
     """
     # If no functions are provided, yield an empty list and return.
     if not fns:
@@ -228,6 +236,7 @@ def run_concurrently(*fns: Union[Callable, Tuple]) -> None:
 
     Args:
         *fns: The functions to run.
+
     """
     with run_concurrently_context(*fns):
         pass
@@ -254,6 +263,7 @@ def stream_logs(
 
     Raises:
         Exit: If the process failed.
+
     """
     from reflex.utils import telemetry
 
@@ -289,6 +299,7 @@ def show_logs(message: str, process: subprocess.Popen):
     Args:
         message: The message to display.
         process: The process.
+
     """
     for _ in stream_logs(message, process):
         pass
@@ -307,6 +318,7 @@ def show_status(
         process: The process.
         suppress_errors: If True, do not exit if errors are encountered (for fallback).
         analytics_enabled: Whether analytics are enabled for this command.
+
     """
     with console.status(message) as status:
         for line in stream_logs(
@@ -325,6 +337,7 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str
         message: The message to display.
         process: The process.
         checkpoints: The checkpoints to advance the progress bar.
+
     """
     # Iterate over the process output.
     with console.progress() as progress:
@@ -354,6 +367,7 @@ def get_command_with_loglevel(command: list[str]) -> list[str]:
 
     Returns:
         The updated command list
+
     """
     npm_path = path_ops.get_npm_path()
     npm_path = str(Path(npm_path).resolve()) if npm_path else npm_path
@@ -379,6 +393,7 @@ def run_process_with_fallback(
         fallback: The fallback command to run.
         analytics_enabled: Whether analytics are enabled for this command.
         kwargs: Kwargs to pass to new_process function.
+
     """
     process = new_process(get_command_with_loglevel(args), **kwargs)
     if fallback is None:
@@ -414,6 +429,7 @@ def execute_command_and_return_output(command) -> str | None:
 
     Returns:
         The output of the command.
+
     """
     try:
         return subprocess.check_output(command, shell=True).decode().strip()
