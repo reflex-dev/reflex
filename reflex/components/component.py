@@ -1119,17 +1119,35 @@ class Component(BaseComponent, ABC):
 
         return vars
 
-    def _has_event_triggers(self) -> bool:
-        """Check if the component or children have any event triggers.
+    def _event_trigger_values_use_state(self) -> bool:
+        """Check if the values of a component's event trigger use state.
 
         Returns:
-            True if the component or children have any event triggers.
+            True if any of the component's event trigger values uses State.
         """
-        if self.event_triggers:
+        for trigger in self.event_triggers.values():
+            if isinstance(trigger, EventChain):
+                for event in trigger.events:
+                    if event.handler.state_full_name:
+                        return True
+            elif isinstance(trigger, Var) and trigger._var_state:
+                return True
+        return False
+
+    def _has_stateful_event_triggers(self):
+        """Check if component or children have any event triggers that use state.
+
+        Returns:
+            True if the component or children have any event triggers that uses state.
+        """
+        if self.event_triggers and self._event_trigger_values_use_state():
             return True
         else:
             for child in self.children:
-                if isinstance(child, Component) and child._has_event_triggers():
+                if (
+                    isinstance(child, Component)
+                    and child._has_stateful_event_triggers()
+                ):
                     return True
         return False
 
