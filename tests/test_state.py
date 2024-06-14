@@ -16,6 +16,7 @@ from plotly.graph_objects import Figure
 import reflex as rx
 from reflex.app import App
 from reflex.base import Base
+from reflex.components.sonner.toast import Toaster
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
 from reflex.state import (
@@ -1426,6 +1427,7 @@ async def test_state_with_invalid_yield(capsys):
 
     Args:
         capsys: Pytest fixture for capture standard streams.
+
     """
 
     class StateWithInvalidYield(BaseState):
@@ -1444,10 +1446,25 @@ async def test_state_with_invalid_yield(capsys):
         rx.event.Event(token="fake_token", name="invalid_handler")
     ):
         assert not update.delta
-        assert update.events == rx.event.fix_events(
-            [rx.window_alert("An error occurred. See logs for details.")],
-            token="",
-        )
+        if Toaster.is_used:
+            assert update.events == rx.event.fix_events(
+                [
+                    rx.toast(
+                        title="An error occurred.",
+                        description="Contact the website administrator.",
+                        level="error",
+                        position="top-center",
+                        style={"width": "500px"},
+                    )  # type: ignore
+                ],
+                token="",
+            )
+        else:
+            assert update.events == [
+                rx.window_alert(
+                    "An error occurred.\n Contact the website administrator."
+                )
+            ]
     captured = capsys.readouterr()
     assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
