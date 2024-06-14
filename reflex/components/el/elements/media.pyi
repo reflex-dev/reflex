@@ -178,6 +178,7 @@ class Area(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -338,6 +339,7 @@ class Audio(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -649,6 +651,7 @@ class Map(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -797,6 +800,7 @@ class Track(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -965,6 +969,7 @@ class Video(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1101,6 +1106,7 @@ class Embed(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1263,6 +1269,7 @@ class Iframe(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1407,6 +1414,7 @@ class Object(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1539,6 +1547,7 @@ class Picture(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1671,6 +1680,7 @@ class Portal(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1819,6 +1829,7 @@ class Source(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1951,6 +1962,7 @@ class Svg(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2083,6 +2095,7 @@ class Defs(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2231,6 +2244,7 @@ class Lineargradient(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2375,6 +2389,7 @@ class Stop(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2509,6 +2524,7 @@ class Path(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 

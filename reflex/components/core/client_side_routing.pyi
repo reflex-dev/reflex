@@ -89,6 +89,7 @@ class ClientSideRouting(Component):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -168,5 +169,6 @@ class Default404Page(Component):
 
         Returns:
             The component.
+
         """
         ...

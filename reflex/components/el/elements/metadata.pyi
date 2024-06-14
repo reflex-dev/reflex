@@ -145,6 +145,7 @@ class Base(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -277,6 +278,7 @@ class Head(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -430,6 +432,7 @@ class Link(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -572,6 +575,7 @@ class Meta(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -648,6 +652,7 @@ class Title(Element):
 
         Returns:
             The component.
+
         """
         ...
 

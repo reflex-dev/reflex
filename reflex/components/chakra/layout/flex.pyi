@@ -100,5 +100,6 @@ class Flex(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

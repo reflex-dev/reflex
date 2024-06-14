@@ -309,6 +309,7 @@ class Text(elements.Span, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -586,6 +587,7 @@ class Span(Text):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -721,6 +723,7 @@ class Em(elements.Em, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -863,6 +866,7 @@ class Kbd(elements.Kbd, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -1000,6 +1004,7 @@ class Quote(elements.Q, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -1135,6 +1140,7 @@ class Strong(elements.Strong, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -1416,6 +1422,7 @@ class TextNamespace(ComponentNamespace):
 
         Returns:
             A new component instance.
+
         """
         ...
 

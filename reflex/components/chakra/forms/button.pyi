@@ -170,6 +170,7 @@ class Button(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -263,5 +264,6 @@ class ButtonGroup(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

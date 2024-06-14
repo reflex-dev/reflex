@@ -150,6 +150,7 @@ class Section(elements.Section, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

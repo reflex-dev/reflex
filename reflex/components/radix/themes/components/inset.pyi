@@ -174,6 +174,7 @@ class Inset(elements.Div, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

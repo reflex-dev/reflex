@@ -83,6 +83,7 @@ class Recharts(Component):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -159,6 +160,7 @@ class RechartsCharts(NoSSRComponent, MemoizationLeaf):
 
         Returns:
             The memoization leaf
+
         """
         ...
 

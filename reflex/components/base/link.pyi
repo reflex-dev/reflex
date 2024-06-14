@@ -87,6 +87,7 @@ class RawLink(Component):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -177,5 +178,6 @@ class ScriptTag(Component):
 
         Returns:
             The component.
+
         """
         ...

@@ -194,6 +194,7 @@ class Grid(elements.Div, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

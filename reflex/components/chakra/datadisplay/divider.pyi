@@ -97,5 +97,6 @@ class Divider(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

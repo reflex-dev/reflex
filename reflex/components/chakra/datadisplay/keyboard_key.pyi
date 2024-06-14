@@ -82,5 +82,6 @@ class KeyboardKey(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

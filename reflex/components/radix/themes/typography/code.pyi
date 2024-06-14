@@ -230,6 +230,7 @@ class Code(elements.Code, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

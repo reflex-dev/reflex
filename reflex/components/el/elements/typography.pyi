@@ -142,6 +142,7 @@ class Blockquote(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -274,6 +275,7 @@ class Dd(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -406,6 +408,7 @@ class Div(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -538,6 +541,7 @@ class Dl(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -670,6 +674,7 @@ class Dt(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -802,6 +807,7 @@ class Figcaption(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -938,6 +944,7 @@ class Hr(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1070,6 +1077,7 @@ class Li(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1204,6 +1212,7 @@ class Menu(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1346,6 +1355,7 @@ class Ol(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1478,6 +1488,7 @@ class P(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1610,6 +1621,7 @@ class Pre(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1742,6 +1754,7 @@ class Ul(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1880,6 +1893,7 @@ class Ins(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2018,6 +2032,7 @@ class Del(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 

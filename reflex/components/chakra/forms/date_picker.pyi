@@ -125,5 +125,6 @@ class DatePicker(Input):
 
         Returns:
             The component.
+
         """
         ...

@@ -125,5 +125,6 @@ class Email(Input):
 
         Returns:
             The component.
+
         """
         ...

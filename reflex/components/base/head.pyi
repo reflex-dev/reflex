@@ -82,6 +82,7 @@ class NextHeadLib(Component):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -158,6 +159,7 @@ class Head(NextHeadLib, MemoizationLeaf):
 
         Returns:
             The memoization leaf
+
         """
         ...
 

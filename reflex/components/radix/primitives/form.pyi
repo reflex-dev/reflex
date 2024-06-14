@@ -270,6 +270,7 @@ class FormRoot(FormComponent, HTMLForm):
 
         Returns:
             The form component.
+
         """
         ...
 
@@ -983,6 +984,7 @@ class Form(FormRoot):
 
         Returns:
             The form component.
+
         """
         ...
 
@@ -1167,6 +1169,7 @@ class FormNamespace(ComponentNamespace):
 
         Returns:
             The form component.
+
         """
         ...
 

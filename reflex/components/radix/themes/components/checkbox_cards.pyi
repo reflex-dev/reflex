@@ -175,6 +175,7 @@ class CheckboxCardsRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -254,6 +255,7 @@ class CheckboxCardsItem(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

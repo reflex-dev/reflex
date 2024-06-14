@@ -125,5 +125,6 @@ class Password(Input):
 
         Returns:
             The component.
+
         """
         ...

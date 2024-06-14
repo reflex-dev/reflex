@@ -159,6 +159,7 @@ class Card(elements.Div, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

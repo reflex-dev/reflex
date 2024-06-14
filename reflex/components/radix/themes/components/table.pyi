@@ -161,6 +161,7 @@ class TableRoot(elements.Table, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -300,6 +301,7 @@ class TableHeader(elements.Thead, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -442,6 +444,7 @@ class TableRow(elements.Tr, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -604,6 +607,7 @@ class TableColumnHeaderCell(elements.Th, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -743,6 +747,7 @@ class TableBody(elements.Tbody, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -901,6 +906,7 @@ class TableCell(elements.Td, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -1063,6 +1069,7 @@ class TableRowHeaderCell(elements.Th, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

@@ -92,5 +92,6 @@ class Heading(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

@@ -98,6 +98,7 @@ class Grid(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -188,6 +189,7 @@ class GridItem(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -290,5 +292,6 @@ class ResponsiveGrid(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

@@ -189,6 +189,7 @@ class Switch(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

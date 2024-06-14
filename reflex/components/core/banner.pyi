@@ -228,6 +228,7 @@ class ConnectionToaster(Toaster):
 
         Returns:
             The component.
+
         """
         ...
 

@@ -107,6 +107,7 @@ class DropdownMenuRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -178,6 +179,7 @@ class DropdownMenuTrigger(RadixThemesTriggerComponent):
 
         Returns:
             The new RadixThemesTriggerComponent instance.
+
         """
         ...
 
@@ -386,6 +388,7 @@ class DropdownMenuContent(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -459,6 +462,7 @@ class DropdownMenuSubTrigger(RadixThemesTriggerComponent):
 
         Returns:
             The new RadixThemesTriggerComponent instance.
+
         """
         ...
 
@@ -545,6 +549,7 @@ class DropdownMenuSub(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -665,6 +670,7 @@ class DropdownMenuSubContent(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -818,6 +824,7 @@ class DropdownMenuItem(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -897,6 +904,7 @@ class DropdownMenuSeparator(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

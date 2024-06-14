@@ -87,6 +87,7 @@ class LinkOverlay(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -163,5 +164,6 @@ class LinkBox(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

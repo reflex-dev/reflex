@@ -156,5 +156,6 @@ class Switch(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

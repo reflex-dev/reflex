@@ -142,6 +142,7 @@ class Details(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -276,6 +277,7 @@ class Dialog(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -408,6 +410,7 @@ class Summary(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -540,6 +543,7 @@ class Slot(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -672,6 +676,7 @@ class Template(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -804,6 +809,7 @@ class Math(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -940,6 +946,7 @@ class Html(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 

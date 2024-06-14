@@ -82,5 +82,6 @@ class Code(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

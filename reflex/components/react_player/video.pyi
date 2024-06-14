@@ -150,5 +150,6 @@ class Video(ReactPlayer):
 
         Returns:
             The component.
+
         """
         ...

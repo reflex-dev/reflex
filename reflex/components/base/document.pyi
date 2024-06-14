@@ -83,6 +83,7 @@ class NextDocumentLib(Component):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -160,6 +161,7 @@ class Html(NextDocumentLib):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -236,6 +238,7 @@ class DocumentHead(NextDocumentLib):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -312,6 +315,7 @@ class Main(NextDocumentLib):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -388,5 +392,6 @@ class NextScript(NextDocumentLib):
 
         Returns:
             The component.
+
         """
         ...

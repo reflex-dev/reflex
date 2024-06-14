@@ -142,6 +142,7 @@ class Box(elements.Div, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

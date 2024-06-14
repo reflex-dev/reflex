@@ -108,6 +108,7 @@ class Avatar(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -184,6 +185,7 @@ class AvatarBadge(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -264,5 +266,6 @@ class AvatarGroup(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

@@ -176,6 +176,7 @@ class Avatar(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

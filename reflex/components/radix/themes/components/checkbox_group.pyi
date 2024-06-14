@@ -164,6 +164,7 @@ class CheckboxGroupRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -243,6 +244,7 @@ class CheckboxGroupItem(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

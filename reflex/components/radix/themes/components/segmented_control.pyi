@@ -171,6 +171,7 @@ class SegmentedControlRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -252,6 +253,7 @@ class SegmentedControlItem(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

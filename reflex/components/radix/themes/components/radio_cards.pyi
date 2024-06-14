@@ -175,6 +175,7 @@ class RadioCardsRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -254,6 +255,7 @@ class RadioCardsItem(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

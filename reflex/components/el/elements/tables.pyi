@@ -144,6 +144,7 @@ class Caption(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -282,6 +283,7 @@ class Col(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -420,6 +422,7 @@ class Colgroup(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -560,6 +563,7 @@ class Table(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -696,6 +700,7 @@ class Tbody(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -844,6 +849,7 @@ class Td(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -980,6 +986,7 @@ class Tfoot(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1132,6 +1139,7 @@ class Th(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1268,6 +1276,7 @@ class Thead(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1404,6 +1413,7 @@ class Tr(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 

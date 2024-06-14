@@ -97,6 +97,7 @@ class PopoverRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -167,6 +168,7 @@ class PopoverTrigger(RadixThemesTriggerComponent):
 
         Returns:
             The new RadixThemesTriggerComponent instance.
+
         """
         ...
 
@@ -344,6 +346,7 @@ class PopoverContent(elements.Div, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -414,6 +417,7 @@ class PopoverClose(RadixThemesTriggerComponent):
 
         Returns:
             The new RadixThemesTriggerComponent instance.
+
         """
         ...
 

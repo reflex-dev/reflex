@@ -88,6 +88,7 @@ class Transition(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -168,6 +169,7 @@ class Fade(Transition):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -252,6 +254,7 @@ class ScaleFade(Transition):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -334,6 +337,7 @@ class Slide(Transition):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -420,6 +424,7 @@ class SlideFade(Transition):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -506,5 +511,6 @@ class Collapse(Transition):
 
         Returns:
             The component.
+
         """
         ...

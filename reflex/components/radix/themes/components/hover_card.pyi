@@ -101,6 +101,7 @@ class HoverCardRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -171,6 +172,7 @@ class HoverCardTrigger(RadixThemesTriggerComponent):
 
         Returns:
             The new RadixThemesTriggerComponent instance.
+
         """
         ...
 
@@ -324,6 +326,7 @@ class HoverCardContent(elements.Div, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -416,6 +419,7 @@ class HoverCard(ComponentNamespace):
 
         Returns:
             A new component instance.
+
         """
         ...
 

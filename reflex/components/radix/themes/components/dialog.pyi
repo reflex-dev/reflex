@@ -95,6 +95,7 @@ class DialogRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -165,6 +166,7 @@ class DialogTrigger(RadixThemesTriggerComponent):
 
         Returns:
             The new RadixThemesTriggerComponent instance.
+
         """
         ...
 
@@ -244,6 +246,7 @@ class DialogTitle(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -398,6 +401,7 @@ class DialogContent(elements.Div, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -477,6 +481,7 @@ class DialogDescription(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -547,6 +552,7 @@ class DialogClose(RadixThemesTriggerComponent):
 
         Returns:
             The new RadixThemesTriggerComponent instance.
+
         """
         ...
 
@@ -636,6 +642,7 @@ class Dialog(ComponentNamespace):
 
         Returns:
             A new component instance.
+
         """
         ...
 

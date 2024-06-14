@@ -140,5 +140,6 @@ class BaseHTML(Element):
 
         Returns:
             The component.
+
         """
         ...

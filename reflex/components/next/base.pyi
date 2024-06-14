@@ -84,5 +84,6 @@ class NextComponent(Component):
 
         Returns:
             The component.
+
         """
         ...

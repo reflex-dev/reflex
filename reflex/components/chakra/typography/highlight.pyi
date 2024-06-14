@@ -89,5 +89,6 @@ class Highlight(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

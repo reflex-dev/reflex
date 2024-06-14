@@ -125,5 +125,6 @@ class TimePicker(Input):
 
         Returns:
             The component.
+
         """
         ...

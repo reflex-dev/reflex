@@ -82,5 +82,6 @@ class Body(Component):
 
         Returns:
             The component.
+
         """
         ...

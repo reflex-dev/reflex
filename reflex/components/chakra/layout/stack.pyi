@@ -105,6 +105,7 @@ class Stack(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -202,6 +203,7 @@ class Hstack(Stack):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -299,5 +301,6 @@ class Vstack(Stack):
 
         Returns:
             The component.
+
         """
         ...

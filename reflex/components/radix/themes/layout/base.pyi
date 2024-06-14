@@ -191,5 +191,6 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...

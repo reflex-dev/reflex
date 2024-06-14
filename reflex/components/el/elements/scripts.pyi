@@ -140,6 +140,7 @@ class Canvas(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -272,6 +273,7 @@ class Noscript(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -436,6 +438,7 @@ class Script(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 

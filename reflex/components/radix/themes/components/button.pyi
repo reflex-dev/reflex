@@ -275,6 +275,7 @@ class Button(elements.Button, RadixLoadingProp, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

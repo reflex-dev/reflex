@@ -112,6 +112,7 @@ class Editable(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -188,6 +189,7 @@ class EditableInput(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -264,6 +266,7 @@ class EditableTextarea(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -340,5 +343,6 @@ class EditablePreview(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

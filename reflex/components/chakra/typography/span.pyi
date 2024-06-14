@@ -85,5 +85,6 @@ class Span(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

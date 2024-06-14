@@ -94,6 +94,7 @@ class ContextMenuRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -175,6 +176,7 @@ class ContextMenuTrigger(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -344,6 +346,7 @@ class ContextMenuContent(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -423,6 +426,7 @@ class ContextMenuSub(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -504,6 +508,7 @@ class ContextMenuSubTrigger(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -597,6 +602,7 @@ class ContextMenuSubContent(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -741,6 +747,7 @@ class ContextMenuItem(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -820,6 +827,7 @@ class ContextMenuSeparator(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

@@ -184,6 +184,7 @@ class Flex(elements.Div, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

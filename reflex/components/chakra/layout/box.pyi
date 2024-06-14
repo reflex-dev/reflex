@@ -90,5 +90,6 @@ class Box(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

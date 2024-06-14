@@ -227,6 +227,7 @@ class Badge(elements.Span, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

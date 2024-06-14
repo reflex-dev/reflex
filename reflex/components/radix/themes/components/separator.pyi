@@ -165,6 +165,7 @@ class Separator(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

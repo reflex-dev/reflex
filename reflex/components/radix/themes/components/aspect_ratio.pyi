@@ -89,6 +89,7 @@ class AspectRatio(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

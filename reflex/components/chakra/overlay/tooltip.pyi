@@ -126,5 +126,6 @@ class Tooltip(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

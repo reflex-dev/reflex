@@ -82,6 +82,7 @@ class Fragment(Component):
 
         Returns:
             The component.
+
         """
         ...
 

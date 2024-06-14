@@ -82,5 +82,6 @@ class Spacer(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

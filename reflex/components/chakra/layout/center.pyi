@@ -82,6 +82,7 @@ class Center(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -158,6 +159,7 @@ class Square(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -234,5 +236,6 @@ class Circle(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

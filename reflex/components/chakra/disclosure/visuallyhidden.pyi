@@ -82,5 +82,6 @@ class VisuallyHidden(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

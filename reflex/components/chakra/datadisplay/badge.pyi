@@ -92,5 +92,6 @@ class Badge(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

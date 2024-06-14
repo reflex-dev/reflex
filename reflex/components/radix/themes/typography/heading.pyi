@@ -241,6 +241,7 @@ class Heading(elements.H1, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

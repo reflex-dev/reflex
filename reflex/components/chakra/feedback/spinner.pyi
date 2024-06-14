@@ -98,5 +98,6 @@ class Spinner(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

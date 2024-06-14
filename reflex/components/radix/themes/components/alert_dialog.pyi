@@ -97,6 +97,7 @@ class AlertDialogRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -167,6 +168,7 @@ class AlertDialogTrigger(RadixThemesTriggerComponent):
 
         Returns:
             The new RadixThemesTriggerComponent instance.
+
         """
         ...
 
@@ -317,6 +319,7 @@ class AlertDialogContent(elements.Div, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -396,6 +399,7 @@ class AlertDialogTitle(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -475,6 +479,7 @@ class AlertDialogDescription(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -545,6 +550,7 @@ class AlertDialogAction(RadixThemesTriggerComponent):
 
         Returns:
             The new RadixThemesTriggerComponent instance.
+
         """
         ...
 
@@ -615,6 +621,7 @@ class AlertDialogCancel(RadixThemesTriggerComponent):
 
         Returns:
             The new RadixThemesTriggerComponent instance.
+
         """
         ...
 

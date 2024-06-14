@@ -103,6 +103,7 @@ class ScrollArea(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

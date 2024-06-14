@@ -106,6 +106,7 @@ class DataListRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -191,6 +192,7 @@ class DataListItem(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -335,6 +337,7 @@ class DataListLabel(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -414,6 +417,7 @@ class DataListValue(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

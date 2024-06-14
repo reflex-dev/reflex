@@ -115,6 +115,7 @@ class UploadFilesProvider(Component):
 
         Returns:
             The component.
+
         """
         ...
 

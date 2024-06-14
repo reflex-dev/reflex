@@ -184,6 +184,7 @@ class Form(ChakraComponent, HTMLForm):
 
         Returns:
             The form component.
+
         """
         ...
 

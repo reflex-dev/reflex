@@ -160,6 +160,7 @@ class Checkbox(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -244,5 +245,6 @@ class CheckboxGroup(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

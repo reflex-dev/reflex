@@ -170,6 +170,7 @@ class A(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -302,6 +303,7 @@ class Abbr(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -434,6 +436,7 @@ class B(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -566,6 +569,7 @@ class Bdi(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -698,6 +702,7 @@ class Bdo(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -830,6 +835,7 @@ class Br(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -962,6 +968,7 @@ class Cite(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1094,6 +1101,7 @@ class Code(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1230,6 +1238,7 @@ class Data(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1362,6 +1371,7 @@ class Dfn(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1494,6 +1504,7 @@ class Em(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1626,6 +1637,7 @@ class I(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1758,6 +1770,7 @@ class Kbd(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -1890,6 +1903,7 @@ class Mark(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2024,6 +2038,7 @@ class Q(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2156,6 +2171,7 @@ class Rp(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2288,6 +2304,7 @@ class Rt(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2420,6 +2437,7 @@ class Ruby(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2552,6 +2570,7 @@ class S(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2684,6 +2703,7 @@ class Samp(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2816,6 +2836,7 @@ class Small(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -2948,6 +2969,7 @@ class Span(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -3080,6 +3102,7 @@ class Strong(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -3212,6 +3235,7 @@ class Sub(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -3344,6 +3368,7 @@ class Sup(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -3480,6 +3505,7 @@ class Time(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -3612,6 +3638,7 @@ class U(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -3744,6 +3771,7 @@ class Wbr(BaseHTML):
 
         Returns:
             The component.
+
         """
         ...
 

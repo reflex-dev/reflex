@@ -100,6 +100,7 @@ class Skeleton(RadixLoadingProp, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

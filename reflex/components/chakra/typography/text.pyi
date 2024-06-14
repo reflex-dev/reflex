@@ -87,5 +87,6 @@ class Text(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

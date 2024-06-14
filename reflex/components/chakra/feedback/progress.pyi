@@ -98,5 +98,6 @@ class Progress(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

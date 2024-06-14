@@ -225,6 +225,7 @@ class Blockquote(elements.Blockquote, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 

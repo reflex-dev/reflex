@@ -93,6 +93,7 @@ class Skeleton(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -179,6 +180,7 @@ class SkeletonCircle(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -267,5 +269,6 @@ class SkeletonText(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

@@ -150,5 +150,6 @@ class Audio(ReactPlayer):
 
         Returns:
             The component.
+
         """
         ...

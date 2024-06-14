@@ -85,5 +85,6 @@ class AspectRatio(ChakraComponent):
 
         Returns:
             The component.
+
         """
         ...

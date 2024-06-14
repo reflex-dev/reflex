@@ -105,5 +105,6 @@ class IconButton(Text):
 
         Returns:
             The component.
+
         """
         ...

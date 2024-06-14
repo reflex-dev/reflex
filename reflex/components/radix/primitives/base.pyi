@@ -88,6 +88,7 @@ class RadixPrimitiveComponent(Component):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -166,5 +167,6 @@ class RadixPrimitiveComponentWithClassName(RadixPrimitiveComponent):
 
         Returns:
             The component.
+
         """
         ...

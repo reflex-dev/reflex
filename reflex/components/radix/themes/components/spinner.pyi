@@ -95,6 +95,7 @@ class Spinner(RadixLoadingProp, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
