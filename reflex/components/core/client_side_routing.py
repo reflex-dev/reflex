@@ -14,7 +14,7 @@ from reflex.components.component import Component
 from reflex.components.core.cond import cond
 from reflex.vars import Var
 
-route_not_found: Var = Var.create_safe(constants.ROUTE_NOT_FOUND)
+route_not_found: Var = Var.create_safe(constants.ROUTE_NOT_FOUND, _var_is_string=False)
 
 
 class ClientSideRouting(Component):
@@ -23,13 +23,13 @@ class ClientSideRouting(Component):
     library = "/utils/client_side_routing"
     tag = "useClientSideRouting"
 
-    def _get_hooks(self) -> str:
+    def add_hooks(self) -> list[str]:
         """Get the hooks to render.
 
         Returns:
             The useClientSideRouting hook.
         """
-        return f"const {constants.ROUTE_NOT_FOUND} = {self.tag}()"
+        return [f"const {constants.ROUTE_NOT_FOUND} = {self.tag}()"]
 
     def render(self) -> str:
         """Render the component.

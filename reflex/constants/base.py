@@ -21,10 +21,14 @@ class Dirs(SimpleNamespace):
     WEB = ".web"
     # The name of the assets directory.
     APP_ASSETS = "assets"
+    # The name of the assets directory for external ressource (a subfolder of APP_ASSETS).
+    EXTERNAL_APP_ASSETS = "external"
     # The name of the utils file.
     UTILS = "utils"
     # The name of the output static directory.
     STATIC = "_static"
+    # The name of the public html directory served at "/"
+    PUBLIC = "public"
     # The name of the state file.
     STATE_PATH = "/".join([UTILS, "state"])
     # The name of the components file.
@@ -38,7 +42,7 @@ class Dirs(SimpleNamespace):
     # The directory where the utils file is located.
     WEB_UTILS = os.path.join(WEB, UTILS)
     # The directory where the assets are located.
-    WEB_ASSETS = os.path.join(WEB, "public")
+    WEB_ASSETS = os.path.join(WEB, PUBLIC)
     # The env json file.
     ENV_JSON = os.path.join(WEB, "env.json")
     # The reflex json file.

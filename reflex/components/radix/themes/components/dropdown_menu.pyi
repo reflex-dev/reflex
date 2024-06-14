@@ -7,9 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Literal, Union
+from typing import Dict, List, Literal, Union
 from reflex.components.component import ComponentNamespace
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent, RadixThemesTriggerComponent
 
@@ -21,7 +21,6 @@ LiteralAlignType = Literal["start", "center", "end"]
 LiteralStickyType = Literal["partial", "always"]
 
 class DropdownMenuRoot(RadixThemesComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -183,7 +182,6 @@ class DropdownMenuTrigger(RadixThemesTriggerComponent):
         ...
 
 class DropdownMenuContent(RadixThemesComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -465,7 +463,6 @@ class DropdownMenuSubTrigger(RadixThemesTriggerComponent):
         ...
 
 class DropdownMenuSub(RadixThemesComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -552,7 +549,6 @@ class DropdownMenuSub(RadixThemesComponent):
         ...
 
 class DropdownMenuSubContent(RadixThemesComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -673,7 +669,6 @@ class DropdownMenuSubContent(RadixThemesComponent):
         ...
 
 class DropdownMenuItem(RadixThemesComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore

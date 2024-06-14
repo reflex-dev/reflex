@@ -1,6 +1,12 @@
 import pytest
 
-from reflex.utils.imports import ImportVar, merge_imports
+from reflex.utils.imports import (
+    ImportDict,
+    ImportVar,
+    ParsedImportDict,
+    merge_imports,
+    parse_imports,
+)
 
 
 @pytest.mark.parametrize(
@@ -72,7 +78,36 @@ def test_merge_imports(input_1, input_2, output):
 
     """
     res = merge_imports(input_1, input_2)
-    assert set(res.keys()) == set(output.keys())
+    assert res.keys() == output.keys()
 
     for key in output:
         assert set(res[key]) == set(output[key])
+
+
+@pytest.mark.parametrize(
+    "input, output",
+    [
+        ({}, {}),
+        (
+            {"react": "Component"},
+            {"react": [ImportVar(tag="Component")]},
+        ),
+        (
+            {"react": ["Component"]},
+            {"react": [ImportVar(tag="Component")]},
+        ),
+        (
+            {"react": ["Component", ImportVar(tag="useState")]},
+            {"react": [ImportVar(tag="Component"), ImportVar(tag="useState")]},
+        ),
+        (
+            {"react": ["Component"], "foo": "anotherFunction"},
+            {
+                "react": [ImportVar(tag="Component")],
+                "foo": [ImportVar(tag="anotherFunction")],
+            },
+        ),
+    ],
+)
+def test_parse_imports(input: ImportDict, output: ParsedImportDict):
+    assert parse_imports(input) == output

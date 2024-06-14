@@ -10,7 +10,8 @@ from reflex.style import Style
 from typing import Any, Dict, Literal
 from reflex.components import Component
 from reflex.components.tags import Tag
-from reflex.utils import imports
+from reflex.config import get_config
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
@@ -579,8 +580,11 @@ class Theme(RadixThemesComponent):
             A new component instance.
         """
         ...
+    def add_imports(self) -> ImportDict | list[ImportDict]: ...
 
 class ThemePanel(RadixThemesComponent):
+    def add_imports(self) -> dict[str, str]: ...
+    def add_hooks(self) -> list[str]: ...
     @overload
     @classmethod
     def create(  # type: ignore

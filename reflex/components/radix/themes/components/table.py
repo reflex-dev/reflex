@@ -1,8 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import List, Literal
 
-from reflex import el
 from reflex.components.component import ComponentNamespace
+from reflex.components.el import elements
 from reflex.vars import Var
 
 from ..base import (
@@ -10,7 +10,7 @@ from ..base import (
 )
 
 
-class TableRoot(el.Table, RadixThemesComponent):
+class TableRoot(elements.Table, RadixThemesComponent):
     """A semantic table for presenting tabular data."""
 
     tag = "Table.Root"
@@ -22,7 +22,7 @@ class TableRoot(el.Table, RadixThemesComponent):
     variant: Var[Literal["surface", "ghost"]]
 
 
-class TableHeader(el.Thead, RadixThemesComponent):
+class TableHeader(elements.Thead, RadixThemesComponent):
     """The header of the table defines column names and other non-data elements."""
 
     tag = "Table.Header"
@@ -32,7 +32,7 @@ class TableHeader(el.Thead, RadixThemesComponent):
     _valid_parents: List[str] = ["TableRoot"]
 
 
-class TableRow(el.Tr, RadixThemesComponent):
+class TableRow(elements.Tr, RadixThemesComponent):
     """A row containing table cells."""
 
     tag = "Table.Row"
@@ -43,7 +43,7 @@ class TableRow(el.Tr, RadixThemesComponent):
     _invalid_children: List[str] = ["TableBody", "TableHeader", "TableRow"]
 
 
-class TableColumnHeaderCell(el.Th, RadixThemesComponent):
+class TableColumnHeaderCell(elements.Th, RadixThemesComponent):
     """A table cell that is semantically treated as a column header."""
 
     tag = "Table.ColumnHeaderCell"
@@ -61,7 +61,7 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
     ]
 
 
-class TableBody(el.Tbody, RadixThemesComponent):
+class TableBody(elements.Tbody, RadixThemesComponent):
     """The body of the table contains the data rows."""
 
     tag = "Table.Body"
@@ -76,7 +76,7 @@ class TableBody(el.Tbody, RadixThemesComponent):
     _valid_parents: List[str] = ["TableRoot"]
 
 
-class TableCell(el.Td, RadixThemesComponent):
+class TableCell(elements.Td, RadixThemesComponent):
     """A cell containing data."""
 
     tag = "Table.Cell"
@@ -93,7 +93,7 @@ class TableCell(el.Td, RadixThemesComponent):
     ]
 
 
-class TableRowHeaderCell(el.Th, RadixThemesComponent):
+class TableRowHeaderCell(elements.Th, RadixThemesComponent):
     """A table cell that is semantically treated as a row header."""
 
     tag = "Table.RowHeaderCell"

@@ -160,3 +160,5 @@ class Head(NextHeadLib, MemoizationLeaf):
             The memoization leaf
         """
         ...
+
+head = Head.create

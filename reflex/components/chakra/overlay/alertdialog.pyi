@@ -7,14 +7,13 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Union
 from reflex.components.chakra import ChakraComponent, LiteralAlertDialogSize
 from reflex.components.chakra.media.icon import Icon
 from reflex.components.component import Component
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 class AlertDialog(ChakraComponent):
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore

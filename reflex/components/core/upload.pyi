@@ -9,21 +9,21 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 import os
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
-from reflex import constants
-from reflex.components.chakra.forms.input import Input
-from reflex.components.chakra.layout.box import Box
+from typing import Callable, ClassVar, Dict, List, Optional
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
+from reflex.components.el.elements.forms import Input
+from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import Dirs
 from reflex.event import (
     CallableEventSpec,
     EventChain,
+    EventHandler,
     EventSpec,
     call_event_fn,
     call_script,
     parse_args_spec,
 )
-from reflex.utils import imports
+from reflex.utils.imports import ImportVar
 from reflex.vars import BaseVar, CallableVar, Var, VarData
 
 DEFAULT_UPLOAD_ID: str
@@ -218,7 +218,6 @@ class Upload(MemoizationLeaf):
             The upload component.
         """
         ...
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
 
 class StyledUpload(Upload):
     @overload
@@ -417,3 +416,5 @@ class UploadNamespace(ComponentNamespace):
             The styled upload component.
         """
         ...
+
+upload = UploadNamespace()

@@ -73,7 +73,7 @@ position_map = {
 
 # needed to inverse contains for find
 def _find(const, var):
-    return Var.create_safe(const).contains(var)
+    return Var.create_safe(const, _var_is_string=False).contains(var)
 
 
 def _set_var_default(props, position, prop, default1, default2=""):
@@ -174,4 +174,6 @@ class ColorModeNamespace(BaseVar):
     switch = staticmethod(ColorModeSwitch.create)
 
 
-color_mode_var_and_namespace = ColorModeNamespace(**dataclasses.asdict(color_mode))
+color_mode = color_mode_var_and_namespace = ColorModeNamespace(
+    **dataclasses.asdict(color_mode)
+)

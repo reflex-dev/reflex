@@ -9,8 +9,7 @@ import re
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from reflex import constants
-from reflex.utils import exceptions, serializers, types
-from reflex.utils.serializers import serialize
+from reflex.utils import exceptions, types
 from reflex.vars import BaseVar, Var
 
 if TYPE_CHECKING:
@@ -400,6 +399,7 @@ def format_prop(
     """
     # import here to avoid circular import.
     from reflex.event import EventChain
+    from reflex.utils import serializers
 
     try:
         # Handle var props.
@@ -612,6 +612,9 @@ def format_queue_events(
 
     Returns:
         The compiled javascript callback to queue the given events on the frontend.
+
+    Raises:
+        ValueError: If a lambda function is given which returns a Var.
     """
     from reflex.event import (
         EventChain,
@@ -648,7 +651,11 @@ def format_queue_events(
         if isinstance(spec, (EventHandler, EventSpec)):
             specs = [call_event_handler(spec, args_spec or _default_args_spec)]
         elif isinstance(spec, type(lambda: None)):
-            specs = call_event_fn(spec, args_spec or _default_args_spec)
+            specs = call_event_fn(spec, args_spec or _default_args_spec)  # type: ignore
+            if isinstance(specs, Var):
+                raise ValueError(
+                    f"Invalid event spec: {specs}. Expected a list of EventSpecs."
+                )
         payloads.extend(format_event(s) for s in specs)
 
     # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
@@ -687,6 +694,8 @@ def format_state(value: Any, key: Optional[str] = None) -> Any:
     Raises:
         TypeError: If the given value is not a valid state.
     """
+    from reflex.utils import serializers
+
     # Handle dicts.
     if isinstance(value, dict):
         return {k: format_state(v, k) for k, v in value.items()}
@@ -700,7 +709,7 @@ def format_state(value: Any, key: Optional[str] = None) -> Any:
         return value
 
     # Serialize the value.
-    serialized = serialize(value)
+    serialized = serializers.serialize(value)
     if serialized is not None:
         return serialized
 
@@ -803,7 +812,9 @@ def json_dumps(obj: Any) -> str:
     Returns:
         A string
     """
-    return json.dumps(obj, ensure_ascii=False, default=serialize)
+    from reflex.utils import serializers
+
+    return json.dumps(obj, ensure_ascii=False, default=serializers.serialize)
 
 
 def unwrap_vars(value: str) -> str:
@@ -905,4 +916,7 @@ def format_data_editor_cell(cell: Any):
     Returns:
         The formatted cell.
     """
-    return {"kind": Var.create(value="GridCellKind.Text"), "data": cell}
+    return {
+        "kind": Var.create(value="GridCellKind.Text", _var_is_string=False),
+        "data": cell,
+    }

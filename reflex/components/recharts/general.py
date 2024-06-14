@@ -53,6 +53,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
         "ScatterChart",
         "Treemap",
         "ComposedChart",
+        "FunnelChart",
     ]
 
 
@@ -182,3 +183,10 @@ class LabelList(Recharts):
 
     # Color of the stroke
     stroke: Var[str]
+
+
+responsive_container = ResponsiveContainer.create
+legend = Legend.create
+graphing_tooltip = GraphingTooltip.create
+label = Label.create
+label_list = LabelList.create

@@ -17,7 +17,7 @@ from reflex.components.component import (
 )
 from reflex.config import get_config
 from reflex.state import BaseState
-from reflex.style import LIGHT_COLOR_MODE
+from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
 from reflex.vars import Var
@@ -79,7 +79,7 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
     """
     appearance = getattr(theme, "appearance", None)
     if appearance is None:
-        appearance = LIGHT_COLOR_MODE
+        appearance = SYSTEM_COLOR_MODE
     return (
         templates.CONTEXT.render(
             initial_state=utils.compile_state(state),
@@ -169,7 +169,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
                 raise FileNotFoundError(
                     f"The stylesheet file {stylesheet_full_path} does not exist."
                 )
-            stylesheet = f"@/{stylesheet.strip('/')}"
+            stylesheet = f"../{constants.Dirs.PUBLIC}/{stylesheet.strip('/')}"
         sheets.append(stylesheet) if stylesheet not in sheets else None
     return templates.STYLE.render(stylesheets=sheets)
 

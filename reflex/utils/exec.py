@@ -108,11 +108,26 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                         url = match.group(1)
                         if get_config().frontend_path != "":
                             url = urljoin(url, get_config().frontend_path)
-                        console.print(f"App running at: [bold green]{url}")
+
+                        console.print(
+                            f"App running at: [bold green]{url}[/bold green]{' (Frontend-only mode)' if not backend_present else ''}"
+                        )
+                        if backend_present:
+                            console.print(
+                                f"Backend running at: [bold green]http://0.0.0.0:{get_config().backend_port}[/bold green]"
+                            )
                         first_run = False
                     else:
                         console.print("New packages detected: Updating app...")
                 else:
+                    if any(
+                        [x in line for x in ("bin executable does not exist on disk",)]
+                    ):
+                        console.error(
+                            "Try setting `REFLEX_USE_NPM=1` and re-running `reflex init` and `reflex run` to use npm instead of bun:\n"
+                            "`REFLEX_USE_NPM=1 reflex init`\n"
+                            "`REFLEX_USE_NPM=1 reflex run`"
+                        )
                     new_hash = detect_package_change(json_file_path)
                     if new_hash != last_hash:
                         last_hash = new_hash

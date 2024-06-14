@@ -12,8 +12,8 @@ from reflex.components.core.cond import color_mode_cond
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
-from reflex.utils import format, imports
-from reflex.utils.imports import ImportVar
+from reflex.utils import format
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 LiteralCodeBlockTheme = Literal[
@@ -381,42 +381,45 @@ class CodeBlock(Component):
     # Props passed down to the code tag.
     code_tag_props: Var[Dict[str, str]]
 
-    def _get_imports(self) -> imports.ImportDict:
-        merged_imports = super()._get_imports()
-        # Get all themes from a cond literal
+    def add_imports(self) -> ImportDict:
+        """Add imports for the CodeBlock component.
+
+        Returns:
+            The import dict.
+        """
+        imports_: ImportDict = {}
         themes = re.findall(r"`(.*?)`", self.theme._var_name)
         if not themes:
             themes = [self.theme._var_name]
-        merged_imports = imports.merge_imports(
-            merged_imports,
+
+        imports_.update(
             {
-                f"react-syntax-highlighter/dist/cjs/styles/prism/{self.convert_theme_name(theme)}": {
+                f"react-syntax-highlighter/dist/cjs/styles/prism/{self.convert_theme_name(theme)}": [
                     ImportVar(
                         tag=format.to_camel_case(self.convert_theme_name(theme)),
                         is_default=True,
                         install=False,
                     )
-                }
+                ]
                 for theme in themes
-            },
+            }
         )
+
         if (
             self.language is not None
             and self.language._var_name in LiteralCodeLanguage.__args__  # type: ignore
         ):
-            merged_imports = imports.merge_imports(
-                merged_imports,
-                {
-                    f"react-syntax-highlighter/dist/cjs/languages/prism/{self.language._var_name}": {
-                        ImportVar(
-                            tag=format.to_camel_case(self.language._var_name),
-                            is_default=True,
-                            install=False,
-                        )
-                    }
-                },
-            )
-        return merged_imports
+            imports_[
+                f"react-syntax-highlighter/dist/cjs/languages/prism/{self.language._var_name}"
+            ] = [
+                ImportVar(
+                    tag=format.to_camel_case(self.language._var_name),
+                    is_default=True,
+                    install=False,
+                )
+            ]
+
+        return imports_
 
     def _get_custom_code(self) -> Optional[str]:
         if (
@@ -504,10 +507,13 @@ class CodeBlock(Component):
             style=Var.create(
                 format.to_camel_case(f"{predicate}{qmark}{value.replace('`', '')}"),
                 _var_is_local=False,
+                _var_is_string=False,
             )
         ).remove_props("theme", "code")
         if self.code is not None:
-            out.special_props.add(Var.create_safe(f"children={str(self.code)}"))
+            out.special_props.add(
+                Var.create_safe(f"children={str(self.code)}", _var_is_string=False)
+            )
         return out
 
     @staticmethod
@@ -523,3 +529,6 @@ class CodeBlock(Component):
         if theme in ["light", "dark"]:
             return f"one-{theme}"
         return theme
+
+
+code_block = CodeBlock.create

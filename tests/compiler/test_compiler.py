@@ -4,8 +4,7 @@ from typing import List
 import pytest
 
 from reflex.compiler import compiler, utils
-from reflex.utils import imports
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportVar, ParsedImportDict
 
 
 @pytest.mark.parametrize(
@@ -93,7 +92,7 @@ def test_compile_import_statement(
         ),
     ],
 )
-def test_compile_imports(import_dict: imports.ImportDict, test_dicts: List[dict]):
+def test_compile_imports(import_dict: ParsedImportDict, test_dicts: List[dict]):
     """Test the compile_imports function.
 
     Args:
@@ -135,7 +134,7 @@ def test_compile_stylesheets(tmp_path, mocker):
         f"@import url('./tailwind.css'); \n"
         f"@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
         f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
-        f"@import url('@/styles.css'); \n"
+        f"@import url('../public/styles.css'); \n"
         f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
     )
 
@@ -166,7 +165,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         os.path.join(".web", "styles", "styles.css"),
-        "@import url('@/styles.css'); \n",
+        "@import url('../public/styles.css'); \n",
     )
 
 

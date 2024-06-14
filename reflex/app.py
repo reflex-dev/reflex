@@ -50,7 +50,7 @@ from reflex.components.component import (
     ComponentStyle,
     evaluate_style_namespaces,
 )
-from reflex.components.core import connection_pulser, connection_toaster
+from reflex.components.core.banner import connection_pulser, connection_toaster
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
@@ -707,11 +707,8 @@ class App(LifespanMixin, Base):
         page_imports = {
             i
             for i, tags in imports.items()
-            if i
-            not in [
-                *constants.PackageJson.DEPENDENCIES.keys(),
-                *constants.PackageJson.DEV_DEPENDENCIES.keys(),
-            ]
+            if i not in constants.PackageJson.DEPENDENCIES
+            and i not in constants.PackageJson.DEV_DEPENDENCIES
             and not any(i.startswith(prefix) for prefix in ["/", ".", "next/"])
             and i != ""
             and any(tag.install for tag in tags)
@@ -1302,6 +1299,12 @@ class EventNamespace(AsyncNamespace):
     # The application object.
     app: App
 
+    # Keep a mapping between socket ID and client token.
+    token_to_sid: dict[str, str] = {}
+
+    # Keep a mapping between client token and socket ID.
+    sid_to_token: dict[str, str] = {}
+
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
 
@@ -1327,7 +1330,9 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id.
         """
-        pass
+        disconnect_token = self.sid_to_token.pop(sid, None)
+        if disconnect_token:
+            self.token_to_sid.pop(disconnect_token, None)
 
     async def emit_update(self, update: StateUpdate, sid: str) -> None:
         """Emit an update to the client.
@@ -1350,6 +1355,9 @@ class EventNamespace(AsyncNamespace):
         """
         # Get the event.
         event = Event.parse_raw(data)
+
+        self.token_to_sid[event.token] = sid
+        self.sid_to_token[sid] = event.token
 
         # Get the event environment.
         assert self.app.sio is not None
