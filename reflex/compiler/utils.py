@@ -158,7 +158,7 @@ def _compile_client_storage_field(
     Type[Cookie] | Type[LocalStorage] | Type[SessionStorage] | None,
     dict[str, Any] | None,
 ]:
-    """Compile the given cookie, local_storage or sessionStorage field.
+    """Compile the given cookie, local_storage or session_storage field.
 
     Args:
         field: The possible cookie field to compile.
