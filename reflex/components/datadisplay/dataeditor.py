@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
-from reflex.constants.event import EventTriggers
 from reflex.event import EventHandler
 from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
@@ -391,18 +390,6 @@ class DataEditor(NoSSRComponent):
                 position="fixed",
                 top=0,
             )
-        }
-
-    def get_default_event_triggers(self) -> dict[str, Any]:
-        """Remove most default event triggers from the DataEditor.
-
-        Returns:
-            The overriden default event triggers dictionary.
-
-        """
-        return {
-            EventTriggers.ON_MOUNT: lambda: [],
-            EventTriggers.ON_UNMOUNT: lambda: [],
         }
 
 
