@@ -161,6 +161,24 @@ ComponentStyle = Dict[
 ]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
 
+DEFAULTS_EVENT_TRIGGERS: dict[str, Callable[[], list]] = {
+    EventTriggers.ON_FOCUS: lambda: [],
+    EventTriggers.ON_BLUR: lambda: [],
+    EventTriggers.ON_CLICK: lambda: [],
+    EventTriggers.ON_CONTEXT_MENU: lambda: [],
+    EventTriggers.ON_DOUBLE_CLICK: lambda: [],
+    EventTriggers.ON_MOUSE_DOWN: lambda: [],
+    EventTriggers.ON_MOUSE_ENTER: lambda: [],
+    EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+    EventTriggers.ON_MOUSE_MOVE: lambda: [],
+    EventTriggers.ON_MOUSE_OUT: lambda: [],
+    EventTriggers.ON_MOUSE_OVER: lambda: [],
+    EventTriggers.ON_MOUSE_UP: lambda: [],
+    EventTriggers.ON_SCROLL: lambda: [],
+    EventTriggers.ON_MOUNT: lambda: [],
+    EventTriggers.ON_UNMOUNT: lambda: [],
+}
+
 
 class Component(BaseComponent, ABC):
     """A component with style, event trigger and other props."""
@@ -586,23 +604,7 @@ class Component(BaseComponent, ABC):
             The default event triggers.
 
         """
-        return {
-            EventTriggers.ON_FOCUS: lambda: [],
-            EventTriggers.ON_BLUR: lambda: [],
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_CONTEXT_MENU: lambda: [],
-            EventTriggers.ON_DOUBLE_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_OUT: lambda: [],
-            EventTriggers.ON_MOUSE_OVER: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
-            EventTriggers.ON_SCROLL: lambda: [],
-            EventTriggers.ON_MOUNT: lambda: [],
-            EventTriggers.ON_UNMOUNT: lambda: [],
-        }
+        return DEFAULTS_EVENT_TRIGGERS
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers for the component.
