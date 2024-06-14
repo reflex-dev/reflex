@@ -168,6 +168,7 @@ class Stack(Flex):
 
         Returns:
             The stack component.
+
         """
         ...
 
@@ -327,6 +328,7 @@ class VStack(Stack):
 
         Returns:
             The stack component.
+
         """
         ...
 
@@ -486,6 +488,7 @@ class HStack(Stack):
 
         Returns:
             The stack component.
+
         """
         ...
 

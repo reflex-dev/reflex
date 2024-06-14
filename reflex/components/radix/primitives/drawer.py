@@ -83,6 +83,7 @@ class DrawerTrigger(DrawerComponent):
 
         Returns:
             The new DrawerTrigger instance.
+
         """
         for child in children:
             if "on_click" in getattr(child, "event_triggers", {}):
@@ -113,6 +114,7 @@ class DrawerContent(DrawerComponent):
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
+
         """
         base_style = {
             "left": "0",
@@ -156,6 +158,7 @@ class DrawerContent(DrawerComponent):
 
         Returns:
                  The drawer content.
+
         """
         comp = super().create(*children, **props)
 
@@ -175,6 +178,7 @@ class DrawerOverlay(DrawerComponent):
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
+
         """
         base_style = {
             "position": "fixed",
@@ -211,6 +215,7 @@ class DrawerTitle(DrawerComponent):
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
+
         """
         base_style = {
             "font-size": "1.125rem",
@@ -236,6 +241,7 @@ class DrawerDescription(DrawerComponent):
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
+
         """
         base_style = {
             "font-size": "0.875rem",

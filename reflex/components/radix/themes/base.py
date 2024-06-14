@@ -106,6 +106,7 @@ class RadixThemesComponent(Component):
 
         Returns:
             A new component instance.
+
         """
         component = super().create(*children, **props)
         if component.library is None:
@@ -141,6 +142,7 @@ class RadixThemesTriggerComponent(RadixThemesComponent):
 
         Returns:
             The new RadixThemesTriggerComponent instance.
+
         """
         from .layout.flex import Flex
 
@@ -202,6 +204,7 @@ class Theme(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         if color_mode is not None:
             props["appearance"] = color_mode
@@ -214,6 +217,7 @@ class Theme(RadixThemesComponent):
 
         Returns:
             The import dict.
+
         """
         _imports: ImportDict = {
             "/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
@@ -255,6 +259,7 @@ class ThemePanel(RadixThemesComponent):
 
         Returns:
             The import dict.
+
         """
         return {"react": "useEffect"}
 
@@ -263,6 +268,7 @@ class ThemePanel(RadixThemesComponent):
 
         Returns:
             The hooks to render.
+
         """
         # The panel freezes the tab if the user color preference differs from the
         # theme "appearance", so clear it out when theme panel is used.

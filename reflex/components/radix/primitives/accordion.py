@@ -35,6 +35,7 @@ def _inherited_variant_selector(
 
     Returns:
         A CSS selector that is more specific on elements that directly set the variant.
+
     """
     if not selectors:
         selectors = ("&",)
@@ -128,6 +129,7 @@ class AccordionRoot(AccordionComponent):
 
         Returns:
             The style of the component.
+
         """
         if self.radius is not None:
             self.custom_attrs["data-radius"] = self.radius
@@ -206,6 +208,7 @@ class AccordionItem(AccordionComponent):
 
         Returns:
             The accordion item.
+
         """
         # The item requires a value to toggle (use a random unique name if not provided).
         value = props.pop("value", get_uuid_string_var())
@@ -247,6 +250,7 @@ class AccordionItem(AccordionComponent):
 
         Returns:
             The style of the component.
+
         """
         divider_style = f"var(--divider-px) solid {color('gray', 6, alpha=True)}"
         return {
@@ -296,6 +300,7 @@ class AccordionHeader(AccordionComponent):
 
         Returns:
             The Accordion header Component.
+
         """
         if "AccordionHeader" not in (
             cls_name := props.pop("class_name", "AccordionHeader")
@@ -309,6 +314,7 @@ class AccordionHeader(AccordionComponent):
 
         Returns:
             The style of the component.
+
         """
         return {"display": "flex"}
 
@@ -330,6 +336,7 @@ class AccordionTrigger(AccordionComponent):
 
         Returns:
             The Accordion trigger Component.
+
         """
         if "AccordionTrigger" not in (
             cls_name := props.pop("class_name", "AccordionTrigger")
@@ -343,6 +350,7 @@ class AccordionTrigger(AccordionComponent):
 
         Returns:
             The style of the component.
+
         """
         return {
             "color": color("accent", 11),
@@ -389,6 +397,7 @@ class AccordionIcon(Icon):
 
         Returns:
             The Accordion icon Component.
+
         """
         if "AccordionChevron" not in (
             cls_name := props.pop("class_name", "AccordionChevron")
@@ -410,6 +419,7 @@ class AccordionContent(AccordionComponent):
 
         Returns:
             The imports of the component.
+
         """
         return {"@emotion/react": "keyframes"}
 
@@ -423,6 +433,7 @@ class AccordionContent(AccordionComponent):
 
         Returns:
             The Accordion content Component.
+
         """
         if "AccordionContent" not in (
             cls_name := props.pop("class_name", "AccordionContent")
@@ -436,6 +447,7 @@ class AccordionContent(AccordionComponent):
 
         Returns:
             The custom code of the component.
+
         """
         return [
             """
@@ -463,6 +475,7 @@ to {
 
         Returns:
             The style of the component.
+
         """
         slideDown = Var.create(
             f"${{slideDown}} var(--animation-duration) var(--animation-easing)",

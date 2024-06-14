@@ -186,6 +186,7 @@ class HighLevelSelect(SelectRoot):
 
         Returns:
             The select component.
+
         """
         trigger_prop_list = [
             "placeholder",

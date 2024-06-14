@@ -41,6 +41,7 @@ class TabsRoot(RadixThemesComponent):
 
         Returns:
             The style to add.
+
         """
         return {
             vertical_orientation_css: {
@@ -62,6 +63,7 @@ class TabsList(RadixThemesComponent):
 
         Returns:
             The style to add.
+
         """
         return {
             vertical_orientation_css: {
@@ -97,6 +99,7 @@ class TabsTrigger(RadixThemesComponent):
 
         Returns:
             The TabsTrigger Component.
+
         """
         if "color_scheme" in props:
             custom_attrs = props.setdefault("custom_attrs", {})
@@ -111,6 +114,7 @@ class TabsTrigger(RadixThemesComponent):
 
         Returns:
             The style to add.
+
         """
         return {vertical_orientation_css: {"width": "100%"}}
 
@@ -128,6 +132,7 @@ class TabsContent(RadixThemesComponent):
 
         Returns:
             The style to add.
+
         """
         return {
             vertical_orientation_css: {"width": "100%", "margin": None},

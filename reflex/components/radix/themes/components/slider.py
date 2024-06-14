@@ -83,6 +83,7 @@ class Slider(RadixThemesComponent):
 
         Returns:
             The component.
+
         """
         default_value = props.pop("default_value", [50])
 

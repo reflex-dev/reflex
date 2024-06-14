@@ -125,6 +125,7 @@ class HighLevelCheckbox(RadixThemesComponent):
 
         Returns:
             The checkbox component with a label.
+
         """
         spacing = props.pop("spacing", "2")
         size = props.pop("size", "2")

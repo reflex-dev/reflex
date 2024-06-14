@@ -174,6 +174,7 @@ class Progress(RadixThemesComponent):
 
         Returns:
             The Progress Component.
+
         """
         ...
 

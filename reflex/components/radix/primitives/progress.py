@@ -32,6 +32,7 @@ class ProgressRoot(ProgressComponent):
 
         Returns:
             The style of the component.
+
         """
         if self.radius is not None:
             self.custom_attrs["data-radius"] = self.radius
@@ -71,6 +72,7 @@ class ProgressIndicator(ProgressComponent):
 
         Returns:
             The style of the component.
+
         """
         if self.color_scheme is not None:
             self.custom_attrs["data-accent-color"] = self.color_scheme
@@ -112,6 +114,7 @@ class Progress(ProgressRoot):
 
         Returns:
             The progress bar.
+
         """
         progress_indicator_props = {}
         if "color_scheme" in props:

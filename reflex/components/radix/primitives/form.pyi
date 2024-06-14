@@ -90,6 +90,7 @@ class FormComponent(RadixPrimitiveComponentWithClassName):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -352,6 +353,7 @@ class FormField(FormComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -431,6 +433,7 @@ class FormLabel(FormComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -513,6 +516,7 @@ class FormControl(FormComponent):
 
         Returns:
             The form control component.
+
         """
         ...
 
@@ -640,6 +644,7 @@ class FormMessage(FormComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -718,6 +723,7 @@ class FormValidityState(FormComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -796,6 +802,7 @@ class FormSubmit(FormComponent):
 
         Returns:
             The component.
+
         """
         ...
 

@@ -51,6 +51,7 @@ class ColorModeIcon(Cond):
 
         Returns:
             The conditionally rendered component
+
         """
         return color_mode_cond(
             light=light_component or DEFAULT_LIGHT_ICON,
@@ -106,6 +107,7 @@ class ColorModeIconButton(IconButton):
 
         Returns:
             The button component.
+
         """
         if children:
             console.deprecate(
@@ -157,6 +159,7 @@ class ColorModeSwitch(Switch):
 
         Returns:
             The switch component.
+
         """
         return Switch.create(
             *children,

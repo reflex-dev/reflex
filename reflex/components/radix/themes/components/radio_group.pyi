@@ -183,6 +183,7 @@ class RadioGroupRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -268,6 +269,7 @@ class RadioGroupItem(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -446,6 +448,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
 
         Returns:
             The created radio group component.
+
         """
         ...
 
@@ -625,6 +628,7 @@ class RadioGroup(ComponentNamespace):
 
         Returns:
             The created radio group component.
+
         """
         ...
 

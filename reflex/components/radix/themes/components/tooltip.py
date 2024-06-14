@@ -104,6 +104,7 @@ class Tooltip(RadixThemesComponent):
 
         Returns:
             The created component.
+
         """
         ARIA_LABEL_KEY = "aria_label"
         if props.get(ARIA_LABEL_KEY) is not None:

@@ -180,6 +180,7 @@ class Center(Flex):
 
         Returns:
             A new component instance.
+
         """
         ...
 

@@ -113,6 +113,7 @@ class SelectRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -271,6 +272,7 @@ class SelectTrigger(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -453,6 +455,7 @@ class SelectContent(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -532,6 +535,7 @@ class SelectGroup(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -615,6 +619,7 @@ class SelectItem(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -694,6 +699,7 @@ class SelectLabel(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -773,6 +779,7 @@ class SelectSeparator(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -967,6 +974,7 @@ class HighLevelSelect(SelectRoot):
 
         Returns:
             The select component.
+
         """
         ...
 
@@ -1167,6 +1175,7 @@ class Select(ComponentNamespace):
 
         Returns:
             The select component.
+
         """
         ...
 

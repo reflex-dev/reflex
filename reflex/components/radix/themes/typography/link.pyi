@@ -281,6 +281,7 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
 
         Returns:
             Component: The link component
+
         """
         ...
 

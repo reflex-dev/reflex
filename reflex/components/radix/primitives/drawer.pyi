@@ -90,6 +90,7 @@ class DrawerComponent(RadixPrimitiveComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -196,6 +197,7 @@ class DrawerRoot(DrawerComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -267,6 +269,7 @@ class DrawerTrigger(DrawerComponent):
 
         Returns:
             The new DrawerTrigger instance.
+
         """
         ...
 
@@ -345,6 +348,7 @@ class DrawerPortal(DrawerComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -442,6 +446,7 @@ class DrawerContent(DrawerComponent):
 
         Returns:
                  The drawer content.
+
         """
         ...
 
@@ -520,6 +525,7 @@ class DrawerOverlay(DrawerComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -591,6 +597,7 @@ class DrawerClose(DrawerTrigger):
 
         Returns:
             The new DrawerTrigger instance.
+
         """
         ...
 
@@ -669,6 +676,7 @@ class DrawerTitle(DrawerComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -747,6 +755,7 @@ class DrawerDescription(DrawerComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -858,6 +867,7 @@ class Drawer(ComponentNamespace):
 
         Returns:
             The component.
+
         """
         ...
 

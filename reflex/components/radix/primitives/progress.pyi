@@ -90,6 +90,7 @@ class ProgressComponent(RadixPrimitiveComponentWithClassName):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -176,6 +177,7 @@ class ProgressRoot(ProgressComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -322,6 +324,7 @@ class ProgressIndicator(ProgressComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -473,6 +476,7 @@ class Progress(ProgressRoot):
 
         Returns:
             The progress bar.
+
         """
         ...
 
@@ -625,6 +629,7 @@ class ProgressNamespace(ComponentNamespace):
 
         Returns:
             The progress bar.
+
         """
         ...
 

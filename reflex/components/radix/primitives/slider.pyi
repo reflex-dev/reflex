@@ -91,6 +91,7 @@ class SliderComponent(RadixPrimitiveComponentWithClassName):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -192,6 +193,7 @@ class SliderRoot(SliderComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -271,6 +273,7 @@ class SliderTrack(SliderComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -350,6 +353,7 @@ class SliderRange(SliderComponent):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -429,6 +433,7 @@ class SliderThumb(SliderComponent):
 
         Returns:
             The component.
+
         """
         ...
 

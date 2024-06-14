@@ -129,6 +129,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
 
         Returns:
             The created radio group component.
+
         """
         direction = props.pop("direction", "column")
         spacing = props.pop("spacing", "2")

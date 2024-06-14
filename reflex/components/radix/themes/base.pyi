@@ -174,6 +174,7 @@ class CommonMarginProps(Component):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -252,6 +253,7 @@ class RadixLoadingProp(Component):
 
         Returns:
             The component.
+
         """
         ...
 
@@ -331,6 +333,7 @@ class RadixThemesComponent(Component):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -401,6 +404,7 @@ class RadixThemesTriggerComponent(RadixThemesComponent):
 
         Returns:
             The new RadixThemesTriggerComponent instance.
+
         """
         ...
 
@@ -578,6 +582,7 @@ class Theme(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
     def add_imports(self) -> ImportDict | list[ImportDict]: ...
@@ -662,6 +667,7 @@ class ThemePanel(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -738,6 +744,7 @@ class RadixThemesColorModeProvider(Component):
 
         Returns:
             The component.
+
         """
         ...
 

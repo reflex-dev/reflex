@@ -278,6 +278,7 @@ class TextArea(RadixThemesComponent, elements.Textarea):
 
         Returns:
             The component.
+
         """
         ...
 

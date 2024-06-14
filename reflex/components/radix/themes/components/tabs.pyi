@@ -107,6 +107,7 @@ class TabsRoot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -189,6 +190,7 @@ class TabsList(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -332,6 +334,7 @@ class TabsTrigger(RadixThemesComponent):
 
         Returns:
             The TabsTrigger Component.
+
         """
         ...
     def add_style(self) -> Dict[str, Any] | None: ...
@@ -415,6 +418,7 @@ class TabsContent(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -511,6 +515,7 @@ class Tabs(ComponentNamespace):
 
         Returns:
             A new component instance.
+
         """
         ...
 

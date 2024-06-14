@@ -206,6 +206,7 @@ class Slider(RadixThemesComponent):
 
         Returns:
             The component.
+
         """
         ...
 

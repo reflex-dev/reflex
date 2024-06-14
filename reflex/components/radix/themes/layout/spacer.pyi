@@ -180,6 +180,7 @@ class Spacer(Flex):
 
         Returns:
             A new component instance.
+
         """
         ...
 

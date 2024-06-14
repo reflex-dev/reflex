@@ -82,6 +82,7 @@ class BaseList(Component):
 
         Returns:
             The style of the component.
+
         """
         return {
             "direction": "column",

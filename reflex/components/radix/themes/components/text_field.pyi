@@ -264,6 +264,7 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
 
         Returns:
             The component.
+
         """
         ...
     @classmethod
@@ -410,6 +411,7 @@ class TextFieldSlot(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -658,6 +660,7 @@ class TextField(ComponentNamespace):
 
         Returns:
             The component.
+
         """
         ...
 

@@ -187,6 +187,7 @@ class Checkbox(RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -365,6 +366,7 @@ class HighLevelCheckbox(RadixThemesComponent):
 
         Returns:
             The checkbox component with a label.
+
         """
         ...
 
@@ -541,6 +543,7 @@ class CheckboxNamespace(ComponentNamespace):
 
         Returns:
             The checkbox component with a label.
+
         """
         ...
 

@@ -227,6 +227,7 @@ class CalloutRoot(elements.Div, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -362,6 +363,7 @@ class CalloutIcon(elements.Div, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -497,6 +499,7 @@ class CalloutText(elements.P, RadixThemesComponent):
 
         Returns:
             A new component instance.
+
         """
         ...
 
@@ -711,6 +714,7 @@ class Callout(CalloutRoot):
 
         Returns:
             The callout component.
+
         """
         ...
 
@@ -927,6 +931,7 @@ class CalloutNamespace(ComponentNamespace):
 
         Returns:
             The callout component.
+
         """
         ...
 

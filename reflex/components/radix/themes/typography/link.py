@@ -64,6 +64,7 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
 
         Returns:
             The import dict.
+
         """
         return next_link._get_imports()  # type: ignore
 
@@ -80,6 +81,7 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
 
         Returns:
             Component: The link component
+
         """
         props.setdefault(":hover", {"color": color("accent", 8)})
 

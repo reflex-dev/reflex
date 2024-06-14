@@ -279,6 +279,7 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
 
         Returns:
             The IconButton component.
+
         """
         ...
     def add_style(self): ...

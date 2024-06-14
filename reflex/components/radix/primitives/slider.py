@@ -58,6 +58,7 @@ class SliderRoot(SliderComponent):
 
         Returns:
             The style of the component.
+
         """
         return {
             "position": "relative",
@@ -86,6 +87,7 @@ class SliderTrack(SliderComponent):
 
         Returns:
             The style of the component.
+
         """
         return {
             "position": "relative",
@@ -108,6 +110,7 @@ class SliderRange(SliderComponent):
 
         Returns:
             The style of the component.
+
         """
         return {
             "position": "absolute",
@@ -128,6 +131,7 @@ class SliderThumb(SliderComponent):
 
         Returns:
             The style of the component.
+
         """
         return {
             "display": "block",
@@ -163,6 +167,7 @@ class Slider(ComponentNamespace):
 
         Returns:
             A slider component.
+
         """
         track = SliderTrack.create(SliderRange.create())
         # if default_value is not set, the thumbs will not render properly but the slider will still work

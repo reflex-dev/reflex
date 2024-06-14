@@ -91,6 +91,7 @@ class ColorModeIcon(Cond):
 
         Returns:
             The conditionally rendered component
+
         """
         ...
 
@@ -360,6 +361,7 @@ class ColorModeIconButton(IconButton):
 
         Returns:
             The button component.
+
         """
         ...
 
@@ -535,6 +537,7 @@ class ColorModeSwitch(Switch):
 
         Returns:
             The switch component.
+
         """
         ...
 

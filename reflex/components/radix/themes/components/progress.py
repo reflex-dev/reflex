@@ -47,6 +47,7 @@ class Progress(RadixThemesComponent):
 
         Returns:
             The Progress Component.
+
         """
         props.setdefault("width", "100%")
         return super().create(*children, **props)
