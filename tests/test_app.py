@@ -1392,8 +1392,12 @@ def test_app_state_determination():
     a4 = App()
     assert a4.state is None
 
-    # Referencing an event handler enables state.
     a4.add_page(rx.box(rx.button("Click", on_click=rx.console_log(""))), route="/")
+    assert a4.state is None
+
+    a4.add_page(
+        rx.box(rx.button("Click", on_click=DynamicState.on_counter)), route="/page2"
+    )
     assert a4.state is not None
 
 
