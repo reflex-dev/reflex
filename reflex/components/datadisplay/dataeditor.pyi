@@ -231,6 +231,7 @@ class DataEditor(NoSSRComponent):
             The DataEditor component.&
         """
         ...
+
     def get_event_triggers(self) -> dict[str, Any]: ...
 
 @serializer
