@@ -1,6 +1,6 @@
 """Global on_paste handling for Reflex app."""
 
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.tags.tag import Tag
@@ -14,7 +14,7 @@ class Clipboard(Fragment):
     """Clipboard component."""
 
     # The element ids to attach the event listener to. Defaults to all child components or the document.
-    targets: Var[list[str]]
+    targets: Var[List[str]]
 
     # Called when the user pastes data into the document. Data is a list of tuples of (mime_type, data). Binary types will be base64 encoded as a data uri.
     on_paste: EventHandler[lambda data: [data]]

@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Dict, Union
+from typing import Dict, List, Union
 from reflex.components.base.fragment import Fragment
 from reflex.components.tags.tag import Tag
 from reflex.event import EventChain, EventHandler
@@ -21,7 +21,7 @@ class Clipboard(Fragment):
     def create(  # type: ignore
         cls,
         *children,
-        targets: Optional[Union[Var[list[str]], list[str]]] = None,
+        targets: Optional[Union[Var[List[str]], List[str]]] = None,
         on_paste_event_actions: Optional[
             Union[Var[Dict[str, Union[bool, int]]], Dict[str, Union[bool, int]]]
         ] = None,
