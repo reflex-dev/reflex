@@ -20,6 +20,7 @@ from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
+from reflex.utils.prerequisites import get_web_dir
 from reflex.vars import Var
 
 
@@ -469,7 +470,7 @@ def compile_tailwind(
         The compiled Tailwind config.
     """
     # Get the path for the output file.
-    output_path = constants.Tailwind.CONFIG
+    output_path = get_web_dir() / constants.Tailwind.CONFIG
 
     # Compile the config.
     code = _compile_tailwind(config)
@@ -483,7 +484,7 @@ def remove_tailwind_from_postcss() -> tuple[str, str]:
         The path and code of the compiled postcss.config.js.
     """
     # Get the path for the output file.
-    output_path = constants.Dirs.POSTCSS_JS
+    output_path = str(get_web_dir() / constants.Dirs.POSTCSS_JS)
 
     code = [
         line
@@ -502,7 +503,7 @@ def purge_web_pages_dir():
         return
 
     # Empty out the web pages directory.
-    utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+    utils.empty_dir(get_web_dir() / constants.Dirs.PAGES, keep_files=["_app.js"])
 
 
 class ExecutorSafeFunctions:

@@ -62,7 +62,7 @@ from .route import (
     RouteRegex,
     RouteVar,
 )
-from .style import STYLES_DIR, Tailwind
+from .style import Tailwind
 
 __ALL__ = [
     ALEMBIC_CONFIG,
@@ -113,7 +113,6 @@ __ALL__ = [
     SETTER_PREFIX,
     SKIP_COMPILE_ENV_VAR,
     SocketEvent,
-    STYLES_DIR,
     Tailwind,
     Templates,
     CompileVars,

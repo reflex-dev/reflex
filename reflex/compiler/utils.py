@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
+
+from reflex.utils.prerequisites import get_web_dir
 
 try:
     from pydantic.v1.fields import ModelField
@@ -330,7 +333,7 @@ def get_page_path(path: str) -> str:
     Returns:
         The path of the compiled JS file.
     """
-    return os.path.join(constants.Dirs.WEB_PAGES, path + constants.Ext.JS)
+    return str(get_web_dir() / constants.Dirs.PAGES / (path + constants.Ext.JS))
 
 
 def get_theme_path() -> str:
@@ -339,8 +342,10 @@ def get_theme_path() -> str:
     Returns:
         The path of the theme style.
     """
-    return os.path.join(
-        constants.Dirs.WEB_UTILS, constants.PageNames.THEME + constants.Ext.JS
+    return str(
+        get_web_dir()
+        / constants.Dirs.UTILS
+        / (constants.PageNames.THEME + constants.Ext.JS)
     )
 
 
@@ -350,8 +355,10 @@ def get_root_stylesheet_path() -> str:
     Returns:
         The path of the app root file.
     """
-    return os.path.join(
-        constants.STYLES_DIR, constants.PageNames.STYLESHEET_ROOT + constants.Ext.CSS
+    return str(
+        get_web_dir()
+        / constants.Dirs.STYLES
+        / (constants.PageNames.STYLESHEET_ROOT + constants.Ext.CSS)
     )
 
 
@@ -361,9 +368,7 @@ def get_context_path() -> str:
     Returns:
         The path of the context module.
     """
-    return os.path.join(
-        constants.Dirs.WEB, constants.Dirs.CONTEXTS_PATH + constants.Ext.JS
-    )
+    return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JS))
 
 
 def get_components_path() -> str:
@@ -372,7 +377,11 @@ def get_components_path() -> str:
     Returns:
         The path of the compiled components.
     """
-    return os.path.join(constants.Dirs.WEB_UTILS, "components" + constants.Ext.JS)
+    return str(
+        get_web_dir()
+        / constants.Dirs.UTILS
+        / (constants.PageNames.COMPONENTS + constants.Ext.JS),
+    )
 
 
 def get_stateful_components_path() -> str:
@@ -381,9 +390,10 @@ def get_stateful_components_path() -> str:
     Returns:
         The path of the compiled stateful components.
     """
-    return os.path.join(
-        constants.Dirs.WEB_UTILS,
-        constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JS,
+    return str(
+        get_web_dir()
+        / constants.Dirs.UTILS
+        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JS)
     )
 
 
@@ -437,23 +447,24 @@ def write_page(path: str, code: str):
         f.write(code)
 
 
-def empty_dir(path: str, keep_files: list[str] | None = None):
+def empty_dir(path: str | Path, keep_files: list[str] | None = None):
     """Remove all files and folders in a directory except for the keep_files.
 
     Args:
         path: The path to the directory that will be emptied
         keep_files: List of filenames or foldernames that will not be deleted.
     """
+    path = Path(path)
+
     # If the directory does not exist, return.
-    if not os.path.exists(path):
+    if not path.exists():
         return
 
     # Remove all files and folders in the directory.
     keep_files = keep_files or []
-    directory_contents = os.listdir(path)
-    for element in directory_contents:
-        if element not in keep_files:
-            path_ops.rm(os.path.join(path, element))
+    for element in path.iterdir():
+        if element.name not in keep_files:
+            path_ops.rm(element)
 
 
 def is_valid_url(url) -> bool:
