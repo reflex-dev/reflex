@@ -960,7 +960,6 @@ class PyiGenerator:
                 target_path.is_file()
                 and target_path.suffix == ".py"
                 and target_path.name not in EXCLUDED_FILES
-                and "reflex/components" in str(target_path)
             ):
                 file_targets.append(target_path)
                 continue
