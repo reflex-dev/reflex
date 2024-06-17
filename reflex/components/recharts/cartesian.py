@@ -581,12 +581,6 @@ class Reference(Recharts):
     # The id of y-axis which is corresponding to the data.
     y_axis_id: Var[Union[str, int]]
 
-    # If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
-    x: Var[Union[str, int]]
-
-    # If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
-    y: Var[Union[str, int]]
-
     # Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
     if_overflow: Var[LiteralIfOverflow]
 
@@ -606,14 +600,14 @@ class ReferenceLine(Reference):
     # If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
     y: Var[Union[str, int]]
 
+    # The color of the reference line.
+    stroke: Var[Union[str, Color]]
+
     # The width of the stroke.
-    stroke_width: Var[int]
+    stroke_width: Var[Union[str, int]]
 
     # Valid children components
     _valid_children: List[str] = ["Label"]
-
-    # The color of the reference line.
-    stroke: Var[Union[str, Color]]
 
     # Array of endpoints in { x, y } format. These endpoints would be used to draw the ReferenceLine.
     segment: List[Any] = []
