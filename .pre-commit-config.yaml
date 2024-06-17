@@ -26,7 +26,8 @@ repos:
       - id: pyright
         name: pyright
         language: system
-        entry: poetry run pyright integration reflex tests
+        entry: poetry run pyright
+        args: [integration, reflex, tests]
         pass_filenames: false
       - id: darglint
         name: darglint
