@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Generator
 
 import pytest
@@ -564,6 +565,7 @@ def test_yield_state_update(event_chain: AppHarness, driver: WebDriver, button_i
     assert (
         event_chain.poll_for_value(interim_value_input, exp_not_equal="") == "interim"
     )
+    time.sleep(1)
     assert (
         event_chain.poll_for_value(interim_value_input, exp_not_equal="interim")
         == "final"
