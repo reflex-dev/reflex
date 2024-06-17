@@ -14,28 +14,28 @@ repos:
   - repo: local
     hooks:
       - id: poetry_check
+        name: poetry_check
         language: system
         entry: poetry check
-        name: poetry_check
         pass_filenames: false
       - id: poetry_install
+        name: poetry_install
         language: system
         entry: poetry install
-        name: poetry_install
         pass_filenames: false
       - id: pyright
+        name: pyright
         language: system
         entry: poetry run pyright integration reflex tests
-        name: pyright
         pass_filenames: false
       - id: darglint
+        name: darglint
         language: system
         entry: poetry run darglint
-        name: darglint
         exclude: '^reflex/reflex.py'
       - id: update-pyi-files
         name: update-pyi-files
-        always_run: true
         language: system
-        description: 'Update pyi files as needed'
         entry: python scripts/make_pyi.py
+        always_run: true
+        description: 'Update pyi files as needed'
