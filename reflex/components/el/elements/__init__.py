@@ -75,6 +75,7 @@ _MAPPING = {
         "link",
         "meta",
         "title",
+        "style",
     ],
     "other": ["details", "dialog", "summary", "slot", "template", "math", "html"],
     "scripts": ["canvas", "noscript", "script"],
