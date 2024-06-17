@@ -11,24 +11,32 @@ repos:
         args: ["--fix", "--exit-non-zero-on-fix"]
         exclude: '^integration/benchmarks/'
 
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.313
-    hooks:
-      - id: pyright
-        args: [integration, reflex, tests]
-        language: system
-
-  - repo: https://github.com/terrencepreilly/darglint
-    rev: v1.8.1
-    hooks:
-      - id: darglint
-        exclude: '^reflex/reflex.py'
-
   - repo: local
     hooks:
+      - id: poetry_check
+        name: poetry_check
+        language: system
+        entry: poetry check
+        pass_filenames: false
+      - id: poetry_install
+        name: poetry_install
+        language: system
+        entry: poetry install
+        pass_filenames: false
+      - id: pyright
+        name: pyright
+        language: system
+        entry: poetry run pyright
+        args: [integration, reflex, tests]
+        pass_filenames: false
+      - id: darglint
+        name: darglint
+        language: system
+        entry: poetry run darglint
+        exclude: '^reflex/reflex.py'
       - id: update-pyi-files
         name: update-pyi-files
-        always_run: true
         language: system
-        description: 'Update pyi files as needed'
         entry: python scripts/make_pyi.py
+        always_run: true
+        description: 'Update pyi files as needed'
