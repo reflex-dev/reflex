@@ -590,6 +590,7 @@ class Reference(Recharts):
     # If set true, the line will be rendered in front of bars in BarChart, etc.
     is_front: Var[bool]
 
+
 class ReferenceLine(Reference):
     """A ReferenceLine component in Recharts."""
 
@@ -614,6 +615,7 @@ class ReferenceLine(Reference):
 
     # Array of endpoints in { x, y } format. These endpoints would be used to draw the ReferenceLine.
     segment: List[Any] = []
+
 
 class ReferenceDot(Reference):
     """A ReferenceDot component in Recharts."""

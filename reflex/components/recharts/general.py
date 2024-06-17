@@ -4,8 +4,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Union
 
 from reflex.components.component import MemoizationLeaf
-from reflex.vars import Var
 from reflex.event import EventHandler
+from reflex.vars import Var
 
 from .recharts import (
     LiteralIconType,
@@ -117,7 +117,6 @@ class Legend(Recharts):
 
     # The customized event handler of mouseleave on the items in this group
     on_mouse_leave: EventHandler[lambda: []]
-
 
 
 class GraphingTooltip(Recharts):
