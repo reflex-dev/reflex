@@ -628,6 +628,15 @@ class ReferenceDot(Reference):
     # If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
     y: Var[Union[str, int]]
 
+    # The radius of dot.
+    r: Var[int]
+
+    # The color of the area fill.
+    fill: Var[Union[str, Color]]
+
+    # The color of the line stroke.
+    stroke: Var[Union[str, Color]]
+
     # Valid children components
     _valid_children: List[str] = ["Label"]
 
