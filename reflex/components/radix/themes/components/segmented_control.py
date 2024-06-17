@@ -1,8 +1,9 @@
 """SegmentedControl from Radix Themes."""
 
 from types import SimpleNamespace
-from typing import Literal
+from typing import Literal, Union
 
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -11,13 +12,15 @@ from ..base import LiteralAccentColor, RadixThemesComponent
 class SegmentedControlRoot(RadixThemesComponent):
     """Root element for a SegmentedControl component."""
 
-    tag = "SegmentedControl"
+    tag = "SegmentedControl.Root"
 
     # The size of the segmented control: "1" | "2" | "3"
     size: Var[Literal["1", "2", "3"]]
 
-    # Variant of button: "classic" | "surface" | "soft"
-    variant: Var[Literal["classic", "surface", "soft"]]
+    # Variant of button: "classic" | "surface"
+    variant: Var[Literal["classic", "surface"]]
+
+    type: Var[Literal["single", "multiple"]]
 
     # Override theme color for button
     color_scheme: Var[LiteralAccentColor]
@@ -26,7 +29,13 @@ class SegmentedControlRoot(RadixThemesComponent):
     radius: Var[Literal["none", "small", "medium", "large", "full"]]
 
     # The default value of the segmented control.
-    default_value: Var[str]
+    default_value: Var[Union[str, list[str]]]
+
+    value: Var[Union[str, list[str]]]
+
+    on_change: EventHandler[lambda e0: [e0]]
+
+    _rename_props = {"onChange": "onValueChange"}
 
 
 class SegmentedControlItem(RadixThemesComponent):

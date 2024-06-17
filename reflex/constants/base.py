@@ -130,9 +130,11 @@ class Next(SimpleNamespace):
 class ColorMode(SimpleNamespace):
     """Constants related to ColorMode."""
 
-    NAME = "colorMode"
+    NAME = "rawColorMode"
+    RESOLVED_NAME = "resolvedColorMode"
     USE = "useColorMode"
     TOGGLE = "toggleColorMode"
+    SET = "setColorMode"
 
 
 # Env modes

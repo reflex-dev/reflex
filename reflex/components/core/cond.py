@@ -9,7 +9,7 @@ from reflex.components.component import BaseComponent, Component, MemoizationLea
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.constants.colors import Color
-from reflex.style import LIGHT_COLOR_MODE, color_mode
+from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var, VarData
@@ -208,7 +208,7 @@ def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
         The conditional component or prop.
     """
     return cond(
-        color_mode == Var.create(LIGHT_COLOR_MODE, _var_is_string=True),
+        resolved_color_mode == Var.create(LIGHT_COLOR_MODE, _var_is_string=True),
         light,
         dark,
     )

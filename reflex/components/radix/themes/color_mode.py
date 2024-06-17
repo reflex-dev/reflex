@@ -23,8 +23,10 @@ from typing import Literal, get_args
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
 from reflex.components.lucide.icon import Icon
+from reflex.components.radix.themes.components.dropdown_menu import dropdown_menu
 from reflex.components.radix.themes.components.switch import Switch
-from reflex.style import LIGHT_COLOR_MODE, color_mode, toggle_color_mode
+from reflex.event import EventChain
+from reflex.style import LIGHT_COLOR_MODE, color_mode, set_color_mode, toggle_color_mode
 from reflex.utils import console
 from reflex.vars import BaseVar, Var
 
@@ -95,6 +97,7 @@ class ColorModeIconButton(IconButton):
         cls,
         *children,
         position: LiteralPosition | None = None,
+        allow_system: bool = False,
         **props,
     ):
         """Create a icon button component that calls toggle_color_mode on click.
@@ -102,6 +105,7 @@ class ColorModeIconButton(IconButton):
         Args:
             *children: The children of the component.
             position: The position of the icon button. Follow document flow if None.
+            allow_system: Allow picking the "system" value for the color mode.
             **props: The props to pass to the component.
 
         Returns:
@@ -137,6 +141,32 @@ class ColorModeIconButton(IconButton):
         props.setdefault("z_index", "20")
         props.setdefault(":hover", {"cursor": "pointer"})
 
+        if allow_system:
+
+            def color_mode_item(_color_mode):
+                setter = Var.create_safe(
+                    f'() => {set_color_mode._var_name}("{_color_mode}")',
+                    _var_is_string=False,
+                    _var_is_local=True,
+                    _var_data=set_color_mode._var_data,
+                )
+                setter._var_type = EventChain
+
+                return dropdown_menu.item(_color_mode.title(), on_click=setter)  # type: ignore
+
+            return dropdown_menu.root(
+                dropdown_menu.trigger(
+                    super().create(
+                        ColorModeIcon.create(),
+                        **props,
+                    )
+                ),
+                dropdown_menu.content(
+                    color_mode_item("light"),
+                    color_mode_item("dark"),
+                    color_mode_item("system"),
+                ),
+            )
         return super().create(
             ColorModeIcon.create(),
             on_click=toggle_color_mode,
