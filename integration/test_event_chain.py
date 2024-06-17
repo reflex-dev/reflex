@@ -16,7 +16,6 @@ MANY_EVENTS = 50
 def EventChain():
     """App with chained event handlers."""
     import asyncio
-    import time
     from typing import List
 
     import reflex as rx
@@ -565,7 +564,6 @@ def test_yield_state_update(event_chain: AppHarness, driver: WebDriver, button_i
     assert (
         event_chain.poll_for_value(interim_value_input, exp_not_equal="") == "interim"
     )
-    time.sleep(1)
     assert (
         event_chain.poll_for_value(interim_value_input, exp_not_equal="interim")
         == "final"
