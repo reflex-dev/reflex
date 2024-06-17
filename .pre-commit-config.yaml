@@ -26,6 +26,16 @@ repos:
 
   - repo: local
     hooks:
+      - id: poetry_check
+        language: system
+        entry: poetry check
+        name: poetry_check
+        pass_filenames: false
+      - id: poetry_install
+        language: system
+        entry: poetry install
+        name: poetry_install
+        pass_filenames: false
       - id: update-pyi-files
         name: update-pyi-files
         always_run: true
