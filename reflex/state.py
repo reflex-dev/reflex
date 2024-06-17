@@ -1458,15 +1458,37 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Convert valid EventHandler and EventSpec into Event
         fixed_events = fix_events(self._check_valid(handler, events), token)
 
-        # Get the delta after processing the event.
-        delta = state.get_delta()
-        state._clean()
+        try:
+            # Get the delta after processing the event.
+            delta = state.get_delta()
+            state._clean()
 
-        return StateUpdate(
-            delta=delta,
-            events=fixed_events,
-            final=final if not handler.is_background else True,
-        )
+            return StateUpdate(
+                delta=delta,
+                events=fixed_events,
+                final=final if not handler.is_background else True,
+            )
+        except Exception as ex:
+
+            state._clean()
+
+            config = get_config()
+
+            events = config.backend_exception_handler(ex)
+
+            if events:
+                events = fix_events(
+                    [events],
+                    state.router.session.client_token,
+                    router_data=state.router_data,
+                )
+            else:
+                events = []
+
+            return StateUpdate(
+                events=events,
+                final=True
+            )
 
     async def _process_event(
         self, handler: EventHandler, state: BaseState | StateProxy, payload: Dict
@@ -1524,7 +1546,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             config = get_config()
 
             events = config.backend_exception_handler(ex)
-
             yield state._as_state_update(
                 handler,
                 events,
