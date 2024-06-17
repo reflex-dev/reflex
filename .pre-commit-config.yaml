@@ -11,12 +11,6 @@ repos:
         args: ["--fix", "--exit-non-zero-on-fix"]
         exclude: '^integration/benchmarks/'
 
-  - repo: https://github.com/terrencepreilly/darglint
-    rev: v1.8.1
-    hooks:
-      - id: darglint
-        exclude: '^reflex/reflex.py'
-
   - repo: local
     hooks:
       - id: poetry_check
@@ -34,6 +28,11 @@ repos:
         entry: poetry run pyright integration reflex tests
         name: pyright
         pass_filenames: false
+      - id: darglint
+        language: system
+        entry: poetry run darglint
+        name: darglint
+        exclude: '^reflex/reflex.py'
       - id: update-pyi-files
         name: update-pyi-files
         always_run: true
