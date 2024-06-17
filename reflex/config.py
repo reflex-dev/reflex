@@ -474,6 +474,7 @@ class Config(Base):
                     or return_type == Optional[EventSpec]
                     or return_type == List[EventSpec]
                     or return_type == inspect.Signature.empty
+                    or return_type is None
                 )
 
                 if not valid:
