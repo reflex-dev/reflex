@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from typing import Generator
 
 import pytest
@@ -16,6 +15,7 @@ MANY_EVENTS = 50
 def EventChain():
     """App with chained event handlers."""
     import asyncio
+    import time
     from typing import List
 
     import reflex as rx
