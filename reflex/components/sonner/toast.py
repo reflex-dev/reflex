@@ -28,7 +28,7 @@ LiteralPosition = Literal[
 ]
 
 
-toast_ref = Var.create_safe("refs['__toast']")
+toast_ref = Var.create_safe("refs['__toast']", _var_is_string=False)
 
 
 class ToastAction(Base):
@@ -65,7 +65,8 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
     """
     return [
         Var.create_safe(
-            f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {toast}; return rest}})()"
+            f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {toast}; return rest}})()",
+            _var_is_string=False,
         )
     ]
 
@@ -106,7 +107,7 @@ class ToastProps(PropsBase):
     cancel: Optional[ToastAction]
 
     # Custom id for the toast.
-    id: Optional[str]
+    id: Optional[Union[str, Var]]
 
     # Removes the default styling, which allows for easier customization.
     unstyled: Optional[bool]
@@ -127,7 +128,7 @@ class ToastProps(PropsBase):
     # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
     on_auto_close: Optional[Any]
 
-    def dict(self, *args, **kwargs) -> dict:
+    def dict(self, *args, **kwargs) -> dict[str, Any]:
         """Convert the object to a dictionary.
 
         Args:
@@ -137,7 +138,7 @@ class ToastProps(PropsBase):
         Returns:
             The object as a dictionary with ToastAction fields intact.
         """
-        kwargs.setdefault("exclude_none", True)
+        kwargs.setdefault("exclude_none", True)  # type: ignore
         d = super().dict(*args, **kwargs)
         # Keep these fields as ToastAction so they can be serialized specially
         if "action" in d:
@@ -179,7 +180,9 @@ class Toaster(Component):
     visible_toasts: Var[int]
 
     # the position of the toast
-    position: Var[LiteralPosition] = Var.create_safe("bottom-right")
+    position: Var[LiteralPosition] = Var.create_safe(
+        "bottom-right", _var_is_string=True
+    )
 
     # whether to show the close button
     close_button: Var[bool] = Var.create_safe(False)
@@ -208,10 +211,16 @@ class Toaster(Component):
     # Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
     pause_when_page_is_hidden: Var[bool]
 
-    def _get_hooks(self) -> Var[str]:
+    def add_hooks(self) -> list[Var | str]:
+        """Add hooks for the toaster component.
+
+        Returns:
+            The hooks for the toaster component.
+        """
         hook = Var.create_safe(
             f"{toast_ref} = toast",
             _var_is_local=True,
+            _var_is_string=False,
             _var_data=VarData(
                 imports={
                     "/utils/state": [ImportVar(tag="refs")],
@@ -219,7 +228,7 @@ class Toaster(Component):
                 }
             ),
         )
-        return hook
+        return [hook]
 
     @staticmethod
     def send_toast(message: str, level: str | None = None, **props) -> EventSpec:
@@ -235,13 +244,13 @@ class Toaster(Component):
         """
         toast_command = f"{toast_ref}.{level}" if level is not None else toast_ref
         if props:
-            args = serialize(ToastProps(**props))
+            args = serialize(ToastProps(**props))  # type: ignore
             toast = f"{toast_command}(`{message}`, {args})"
         else:
             toast = f"{toast_command}(`{message}`)"
 
-        toast_action = Var.create(toast, _var_is_string=False, _var_is_local=True)
-        return call_script(toast_action)  # type: ignore
+        toast_action = Var.create_safe(toast, _var_is_string=False, _var_is_local=True)
+        return call_script(toast_action)
 
     @staticmethod
     def toast_info(message: str, **kwargs):
@@ -295,7 +304,8 @@ class Toaster(Component):
         """
         return Toaster.send_toast(message, level="success", **kwargs)
 
-    def toast_dismiss(self, id: str | None):
+    @staticmethod
+    def toast_dismiss(id: Var | str | None = None):
         """Dismiss a toast.
 
         Args:
@@ -304,12 +314,22 @@ class Toaster(Component):
         Returns:
             The toast dismiss event.
         """
-        if id is None:
-            dismiss = f"{toast_ref}.dismiss()"
+        dismiss_var_data = None
+
+        if isinstance(id, Var):
+            dismiss = f"{toast_ref}.dismiss({id._var_name_unwrapped})"
+            dismiss_var_data = id._var_data
+        elif isinstance(id, str):
+            dismiss = f"{toast_ref}.dismiss('{id}')"
         else:
-            dismiss = f"{toast_ref}.dismiss({id})"
-        dismiss_action = Var.create(dismiss, _var_is_string=False, _var_is_local=True)
-        return call_script(dismiss_action)  # type: ignore
+            dismiss = f"{toast_ref}.dismiss()"
+        dismiss_action = Var.create_safe(
+            dismiss,
+            _var_is_string=False,
+            _var_is_local=True,
+            _var_data=dismiss_var_data,
+        )
+        return call_script(dismiss_action)
 
 
 # TODO: figure out why loading toast stay open forever

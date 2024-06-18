@@ -1,11 +1,20 @@
 """Data grid components."""
+from __future__ import annotations
 
-from .code import CodeBlock
-from .code import LiteralCodeBlockTheme as LiteralCodeBlockTheme
-from .code import LiteralCodeLanguage as LiteralCodeLanguage
-from .dataeditor import DataEditor, DataEditorTheme
-from .logo import logo
+from reflex.utils import lazy_loader
 
-code_block = CodeBlock.create
-data_editor = DataEditor.create
-data_editor_theme = DataEditorTheme
+_SUBMOD_ATTRS: dict[str, list[str]] = {
+    "code": [
+        "CodeBlock",
+        "code_block",
+        "LiteralCodeBlockTheme",
+        "LiteralCodeLanguage",
+    ],
+    "dataeditor": ["data_editor", "data_editor_theme", "DataEditorTheme"],
+    "logo": ["logo"],
+}
+
+__getattr__, __dir__, __all__ = lazy_loader.attach(
+    __name__,
+    submod_attrs=_SUBMOD_ATTRS,
+)

@@ -8,14 +8,14 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
-from reflex import el
+from reflex.components.el import elements
 from reflex.style import STACK_CHILDREN_FULL_WIDTH
 from reflex.vars import Var
 from ..base import RadixThemesComponent
 
 LiteralContainerSize = Literal["1", "2", "3", "4"]
 
-class Container(el.Div, RadixThemesComponent):
+class Container(elements.Div, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -131,3 +131,5 @@ class Container(el.Div, RadixThemesComponent):
             The container component.
         """
         ...
+
+container = Container.create

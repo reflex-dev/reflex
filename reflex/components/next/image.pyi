@@ -7,13 +7,13 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
+from reflex.event import EventHandler
 from reflex.utils import types
 from reflex.vars import Var
 from .base import NextComponent
 
 class Image(NextComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore

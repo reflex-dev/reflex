@@ -6,7 +6,8 @@ from typing import Any, Dict, Literal
 
 from reflex.components import Component
 from reflex.components.tags import Tag
-from reflex.utils import imports
+from reflex.config import get_config
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
@@ -208,18 +209,23 @@ class Theme(RadixThemesComponent):
             children = [ThemePanel.create(), *children]
         return super().create(*children, **props)
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
-                "": [
-                    imports.ImportVar(tag="@radix-ui/themes/styles.css", install=False)
-                ],
-                "/utils/theme.js": [
-                    imports.ImportVar(tag="theme", is_default=True),
-                ],
-            },
-        )
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the Theme component.
+
+        Returns:
+            The import dict.
+        """
+        _imports: ImportDict = {
+            "/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
+        }
+        if get_config().tailwind is None:
+            # When tailwind is disabled, import the radix-ui styles directly because they will
+            # not be included in the tailwind.css file.
+            _imports[""] = ImportVar(
+                tag="@radix-ui/themes/styles.css",
+                install=False,
+            )
+        return _imports
 
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         tag = super()._render(props)
@@ -227,6 +233,7 @@ class Theme(RadixThemesComponent):
             css=Var.create(
                 "{{...theme.styles.global[':root'], ...theme.styles.global.body}}",
                 _var_is_local=False,
+                _var_is_string=False,
             ),
         )
         return tag
@@ -243,18 +250,24 @@ class ThemePanel(RadixThemesComponent):
     # Whether the panel is open. Defaults to False.
     default_open: Var[bool]
 
-    def _get_imports(self) -> dict[str, list[imports.ImportVar]]:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
-                "react": [imports.ImportVar(tag="useEffect")],
-            },
-        )
+    def add_imports(self) -> dict[str, str]:
+        """Add imports for the ThemePanel component.
 
-    def _get_hooks(self) -> str | None:
+        Returns:
+            The import dict.
+        """
+        return {"react": "useEffect"}
+
+    def add_hooks(self) -> list[str]:
+        """Add a hook on the ThemePanel to clear chakra-ui-color-mode.
+
+        Returns:
+            The hooks to render.
+        """
         # The panel freezes the tab if the user color preference differs from the
         # theme "appearance", so clear it out when theme panel is used.
-        return """
+        return [
+            """
             useEffect(() => {
                 if (typeof window !== 'undefined') {
                     window.onbeforeunload = () => {
@@ -263,6 +276,7 @@ class ThemePanel(RadixThemesComponent):
                     window.onbeforeunload();
                 }
             }, [])"""
+        ]
 
 
 class RadixThemesColorModeProvider(Component):

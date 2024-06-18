@@ -11,7 +11,6 @@ import textwrap
 from functools import lru_cache
 from hashlib import md5
 from typing import Any, Callable, Dict, Union
-from reflex.compiler import utils
 from reflex.components.component import Component, CustomComponent
 from reflex.components.radix.themes.layout.list import (
     ListItem,
@@ -22,19 +21,23 @@ from reflex.components.radix.themes.typography.heading import Heading
 from reflex.components.radix.themes.typography.link import Link
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.tags.tag import Tag
-from reflex.utils import imports, types
-from reflex.utils.imports import ImportVar
+from reflex.utils import types
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
-_CHILDREN = Var.create_safe("children", _var_is_local=False)
-_PROPS = Var.create_safe("...props", _var_is_local=False)
-_MOCK_ARG = Var.create_safe("")
-_REMARK_MATH = Var.create_safe("remarkMath", _var_is_local=False)
-_REMARK_GFM = Var.create_safe("remarkGfm", _var_is_local=False)
-_REMARK_UNWRAP_IMAGES = Var.create_safe("remarkUnwrapImages", _var_is_local=False)
+_CHILDREN = Var.create_safe("children", _var_is_local=False, _var_is_string=False)
+_PROPS = Var.create_safe("...props", _var_is_local=False, _var_is_string=False)
+_MOCK_ARG = Var.create_safe("", _var_is_string=False)
+_REMARK_MATH = Var.create_safe("remarkMath", _var_is_local=False, _var_is_string=False)
+_REMARK_GFM = Var.create_safe("remarkGfm", _var_is_local=False, _var_is_string=False)
+_REMARK_UNWRAP_IMAGES = Var.create_safe(
+    "remarkUnwrapImages", _var_is_local=False, _var_is_string=False
+)
 _REMARK_PLUGINS = Var.create_safe([_REMARK_MATH, _REMARK_GFM, _REMARK_UNWRAP_IMAGES])
-_REHYPE_KATEX = Var.create_safe("rehypeKatex", _var_is_local=False)
-_REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False)
+_REHYPE_KATEX = Var.create_safe(
+    "rehypeKatex", _var_is_local=False, _var_is_string=False
+)
+_REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False, _var_is_string=False)
 _REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
 NO_PROPS_TAGS = ("ul", "ol", "li")
 
@@ -120,6 +123,7 @@ class Markdown(Component):
             The markdown component.
         """
         ...
+    def add_imports(self) -> ImportDict | list[ImportDict]: ...
     def get_component(self, tag: str, **props) -> Component: ...
     def format_component(self, tag: str, **props) -> str: ...
     def format_component_map(self) -> dict[str, str]: ...

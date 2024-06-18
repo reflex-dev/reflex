@@ -30,7 +30,7 @@ def test_serialize_plotly(plotly_fig: go.Figure):
         plotly_fig: The figure to serialize.
     """
     value = serialize(plotly_fig)
-    assert isinstance(value, list)
+    assert isinstance(value, dict)
     assert value == serialize_figure(plotly_fig)
 
 

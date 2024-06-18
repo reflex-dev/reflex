@@ -1,14 +1,16 @@
 """Data Editor component from glide-data-grid."""
+
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
-from reflex.utils import console, format, imports, types
-from reflex.utils.imports import ImportVar
+from reflex.event import EventHandler
+from reflex.utils import console, format, types
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
 from reflex.vars import Var, get_unique_variable_name
 
@@ -101,6 +103,19 @@ class DataEditorTheme(Base):
     text_header_selected: Optional[str] = None
     text_light: Optional[str] = None
     text_medium: Optional[str] = None
+
+
+def on_edit_spec(pos, data: dict[str, Any]):
+    """The on edit spec function.
+
+    Args:
+        pos: The position of the edit event.
+        data: The data of the edit event.
+
+    Returns:
+        The position and data.
+    """
+    return [pos, data]
 
 
 class DataEditor(NoSSRComponent):
@@ -205,60 +220,82 @@ class DataEditor(NoSSRComponent):
     # global theme
     theme: Var[Union[DataEditorTheme, Dict]]
 
-    def _get_imports(self):
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
-                "": {
-                    ImportVar(
-                        tag=f"{format.format_library_name(self.library)}/dist/index.css"
-                    )
-                },
-                self.library: {ImportVar(tag="GridCellKind")},
-                "/utils/helpers/dataeditor.js": {
-                    ImportVar(
-                        tag=f"formatDataEditorCells", is_default=False, install=False
-                    ),
-                },
-            },
-        )
+    # Fired when a cell is activated.
+    on_cell_activated: EventHandler[lambda pos: [pos]]
 
-    def get_event_triggers(self) -> Dict[str, Callable]:
-        """The event triggers of the component.
+    # Fired when a cell is clicked.
+    on_cell_clicked: EventHandler[lambda pos: [pos]]
+
+    # Fired when a cell is right-clicked.
+    on_cell_context_menu: EventHandler[lambda pos: [pos]]
+
+    # Fired when a cell is edited.
+    on_cell_edited: EventHandler[on_edit_spec]
+
+    # Fired when a group header is clicked.
+    on_group_header_clicked: EventHandler[on_edit_spec]
+
+    # Fired when a group header is right-clicked.
+    on_group_header_context_menu: EventHandler[lambda grp_idx, data: [grp_idx, data]]
+
+    # Fired when a group header is renamed.
+    on_group_header_renamed: EventHandler[lambda idx, val: [idx, val]]
+
+    # Fired when a header is clicked.
+    on_header_clicked: EventHandler[lambda pos: [pos]]
+
+    # Fired when a header is right-clicked.
+    on_header_context_menu: EventHandler[lambda pos: [pos]]
+
+    # Fired when a header menu item is clicked.
+    on_header_menu_click: EventHandler[lambda col, pos: [col, pos]]
+
+    # Fired when an item is hovered.
+    on_item_hovered: EventHandler[lambda pos: [pos]]
+
+    # Fired when a selection is deleted.
+    on_delete: EventHandler[lambda selection: [selection]]
+
+    # Fired when editing is finished.
+    on_finished_editing: EventHandler[lambda new_value, movement: [new_value, movement]]
+
+    # Fired when a row is appended.
+    on_row_appended: EventHandler[lambda: []]
+
+    # Fired when the selection is cleared.
+    on_selection_cleared: EventHandler[lambda: []]
+
+    # Fired when a column is resized.
+    on_column_resize: EventHandler[lambda col, width: [col, width]]
+
+    def add_imports(self) -> ImportDict:
+        """Add imports for the component.
 
         Returns:
-            The dict describing the event triggers.
+            The import dict.
         """
-
-        def edit_sig(pos, data: dict[str, Any]):
-            return [pos, data]
-
         return {
-            "on_cell_activated": lambda pos: [pos],
-            "on_cell_clicked": lambda pos: [pos],
-            "on_cell_context_menu": lambda pos: [pos],
-            "on_cell_edited": edit_sig,
-            "on_group_header_clicked": edit_sig,
-            "on_group_header_context_menu": lambda grp_idx, data: [grp_idx, data],
-            "on_group_header_renamed": lambda idx, val: [idx, val],
-            "on_header_clicked": lambda pos: [pos],
-            "on_header_context_menu": lambda pos: [pos],
-            "on_header_menu_click": lambda col, pos: [col, pos],
-            "on_item_hovered": lambda pos: [pos],
-            "on_delete": lambda selection: [selection],
-            "on_finished_editing": lambda new_value, movement: [new_value, movement],
-            "on_row_appended": lambda: [],
-            "on_selection_cleared": lambda: [],
-            "on_column_resize": lambda col, width: [col, width],
+            "": f"{format.format_library_name(self.library)}/dist/index.css",
+            self.library: "GridCellKind",
+            "/utils/helpers/dataeditor.js": ImportVar(
+                tag="formatDataEditorCells", is_default=False, install=False
+            ),
         }
 
-    def _get_hooks(self) -> str | None:
+    def add_hooks(self) -> list[str]:
+        """Get the hooks to render.
+
+        Returns:
+            The hooks to render.
+        """
         # Define the id of the component in case multiple are used in the same page.
         editor_id = get_unique_variable_name()
 
         # Define the name of the getData callback associated with this component and assign to get_cell_content.
         data_callback = f"getData_{editor_id}"
-        self.get_cell_content = Var.create(data_callback, _var_is_local=False)  # type: ignore
+        self.get_cell_content = Var.create(
+            data_callback, _var_is_local=False, _var_is_string=False
+        )  # type: ignore
 
         code = [f"function {data_callback}([col, row])" "{"]
 
@@ -272,7 +309,7 @@ class DataEditor(NoSSRComponent):
             ]
         )
 
-        return "\n".join(code)
+        return ["\n".join(code)]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -296,11 +333,7 @@ class DataEditor(NoSSRComponent):
 
         # If rows is not provided, determine from data.
         if rows is None:
-            props["rows"] = (
-                data.length()  # BaseVar.create(value=f"{data}.length()", is_local=False)
-                if isinstance(data, Var)
-                else len(data)
-            )
+            props["rows"] = data.length() if isinstance(data, Var) else len(data)
 
         if not isinstance(columns, Var) and len(columns):
             if (
@@ -360,43 +393,6 @@ class DataEditor(NoSSRComponent):
         }
 
 
-# try:
-#     pass
-
-#     # def format_dataframe_values(df: DataFrame) -> list[list[Any]]:
-#     #     """Format dataframe values to a list of lists.
-
-#     #     Args:
-#     #         df: The dataframe to format.
-
-#     #     Returns:
-#     #         The dataframe as a list of lists.
-#     #     """
-#     # return [
-#     #     [str(d) if isinstance(d, (list, tuple)) else d for d in data]
-#     #     for data in list(df.values.tolist())
-#     # ]
-#     # ...
-
-#     # @serializer
-#     # def serialize_dataframe(df: DataFrame) -> dict:
-#     #     """Serialize a pandas dataframe.
-
-#     #     Args:
-#     #         df: The dataframe to serialize.
-
-#     #     Returns:
-#     #         The serialized dataframe.
-#     #     """
-#     # return {
-#     #     "columns": df.columns.tolist(),
-#     #     "data": format_dataframe_values(df),
-#     # }
-
-# except ImportError:
-#     pass
-
-
 @serializer
 def serialize_dataeditortheme(theme: DataEditorTheme):
     """The serializer for the data editor theme.
@@ -410,3 +406,7 @@ def serialize_dataeditortheme(theme: DataEditorTheme):
     return format.json_dumps(
         {format.to_camel_case(k): v for k, v in theme.__dict__.items() if v is not None}
     )
+
+
+data_editor = DataEditor.create
+data_editor_theme = DataEditorTheme

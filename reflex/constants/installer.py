@@ -5,7 +5,7 @@ import os
 import platform
 from types import SimpleNamespace
 
-from .base import IS_WINDOWS, Dirs, Reflex
+from .base import IS_WINDOWS, Reflex
 
 
 def get_fnm_name() -> str | None:
@@ -35,7 +35,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.1.8"
+    VERSION = "1.1.10"
     # Min Bun Version
     MIN_VERSION = "0.7.0"
     # The directory to store the bun.
@@ -105,7 +105,7 @@ class PackageJson(SimpleNamespace):
         EXPORT_SITEMAP = "next build && next-sitemap"
         PROD = "next start"
 
-    PATH = os.path.join(Dirs.WEB, "package.json")
+    PATH = "package.json"
 
     DEPENDENCIES = {
         "@emotion/react": "11.11.1",
@@ -123,4 +123,5 @@ class PackageJson(SimpleNamespace):
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.14",
         "postcss": "8.4.31",
+        "postcss-import": "16.1.0",
     }

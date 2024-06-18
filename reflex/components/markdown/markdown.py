@@ -7,7 +7,6 @@ from functools import lru_cache
 from hashlib import md5
 from typing import Any, Callable, Dict, Union
 
-from reflex.compiler import utils
 from reflex.components.component import Component, CustomComponent
 from reflex.components.radix.themes.layout.list import (
     ListItem,
@@ -18,24 +17,28 @@ from reflex.components.radix.themes.typography.heading import Heading
 from reflex.components.radix.themes.typography.link import Link
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.tags.tag import Tag
-from reflex.utils import imports, types
-from reflex.utils.imports import ImportVar
+from reflex.utils import types
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 # Special vars used in the component map.
-_CHILDREN = Var.create_safe("children", _var_is_local=False)
-_PROPS = Var.create_safe("...props", _var_is_local=False)
-_MOCK_ARG = Var.create_safe("")
+_CHILDREN = Var.create_safe("children", _var_is_local=False, _var_is_string=False)
+_PROPS = Var.create_safe("...props", _var_is_local=False, _var_is_string=False)
+_MOCK_ARG = Var.create_safe("", _var_is_string=False)
 
 # Special remark plugins.
-_REMARK_MATH = Var.create_safe("remarkMath", _var_is_local=False)
-_REMARK_GFM = Var.create_safe("remarkGfm", _var_is_local=False)
-_REMARK_UNWRAP_IMAGES = Var.create_safe("remarkUnwrapImages", _var_is_local=False)
+_REMARK_MATH = Var.create_safe("remarkMath", _var_is_local=False, _var_is_string=False)
+_REMARK_GFM = Var.create_safe("remarkGfm", _var_is_local=False, _var_is_string=False)
+_REMARK_UNWRAP_IMAGES = Var.create_safe(
+    "remarkUnwrapImages", _var_is_local=False, _var_is_string=False
+)
 _REMARK_PLUGINS = Var.create_safe([_REMARK_MATH, _REMARK_GFM, _REMARK_UNWRAP_IMAGES])
 
 # Special rehype plugins.
-_REHYPE_KATEX = Var.create_safe("rehypeKatex", _var_is_local=False)
-_REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False)
+_REHYPE_KATEX = Var.create_safe(
+    "rehypeKatex", _var_is_local=False, _var_is_string=False
+)
+_REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False, _var_is_string=False)
 _REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
 
 # These tags do NOT get props passed to them
@@ -141,47 +144,41 @@ class Markdown(Component):
 
         return custom_components
 
-    def _get_imports(self) -> imports.ImportDict:
-        # Import here to avoid circular imports.
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the markdown component.
+
+        Returns:
+            The imports for the markdown component.
+        """
         from reflex.components.datadisplay.code import CodeBlock
         from reflex.components.radix.themes.typography.code import Code
 
-        imports = super()._get_imports()
-
-        # Special markdown imports.
-        imports.update(
+        return [
             {
-                "": [ImportVar(tag="katex/dist/katex.min.css")],
-                "remark-math@5.1.1": [
-                    ImportVar(tag=_REMARK_MATH._var_name, is_default=True)
-                ],
-                "remark-gfm@3.0.1": [
-                    ImportVar(tag=_REMARK_GFM._var_name, is_default=True)
-                ],
-                "remark-unwrap-images@4.0.0": [
-                    ImportVar(tag=_REMARK_UNWRAP_IMAGES._var_name, is_default=True)
-                ],
-                "rehype-katex@6.0.3": [
-                    ImportVar(tag=_REHYPE_KATEX._var_name, is_default=True)
-                ],
-                "rehype-raw@6.1.1": [
-                    ImportVar(tag=_REHYPE_RAW._var_name, is_default=True)
-                ],
-            }
-        )
-
-        # Get the imports for each component.
-        for component in self.component_map.values():
-            imports = utils.merge_imports(
-                imports, component(_MOCK_ARG)._get_all_imports()
-            )
-
-        # Get the imports for the code components.
-        imports = utils.merge_imports(
-            imports, CodeBlock.create(theme="light")._get_imports()
-        )
-        imports = utils.merge_imports(imports, Code.create()._get_imports())
-        return imports
+                "": "katex/dist/katex.min.css",
+                "remark-math@5.1.1": ImportVar(
+                    tag=_REMARK_MATH._var_name, is_default=True
+                ),
+                "remark-gfm@3.0.1": ImportVar(
+                    tag=_REMARK_GFM._var_name, is_default=True
+                ),
+                "remark-unwrap-images@4.0.0": ImportVar(
+                    tag=_REMARK_UNWRAP_IMAGES._var_name, is_default=True
+                ),
+                "rehype-katex@6.0.3": ImportVar(
+                    tag=_REHYPE_KATEX._var_name, is_default=True
+                ),
+                "rehype-raw@6.1.1": ImportVar(
+                    tag=_REHYPE_RAW._var_name, is_default=True
+                ),
+            },
+            *[
+                component(_MOCK_ARG)._get_imports()  # type: ignore
+                for component in self.component_map.values()
+            ],
+            CodeBlock.create(theme="light")._get_imports(),  # type: ignore,
+            Code.create()._get_imports(),  # type: ignore,
+        ]
 
     def get_component(self, tag: str, **props) -> Component:
         """Get the component for a tag and props.
@@ -210,7 +207,9 @@ class Markdown(Component):
         # If the children are set as a prop, don't pass them as children.
         children_prop = props.pop("children", None)
         if children_prop is not None:
-            special_props.add(Var.create_safe(f"children={str(children_prop)}"))
+            special_props.add(
+                Var.create_safe(f"children={str(children_prop)}", _var_is_string=False)
+            )
             children = []
 
         # Get the component.
@@ -229,7 +228,7 @@ class Markdown(Component):
         Returns:
             The formatted component.
         """
-        return str(self.get_component(tag, **props)).replace("\n", " ")
+        return str(self.get_component(tag, **props)).replace("\n", "")
 
     def format_component_map(self) -> dict[str, str]:
         """Format the component map for rendering.
@@ -259,7 +258,7 @@ class Markdown(Component):
     return inline ? (
         {self.format_component("code")}
     ) : (
-        {self.format_component("codeblock", language=Var.create_safe("language", _var_is_local=False))}
+        {self.format_component("codeblock", language=Var.create_safe("language", _var_is_local=False, _var_is_string=False))}
     );
       }}}}""".replace("\n", " ")
 

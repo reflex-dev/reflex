@@ -1406,3 +1406,14 @@ class Tr(BaseHTML):
             The component.
         """
         ...
+
+caption = Caption.create
+col = Col.create
+colgroup = Colgroup.create
+table = Table.create
+tbody = Tbody.create
+td = Td.create
+tfoot = Tfoot.create
+th = Th.create
+thead = Thead.create
+tr = Tr.create

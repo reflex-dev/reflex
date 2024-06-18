@@ -98,11 +98,10 @@ def test_event_triggers():
             on_change=S.on_change,
         )
     )
-    default_event_triggers = list(rx.Component().get_event_triggers().keys())
-    assert list(debounced_input.get_event_triggers().keys()) == [
-        *default_event_triggers,
+    assert tuple(debounced_input.get_event_triggers()) == (
+        *rx.Component().get_event_triggers(),  # default event triggers
         "on_change",
-    ]
+    )
 
 
 def test_render_child_props_recursive():

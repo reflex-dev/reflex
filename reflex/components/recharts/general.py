@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Union
 
 from reflex.components.component import MemoizationLeaf
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from .recharts import (
@@ -53,6 +53,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
         "ScatterChart",
         "Treemap",
         "ComposedChart",
+        "FunnelChart",
     ]
 
 
@@ -93,20 +94,29 @@ class Legend(Recharts):
     # The margin of chart container, usually calculated internally.
     margin: Var[Dict[str, Any]]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # The customized event handler of click on the items in this group
+    on_click: EventHandler[lambda: []]
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_OVER: lambda: [],
-            EventTriggers.ON_MOUSE_OUT: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
+    # The customized event handler of mousedown on the items in this group
+    on_mouse_down: EventHandler[lambda: []]
+
+    # The customized event handler of mouseup on the items in this group
+    on_mouse_up: EventHandler[lambda: []]
+
+    # The customized event handler of mousemove on the items in this group
+    on_mouse_move: EventHandler[lambda: []]
+
+    # The customized event handler of mouseover on the items in this group
+    on_mouse_over: EventHandler[lambda: []]
+
+    # The customized event handler of mouseout on the items in this group
+    on_mouse_out: EventHandler[lambda: []]
+
+    # The customized event handler of mouseenter on the items in this group
+    on_mouse_enter: EventHandler[lambda: []]
+
+    # The customized event handler of mouseleave on the items in this group
+    on_mouse_leave: EventHandler[lambda: []]
 
 
 class GraphingTooltip(Recharts):
@@ -177,8 +187,9 @@ class LabelList(Recharts):
     # The offset to the specified "position"
     offset: Var[int]
 
-    # Color of the fill
-    fill: Var[str]
 
-    # Color of the stroke
-    stroke: Var[str]
+responsive_container = ResponsiveContainer.create
+legend = Legend.create
+graphing_tooltip = GraphingTooltip.create
+label = Label.create
+label_list = LabelList.create

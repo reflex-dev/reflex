@@ -17,9 +17,10 @@ from reflex.components.component import (
 )
 from reflex.config import get_config
 from reflex.state import BaseState
-from reflex.style import LIGHT_COLOR_MODE
+from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
+from reflex.utils.prerequisites import get_web_dir
 from reflex.vars import Var
 
 
@@ -79,7 +80,7 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
     """
     appearance = getattr(theme, "appearance", None)
     if appearance is None:
-        appearance = LIGHT_COLOR_MODE
+        appearance = SYSTEM_COLOR_MODE
     return (
         templates.CONTEXT.render(
             initial_state=utils.compile_state(state),
@@ -169,7 +170,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
                 raise FileNotFoundError(
                     f"The stylesheet file {stylesheet_full_path} does not exist."
                 )
-            stylesheet = f"@/{stylesheet.strip('/')}"
+            stylesheet = f"../{constants.Dirs.PUBLIC}/{stylesheet.strip('/')}"
         sheets.append(stylesheet) if stylesheet not in sheets else None
     return templates.STYLE.render(stylesheets=sheets)
 
@@ -469,7 +470,7 @@ def compile_tailwind(
         The compiled Tailwind config.
     """
     # Get the path for the output file.
-    output_path = constants.Tailwind.CONFIG
+    output_path = get_web_dir() / constants.Tailwind.CONFIG
 
     # Compile the config.
     code = _compile_tailwind(config)
@@ -483,7 +484,7 @@ def remove_tailwind_from_postcss() -> tuple[str, str]:
         The path and code of the compiled postcss.config.js.
     """
     # Get the path for the output file.
-    output_path = constants.Dirs.POSTCSS_JS
+    output_path = str(get_web_dir() / constants.Dirs.POSTCSS_JS)
 
     code = [
         line
@@ -502,7 +503,7 @@ def purge_web_pages_dir():
         return
 
     # Empty out the web pages directory.
-    utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+    utils.empty_dir(get_web_dir() / constants.Dirs.PAGES, keep_files=["_app.js"])
 
 
 class ExecutorSafeFunctions:

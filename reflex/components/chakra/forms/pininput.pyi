@@ -7,17 +7,16 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Optional, Union
+from typing import Optional
 from reflex.components.chakra import ChakraComponent, LiteralInputVariant
 from reflex.components.component import Component
 from reflex.components.tags.tag import Tag
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.utils import format
 from reflex.utils.imports import ImportDict, merge_imports
 from reflex.vars import Var
 
 class PinInput(ChakraComponent):
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     def get_ref(self) -> str | None: ...
     @overload
     @classmethod

@@ -14,3 +14,4 @@ jobs:
         uses: actions/dependency-review-action@v4
         with:
           allow-licenses: Apache-2.0, BSD-2-Clause, BSD-3-Clause, HPND, ISC, MIT, MPL-2.0, PSF-2.0, Unlicense
+          allow-dependencies-licenses: 'pkg:pypi/lazy-loader'

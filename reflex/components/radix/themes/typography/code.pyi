@@ -7,12 +7,12 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from reflex import el
+from reflex.components.el import elements
 from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralVariant, RadixThemesComponent
 from .base import LiteralTextSize, LiteralTextWeight
 
-class Code(el.Code, RadixThemesComponent):
+class Code(elements.Code, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -232,3 +232,5 @@ class Code(el.Code, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+code = Code.create
