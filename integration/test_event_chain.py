@@ -116,13 +116,13 @@ def EventChain():
         async def click_yield_interim_value_async(self):
             self.interim_value = "interim"
             yield
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
             self.interim_value = "final"
 
         def click_yield_interim_value(self):
             self.interim_value = "interim"
             yield
-            time.sleep(5)
+            time.sleep(0.5)
             self.interim_value = "final"
 
     app = rx.App(state=rx.State)
