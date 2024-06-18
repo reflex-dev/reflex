@@ -30,10 +30,10 @@ from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware import cors
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
+from tqdm import tqdm
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -776,22 +776,16 @@ class App(Base):
 
         self._setup_overlay_component()
 
-        # Create a progress bar.
-        progress = Progress(
-            *Progress.get_default_columns()[:-1],
-            MofNCompleteColumn(),
-            TimeElapsedColumn(),
-        )
-
         # try to be somewhat accurate - but still not 100%
         adhoc_steps_without_executor = 6
         fixed_pages_within_executor = 5
-        progress.start()
-        task = progress.add_task(
-            "Compiling:",
+
+        # Create a progress bar.
+        progress = tqdm(
             total=len(self.pages)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
+            desc="Compiling",
         )
 
         # Get the env mode.
@@ -809,7 +803,7 @@ class App(Base):
             # If a theme component was provided, wrap the app with it
             app_wrappers[(20, "Theme")] = self.theme
 
-        progress.advance(task)
+        progress.update(1)
 
         # Fix up the style.
         self.style = evaluate_style_namespaces(self.style)
@@ -831,7 +825,7 @@ class App(Base):
             # Add the custom components from the page to the set.
             custom_components |= component._get_all_custom_components()
 
-        progress.advance(task)
+        progress.update(1)
 
         # Perform auto-memoization of stateful components.
         (
@@ -840,7 +834,7 @@ class App(Base):
             page_components,
         ) = compiler.compile_stateful_components(self.pages.values())
 
-        progress.advance(task)
+        progress.update(1)
 
         # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
         if code_uses_state_contexts(stateful_components_code) and self.state is None:
@@ -869,7 +863,7 @@ class App(Base):
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 
-        progress.advance(task)
+        progress.update(1)
 
         # Prepopulate the global ExecutorSafeFunctions class with input data required by the compile functions.
         # This is required for multiprocessing to work, in presence of non-picklable inputs.
@@ -905,7 +899,7 @@ class App(Base):
             custom_components_future = None
 
             def _mark_complete(_=None):
-                progress.advance(task)
+                progress.update(1)
 
             def _submit_work(fn, *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
@@ -956,13 +950,13 @@ class App(Base):
         # Get imports from AppWrap components.
         all_imports.update(app_root._get_all_imports())
 
-        progress.advance(task)
+        progress.update(1)
 
         # Empty the .web pages directory.
         compiler.purge_web_pages_dir()
 
-        progress.advance(task)
-        progress.stop()
+        progress.update(1)
+        progress.close()
 
         # Install frontend packages.
         self._get_frontend_packages(all_imports)

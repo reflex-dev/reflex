@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from rich.console import Console
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from rich.prompt import Prompt
+from tqdm import tqdm
 
 from reflex.constants import LogLevel
 
@@ -186,11 +186,7 @@ def progress():
     Returns:
         A new progress bar.
     """
-    return Progress(
-        *Progress.get_default_columns()[:-1],
-        MofNCompleteColumn(),
-        TimeElapsedColumn(),
-    )
+    return tqdm(desc="Compiling", total=100)
 
 
 def status(*args, **kwargs):
