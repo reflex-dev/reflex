@@ -28,12 +28,13 @@ color_mode_set_hooks = {
     f"const {{ {constants.ColorMode.NAME}, {constants.ColorMode.RESOLVED_NAME}, {constants.ColorMode.TOGGLE}, {constants.ColorMode.SET} }} = useContext(ColorModeContext)": None,
 }
 color_mode_var_data = VarData(imports=color_mode_imports, hooks=color_mode_toggle_hooks)
-# Var resolves to the current color mode for the app ("light" or "dark")
+# Var resolves to the current color mode for the app ("light", "dark" or "system")
 color_mode = BaseVar(
     _var_name=constants.ColorMode.NAME,
     _var_type="str",
     _var_data=color_mode_var_data,
 )
+# Var resolves to the resolved color mode for the app ("light" or "dark")
 resolved_color_mode = BaseVar(
     _var_name=constants.ColorMode.RESOLVED_NAME,
     _var_type="str",
