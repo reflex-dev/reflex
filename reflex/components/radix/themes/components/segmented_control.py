@@ -1,5 +1,7 @@
 """SegmentedControl from Radix Themes."""
 
+from __future__ import annotations
+
 from types import SimpleNamespace
 from typing import Literal, Union
 
