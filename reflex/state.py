@@ -41,7 +41,6 @@ from redis.exceptions import ResponseError
 
 from reflex import constants
 from reflex.base import Base
-from reflex.config import get_config
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -1473,9 +1472,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             state._clean()
 
-            config = get_config()
+            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
 
-            event_specs = config.backend_exception_handler(ex)
+            event_specs = app_instance.backend_exception_handler(ex)
 
             if event_specs is None:
                 return StateUpdate()
@@ -1547,12 +1546,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             telemetry.send_error(ex, context="backend")
 
-            config = get_config()
+            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
 
-            events = config.backend_exception_handler(ex)
+            event_specs = app_instance.backend_exception_handler(ex)
+
             yield state._as_state_update(
                 handler,
-                events,
+                event_specs,
                 final=True,
             )
 
@@ -1856,8 +1856,8 @@ class FrontendEventExceptionState(State):
             stack: The stack trace of the exception.
 
         """
-        config = get_config()
-        config.frontend_exception_handler(Exception(stack))
+        app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        app_instance.frontend_exception_handler(Exception(stack))
 
 
 class UpdateVarsInternalState(State):

@@ -13,6 +13,7 @@ import multiprocessing
 import os
 import platform
 import sys
+import traceback
 from typing import (
     Any,
     AsyncIterator,
@@ -58,7 +59,7 @@ from reflex.components.core.client_side_routing import (
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import get_config
-from reflex.event import Event, EventHandler, EventSpec
+from reflex.event import Event, EventHandler, EventSpec, window_alert
 from reflex.middleware import HydrateMiddleware, Middleware
 from reflex.model import Model
 from reflex.page import (
@@ -85,6 +86,32 @@ from reflex.utils.imports import ImportVar
 # Define custom types.
 ComponentCallable = Callable[[], Component]
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
+
+
+def default_frontend_exception_handler(exception: Exception) -> None:
+    """Default frontend exception handler function.
+
+    Args:
+        exception: The exception.
+
+    """
+    console.error(f"[Reflex Frontend Exception]\n {exception}\n")
+
+
+def default_backend_exception_handler(exception: Exception) -> EventSpec:
+    """Default backend exception handler function.
+
+    Args:
+        exception: The exception.
+
+    Returns:
+        EventSpec: The window alert event.
+    """
+    error = traceback.format_exc()
+
+    console.error(f"[Reflex Backend Exception]\n {error}\n")
+
+    return window_alert("An error occurred. See logs for details.")
 
 
 def default_overlay_component() -> Component:
@@ -219,6 +246,16 @@ class App(LifespanMixin, Base):
     # Background tasks that are currently running. PRIVATE.
     background_tasks: Set[asyncio.Task] = set()
 
+    # Frontend Error Handler Function
+    frontend_exception_handler: Callable[
+        [Exception], None
+    ] = default_frontend_exception_handler
+
+    # Backend Error Handler Function
+    backend_exception_handler: Callable[
+        [Exception], Union[EventSpec, List[EventSpec], None]
+    ] = default_backend_exception_handler
+
     def __init__(self, **kwargs):
         """Initialize the app.
 
@@ -256,6 +293,9 @@ class App(LifespanMixin, Base):
 
         # Set up the admin dash.
         self._setup_admin_dash()
+
+        # Check the exception handlers
+        self._validate_exception_handlers()
 
     def _enable_state(self) -> None:
         """Enable state for the app."""
@@ -1095,6 +1135,100 @@ class App(LifespanMixin, Base):
         # Clean up task from background_tasks set when complete.
         task.add_done_callback(self.background_tasks.discard)
         return task
+
+    def _validate_exception_handlers(self):
+        """Validate the custom event exception handlers for front- and backend.
+
+        Raises:
+            ValueError: If the custom exception handlers are invalid.
+
+        """
+        FRONTEND_ARG_SPEC = {
+            "exception": Exception,
+        }
+
+        BACKEND_ARG_SPEC = {
+            "exception": Exception,
+        }
+
+        for handler_domain, handler_fn, handler_spec in zip(
+            ["frontend", "backend"],
+            [self.frontend_exception_handler, self.backend_exception_handler],
+            [
+                FRONTEND_ARG_SPEC,
+                BACKEND_ARG_SPEC,
+            ],
+        ):
+            if hasattr(handler_fn, "__name__"):
+                _fn_name = handler_fn.__name__
+            else:
+                _fn_name = handler_fn.__class__.__name__
+
+            if isinstance(handler_fn, functools.partial):
+                raise ValueError(
+                    f"Provided custom {handler_domain} exception handler `{_fn_name}` is a partial function. Please provide a named function instead."
+                )
+
+            if not callable(handler_fn):
+                raise ValueError(
+                    f"Provided custom {handler_domain} exception handler `{_fn_name}` is not a function."
+                )
+
+            # Allow named functions only as lambda functions cannot be introspected
+            if _fn_name == "<lambda>":
+                raise ValueError(
+                    f"Provided custom {handler_domain} exception handler `{_fn_name}` is a lambda function. Please use a named function instead."
+                )
+
+            # Check if the function has the necessary annotations and types in the right order
+            argspec = inspect.getfullargspec(handler_fn)
+            arg_annotations = {
+                k: eval(v) if isinstance(v, str) else v
+                for k, v in argspec.annotations.items()
+                if k not in ["args", "kwargs", "return"]
+            }
+
+            for required_arg_index, required_arg in enumerate(handler_spec):
+                if required_arg not in arg_annotations:
+                    raise ValueError(
+                        f"Provided custom {handler_domain} exception handler `{_fn_name}` does not take the required argument `{required_arg}`"
+                    )
+                elif (
+                    not list(arg_annotations.keys())[required_arg_index] == required_arg
+                ):
+                    raise ValueError(
+                        f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong argument order."
+                        f"Expected `{required_arg}` as the {required_arg_index+1} argument but got `{list(arg_annotations.keys())[required_arg_index]}`"
+                    )
+
+                if not issubclass(arg_annotations[required_arg], Exception):
+                    raise ValueError(
+                        f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong type for {required_arg} argument."
+                        f"Expected to be `Exception` but got `{arg_annotations[required_arg]}`"
+                    )
+
+            # Check if the return type is valid for backend exception handler
+            if handler_domain == "backend":
+                sig = inspect.signature(self.backend_exception_handler)
+                return_type = (
+                    eval(sig.return_annotation)
+                    if isinstance(sig.return_annotation, str)
+                    else sig.return_annotation
+                )
+
+                valid = bool(
+                    return_type == EventSpec
+                    or return_type == Optional[EventSpec]
+                    or return_type == List[EventSpec]
+                    or return_type == inspect.Signature.empty
+                    or return_type is None
+                )
+
+                if not valid:
+                    raise ValueError(
+                        f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong return type."
+                        f"Expected `Union[EventSpec, List[EventSpec], None]` but got `{return_type}`"
+                    )
 
 
 async def process(

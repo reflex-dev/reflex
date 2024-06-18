@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import functools
 import io
 import json
 import os.path
 import re
 import unittest.mock
 import uuid
+from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 from typing import Generator, List, Tuple, Type
 from unittest.mock import AsyncMock
@@ -1535,3 +1537,164 @@ def test_app_with_transpile_packages(compilable_app, export):
     else:
         assert 'output: "export"' not in next_config
         assert f'distDir: "{constants.Dirs.STATIC}"' not in next_config
+
+
+# Test custom exception handlers
+
+
+def valid_custom_handler(exception: Exception, logger: str = "test"):
+    print("Custom Backend Exception")
+    print(exception)
+
+
+def custom_exception_handler_with_wrong_arg_order(
+    logger: str,
+    exception: Exception,  # Should be first
+):
+    print("Custom Backend Exception")
+    print(exception)
+
+
+def custom_exception_handler_with_wrong_argspec(
+    exception: str,  # Should be Exception
+):
+    print("Custom Backend Exception")
+    print(exception)
+
+
+class DummyExceptionHandler:
+    """Dummy exception handler class."""
+
+    def handle(self, exception: Exception):
+        """Handle the exception.
+
+        Args:
+            exception: The exception.
+
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+custom_exception_handlers = {
+    "lambda": lambda exception: print("Custom Exception Handler", exception),
+    "wrong_argspec": custom_exception_handler_with_wrong_argspec,
+    "wrong_arg_order": custom_exception_handler_with_wrong_arg_order,
+    "valid": valid_custom_handler,
+    "partial": functools.partial(valid_custom_handler, logger="test"),
+    "method": DummyExceptionHandler().handle,
+}
+
+
+@pytest.mark.parametrize(
+    "handler_fn, expected",
+    [
+        pytest.param(
+            custom_exception_handlers["partial"],
+            pytest.raises(ValueError),
+            id="partial",
+        ),
+        pytest.param(
+            custom_exception_handlers["lambda"],
+            pytest.raises(ValueError),
+            id="lambda",
+        ),
+        pytest.param(
+            custom_exception_handlers["wrong_argspec"],
+            pytest.raises(ValueError),
+            id="wrong_argspec",
+        ),
+        pytest.param(
+            custom_exception_handlers["wrong_arg_order"],
+            pytest.raises(ValueError),
+            id="wrong_arg_order",
+        ),
+        pytest.param(
+            custom_exception_handlers["valid"],
+            does_not_raise(),
+            id="valid_handler",
+        ),
+        pytest.param(
+            custom_exception_handlers["method"],
+            does_not_raise(),
+            id="valid_class_method",
+        ),
+    ],
+)
+def test_frontend_exception_handler_validation(handler_fn, expected):
+    """Test that the custom frontend exception handler is properly validated.
+
+    Args:
+        handler_fn: The handler function.
+        expected: The expected result.
+
+    """
+    with expected:
+        rx.App(frontend_exception_handler=handler_fn)
+
+
+def backend_exception_handler_with_wrong_return_type(exception: Exception) -> int:
+    """Custom backend exception handler with wrong return type.
+
+    Args:
+        exception: The exception.
+
+    Returns:
+        int: The wrong return type.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+    return 5
+
+
+@pytest.mark.parametrize(
+    "handler_fn, expected",
+    [
+        pytest.param(
+            backend_exception_handler_with_wrong_return_type,
+            pytest.raises(ValueError),
+            id="wrong_return_type",
+        ),
+        pytest.param(
+            custom_exception_handlers["partial"],
+            pytest.raises(ValueError),
+            id="partial",
+        ),
+        pytest.param(
+            custom_exception_handlers["lambda"],
+            pytest.raises(ValueError),
+            id="lambda",
+        ),
+        pytest.param(
+            custom_exception_handlers["wrong_argspec"],
+            pytest.raises(ValueError),
+            id="wrong_argspec",
+        ),
+        pytest.param(
+            custom_exception_handlers["wrong_arg_order"],
+            pytest.raises(ValueError),
+            id="wrong_arg_order",
+        ),
+        pytest.param(
+            custom_exception_handlers["valid"],
+            does_not_raise(),
+            id="valid_handler",
+        ),
+        pytest.param(
+            custom_exception_handlers["method"],
+            does_not_raise(),
+            id="valid_class_method",
+        ),
+    ],
+)
+def test_backend_exception_handler_validation(handler_fn, expected):
+    """Test that the custom backend exception handler is properly validated.
+
+    Args:
+        handler_fn: The handler function.
+        expected: The expected result.
+
+    """
+    with expected:
+        rx.App(backend_exception_handler=handler_fn)
