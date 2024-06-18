@@ -582,14 +582,11 @@ class Reference(Recharts):
     # The id of y-axis which is corresponding to the data.
     y_axis_id: Var[Union[str, int]]
 
-    # If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
-    x: Var[str]
-
-    # If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
-    y: Var[str]
-
     # Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
     if_overflow: Var[LiteralIfOverflow]
+
+    # If set a string or a number, default label will be drawn, and the option is content.
+    label: Var[Union[str, int]]
 
     # If set true, the line will be rendered in front of bars in BarChart, etc.
     is_front: Var[bool]
@@ -602,11 +599,23 @@ class ReferenceLine(Reference):
 
     alias = "RechartsReferenceLine"
 
+    # If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
+    x: Var[Union[str, int]]
+
+    # If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
+    y: Var[Union[str, int]]
+
+    # The color of the reference line.
+    stroke: Var[Union[str, Color]]
+
     # The width of the stroke.
-    stroke_width: Var[int]
+    stroke_width: Var[Union[str, int]]
 
     # Valid children components
     _valid_children: List[str] = ["Label"]
+
+    # Array of endpoints in { x, y } format. These endpoints would be used to draw the ReferenceLine.
+    segment: List[Any] = []
 
 
 class ReferenceDot(Reference):
@@ -615,6 +624,21 @@ class ReferenceDot(Reference):
     tag = "ReferenceDot"
 
     alias = "RechartsReferenceDot"
+
+    # If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
+    x: Var[Union[str, int]]
+
+    # If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
+    y: Var[Union[str, int]]
+
+    # The radius of dot.
+    r: Var[int]
+
+    # The color of the area fill.
+    fill: Var[Union[str, Color]]
+
+    # The color of the line stroke.
+    stroke: Var[Union[str, Color]]
 
     # Valid children components
     _valid_children: List[str] = ["Label"]

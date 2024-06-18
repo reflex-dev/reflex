@@ -12,7 +12,7 @@ from reflex.utils.imports import ImportVar
 SETTER_PREFIX = "set_"
 
 # The file used to specify no compilation.
-NOCOMPILE_FILE = ".web/nocompile"
+NOCOMPILE_FILE = "nocompile"
 
 
 class Ext(SimpleNamespace):
@@ -80,6 +80,8 @@ class PageNames(SimpleNamespace):
     DOCUMENT_ROOT = "_document"
     # The name of the theme page.
     THEME = "theme"
+    # The module containing components.
+    COMPONENTS = "components"
     # The module containing shared stateful components
     STATEFUL_COMPONENTS = "stateful_components"
 

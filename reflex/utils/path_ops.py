@@ -14,19 +14,20 @@ from reflex import constants
 join = os.linesep.join
 
 
-def rm(path: str):
+def rm(path: str | Path):
     """Remove a file or directory.
 
     Args:
         path: The path to the file or directory.
     """
-    if os.path.isdir(path):
+    path = Path(path)
+    if path.is_dir():
         shutil.rmtree(path)
-    elif os.path.isfile(path):
-        os.remove(path)
+    elif path.is_file():
+        path.unlink()
 
 
-def cp(src: str, dest: str, overwrite: bool = True) -> bool:
+def cp(src: str | Path, dest: str | Path, overwrite: bool = True) -> bool:
     """Copy a file or directory.
 
     Args:
@@ -37,11 +38,12 @@ def cp(src: str, dest: str, overwrite: bool = True) -> bool:
     Returns:
         Whether the copy was successful.
     """
+    src, dest = Path(src), Path(dest)
     if src == dest:
         return False
-    if not overwrite and os.path.exists(dest):
+    if not overwrite and dest.exists():
         return False
-    if os.path.isdir(src):
+    if src.is_dir():
         rm(dest)
         shutil.copytree(src, dest)
     else:
@@ -49,7 +51,7 @@ def cp(src: str, dest: str, overwrite: bool = True) -> bool:
     return True
 
 
-def mv(src: str, dest: str, overwrite: bool = True) -> bool:
+def mv(src: str | Path, dest: str | Path, overwrite: bool = True) -> bool:
     """Move a file or directory.
 
     Args:
@@ -60,25 +62,26 @@ def mv(src: str, dest: str, overwrite: bool = True) -> bool:
     Returns:
         Whether the move was successful.
     """
+    src, dest = Path(src), Path(dest)
     if src == dest:
         return False
-    if not overwrite and os.path.exists(dest):
+    if not overwrite and dest.exists():
         return False
     rm(dest)
     shutil.move(src, dest)
     return True
 
 
-def mkdir(path: str):
+def mkdir(path: str | Path):
     """Create a directory.
 
     Args:
         path: The path to the directory.
     """
-    os.makedirs(path, exist_ok=True)
+    Path(path).mkdir(parents=True, exist_ok=True)
 
 
-def ln(src: str, dest: str, overwrite: bool = False) -> bool:
+def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
     """Create a symbolic link.
 
     Args:
@@ -89,19 +92,20 @@ def ln(src: str, dest: str, overwrite: bool = False) -> bool:
     Returns:
         Whether the link was successful.
     """
+    src, dest = Path(src), Path(dest)
     if src == dest:
         return False
-    if not overwrite and (os.path.exists(dest) or os.path.islink(dest)):
+    if not overwrite and (dest.exists() or dest.is_symlink()):
         return False
-    if os.path.isdir(src):
+    if src.is_dir():
         rm(dest)
-        os.symlink(src, dest, target_is_directory=True)
+        src.symlink_to(dest, target_is_directory=True)
     else:
-        os.symlink(src, dest)
+        src.symlink_to(dest)
     return True
 
 
-def which(program: str) -> str | None:
+def which(program: str | Path) -> str | Path | None:
     """Find the path to an executable.
 
     Args:
@@ -110,7 +114,7 @@ def which(program: str) -> str | None:
     Returns:
         The path to the executable.
     """
-    return shutil.which(program)
+    return shutil.which(str(program))
 
 
 def get_node_bin_path() -> str | None:
@@ -119,10 +123,11 @@ def get_node_bin_path() -> str | None:
     Returns:
         The path to the node bin folder.
     """
-    if not os.path.exists(constants.Node.BIN_PATH):
+    bin_path = Path(constants.Node.BIN_PATH)
+    if not bin_path.exists():
         str_path = which("node")
         return str(Path(str_path).parent.resolve()) if str_path else str_path
-    return str(Path(constants.Node.BIN_PATH).resolve())
+    return str(bin_path.resolve())
 
 
 def get_node_path() -> str | None:
@@ -131,9 +136,10 @@ def get_node_path() -> str | None:
     Returns:
         The path to the node binary file.
     """
-    if not os.path.exists(constants.Node.PATH):
-        return which("node")
-    return constants.Node.PATH
+    node_path = Path(constants.Node.PATH)
+    if not node_path.exists():
+        return str(which("node"))
+    return str(node_path)
 
 
 def get_npm_path() -> str | None:
@@ -142,12 +148,13 @@ def get_npm_path() -> str | None:
     Returns:
         The path to the npm binary file.
     """
-    if not os.path.exists(constants.Node.PATH):
-        return which("npm")
-    return constants.Node.NPM_PATH
+    npm_path = Path(constants.Node.NPM_PATH)
+    if not npm_path.exists():
+        return str(which("npm"))
+    return str(npm_path)
 
 
-def update_json_file(file_path: str, update_dict: dict[str, int | str]):
+def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
     """Update the contents of a json file.
 
     Args:
@@ -176,7 +183,7 @@ def update_json_file(file_path: str, update_dict: dict[str, int | str]):
         json.dump(json_object, f, ensure_ascii=False)
 
 
-def find_replace(directory: str, find: str, replace: str):
+def find_replace(directory: str | Path, find: str, replace: str):
     """Recursively find and replace text in files in a directory.
 
     Args:
@@ -184,11 +191,10 @@ def find_replace(directory: str, find: str, replace: str):
         find: The text to find.
         replace: The text to replace.
     """
+    directory = Path(directory)
     for root, _dirs, files in os.walk(directory):
         for file in files:
-            filepath = os.path.join(root, file)
-            with open(filepath, "r", encoding="utf-8") as f:
-                text = f.read()
+            filepath = Path(root, file)
+            text = filepath.read_text(encoding="utf-8")
             text = re.sub(find, replace, text)
-            with open(filepath, "w") as f:
-                f.write(text)
+            filepath.write_text(text)

@@ -19,7 +19,7 @@ repos:
         always_run: true
         language: system
         description: 'Update pyi files as needed'
-        entry: python scripts/make_pyi.py
+        entry: python3 scripts/make_pyi.py
 
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.313
