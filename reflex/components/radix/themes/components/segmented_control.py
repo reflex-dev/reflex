@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import Literal, Union
+from typing import List, Literal, Union
 
 from reflex.event import EventHandler
 from reflex.vars import Var
@@ -31,9 +31,9 @@ class SegmentedControlRoot(RadixThemesComponent):
     radius: Var[Literal["none", "small", "medium", "large", "full"]]
 
     # The default value of the segmented control.
-    default_value: Var[Union[str, list[str]]]
+    default_value: Var[Union[str, List[str]]]
 
-    value: Var[Union[str, list[str]]]
+    value: Var[Union[str, List[str]]]
 
     on_change: EventHandler[lambda e0: [e0]]
 
