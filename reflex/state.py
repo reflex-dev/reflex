@@ -24,6 +24,8 @@ from typing import (
     Sequence,
     Set,
     Type,
+    Union,
+    cast,
 )
 
 import dill
@@ -1469,25 +1471,27 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 final=final if not handler.is_background else True,
             )
         except Exception as ex:
-
             state._clean()
 
             config = get_config()
 
-            events = config.backend_exception_handler(ex)
+            event_specs = config.backend_exception_handler(ex)
 
-            if events:
-                events = fix_events(
-                    [events],
-                    state.router.session.client_token,
-                    router_data=state.router_data,
-                )
-            else:
-                events = []
+            if event_specs is None:
+                return StateUpdate()
 
+            event_specs_correct_type = cast(
+                Union[List[Union[EventSpec, EventHandler]], None],
+                [event_specs] if isinstance(event_specs, EventSpec) else event_specs,
+            )
+            fixed_events = fix_events(
+                event_specs_correct_type,
+                token,
+                router_data=state.router_data,
+            )
             return StateUpdate(
-                events=events,
-                final=True
+                events=fixed_events,
+                final=True,
             )
 
     async def _process_event(
