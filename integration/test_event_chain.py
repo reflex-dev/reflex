@@ -122,7 +122,7 @@ def EventChain():
         def click_yield_interim_value(self):
             self.interim_value = "interim"
             yield
-            time.sleep(1)
+            time.sleep(2)
             self.interim_value = "final"
 
     app = rx.App(state=rx.State)
