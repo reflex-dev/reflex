@@ -16,14 +16,12 @@ export default function RadixThemesColorModeProvider({ children }) {
     setTheme(resolvedTheme === "light" ? "dark" : "light");
   };
   const setColorMode = (mode) => {
-    console.log("call setColorMode", mode);
     const allowedModes = ["light", "dark", "system"];
     if (!allowedModes.includes(mode)) {
       console.error(
         `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`
       );
       mode = defaultColorMode;
-      return;
     }
     setTheme(mode);
   };
