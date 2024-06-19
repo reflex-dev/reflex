@@ -1,4 +1,5 @@
 """A component that wraps a recharts lib."""
+
 from typing import Literal
 
 from reflex.components.component import Component, MemoizationLeaf, NoSSRComponent

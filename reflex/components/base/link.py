@@ -1,6 +1,5 @@
 """Display the title of the current page."""
 
-
 from reflex.components.component import Component
 from reflex.vars import Var
 

@@ -184,6 +184,7 @@ class Thead(ChakraComponent):
 
         """
         ...
+
     @staticmethod
     def validate_headers(headers): ...
 
@@ -264,6 +265,7 @@ class Tbody(ChakraComponent):
             Component: The table body component
         """
         ...
+
     @staticmethod
     def validate_rows(rows): ...
 
@@ -344,6 +346,7 @@ class Tfoot(ChakraComponent):
             The table footer component.
         """
         ...
+
     @staticmethod
     def validate_footers(footers): ...
 

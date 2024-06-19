@@ -1,4 +1,5 @@
 """Component for displaying a plotly graph."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List

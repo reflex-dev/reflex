@@ -1,4 +1,5 @@
 """Event-related constants."""
+
 from enum import Enum
 from types import SimpleNamespace
 
