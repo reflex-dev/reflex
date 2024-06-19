@@ -40,6 +40,7 @@ from redis.exceptions import ResponseError
 
 from reflex import constants
 from reflex.base import Base
+from reflex.config import get_config
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -53,7 +54,6 @@ from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.vars import BaseVar, ComputedVar, Var, computed_var
-from reflex.config import get_config
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
@@ -2317,6 +2317,7 @@ if not isinstance(State.validate.__func__, FunctionType):
     def _dill_reduce_cython_function_or_method(pickler, obj):
         # Ignore cython function when pickling.
         pass
+
 
 @dill.register(type(State))
 def _dill_reduce_state(pickler, obj):
