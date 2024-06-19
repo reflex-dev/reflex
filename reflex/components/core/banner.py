@@ -153,6 +153,20 @@ useEffect(() => {{
             hook,
         ]
 
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a connection toaster component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The connection toaster component.
+        """
+        Toaster.is_used = True
+        return super().create(*children, **props)
+
 
 class ConnectionBanner(Component):
     """A connection banner component."""
