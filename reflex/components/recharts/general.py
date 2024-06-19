@@ -8,12 +8,12 @@ from reflex.event import EventHandler
 from reflex.vars import Var
 
 from .recharts import (
+    LiteralAnimationEasing,
     LiteralIconType,
     LiteralLayout,
     LiteralLegendAlign,
     LiteralPosition,
     LiteralVerticalAlign,
-    LiteralAnimationEasing,
     Recharts,
 )
 
@@ -155,7 +155,9 @@ class GraphingTooltip(Recharts):
     label_style: Var[Dict[str, Any]]
 
     # This option allows the tooltip to extend beyond the viewBox of the chart itself. DEFAULT: { x: false, y: false }
-    allow_escape_view_box: Var[Dict[str, bool]] = Var.create_safe({"x": False, "y": False})
+    allow_escape_view_box: Var[Dict[str, bool]] = Var.create_safe(
+        {"x": False, "y": False}
+    )
 
     # If set true, the tooltip is displayed. If set false, the tooltip is hidden, usually calculated internally.
     active: Var[bool]
