@@ -252,5 +252,10 @@ def token() -> str:
 
 @pytest.fixture
 def model_registry() -> Generator[Type[ModelRegistry], None, None]:
+    """Create a model registry.
+
+    Yields:
+        A fresh model registry.
+    """
     yield ModelRegistry
     ModelRegistry._metadata = None
