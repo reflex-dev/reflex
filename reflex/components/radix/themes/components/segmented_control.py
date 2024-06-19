@@ -48,6 +48,8 @@ class SegmentedControlItem(RadixThemesComponent):
     # The value of the item.
     value: Var[str]
 
+    _valid_parents: List[str] = ["SegmentedControlRoot"]
+
 
 class SegmentedControl(SimpleNamespace):
     """SegmentedControl components namespace."""
