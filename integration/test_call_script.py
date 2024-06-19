@@ -10,6 +10,8 @@ from selenium.webdriver.remote.webdriver import WebDriver
 
 from reflex.testing import AppHarness
 
+from .utils import SessionStorage
+
 
 def CallScript():
     """A test app for browser javascript integration."""
@@ -146,25 +148,20 @@ def CallScript():
     @app.add_page
     def index():
         return rx.vstack(
-            rx.chakra.input(
-                value=CallScriptState.router.session.client_token,
-                is_read_only=True,
-                id="token",
-            ),
-            rx.chakra.input(
+            rx.input(
                 value=CallScriptState.inline_counter.to(str),  # type: ignore
                 id="inline_counter",
-                is_read_only=True,
+                read_only=True,
             ),
-            rx.chakra.input(
+            rx.input(
                 value=CallScriptState.external_counter.to(str),  # type: ignore
                 id="external_counter",
-                is_read_only=True,
+                read_only=True,
             ),
             rx.text_area(
                 value=CallScriptState.results.to_string(),  # type: ignore
                 id="results",
-                is_read_only=True,
+                read_only=True,
             ),
             rx.script(inline_scripts),
             rx.script(src="/external.js"),
@@ -275,25 +272,18 @@ def driver(call_script: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-def assert_token(call_script: AppHarness, driver: WebDriver) -> str:
+def assert_token(driver: WebDriver) -> str:
     """Get the token associated with backend state.
 
     Args:
-        call_script: harness for CallScript app.
         driver: WebDriver instance.
 
     Returns:
         The token visible in the driver browser.
     """
-    assert call_script.app_instance is not None
-    token_input = driver.find_element(By.ID, "token")
-    assert token_input
-
-    # wait for the backend connection to send the token
-    token = call_script.poll_for_value(token_input)
-    assert token is not None
-
-    return token
+    ss = SessionStorage(driver)
+    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
+    return ss.get("token")
 
 
 @pytest.mark.parametrize("script", ["inline", "external"])
@@ -309,7 +299,7 @@ def test_call_script(
         driver: WebDriver instance.
         script: The type of script to test.
     """
-    assert_token(call_script, driver)
+    assert_token(driver)
     reset_button = driver.find_element(By.ID, "reset")
     update_counter_button = driver.find_element(By.ID, f"update_{script}_counter")
     counter = driver.find_element(By.ID, f"{script}_counter")
