@@ -1022,10 +1022,10 @@ class Component(BaseComponent, ABC):
                     f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
                 )
 
-            if child._valid_parents and comp_name not in [
-                *child._valid_parents,
-                *allowed_components,
-            ]:
+            if child._valid_parents and all(
+                clz_name not in [*child._valid_parents, *allowed_components]
+                for clz_name in self._iter_parent_classes_names()
+            ):
                 valid_parent_list = ", ".join(
                     [f"`{v_parent}`" for v_parent in child._valid_parents]
                 )
@@ -1152,6 +1152,13 @@ class Component(BaseComponent, ABC):
                 ):
                     return True
         return False
+
+    @classmethod
+    def _iter_parent_classes_names(cls) -> Iterator[str]:
+        for clz in cls.mro():
+            if clz is Component:
+                break
+            yield clz.__name__
 
     @classmethod
     def _iter_parent_classes_with_method(cls, method: str) -> Iterator[Type[Component]]:
