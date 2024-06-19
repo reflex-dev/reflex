@@ -116,7 +116,7 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some(event => event.name.startsWith("state"));
+  return event_queue.some(event => event.name.startsWith("reflex___state"));
 }
 
 /**
