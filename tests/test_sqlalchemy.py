@@ -46,7 +46,7 @@ def test_automigration(
     class Base(DeclarativeBase):
         @declared_attr.directive
         def __tablename__(cls) -> str:
-            return f"{cls.__module__}_{cls.__name__}".lower()
+            return cls.__name__.lower()
 
     assert ModelRegistry.register(Base)
 
@@ -138,7 +138,7 @@ def test_automigration(
     with reflex.model.session() as session:
         with pytest.raises(sqlalchemy.exc.OperationalError) as errctx:
             _ = session.scalars(select(AlembicSecond)).all()
-        assert errctx.match(r"no such table: tests.test_session_alembicsecond")
+        assert errctx.match(r"no such table: alembicsecond")
         # first table should still exist
         result = session.scalars(select(AlembicThing)).all()
         assert len(result) == 2
