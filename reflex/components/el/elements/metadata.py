@@ -55,7 +55,8 @@ class Title(Element):  # noqa: E742
     tag = "title"
 
 
-class Style(Element):  # noqa: E742
+# Had to be named with an underscore so it doesnt conflict with reflex.style Style in pyi
+class StyleEl(Element):  # noqa: E742
     """Display the style element."""
 
     tag = "style"
@@ -68,4 +69,4 @@ head = Head.create
 link = Link.create
 meta = Meta.create
 title = Title.create
-style = Style.create
+style = StyleEl.create

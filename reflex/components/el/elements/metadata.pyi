@@ -651,7 +651,7 @@ class Title(Element):
         """
         ...
 
-class Style(Element):
+class StyleEl(Element):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -712,7 +712,7 @@ class Style(Element):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
-    ) -> "Style":
+    ) -> "StyleEl":
         """Create the component.
 
         Args:
@@ -735,4 +735,4 @@ head = Head.create
 link = Link.create
 meta = Meta.create
 title = Title.create
-style = Style.create
+style = StyleEl.create
