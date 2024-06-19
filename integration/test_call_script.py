@@ -43,6 +43,7 @@ def CallScript():
         results: List[Optional[Union[str, Dict, List]]] = []
         inline_counter: int = 0
         external_counter: int = 0
+        value: str = "Initial"
 
         def call_script_callback(self, result):
             self.results.append(result)
@@ -227,6 +228,14 @@ def CallScript():
                 on_click=CallScriptState.get_external_counter,
                 id="update_external_counter",
             ),
+            rx.button(
+                CallScriptState.value,
+                on_click=rx.call_script(
+                    "'updated'",
+                    callback=CallScriptState.set_value,  # type: ignore
+                ),
+                id="update_value",
+            ),
             rx.button("Reset", id="reset", on_click=CallScriptState.reset_),
         )
 
@@ -355,3 +364,12 @@ def test_call_script(
     )
     reset_button.click()
     assert call_script.poll_for_value(counter, exp_not_equal="1") == "0"
+
+    # Check that triggering script from event trigger calls callback
+    update_value_button = driver.find_element(By.ID, "update_value")
+    update_value_button.click()
+
+    assert (
+        call_script.poll_for_content(update_value_button, exp_not_equal="Initial")
+        == "updated"
+    )
