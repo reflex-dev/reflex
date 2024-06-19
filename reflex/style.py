@@ -17,18 +17,26 @@ LIGHT_COLOR_MODE: str = "light"
 DARK_COLOR_MODE: str = "dark"
 
 # Reference the global ColorModeContext
-color_mode_var_data = VarData(
-    imports={
-        f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="ColorModeContext")],
-        "react": [ImportVar(tag="useContext")],
-    },
-    hooks={
-        f"const [ {constants.ColorMode.NAME}, {constants.ColorMode.TOGGLE} ] = useContext(ColorModeContext)": None,
-    },
-)
-# Var resolves to the current color mode for the app ("light" or "dark")
+color_mode_imports = {
+    f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="ColorModeContext")],
+    "react": [ImportVar(tag="useContext")],
+}
+color_mode_toggle_hooks = {
+    f"const {{ {constants.ColorMode.RESOLVED_NAME}, {constants.ColorMode.TOGGLE} }} = useContext(ColorModeContext)": None,
+}
+color_mode_set_hooks = {
+    f"const {{ {constants.ColorMode.NAME}, {constants.ColorMode.RESOLVED_NAME}, {constants.ColorMode.TOGGLE}, {constants.ColorMode.SET} }} = useContext(ColorModeContext)": None,
+}
+color_mode_var_data = VarData(imports=color_mode_imports, hooks=color_mode_toggle_hooks)
+# Var resolves to the current color mode for the app ("light", "dark" or "system")
 color_mode = BaseVar(
     _var_name=constants.ColorMode.NAME,
+    _var_type="str",
+    _var_data=color_mode_var_data,
+)
+# Var resolves to the resolved color mode for the app ("light" or "dark")
+resolved_color_mode = BaseVar(
+    _var_name=constants.ColorMode.RESOLVED_NAME,
     _var_type="str",
     _var_data=color_mode_var_data,
 )
@@ -37,6 +45,11 @@ toggle_color_mode = BaseVar(
     _var_name=constants.ColorMode.TOGGLE,
     _var_type=EventChain,
     _var_data=color_mode_var_data,
+)
+set_color_mode = BaseVar(
+    _var_name=constants.ColorMode.SET,
+    _var_type=EventChain,
+    _var_data=VarData(imports=color_mode_imports, hooks=color_mode_set_hooks),
 )
 
 breakpoints = ["0", "30em", "48em", "62em", "80em", "96em"]
@@ -273,7 +286,7 @@ def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
 
 
 def convert_dict_to_style_and_format_emotion(
-    raw_dict: dict[str, Any]
+    raw_dict: dict[str, Any],
 ) -> dict[str, Any] | None:
     """Convert a dict to a style dict and then format as emotion.
 
