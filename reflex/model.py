@@ -24,7 +24,7 @@ from reflex.utils import console
 from reflex.utils.compat import sqlmodel
 
 
-def get_engine(url: str | None = None):
+def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     """Get the database engine.
 
     Args:

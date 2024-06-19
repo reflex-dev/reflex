@@ -5,13 +5,14 @@ import os
 import platform
 import uuid
 from pathlib import Path
-from typing import Dict, Generator
+from typing import Dict, Generator, Type
 from unittest import mock
 
 import pytest
 
 from reflex.app import App
 from reflex.event import EventSpec
+from reflex.model import ModelRegistry
 from reflex.utils import prerequisites
 
 from .states import (
@@ -247,3 +248,9 @@ def token() -> str:
         A fresh/unique token string.
     """
     return str(uuid.uuid4())
+
+
+@pytest.fixture
+def model_registry() -> Generator[Type[ModelRegistry], None, None]:
+    yield ModelRegistry
+    ModelRegistry._metadata = None

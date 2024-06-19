@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Type
 from unittest import mock
 
 import pytest
@@ -8,7 +8,7 @@ import sqlmodel
 
 import reflex.constants
 import reflex.model
-from reflex.model import Model
+from reflex.model import Model, ModelRegistry
 
 
 @pytest.fixture
@@ -64,12 +64,14 @@ def test_custom_primary_key(model_custom_primary: Model):
 def test_automigration(
     tmp_working_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
+    model_registry: Type[ModelRegistry],
 ):
     """Test alembic automigration with add and drop table and column.
 
     Args:
         tmp_working_dir: directory where database and migrations are stored
         monkeypatch: pytest fixture to overwrite attributes
+        model_registry: clean reflex ModelRegistry
     """
     alembic_ini = tmp_working_dir / "alembic.ini"
     versions = tmp_working_dir / "alembic" / "versions"
@@ -100,7 +102,7 @@ def test_automigration(
         session.add(AlembicThing(id=None, t1="foo"))
         session.commit()
 
-    sqlmodel.SQLModel.metadata.clear()
+    model_registry.get_metadata().clear()
 
     # Create column t2, mark t1 as optional with default
     class AlembicThing(Model, table=True):  # type: ignore
@@ -120,7 +122,7 @@ def test_automigration(
         assert result[1].t1 == "default"
         assert result[1].t2 == "baz"
 
-    sqlmodel.SQLModel.metadata.clear()
+    model_registry.get_metadata().clear()
 
     # Drop column t1
     class AlembicThing(Model, table=True):  # type: ignore
@@ -156,7 +158,7 @@ def test_automigration(
     assert len(list(versions.glob("*.py"))) == 4
 
     # drop table (AlembicSecond)
-    sqlmodel.SQLModel.metadata.clear()
+    model_registry.get_metadata().clear()
 
     class AlembicThing(Model, table=True):  # type: ignore
         t2: str = "bar"
@@ -174,7 +176,7 @@ def test_automigration(
         assert result[0].t2 == "bar"
         assert result[1].t2 == "baz"
 
-    sqlmodel.SQLModel.metadata.clear()
+    model_registry.get_metadata().clear()
 
     class AlembicThing(Model, table=True):  # type: ignore
         # changing column type not supported by default
@@ -184,7 +186,7 @@ def test_automigration(
     assert len(list(versions.glob("*.py"))) == 5
 
     # clear all metadata to avoid influencing subsequent tests
-    sqlmodel.SQLModel.metadata.clear()
+    model_registry.get_metadata().clear()
 
     # drop remaining tables
     assert Model.migrate(autogenerate=True)
