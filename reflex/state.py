@@ -53,6 +53,7 @@ from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.vars import BaseVar, ComputedVar, Var, computed_var
+from reflex.config import get_config
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
@@ -60,6 +61,7 @@ if TYPE_CHECKING:
 
 Delta = Dict[str, Any]
 var = computed_var
+config = get_config()
 
 
 # If the state is this large, it's considered a performance issue.
@@ -2316,7 +2318,6 @@ if not isinstance(State.validate.__func__, FunctionType):
         # Ignore cython function when pickling.
         pass
 
-
 @dill.register(type(State))
 def _dill_reduce_state(pickler, obj):
     if obj is not State and issubclass(obj, State):
@@ -2333,10 +2334,10 @@ class StateManagerRedis(StateManager):
     redis: Redis
 
     # The token expiration time (s).
-    token_expiration: int = constants.Expiration.TOKEN
+    token_expiration: int = config.redis_state_manager_token_expiration
 
     # The maximum time to hold a lock (ms).
-    lock_expiration: int = constants.Expiration.LOCK
+    lock_expiration: int = config.redis_state_manager_lock_expiration
 
     # The keyspace subscription string when redis is waiting for lock to be released
     _redis_notify_keyspace_events: str = (
