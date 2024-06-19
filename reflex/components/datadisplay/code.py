@@ -1,4 +1,5 @@
 """A code component."""
+
 from __future__ import annotations
 
 import re

@@ -2,6 +2,7 @@
 
 https://nextjs.org/docs/app/api-reference/components/script
 """
+
 from __future__ import annotations
 
 from reflex.components.component import Component

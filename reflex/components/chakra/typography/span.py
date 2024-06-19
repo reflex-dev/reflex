@@ -1,4 +1,5 @@
 """A span component."""
+
 from __future__ import annotations
 
 from reflex.components.chakra import ChakraComponent

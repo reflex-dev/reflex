@@ -1,4 +1,5 @@
 """Integration tests for var operations."""
+
 from typing import Generator
 
 import pytest

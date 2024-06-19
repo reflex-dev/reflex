@@ -1,4 +1,5 @@
 """Test fixtures."""
+
 import contextlib
 import os
 import platform

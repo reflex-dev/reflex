@@ -1,4 +1,5 @@
 """Specialized test for a larger state tree."""
+
 import asyncio
 from typing import Generator
 

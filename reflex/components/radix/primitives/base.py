@@ -1,4 +1,5 @@
 """The base component for Radix primitives."""
+
 from typing import List
 
 from reflex.components.component import Component

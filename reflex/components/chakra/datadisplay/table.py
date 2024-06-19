@@ -1,4 +1,5 @@
 """Table components."""
+
 from typing import List, Tuple
 
 from reflex.components.chakra import ChakraComponent
