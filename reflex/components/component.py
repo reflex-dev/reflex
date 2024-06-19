@@ -582,6 +582,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The event triggers.
+
         """
         default_triggers = {
             EventTriggers.ON_FOCUS: lambda: [],
@@ -600,6 +601,7 @@ class Component(BaseComponent, ABC):
             EventTriggers.ON_MOUNT: lambda: [],
             EventTriggers.ON_UNMOUNT: lambda: [],
         }
+
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
         for field in self.get_fields().values():

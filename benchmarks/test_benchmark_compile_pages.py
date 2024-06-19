@@ -13,6 +13,9 @@ from reflex import constants
 from reflex.compiler import utils
 from reflex.testing import AppHarness, chdir
 from reflex.utils import build
+from reflex.utils.prerequisites import get_web_dir
+
+web_pages = get_web_dir() / constants.Dirs.PAGES
 
 
 def render_multiple_pages(app, num: int):
@@ -320,7 +323,7 @@ def test_app_1_compile_time_cold(benchmark, app_with_one_page):
 
     def setup():
         with chdir(app_with_one_page.app_path):
-            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            utils.empty_dir(web_pages, keep_files=["_app.js"])
             app_with_one_page._initialize_app()
             build.setup_frontend(app_with_one_page.app_path)
 
@@ -375,7 +378,7 @@ def test_app_10_compile_time_cold(benchmark, app_with_ten_pages):
 
     def setup():
         with chdir(app_with_ten_pages.app_path):
-            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            utils.empty_dir(web_pages, keep_files=["_app.js"])
             app_with_ten_pages._initialize_app()
             build.setup_frontend(app_with_ten_pages.app_path)
 
@@ -430,7 +433,7 @@ def test_app_100_compile_time_cold(benchmark, app_with_hundred_pages):
 
     def setup():
         with chdir(app_with_hundred_pages.app_path):
-            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            utils.empty_dir(web_pages, keep_files=["_app.js"])
             app_with_hundred_pages._initialize_app()
             build.setup_frontend(app_with_hundred_pages.app_path)
 
@@ -485,7 +488,7 @@ def test_app_1000_compile_time_cold(benchmark, app_with_thousand_pages):
 
     def setup():
         with chdir(app_with_thousand_pages.app_path):
-            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            utils.empty_dir(web_pages, keep_files=["_app.js"])
             app_with_thousand_pages._initialize_app()
             build.setup_frontend(app_with_thousand_pages.app_path)
 
@@ -540,7 +543,7 @@ def test_app_10000_compile_time_cold(benchmark, app_with_ten_thousand_pages):
 
     def setup():
         with chdir(app_with_ten_thousand_pages.app_path):
-            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            utils.empty_dir(web_pages, keep_files=["_app.js"])
             app_with_ten_thousand_pages._initialize_app()
             build.setup_frontend(app_with_ten_thousand_pages.app_path)
 

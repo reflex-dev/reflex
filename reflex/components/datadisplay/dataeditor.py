@@ -1,4 +1,5 @@
 """Data Editor component from glide-data-grid."""
+
 from __future__ import annotations
 
 from enum import Enum
@@ -390,14 +391,6 @@ class DataEditor(NoSSRComponent):
                 top=0,
             )
         }
-
-    def get_event_triggers(self) -> dict[str, Any]:
-        """Remove the default event triggers from Component.
-
-        Returns:
-            An empty dictionary.
-        """
-        return {}
 
 
 @serializer

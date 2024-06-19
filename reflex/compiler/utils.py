@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
+
+from reflex.utils.prerequisites import get_web_dir
 
 try:
     from pydantic.v1.fields import ModelField
@@ -25,7 +28,7 @@ from reflex.components.base import (
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.state import BaseState, Cookie, LocalStorage
+from reflex.state import BaseState, Cookie, LocalStorage, SessionStorage
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
 from reflex.utils.imports import ImportVar, ParsedImportDict
@@ -155,8 +158,11 @@ def compile_state(state: Type[BaseState]) -> dict:
 
 def _compile_client_storage_field(
     field: ModelField,
-) -> tuple[Type[Cookie] | Type[LocalStorage] | None, dict[str, Any] | None]:
-    """Compile the given cookie or local_storage field.
+) -> tuple[
+    Type[Cookie] | Type[LocalStorage] | Type[SessionStorage] | None,
+    dict[str, Any] | None,
+]:
+    """Compile the given cookie, local_storage or session_storage field.
 
     Args:
         field: The possible cookie field to compile.
@@ -164,7 +170,7 @@ def _compile_client_storage_field(
     Returns:
         A dictionary of the compiled cookie or None if the field is not cookie-like.
     """
-    for field_type in (Cookie, LocalStorage):
+    for field_type in (Cookie, LocalStorage, SessionStorage):
         if isinstance(field.default, field_type):
             cs_obj = field.default
         elif isinstance(field.type_, type) and issubclass(field.type_, field_type):
@@ -177,7 +183,7 @@ def _compile_client_storage_field(
 
 def _compile_client_storage_recursive(
     state: Type[BaseState],
-) -> tuple[dict[str, dict], dict[str, dict[str, str]]]:
+) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict]]:
     """Compile the client-side storage for the given state recursively.
 
     Args:
@@ -188,10 +194,12 @@ def _compile_client_storage_recursive(
             (
                 cookies: dict[str, dict],
                 local_storage: dict[str, dict[str, str]]
-            )
+                session_storage: dict[str, dict[str, str]]
+            ).
     """
     cookies = {}
     local_storage = {}
+    session_storage = {}
     state_name = state.get_full_name()
     for name, field in state.__fields__.items():
         if name in state.inherited_vars:
@@ -203,15 +211,20 @@ def _compile_client_storage_recursive(
             cookies[state_key] = options
         elif field_type is LocalStorage:
             local_storage[state_key] = options
+        elif field_type is SessionStorage:
+            session_storage[state_key] = options
         else:
             continue
     for substate in state.get_substates():
-        substate_cookies, substate_local_storage = _compile_client_storage_recursive(
-            substate
-        )
+        (
+            substate_cookies,
+            substate_local_storage,
+            substate_session_storage,
+        ) = _compile_client_storage_recursive(substate)
         cookies.update(substate_cookies)
         local_storage.update(substate_local_storage)
-    return cookies, local_storage
+        session_storage.update(substate_session_storage)
+    return cookies, local_storage, session_storage
 
 
 def compile_client_storage(state: Type[BaseState]) -> dict[str, dict]:
@@ -223,10 +236,11 @@ def compile_client_storage(state: Type[BaseState]) -> dict[str, dict]:
     Returns:
         A dictionary of the compiled client-side storage info.
     """
-    cookies, local_storage = _compile_client_storage_recursive(state)
+    cookies, local_storage, session_storage = _compile_client_storage_recursive(state)
     return {
         constants.COOKIES: cookies,
         constants.LOCAL_STORAGE: local_storage,
+        constants.SESSION_STORAGE: session_storage,
     }
 
 
@@ -330,7 +344,7 @@ def get_page_path(path: str) -> str:
     Returns:
         The path of the compiled JS file.
     """
-    return os.path.join(constants.Dirs.WEB_PAGES, path + constants.Ext.JS)
+    return str(get_web_dir() / constants.Dirs.PAGES / (path + constants.Ext.JS))
 
 
 def get_theme_path() -> str:
@@ -339,8 +353,10 @@ def get_theme_path() -> str:
     Returns:
         The path of the theme style.
     """
-    return os.path.join(
-        constants.Dirs.WEB_UTILS, constants.PageNames.THEME + constants.Ext.JS
+    return str(
+        get_web_dir()
+        / constants.Dirs.UTILS
+        / (constants.PageNames.THEME + constants.Ext.JS)
     )
 
 
@@ -350,8 +366,10 @@ def get_root_stylesheet_path() -> str:
     Returns:
         The path of the app root file.
     """
-    return os.path.join(
-        constants.STYLES_DIR, constants.PageNames.STYLESHEET_ROOT + constants.Ext.CSS
+    return str(
+        get_web_dir()
+        / constants.Dirs.STYLES
+        / (constants.PageNames.STYLESHEET_ROOT + constants.Ext.CSS)
     )
 
 
@@ -361,9 +379,7 @@ def get_context_path() -> str:
     Returns:
         The path of the context module.
     """
-    return os.path.join(
-        constants.Dirs.WEB, constants.Dirs.CONTEXTS_PATH + constants.Ext.JS
-    )
+    return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JS))
 
 
 def get_components_path() -> str:
@@ -372,7 +388,11 @@ def get_components_path() -> str:
     Returns:
         The path of the compiled components.
     """
-    return os.path.join(constants.Dirs.WEB_UTILS, "components" + constants.Ext.JS)
+    return str(
+        get_web_dir()
+        / constants.Dirs.UTILS
+        / (constants.PageNames.COMPONENTS + constants.Ext.JS),
+    )
 
 
 def get_stateful_components_path() -> str:
@@ -381,9 +401,10 @@ def get_stateful_components_path() -> str:
     Returns:
         The path of the compiled stateful components.
     """
-    return os.path.join(
-        constants.Dirs.WEB_UTILS,
-        constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JS,
+    return str(
+        get_web_dir()
+        / constants.Dirs.UTILS
+        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JS)
     )
 
 
@@ -437,23 +458,24 @@ def write_page(path: str, code: str):
         f.write(code)
 
 
-def empty_dir(path: str, keep_files: list[str] | None = None):
+def empty_dir(path: str | Path, keep_files: list[str] | None = None):
     """Remove all files and folders in a directory except for the keep_files.
 
     Args:
         path: The path to the directory that will be emptied
         keep_files: List of filenames or foldernames that will not be deleted.
     """
+    path = Path(path)
+
     # If the directory does not exist, return.
-    if not os.path.exists(path):
+    if not path.exists():
         return
 
     # Remove all files and folders in the directory.
     keep_files = keep_files or []
-    directory_contents = os.listdir(path)
-    for element in directory_contents:
-        if element not in keep_files:
-            path_ops.rm(os.path.join(path, element))
+    for element in path.iterdir():
+        if element.name not in keep_files:
+            path_ops.rm(element)
 
 
 def is_valid_url(url) -> bool:

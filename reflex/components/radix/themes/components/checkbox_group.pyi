@@ -8,7 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
-from typing import Literal
+from typing import List, Literal
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -90,6 +90,8 @@ class CheckboxGroupRoot(RadixThemesComponent):
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
+        default_value: Optional[Union[Var[List[str]], List[str]]] = None,
+        name: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -150,10 +152,12 @@ class CheckboxGroupRoot(RadixThemesComponent):
 
         Args:
             *children: Child components.
-            size:
+            size: Use the size prop to control the checkbox size.
             variant: Variant of button: "classic" | "surface" | "soft"
             color_scheme: Override theme color for button
             high_contrast: Uses a higher contrast color for the component.
+            default_value: determines which checkboxes, if any, are checked by default.
+            name: used to assign a name to the entire group of checkboxes
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -173,6 +177,8 @@ class CheckboxGroupItem(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        value: Optional[Union[Var[str], str]] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -233,6 +239,8 @@ class CheckboxGroupItem(RadixThemesComponent):
 
         Args:
             *children: Child components.
+            value: specifies the value associated with a particular checkbox option.
+            disabled: Use the native disabled attribute to create a disabled checkbox.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

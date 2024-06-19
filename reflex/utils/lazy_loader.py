@@ -1,4 +1,5 @@
 """Module to implement lazy loading in reflex."""
+
 import copy
 
 import lazy_loader as lazy
