@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
-from reflex.vars import Var
 from reflex.event import EventHandler
+from reflex.vars import Var
 
 from .recharts import (
     LiteralAnimationEasing,

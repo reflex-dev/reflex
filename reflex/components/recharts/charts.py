@@ -1,4 +1,5 @@
 """A module that defines the chart components in Recharts."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Union
@@ -383,6 +384,8 @@ class RadialBarChart(ChartBase):
         "GraphingTooltip",
         "RadialBar",
     ]
+
+
 class ScatterChart(ChartBase):
     """A Scatter chart component in Recharts."""
 
