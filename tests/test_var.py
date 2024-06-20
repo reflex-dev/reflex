@@ -1403,7 +1403,7 @@ def cv_fget(state: BaseState) -> int:
         ([ComputedVar(fget=cv_fget)], {"cv_fget"}),
     ],
 )
-def test_computed_var_deps(deps: list[Union[str, Var]], expected: set[str]):
+def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
     @computed_var(
         deps=deps,
     )
@@ -1421,7 +1421,7 @@ def test_computed_var_deps(deps: list[Union[str, Var]], expected: set[str]):
         ["", "abc"],
     ],
 )
-def test_invalid_computed_var_deps(deps: list):
+def test_invalid_computed_var_deps(deps: List):
     with pytest.raises(TypeError):
 
         @computed_var(
