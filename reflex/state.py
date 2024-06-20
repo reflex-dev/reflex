@@ -2204,7 +2204,14 @@ class StateManager(Base, ABC):
         """
         redis = prerequisites.get_redis()
         if redis is not None:
-            return StateManagerRedis(state=state, redis=redis)
+            # make sure expiration values are obtained only from the config object on creation
+            config = get_config()
+            return StateManagerRedis(
+                state=state,
+                redis=redis,
+                token_expiration=config.redis_token_expiration,
+                lock_expiration=config.redis_lock_expiration,
+            )
         return StateManagerMemory(state=state)
 
     @abstractmethod
