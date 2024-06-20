@@ -2931,6 +2931,7 @@ async def test_setvar(mock_app: rx.App, token: str):
         TestState.setvar(42, 42)
 
 
+@pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")
 @pytest.mark.parametrize(
     "expiration_kwargs, expected_values",
     [
@@ -2954,11 +2955,12 @@ def test_redis_state_manager_config_knobs(tmp_path, expiration_kwargs, expected_
 import reflex as rx     
 config = rx.Config(
     app_name="project1",
-    redis_url="localhost",
+    redis_url="redis://localhost:6379",
     {config_items}
 )
 """
     (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
