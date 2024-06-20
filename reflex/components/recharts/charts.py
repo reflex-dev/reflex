@@ -374,15 +374,6 @@ class RadialBarChart(ChartBase):
     # The size of each bar. If the barSize is not specified, the size of bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups.
     bar_size: Var[int]
 
-    # The function will be called when click bars.
-    on_click: EventHandler[lambda: []]
-
-    # The customized event handler of mouseenter on the component in this group
-    on_mouse_enter: EventHandler[lambda: []]
-
-    # The customized event handler of mouseleave on the component in this group
-    on_mouse_leave: EventHandler[lambda: []]
-
     # Valid children components
     _valid_children: List[str] = [
         "PolarAngleAxis",
