@@ -2967,5 +2967,5 @@ config = rx.Config(
         from reflex.state import State, StateManager
 
         state_manager = StateManager.create(state=State)
-        assert state_manager.lock_expiration == expected_values[0]
-        assert state_manager.token_expiration == expected_values[1]
+        assert state_manager.lock_expiration == expected_values[0]  # type: ignore
+        assert state_manager.token_expiration == expected_values[1]  # type: ignore
