@@ -14,7 +14,6 @@ from reflex.components.core.cond import Cond, color_mode_cond, cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.dropdown_menu import dropdown_menu
 from reflex.components.radix.themes.components.switch import Switch
-from reflex.event import EventChain
 from reflex.style import LIGHT_COLOR_MODE, color_mode, set_color_mode, toggle_color_mode
 from reflex.utils import console
 from reflex.vars import BaseVar, Var
