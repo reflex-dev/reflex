@@ -1971,6 +1971,9 @@ class ComputedVar(Var, property):
             auto_deps: Whether var dependencies should be auto-determined.
             interval: Interval at which the computed var should be updated.
             **kwargs: additional attributes to set on the instance
+
+        Raises:
+            TypeError: If the computed var dependencies are not Var instances or var names.
         """
         self._initial_value = initial_value
         self._cache = cache
@@ -1979,6 +1982,15 @@ class ComputedVar(Var, property):
         self._update_interval = interval
         if deps is None:
             deps = []
+        else:
+            for dep in deps:
+                if isinstance(dep, Var):
+                    continue
+                if isinstance(dep, str) and dep != "":
+                    continue
+                raise TypeError(
+                    "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
+                )
         self._static_deps = {
             dep._var_name if isinstance(dep, Var) else dep for dep in deps
         }
