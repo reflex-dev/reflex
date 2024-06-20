@@ -9,10 +9,12 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 from .recharts import (
     LiteralAnimationEasing,
     LiteralGridType,
+    LiteralLegendType,
     LiteralPolarRadiusType,
     LiteralScale,
     Recharts,
@@ -36,7 +38,38 @@ class Pie(Recharts):
         min_angle: Optional[Union[Var[int], int]] = None,
         padding_angle: Optional[Union[Var[int], int]] = None,
         name_key: Optional[Union[Var[str], str]] = None,
-        legend_type: Optional[Union[Var[str], str]] = None,
+        legend_type: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "line",
+                        "plainline",
+                        "square",
+                        "rect",
+                        "circle",
+                        "cross",
+                        "diamond",
+                        "star",
+                        "triangle",
+                        "wye",
+                        "none",
+                    ]
+                ],
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
+            ]
+        ] = None,
         label: Optional[Union[Var[bool], bool]] = None,
         label_line: Optional[Union[Var[bool], bool]] = None,
         fill: Optional[Union[Var[str], str]] = None,
@@ -97,9 +130,6 @@ class Pie(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -203,9 +233,6 @@ class Radar(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -216,10 +243,12 @@ class RadialBar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         min_angle: Optional[Union[Var[int], int]] = None,
         legend_type: Optional[Union[Var[str], str]] = None,
-        label: Optional[Union[Var[bool], bool]] = None,
+        label: Optional[
+            Union[Var[Union[bool, Dict[str, Any]]], Union[bool, Dict[str, Any]]]
+        ] = None,
         background: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -251,7 +280,7 @@ class RadialBar(Recharts):
 
         Args:
             *children: The children of the component.
-            data: The source data which each element is an object.
+            data_key: The key of a group of data which should be unique to show the meaning of angle axis.
             min_angle: Min angle of each bar. A positive value between 0 and 360.
             legend_type: Type of legend
             label: If false set, labels will not be drawn.
@@ -266,14 +295,10 @@ class RadialBar(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
 class PolarAngleAxis(Recharts):
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -300,7 +325,25 @@ class PolarAngleAxis(Recharts):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_enter: Optional[
@@ -316,6 +359,15 @@ class PolarAngleAxis(Recharts):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
@@ -345,9 +397,6 @@ class PolarAngleAxis(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -440,9 +489,6 @@ class PolarGrid(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -507,6 +553,7 @@ class PolarRadiusAxis(Recharts):
                 ],
             ]
         ] = None,
+        domain: Optional[List[int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -548,6 +595,7 @@ class PolarRadiusAxis(Recharts):
             tick: The width or height of tick.
             tick_count: The count of ticks.
             scale: If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'
+            domain: The domain of the polar radius axis, specifying the minimum and maximum values.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -558,8 +606,12 @@ class PolarRadiusAxis(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
+
+pie = Pie.create
+radar = Radar.create
+radial_bar = RadialBar.create
+polar_angle_axis = PolarAngleAxis.create
+polar_grid = PolarGrid.create
+polar_radius_axis = PolarRadiusAxis.create
