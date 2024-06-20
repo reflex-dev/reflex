@@ -56,8 +56,18 @@ class Title(Element):  # noqa: E742
     tag = "title"
 
 
+# Had to be named with an underscore so it doesnt conflict with reflex.style Style in pyi
+class StyleEl(Element):  # noqa: E742
+    """Display the style element."""
+
+    tag = "style"
+
+    media: Var[Union[str, int, bool]]
+
+
 base = Base.create
 head = Head.create
 link = Link.create
 meta = Meta.create
 title = Title.create
+style = StyleEl.create
