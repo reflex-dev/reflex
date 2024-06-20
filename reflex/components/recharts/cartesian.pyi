@@ -1743,14 +1743,13 @@ class Reference(Recharts):
         *children,
         x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        x: Optional[Union[Var[str], str]] = None,
-        y: Optional[Union[Var[str], str]] = None,
         if_overflow: Optional[
             Union[
                 Var[Literal["discard", "hidden", "visible", "extendDomain"]],
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
+        label: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         is_front: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1811,9 +1810,8 @@ class Reference(Recharts):
             *children: The children of the component.
             x_axis_id: The id of x-axis which is corresponding to the data.
             y_axis_id: The id of y-axis which is corresponding to the data.
-            x: If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
-            y: If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
             if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
+            label: If set a string or a number, default label will be drawn, and the option is content.
             is_front: If set true, the line will be rendered in front of bars in BarChart, etc.
             style: The style of the component.
             key: A unique key for the component.
@@ -1834,17 +1832,20 @@ class ReferenceLine(Reference):
     def create(  # type: ignore
         cls,
         *children,
-        stroke_width: Optional[Union[Var[int], int]] = None,
+        x: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        y: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
+        stroke_width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        segment: Optional[List[Any]] = None,
         x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        x: Optional[Union[Var[str], str]] = None,
-        y: Optional[Union[Var[str], str]] = None,
         if_overflow: Optional[
             Union[
                 Var[Literal["discard", "hidden", "visible", "extendDomain"]],
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
+        label: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         is_front: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1903,12 +1904,15 @@ class ReferenceLine(Reference):
 
         Args:
             *children: The children of the component.
-            stroke_width: The width of the stroke.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
             x: If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
             y: If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
+            stroke: The color of the reference line.
+            stroke_width: The width of the stroke.
+            segment: Array of endpoints in { x, y } format. These endpoints would be used to draw the ReferenceLine.
+            x_axis_id: The id of x-axis which is corresponding to the data.
+            y_axis_id: The id of y-axis which is corresponding to the data.
             if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
+            label: If set a string or a number, default label will be drawn, and the option is content.
             is_front: If set true, the line will be rendered in front of bars in BarChart, etc.
             style: The style of the component.
             key: A unique key for the component.
@@ -1929,16 +1933,20 @@ class ReferenceDot(Reference):
     def create(  # type: ignore
         cls,
         *children,
+        x: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        y: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        r: Optional[Union[Var[int], int]] = None,
+        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
+        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        x: Optional[Union[Var[str], str]] = None,
-        y: Optional[Union[Var[str], str]] = None,
         if_overflow: Optional[
             Union[
                 Var[Literal["discard", "hidden", "visible", "extendDomain"]],
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
+        label: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         is_front: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1997,11 +2005,15 @@ class ReferenceDot(Reference):
 
         Args:
             *children: The children of the component.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
             x: If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
             y: If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
+            r: The radius of dot.
+            fill: The color of the area fill.
+            stroke: The color of the line stroke.
+            x_axis_id: The id of x-axis which is corresponding to the data.
+            y_axis_id: The id of y-axis which is corresponding to the data.
             if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
+            label: If set a string or a number, default label will be drawn, and the option is content.
             is_front: If set true, the line will be rendered in front of bars in BarChart, etc.
             style: The style of the component.
             key: A unique key for the component.

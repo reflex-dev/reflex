@@ -1,4 +1,5 @@
 """Integration tests for media components."""
+
 from typing import Generator
 
 import pytest

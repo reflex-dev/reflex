@@ -1,4 +1,5 @@
 """Integration tests for client side storage."""
+
 from __future__ import annotations
 
 from typing import Generator

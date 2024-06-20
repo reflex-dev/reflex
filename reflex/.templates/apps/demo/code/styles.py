@@ -1,4 +1,5 @@
 """Styles for the app."""
+
 import reflex as rx
 
 from .state import State

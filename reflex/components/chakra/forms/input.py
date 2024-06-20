@@ -1,6 +1,5 @@
 """An input component."""
 
-
 from reflex.components.chakra import (
     ChakraComponent,
     LiteralButtonSize,

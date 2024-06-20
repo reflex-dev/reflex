@@ -12,7 +12,7 @@ from reflex.event import (
     EventSpec,
     call_script,
 )
-from reflex.style import Style, color_mode
+from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serialize, serializer
@@ -168,7 +168,7 @@ class Toaster(Component):
     tag = "Toaster"
 
     # the theme of the toast
-    theme: Var[str] = color_mode
+    theme: Var[str] = resolved_color_mode
 
     # whether to show rich colors
     rich_colors: Var[bool] = Var.create_safe(True)

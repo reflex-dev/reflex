@@ -185,6 +185,18 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
+  if (event.name == "_clear_session_storage") {
+    sessionStorage.clear();
+    queueEvents(initialEvents(), socket);
+    return false;
+  }
+
+  if (event.name == "_remove_session_storage") {
+    sessionStorage.removeItem(event.payload.key);
+    queueEvents(initialEvents(), socket);
+    return false;
+  }
+
   if (event.name == "_set_clipboard") {
     const content = event.payload.content;
     navigator.clipboard.writeText(content);
@@ -538,7 +550,18 @@ export const hydrateClientStorage = (client_storage) => {
       }
     }
   }
-  if (client_storage.cookies || client_storage.local_storage) {
+  if (client_storage.session_storage && typeof window != "undefined") {
+    for (const state_key in client_storage.session_storage) {
+      const session_options = client_storage.session_storage[state_key];
+      const session_storage_value = sessionStorage.getItem(
+        session_options.name || state_key
+      );
+      if (session_storage_value != null) {
+        client_storage_values[state_key] = session_storage_value;
+      }
+    }
+  }
+  if (client_storage.cookies || client_storage.local_storage || client_storage.session_storage) {
     return client_storage_values;
   }
   return {};
@@ -578,7 +601,15 @@ const applyClientStorageDelta = (client_storage, delta) => {
       ) {
         const options = client_storage.local_storage[state_key];
         localStorage.setItem(options.name || state_key, delta[substate][key]);
+      } else if(
+        client_storage.session_storage &&
+        state_key in client_storage.session_storage &&
+        typeof window !== "undefined"
+      ) {
+        const session_options = client_storage.session_storage[state_key];
+        sessionStorage.setItem(session_options.name || state_key, delta[substate][key]);
       }
+
     }
   }
 };

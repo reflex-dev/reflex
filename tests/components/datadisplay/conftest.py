@@ -1,4 +1,5 @@
 """Data display component tests fixtures."""
+
 from typing import List
 
 import pandas as pd

@@ -1,4 +1,5 @@
 """Helper functions for adding assets to the app."""
+
 import inspect
 from pathlib import Path
 from typing import Optional

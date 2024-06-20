@@ -1988,6 +1988,7 @@ class StateProxy(wrapt.ObjectProxy):
         self._self_substate_path = state_instance.get_full_name().split(".")
         self._self_actx = None
         self._self_mutable = False
+        self._self_actx_lock = asyncio.Lock()
 
     async def __aenter__(self) -> StateProxy:
         """Enter the async context manager protocol.
@@ -2001,6 +2002,7 @@ class StateProxy(wrapt.ObjectProxy):
         Returns:
             This StateProxy instance in mutable mode.
         """
+        await self._self_actx_lock.acquire()
         self._self_actx = self._self_app.modify_state(
             token=_substate_key(
                 self.__wrapped__.router.session.client_token,
@@ -2025,7 +2027,10 @@ class StateProxy(wrapt.ObjectProxy):
         if self._self_actx is None:
             return
         self._self_mutable = False
-        await self._self_actx.__aexit__(*exc_info)
+        try:
+            await self._self_actx.__aexit__(*exc_info)
+        finally:
+            self._self_actx_lock.release()
         self._self_actx = None
 
     def __enter__(self):
@@ -2832,6 +2837,38 @@ class LocalStorage(ClientStorageBase, str):
             inst = super().__new__(cls, object)
         inst.name = name
         inst.sync = sync
+        return inst
+
+
+class SessionStorage(ClientStorageBase, str):
+    """Represents a state Var that is stored in sessionStorage in the browser."""
+
+    name: str | None
+
+    def __new__(
+        cls,
+        object: Any = "",
+        encoding: str | None = None,
+        errors: str | None = None,
+        /,
+        name: str | None = None,
+    ) -> "SessionStorage":
+        """Create a client-side sessionStorage (str).
+
+        Args:
+            object: The initial object.
+            encoding: The encoding to use.
+            errors: The error handling scheme to use
+            name: The name of the storage on the client side
+
+        Returns:
+            The client-side sessionStorage object.
+        """
+        if encoding or errors:
+            inst = super().__new__(cls, object, encoding or "utf-8", errors or "strict")
+        else:
+            inst = super().__new__(cls, object)
+        inst.name = name
         return inst
 
 

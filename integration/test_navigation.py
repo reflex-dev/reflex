@@ -1,4 +1,5 @@
 """Integration tests for links and related components."""
+
 from typing import Generator
 from urllib.parse import urlsplit
 

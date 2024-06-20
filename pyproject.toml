@@ -28,7 +28,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.8"
 dill = ">=0.3.8,<0.4"
-fastapi = ">=0.96.0,<1.0"
+fastapi = ">=0.96.0,<0.111.0"
 gunicorn = ">=20.1.0,<23.0"
 jinja2 = ">=3.1.2,<4.0"
 psutil = ">=5.9.4,<6.0"
@@ -73,8 +73,8 @@ darglint = ">=1.8.1,<2.0"
 toml = ">=0.10.2,<1.0"
 pytest-asyncio = ">=0.20.1,<0.22.0" # https://github.com/pytest-dev/pytest-asyncio/issues/706
 pytest-cov = ">=4.0.0,<5.0"
-black = "^22.10.0,<23.0"
-ruff = "0.1.0"
+black = "^24.3.0"
+ruff = "^0.4.9"
 pandas = [
     {version = ">=2.1.1,<3.0", python = ">=3.9,<3.13"},
     {version = ">=1.5.3,<2.0", python = ">=3.8,<3.9"},
@@ -99,9 +99,11 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 exclude = ["*.pyi"]
-target-version = "py37"
+target-version = "py38"
 lint.select = ["B", "D", "E", "F", "I", "SIM", "W"]
 lint.ignore = ["B008", "D203", "D205", "D213", "D401", "D406", "D407", "E501", "F403", "F405", "F541"]
+lint.pydocstyle.convention = "google"
+
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/*.py" = ["D100", "D103", "D104", "B018"]

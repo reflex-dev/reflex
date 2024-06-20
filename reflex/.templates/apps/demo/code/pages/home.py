@@ -1,4 +1,5 @@
 """The home page of the app."""
+
 import reflex as rx
 
 from ..styles import *

@@ -176,9 +176,9 @@ class App(LifespanMixin, Base):
     stylesheets: List[str] = []
 
     # A component that is present on every page (defaults to the Connection Error banner).
-    overlay_component: Optional[
-        Union[Component, ComponentCallable]
-    ] = default_overlay_component
+    overlay_component: Optional[Union[Component, ComponentCallable]] = (
+        default_overlay_component
+    )
 
     # Components to add to the head of every page.
     head_components: List[Component] = []
@@ -751,10 +751,12 @@ class App(LifespanMixin, Base):
         if should_skip_compile():
             return False
 
+        nocompile = prerequisites.get_web_dir() / constants.NOCOMPILE_FILE
+
         # Check the nocompile file.
-        if os.path.exists(constants.NOCOMPILE_FILE):
+        if nocompile.exists():
             # Delete the nocompile file
-            os.remove(constants.NOCOMPILE_FILE)
+            nocompile.unlink()
             return False
 
         # By default, compile the app.

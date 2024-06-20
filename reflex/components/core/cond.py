@@ -9,7 +9,7 @@ from reflex.components.component import BaseComponent, Component, MemoizationLea
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.constants.colors import Color
-from reflex.style import LIGHT_COLOR_MODE, color_mode
+from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var, VarData
@@ -112,18 +112,15 @@ class Cond(MemoizationLeaf):
 
 
 @overload
-def cond(condition: Any, c1: Component, c2: Any) -> Component:
-    ...
+def cond(condition: Any, c1: Component, c2: Any) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Component) -> Component:
-    ...
+def cond(condition: Any, c1: Component) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Any, c2: Any) -> Var:
-    ...
+def cond(condition: Any, c1: Any, c2: Any) -> Var: ...
 
 
 def cond(condition: Any, c1: Any, c2: Any = None):
@@ -210,7 +207,7 @@ def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
         The conditional component or prop.
     """
     return cond(
-        color_mode == Var.create(LIGHT_COLOR_MODE, _var_is_string=True),
+        resolved_color_mode == Var.create(LIGHT_COLOR_MODE, _var_is_string=True),
         light,
         dark,
     )
