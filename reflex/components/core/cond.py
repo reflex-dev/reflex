@@ -22,6 +22,8 @@ _IS_TRUE_IMPORT: ImportDict = {
 class Cond(MemoizationLeaf):
     """Render one of two components based on a condition."""
 
+    tag = ""
+
     # The cond to determine which component to render.
     cond: Var[Any]
 

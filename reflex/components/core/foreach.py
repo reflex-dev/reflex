@@ -1,4 +1,5 @@
 """Create a list of components from an iterable."""
+
 from __future__ import annotations
 
 import inspect
@@ -23,6 +24,8 @@ class ForeachRenderError(TypeError):
 
 class Foreach(Component):
     """A component that takes in an iterable and a render function and renders a list of components."""
+
+    tag = ""
 
     _memoization_mode = MemoizationMode(recursive=False)
 

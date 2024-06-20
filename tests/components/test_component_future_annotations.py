@@ -9,6 +9,8 @@ from reflex.event import EventHandler
 # This is a repeat of its namesake in test_component.py.
 def test_custom_component_declare_event_handlers_in_fields():
     class ReferenceComponent(Component):
+        tag = ""
+
         def get_event_triggers(self) -> dict[str, Any]:
             """Test controlled triggers.
 
@@ -24,6 +26,7 @@ def test_custom_component_declare_event_handlers_in_fields():
             }
 
     class TestComponent(Component):
+        tag = ""
         on_a: EventHandler[lambda e0: [e0]]
         on_b: EventHandler[lambda e0: [e0.target.value]]
         on_c: EventHandler[lambda e0: []]

@@ -344,6 +344,10 @@ class Component(BaseComponent, ABC):
             TypeError: If an invalid prop is passed.
             ValueError: If an event trigger passed is not valid.
         """
+        if self.__fields__["tag"].default is None:
+            raise ValueError(
+                f"Cannot instantiate an abstract Component {type(self).__name__} with no tag."
+            )
         # Set the id and children initially.
         children = kwargs.get("children", [])
         initial_kwargs = {
@@ -1638,6 +1642,8 @@ class Component(BaseComponent, ABC):
 
 class CustomComponent(Component):
     """A custom user-defined component."""
+
+    tag = ""
 
     # Use the components library.
     library = f"/{Dirs.COMPONENTS_PATH}"

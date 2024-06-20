@@ -17,6 +17,8 @@ from reflex.vars import BaseVar, Var, VarData
 class Match(MemoizationLeaf):
     """Match cases based on a condition."""
 
+    tag = ""
+
     # The condition to determine which case to match.
     cond: Var[Any]
 

@@ -13,6 +13,8 @@ from reflex.vars import Var
 class Bare(Component):
     """A component with no tag."""
 
+    tag = ""
+
     contents: Var[str]
 
     @classmethod

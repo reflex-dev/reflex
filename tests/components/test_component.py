@@ -24,6 +24,12 @@ from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_
 from reflex.vars import BaseVar, Var, VarData
 
 
+class DefaultTestComponent(Component):
+    """Default component used as a base for all tests requiring Components."""
+
+    tag = ""
+
+
 @pytest.fixture
 def test_state():
     class TestState(BaseState):
@@ -46,7 +52,7 @@ def component1() -> Type[Component]:
         A test component.
     """
 
-    class TestComponent1(Component):
+    class TestComponent1(DefaultTestComponent):
         # A test string prop.
         text: Var[str]
 
@@ -73,7 +79,7 @@ def component2() -> Type[Component]:
         A test component.
     """
 
-    class TestComponent2(Component):
+    class TestComponent2(DefaultTestComponent):
         # A test list prop.
         arr: Var[List[str]]
 
@@ -106,7 +112,7 @@ def component3() -> Type[Component]:
         A test component.
     """
 
-    class TestComponent3(Component):
+    class TestComponent3(DefaultTestComponent):
         def _get_hooks(self) -> str:
             return "const a = () => true"
 
@@ -121,7 +127,7 @@ def component4() -> Type[Component]:
         A test component.
     """
 
-    class TestComponent4(Component):
+    class TestComponent4(DefaultTestComponent):
         def _get_hooks(self) -> str:
             return "const b = () => false"
 
@@ -136,7 +142,7 @@ def component5() -> Type[Component]:
         A test component.
     """
 
-    class TestComponent5(Component):
+    class TestComponent5(DefaultTestComponent):
         tag = "RandomComponent"
 
         _invalid_children: List[str] = ["Text"]
@@ -581,7 +587,7 @@ def test_component() -> Type[Component]:
         A test component.
     """
 
-    class TestComponent(Component):
+    class TestComponent(DefaultTestComponent):
         pass
 
     return TestComponent
@@ -1102,7 +1108,7 @@ FORMATTED_TEST_VAR_LIST_OF_DICT = Var.create_safe([{"a": "footestbar"}])._replac
 )
 
 
-class ComponentNestedVar(Component):
+class ComponentNestedVar(DefaultTestComponent):
     """A component with nested Var types."""
 
     dict_of_dict: Var[Dict[str, Dict[str, str]]]
@@ -1348,19 +1354,19 @@ class InvalidParentComponent(Component):
     ...
 
 
-class ValidComponent1(Component):
+class ValidComponent1(DefaultTestComponent):
     """Test valid component."""
 
     _valid_children = ["ValidComponent2"]
 
 
-class ValidComponent2(Component):
+class ValidComponent2(DefaultTestComponent):
     """Test valid component."""
 
     ...
 
 
-class ValidComponent3(Component):
+class ValidComponent3(DefaultTestComponent):
     """Test valid component."""
 
     _valid_parents = ["ValidComponent2"]
@@ -1372,7 +1378,7 @@ class ValidComponent4(Component):
     _invalid_children = ["InvalidComponent"]
 
 
-class InvalidComponent(Component):
+class InvalidComponent(DefaultTestComponent):
     """Test invalid component."""
 
     ...
@@ -1699,7 +1705,7 @@ def test_custom_component_get_imports():
 
 
 def test_custom_component_declare_event_handlers_in_fields():
-    class ReferenceComponent(Component):
+    class ReferenceComponent(DefaultTestComponent):
         def get_event_triggers(self) -> Dict[str, Any]:
             """Test controlled triggers.
 
@@ -1716,7 +1722,7 @@ def test_custom_component_declare_event_handlers_in_fields():
                 "on_f": lambda a, b, c: [c, b, a],
             }
 
-    class TestComponent(Component):
+    class TestComponent(DefaultTestComponent):
         on_a: EventHandler[lambda e0: [e0]]
         on_b: EventHandler[lambda e0: [e0.target.value]]
         on_c: EventHandler[lambda e0: []]
@@ -1738,7 +1744,7 @@ def test_custom_component_declare_event_handlers_in_fields():
 
 
 def test_invalid_event_trigger():
-    class TriggerComponent(Component):
+    class TriggerComponent(DefaultTestComponent):
         on_push: Var[bool]
 
         def get_event_triggers(self) -> Dict[str, Any]:
@@ -1777,7 +1783,7 @@ def test_component_add_imports(tags):
         def _get_imports(self) -> ImportDict:
             return {}
 
-    class Reference(Component):
+    class Reference(DefaultTestComponent):
         def _get_imports(self) -> ParsedImportDict:
             return imports.merge_imports(
                 super()._get_imports(),
@@ -1785,7 +1791,7 @@ def test_component_add_imports(tags):
                 {"foo": [ImportVar(tag="bar")]},
             )
 
-    class TestBase(Component):
+    class TestBase(DefaultTestComponent):
         def add_imports(
             self,
         ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
@@ -1810,7 +1816,7 @@ def test_component_add_imports(tags):
 
 
 def test_component_add_hooks():
-    class BaseComponent(Component):
+    class BaseComponent(DefaultTestComponent):
         def _get_hooks(self):
             return "const hook1 = 42"
 
@@ -1889,7 +1895,7 @@ def test_component_add_hooks():
 
 
 def test_component_add_custom_code():
-    class BaseComponent(Component):
+    class BaseComponent(DefaultTestComponent):
         def _get_custom_code(self):
             return "const custom_code1 = 42"
 
@@ -1964,7 +1970,7 @@ def test_component_add_custom_code():
 
 
 def test_component_add_hooks_var():
-    class HookComponent(Component):
+    class HookComponent(DefaultTestComponent):
         def add_hooks(self):
             return [
                 "const hook3 = useRef(null)",
@@ -2015,7 +2021,7 @@ def test_add_style_embedded_vars(test_state: BaseState):
         merge_var_data=VarData(hooks={"useText": None}),  # type: ignore
     )
 
-    class ParentComponent(Component):
+    class ParentComponent(DefaultTestComponent):
         def add_style(self):
             return Style(
                 {
@@ -2051,7 +2057,7 @@ def test_add_style_embedded_vars(test_state: BaseState):
 
 
 def test_add_style_foreach():
-    class StyledComponent(Component):
+    class StyledComponent(DefaultTestComponent):
         tag = "StyledComponent"
         ix: Var[int]
 
