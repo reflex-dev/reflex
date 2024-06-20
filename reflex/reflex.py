@@ -7,6 +7,7 @@ import os
 import webbrowser
 from pathlib import Path
 from typing import List, Optional
+from functools import lru_cache
 
 import typer
 import typer.core
@@ -23,10 +24,10 @@ typer.core.rich = False  # type: ignore
 
 # Create the app.
 try:
-    cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
+    cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False, no_args_is_help=True)
 except TypeError:
     # Fallback for older typer versions.
-    cli = typer.Typer(add_completion=False)
+    cli = typer.Typer(add_completion=False, no_args_is_help=True)
 
 # Get the config.
 config = get_config()
@@ -47,6 +48,7 @@ def version(value: bool):
 
 
 @cli.callback()
+@lru_cache
 def main(
     version: bool = typer.Option(
         None,
@@ -563,6 +565,7 @@ def deploy(
 
 
 @cli.command()
+@lru_cache
 def demo(
     frontend_port: str = typer.Option(
         "3001", help="Specify a different frontend port."
