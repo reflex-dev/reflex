@@ -2952,7 +2952,7 @@ def test_redis_state_manager_config_knobs(tmp_path, expiration_kwargs, expected_
     )
 
     config_string = f"""
-import reflex as rx     
+import reflex as rx
 config = rx.Config(
     app_name="project1",
     redis_url="redis://localhost:6379",
