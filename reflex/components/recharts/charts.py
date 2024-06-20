@@ -1,5 +1,4 @@
 """A module that defines the chart components in Recharts."""
-
 from __future__ import annotations
 
 from typing import Any, Dict, List, Union
@@ -375,6 +374,15 @@ class RadialBarChart(ChartBase):
     # The size of each bar. If the barSize is not specified, the size of bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups.
     bar_size: Var[int]
 
+    # The function will be called when click bars.
+    on_click: EventHandler[lambda: []]
+
+    # The customized event handler of mouseenter on the component in this group
+    on_mouse_enter: EventHandler[lambda: []]
+
+    # The customized event handler of mouseleave on the component in this group
+    on_mouse_leave: EventHandler[lambda: []]
+
     # Valid children components
     _valid_children: List[str] = [
         "PolarAngleAxis",
@@ -384,20 +392,6 @@ class RadialBarChart(ChartBase):
         "GraphingTooltip",
         "RadialBar",
     ]
-
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
-
-
 class ScatterChart(ChartBase):
     """A Scatter chart component in Recharts."""
 
