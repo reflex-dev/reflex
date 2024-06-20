@@ -516,6 +516,83 @@ class Treemap(RechartsCharts):
         )
 
 
+class Sankey(RechartsCharts):
+    """A sankey chart component in Recharts."""
+
+    tag = "Sankey"
+
+    alias = "RechartsSankey"
+
+    # The key of each sector's name.
+    name_key: Var[str]
+
+    # The key of a group of data which should be unique in a SankeyChart. DEFAULT: value
+    data_key: Var[Union[str, int]]
+
+    # The width of chart container. String or Integer
+    width: Var[Union[str, int]] = "100%"  # type: ignore
+
+    # The height of chart container.
+    height: Var[Union[str, int]] = "100%"  # type: ignore
+
+    # The source data which each element is an object.
+    data: Var[Dict[str, Any]]
+
+    # Whether to sort the nodes on th y axis, or to display them as user-defined. DEFAULT: true
+    sort: Var[bool]
+
+    # If set a object, the option is the configuration of nodes.
+    node: Var[Union[Dict[str, Any], Component]]
+
+    # If set a object, the option is the configuration of links. 
+    link: Var[Dict[str, Any]]
+
+    # The padding between the nodes DEFAULT: 10
+    node_padding: Var[int]
+
+    # The width of node DEFAULT: 10
+    node_width: Var[int]
+
+    # The width of link
+    link_width: Var[int]
+
+    # The curvature of width DEFAULT: 0.5
+    linkCurvature: Var[int]
+
+    # The number of the iterations between the links DEFAULT: 32
+    iterations: Var[int]
+
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
+
+    # The source number of X-axis
+    source_x: Var[int]
+
+    # The source number of Y-axis
+    source_y: Var[int]
+
+    # The source control of X-axis
+    source_control_x: Var[int]
+
+    # The target control of X-axis
+    target_control_x: Var[int]
+
+    # The target of X-axis
+    target_x: Var[int]
+
+    # The target of Y-axis
+    target_y: Var[int]
+
+    # The customized event handler of click on the component in this chart
+    on_click: EventHandler[lambda: []]
+
+    # The customized event handler of mouseenter on the component in this chart
+    on_mouse_enter: EventHandler[lambda: []]
+
+    # The customized event handler of mouseleave on the component in this chart
+    on_mouse_leave: EventHandler[lambda: []]
+
+
 area_chart = AreaChart.create
 bar_chart = BarChart.create
 line_chart = LineChart.create
@@ -526,3 +603,4 @@ radial_bar_chart = RadialBarChart.create
 scatter_chart = ScatterChart.create
 funnel_chart = FunnelChart.create
 treemap = Treemap.create
+sankey = Sankey.create

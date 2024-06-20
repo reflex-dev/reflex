@@ -1,5 +1,4 @@
 """Recharts components."""
-
 from __future__ import annotations
 
 from reflex.utils import lazy_loader
@@ -58,6 +57,8 @@ _SUBMOD_ATTRS: dict = {
         "FunnelChart",
         "treemap",
         "Treemap",
+        "sankey",
+        "Sankey"
     ],
     "general": [
         "responsive_container",
