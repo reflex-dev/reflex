@@ -127,11 +127,13 @@ from .elements.metadata import head as head
 from .elements.metadata import link as link
 from .elements.metadata import meta as meta
 from .elements.metadata import title as title
+from .elements.metadata import style as style
 from .elements.metadata import Base as Base
 from .elements.metadata import Head as Head
 from .elements.metadata import Link as Link
 from .elements.metadata import Meta as Meta
 from .elements.metadata import Title as Title
+from .elements.metadata import Style as Style
 from .elements.other import details as details
 from .elements.other import dialog as dialog
 from .elements.other import summary as summary
