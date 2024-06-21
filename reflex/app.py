@@ -817,7 +817,7 @@ class App(LifespanMixin, Base):
         for var in state.computed_vars.values():
             deps = var._deps(objclass=state)
             for dep in deps:
-                if dep not in state.vars:
+                if dep not in state.vars and dep not in state.backend_vars:
                     raise exceptions.VarDependencyError(
                         f"ComputedVar {var._var_name} on state {state.__name__} has an invalid dependency {dep}"
                     )

@@ -1541,8 +1541,27 @@ def test_app_with_transpile_packages(compilable_app: tuple[App, Path], export: b
         assert f'distDir: "{constants.Dirs.STATIC}"' not in next_config
 
 
+def test_app_with_valid_var_dependencies(compilable_app: tuple[App, Path]):
+    app, _ = compilable_app
+
+    class ValidDepState(BaseState):
+        base: int = 0
+        _backend: int = 0
+
+        @computed_var
+        def foo(self) -> str:
+            return "foo"
+
+        @computed_var(deps=["_backend", "base", foo])
+        def bar(self) -> str:
+            return "bar"
+
+    app.state = ValidDepState
+    app._compile()
+
+
 def test_app_with_invalid_var_dependencies(compilable_app: tuple[App, Path]):
-    app, web_dir = compilable_app
+    app, _ = compilable_app
 
     class InvalidDepState(BaseState):
         @computed_var(deps=["foolksjdf"])
