@@ -5,7 +5,7 @@ import { ColorModeContext, defaultColorMode } from "/utils/context.js";
 export default function RadixThemesColorModeProvider({ children }) {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [rawColorMode, setRawColorMode] = useState(defaultColorMode);
-  const [resolvedColorMode, setResolvedColorMode] = useState(theme);
+  const [resolvedColorMode, setResolvedColorMode] = useState("dark");
 
   useEffect(() => {
     setRawColorMode(theme);
