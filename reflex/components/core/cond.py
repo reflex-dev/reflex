@@ -110,18 +110,15 @@ class Cond(MemoizationLeaf):
 
 
 @overload
-def cond(condition: Any, c1: Component, c2: Any) -> Component:
-    ...
+def cond(condition: Any, c1: Component, c2: Any) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Component) -> Component:
-    ...
+def cond(condition: Any, c1: Component) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Any, c2: Any) -> BaseVar:
-    ...
+def cond(condition: Any, c1: Any, c2: Any) -> BaseVar: ...
 
 
 def cond(condition: Any, c1: Any, c2: Any = None):

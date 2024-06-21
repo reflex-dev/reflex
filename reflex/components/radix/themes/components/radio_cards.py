@@ -34,7 +34,7 @@ class RadioCardsRoot(RadixThemesComponent):
 
     # The gap between the checkbox cards:
     gap: Var[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
-    
+
     default_value: Var[str]
 
     # The controlled value of the radio item to check. Should be used in conjunction with onValueChange.
@@ -52,7 +52,7 @@ class RadioCardsRoot(RadixThemesComponent):
     # The orientation of the component.
     orientation: Var[Literal["horizontal", "vertical", "undefined"]]
 
-    # The reading direction of the radio group. If omitted, 
+    # The reading direction of the radio group. If omitted,
     # inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
     dir: Var[Literal["ltr", "rtl"]]
 
