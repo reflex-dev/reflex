@@ -176,9 +176,9 @@ class App(LifespanMixin, Base):
     stylesheets: List[str] = []
 
     # A component that is present on every page (defaults to the Connection Error banner).
-    overlay_component: Optional[Union[Component, ComponentCallable]] = (
-        default_overlay_component
-    )
+    overlay_component: Optional[
+        Union[Component, ComponentCallable]
+    ] = default_overlay_component
 
     # Components to add to the head of every page.
     head_components: List[Component] = []

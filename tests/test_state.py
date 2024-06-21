@@ -1698,9 +1698,9 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     parent_state = child_state.parent_state
     assert parent_state is not None
     if isinstance(mock_app.state_manager, StateManagerMemory):
-        mock_app.state_manager.states[parent_state.router.session.client_token] = (
-            parent_state
-        )
+        mock_app.state_manager.states[
+            parent_state.router.session.client_token
+        ] = parent_state
 
     sp = StateProxy(grandchild_state)
     assert sp.__wrapped__ == grandchild_state

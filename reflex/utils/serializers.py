@@ -94,15 +94,18 @@ def serializer(
 @overload
 def serialize(
     value: Any, get_type: Literal[True]
-) -> Tuple[Optional[SerializedType], Optional[types.GenericType]]: ...
+) -> Tuple[Optional[SerializedType], Optional[types.GenericType]]:
+    ...
 
 
 @overload
-def serialize(value: Any, get_type: Literal[False]) -> Optional[SerializedType]: ...
+def serialize(value: Any, get_type: Literal[False]) -> Optional[SerializedType]:
+    ...
 
 
 @overload
-def serialize(value: Any) -> Optional[SerializedType]: ...
+def serialize(value: Any) -> Optional[SerializedType]:
+    ...
 
 
 def serialize(
