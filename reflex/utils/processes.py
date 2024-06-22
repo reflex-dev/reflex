@@ -14,6 +14,7 @@ from typing import Callable, Generator, List, Optional, Tuple, Union
 import psutil
 import typer
 from redis.exceptions import RedisError
+from tqdm import tqdm
 
 from reflex import constants
 from reflex.utils import console, path_ops, prerequisites
@@ -300,15 +301,16 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str
         checkpoints: The checkpoints to advance the progress bar.
     """
     # Iterate over the process output.
-    with console.progress() as progress:
-        task = progress.add_task(f"{message}: ", total=len(checkpoints))
-        for line in stream_logs(message, process, progress=progress):
+    total_checkpoints = len(checkpoints)
+    with tqdm(desc=f"{message}: ", total=total_checkpoints) as progress:
+        for line in stream_logs(message, process):
             # Check for special strings and update the progress bar.
             for special_string in checkpoints:
                 if special_string in line:
-                    progress.update(task, advance=1)
+                    progress.update(1)
                     if special_string == checkpoints[-1]:
-                        progress.update(task, completed=len(checkpoints))
+                        progress.n = total_checkpoints
+                        progress.refresh()
                     break
 
 

@@ -782,10 +782,10 @@ class App(Base):
 
         # Create a progress bar.
         progress = tqdm(
+            desc="Compiling:",
             total=len(self.pages)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
-            desc="Compiling",
         )
 
         # Get the env mode.

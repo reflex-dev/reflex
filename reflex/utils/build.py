@@ -113,13 +113,13 @@ def _zip(
         ]
 
         # Create a progress bar for zipping the component.
-        progress = tqdm(total=len(files_to_zip), desc=f"Zipping {component_name.value}")
+        progress = tqdm(desc=f"Zipping {component_name.value}", total=len(files_to_zip))
 
         with progress, zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zipf:
             for file in files_to_zip:
                 tqdm.write(f"{target}: {file}")
                 zipf.write(file, os.path.relpath(file, root_dir))
-                progress.update(1)
+                progress.update(len(files_to_zip))
         progress.close()
 
 

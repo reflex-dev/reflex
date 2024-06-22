@@ -179,14 +179,14 @@ def ask(
     )  # type: ignore
 
 
-def progress():
+def progress(desc="Compiling:", total=100):
     """Create a new progress bar.
 
 
     Returns:
         A new progress bar.
     """
-    return tqdm(desc="Compiling", total=100)
+    return tqdm(desc=desc, total=total)
 
 
 def status(*args, **kwargs):
