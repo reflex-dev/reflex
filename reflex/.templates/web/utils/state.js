@@ -388,9 +388,17 @@ export const connect = async (
     }
   }
 
+  const pagehideHandler = (event) => {
+    if (event.persisted && socket.current?.connected) {
+      console.log("Disconnect backend before bfcache on navigation");
+      socket.current.disconnect();
+    }
+  }
+
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
     setConnectErrors([]);
+    window.addEventListener("pagehide", pagehideHandler);
   });
 
   socket.current.on("connect_error", (error) => {
@@ -400,6 +408,7 @@ export const connect = async (
   // When the socket disconnects reset the event_processing flag
   socket.current.on("disconnect", () => {
     event_processing = false;
+    window.removeEventListener("pagehide", pagehideHandler);
   });
 
   // On each received message, queue the updates and events.

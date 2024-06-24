@@ -1,4 +1,5 @@
 """The settings page for the template."""
+
 import reflex as rx
 
 from ..states.form_state import FormState, UploadState

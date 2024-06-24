@@ -1,4 +1,5 @@
 """General components for Recharts."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Union
@@ -8,6 +9,7 @@ from reflex.event import EventHandler
 from reflex.vars import Var
 
 from .recharts import (
+    LiteralAnimationEasing,
     LiteralIconType,
     LiteralLayout,
     LiteralLegendAlign,
@@ -141,6 +143,23 @@ class GraphingTooltip(Recharts):
     # The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
     view_box: Var[Dict[str, Any]]
 
+    # The style of default tooltip content item which is a li element. DEFAULT: {}
+    item_style: Var[Dict[str, Any]]
+
+    # The style of tooltip wrapper which is a dom element. DEFAULT: {}
+    wrapper_style: Var[Dict[str, Any]]
+
+    # The style of tooltip content which is a dom element. DEFAULT: {}
+    content_style: Var[Dict[str, Any]]
+
+    # The style of default tooltip label which is a p element. DEFAULT: {}
+    label_style: Var[Dict[str, Any]]
+
+    # This option allows the tooltip to extend beyond the viewBox of the chart itself. DEFAULT: { x: false, y: false }
+    allow_escape_view_box: Var[Dict[str, bool]] = Var.create_safe(
+        {"x": False, "y": False}
+    )
+
     # If set true, the tooltip is displayed. If set false, the tooltip is hidden, usually calculated internally.
     active: Var[bool]
 
@@ -149,6 +168,15 @@ class GraphingTooltip(Recharts):
 
     # The coordinate of tooltip which is usually calculated internally.
     coordinate: Var[Dict[str, Any]]
+
+    # If set false, animation of tooltip will be disabled. DEFAULT: true in CSR, and false in SSR
+    is_animation_active: Var[bool]
+
+    # Specifies the duration of animation, the unit of this option is ms. DEFAULT: 1500
+    animation_duration: Var[int]
+
+    # The type of easing function. DEFAULT: 'ease'
+    animation_easing: Var[LiteralAnimationEasing]
 
 
 class Label(Recharts):

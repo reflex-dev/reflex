@@ -1,4 +1,5 @@
 """Ensure that Event Chains are properly queued and handled between frontend and backend."""
+
 from __future__ import annotations
 
 from typing import Generator

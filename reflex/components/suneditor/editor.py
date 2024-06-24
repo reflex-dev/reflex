@@ -1,4 +1,5 @@
 """A Rich Text Editor based on SunEditor."""
+
 from __future__ import annotations
 
 import enum

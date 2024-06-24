@@ -482,7 +482,7 @@ class Var:
             self._var_name = _var_name
             self._var_data = VarData.merge(self._var_data, _var_data)
 
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> Var:
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> BaseVar:
         """Make a copy of this Var with updated fields.
 
         Args:
@@ -894,19 +894,19 @@ class Var:
                 if invoke_fn:
                     # invoke the function on left operand.
                     operation_name = (
-                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"
-                    )  # type: ignore
+                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
+                    )
                 else:
                     # pass the operands as arguments to the function.
                     operation_name = (
-                        f"{left_operand_full_name} {op} {right_operand_full_name}"
-                    )  # type: ignore
+                        f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                    )
                     operation_name = f"{fn}({operation_name})"
             else:
                 # apply operator to operands (left operand <operator> right_operand)
                 operation_name = (
-                    f"{left_operand_full_name} {op} {right_operand_full_name}"
-                )  # type: ignore
+                    f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                )
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
@@ -1792,18 +1792,16 @@ class Var:
         """
         from reflex.style import Style
 
-        type_ = (
-            get_origin(self._var_type)
-            if types.is_generic_alias(self._var_type)
-            else self._var_type
-        )
+        generic_alias = types.is_generic_alias(self._var_type)
+
+        type_ = get_origin(self._var_type) if generic_alias else self._var_type
         wrapped_var = str(self)
 
         return (
             wrapped_var
             if not self._var_state
-            and types._issubclass(type_, dict)
-            or types._issubclass(type_, Style)
+            and not generic_alias
+            and (types._issubclass(type_, dict) or types._issubclass(type_, Style))
             else wrapped_var.strip("{}")
         )
 

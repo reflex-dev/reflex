@@ -1,4 +1,5 @@
 """An icon component."""
+
 from typing import List
 
 from reflex.components.chakra import ChakraComponent
