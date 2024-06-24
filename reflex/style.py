@@ -2,41 +2,88 @@
 
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import Any, Literal, Tuple, Type
 
 from reflex import constants
 from reflex.event import EventChain
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import BaseVar, CallableVar, Var, VarData
 
 VarData.update_forward_refs()  # Ensure all type definitions are resolved
 
 SYSTEM_COLOR_MODE: str = "system"
 LIGHT_COLOR_MODE: str = "light"
 DARK_COLOR_MODE: str = "dark"
+LiteralColorMode = Literal["system", "light", "dark"]
 
 # Reference the global ColorModeContext
-color_mode_var_data = VarData(
-    imports={
-        f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="ColorModeContext")],
-        "react": [ImportVar(tag="useContext")],
-    },
-    hooks={
-        f"const [ {constants.ColorMode.NAME}, {constants.ColorMode.TOGGLE} ] = useContext(ColorModeContext)": None,
-    },
-)
-# Var resolves to the current color mode for the app ("light" or "dark")
-color_mode = BaseVar(
-    _var_name=constants.ColorMode.NAME,
-    _var_type="str",
-    _var_data=color_mode_var_data,
-)
+color_mode_imports = {
+    f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="ColorModeContext")],
+    "react": [ImportVar(tag="useContext")],
+}
+
+
+def _color_mode_var(_var_name: str, _var_type: Type = str) -> BaseVar:
+    """Create a Var that destructs the _var_name from ColorModeContext.
+
+    Args:
+        _var_name: The name of the variable to get from ColorModeContext.
+        _var_type: The type of the Var.
+
+    Returns:
+        The BaseVar for accessing _var_name from ColorModeContext.
+    """
+    return BaseVar(
+        _var_name=_var_name,
+        _var_type=_var_type,
+        _var_is_local=False,
+        _var_is_string=False,
+        _var_data=VarData(
+            imports=color_mode_imports,
+            hooks={f"const {{ {_var_name} }} = useContext(ColorModeContext)": None},
+        ),
+    )
+
+
+@CallableVar
+def set_color_mode(
+    new_color_mode: LiteralColorMode | Var[LiteralColorMode] | None = None,
+) -> BaseVar[EventChain]:
+    """Create an EventChain Var that sets the color mode to a specific value.
+
+    Note: `set_color_mode` is not a real event and cannot be triggered from a
+    backend event handler.
+
+    Args:
+        new_color_mode: The color mode to set.
+
+    Returns:
+        The EventChain Var that can be passed to an event trigger.
+    """
+    base_setter = _color_mode_var(
+        _var_name=constants.ColorMode.SET,
+        _var_type=EventChain,
+    )
+    if new_color_mode is None:
+        return base_setter
+
+    if not isinstance(new_color_mode, Var):
+        new_color_mode = Var.create_safe(new_color_mode, _var_is_string=True)
+    return base_setter._replace(
+        _var_name=f"() => {base_setter._var_name}({new_color_mode._var_name_unwrapped})",
+        merge_var_data=new_color_mode._var_data,
+    )
+
+
+# Var resolves to the current color mode for the app ("light", "dark" or "system")
+color_mode = _color_mode_var(_var_name=constants.ColorMode.NAME)
+# Var resolves to the resolved color mode for the app ("light" or "dark")
+resolved_color_mode = _color_mode_var(_var_name=constants.ColorMode.RESOLVED_NAME)
 # Var resolves to a function invocation that toggles the color mode
-toggle_color_mode = BaseVar(
+toggle_color_mode = _color_mode_var(
     _var_name=constants.ColorMode.TOGGLE,
     _var_type=EventChain,
-    _var_data=color_mode_var_data,
 )
 
 breakpoints = ["0", "30em", "48em", "62em", "80em", "96em"]
@@ -273,7 +320,7 @@ def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
 
 
 def convert_dict_to_style_and_format_emotion(
-    raw_dict: dict[str, Any]
+    raw_dict: dict[str, Any],
 ) -> dict[str, Any] | None:
     """Convert a dict to a style dict and then format as emotion.
 

@@ -1,6 +1,5 @@
 """Base class definition for raw HTML elements."""
 
-
 from reflex.components.component import Component
 
 

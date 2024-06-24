@@ -1,4 +1,5 @@
 """Config constants."""
+
 import os
 from types import SimpleNamespace
 

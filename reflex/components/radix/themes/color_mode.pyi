@@ -12,8 +12,15 @@ from typing import Literal, get_args
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
 from reflex.components.lucide.icon import Icon
+from reflex.components.radix.themes.components.dropdown_menu import dropdown_menu
 from reflex.components.radix.themes.components.switch import Switch
-from reflex.style import LIGHT_COLOR_MODE, color_mode, toggle_color_mode
+from reflex.style import (
+    LIGHT_COLOR_MODE,
+    color_mode,
+    resolved_color_mode,
+    set_color_mode,
+    toggle_color_mode,
+)
 from reflex.utils import console
 from reflex.vars import BaseVar, Var
 from .components.icon_button import IconButton
@@ -113,6 +120,7 @@ class ColorModeIconButton(IconButton):
         position: Optional[
             Literal["top-left", "top-right", "bottom-left", "bottom-right"]
         ] = None,
+        allow_system: Optional[bool] = False,
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
             Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
@@ -316,6 +324,7 @@ class ColorModeIconButton(IconButton):
         Args:
             *children: The children of the component.
             position: The position of the icon button. Follow document flow if None.
+            allow_system: Allow picking the "system" value for the color mode.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             size: Button size "1" - "4"
             variant: Variant of button: "classic" | "solid" | "soft" | "surface" | "outline" | "ghost"

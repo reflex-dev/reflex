@@ -1,4 +1,5 @@
 """A module that defines the chart components in Recharts."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Union
@@ -383,18 +384,6 @@ class RadialBarChart(ChartBase):
         "GraphingTooltip",
         "RadialBar",
     ]
-
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
 
 
 class ScatterChart(ChartBase):

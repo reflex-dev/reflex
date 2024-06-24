@@ -1,4 +1,5 @@
 """Integration tests for text input and related components."""
+
 from typing import Generator
 
 import pytest

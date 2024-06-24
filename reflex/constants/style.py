@@ -1,4 +1,5 @@
 """Style constants."""
+
 from types import SimpleNamespace
 
 

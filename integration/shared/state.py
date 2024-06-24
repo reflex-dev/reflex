@@ -1,4 +1,5 @@
 """Simple module which contains one reusable reflex state class."""
+
 import reflex as rx
 
 

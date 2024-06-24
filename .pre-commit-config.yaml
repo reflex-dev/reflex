@@ -3,13 +3,23 @@ fail_fast: true
 repos:
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.1.0
+    rev: v0.4.9
     hooks:
       - id: ruff-format
         args: [integration, reflex, tests]
       - id: ruff
         args: ["--fix", "--exit-non-zero-on-fix"]
         exclude: '^integration/benchmarks/'
+
+  # Run pyi check before pyright because pyright can fail if pyi files are wrong.
+  - repo: local
+    hooks:
+      - id: update-pyi-files
+        name: update-pyi-files
+        always_run: true
+        language: system
+        description: 'Update pyi files as needed'
+        entry: python3 scripts/make_pyi.py
 
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.313
@@ -24,11 +34,3 @@ repos:
       - id: darglint
         exclude: '^reflex/reflex.py'
 
-  - repo: local
-    hooks:
-      - id: update-pyi-files
-        name: update-pyi-files
-        always_run: true
-        language: system
-        description: 'Update pyi files as needed'
-        entry: python3 scripts/make_pyi.py

@@ -1,4 +1,5 @@
 """Test that Script from next/script renders correctly."""
+
 import pytest
 
 from reflex.components.base.script import Script
