@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Type, Union
+from datetime import datetime
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -87,6 +88,7 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
+            last_compiled_time=str(datetime.now()),
             default_color_mode=appearance,
         )
         if state

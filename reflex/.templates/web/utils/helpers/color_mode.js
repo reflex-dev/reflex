@@ -1,13 +1,12 @@
-import reflex from "/reflex.json";
-
+import {lastCompiledTimeStamp} from "/utils/context.js";
 
 export function clearColorModeLocalStorageOnStartup () {
     if (typeof window !== "undefined") {
-        const colorModeHash = localStorage.getItem("color_mode_hash") 
-        if (colorModeHash && colorModeHash == reflex.color_mode_hash) {
-            return 
+        const lastCompiledTimeInLocalStorage = localStorage.getItem("last_compiled_time")
+        if (lastCompiledTimeInLocalStorage && lastCompiledTimeInLocalStorage == lastCompiledTimeStamp) {
+            return
         }
         localStorage.removeItem('chakra-ui-color-mode');
-        localStorage.setItem("color_mode_hash", reflex.color_mode_hash)
+        localStorage.setItem("last_compiled_time", lastCompiledTimeStamp)
       }
 };
