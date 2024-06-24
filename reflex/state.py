@@ -40,6 +40,7 @@ from redis.exceptions import ResponseError
 
 from reflex import constants
 from reflex.base import Base
+from reflex.config import get_config
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -60,6 +61,7 @@ if TYPE_CHECKING:
 
 Delta = Dict[str, Any]
 var = computed_var
+config = get_config()
 
 
 # If the state is this large, it's considered a performance issue.
@@ -2202,7 +2204,14 @@ class StateManager(Base, ABC):
         """
         redis = prerequisites.get_redis()
         if redis is not None:
-            return StateManagerRedis(state=state, redis=redis)
+            # make sure expiration values are obtained only from the config object on creation
+            config = get_config()
+            return StateManagerRedis(
+                state=state,
+                redis=redis,
+                token_expiration=config.redis_token_expiration,
+                lock_expiration=config.redis_lock_expiration,
+            )
         return StateManagerMemory(state=state)
 
     @abstractmethod
@@ -2333,10 +2342,10 @@ class StateManagerRedis(StateManager):
     redis: Redis
 
     # The token expiration time (s).
-    token_expiration: int = constants.Expiration.TOKEN
+    token_expiration: int = config.redis_token_expiration
 
     # The maximum time to hold a lock (ms).
-    lock_expiration: int = constants.Expiration.LOCK
+    lock_expiration: int = config.redis_lock_expiration
 
     # The keyspace subscription string when redis is waiting for lock to be released
     _redis_notify_keyspace_events: str = (
