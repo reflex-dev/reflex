@@ -60,7 +60,7 @@ class Foreach(Component):
                 deprecation_version="0.5.0",
                 removal_version="0.6.0",
             )
-        iterable = Var.create_safe(iterable)
+        iterable = Var.create_safe(iterable, _var_is_string=False)
         if iterable._var_type == Any:
             raise ForeachVarError(
                 f"Could not foreach over var `{iterable._var_full_name}` of type Any. "
@@ -139,3 +139,6 @@ class Foreach(Component):
             arg_index=tag.get_index_var_arg(),
             iterable_type=tag.iterable._var_type.mro()[0].__name__,
         )
+
+
+foreach = Foreach.create

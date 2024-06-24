@@ -942,3 +942,11 @@ class Html(BaseHTML):
             The component.
         """
         ...
+
+details = Details.create
+dialog = Dialog.create
+summary = Summary.create
+slot = Slot.create
+template = Template.create
+math = Math.create
+html = Html.create

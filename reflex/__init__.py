@@ -1,152 +1,300 @@
 """Import all classes and functions the end user will need to make an app.
 
 Anything imported here will be available in the default Reflex import as `rx.*`.
-To signal to typecheckers that something should be reexported,
-we use the Flask "import name as name" syntax.
+
+Dynamic Imports
+---------------
+Reflex utilizes dynamic imports, or lazy loading, to reduce startup/import times.
+With this approach, imports are delayed until they are actually needed. We use
+the `lazy_loader` library(https://github.com/scientific-python/lazy_loader) to achieve this.
+
+How it works
+--------------
+`lazy_loader.attach` takes two optional arguments: `submodules` and `submod_attrs`.
+- `submodules` typically points to directories or files to be accessed.
+- `submod_attrs` defines a mapping of directory or file names as keys with a list
+  of attributes or modules to access.
+
+Example directory structure:
+
+reflex/
+    |_ components/
+            |_ radix/
+                |_ themes/
+                    |_ components/
+                        |_ box.py
+
+To add `box` under the `rx` namespace (`rx.box`), add the relative path to `submod_attrs` in
+`reflex/__init__.py` (this file):
+
+```python
+lazy_loader.attach(
+    submodules={"components"},
+    submod_attrs={
+        "components.radix.themes.components.box": ["box"]
+    }
+)
+```
+
+This implies that `box` will be imported from `reflex/components/radix/themes/components/box.py`.
+
+To add box under the `rx.radix` namespace (`rx.radix.box`), add the relative path to the
+submod_attrs argument in `reflex/components/radix/__init__.py`:
+
+```python
+lazy_loader.attach(
+    submodules = {"themes"},
+    submod_attrs = {
+        "themes.components.box": ["box"]
+    }
+)
+```
+
+Note: It is important to specify the immediate submodules of a directory in the submodules
+argument to ensure they are registered at runtime. For example, 'components' for reflex,
+'radix' for components, 'themes' for radix, etc.
+
+
+Pyi_generator
+--------------
+To generate `.pyi` files for `__init__.py` files, we read the `_SUBMODULES` and `_SUBMOD_ATTRS`
+attributes to generate the import statements. It is highly recommended to define these with
+the provided annotations to facilitate their generation.
+
+
+Aliases
+------------
+This is a special case to specify an alias for a component.
+As an example, we use this typically for `rx.list` where defining `list` attribute in the list.py
+overshadows python's list object which messes up the pyi generation for `list.pyi`. As a result, aliases
+should be used for similar cases like this. Note that this logic is employed to fix the pyi generation and alias
+should still be defined or accessible. Check out the __getattr__ logic in `reflex/components/radix/themes/layouts/list.py`
+
+```python
+lazy_loader.attach(
+    submodules={"components"},
+    submod_attrs={
+        "components.radix.themes.layouts": [("list_ns", "list")]
+    }
+)
+```
+
+In the example above, you will be able to do `rx.list`
 """
 
 from __future__ import annotations
 
-import importlib
-from typing import Type
+from reflex.utils import lazy_loader
 
-from reflex.page import page as page
-from reflex.utils import console
-from reflex.utils.format import to_snake_case
+# import this here explicitly to avoid returning the page module since page attr has the
+# same name as page module(page.py)
+from .page import page as page
 
-_ALL_COMPONENTS = [
-    # Core
-    "color",
-    "cond",
-    "foreach",
-    "html",
-    "match",
-    "color_mode_cond",
-    "connection_banner",
-    "connection_modal",
-    "debounce_input",
-    # Base
-    "fragment",
-    "Fragment",
-    "image",
-    "script",
-    # Responsive
-    "desktop_only",
-    "mobile_and_tablet",
-    "mobile_only",
-    "tablet_and_desktop",
-    "tablet_only",
-    # Upload
-    "cancel_upload",
-    "clear_selected_files",
-    "get_upload_dir",
-    "get_upload_url",
-    "selected_files",
-    "upload",
-    # Radix
-    "accordion",
-    "alert_dialog",
-    "aspect_ratio",
-    "avatar",
-    "badge",
-    "blockquote",
-    "box",
-    "button",
-    "callout",
-    "card",
-    "center",
-    "checkbox",
-    "code",
-    "container",
-    "context_menu",
-    "data_list",
-    "dialog",
-    "divider",
-    "drawer",
-    "flex",
-    "form",
-    "grid",
-    "heading",
-    "hover_card",
-    "hstack",
-    "icon_button",
-    "inset",
-    "input",
-    "link",
-    "menu",
-    "popover",
-    "progress",
-    "radio",
-    "scroll_area",
-    "section",
-    "select",
-    "skeleton",
-    "slider",
-    "spacer",
-    "spinner",
-    "stack",
-    "switch",
-    "table",
-    "tabs",
-    "text",
-    "text_area",
-    "theme",
-    "theme_panel",
-    "tooltip",
-    "vstack",
-    # Other
-    "code_block",
-    "data_editor",
-    "data_editor_theme",
-    "data_table",
-    "plotly",
-    "audio",
-    "video",
-    "editor",
-    "EditorButtonList",
-    "EditorOptions",
-    "icon",
-    "markdown",
-    "list",
-    "list_item",
-    "unordered_list",
-    "ordered_list",
-    "moment",
-    "logo",
-    # Toast is in experimental namespace initially
-    # "toast",
-]
+RADIX_THEMES_MAPPING: dict = {
+    "components.radix.themes.base": ["color_mode", "theme", "theme_panel"],
+    "components.radix.themes.color_mode": ["color_mode"],
+}
+RADIX_THEMES_COMPONENTS_MAPPING: dict = {
+    **{
+        f"components.radix.themes.components.{mod}": [mod]
+        for mod in [
+            "alert_dialog",
+            "aspect_ratio",
+            "avatar",
+            "badge",
+            "button",
+            "callout",
+            "card",
+            "checkbox",
+            "context_menu",
+            "data_list",
+            "dialog",
+            "hover_card",
+            "icon_button",
+            "input",
+            "inset",
+            "popover",
+            "scroll_area",
+            "select",
+            "skeleton",
+            "slider",
+            "spinner",
+            "switch",
+            "table",
+            "tabs",
+            "text_area",
+            "tooltip",
+            "segmented_control",
+            "radio_cards",
+            "checkbox_cards",
+            "checkbox_group",
+        ]
+    },
+    "components.radix.themes.components.text_field": ["text_field", "input"],
+    "components.radix.themes.components.radio_group": ["radio", "radio_group"],
+    "components.radix.themes.components.dropdown_menu": ["menu", "dropdown_menu"],
+    "components.radix.themes.components.separator": ["divider", "separator"],
+}
 
-_MAPPING = {
-    "reflex.experimental": ["_x"],
-    "reflex.admin": ["admin", "AdminDash"],
-    "reflex.app": ["app", "App", "UploadFile"],
-    "reflex.base": ["base", "Base"],
-    "reflex.compiler": ["compiler"],
-    "reflex.components": _ALL_COMPONENTS,
-    "reflex.components.component": ["Component", "NoSSRComponent", "memo"],
-    "reflex.components.chakra": ["chakra"],
-    "reflex.components.el": ["el"],
-    "reflex.components.lucide": ["lucide"],
-    "reflex.components.next": ["next"],
-    "reflex.components.radix": ["radix", "color_mode"],
-    "reflex.components.recharts": ["recharts"],
-    "reflex.components.moment.moment": ["MomentDelta"],
-    "reflex.config": ["config", "Config", "DBConfig"],
-    "reflex.constants": ["constants", "Env"],
-    "reflex.event": [
-        "event",
+RADIX_THEMES_LAYOUT_MAPPING: dict = {
+    "components.radix.themes.layout.box": [
+        "box",
+    ],
+    "components.radix.themes.layout.center": [
+        "center",
+    ],
+    "components.radix.themes.layout.container": [
+        "container",
+    ],
+    "components.radix.themes.layout.flex": [
+        "flex",
+    ],
+    "components.radix.themes.layout.grid": [
+        "grid",
+    ],
+    "components.radix.themes.layout.section": [
+        "section",
+    ],
+    "components.radix.themes.layout.spacer": [
+        "spacer",
+    ],
+    "components.radix.themes.layout.stack": [
+        "stack",
+        "hstack",
+        "vstack",
+    ],
+    "components.radix.themes.layout.list": [
+        ("list_ns", "list"),
+        "list_item",
+        "ordered_list",
+        "unordered_list",
+    ],
+}
+
+RADIX_THEMES_TYPOGRAPHY_MAPPING: dict = {
+    "components.radix.themes.typography.blockquote": [
+        "blockquote",
+    ],
+    "components.radix.themes.typography.code": [
+        "code",
+    ],
+    "components.radix.themes.typography.heading": [
+        "heading",
+    ],
+    "components.radix.themes.typography.link": [
+        "link",
+    ],
+    "components.radix.themes.typography.text": [
+        "text",
+    ],
+}
+
+RADIX_PRIMITIVES_MAPPING: dict = {
+    "components.radix.primitives.accordion": [
+        "accordion",
+    ],
+    "components.radix.primitives.drawer": [
+        "drawer",
+    ],
+    "components.radix.primitives.form": [
+        "form",
+    ],
+    "components.radix.primitives.progress": ["progress"],
+}
+
+COMPONENTS_CORE_MAPPING: dict = {
+    "components.core.banner": [
+        "connection_banner",
+        "connection_modal",
+    ],
+    "components.core.cond": ["cond", "color_mode_cond"],
+    "components.core.foreach": ["foreach"],
+    "components.core.debounce": ["debounce_input"],
+    "components.core.html": ["html"],
+    "components.core.match": ["match"],
+    "components.core.colors": ["color"],
+    "components.core.responsive": [
+        "desktop_only",
+        "mobile_and_tablet",
+        "mobile_only",
+        "tablet_and_desktop",
+        "tablet_only",
+    ],
+    "components.core.upload": [
+        "cancel_upload",
+        "clear_selected_files",
+        "get_upload_dir",
+        "get_upload_url",
+        "selected_files",
+        "upload",
+    ],
+}
+
+COMPONENTS_BASE_MAPPING: dict = {
+    "components.base.fragment": ["fragment", "Fragment"],
+    "components.base.script": ["script", "Script"],
+}
+
+RADIX_MAPPING: dict = {
+    **RADIX_THEMES_MAPPING,
+    **RADIX_THEMES_COMPONENTS_MAPPING,
+    **RADIX_THEMES_TYPOGRAPHY_MAPPING,
+    **RADIX_THEMES_LAYOUT_MAPPING,
+    **RADIX_PRIMITIVES_MAPPING,
+}
+
+_MAPPING: dict = {
+    "experimental": ["_x"],
+    "admin": ["AdminDash"],
+    "app": ["App", "UploadFile"],
+    "base": ["Base"],
+    "components.component": [
+        "Component",
+        "NoSSRComponent",
+        "memo",
+        "ComponentNamespace",
+    ],
+    "components.el.elements.media": ["image"],
+    "components.lucide": ["icon"],
+    **COMPONENTS_BASE_MAPPING,
+    "components.suneditor": [
+        "editor",
+        "EditorButtonList",
+        "EditorOptions",
+    ],
+    "components": ["el", "chakra", "radix", "lucide", "recharts", "next"],
+    "components.markdown": ["markdown"],
+    **RADIX_MAPPING,
+    "components.plotly": ["plotly"],
+    "components.react_player": ["audio", "video"],
+    **COMPONENTS_CORE_MAPPING,
+    "components.datadisplay.code": [
+        "code_block",
+    ],
+    "components.datadisplay.dataeditor": [
+        "data_editor",
+        "data_editor_theme",
+    ],
+    "components.sonner.toast": ["toast"],
+    "components.datadisplay.logo": ["logo"],
+    "components.gridjs": ["data_table"],
+    "components.moment": ["MomentDelta", "moment"],
+    "config": ["Config", "DBConfig"],
+    "constants": ["Env"],
+    "event": [
         "EventChain",
         "EventHandler",
         "background",
         "call_script",
         "clear_local_storage",
+        "clear_session_storage",
         "console_log",
         "download",
         "prevent_default",
         "redirect",
         "remove_cookie",
         "remove_local_storage",
+        "remove_session_storage",
         "set_clipboard",
         "set_focus",
         "scroll_to",
@@ -155,84 +303,39 @@ _MAPPING = {
         "upload_files",
         "window_alert",
     ],
-    "reflex.middleware": ["middleware", "Middleware"],
-    "reflex.model": ["model", "session", "Model"],
-    "reflex.page": ["page"],
-    "reflex.route": ["route"],
-    "reflex.state": [
-        "state",
+    "middleware": ["middleware", "Middleware"],
+    "model": ["session", "Model"],
+    "state": [
         "var",
         "Cookie",
         "LocalStorage",
+        "SessionStorage",
         "ComponentState",
         "State",
     ],
-    "reflex.style": ["style", "toggle_color_mode"],
-    "reflex.testing": ["testing"],
-    "reflex.utils": ["utils"],
-    "reflex.utils.imports": ["ImportVar"],
-    "reflex.vars": ["vars", "cached_var", "Var"],
+    "style": ["Style", "toggle_color_mode"],
+    "utils.imports": ["ImportVar"],
+    "utils.serializers": ["serializer"],
+    "vars": ["cached_var", "Var"],
 }
 
-
-def _reverse_mapping(mapping: dict[str, list]) -> dict[str, str]:
-    """Reverse the mapping used to lazy loading, and check for conflicting name.
-
-    Args:
-        mapping: The mapping to reverse.
-
-    Returns:
-        The reversed mapping.
-    """
-    reversed_mapping = {}
-    for key, values in mapping.items():
-        for value in values:
-            if value not in reversed_mapping:
-                reversed_mapping[value] = key
-            else:
-                console.warn(
-                    f"Key {value} is present multiple times in the imports _MAPPING: {key} / {reversed_mapping[value]}"
-                )
-    return reversed_mapping
-
-
-# _MAPPING = {value: key for key, values in _MAPPING.items() for value in values}
-_MAPPING = _reverse_mapping(_MAPPING)
-
-
-def _removeprefix(text, prefix):
-    return text[text.startswith(prefix) and len(prefix) :]
-
-
-__all__ = (_removeprefix(mod, "reflex.") for mod in _MAPPING)
-
-
-def __getattr__(name: str) -> Type:
-    """Lazy load all modules.
-
-    Args:
-        name: name of the module to load.
-
-    Returns:
-        The module or the attribute of the module.
-
-    Raises:
-        AttributeError: If the module or the attribute does not exist.
-    """
-    try:
-        # Check for import of a module that is not in the mapping.
-        if name not in _MAPPING:
-            # If the name does not start with reflex, add it.
-            if not name.startswith("reflex") and name != "__all__":
-                name = f"reflex.{name}"
-            return importlib.import_module(name)
-
-        # Import the module.
-        module = importlib.import_module(_MAPPING[name])
-
-        # Get the attribute from the module if the name is not the module itself.
-        return (
-            getattr(module, name) if name != _MAPPING[name].rsplit(".")[-1] else module
-        )
-    except ModuleNotFoundError:
-        raise AttributeError(f"module 'reflex' has no attribute {name}") from None
+_SUBMODULES: set[str] = {
+    "components",
+    "event",
+    "app",
+    "style",
+    "admin",
+    "base",
+    "model",
+    "testing",
+    "utils",
+    "vars",
+    "config",
+    "compiler",
+}
+_SUBMOD_ATTRS: dict = _MAPPING
+__getattr__, __dir__, __all__ = lazy_loader.attach(
+    __name__,
+    submodules=_SUBMODULES,
+    submod_attrs=_SUBMOD_ATTRS,
+)

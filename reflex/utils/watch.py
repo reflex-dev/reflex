@@ -9,6 +9,7 @@ from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from reflex.constants import Dirs
+from reflex.utils.prerequisites import get_web_dir
 
 
 class AssetFolderWatch:
@@ -90,5 +91,6 @@ class AssetFolderHandler(FileSystemEventHandler):
             The public file path.
         """
         return src_path.replace(
-            str(self.root / Dirs.APP_ASSETS), str(self.root / Dirs.WEB_ASSETS)
+            str(self.root / Dirs.APP_ASSETS),
+            str(self.root / get_web_dir() / Dirs.PUBLIC),
         )

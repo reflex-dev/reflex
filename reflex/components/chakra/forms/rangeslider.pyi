@@ -7,15 +7,14 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, List, Optional, Union
+from typing import List, Optional
 from reflex.components.chakra import ChakraComponent, LiteralChakraDirection
 from reflex.components.component import Component
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.utils import format
 from reflex.vars import Var
 
 class RangeSlider(ChakraComponent):
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     def get_ref(self): ...
     @overload
     @classmethod

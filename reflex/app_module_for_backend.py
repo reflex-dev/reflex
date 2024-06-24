@@ -4,12 +4,14 @@ Only the app attribute is explicitly exposed.
 from concurrent.futures import ThreadPoolExecutor
 
 from reflex import constants
+from reflex.utils import telemetry
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.prerequisites import get_app
 
 if "app" != constants.CompileVars.APP:
     raise AssertionError("unexpected variable name for 'app'")
 
+telemetry.send("compile")
 app_module = get_app(reload=False)
 app = getattr(app_module, constants.CompileVars.APP)
 # For py3.8 and py3.9 compatibility when redis is used, we MUST add any decorator pages
@@ -29,5 +31,6 @@ del app_module
 del compile_future
 del get_app
 del is_prod_mode
+del telemetry
 del constants
 del ThreadPoolExecutor

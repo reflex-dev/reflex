@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from reflex import el
+from reflex.components.el import elements
 from reflex.style import STACK_CHILDREN_FULL_WIDTH
 from reflex.vars import Var
 
@@ -12,7 +12,7 @@ from ..base import RadixThemesComponent
 LiteralContainerSize = Literal["1", "2", "3", "4"]
 
 
-class Container(el.Div, RadixThemesComponent):
+class Container(elements.Div, RadixThemesComponent):
     """Constrains the maximum width of page content.
 
     See https://www.radix-ui.com/themes/docs/components/container
@@ -21,7 +21,7 @@ class Container(el.Div, RadixThemesComponent):
     tag = "Container"
 
     # The size of the container: "1" - "4" (default "3")
-    size: Var[LiteralContainerSize] = Var.create_safe("3")
+    size: Var[LiteralContainerSize] = Var.create_safe("3", _var_is_string=True)
 
     @classmethod
     def create(
@@ -49,3 +49,6 @@ class Container(el.Div, RadixThemesComponent):
             padding=padding,
             **props,
         )
+
+
+container = Container.create

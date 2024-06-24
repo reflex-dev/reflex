@@ -7,7 +7,6 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict
 from reflex.components.chakra import (
     ChakraComponent,
     LiteralButtonSize,
@@ -16,12 +15,13 @@ from reflex.components.chakra import (
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.literals import LiteralInputType
-from reflex.constants import EventTriggers, MemoizationMode
-from reflex.utils import imports
+from reflex.constants import MemoizationMode
+from reflex.event import EventHandler
+from reflex.utils.imports import ImportDict
 from reflex.vars import Var
 
 class Input(ChakraComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
+    def add_imports(self) -> ImportDict: ...
     @overload
     @classmethod
     def create(  # type: ignore

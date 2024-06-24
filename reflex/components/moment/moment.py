@@ -1,10 +1,11 @@
 """Moment component for humanized date rendering."""
 
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
-from reflex.utils import imports
+from reflex.event import EventHandler
+from reflex.utils.imports import ImportDict
 from reflex.vars import Var
 
 
@@ -90,25 +91,18 @@ class Moment(NoSSRComponent):
     # Display the date in the given timezone.
     tz: Var[str]
 
-    def _get_imports(self) -> imports.ImportDict:
-        merged_imports = super()._get_imports()
-        if self.tz is not None:
-            merged_imports = imports.merge_imports(
-                merged_imports,
-                {"moment-timezone": {imports.ImportVar(tag="")}},
-            )
-        return merged_imports
+    # Fires when the date changes.
+    on_change: EventHandler[lambda date: [date]]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
+    def add_imports(self) -> ImportDict:
+        """Add the imports for the Moment component.
 
         Returns:
-            The signatures of the event triggers.
+            The import dict for the component.
         """
-        return {
-            **super().get_event_triggers(),
-            "on_change": lambda date: [date],
-        }
+        if self.tz is not None:
+            return {"moment-timezone": ""}
+        return {}
 
     @classmethod
     def create(cls, *children, **props) -> Component:

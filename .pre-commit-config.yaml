@@ -31,4 +31,4 @@ repos:
         always_run: true
         language: system
         description: 'Update pyi files as needed'
-        entry: python scripts/make_pyi.py
+        entry: python3 scripts/make_pyi.py

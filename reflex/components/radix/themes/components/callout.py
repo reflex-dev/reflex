@@ -3,8 +3,8 @@
 from typing import Literal, Union
 
 import reflex as rx
-from reflex import el
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.el import elements
 from reflex.components.lucide.icon import Icon
 from reflex.vars import Var
 
@@ -16,7 +16,7 @@ from ..base import (
 CalloutVariant = Literal["soft", "surface", "outline"]
 
 
-class CalloutRoot(el.Div, RadixThemesComponent):
+class CalloutRoot(elements.Div, RadixThemesComponent):
     """Groups Icon and Text parts of a Callout."""
 
     tag = "Callout.Root"
@@ -37,13 +37,13 @@ class CalloutRoot(el.Div, RadixThemesComponent):
     high_contrast: Var[bool]
 
 
-class CalloutIcon(el.Div, RadixThemesComponent):
+class CalloutIcon(elements.Div, RadixThemesComponent):
     """Provides width and height for the icon associated with the callout."""
 
     tag = "Callout.Icon"
 
 
-class CalloutText(el.P, RadixThemesComponent):
+class CalloutText(elements.P, RadixThemesComponent):
     """Renders the callout text. This component is based on the p element."""
 
     tag = "Callout.Text"

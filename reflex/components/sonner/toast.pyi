@@ -27,7 +27,7 @@ LiteralPosition = Literal[
     "bottom-center",
     "bottom-right",
 ]
-toast_ref = Var.create_safe("refs['__toast']")
+toast_ref = Var.create_safe("refs['__toast']", _var_is_string=False)
 
 class ToastAction(Base):
     label: str
@@ -46,7 +46,7 @@ class ToastProps(PropsBase):
     dismissible: Optional[bool]
     action: Optional[ToastAction]
     cancel: Optional[ToastAction]
-    id: Optional[str]
+    id: Optional[Union[str, Var]]
     unstyled: Optional[bool]
     style: Optional[Style]
     action_button_styles: Optional[Style]
@@ -54,9 +54,10 @@ class ToastProps(PropsBase):
     on_dismiss: Optional[Any]
     on_auto_close: Optional[Any]
 
-    def dict(self, *args, **kwargs) -> dict: ...
+    def dict(self, *args, **kwargs) -> dict[str, Any]: ...
 
 class Toaster(Component):
+    def add_hooks(self) -> list[Var | str]: ...
     @staticmethod
     def send_toast(message: str, level: str | None = None, **props) -> EventSpec: ...
     @staticmethod
@@ -67,7 +68,8 @@ class Toaster(Component):
     def toast_error(message: str, **kwargs): ...
     @staticmethod
     def toast_success(message: str, **kwargs): ...
-    def toast_dismiss(self, id: str | None): ...
+    @staticmethod
+    def toast_dismiss(id: Var | str | None = None): ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -202,7 +204,9 @@ class ToastNamespace(ComponentNamespace):
     dismiss = staticmethod(Toaster.toast_dismiss)
 
     @staticmethod
-    def __call__(message: str, level: Optional[str], **props) -> "Optional[EventSpec]":
+    def __call__(
+        message: str, level: Optional[str] = None, **props
+    ) -> "Optional[EventSpec]":
         """Send a toast message.
 
         Args:

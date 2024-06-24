@@ -7,11 +7,11 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal
+from typing import Literal
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralSpacing, RadixThemesComponent
 
@@ -19,7 +19,6 @@ LiteralCheckboxSize = Literal["1", "2", "3"]
 LiteralCheckboxVariant = Literal["classic", "surface", "soft"]
 
 class Checkbox(RadixThemesComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -192,7 +191,6 @@ class Checkbox(RadixThemesComponent):
         ...
 
 class HighLevelCheckbox(RadixThemesComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore

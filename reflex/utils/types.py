@@ -42,7 +42,7 @@ from sqlalchemy.orm import (
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import console, serializers
+from reflex.utils import console
 
 if sys.version_info >= (3, 12):
     from typing import override
@@ -215,7 +215,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     attr = getattr(cls, name, None)
     if hint := get_property_hint(attr):
         return hint
-    if hasattr(cls, "__fields__") and name in cls.__fields__:
+    if (
+        hasattr(cls, "__fields__")
+        and name in cls.__fields__
+        and hasattr(cls.__fields__[name], "outer_type_")
+    ):
         # pydantic models
         field = cls.__fields__[name]
         type_ = field.outer_type_
@@ -392,6 +396,8 @@ def is_valid_var_type(type_: Type) -> bool:
     Returns:
         Whether the type is a valid prop type.
     """
+    from reflex.utils import serializers
+
     if is_union(type_):
         return all((is_valid_var_type(arg) for arg in get_args(type_)))
     return _issubclass(type_, StateVar) or serializers.has_serializer(type_)
@@ -503,7 +509,7 @@ def validate_parameter_literals(func):
         annotations = {param[0]: param[1].annotation for param in func_params}
 
         # validate args
-        for param, arg in zip(annotations.keys(), args):
+        for param, arg in zip(annotations, args):
             if annotations[param] is inspect.Parameter.empty:
                 continue
             validate_literal(param, arg, annotations[param], func.__name__)

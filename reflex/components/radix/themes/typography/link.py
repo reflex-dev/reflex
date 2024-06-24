@@ -12,7 +12,7 @@ from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.next.link import NextLink
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict
 from reflex.vars import Var
 
 from ..base import (
@@ -59,8 +59,13 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
     # If True, the link will open in a new tab
     is_external: Var[bool]
 
-    def _get_imports(self) -> imports.ImportDict:
-        return {**super()._get_imports(), **next_link._get_imports()}
+    def add_imports(self) -> ImportDict:
+        """Add imports for the Link component.
+
+        Returns:
+            The import dict.
+        """
+        return next_link._get_imports()  # type: ignore
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -102,3 +107,6 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
                     **props,
                 )
         return super().create(*children, **props)
+
+
+link = Link.create
