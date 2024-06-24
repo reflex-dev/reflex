@@ -955,9 +955,10 @@ def needs_reinit(frontend: bool = True) -> bool:
         console.warn(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
-        if sys.version_info >= (3, 12) and uvi_ver != "0.24.0.post1":
+        if sys.version_info >= (3, 12):
             console.warn(
-                f"""On Python 3.12, `uvicorn==0.24.0.post1` is recommended for improved hot reload times. Found {uvi_ver} instead."""
+                "Python 3.12 on Windows has known issues with hot reload (reflex-dev/reflex#3536). "
+                "Python 3.11 is recommended with this release of Reflex."
             )
 
         if sys.version_info < (3, 12) and uvi_ver != "0.20.0":
