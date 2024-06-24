@@ -766,10 +766,12 @@ def call_script(
     callback_kwargs = {}
     if callback is not None:
         callback_kwargs = {
-            "callback": format.format_queue_events(
-                callback,
-                args_spec=lambda result: [result],
-            )
+            "callback": str(
+                format.format_queue_events(
+                    callback,
+                    args_spec=lambda result: [result],
+                ),
+            ),
         }
     return server_side(
         "_call_script",

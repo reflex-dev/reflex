@@ -6,12 +6,12 @@ import os
 from typing import TYPE_CHECKING, Any, List, Type
 
 try:
-    import pydantic.v1 as pydantic
+    import pydantic.v1.main as pydantic_main
     from pydantic.v1 import BaseModel
     from pydantic.v1.fields import ModelField
 except ModuleNotFoundError:
     if not TYPE_CHECKING:
-        import pydantic
+        import pydantic.main as pydantic_main
         from pydantic import BaseModel
         from pydantic.fields import ModelField  # type: ignore
 
@@ -45,10 +45,10 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 
 # monkeypatch pydantic validate_field_name method to skip validating
 # shadowed state vars when reloading app via utils.prerequisites.get_app(reload=True)
-pydantic.main.validate_field_name = validate_field_name  # type: ignore
+pydantic_main.validate_field_name = validate_field_name  # type: ignore
 
 
-class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
+class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
     """The base class subclassed by all Reflex classes.
 
     This class wraps Pydantic and provides common methods such as

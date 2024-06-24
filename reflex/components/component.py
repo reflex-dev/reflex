@@ -2121,10 +2121,20 @@ class StatefulComponent(BaseComponent):
         Returns:
             A list of var names created by the hook declaration.
         """
-        var_name = hook.partition("=")[0].strip().split(None, 1)[1].strip()
-        if var_name.startswith("["):
-            # Break up array destructuring.
-            return [v.strip() for v in var_name.strip("[]").split(",")]
+        # Ensure that the hook is a var declaration.
+        var_decl = hook.partition("=")[0].strip()
+        if not any(var_decl.startswith(kw) for kw in ["const ", "let ", "var "]):
+            return []
+
+        # Extract the var name from the declaration.
+        _, _, var_name = var_decl.partition(" ")
+        var_name = var_name.strip()
+
+        # Break up array and object destructuring if used.
+        if var_name.startswith("[") or var_name.startswith("{"):
+            return [
+                v.strip().replace("...", "") for v in var_name.strip("[]{}").split(",")
+            ]
         return [var_name]
 
     @classmethod

@@ -6,12 +6,13 @@ import { ColorModeContext, defaultColorMode } from "/utils/context.js";
 export default function ChakraColorModeProvider({ children }) {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const { colorMode, toggleColorMode } = chakraUseColorMode();
-  const [resolvedColorMode, setResolvedColorMode] = useState(theme);
+  const [resolvedColorMode, setResolvedColorMode] = useState(colorMode);
 
   useEffect(() => {
     if (colorMode != resolvedTheme) {
       toggleColorMode();
     }
+    setResolvedColorMode(resolvedTheme);
   }, [theme, resolvedTheme]);
 
   const rawColorMode = colorMode;

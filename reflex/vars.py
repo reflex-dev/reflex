@@ -482,7 +482,7 @@ class Var:
             self._var_name = _var_name
             self._var_data = VarData.merge(self._var_data, _var_data)
 
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> Var:
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> BaseVar:
         """Make a copy of this Var with updated fields.
 
         Args:
