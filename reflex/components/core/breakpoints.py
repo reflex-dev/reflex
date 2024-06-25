@@ -1,10 +1,14 @@
-from typing import Self
-
+"""Breakpoints utility."""
 
 breakpoints_values = ["520px", "768px", "1024px", "1280px", "1640px"]
 
 
 def set_breakpoints(values: tuple[str, str, str, str, str]):
+    """Overwrite default breakpoint values.
+
+    Args:
+        values: CSS values in order defining the breakpoints of responsive layouts
+    """
     breakpoints_values.clear()
     breakpoints_values.extend(values)
 
@@ -13,6 +17,11 @@ class Breakpoints(dict):
     """A responsive styling helper."""
 
     def __init__(self, mapping: dict):
+        """Instantiate breakpoints mapping.
+
+        Args:
+            mapping: a dictionary where breakpoints are keys and CSS values are values
+        """
         super().__init__(mapping)
 
     @classmethod
@@ -25,7 +34,7 @@ class Breakpoints(dict):
         md=None,
         lg=None,
         xl=None,
-    ) -> Self:
+    ):
         """Create a new instance of the helper. Only provide a custom component OR use named props.
 
         Args:
@@ -36,6 +45,9 @@ class Breakpoints(dict):
             md: Styling when in the medium width
             lg: Styling when in the large width
             xl: Styling when in the extra-large width
+
+        Raises:
+            ValueError: If both custom and any other named parameters are provided.
 
         Returns:
             The responsive mapping.
