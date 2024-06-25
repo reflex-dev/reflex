@@ -12,7 +12,6 @@ services:
       DB_URL: sqlite:///data/reflex.db
     build:
       context: .
-      dockerfile: prod.Dockerfile
     volumes:
        - db-data:/app/data
        - upload-data:/app/uploaded_files
