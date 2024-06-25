@@ -182,6 +182,9 @@ def ask(
 def progress(desc="Compiling:", total=100):
     """Create a new progress bar.
 
+    Args:
+        desc: description of progress bar
+        total: total length of progress bar
 
     Returns:
         A new progress bar.
