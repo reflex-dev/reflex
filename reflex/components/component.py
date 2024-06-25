@@ -1538,7 +1538,8 @@ class Component(BaseComponent, ABC):
         if hooks is not None:
             code[hooks] = None
 
-        code.update(self._get_added_hooks())
+        for hook in self._get_added_hooks():
+            code[hook] = None
 
         # Add the hook code for the children.
         for child in self.children:
