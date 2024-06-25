@@ -12,3 +12,4 @@ venv
 requirements.txt
 .pyi_generator_last_run
 .pyi_generator_diff
+reflex.db
