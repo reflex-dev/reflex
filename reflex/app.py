@@ -7,12 +7,10 @@ import concurrent.futures
 import contextlib
 import copy
 import functools
-import inspect
 import io
 import multiprocessing
 import os
 import platform
-import sys
 from typing import (
     Any,
     AsyncIterator,
@@ -39,6 +37,7 @@ from starlette_admin.contrib.sqla.view import ModelView
 
 from reflex import constants
 from reflex.admin import AdminDash
+from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
@@ -59,7 +58,6 @@ from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
-from reflex.middleware import HydrateMiddleware, Middleware
 from reflex.model import Model
 from reflex.page import (
     DECORATED_PAGES,
@@ -102,50 +100,7 @@ class OverlayFragment(Fragment):
     pass
 
 
-class LifespanMixin(Base):
-    """A Mixin that allow tasks to run during the whole app lifespan."""
-
-    # Lifespan tasks that are planned to run.
-    lifespan_tasks: Set[Union[asyncio.Task, Callable]] = set()
-
-    @contextlib.asynccontextmanager
-    async def _run_lifespan_tasks(self, app: FastAPI):
-        running_tasks = []
-        try:
-            async with contextlib.AsyncExitStack() as stack:
-                for task in self.lifespan_tasks:
-                    if isinstance(task, asyncio.Task):
-                        running_tasks.append(task)
-                    else:
-                        signature = inspect.signature(task)
-                        if "app" in signature.parameters:
-                            task = functools.partial(task, app=app)
-                        _t = task()
-                        if isinstance(_t, contextlib._AsyncGeneratorContextManager):
-                            await stack.enter_async_context(_t)
-                        elif isinstance(_t, Coroutine):
-                            running_tasks.append(asyncio.create_task(_t))
-                yield
-        finally:
-            cancel_kwargs = (
-                {"msg": "lifespan_cleanup"} if sys.version_info >= (3, 9) else {}
-            )
-            for task in running_tasks:
-                task.cancel(**cancel_kwargs)
-
-    def register_lifespan_task(self, task: Callable | asyncio.Task, **task_kwargs):
-        """Register a task to run during the lifespan of the app.
-
-        Args:
-            task: The task to register.
-            task_kwargs: The kwargs of the task.
-        """
-        if task_kwargs:
-            task = functools.partial(task, **task_kwargs)  # type: ignore
-        self.lifespan_tasks.add(task)  # type: ignore
-
-
-class App(LifespanMixin, Base):
+class App(MiddlewareMixin, LifespanMixin, Base):
     """The main Reflex app that encapsulates the backend and frontend.
 
     Every Reflex app needs an app defined in its main module.
@@ -204,9 +159,6 @@ class App(LifespanMixin, Base):
     # Class to manage many client states.
     _state_manager: Optional[StateManager] = None
 
-    # Middleware to add to the app. Users should use `add_middleware`. PRIVATE.
-    middleware: List[Middleware] = []
-
     # Mapping from a route to event handlers to trigger when the page loads. PRIVATE.
     load_events: Dict[str, List[Union[EventHandler, EventSpec]]] = {}
 
@@ -244,13 +196,14 @@ class App(LifespanMixin, Base):
                 "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
             )
 
-        # Add middleware.
-        self.middleware.append(HydrateMiddleware())
-
         # Set up the API.
         self.api = FastAPI(lifespan=self._run_lifespan_tasks)
         self._add_cors()
         self._add_default_endpoints()
+
+        for clz in App.__mro__:
+            if issubclass(clz, AppMixin):
+                clz._init_mixin(self)
 
         self._setup_state()
 
@@ -365,77 +318,6 @@ class App(LifespanMixin, Base):
         if self._state_manager is None:
             raise ValueError("The state manager has not been initialized.")
         return self._state_manager
-
-    async def _preprocess(self, state: BaseState, event: Event) -> StateUpdate | None:
-        """Preprocess the event.
-
-        This is where middleware can modify the event before it is processed.
-        Each middleware is called in the order it was added to the app.
-
-        If a middleware returns an update, the event is not processed and the
-        update is returned.
-
-        Args:
-            state: The state to preprocess.
-            event: The event to preprocess.
-
-        Returns:
-            An optional state to return.
-        """
-        for middleware in self.middleware:
-            if asyncio.iscoroutinefunction(middleware.preprocess):
-                out = await middleware.preprocess(app=self, state=state, event=event)  # type: ignore
-            else:
-                out = middleware.preprocess(app=self, state=state, event=event)  # type: ignore
-            if out is not None:
-                return out  # type: ignore
-
-    async def _postprocess(
-        self, state: BaseState, event: Event, update: StateUpdate
-    ) -> StateUpdate:
-        """Postprocess the event.
-
-        This is where middleware can modify the delta after it is processed.
-        Each middleware is called in the order it was added to the app.
-
-        Args:
-            state: The state to postprocess.
-            event: The event to postprocess.
-            update: The current state update.
-
-        Returns:
-            The state update to return.
-        """
-        for middleware in self.middleware:
-            if asyncio.iscoroutinefunction(middleware.postprocess):
-                out = await middleware.postprocess(
-                    app=self,  # type: ignore
-                    state=state,
-                    event=event,
-                    update=update,
-                )
-            else:
-                out = middleware.postprocess(
-                    app=self,  # type: ignore
-                    state=state,
-                    event=event,
-                    update=update,
-                )
-            if out is not None:
-                return out  # type: ignore
-        return update
-
-    def add_middleware(self, middleware: Middleware, index: int | None = None):
-        """Add middleware to the app.
-
-        Args:
-            middleware: The middleware to add.
-            index: The index to add the middleware at.
-        """
-        if index is None:
-            self.middleware.append(middleware)
-        else:
-            self.middleware.insert(index, middleware)
 
     @staticmethod
     def _generate_component(component: Component | ComponentCallable) -> Component:
