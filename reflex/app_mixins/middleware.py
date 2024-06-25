@@ -1,5 +1,7 @@
 """Middleware Mixin that allow to add middleware to the app."""
 
+from __future__ import annotations
+
 import asyncio
 from typing import List
 

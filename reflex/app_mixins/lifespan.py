@@ -1,5 +1,7 @@
 """Mixin that allow tasks to run during the whole app lifespan."""
 
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import functools
