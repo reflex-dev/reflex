@@ -31,6 +31,7 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
         "match",
         "Match",
     ],
+    "breakpoints": ["breakpoints", "set_breakpoints"],
     "responsive": [
         "desktop_only",
         "mobile_and_tablet",

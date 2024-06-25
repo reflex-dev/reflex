@@ -25,6 +25,8 @@ from .html import html as html
 from .html import Html as Html
 from .match import match as match
 from .match import Match as Match
+from .breakpoints import breakpoints as breakpoints
+from .breakpoints import set_breakpoints as set_breakpoints
 from .responsive import desktop_only as desktop_only
 from .responsive import mobile_and_tablet as mobile_and_tablet
 from .responsive import mobile_only as mobile_only
