@@ -1,9 +1,11 @@
 """Breakpoints utility."""
 
+from typing import Tuple
+
 breakpoints_values = ["30em", "48em", "62em", "80em", "96em"]
 
 
-def set_breakpoints(values: tuple[str, str, str, str, str]):
+def set_breakpoints(values: Tuple[str, str, str, str, str]):
     """Overwrite default breakpoint values.
 
     Args:
