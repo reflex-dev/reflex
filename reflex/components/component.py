@@ -2038,6 +2038,7 @@ class StatefulComponent(BaseComponent):
         from reflex.components.base.bare import Bare
         from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
+        from reflex.components.core.match import Match
 
         if isinstance(child, Bare):
             return child.contents
@@ -2045,6 +2046,8 @@ class StatefulComponent(BaseComponent):
             return child.cond
         if isinstance(child, Foreach):
             return child.iterable
+        if isinstance(child, Match):
+            return child.cond
         return child
 
     @classmethod
