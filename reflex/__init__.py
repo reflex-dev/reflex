@@ -304,7 +304,7 @@ _MAPPING: dict = {
         "window_alert",
     ],
     "middleware": ["middleware", "Middleware"],
-    "model": ["session", "sqla_session", "Model"],
+    "model": ["session", "Model"],
     "state": [
         "var",
         "Cookie",
