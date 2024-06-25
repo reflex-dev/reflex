@@ -1,6 +1,6 @@
 """Breakpoints utility."""
 
-breakpoints_values = ["520px", "768px", "1024px", "1280px", "1640px"]
+breakpoints_values = ["30em", "48em", "62em", "80em", "96em"]
 
 
 def set_breakpoints(values: tuple[str, str, str, str, str]):
