@@ -109,16 +109,16 @@ def test_wrap(text: str, open: str, expected: str, check_first: bool, num: int):
             "This is a random string with \\`backticks\\`",
         ),
         (
-            "This is a string with ${`string interpolation`} unescaped",
-            "This is a string with ${`string interpolation`} unescaped",
+            "This is a string with ${someValue[`string interpolation`]} unescaped",
+            "This is a string with ${someValue[`string interpolation`]} unescaped",
         ),
         (
-            "This is a string with `backticks` and ${`string interpolation`} unescaped",
-            "This is a string with \\`backticks\\` and ${`string interpolation`} unescaped",
+            "This is a string with `backticks` and ${someValue[`string interpolation`]} unescaped",
+            "This is a string with \\`backticks\\` and ${someValue[`string interpolation`]} unescaped",
         ),
         (
-            "This is a string with `backticks`, ${`the first string interpolation`} and ${`the second`}",
-            "This is a string with \\`backticks\\`, ${`the first string interpolation`} and ${`the second`}",
+            "This is a string with `backticks`, ${someValue[`the first string interpolation`]} and ${someValue[`the second`]}",
+            "This is a string with \\`backticks\\`, ${someValue[`the first string interpolation`]} and ${someValue[`the second`]}",
         ),
     ],
 )
