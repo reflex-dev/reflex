@@ -202,6 +202,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         self._add_default_endpoints()
 
         for clz in App.__mro__:
+            if clz == App:
+                continue
             if issubclass(clz, AppMixin):
                 clz._init_mixin(self)
 
