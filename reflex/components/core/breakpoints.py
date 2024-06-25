@@ -1,6 +1,6 @@
 """Breakpoints utility."""
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 breakpoints_values = ["30em", "48em", "62em", "80em", "96em"]
 
@@ -29,7 +29,7 @@ class Breakpoints(dict):
     @classmethod
     def create(
         cls,
-        custom: dict | None = None,
+        custom: Optional[dict] = None,
         initial=None,
         xs=None,
         sm=None,
