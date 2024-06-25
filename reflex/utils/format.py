@@ -212,7 +212,14 @@ def _escape_js_string(string: str) -> str:
     """
 
     def escape_outside_segments(segment):
-        """Escape backticks in segments outside of `${}`."""
+        """Escape backticks in segments outside of `${}`.
+
+        Args:
+            segment: The part of the string to escape.
+
+        Returns:
+            The escaped or unescaped segment.
+        """
         if segment.startswith("${") and segment.endswith("}"):
             # Return the `${}` segment unchanged
             return segment
