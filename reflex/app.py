@@ -13,6 +13,7 @@ import multiprocessing
 import os
 import platform
 import sys
+from datetime import datetime
 from typing import (
     Any,
     AsyncIterator,
@@ -836,6 +837,9 @@ class App(LifespanMixin, Base):
         """
         from reflex.utils.exceptions import ReflexRuntimeError
 
+        def get_compilation_time() -> str:
+            return str(datetime.now().time()).split(".")[0]
+
         # Render a default 404 page if the user didn't supply one
         if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
@@ -861,7 +865,7 @@ class App(LifespanMixin, Base):
         fixed_pages_within_executor = 5
         progress.start()
         task = progress.add_task(
-            "Compiling:",
+            f"[{get_compilation_time()}] Compiling:",
             total=len(self.pages)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
