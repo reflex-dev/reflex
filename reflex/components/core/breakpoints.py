@@ -18,14 +18,6 @@ def set_breakpoints(values: Tuple[str, str, str, str, str]):
 class Breakpoints(dict):
     """A responsive styling helper."""
 
-    def __init__(self, mapping: dict):
-        """Instantiate breakpoints mapping.
-
-        Args:
-            mapping: a dictionary where breakpoints are keys and CSS values are values
-        """
-        super().__init__(mapping)
-
     @classmethod
     def create(
         cls,
