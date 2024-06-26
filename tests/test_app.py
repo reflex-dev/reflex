@@ -46,7 +46,7 @@ from reflex.state import (
 )
 from reflex.style import Style
 from reflex.utils import exceptions, format
-from reflex.vars import ComputedVar
+from reflex.vars import computed_var
 
 from .conftest import chdir
 from .states import (
@@ -951,7 +951,7 @@ class DynamicState(BaseState):
         """Increment the counter var."""
         self.counter = self.counter + 1
 
-    @ComputedVar
+    @computed_var
     def comp_dynamic(self) -> str:
         """A computed var that depends on the dynamic var.
 
@@ -1278,7 +1278,7 @@ def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
         yield app, web_dir
 
 
-def test_app_wrap_compile_theme(compilable_app):
+def test_app_wrap_compile_theme(compilable_app: tuple[App, Path]):
     """Test that the radix theme component wraps the app.
 
     Args:
@@ -1306,7 +1306,7 @@ def test_app_wrap_compile_theme(compilable_app):
     ) in "".join(app_js_lines)
 
 
-def test_app_wrap_priority(compilable_app):
+def test_app_wrap_priority(compilable_app: tuple[App, Path]):
     """Test that the app wrap components are wrapped in the correct order.
 
     Args:
@@ -1490,7 +1490,7 @@ def test_add_page_component_returning_tuple():
 
 
 @pytest.mark.parametrize("export", (True, False))
-def test_app_with_transpile_packages(compilable_app, export):
+def test_app_with_transpile_packages(compilable_app: tuple[App, Path], export: bool):
     class C1(rx.Component):
         library = "foo@1.2.3"
         tag = "Foo"
@@ -1539,3 +1539,35 @@ def test_app_with_transpile_packages(compilable_app, export):
     else:
         assert 'output: "export"' not in next_config
         assert f'distDir: "{constants.Dirs.STATIC}"' not in next_config
+
+
+def test_app_with_valid_var_dependencies(compilable_app: tuple[App, Path]):
+    app, _ = compilable_app
+
+    class ValidDepState(BaseState):
+        base: int = 0
+        _backend: int = 0
+
+        @computed_var
+        def foo(self) -> str:
+            return "foo"
+
+        @computed_var(deps=["_backend", "base", foo])
+        def bar(self) -> str:
+            return "bar"
+
+    app.state = ValidDepState
+    app._compile()
+
+
+def test_app_with_invalid_var_dependencies(compilable_app: tuple[App, Path]):
+    app, _ = compilable_app
+
+    class InvalidDepState(BaseState):
+        @computed_var(deps=["foolksjdf"])
+        def bar(self) -> str:
+            return "bar"
+
+    app.state = InvalidDepState
+    with pytest.raises(exceptions.VarDependencyError):
+        app._compile()

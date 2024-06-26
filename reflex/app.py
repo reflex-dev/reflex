@@ -797,6 +797,34 @@ class App(LifespanMixin, Base):
         for render, kwargs in DECORATED_PAGES[get_config().app_name]:
             self.add_page(render, **kwargs)
 
+    def _validate_var_dependencies(
+        self, state: Optional[Type[BaseState]] = None
+    ) -> None:
+        """Validate the dependencies of the vars in the app.
+
+        Args:
+            state: The state to validate the dependencies for.
+
+        Raises:
+            VarDependencyError: When a computed var has an invalid dependency.
+        """
+        if not self.state:
+            return
+
+        if not state:
+            state = self.state
+
+        for var in state.computed_vars.values():
+            deps = var._deps(objclass=state)
+            for dep in deps:
+                if dep not in state.vars and dep not in state.backend_vars:
+                    raise exceptions.VarDependencyError(
+                        f"ComputedVar {var._var_name} on state {state.__name__} has an invalid dependency {dep}"
+                    )
+
+        for substate in state.class_subclasses:
+            self._validate_var_dependencies(substate)
+
     def _compile(self, export: bool = False):
         """Compile the app and output it to the pages folder.
 
@@ -818,6 +846,7 @@ class App(LifespanMixin, Base):
         if not self._should_compile():
             return
 
+        self._validate_var_dependencies()
         self._setup_overlay_component()
 
         # Create a progress bar.
