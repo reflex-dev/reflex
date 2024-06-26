@@ -1363,6 +1363,8 @@ async def process(
                     yield update
     except Exception as ex:
         telemetry.send_error(ex, context="backend")
+
+        app.backend_exception_handler(ex)
         raise
 
 
