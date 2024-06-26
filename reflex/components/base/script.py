@@ -28,7 +28,7 @@ class Script(Component):
     # Required unless inline script is used
     src: Var[str]
 
-    # When the script will execute: afterInteractive | beforeInteractive | lazyOnload
+    # When the script will execute: afterInteractive (defer-like behavior) | beforeInteractive | lazyOnload (async-like behavior)
     strategy:  Var[Literal["afterInteractive", "beforeInteractive", "lazyOnload"]] = "afterInteractive"
 
     # Triggered when the script is loading
