@@ -179,6 +179,7 @@ async def test_computed_vars(
     """
     assert computed_vars.app_instance is not None
 
+    token = f"{token}_state.state"
     state = (await computed_vars.get_state(token)).substates["state"]
     assert state is not None
     assert state.count1_backend == 0
