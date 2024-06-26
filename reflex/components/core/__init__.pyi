@@ -13,6 +13,8 @@ from .banner import connection_banner as connection_banner
 from .banner import connection_modal as connection_modal
 from .banner import connection_toaster as connection_toaster
 from .banner import connection_pulser as connection_pulser
+from .clipboard import Clipboard as Clipboard
+from .clipboard import clipboard as clipboard
 from .colors import color as color
 from .cond import Cond as Cond
 from .cond import color_mode_cond as color_mode_cond

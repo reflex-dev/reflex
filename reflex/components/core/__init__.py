@@ -17,6 +17,7 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
         "connection_toaster",
         "connection_pulser",
     ],
+    "clipboard": ["Clipboard", "clipboard"],
     "colors": [
         "color",
     ],

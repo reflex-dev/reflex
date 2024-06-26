@@ -212,6 +212,7 @@ COMPONENTS_CORE_MAPPING: dict = {
     "components.core.debounce": ["debounce_input"],
     "components.core.html": ["html"],
     "components.core.match": ["match"],
+    "components.core.clipboard": ["clipboard"],
     "components.core.colors": ["color"],
     "components.core.responsive": [
         "desktop_only",
