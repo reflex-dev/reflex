@@ -201,8 +201,6 @@ class Component(BaseComponent, ABC):
     # Whether the component should take the focus once the page is loaded
     autofocus: bool = False
 
-    useErrorBoundary: bool = False
-
     # components that cannot be children
     _invalid_children: List[str] = []
 
@@ -978,7 +976,6 @@ class Component(BaseComponent, ABC):
                 props=tag.format_props(),
             ),
             autofocus=self.autofocus,
-            useErrorBoundary=self.useErrorBoundary,
         )
         self._replace_prop_names(rendered_dict)
         return rendered_dict
@@ -1397,7 +1394,8 @@ class Component(BaseComponent, ABC):
         # Get static imports required for event processing.
         event_imports = Imports.EVENTS if self.event_triggers else {}
 
-        errors_imports = Imports.FRONTEND_ERRORS if self.useErrorBoundary else {}
+        # Get static imports required for error handling.
+        errors_imports = Imports.FRONTEND_ERRORS if self.tag == "ErrorBoundary" else {}
 
         # Collect imports from Vars used directly by this component.
         var_imports = [
@@ -1497,8 +1495,6 @@ class Component(BaseComponent, ABC):
         """
         hooks = {Hooks.EVENTS: None} if self.event_triggers else {}
 
-        if self.useErrorBoundary:
-            hooks[Hooks.FRONTEND_ERRORS] = None
         return hooks
 
     def _get_special_hooks(self) -> dict[str, None]:

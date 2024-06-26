@@ -672,15 +672,12 @@ def test_component_create_unallowed_types(children, test_component):
                                 "special_props": set(),
                                 "children": [],
                                 "autofocus": False,
-                                "useErrorBoundary": False,
                             }
                         ],
                         "autofocus": False,
-                        "useErrorBoundary": False,
                     }
                 ],
                 "autofocus": False,
-                "useErrorBoundary": False,
             },
         ),
         (
@@ -688,17 +685,14 @@ def test_component_create_unallowed_types(children, test_component):
             {
                 "args": None,
                 "autofocus": False,
-                "useErrorBoundary": False,
                 "children": [
                     {
                         "args": None,
                         "autofocus": False,
-                        "useErrorBoundary": False,
                         "children": [
                             {
                                 "args": None,
                                 "autofocus": False,
-                                "useErrorBoundary": False,
                                 "children": [],
                                 "contents": "{`first_text`}",
                                 "name": "",
@@ -714,12 +708,10 @@ def test_component_create_unallowed_types(children, test_component):
                     {
                         "args": None,
                         "autofocus": False,
-                        "useErrorBoundary": False,
                         "children": [
                             {
                                 "args": None,
                                 "autofocus": False,
-                                "useErrorBoundary": False,
                                 "children": [],
                                 "contents": "{`second_text`}",
                                 "name": "",
@@ -744,17 +736,14 @@ def test_component_create_unallowed_types(children, test_component):
             {
                 "args": None,
                 "autofocus": False,
-                "useErrorBoundary": False,
                 "children": [
                     {
                         "args": None,
                         "autofocus": False,
-                        "useErrorBoundary": False,
                         "children": [
                             {
                                 "args": None,
                                 "autofocus": False,
-                                "useErrorBoundary": False,
                                 "children": [],
                                 "contents": "{`first_text`}",
                                 "name": "",
@@ -770,22 +759,18 @@ def test_component_create_unallowed_types(children, test_component):
                     {
                         "args": None,
                         "autofocus": False,
-                        "useErrorBoundary": False,
                         "children": [
                             {
                                 "args": None,
                                 "autofocus": False,
-                                "useErrorBoundary": False,
                                 "children": [
                                     {
                                         "args": None,
                                         "autofocus": False,
-                                        "useErrorBoundary": False,
                                         "children": [
                                             {
                                                 "args": None,
                                                 "autofocus": False,
-                                                "useErrorBoundary": False,
                                                 "children": [],
                                                 "contents": "{`second_text`}",
                                                 "name": "",

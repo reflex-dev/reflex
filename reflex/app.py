@@ -45,6 +45,7 @@ from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.compiler.compiler import ExecutorSafeFunctions
 from reflex.components.base.app_wrap import AppWrap
+from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
     Component,
@@ -123,6 +124,16 @@ def default_overlay_component() -> Component:
 
     """
     return Fragment.create(connection_pulser(), connection_toaster())
+
+
+def default_error_boundary() -> Component:
+    """Default error_boundary attribute for App.
+
+    Returns:
+        The default error_boundary, which is an ErrorBoundary.
+
+    """
+    return ErrorBoundary.create()
 
 
 class OverlayFragment(Fragment):
@@ -208,6 +219,10 @@ class App(LifespanMixin, Base):
     # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Optional[Union[Component, ComponentCallable]] = (
         default_overlay_component
+    )
+
+    error_boundary: Optional[Union[Component, ComponentCallable]] = (
+        default_error_boundary
     )
 
     # Components to add to the head of every page.
@@ -842,6 +857,21 @@ class App(LifespanMixin, Base):
         for k, component in self.pages.items():
             self.pages[k] = self._add_overlay_to_component(component)
 
+    def _add_error_boundary_to_component(self, component: Component) -> Component:
+        if self.error_boundary is None:
+            return component
+
+        component = ErrorBoundary.create(*component.children)
+
+        return component
+
+    def _setup_error_boundary(self):
+        """If a State is not used and no error_boundary is specified, do not render the error boundary."""
+        if self.state is None and self.error_boundary is default_error_boundary:
+            self.error_boundary = None
+        for k, component in self.pages.items():
+            self.pages[k] = self._add_error_boundary_to_component(component)
+
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app.
 
@@ -907,6 +937,7 @@ class App(LifespanMixin, Base):
 
         self._validate_var_dependencies()
         self._setup_overlay_component()
+        self._setup_error_boundary()
 
         # Create a progress bar.
         progress = Progress(

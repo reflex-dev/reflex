@@ -113,6 +113,9 @@ class Imports(SimpleNamespace):
 
     FRONTEND_ERRORS = {
         "react-error-boundary": [ImportVar(tag="ErrorBoundary")],
+        "react": [ImportVar(tag="useContext")],
+        f"/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
+        f"/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
     }
 
 
