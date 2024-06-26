@@ -1607,7 +1607,6 @@ def test_app_with_invalid_var_dependencies(compilable_app: tuple[App, Path]):
     with pytest.raises(exceptions.VarDependencyError):
         app._compile()
 
-
 # Test custom exception handlers
 
 
