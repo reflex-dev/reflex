@@ -72,7 +72,7 @@ from reflex.route import (
 from reflex.state import (
     BaseState,
     RouterData,
-    SessionStatus,
+    SessionStatusEnum,
     State,
     StateManager,
     StateUpdate,
@@ -1134,15 +1134,28 @@ async def process(
         )
         # Get the state for the session exclusively.
         async with app.state_manager.modify_state(event.substate_token) as state:
+            current_session_id = state.router.session.session_id
+
             # re-assign only when the value is different
             if state.router_data != router_data:
                 # assignment will recurse into substates and force recalculation of
                 # dependent ComputedVar (dynamic route variables)
                 state.router_data = router_data
-            if state.router:
-                state.router.update(router_data)
+                if state.router:
+                    state.router.update(router_data)
+                else:
+                    state.router = RouterData(router_data)
+
+            # Update session status.
+            new_session_id = state.router.session.session_id
+            if (
+                current_session_id
+                and new_session_id
+                and current_session_id != new_session_id
+            ):
+                state._session_status.update(SessionStatusEnum.RECONNECTED)
             else:
-                state.router = RouterData(router_data)
+                state._session_status.update(SessionStatusEnum.CONNECTED)
 
             # Preprocess the event.
             update = await app._preprocess(state, event)
@@ -1343,7 +1356,7 @@ class EventNamespace(AsyncNamespace):
             return
 
         async with self.app.state_manager.modify_state(disconnect_token) as state:
-            state.router.session.status = SessionStatus.DISCONNECTED
+            state._session_status.status = SessionStatusEnum.DISCONNECTED
 
     async def emit_update(self, update: StateUpdate, sid: str) -> None:
         """Emit an update to the client.
