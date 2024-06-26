@@ -416,7 +416,7 @@ class Var:
 
         if _var_is_string is None and type_ is str:
             console.deprecate(
-                feature_name="Creating a Var from a string without specifying _var_is_string",
+                feature_name=f"Creating a Var ({value}) from a string without specifying _var_is_string",
                 reason=(
                     "Specify _var_is_string=False to create a Var that is not a string literal. "
                     "In the future, creating a Var from a string will be treated as a string literal "
