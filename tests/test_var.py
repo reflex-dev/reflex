@@ -1,6 +1,6 @@
 import json
 import typing
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Union
 
 import pytest
 from pandas import DataFrame
@@ -9,6 +9,7 @@ from reflex.base import Base
 from reflex.state import BaseState
 from reflex.vars import (
     BaseVar,
+    ComputedVar,
     Var,
     computed_var,
 )
@@ -1388,3 +1389,43 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List
 )
 def test_var_name_unwrapped(var, expected):
     assert var._var_name_unwrapped == expected
+
+
+def cv_fget(state: BaseState) -> int:
+    return 1
+
+
+@pytest.mark.parametrize(
+    "deps,expected",
+    [
+        (["a"], {"a"}),
+        (["b"], {"b"}),
+        ([ComputedVar(fget=cv_fget)], {"cv_fget"}),
+    ],
+)
+def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
+    @computed_var(
+        deps=deps,
+    )
+    def test_var(state) -> int:
+        return 1
+
+    assert test_var._static_deps == expected
+
+
+@pytest.mark.parametrize(
+    "deps",
+    [
+        [""],
+        [1],
+        ["", "abc"],
+    ],
+)
+def test_invalid_computed_var_deps(deps: List):
+    with pytest.raises(TypeError):
+
+        @computed_var(
+            deps=deps,
+        )
+        def test_var(state) -> int:
+            return 1

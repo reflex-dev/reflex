@@ -13,6 +13,7 @@ import multiprocessing
 import os
 import platform
 import sys
+from datetime import datetime
 from typing import (
     Any,
     AsyncIterator,
@@ -51,6 +52,7 @@ from reflex.components.component import (
     evaluate_style_namespaces,
 )
 from reflex.components.core.banner import connection_pulser, connection_toaster
+from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
@@ -244,6 +246,9 @@ class App(LifespanMixin, Base):
             raise ValueError(
                 "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
             )
+
+        if "breakpoints" in self.style:
+            set_breakpoints(self.style.pop("breakpoints"))
 
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
@@ -798,6 +803,34 @@ class App(LifespanMixin, Base):
         for render, kwargs in DECORATED_PAGES[get_config().app_name]:
             self.add_page(render, **kwargs)
 
+    def _validate_var_dependencies(
+        self, state: Optional[Type[BaseState]] = None
+    ) -> None:
+        """Validate the dependencies of the vars in the app.
+
+        Args:
+            state: The state to validate the dependencies for.
+
+        Raises:
+            VarDependencyError: When a computed var has an invalid dependency.
+        """
+        if not self.state:
+            return
+
+        if not state:
+            state = self.state
+
+        for var in state.computed_vars.values():
+            deps = var._deps(objclass=state)
+            for dep in deps:
+                if dep not in state.vars and dep not in state.backend_vars:
+                    raise exceptions.VarDependencyError(
+                        f"ComputedVar {var._var_name} on state {state.__name__} has an invalid dependency {dep}"
+                    )
+
+        for substate in state.class_subclasses:
+            self._validate_var_dependencies(substate)
+
     def _compile(self, export: bool = False):
         """Compile the app and output it to the pages folder.
 
@@ -809,6 +842,9 @@ class App(LifespanMixin, Base):
         """
         from reflex.utils.exceptions import ReflexRuntimeError
 
+        def get_compilation_time() -> str:
+            return str(datetime.now().time()).split(".")[0]
+
         # Render a default 404 page if the user didn't supply one
         if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
@@ -819,6 +855,7 @@ class App(LifespanMixin, Base):
         if not self._should_compile():
             return
 
+        self._validate_var_dependencies()
         self._setup_overlay_component()
 
         # Create a progress bar.
@@ -833,7 +870,7 @@ class App(LifespanMixin, Base):
         fixed_pages_within_executor = 5
         progress.start()
         task = progress.add_task(
-            "Compiling:",
+            f"[{get_compilation_time()}] Compiling:",
             total=len(self.pages)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,

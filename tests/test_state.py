@@ -7,6 +7,7 @@ import functools
 import json
 import os
 import sys
+from textwrap import dedent
 from typing import Any, Dict, Generator, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
 
@@ -14,6 +15,8 @@ import pytest
 from plotly.graph_objects import Figure
 
 import reflex as rx
+import reflex.config
+from reflex import constants
 from reflex.app import App
 from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
@@ -33,6 +36,7 @@ from reflex.state import (
     StateUpdate,
     _substate_key,
 )
+from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
 from reflex.vars import BaseVar, ComputedVar
@@ -2925,3 +2929,43 @@ async def test_setvar(mock_app: rx.App, token: str):
     # Cannot setvar with non-string
     with pytest.raises(ValueError):
         TestState.setvar(42, 42)
+
+
+@pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")
+@pytest.mark.parametrize(
+    "expiration_kwargs, expected_values",
+    [
+        ({"redis_lock_expiration": 20000}, (20000, constants.Expiration.TOKEN)),
+        (
+            {"redis_lock_expiration": 50000, "redis_token_expiration": 5600},
+            (50000, 5600),
+        ),
+        ({"redis_token_expiration": 7600}, (constants.Expiration.LOCK, 7600)),
+    ],
+)
+def test_redis_state_manager_config_knobs(tmp_path, expiration_kwargs, expected_values):
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+
+    config_items = ",\n    ".join(
+        f"{key} = {value}" for key, value in expiration_kwargs.items()
+    )
+
+    config_string = f"""
+import reflex as rx
+config = rx.Config(
+    app_name="project1",
+    redis_url="redis://localhost:6379",
+    {config_items}
+)
+"""
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        # reload config for each parameter to avoid stale values
+        reflex.config.get_config(reload=True)
+        from reflex.state import State, StateManager
+
+        state_manager = StateManager.create(state=State)
+        assert state_manager.lock_expiration == expected_values[0]  # type: ignore
+        assert state_manager.token_expiration == expected_values[1]  # type: ignore
