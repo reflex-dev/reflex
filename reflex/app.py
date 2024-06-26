@@ -51,6 +51,7 @@ from reflex.components.component import (
     evaluate_style_namespaces,
 )
 from reflex.components.core.banner import connection_pulser, connection_toaster
+from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
@@ -243,6 +244,9 @@ class App(LifespanMixin, Base):
             raise ValueError(
                 "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
             )
+
+        if "breakpoints" in self.style:
+            set_breakpoints(self.style.pop("breakpoints"))
 
         # Add middleware.
         self.middleware.append(HydrateMiddleware())

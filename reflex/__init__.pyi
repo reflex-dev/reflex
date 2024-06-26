@@ -130,6 +130,7 @@ from .components.core.debounce import debounce_input as debounce_input
 from .components.core.html import html as html
 from .components.core.match import match as match
 from .components.core.colors import color as color
+from .components.core.breakpoints import breakpoints as breakpoints
 from .components.core.responsive import desktop_only as desktop_only
 from .components.core.responsive import mobile_and_tablet as mobile_and_tablet
 from .components.core.responsive import mobile_only as mobile_only
