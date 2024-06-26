@@ -144,7 +144,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
         color_scheme = props.pop("color_scheme", None)
         default_value = props.pop("default_value", "")
 
-        default_value = Var.create(default_value)
+        default_value = Var.create(default_value, _var_is_string=True)
 
         # convert only non-strings to json(JSON.stringify) so quotes are not rendered
         # for string literal types.
