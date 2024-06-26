@@ -110,6 +110,13 @@ class Imports(SimpleNamespace):
         f"/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
     }
 
+    FRONTEND_ERRORS = {
+        "react-error-boundary": [ImportVar(tag="ErrorBoundary")],
+        "react": [ImportVar(tag="useContext")],
+        f"/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
+        f"/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
+    }
+
 
 class Hooks(SimpleNamespace):
     """Common sets of hook declarations."""
@@ -123,6 +130,30 @@ class Hooks(SimpleNamespace):
                     focusRef.current.focus();
                   }
                 })"""
+
+    FRONTEND_ERRORS = f"""
+
+    function Fallback({{ error, resetErrorBoundary }}) {{
+
+        return (
+            <div role="alert">
+            <h2>Unknown Error:</h2>
+            <p>{{ error.message }}</p>
+            </div>
+        );
+    }}
+
+    const [{CompileVars.ADD_EVENTS}, {CompileVars.CONNECT_ERROR}] = useContext(EventLoopContext);
+
+    const logFrontendError = (error, info) => {{
+        if (process.env.NODE_ENV === "production") {{
+            addEvents([Event("frontend_event_exception_state.handle_frontend_exception", {{
+                stack: error.stack,
+            }})])
+        }}
+
+    }}
+    """
 
 
 class MemoizationDisposition(enum.Enum):

@@ -247,6 +247,9 @@ export const applyEvent = async (event, socket) => {
       }
     } catch (e) {
       console.log("_call_script", e);
+      if (window && window?.onerror) {
+        window.onerror(e.message, null, null, null, e)
+      }
     }
     return false;
   }
@@ -686,6 +689,31 @@ export const useEventLoop = (
       sentHydrate.current = true;
     }
   }, [router.isReady]);
+
+    // Handle frontend errors and send them to the backend via websocket.
+    useEffect(() => {
+      
+      if (typeof window === 'undefined') {
+        return;
+      }
+  
+      window.onerror = function (msg, url, lineNo, columnNo, error) {
+        addEvents([Event("state.frontend_event_exception_state.handle_frontend_exception", {
+          stack: error.stack,
+        })])
+        return false;
+      }
+
+      //NOTE: Only works in Chrome v49+
+      //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
+      window.onunhandledrejection = function (event) {
+          addEvents([Event("state.frontend_event_exception_state.handle_frontend_exception", {
+            stack: event.reason.stack,
+          })])
+          return false;
+      }
+  
+    },[])
 
   // Main event loop.
   useEffect(() => {
