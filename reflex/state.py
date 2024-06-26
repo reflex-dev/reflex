@@ -1552,11 +1552,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if self.computed_vars[cvar].needs_update(instance=self)
         )
 
-    def _dirty_computed_vars(self, from_vars: set[str] | None = None) -> set[str]:
+    def _dirty_computed_vars(
+        self, from_vars: set[str] | None = None, include_backend: bool = True
+    ) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the given vars.
 
         Args:
             from_vars: find ComputedVar that depend on this set of vars. If unspecified, will use the dirty_vars.
+            include_backend: whether to include backend vars in the calculation.
 
         Returns:
             Set of computed vars to include in the delta.
@@ -1565,6 +1568,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cvar
             for dirty_var in from_vars or self.dirty_vars
             for cvar in self._computed_var_dependencies[dirty_var]
+            if include_backend or not self.computed_vars[cvar]._backend
         )
 
     @classmethod
@@ -1600,12 +1604,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         self.dirty_vars.update(self._always_dirty_computed_vars)
         self._mark_dirty()
 
+        frontend_computed_vars: set[str] = {
+            name for name, cv in self.computed_vars.items() if not cv._backend
+        }
+
         # Return the dirty vars for this instance, any cached/dependent computed vars,
         # and always dirty computed vars (cache=False)
         delta_vars = (
             self.dirty_vars.intersection(self.base_vars)
-            .union(self.dirty_vars.intersection(self.computed_vars))
-            .union(self._dirty_computed_vars())
+            .union(self.dirty_vars.intersection(frontend_computed_vars))
+            .union(self._dirty_computed_vars(include_backend=False))
             .union(self._always_dirty_computed_vars)
         )
 
@@ -1761,6 +1769,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for v in self.substates.values()
         ]:
             d.update(substate_d)
+
         return d
 
     async def __aenter__(self) -> BaseState:

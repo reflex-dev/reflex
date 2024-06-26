@@ -2024,6 +2024,7 @@ class ComputedVar(Var, property):
             deps=kwargs.get("deps", self._static_deps),
             auto_deps=kwargs.get("auto_deps", self._auto_deps),
             interval=kwargs.get("interval", self._update_interval),
+            backend=kwargs.get("backend", self._backend),
             _var_name=kwargs.get("_var_name", self._var_name),
             _var_type=kwargs.get("_var_type", self._var_type),
             _var_is_local=kwargs.get("_var_is_local", self._var_is_local),
@@ -2221,6 +2222,7 @@ def computed_var(
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
+    backend: bool = False,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
     """A ComputedVar decorator with or without kwargs.
@@ -2232,6 +2234,7 @@ def computed_var(
         deps: Explicit var dependencies to track.
         auto_deps: Whether var dependencies should be auto-determined.
         interval: Interval at which the computed var should be updated.
+        backend: Whether the computed var is a backend var.
         **kwargs: additional attributes to set on the instance
 
     Returns:
@@ -2254,6 +2257,7 @@ def computed_var(
             deps=deps,
             auto_deps=auto_deps,
             interval=interval,
+            backend=backend,
             **kwargs,
         )
 

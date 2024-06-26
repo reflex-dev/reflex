@@ -19,8 +19,13 @@ def ComputedVars():
         count: int = 0
 
         # cached var with dep on count
-        @rx.cached_var(interval=15)
+        @rx.var(cache=True, interval=15)
         def count1(self) -> int:
+            return self.count
+
+        # cached backend var with dep on count
+        @rx.var(cache=True, interval=15, backend=True)
+        def count1_backend(self) -> int:
             return self.count
 
         # same as above, different notation
@@ -71,6 +76,8 @@ def ComputedVars():
                 rx.text(State.count, id="count"),
                 rx.text("count1:"),
                 rx.text(State.count1, id="count1"),
+                rx.text("count1_backend:"),
+                rx.text(State.count1_backend, id="count1_backend"),
                 rx.text("count2:"),
                 rx.text(State.count2, id="count2"),
                 rx.text("count3:"),
@@ -157,7 +164,8 @@ def token(computed_vars: AppHarness, driver: WebDriver) -> str:
     return token
 
 
-def test_computed_vars(
+@pytest.mark.asyncio
+async def test_computed_vars(
     computed_vars: AppHarness,
     driver: WebDriver,
     token: str,
@@ -170,6 +178,15 @@ def test_computed_vars(
         token: The token for the connected client.
     """
     assert computed_vars.app_instance is not None
+
+    state = (await computed_vars.get_state(token)).substates["state"]
+    assert state is not None
+    assert state.count1_backend == 0
+
+    # test that backend var is not rendered
+    count1_backend = driver.find_element(By.ID, "count1_backend")
+    assert count1_backend
+    assert count1_backend.text == ""
 
     count = driver.find_element(By.ID, "count")
     assert count
@@ -208,6 +225,10 @@ def test_computed_vars(
     mark_dirty.click()
 
     increment.click()
+    state = (await computed_vars.get_state(token)).substates["state"]
+    assert state is not None
+    assert state.count1_backend == 1
+    assert count1_backend.text == ""
     assert computed_vars.poll_for_content(count, timeout=2, exp_not_equal="0") == "1"
     assert computed_vars.poll_for_content(count1, timeout=2, exp_not_equal="0") == "1"
     assert computed_vars.poll_for_content(count2, timeout=2, exp_not_equal="0") == "1"
