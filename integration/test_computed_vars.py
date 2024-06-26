@@ -226,10 +226,6 @@ async def test_computed_vars(
     mark_dirty.click()
 
     increment.click()
-    state = (await computed_vars.get_state(token)).substates["state"]
-    assert state is not None
-    assert state.count1_backend == 1
-    assert count1_backend.text == ""
     assert computed_vars.poll_for_content(count, timeout=2, exp_not_equal="0") == "1"
     assert computed_vars.poll_for_content(count1, timeout=2, exp_not_equal="0") == "1"
     assert computed_vars.poll_for_content(count2, timeout=2, exp_not_equal="0") == "1"
@@ -237,6 +233,10 @@ async def test_computed_vars(
         computed_vars.poll_for_content(depends_on_count, timeout=2, exp_not_equal="0")
         == "1"
     )
+    state = (await computed_vars.get_state(token)).substates["state"]
+    assert state is not None
+    assert state.count1_backend == 1
+    assert count1_backend.text == ""
 
     mark_dirty.click()
     with pytest.raises(TimeoutError):
