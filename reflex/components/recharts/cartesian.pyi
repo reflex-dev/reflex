@@ -102,6 +102,8 @@ class Axis(Recharts):
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
+        text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -180,6 +182,8 @@ class Axis(Recharts):
             tick_line: If set false, no axis tick lines will be drawn.
             tick_size: The length of tick line.
             min_tick_gap: The minimum gap between two adjacent labels
+            stroke: The stroke color of axis
+            text_anchor: The text anchor of axis
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -267,6 +271,8 @@ class XAxis(Axis):
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
+        text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -347,6 +353,8 @@ class XAxis(Axis):
             tick_line: If set false, no axis tick lines will be drawn.
             tick_size: The length of tick line.
             min_tick_gap: The minimum gap between two adjacent labels
+            stroke: The stroke color of axis
+            text_anchor: The text anchor of axis
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -433,6 +441,8 @@ class YAxis(Axis):
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
+        text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -512,6 +522,8 @@ class YAxis(Axis):
             tick_line: If set false, no axis tick lines will be drawn.
             tick_size: The length of tick line.
             min_tick_gap: The minimum gap between two adjacent labels
+            stroke: The stroke color of axis
+            text_anchor: The text anchor of axis
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -657,7 +669,6 @@ class Brush(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
         x: Optional[Union[Var[int], int]] = None,
         y: Optional[Union[Var[int], int]] = None,
@@ -668,6 +679,8 @@ class Brush(Recharts):
         gap: Optional[Union[Var[int], int]] = None,
         start_index: Optional[Union[Var[int], int]] = None,
         end_index: Optional[Union[Var[int], int]] = None,
+        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
+        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -683,7 +696,6 @@ class Brush(Recharts):
 
         Args:
             *children: The children of the component.
-            stroke: Stroke color
             data_key: The key of data displayed in the axis.
             x: The x-coordinate of brush.
             y: The y-coordinate of brush.
@@ -694,6 +706,8 @@ class Brush(Recharts):
             gap: The data with gap of refreshing chart. If the option is not set, the chart will be refreshed every time
             start_index: The default start index of brush. If the option is not set, the start index will be 0.
             end_index: The default end index of brush. If the option is not set, the end index will be 1.
+            fill: The fill color of brush
+            stroke: The stroke color of brush
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

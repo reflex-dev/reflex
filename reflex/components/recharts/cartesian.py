@@ -94,6 +94,12 @@ class Axis(Recharts):
     # The minimum gap between two adjacent labels
     min_tick_gap: Var[int]
 
+    # The stroke color of axis
+    stroke: Var[Union[str, Color]]
+
+    # The text anchor of axis
+    text_anchor: Var[str]  # 'start', 'middle', 'end'
+
     # The customized event handler of click on the ticks of this axis
     on_click: EventHandler[lambda: []]
 
@@ -177,9 +183,6 @@ class Brush(Recharts):
 
     alias = "RechartsBrush"
 
-    # Stroke color
-    stroke: Var[Union[str, Color]]
-
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
 
@@ -209,6 +212,12 @@ class Brush(Recharts):
 
     # The default end index of brush. If the option is not set, the end index will be 1.
     end_index: Var[int]
+
+    # The fill color of brush
+    fill: Var[Union[str, Color]]
+
+    # The stroke color of brush
+    stroke: Var[Union[str, Color]]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.

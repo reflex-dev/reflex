@@ -266,7 +266,6 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
             The component.
         """
         ...
-
     @classmethod
     def create_root_deprecated(cls, *children, **props) -> Component: ...
     @classmethod

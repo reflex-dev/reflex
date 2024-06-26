@@ -445,7 +445,6 @@ class WifiOffPulse(Icon):
             The icon component with default props applied.
         """
         ...
-
     def add_imports(self) -> dict[str, str | ImportVar | list[str | ImportVar]]: ...
 
 class ConnectionPulser(Div):
