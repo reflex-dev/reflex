@@ -164,7 +164,7 @@ class GrandchildState(ChildState):
 class GrandchildState2(ChildState2):
     """A grandchild state fixture."""
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def cached(self) -> str:
         """A cached var.
 
@@ -907,7 +907,7 @@ class InterdependentState(BaseState):
     v1: int = 0
     _v2: int = 1
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def v1x2(self) -> int:
         """Depends on var v1.
 
@@ -916,7 +916,7 @@ class InterdependentState(BaseState):
         """
         return self.v1 * 2
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def v2x2(self) -> int:
         """Depends on backend var _v2.
 
@@ -925,7 +925,16 @@ class InterdependentState(BaseState):
         """
         return self._v2 * 2
 
-    @rx.cached_var
+    @rx.var(cache=True, backend=True)
+    def v2x2_backend(self) -> int:
+        """Depends on backend var _v2.
+
+        Returns:
+            backend var _v2 multiplied by 2
+        """
+        return self._v2 * 2
+
+    @rx.var(cache=True)
     def v1x2x2(self) -> int:
         """Depends on ComputedVar v1x2.
 
@@ -934,7 +943,7 @@ class InterdependentState(BaseState):
         """
         return self.v1x2 * 2  # type: ignore
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def _v3(self) -> int:
         """Depends on backend var _v2.
 
@@ -943,7 +952,7 @@ class InterdependentState(BaseState):
         """
         return self._v2
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def v3x2(self) -> int:
         """Depends on ComputedVar _v3.
 
@@ -1128,7 +1137,7 @@ def test_computed_var_cached():
     class ComputedState(BaseState):
         v: int = 0
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def comp_v(self) -> int:
             nonlocal comp_v_calls
             comp_v_calls += 1
@@ -1157,11 +1166,11 @@ def test_computed_var_cached_depends_on_non_cached():
         def no_cache_v(self) -> int:
             return self.v
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def dep_v(self) -> int:
             return self.no_cache_v  # type: ignore
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def comp_v(self) -> int:
             return self.v
 
@@ -1200,7 +1209,7 @@ def test_computed_var_depends_on_parent_non_cached():
             return counter
 
     class ChildState(ParentState):
-        @rx.cached_var
+        @rx.var(cache=True)
         def dep_v(self) -> int:
             return self.no_cache_v  # type: ignore
 
@@ -1246,7 +1255,7 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
         def handler(self):
             self.x = self.x + 1
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def cached_x_side_effect(self) -> int:
             self.handler()
             nonlocal counter
@@ -1278,7 +1287,7 @@ def test_computed_var_dependencies():
         y: List[int] = [1, 2, 3]
         _z: List[int] = [1, 2, 3]
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def comp_v(self) -> int:
             """Direct access.
 
@@ -1287,7 +1296,16 @@ def test_computed_var_dependencies():
             """
             return self.v
 
-        @rx.cached_var
+        @rx.var(cache=True, backend=True)
+        def comp_v_backend(self) -> int:
+            """Direct access backend var.
+
+            Returns:
+                The value of self.v.
+            """
+            return self.v
+
+        @rx.var(cache=True)
         def comp_w(self):
             """Nested lambda.
 
@@ -1296,7 +1314,7 @@ def test_computed_var_dependencies():
             """
             return lambda: self.w
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def comp_x(self):
             """Nested function.
 
@@ -1309,7 +1327,7 @@ def test_computed_var_dependencies():
 
             return _
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def comp_y(self) -> List[int]:
             """Comprehension iterating over attribute.
 
@@ -1318,7 +1336,7 @@ def test_computed_var_dependencies():
             """
             return [round(y) for y in self.y]
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def comp_z(self) -> List[bool]:
             """Comprehension accesses attribute.
 
@@ -1328,7 +1346,7 @@ def test_computed_var_dependencies():
             return [z in self._z for z in range(5)]
 
     cs = ComputedState()
-    assert cs._computed_var_dependencies["v"] == {"comp_v"}
+    assert cs._computed_var_dependencies["v"] == {"comp_v", "comp_v_backend"}
     assert cs._computed_var_dependencies["w"] == {"comp_w"}
     assert cs._computed_var_dependencies["x"] == {"comp_x"}
     assert cs._computed_var_dependencies["y"] == {"comp_y"}
