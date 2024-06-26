@@ -7,8 +7,8 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Union
 from reflex.components.component import Component
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 class Script(Component):
@@ -112,6 +112,5 @@ class Script(Component):
             ValueError: when neither children nor `src` are specified.
         """
         ...
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
 
 script = Script.create

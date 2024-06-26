@@ -24,6 +24,7 @@ def TailwindApp(
         tailwind_disabled: Whether tailwind is disabled for the app.
         paragraph_text: Text for the paragraph.
         paragraph_class_name: Tailwind class_name for the paragraph.
+
     """
     from pathlib import Path
 
@@ -61,6 +62,7 @@ def tailwind_disabled(request) -> bool:
 
     Returns:
         True if tailwind is disabled, False otherwise.
+
     """
     return request.param
 
@@ -75,6 +77,7 @@ def tailwind_app(tmp_path, tailwind_disabled) -> Generator[AppHarness, None, Non
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path,
@@ -90,6 +93,7 @@ def test_tailwind_app(tailwind_app: AppHarness, tailwind_disabled: bool):
     Args:
         tailwind_app: AppHarness instance.
         tailwind_disabled: Whether tailwind is disabled for the app.
+
     """
     assert tailwind_app.app_instance is not None
     assert tailwind_app.backend is not None

@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from reflex.base import Base
 
 
-def merge_imports(*imports) -> ImportDict:
+def merge_imports(*imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
     """Merge multiple import dicts together.
 
     Args:
@@ -16,6 +16,7 @@ def merge_imports(*imports) -> ImportDict:
 
     Returns:
         The merged import dicts.
+
     """
     all_imports = defaultdict(list)
     for import_dict in imports:
@@ -24,7 +25,31 @@ def merge_imports(*imports) -> ImportDict:
     return all_imports
 
 
-def collapse_imports(imports: ImportDict) -> ImportDict:
+def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
+    """Parse the import dict into a standard format.
+
+    Args:
+        imports: The import dict to parse.
+
+    Returns:
+        The parsed import dict.
+    """
+
+    def _make_list(value: ImportTypes) -> list[str | ImportVar] | list[ImportVar]:
+        if isinstance(value, (str, ImportVar)):
+            return [value]
+        return value
+
+    return {
+        package: [
+            ImportVar(tag=tag) if isinstance(tag, str) else tag
+            for tag in _make_list(maybe_tags)
+        ]
+        for package, maybe_tags in imports.items()
+    }
+
+
+def collapse_imports(imports: ParsedImportDict) -> ParsedImportDict:
     """Remove all duplicate ImportVar within an ImportDict.
 
     Args:
@@ -32,8 +57,12 @@ def collapse_imports(imports: ImportDict) -> ImportDict:
 
     Returns:
         The collapsed import dict.
+
     """
-    return {lib: list(set(import_vars)) for lib, import_vars in imports.items()}
+    return {
+        lib: list(set(import_vars)) if isinstance(import_vars, list) else import_vars
+        for lib, import_vars in imports.items()
+    }
 
 
 class ImportVar(Base):
@@ -64,6 +93,7 @@ class ImportVar(Base):
 
         Returns:
             The name(tag name with alias) of tag.
+
         """
         if self.alias:
             return (
@@ -77,6 +107,7 @@ class ImportVar(Base):
 
         Returns:
             The hash of the var.
+
         """
         return hash(
             (
@@ -90,4 +121,6 @@ class ImportVar(Base):
         )
 
 
-ImportDict = Dict[str, List[ImportVar]]
+ImportTypes = Union[str, ImportVar, List[Union[str, ImportVar]], List[ImportVar]]
+ImportDict = Dict[str, ImportTypes]
+ParsedImportDict = Dict[str, List[ImportVar]]

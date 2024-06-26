@@ -2,11 +2,11 @@
 
 https://nextjs.org/docs/app/api-reference/components/script
 """
+
 from __future__ import annotations
 
-from typing import Any, Union
-
 from reflex.components.component import Component
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 
@@ -29,6 +29,15 @@ class Script(Component):
 
     # When the script will execute: afterInteractive | beforeInteractive | lazyOnload
     strategy: Var[str] = "afterInteractive"  # type: ignore
+
+    # Triggered when the script is loading
+    on_load: EventHandler[lambda: []]
+
+    # Triggered when the script has loaded
+    on_ready: EventHandler[lambda: []]
+
+    # Triggered when the script has errored
+    on_error: EventHandler[lambda: []]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -53,23 +62,11 @@ class Script(Component):
 
         Raises:
             ValueError: when neither children nor `src` are specified.
+
         """
         if not children and not props.get("src"):
             raise ValueError("Must provide inline script or `src` prop.")
         return super().create(*children, **props)
-
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers for the component.
-
-        Returns:
-            The event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            "on_load": lambda: [],
-            "on_ready": lambda: [],
-            "on_error": lambda: [],
-        }
 
 
 script = Script.create

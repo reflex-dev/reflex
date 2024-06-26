@@ -1,4 +1,5 @@
 """Base for NextJS components."""
+
 from reflex.components.component import Component
 
 

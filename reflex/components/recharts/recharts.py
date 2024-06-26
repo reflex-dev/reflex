@@ -1,4 +1,5 @@
 """A component that wraps a recharts lib."""
+
 from typing import Literal
 
 from reflex.components.component import Component, MemoizationLeaf, NoSSRComponent
@@ -7,13 +8,13 @@ from reflex.components.component import Component, MemoizationLeaf, NoSSRCompone
 class Recharts(Component):
     """A component that wraps a recharts lib."""
 
-    library = "recharts@2.8.0"
+    library = "recharts@2.12.7"
 
 
 class RechartsCharts(NoSSRComponent, MemoizationLeaf):
     """A component that wraps a recharts lib."""
 
-    library = "recharts@2.8.0"
+    library = "recharts@2.12.7"
 
 
 LiteralAnimationEasing = Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]

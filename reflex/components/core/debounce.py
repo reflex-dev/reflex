@@ -6,6 +6,7 @@ from typing import Any, Type, Union
 
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var, VarData
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
@@ -43,6 +44,9 @@ class DebounceInput(Component):
     # The element to wrap
     element: Var[Type[Component]]
 
+    # Fired when the input value changes
+    on_change: EventHandler[lambda e0: [e0.value]]
+
     @classmethod
     def create(cls, *children: Component, **props: Any) -> Component:
         """Create a DebounceInput component.
@@ -63,6 +67,7 @@ class DebounceInput(Component):
         Raises:
             RuntimeError: unless exactly one child element is provided.
             ValueError: if the child element does not have an on_change handler.
+
         """
         if len(children) != 1:
             raise RuntimeError(
@@ -124,17 +129,6 @@ class DebounceInput(Component):
         component.children = child.children
         component._rename_props = child._rename_props
         return component
-
-    def get_event_triggers(self) -> dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.value],
-        }
 
     def _render(self):
         return super()._render().remove_props("ref")

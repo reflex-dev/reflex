@@ -42,6 +42,7 @@ class Wrap(ChakraComponent):
 
         Returns:
             The wrap component.
+
         """
         if len(children) == 0:
             children = []

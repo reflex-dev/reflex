@@ -10,7 +10,7 @@ from reflex.style import Style
 from functools import lru_cache
 from typing import List, Literal
 from reflex.components.component import Component
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 class ChakraComponent(Component):
@@ -155,6 +155,8 @@ class ChakraProvider(ChakraComponent):
             A new ChakraProvider component.
         """
         ...
+
+    def add_imports(self) -> ImportDict: ...
 
 chakra_provider = ChakraProvider.create()
 

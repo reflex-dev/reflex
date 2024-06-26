@@ -19,6 +19,7 @@ class TestUploadState(State):
 
         Args:
             files: The files dropped.
+
         """
         pass
 
@@ -27,6 +28,7 @@ class TestUploadState(State):
 
         Args:
             not_files: The files dropped.
+
         """
         pass
 

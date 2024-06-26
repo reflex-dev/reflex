@@ -6,12 +6,12 @@ import os
 from typing import TYPE_CHECKING, Any, List, Type
 
 try:
-    import pydantic.v1 as pydantic
+    import pydantic.v1.main as pydantic_main
     from pydantic.v1 import BaseModel
     from pydantic.v1.fields import ModelField
 except ModuleNotFoundError:
     if not TYPE_CHECKING:
-        import pydantic
+        import pydantic.main as pydantic_main
         from pydantic import BaseModel
         from pydantic.fields import ModelField  # type: ignore
 
@@ -28,6 +28,7 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 
     Raises:
         VarNameError: If state var field shadows another in its parent state
+
     """
     from reflex.utils.exceptions import VarNameError
 
@@ -45,10 +46,10 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 
 # monkeypatch pydantic validate_field_name method to skip validating
 # shadowed state vars when reloading app via utils.prerequisites.get_app(reload=True)
-pydantic.main.validate_field_name = validate_field_name  # type: ignore
+pydantic_main.validate_field_name = validate_field_name  # type: ignore
 
 
-class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
+class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
     """The base class subclassed by all Reflex classes.
 
     This class wraps Pydantic and provides common methods such as
@@ -70,6 +71,7 @@ class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
 
         Returns:
             The object as a json string.
+
         """
         from reflex.utils.serializers import serialize
 
@@ -86,6 +88,7 @@ class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
 
         Returns:
             The object with the fields set.
+
         """
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -97,6 +100,7 @@ class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
 
         Returns:
             The fields of the object.
+
         """
         return cls.__fields__
 
@@ -109,6 +113,7 @@ class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
         Args:
             var: The variable to add a pydantic field for.
             default_value: The default value of the field
+
         """
         new_field = ModelField.infer(
             name=var._var_name,
@@ -127,6 +132,7 @@ class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
 
         Returns:
             The value of the field.
+
         """
         if isinstance(key, str) and key in self.__fields__:
             # Seems like this function signature was wrong all along?

@@ -49,6 +49,7 @@ class Event(Base):
 
         Returns:
             The substate token.
+
         """
         substate = self.name.rpartition(".")[0]
         return f"{self.token}_{substate}"
@@ -69,6 +70,7 @@ def background(fn):
 
     Raises:
         TypeError: If the function is not a coroutine function or async generator.
+
     """
     if not inspect.iscoroutinefunction(fn) and not inspect.isasyncgenfunction(fn):
         raise TypeError("Background task must be async function or generator.")
@@ -88,6 +90,7 @@ class EventActionsMixin(Base):
 
         Returns:
             New EventHandler-like with stopPropagation set to True.
+
         """
         return self.copy(
             update={"event_actions": {"stopPropagation": True, **self.event_actions}},
@@ -99,6 +102,7 @@ class EventActionsMixin(Base):
 
         Returns:
             New EventHandler-like with preventDefault set to True.
+
         """
         return self.copy(
             update={"event_actions": {"preventDefault": True, **self.event_actions}},
@@ -112,6 +116,7 @@ class EventActionsMixin(Base):
 
         Returns:
             New EventHandler-like with throttle set to limit_ms.
+
         """
         return self.copy(
             update={"event_actions": {"throttle": limit_ms, **self.event_actions}},
@@ -125,6 +130,7 @@ class EventActionsMixin(Base):
 
         Returns:
             New EventHandler-like with debounce set to delay_ms.
+
         """
         return self.copy(
             update={"event_actions": {"debounce": delay_ms, **self.event_actions}},
@@ -156,6 +162,7 @@ class EventHandler(EventActionsMixin):
 
         Returns:
             The EventHandler class item.
+
         """
         return Annotated[cls, args_spec]
 
@@ -165,6 +172,7 @@ class EventHandler(EventActionsMixin):
 
         Returns:
             True if the event handler is marked as a background task.
+
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
 
@@ -181,6 +189,7 @@ class EventHandler(EventActionsMixin):
 
         Raises:
             EventHandlerTypeError: If the arguments are invalid.
+
         """
         from reflex.utils.exceptions import EventHandlerTypeError
 
@@ -240,6 +249,7 @@ class EventSpec(EventActionsMixin):
 
         Returns:
             A copy of the event spec, with the new args.
+
         """
         return type(self)(
             handler=self.handler,
@@ -259,6 +269,7 @@ class EventSpec(EventActionsMixin):
 
         Raises:
             EventHandlerTypeError: If the arguments are invalid.
+
         """
         from reflex.utils.exceptions import EventHandlerTypeError
 
@@ -294,6 +305,7 @@ class CallableEventSpec(EventSpec):
         Args:
             fn: The function to decorate.
             **kwargs: The kwargs to pass to pydantic initializer
+
         """
         if fn is not None:
             default_event_spec = fn()
@@ -317,6 +329,7 @@ class CallableEventSpec(EventSpec):
 
         Raises:
             EventHandlerTypeError: If the CallableEventSpec has no associated function.
+
         """
         from reflex.utils.exceptions import EventHandlerTypeError
 
@@ -365,6 +378,7 @@ class FileUpload(Base):
 
         Returns:
             The arg mapping passed to backend event handler
+
         """
         return [_prog]
 
@@ -379,6 +393,7 @@ class FileUpload(Base):
 
         Raises:
             ValueError: If the on_upload_progress is not a valid event handler.
+
         """
         from reflex.components.core.upload import (
             DEFAULT_UPLOAD_ID,
@@ -386,12 +401,12 @@ class FileUpload(Base):
         )
 
         upload_id = self.upload_id or DEFAULT_UPLOAD_ID
-
         spec_args = [
             (
                 Var.create_safe("files", _var_is_string=False),
                 Var.create_safe(
-                    f"filesById.{upload_id}", _var_is_string=False
+                    f"filesById[{Var.create_safe(upload_id, _var_is_string=True)._var_name_unwrapped}]",
+                    _var_is_string=False,
                 )._replace(_var_data=upload_files_context_var_data),
             ),
             (
@@ -454,6 +469,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
 
     Returns:
         An event spec for a server-side event.
+
     """
 
     def fn():
@@ -487,6 +503,7 @@ def redirect(
 
     Returns:
         An event to redirect to the path.
+
     """
     return server_side(
         "_redirect",
@@ -505,6 +522,7 @@ def console_log(message: str | Var[str]) -> EventSpec:
 
     Returns:
         An event to log the message.
+
     """
     return server_side("_console", get_fn_signature(console_log), message=message)
 
@@ -517,6 +535,7 @@ def window_alert(message: str | Var[str]) -> EventSpec:
 
     Returns:
         An event to alert the message.
+
     """
     return server_side("_alert", get_fn_signature(window_alert), message=message)
 
@@ -529,6 +548,7 @@ def set_focus(ref: str) -> EventSpec:
 
     Returns:
         An event to set focus on the ref
+
     """
     return server_side(
         "_set_focus",
@@ -545,6 +565,7 @@ def scroll_to(elem_id: str) -> EventSpec:
 
     Returns:
         An EventSpec to scroll the page to the selected element.
+
     """
     js_code = f"document.getElementById('{elem_id}').scrollIntoView();"
 
@@ -560,6 +581,7 @@ def set_value(ref: str, value: Any) -> EventSpec:
 
     Returns:
         An event to set the ref.
+
     """
     return server_side(
         "_set_value",
@@ -578,6 +600,7 @@ def remove_cookie(key: str, options: dict[str, Any] | None = None) -> EventSpec:
 
     Returns:
         EventSpec: An event to remove a cookie.
+
     """
     options = options or {}
     options["path"] = options.get("path", "/")
@@ -594,6 +617,7 @@ def clear_local_storage() -> EventSpec:
 
     Returns:
         EventSpec: An event to clear the local storage.
+
     """
     return server_side(
         "_clear_local_storage",
@@ -609,10 +633,39 @@ def remove_local_storage(key: str) -> EventSpec:
 
     Returns:
         EventSpec: An event to remove an item based on the provided key in local storage.
+
     """
     return server_side(
         "_remove_local_storage",
         get_fn_signature(remove_local_storage),
+        key=key,
+    )
+
+
+def clear_session_storage() -> EventSpec:
+    """Set a value in the session storage on the frontend.
+
+    Returns:
+        EventSpec: An event to clear the session storage.
+    """
+    return server_side(
+        "_clear_session_storage",
+        get_fn_signature(clear_session_storage),
+    )
+
+
+def remove_session_storage(key: str) -> EventSpec:
+    """Set a value in the session storage on the frontend.
+
+    Args:
+        key: The key identifying the variable in the session storage to remove.
+
+    Returns:
+        EventSpec: An event to remove an item based on the provided key in session storage.
+    """
+    return server_side(
+        "_remove_session_storage",
+        get_fn_signature(remove_session_storage),
         key=key,
     )
 
@@ -625,6 +678,7 @@ def set_clipboard(content: str) -> EventSpec:
 
     Returns:
         EventSpec: An event to set some content in the clipboard.
+
     """
     return server_side(
         "_set_clipboard",
@@ -651,6 +705,7 @@ def download(
 
     Returns:
         EventSpec: An event to download the associated file.
+
     """
     from reflex.components.core.cond import cond
 
@@ -714,6 +769,7 @@ def _callback_arg_spec(eval_result):
 
     Returns:
         Args for the callback function
+
     """
     return [eval_result]
 
@@ -734,14 +790,17 @@ def call_script(
 
     Returns:
         EventSpec: An event that will execute the client side javascript.
+
     """
     callback_kwargs = {}
     if callback is not None:
         callback_kwargs = {
-            "callback": format.format_queue_events(
-                callback,
-                args_spec=lambda result: [result],
-            )
+            "callback": str(
+                format.format_queue_events(
+                    callback,
+                    args_spec=lambda result: [result],
+                ),
+            ),
         }
     return server_side(
         "_call_script",
@@ -760,6 +819,7 @@ def get_event(state, event):
 
     Returns:
         The event.
+
     """
     return f"{state.get_name()}.{event}"
 
@@ -772,6 +832,7 @@ def get_hydrate_event(state) -> str:
 
     Returns:
         The name of the hydrate event.
+
     """
     return get_event(state, constants.CompileVars.HYDRATE)
 
@@ -795,6 +856,7 @@ def call_event_handler(
 
     Returns:
         The event spec from calling the event handler.
+
     """
     parsed_args = parse_args_spec(arg_spec)  # type: ignore
 
@@ -821,6 +883,7 @@ def parse_args_spec(arg_spec: ArgsSpec):
 
     Returns:
         The parsed args.
+
     """
     spec = inspect.getfullargspec(arg_spec)
     annotations = get_type_hints(arg_spec)
@@ -852,6 +915,7 @@ def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec] | 
 
     Raises:
         EventHandlerValueError: If the lambda has an invalid signature.
+
     """
     # Import here to avoid circular imports.
     from reflex.event import EventHandler, EventSpec
@@ -910,6 +974,7 @@ def get_handler_args(event_spec: EventSpec) -> tuple[tuple[Var, Var], ...]:
 
     Returns:
         The handler args.
+
     """
     args = inspect.getfullargspec(event_spec.handler.fn).args
 
@@ -930,6 +995,7 @@ def fix_events(
 
     Returns:
         The fixed events.
+
     """
     # If the event handler returns nothing, return an empty list.
     if events is None:
@@ -982,6 +1048,7 @@ def get_fn_signature(fn: Callable) -> inspect.Signature:
 
     Returns:
         The signature of the function.
+
     """
     signature = inspect.signature(fn)
     new_param = inspect.Parameter(

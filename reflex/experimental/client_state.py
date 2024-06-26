@@ -1,4 +1,5 @@
 """Handle client side state with `useState`."""
+
 from __future__ import annotations
 
 import dataclasses
@@ -8,7 +9,7 @@ from typing import Any, Callable, Optional, Type, Union
 from reflex import constants
 from reflex.event import EventChain, EventHandler, EventSpec, call_script
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import Var, VarData, get_unique_variable_name
 
 NoValue = object()
 
@@ -26,6 +27,7 @@ def _client_state_ref(var_name: str) -> str:
 
     Returns:
         An accessor for ClientStateVar ref as a string.
+
     """
     return f"refs['_client_state_{var_name}']"
 
@@ -67,6 +69,7 @@ class ClientStateVar(Var):
 
         Returns:
             The hash of the var.
+
         """
         return hash(
             (self._var_name, str(self._var_type), self._getter_name, self._setter_name)
@@ -74,7 +77,10 @@ class ClientStateVar(Var):
 
     @classmethod
     def create(
-        cls, var_name: str, default: Any = NoValue, global_ref: bool = True
+        cls,
+        var_name: str | None = None,
+        default: Any = NoValue,
+        global_ref: bool = True,
     ) -> "ClientStateVar":
         """Create a local_state Var that can be accessed and updated on the client.
 
@@ -100,7 +106,10 @@ class ClientStateVar(Var):
 
         Returns:
             ClientStateVar
+
         """
+        if var_name is None:
+            var_name = get_unique_variable_name()
         assert isinstance(var_name, str), "var_name must be a string."
         if default is NoValue:
             default_var = Var.create_safe("", _var_is_local=False, _var_is_string=False)
@@ -149,6 +158,7 @@ class ClientStateVar(Var):
 
         Returns:
             an accessor for the client state variable.
+
         """
         return (
             Var.create_safe(
@@ -178,6 +188,7 @@ class ClientStateVar(Var):
 
         Returns:
             A special EventChain Var which will set the value when triggered.
+
         """
         setter = (
             _client_state_ref(self._setter_name)
@@ -188,7 +199,7 @@ class ClientStateVar(Var):
             # This is a hack to make it work like an EventSpec taking an arg
             value = Var.create_safe(value, _var_is_string=isinstance(value, str))
             if not value._var_is_string and value._var_full_name.startswith("_"):
-                arg = value._var_name_unwrapped
+                arg = value._var_name_unwrapped.partition(".")[0]
             else:
                 arg = ""
             setter = f"({arg}) => {setter}({value._var_name_unwrapped})"
@@ -216,6 +227,7 @@ class ClientStateVar(Var):
 
         Returns:
             A special EventChain Var which will set the value when triggered.
+
         """
         return self.set_value()
 
@@ -234,6 +246,7 @@ class ClientStateVar(Var):
 
         Raises:
             ValueError: If the ClientStateVar is not global.
+
         """
         if not self._global_ref:
             raise ValueError("ClientStateVar must be global to retrieve the value.")
@@ -252,6 +265,7 @@ class ClientStateVar(Var):
 
         Raises:
             ValueError: If the ClientStateVar is not global.
+
         """
         if not self._global_ref:
             raise ValueError("ClientStateVar must be global to push the value.")

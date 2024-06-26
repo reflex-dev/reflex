@@ -1,4 +1,5 @@
 """The settings page for the template."""
+
 from typing import Any
 
 import reflex as rx
@@ -269,6 +270,7 @@ def datatable_page() -> rx.Component:
 
     Returns:
         rx.Component: The UI for the settings page.
+
     """
     return rx.chakra.box(
         rx.chakra.vstack(

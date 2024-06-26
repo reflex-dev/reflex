@@ -1,4 +1,5 @@
 """Integration tests for text input and related components."""
+
 from typing import Generator
 
 import pytest
@@ -59,6 +60,7 @@ def fully_controlled_input(tmp_path) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path,
@@ -73,6 +75,7 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
 
     Args:
         fully_controlled_input: harness for FullyControlledInput app
+
     """
     assert fully_controlled_input.app_instance is not None, "app is not running"
     driver = fully_controlled_input.frontend()

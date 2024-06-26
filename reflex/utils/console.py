@@ -23,6 +23,7 @@ def set_log_level(log_level: LogLevel):
 
     Args:
         log_level: The log level to set.
+
     """
     global _LOG_LEVEL
     _LOG_LEVEL = log_level
@@ -33,6 +34,7 @@ def is_debug() -> bool:
 
     Returns:
         True if the log level is debug.
+
     """
     return _LOG_LEVEL <= LogLevel.DEBUG
 
@@ -43,6 +45,7 @@ def print(msg: str, **kwargs):
     Args:
         msg: The message to print.
         kwargs: Keyword arguments to pass to the print function.
+
     """
     _console.print(msg, **kwargs)
 
@@ -53,6 +56,7 @@ def debug(msg: str, **kwargs):
     Args:
         msg: The debug message.
         kwargs: Keyword arguments to pass to the print function.
+
     """
     if is_debug():
         msg_ = f"[blue]Debug: {msg}[/blue]"
@@ -68,6 +72,7 @@ def info(msg: str, **kwargs):
     Args:
         msg: The info message.
         kwargs: Keyword arguments to pass to the print function.
+
     """
     if _LOG_LEVEL <= LogLevel.INFO:
         print(f"[cyan]Info: {msg}[/cyan]", **kwargs)
@@ -79,6 +84,7 @@ def success(msg: str, **kwargs):
     Args:
         msg: The success message.
         kwargs: Keyword arguments to pass to the print function.
+
     """
     if _LOG_LEVEL <= LogLevel.INFO:
         print(f"[green]Success: {msg}[/green]", **kwargs)
@@ -90,6 +96,7 @@ def log(msg: str, **kwargs):
     Args:
         msg: The message to log.
         kwargs: Keyword arguments to pass to the print function.
+
     """
     if _LOG_LEVEL <= LogLevel.INFO:
         _console.log(msg, **kwargs)
@@ -101,6 +108,7 @@ def rule(title: str, **kwargs):
     Args:
         title: The title of the rule.
         kwargs: Keyword arguments to pass to the print function.
+
     """
     _console.rule(title, **kwargs)
 
@@ -111,6 +119,7 @@ def warn(msg: str, **kwargs):
     Args:
         msg: The warning message.
         kwargs: Keyword arguments to pass to the print function.
+
     """
     if _LOG_LEVEL <= LogLevel.WARNING:
         print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
@@ -133,6 +142,7 @@ def deprecate(
         removal_version: The version the deprecated feature will be removed
         dedupe: If True, suppress multiple console logs of deprecation message.
         kwargs: Keyword arguments to pass to the print function.
+
     """
     if feature_name not in _EMITTED_DEPRECATION_WARNINGS:
         msg = (
@@ -151,6 +161,7 @@ def error(msg: str, **kwargs):
     Args:
         msg: The error message.
         kwargs: Keyword arguments to pass to the print function.
+
     """
     if _LOG_LEVEL <= LogLevel.ERROR:
         print(f"[red]{msg}[/red]", **kwargs)
@@ -173,6 +184,7 @@ def ask(
 
     Returns:
         A string with the user input.
+
     """
     return Prompt.ask(
         question, choices=choices, default=default, show_choices=show_choices
@@ -185,6 +197,7 @@ def progress():
 
     Returns:
         A new progress bar.
+
     """
     return Progress(
         *Progress.get_default_columns()[:-1],
@@ -202,5 +215,6 @@ def status(*args, **kwargs):
 
     Returns:
         A new status.
+
     """
     return _console.status(*args, **kwargs)

@@ -40,6 +40,7 @@ def version(value: bool):
 
     Raises:
         typer.Exit: If the version flag was passed.
+
     """
     if value:
         console.print(constants.Reflex.VERSION)

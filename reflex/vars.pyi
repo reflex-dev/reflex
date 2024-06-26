@@ -10,7 +10,7 @@ from reflex.base import Base as Base
 from reflex.state import State as State
 from reflex.state import BaseState as BaseState
 from reflex.utils import console as console, format as format, types as types
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportVar, ImportDict, ParsedImportDict
 from types import FunctionType
 from typing import (
     Any,
@@ -36,7 +36,7 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]: ...
 
 class VarData(Base):
     state: str = ""
-    imports: dict[str, List[ImportVar]] = {}
+    imports: Union[ImportDict, ParsedImportDict] = {}
     hooks: Dict[str, None] = {}
     interpolations: List[Tuple[int, int]] = []
     @classmethod
@@ -59,7 +59,7 @@ class Var:
     ) -> Var: ...
     @classmethod
     def __class_getitem__(cls, type_: Type) -> _GenericAlias: ...
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> Var: ...
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> BaseVar: ...
     def equals(self, other: Var) -> bool: ...
     def to_string(self) -> Var: ...
     def __hash__(self) -> int: ...

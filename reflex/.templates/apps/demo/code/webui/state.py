@@ -75,6 +75,7 @@ class State(State):
 
         Args:
             chat_name: The name of the chat.
+
         """
         self.current_chat = chat_name
         self.toggle_drawer()
@@ -85,6 +86,7 @@ class State(State):
 
         Returns:
             The list of chat names.
+
         """
         return [*self.chats]
 
@@ -96,6 +98,7 @@ class State(State):
 
         Yields:
             The current question and the response.
+
         """
         # Check if the question is empty
         if self.question == "":

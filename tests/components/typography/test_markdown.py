@@ -27,6 +27,7 @@ def test_get_component(tag, expected):
     Args:
         tag: The tag to get.
         expected: The expected component.
+
     """
     md = Markdown.create("# Hello")
     assert tag in md.component_map  # type: ignore

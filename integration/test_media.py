@@ -1,4 +1,5 @@
 """Integration tests for media components."""
+
 from typing import Generator
 
 import pytest
@@ -80,6 +81,7 @@ def media_app(tmp_path) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path,
@@ -94,6 +96,7 @@ async def test_media_app(media_app: AppHarness):
 
     Args:
         media_app: harness for MediaApp app
+
     """
     assert media_app.app_instance is not None, "app is not running"
     driver = media_app.frontend()

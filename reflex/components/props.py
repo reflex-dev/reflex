@@ -1,4 +1,5 @@
 """A class that holds props to be passed or applied to a component."""
+
 from __future__ import annotations
 
 from reflex.base import Base
@@ -18,6 +19,7 @@ class PropsBase(Base):
 
         Returns:
             The object as a Javascript Object literal.
+
         """
         return format.unwrap_vars(
             self.__config__.json_dumps(

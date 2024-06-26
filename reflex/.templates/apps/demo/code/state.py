@@ -14,6 +14,7 @@ class State(rx.State):
 
         Returns:
             str: The url of the current page.
+
         """
         return self.router_data.get("asPath", "")
 

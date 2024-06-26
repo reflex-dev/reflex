@@ -20,7 +20,7 @@ from reflex.event import EventChain, EventHandler, parse_args_spec
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import BaseVar, Var, VarData
 
 
@@ -44,6 +44,7 @@ def component1() -> Type[Component]:
 
     Returns:
         A test component.
+
     """
 
     class TestComponent1(Component):
@@ -56,7 +57,7 @@ def component1() -> Type[Component]:
         # A test string/number prop.
         text_or_number: Var[Union[int, str]]
 
-        def _get_imports(self) -> imports.ImportDict:
+        def _get_imports(self) -> ParsedImportDict:
             return {"react": [ImportVar(tag="Component")]}
 
         def _get_custom_code(self) -> str:
@@ -71,6 +72,7 @@ def component2() -> Type[Component]:
 
     Returns:
         A test component.
+
     """
 
     class TestComponent2(Component):
@@ -82,6 +84,7 @@ def component2() -> Type[Component]:
 
             Returns:
                 Test controlled triggers.
+
             """
             return {
                 **super().get_event_triggers(),
@@ -89,7 +92,7 @@ def component2() -> Type[Component]:
                 "on_close": lambda e0: [e0],
             }
 
-        def _get_imports(self) -> imports.ImportDict:
+        def _get_imports(self) -> ParsedImportDict:
             return {"react-redux": [ImportVar(tag="connect")]}
 
         def _get_custom_code(self) -> str:
@@ -104,6 +107,7 @@ def component3() -> Type[Component]:
 
     Returns:
         A test component.
+
     """
 
     class TestComponent3(Component):
@@ -119,6 +123,7 @@ def component4() -> Type[Component]:
 
     Returns:
         A test component.
+
     """
 
     class TestComponent4(Component):
@@ -134,6 +139,7 @@ def component5() -> Type[Component]:
 
     Returns:
         A test component.
+
     """
 
     class TestComponent5(Component):
@@ -154,6 +160,7 @@ def component6() -> Type[Component]:
 
     Returns:
         A test component.
+
     """
 
     class TestComponent6(Component):
@@ -170,6 +177,7 @@ def component7() -> Type[Component]:
 
     Returns:
         A test component.
+
     """
 
     class TestComponent7(Component):
@@ -186,6 +194,7 @@ def on_click1() -> EventHandler:
 
     Returns:
         A sample on click function.
+
     """
 
     def on_click1():
@@ -200,6 +209,7 @@ def on_click2() -> EventHandler:
 
     Returns:
         A sample on click function.
+
     """
 
     def on_click2():
@@ -214,6 +224,7 @@ def my_component():
 
     Returns:
         A test component function.
+
     """
 
     def my_component(prop1: Var[str], prop2: Var[int]):
@@ -227,6 +238,7 @@ def test_set_style_attrs(component1):
 
     Args:
         component1: A test component.
+
     """
     component = component1(color="white", text_align="center")
     assert component.style["color"] == "white"
@@ -238,6 +250,7 @@ def test_custom_attrs(component1):
 
     Args:
         component1: A test component.
+
     """
     component = component1(custom_attrs={"attr1": "1", "attr2": "attr2"})
     assert component.custom_attrs == {"attr1": "1", "attr2": "attr2"}
@@ -248,6 +261,7 @@ def test_create_component(component1):
 
     Args:
         component1: A test component.
+
     """
     children = [component1() for _ in range(3)]
     attrs = {"color": "white", "text_align": "center"}
@@ -395,6 +409,7 @@ def test_create_component_prop_validation(
         prop_name: The name of the prop.
         var: The value of the prop.
         expected: The expected exception.
+
     """
     ctx = pytest.raises(expected) if expected else nullcontext()
     kwargs = {prop_name: var}
@@ -411,6 +426,7 @@ def test_add_style(component1, component2):
     Args:
         component1: A test component.
         component2: A test component.
+
     """
     style = {
         component1: Style({"color": "white"}),
@@ -428,6 +444,7 @@ def test_add_style_create(component1, component2):
     Args:
         component1: A test component.
         component2: A test component.
+
     """
     style = {
         component1.create: Style({"color": "white"}),
@@ -445,6 +462,7 @@ def test_get_imports(component1, component2):
     Args:
         component1: A test component.
         component2: A test component.
+
     """
     c1 = component1.create()
     c2 = component2.create(c1)
@@ -461,6 +479,7 @@ def test_get_custom_code(component1, component2):
     Args:
         component1: A test component.
         component2: A test component.
+
     """
     # Check that the code gets compiled correctly.
     c1 = component1.create()
@@ -489,6 +508,7 @@ def test_get_props(component1, component2):
     Args:
         component1: A test component.
         component2: A test component.
+
     """
     assert component1.get_props() == {"text", "number", "text_or_number"}
     assert component2.get_props() == {"arr"}
@@ -509,6 +529,7 @@ def test_valid_props(component1, text: str, number: int):
         component1: A test component.
         text: A test string.
         number: A test number.
+
     """
     c = component1.create(text=text, number=number)
     assert c.text._decode() == text
@@ -525,6 +546,7 @@ def test_invalid_prop_type(component1, text: str, number: int):
         component1: A test component.
         text: A test string.
         number: A test number.
+
     """
     # Check that
     with pytest.raises(TypeError):
@@ -537,6 +559,7 @@ def test_var_props(component1, test_state):
     Args:
         component1: A test component.
         test_state: A test state.
+
     """
     c1 = component1.create(text="hello", number=test_state.num)
     assert c1.number.equals(test_state.num)
@@ -548,6 +571,7 @@ def test_get_event_triggers(component1, component2):
     Args:
         component1: A test component.
         component2: A test component.
+
     """
     default_triggers = {
         EventTriggers.ON_FOCUS,
@@ -579,6 +603,7 @@ def test_component() -> Type[Component]:
 
     Returns:
         A test component.
+
     """
 
     class TestComponent(Component):
@@ -647,12 +672,15 @@ def test_component_create_unallowed_types(children, test_component):
                                 "special_props": set(),
                                 "children": [],
                                 "autofocus": False,
+                                "useErrorBoundary": False,
                             }
                         ],
                         "autofocus": False,
+                        "useErrorBoundary": False,
                     }
                 ],
                 "autofocus": False,
+                "useErrorBoundary": False,
             },
         ),
         (
@@ -660,14 +688,17 @@ def test_component_create_unallowed_types(children, test_component):
             {
                 "args": None,
                 "autofocus": False,
+                "useErrorBoundary": False,
                 "children": [
                     {
                         "args": None,
                         "autofocus": False,
+                        "useErrorBoundary": False,
                         "children": [
                             {
                                 "args": None,
                                 "autofocus": False,
+                                "useErrorBoundary": False,
                                 "children": [],
                                 "contents": "{`first_text`}",
                                 "name": "",
@@ -683,10 +714,12 @@ def test_component_create_unallowed_types(children, test_component):
                     {
                         "args": None,
                         "autofocus": False,
+                        "useErrorBoundary": False,
                         "children": [
                             {
                                 "args": None,
                                 "autofocus": False,
+                                "useErrorBoundary": False,
                                 "children": [],
                                 "contents": "{`second_text`}",
                                 "name": "",
@@ -711,14 +744,17 @@ def test_component_create_unallowed_types(children, test_component):
             {
                 "args": None,
                 "autofocus": False,
+                "useErrorBoundary": False,
                 "children": [
                     {
                         "args": None,
                         "autofocus": False,
+                        "useErrorBoundary": False,
                         "children": [
                             {
                                 "args": None,
                                 "autofocus": False,
+                                "useErrorBoundary": False,
                                 "children": [],
                                 "contents": "{`first_text`}",
                                 "name": "",
@@ -734,18 +770,22 @@ def test_component_create_unallowed_types(children, test_component):
                     {
                         "args": None,
                         "autofocus": False,
+                        "useErrorBoundary": False,
                         "children": [
                             {
                                 "args": None,
                                 "autofocus": False,
+                                "useErrorBoundary": False,
                                 "children": [
                                     {
                                         "args": None,
                                         "autofocus": False,
+                                        "useErrorBoundary": False,
                                         "children": [
                                             {
                                                 "args": None,
                                                 "autofocus": False,
+                                                "useErrorBoundary": False,
                                                 "children": [],
                                                 "contents": "{`second_text`}",
                                                 "name": "",
@@ -786,6 +826,7 @@ def test_component_create_unpack_tuple_child(test_component, element, expected):
         test_component: Component fixture.
         element: The children to pass to the component.
         expected: The expected render dict.
+
     """
     comp = test_component.create(element)
 
@@ -835,6 +876,7 @@ def test_create_custom_component(my_component):
 
     Args:
         my_component: A test custom component.
+
     """
     component = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
     assert component.tag == "MyComponent"
@@ -847,6 +889,7 @@ def test_custom_component_hash(my_component):
 
     Args:
         my_component: A test custom component.
+
     """
     component1 = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
     component2 = CustomComponent(component_fn=my_component, prop1="test", prop2=2)
@@ -882,6 +925,7 @@ def test_invalid_event_handler_args(component2, test_state):
     Args:
         component2: A test component.
         test_state: A test state.
+
     """
     # Uncontrolled event handlers should not take args.
     # This is okay.
@@ -914,6 +958,7 @@ def test_get_hooks_nested(component1, component2, component3):
         component1: test component.
         component2: another component.
         component3: component with hooks defined.
+
     """
     c = component1.create(
         component2.create(arr=[]),
@@ -932,6 +977,7 @@ def test_get_hooks_nested2(component3, component4):
     Args:
         component3: component with hooks defined.
         component4: component with different hooks defined.
+
     """
     exp_hooks = {**component3()._get_all_hooks(), **component4()._get_all_hooks()}
     assert component3.create(component4.create())._get_all_hooks() == exp_hooks
@@ -954,6 +1000,7 @@ def test_unsupported_child_components(fixture, request):
     Args:
         fixture: the test component as a fixture.
         request: Pytest request.
+
     """
     component = request.getfixturevalue(fixture)
     with pytest.raises(ValueError) as err:
@@ -970,6 +1017,7 @@ def test_unsupported_parent_components(component5):
 
     Args:
         component5: component with valid parent of "Text" only
+
     """
     with pytest.raises(ValueError) as err:
         rx.box(component5.create())
@@ -987,6 +1035,7 @@ def test_component_with_only_valid_children(fixture, request):
     Args:
         fixture: the test component as a fixture.
         request: Pytest request.
+
     """
     component = request.getfixturevalue(fixture)
     with pytest.raises(ValueError) as err:
@@ -1015,6 +1064,7 @@ def test_format_component(component, rendered):
     Args:
         component: The component to format.
         rendered: The expected rendered component.
+
     """
     assert str(component) == rendered
 
@@ -1024,6 +1074,7 @@ def test_stateful_component(test_state):
 
     Args:
         test_state: A test state.
+
     """
     text_component = rx.text(test_state.num)
     stateful_component = StatefulComponent.compile_from(text_component)
@@ -1042,6 +1093,7 @@ def test_stateful_component_memoize_event_trigger(test_state):
 
     Args:
         test_state: A test state.
+
     """
     button_component = rx.button("Click me", on_click=test_state.do_something)
     stateful_component = StatefulComponent.compile_from(button_component)
@@ -1124,6 +1176,7 @@ class EventState(rx.State):
 
         Args:
             arg: An arg.
+
         """
 
 
@@ -1609,6 +1662,7 @@ def test_deprecated_props(capsys):
 
     Args:
         capsys: Pytest fixture for capturing stdout and stderr.
+
     """
 
     class C1(Component):
@@ -1705,6 +1759,7 @@ def test_custom_component_declare_event_handlers_in_fields():
 
             Returns:
                 Test controlled triggers.
+
             """
             return {
                 **super().get_event_triggers(),
@@ -1746,6 +1801,7 @@ def test_invalid_event_trigger():
 
             Returns:
                 Test controlled triggers.
+
             """
             return {
                 **super().get_event_triggers(),
@@ -1773,21 +1829,15 @@ def test_invalid_event_trigger():
     ),
 )
 def test_component_add_imports(tags):
-    def _list_to_import_vars(tags: List[str]) -> List[ImportVar]:
-        return [
-            ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
-            for tag in tags
-        ]
-
     class BaseComponent(Component):
-        def _get_imports(self) -> imports.ImportDict:
+        def _get_imports(self) -> ImportDict:
             return {}
 
     class Reference(Component):
-        def _get_imports(self) -> imports.ImportDict:
+        def _get_imports(self) -> ParsedImportDict:
             return imports.merge_imports(
                 super()._get_imports(),
-                {"react": _list_to_import_vars(tags)},
+                parse_imports({"react": tags}),
                 {"foo": [ImportVar(tag="bar")]},
             )
 
@@ -1806,10 +1856,12 @@ def test_component_add_imports(tags):
     baseline = Reference.create()
     test = Test.create()
 
-    assert baseline._get_all_imports() == {
-        "react": _list_to_import_vars(tags),
-        "foo": [ImportVar(tag="bar")],
-    }
+    assert baseline._get_all_imports() == parse_imports(
+        {
+            "react": tags,
+            "foo": [ImportVar(tag="bar")],
+        }
+    )
     assert test._get_all_imports() == baseline._get_all_imports()
 
 
@@ -2010,6 +2062,7 @@ def test_add_style_embedded_vars(test_state: BaseState):
 
     Args:
         test_state: A test state.
+
     """
     v0 = Var.create_safe("parent")._replace(
         merge_var_data=VarData(hooks={"useParent": None}),  # type: ignore
@@ -2073,3 +2126,76 @@ def test_add_style_foreach():
 
     # Expect only one instance of this CSS dict in the rendered page
     assert str(page).count('css={{"color": "red"}}') == 1
+
+
+class TriggerState(rx.State):
+    """Test state with event handlers."""
+
+    def do_something(self):
+        """Sample event handler."""
+        pass
+
+
+@pytest.mark.parametrize(
+    "component, output",
+    [
+        (rx.box(rx.text("random text")), False),
+        (
+            rx.box(rx.text("random text", on_click=rx.console_log("log"))),
+            False,
+        ),
+        (
+            rx.box(
+                rx.text("random text", on_click=TriggerState.do_something),
+                rx.text(
+                    "random text",
+                    on_click=BaseVar(_var_name="toggleColorMode", _var_type=EventChain),
+                ),
+            ),
+            True,
+        ),
+        (
+            rx.box(
+                rx.text("random text", on_click=rx.console_log("log")),
+                rx.text(
+                    "random text",
+                    on_click=BaseVar(_var_name="toggleColorMode", _var_type=EventChain),
+                ),
+            ),
+            False,
+        ),
+        (
+            rx.box(rx.text("random text", on_click=TriggerState.do_something)),
+            True,
+        ),
+        (
+            rx.box(
+                rx.text(
+                    "random text",
+                    on_click=[rx.console_log("log"), rx.window_alert("alert")],
+                ),
+            ),
+            False,
+        ),
+        (
+            rx.box(
+                rx.text(
+                    "random text",
+                    on_click=[rx.console_log("log"), TriggerState.do_something],
+                ),
+            ),
+            True,
+        ),
+        (
+            rx.box(
+                rx.text(
+                    "random text",
+                    on_blur=lambda: TriggerState.do_something,
+                ),
+            ),
+            True,
+        ),
+    ],
+)
+def test_has_state_event_triggers(component, output):
+    assert component._has_stateful_event_triggers() == output

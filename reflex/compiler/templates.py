@@ -37,7 +37,9 @@ class ReflexJinjaEnvironment(Environment):
                 constants.CompileVars.PROCESSING: False,
             },
             "color_mode": constants.ColorMode.NAME,
+            "resolved_color_mode": constants.ColorMode.RESOLVED_NAME,
             "toggle_color_mode": constants.ColorMode.TOGGLE,
+            "set_color_mode": constants.ColorMode.SET,
             "use_color_mode": constants.ColorMode.USE,
             "hydrate": constants.CompileVars.HYDRATE,
             "on_load_internal": constants.CompileVars.ON_LOAD_INTERNAL,
@@ -53,6 +55,7 @@ def get_template(name: str) -> Template:
 
     Returns:
         A render function.
+
     """
     return ReflexJinjaEnvironment().get_template(name=name)
 

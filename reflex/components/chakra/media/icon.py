@@ -1,4 +1,5 @@
 """An icon component."""
+
 from typing import List
 
 from reflex.components.chakra import ChakraComponent
@@ -32,6 +33,7 @@ class Icon(ChakraIconComponent):
 
         Returns:
             The created component.
+
         """
         if children:
             raise AttributeError(

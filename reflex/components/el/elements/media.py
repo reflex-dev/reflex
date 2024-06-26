@@ -1,7 +1,9 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+
 from typing import Any, Union
 
 from reflex import Component
+from reflex.constants.colors import Color
 from reflex.vars import Var as Var
 
 from .base import BaseHTML
@@ -309,6 +311,54 @@ class Svg(BaseHTML):
     tag = "svg"
 
 
+class Defs(BaseHTML):
+    """Display the defs element."""
+
+    tag = "defs"
+
+
+class Lineargradient(BaseHTML):
+    """Display the linearGradient element."""
+
+    tag = "linearGradient"
+
+    # Units for the gradient
+    gradient_units: Var[Union[str, bool]]
+
+    # Transform applied to the gradient
+    gradient_transform: Var[Union[str, bool]]
+
+    # Method used to spread the gradient
+    spread_method: Var[Union[str, bool]]
+
+    # X coordinate of the starting point of the gradient
+    x1: Var[Union[str, int, bool]]
+
+    # X coordinate of the ending point of the gradient
+    x2: Var[Union[str, int, bool]]
+
+    # Y coordinate of the starting point of the gradient
+    y1: Var[Union[str, int, bool]]
+
+    # Y coordinate of the ending point of the gradient
+    y2: Var[Union[str, int, bool]]
+
+
+class Stop(BaseHTML):
+    """Display the stop element."""
+
+    tag = "stop"
+
+    # Offset of the gradient stop
+    offset: Var[Union[str, float, int]]
+
+    # Color of the gradient stop
+    stop_color: Var[Union[str, Color, bool]]
+
+    # Opacity of the gradient stop
+    stop_opacity: Var[Union[str, float, int, bool]]
+
+
 class Path(BaseHTML):
     """Display the path element."""
 
@@ -331,4 +381,7 @@ picture = Picture.create
 portal = Portal.create
 source = Source.create
 svg = Svg.create
+defs = Defs.create
+lineargradient = Lineargradient.create
+stop = Stop.create
 path = Path.create

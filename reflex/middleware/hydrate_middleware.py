@@ -1,4 +1,5 @@
 """Middleware to hydrate the state."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
@@ -28,6 +29,7 @@ class HydrateMiddleware(Middleware):
 
         Returns:
             An optional delta or list of state updates to return.
+
         """
         # If this is not the hydrate event, return None
         if event.name != get_hydrate_event(state):

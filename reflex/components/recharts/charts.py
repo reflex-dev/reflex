@@ -1,4 +1,5 @@
 """A module that defines the chart components in Recharts."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Union
@@ -28,18 +29,17 @@ class ChartBase(RechartsCharts):
     # The height of chart container.
     height: Var[Union[str, int]] = "100%"  # type: ignore
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # The customized event handler of click on the component in this chart
+    on_click: EventHandler[lambda: []]
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
+    # The customized event handler of mouseenter on the component in this chart
+    on_mouse_enter: EventHandler[lambda: []]
+
+    # The customized event handler of mousemove on the component in this chart
+    on_mouse_move: EventHandler[lambda: []]
+
+    # The customized event handler of mouseleave on the component in this chart
+    on_mouse_leave: EventHandler[lambda: []]
 
     @staticmethod
     def _ensure_valid_dimension(name: str, value: Any) -> None:
@@ -53,6 +53,7 @@ class ChartBase(RechartsCharts):
 
         Raises:
             ValueError: If the value is not an int type or str percentage.
+
         """
         if value is None:
             return
@@ -77,6 +78,7 @@ class ChartBase(RechartsCharts):
 
         Returns:
             The chart component wrapped in a responsive container.
+
         """
         width = props.pop("width", None)
         height = props.pop("height", None)
@@ -143,6 +145,7 @@ class AreaChart(CategoricalChartBase):
         "Legend",
         "GraphingTooltip",
         "Area",
+        "Defs",
     ]
 
 
@@ -267,17 +270,17 @@ class PieChart(ChartBase):
         "Pie",
     ]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # The customized event handler of mousedown on the sectors in this group
+    on_mouse_down: EventHandler[lambda: []]
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
+    # The customized event handler of mouseup on the sectors in this group
+    on_mouse_up: EventHandler[lambda: []]
+
+    # The customized event handler of mouseover on the sectors in this group
+    on_mouse_over: EventHandler[lambda: []]
+
+    # The customized event handler of mouseout on the sectors in this group
+    on_mouse_out: EventHandler[lambda: []]
 
 
 class RadarChart(ChartBase):
@@ -326,6 +329,7 @@ class RadarChart(ChartBase):
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
+
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
@@ -384,18 +388,6 @@ class RadialBarChart(ChartBase):
         "RadialBar",
     ]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
-
 
 class ScatterChart(ChartBase):
     """A Scatter chart component in Recharts."""
@@ -427,6 +419,7 @@ class ScatterChart(ChartBase):
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
+
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
@@ -507,6 +500,7 @@ class Treemap(RechartsCharts):
 
         Returns:
             The Treemap component wrapped in a responsive container.
+
         """
         return ResponsiveContainer.create(
             super().create(*children, **props),

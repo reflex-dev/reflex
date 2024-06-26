@@ -1,4 +1,5 @@
 """Base Reflex middleware."""
+
 from __future__ import annotations
 
 from abc import ABC
@@ -27,6 +28,7 @@ class Middleware(Base, ABC):
 
         Returns:
             An optional state update to return.
+
         """
         return None
 
@@ -43,5 +45,6 @@ class Middleware(Base, ABC):
 
         Returns:
             An optional state to return.
+
         """
         return update

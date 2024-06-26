@@ -1,4 +1,5 @@
 """Specialized test for a larger state tree."""
+
 import asyncio
 from typing import Generator
 
@@ -47,6 +48,7 @@ class SubA_A_A_B(SubA_A_A):
 
         Returns:
             The value of sub_a_a_a + 1
+
         """
         return self.sub_a_a_a + 1
 
@@ -122,6 +124,7 @@ class TreeD(Root):
 
         Returns:
             The value of d + 1
+
         """
         return self.d + 1
 
@@ -161,6 +164,7 @@ class SubE_A_A_A_A(SubE_A_A_A):
 
         Returns:
             The value of sub_e_a_a_a_a + 1
+
         """
         return self.sub_e_a_a_a + 1
 
@@ -188,6 +192,7 @@ class SubE_A_A_A_D(SubE_A_A_A):
 
         Returns:
             The value of sub_e_a_a_a_a + 1
+
         """
         return self.sub_e_a_a_a + 1
 
@@ -218,6 +223,7 @@ def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
 
     Yields:
         A state manager instance
+
     """
     app_module_mock.app = rx.App(state=Root)
     state_manager = app_module_mock.app.state_manager
@@ -359,6 +365,7 @@ async def test_get_state_tree(
         substate_cls: The substate class to retrieve.
         exp_root_substates: The expected substates of the root state.
         exp_root_dict_keys: The expected keys of the root state dict.
+
     """
     state = await state_manager_redis.get_state(_substate_key(token, substate_cls))
     assert isinstance(state, Root)

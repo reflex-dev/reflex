@@ -44,6 +44,7 @@ def set_directory(working_directory: str):
 
     Yields:
         Yield to the caller to perform operations in the working directory.
+
     """
     current_directory = os.getcwd()
     try:
@@ -59,6 +60,7 @@ def _create_package_config(module_name: str, package_name: str):
     Args:
         module_name: The name of the module.
         package_name: The name of the package typically constructed with `reflex-` prefix and a meaningful library name.
+
     """
     from reflex.compiler import templates
 
@@ -81,6 +83,7 @@ def _get_package_config(exit_on_fail: bool = True) -> dict:
 
     Raises:
         Exit: If the pyproject.toml file is not found.
+
     """
     try:
         with open(CustomComponents.PYPROJECT_TOML, "rb") as f:
@@ -98,6 +101,7 @@ def _create_readme(module_name: str, package_name: str):
     Args:
         module_name: The name of the module.
         package_name: The name of the python package to be published.
+
     """
     from reflex.compiler import templates
 
@@ -121,6 +125,7 @@ def _write_source_and_init_py(
         custom_component_src_dir: The name of the custom component source directory.
         component_class_name: The name of the component class.
         module_name: The name of the module.
+
     """
     from reflex.compiler import templates
 
@@ -152,6 +157,7 @@ def _populate_demo_app(name_variants: NameVariants):
 
     Args:
         name_variants: the tuple including various names such as package name, class name needed for the project.
+
     """
     from reflex import constants
     from reflex.compiler import templates
@@ -189,6 +195,7 @@ def _get_default_library_name_parts() -> list[str]:
 
     Returns:
         The parts of default library name.
+
     """
     current_dir_name = os.getcwd().split(os.path.sep)[-1]
 
@@ -238,6 +245,7 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
 
     Returns:
         A tuple containing the various names such as package name, class name, etc., needed for the project.
+
     """
     if library_name is not None and not re.match(
         r"^[a-zA-Z-]+[a-zA-Z0-9-]*$", library_name
@@ -290,6 +298,7 @@ def _populate_custom_component_project(name_variants: NameVariants):
 
     Args:
         name_variants: the tuple including various names such as package name, class name needed for the project.
+
     """
     console.info(
         f"Populating pyproject.toml with package name: {name_variants.package_name}"
@@ -338,6 +347,7 @@ def init(
 
     Raises:
         Exit: If the pyproject.toml already exists.
+
     """
     from reflex.utils import exec, prerequisites
 
@@ -400,6 +410,7 @@ def _pip_install_on_demand(
 
     Returns:
         True if the package is installed successfully, False otherwise.
+
     """
     install_args = install_args or []
 
@@ -423,6 +434,7 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
 
     Returns:
         True if the command runs successfully, False otherwise.
+
     """
     console.debug(f"Running command: {' '.join(cmds)}")
     try:
@@ -452,6 +464,7 @@ def _run_build():
 
     Raises:
         Exit: If the build fails.
+
     """
     console.print("Building custom component...")
 
@@ -474,6 +487,7 @@ def build(
 
     Args:
         loglevel: The log level to use.
+
     """
     console.set_log_level(loglevel)
     _run_build()
@@ -490,6 +504,7 @@ def _validate_repository_name(repository: str | None) -> str:
 
     Raises:
         Exit: If the repository name is not supported.
+
     """
     if repository is None:
         return "pypi"
@@ -516,6 +531,7 @@ def _validate_credentials(
 
     Returns:
         The username and password.
+
     """
     if token is not None:
         if username is not None or password is not None:
@@ -537,6 +553,7 @@ def _get_version_to_publish() -> str:
 
     Returns:
         The version to publish.
+
     """
     return _get_package_config()["project"]["version"]
 
@@ -550,6 +567,7 @@ def _ensure_dist_dir(version_to_publish: str, build: bool):
 
     Raises:
         Exit: If the distribution directory does not exist, or the expected files are not found.
+
     """
     dist_dir = Path(CustomComponents.DIST_DIR)
 
@@ -659,6 +677,7 @@ def publish(
 
     Raises:
         Exit: If arguments provided are not correct or the publish fails.
+
     """
     console.set_log_level(loglevel)
 
@@ -736,6 +755,7 @@ def _process_entered_list(input: str | None) -> list | None:
 
     Returns:
         The list of items or None.
+
     """
     return [t.strip() for t in (input or "").split(",") if t if input] or None
 
@@ -745,6 +765,7 @@ def _min_validate_project_info():
 
     Raises:
         Exit: If the pyproject.toml file is ill-formed.
+
     """
     pyproject_toml = _get_package_config()
 
@@ -773,6 +794,7 @@ def _validate_project_info():
 
     Raises:
         Exit: If the pyproject.toml file is ill-formed.
+
     """
     pyproject_toml = _get_package_config()
     project = pyproject_toml["project"]
@@ -833,6 +855,7 @@ def _collect_details_for_gallery():
 
     Raises:
         Exit: If pyproject.toml file is ill-formed or the request to the backend services fails.
+
     """
     from reflex.reflex import _login
 
@@ -922,6 +945,7 @@ def _validate_url_with_protocol_prefix(url: str | None) -> bool:
 
     Returns:
         Whether the entered URL is acceptable.
+
     """
     return not url or (url.startswith("http://") or url.startswith("https://"))
 
@@ -957,6 +981,7 @@ def share_more_detail(
 
     Args:
         loglevel: The log level to use.
+
     """
     console.set_log_level(loglevel)
 
@@ -976,6 +1001,7 @@ def install(
 
     Raises:
         Exit: If unable to install the current directory in editable mode.
+
     """
     console.set_log_level(loglevel)
 

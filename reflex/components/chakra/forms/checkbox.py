@@ -1,14 +1,13 @@
 """A checkbox component."""
-from __future__ import annotations
 
-from typing import Any, Union
+from __future__ import annotations
 
 from reflex.components.chakra import (
     ChakraComponent,
     LiteralColorScheme,
     LiteralTagSize,
 )
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 
@@ -56,16 +55,8 @@ class Checkbox(ChakraComponent):
     # The spacing between the checkbox and its label text (0.5rem)
     spacing: Var[str]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.target.checked],
-        }
+    # Fired when the checkbox is checked or unchecked
+    on_change: EventHandler[lambda e0: [e0.target.checked]]
 
 
 class CheckboxGroup(ChakraComponent):

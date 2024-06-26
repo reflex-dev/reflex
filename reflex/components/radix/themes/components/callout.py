@@ -68,6 +68,7 @@ class Callout(CalloutRoot):
 
         Returns:
             The callout component.
+
         """
         return CalloutRoot.create(
             (

@@ -90,6 +90,7 @@ class chdir(contextlib.AbstractContextManager):
 
         Args:
             path: the path to change to
+
         """
         self.path = path
         self._old_cwd = []
@@ -104,6 +105,7 @@ class chdir(contextlib.AbstractContextManager):
 
         Args:
             excinfo: sys.exc_info captured in the context block
+
         """
         os.chdir(self._old_cwd.pop())
 
@@ -150,6 +152,7 @@ class AppHarness:
 
         Returns:
             AppHarness instance
+
         """
         if app_name is None:
             if app_source is None:
@@ -185,6 +188,7 @@ class AppHarness:
 
         Returns:
             dict of globals
+
         """
         overrides = {}
         glbs = {}
@@ -207,6 +211,7 @@ class AppHarness:
 
         Returns:
             source code
+
         """
         if isinstance(app_source, str):
             return app_source
@@ -330,7 +335,7 @@ class AppHarness:
         # Start the frontend.
         self.frontend_process = reflex.utils.processes.new_process(
             [reflex.utils.prerequisites.get_package_manager(), "run", "dev"],
-            cwd=self.app_path / reflex.constants.Dirs.WEB,
+            cwd=self.app_path / reflex.utils.prerequisites.get_web_dir(),
             env={"PORT": "0"},
             **FRONTEND_POPEN_ARGS,
         )
@@ -369,6 +374,7 @@ class AppHarness:
 
         Returns:
             self
+
         """
         self._initialize_app()
         self._start_backend()
@@ -399,6 +405,7 @@ class AppHarness:
 
         Returns:
             Instance of AppHarness after calling start()
+
         """
         return self.start()
 
@@ -446,6 +453,7 @@ class AppHarness:
 
         Args:
             excinfo: sys.exc_info captured in the context block
+
         """
         self.stop()
 
@@ -465,6 +473,7 @@ class AppHarness:
         Returns:
             return value of target() if truthy within timeout
             False if timeout elapses
+
         """
         if timeout is None:
             timeout = DEFAULT_TIMEOUT
@@ -494,6 +503,7 @@ class AppHarness:
         Returns:
             return value of target() if truthy within timeout
             False if timeout elapses
+
         """
         if timeout is None:
             timeout = DEFAULT_TIMEOUT
@@ -519,6 +529,7 @@ class AppHarness:
         Raises:
             RuntimeError: when the backend hasn't started running
             TimeoutError: when server or sockets are not ready
+
         """
         if self.backend is None:
             raise RuntimeError("Backend is not running.")
@@ -560,6 +571,7 @@ class AppHarness:
 
         Raises:
             RuntimeError: when selenium is not importable or frontend is not running
+
         """
         if not has_selenium:
             raise RuntimeError(
@@ -621,6 +633,7 @@ class AppHarness:
 
         Raises:
             RuntimeError: when the app hasn't started running
+
         """
         if self.state_manager is None:
             raise RuntimeError("state_manager is not set.")
@@ -639,6 +652,7 @@ class AppHarness:
 
         Raises:
             RuntimeError: when the app hasn't started running
+
         """
         if self.state_manager is None:
             raise RuntimeError("state_manager is not set.")
@@ -663,6 +677,7 @@ class AppHarness:
 
         Raises:
             RuntimeError: when the app hasn't started running
+
         """
         if self.state_manager is None:
             raise RuntimeError("state_manager is not set.")
@@ -699,6 +714,7 @@ class AppHarness:
 
         Raises:
             TimeoutError: when the timeout expires before text changes
+
         """
         if not self._poll_for(
             target=lambda: element.text != exp_not_equal,
@@ -727,6 +743,7 @@ class AppHarness:
 
         Raises:
             TimeoutError: when the timeout expires before value changes
+
         """
         if not self._poll_for(
             target=lambda: element.get_attribute("value") != exp_not_equal,
@@ -749,6 +766,7 @@ class AppHarness:
         Raises:
             RuntimeError: when the app hasn't started running
             TimeoutError: when the timeout expires before any states are seen
+
         """
         if self.app_instance is None:
             raise RuntimeError("App is not running.")
@@ -774,6 +792,7 @@ class SimpleHTTPRequestHandlerCustomErrors(SimpleHTTPRequestHandler):
             error_page_map: map of error code to error page path
             *args: passed through to superclass
             **kwargs: passed through to superclass
+
         """
         self.error_page_map = error_page_map
         super().__init__(*args, **kwargs)
@@ -790,6 +809,7 @@ class SimpleHTTPRequestHandlerCustomErrors(SimpleHTTPRequestHandler):
             code: the error code
             message: the error message
             explain: the error explanation
+
         """
         error_page = self.error_page_map.get(code)
         if error_page:
@@ -821,6 +841,7 @@ class Subdir404TCPServer(socketserver.TCPServer):
             error_page_map: map of error code to error page path
             *args: passed through to superclass
             **kwargs: passed through to superclass
+
         """
         self.root = root
         self.error_page_map = error_page_map or {}
@@ -832,6 +853,7 @@ class Subdir404TCPServer(socketserver.TCPServer):
         Args:
             request: the requesting socket
             client_address: (host, port) referring to the client’s address.
+
         """
         self.RequestHandlerClass(
             request,
@@ -854,7 +876,11 @@ class AppHarnessProd(AppHarness):
     frontend_server: Optional[Subdir404TCPServer] = None
 
     def _run_frontend(self):
-        web_root = self.app_path / reflex.constants.Dirs.WEB_STATIC
+        web_root = (
+            self.app_path
+            / reflex.utils.prerequisites.get_web_dir()
+            / reflex.constants.Dirs.STATIC
+        )
         error_page_map = {
             404: web_root / "404.html",
         }

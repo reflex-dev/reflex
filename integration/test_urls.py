@@ -1,4 +1,5 @@
 """Integration tests for all urls in Reflex."""
+
 import os
 import re
 from pathlib import Path
@@ -15,6 +16,7 @@ def check_urls(repo_dir):
 
     Returns:
         A list of errors.
+
     """
     url_pattern = re.compile(r'http[s]?://reflex\.dev[^\s")]*')
     errors = []
@@ -62,6 +64,7 @@ def test_find_and_check_urls(repo_dir):
 
     Args:
         repo_dir: The directory of the repo.
+
     """
     errors = check_urls(repo_dir)
     assert not errors, "\n".join(errors)

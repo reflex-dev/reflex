@@ -7,7 +7,6 @@ from functools import lru_cache
 from hashlib import md5
 from typing import Any, Callable, Dict, Union
 
-from reflex.compiler import utils
 from reflex.components.component import Component, CustomComponent
 from reflex.components.radix.themes.layout.list import (
     ListItem,
@@ -18,8 +17,8 @@ from reflex.components.radix.themes.typography.heading import Heading
 from reflex.components.radix.themes.typography.link import Link
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.tags.tag import Tag
-from reflex.utils import imports, types
-from reflex.utils.imports import ImportVar
+from reflex.utils import types
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 # Special vars used in the component map.
@@ -53,6 +52,7 @@ def get_base_component_map() -> dict[str, Callable]:
 
     Returns:
         The base component map.
+
     """
     from reflex.components.datadisplay.code import CodeBlock
     from reflex.components.radix.themes.typography.code import Code
@@ -101,6 +101,7 @@ class Markdown(Component):
 
         Returns:
             The markdown component.
+
         """
         assert (
             len(children) == 1 and types._isinstance(children[0], Union[str, Var])
@@ -134,6 +135,7 @@ class Markdown(Component):
 
         Returns:
             The set of custom components.
+
         """
         custom_components = super()._get_all_custom_components(seen=seen)
 
@@ -145,47 +147,41 @@ class Markdown(Component):
 
         return custom_components
 
-    def _get_imports(self) -> imports.ImportDict:
-        # Import here to avoid circular imports.
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the markdown component.
+
+        Returns:
+            The imports for the markdown component.
+        """
         from reflex.components.datadisplay.code import CodeBlock
         from reflex.components.radix.themes.typography.code import Code
 
-        imports = super()._get_imports()
-
-        # Special markdown imports.
-        imports.update(
+        return [
             {
-                "": [ImportVar(tag="katex/dist/katex.min.css")],
-                "remark-math@5.1.1": [
-                    ImportVar(tag=_REMARK_MATH._var_name, is_default=True)
-                ],
-                "remark-gfm@3.0.1": [
-                    ImportVar(tag=_REMARK_GFM._var_name, is_default=True)
-                ],
-                "remark-unwrap-images@4.0.0": [
-                    ImportVar(tag=_REMARK_UNWRAP_IMAGES._var_name, is_default=True)
-                ],
-                "rehype-katex@6.0.3": [
-                    ImportVar(tag=_REHYPE_KATEX._var_name, is_default=True)
-                ],
-                "rehype-raw@6.1.1": [
-                    ImportVar(tag=_REHYPE_RAW._var_name, is_default=True)
-                ],
-            }
-        )
-
-        # Get the imports for each component.
-        for component in self.component_map.values():
-            imports = utils.merge_imports(
-                imports, component(_MOCK_ARG)._get_all_imports()
-            )
-
-        # Get the imports for the code components.
-        imports = utils.merge_imports(
-            imports, CodeBlock.create(theme="light")._get_imports()
-        )
-        imports = utils.merge_imports(imports, Code.create()._get_imports())
-        return imports
+                "": "katex/dist/katex.min.css",
+                "remark-math@5.1.1": ImportVar(
+                    tag=_REMARK_MATH._var_name, is_default=True
+                ),
+                "remark-gfm@3.0.1": ImportVar(
+                    tag=_REMARK_GFM._var_name, is_default=True
+                ),
+                "remark-unwrap-images@4.0.0": ImportVar(
+                    tag=_REMARK_UNWRAP_IMAGES._var_name, is_default=True
+                ),
+                "rehype-katex@6.0.3": ImportVar(
+                    tag=_REHYPE_KATEX._var_name, is_default=True
+                ),
+                "rehype-raw@6.1.1": ImportVar(
+                    tag=_REHYPE_RAW._var_name, is_default=True
+                ),
+            },
+            *[
+                component(_MOCK_ARG)._get_imports()  # type: ignore
+                for component in self.component_map.values()
+            ],
+            CodeBlock.create(theme="light")._get_imports(),  # type: ignore,
+            Code.create()._get_imports(),  # type: ignore,
+        ]
 
     def get_component(self, tag: str, **props) -> Component:
         """Get the component for a tag and props.
@@ -199,6 +195,7 @@ class Markdown(Component):
 
         Raises:
             ValueError: If the tag is invalid.
+
         """
         # Check the tag is valid.
         if tag not in self.component_map:
@@ -234,6 +231,7 @@ class Markdown(Component):
 
         Returns:
             The formatted component.
+
         """
         return str(self.get_component(tag, **props)).replace("\n", "")
 
@@ -242,6 +240,7 @@ class Markdown(Component):
 
         Returns:
             The formatted component map.
+
         """
         components = {
             tag: f"{{({{node, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {self.format_component(tag)}}}"
@@ -249,7 +248,9 @@ class Markdown(Component):
         }
 
         # Separate out inline code and code blocks.
-        components["code"] = f"""{{({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
+        components[
+            "code"
+        ] = f"""{{({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
     if (language) {{

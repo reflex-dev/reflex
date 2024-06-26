@@ -1,4 +1,5 @@
 """Tag to loop through a list of components."""
+
 from __future__ import annotations
 
 import inspect
@@ -31,6 +32,7 @@ class IterTag(Tag):
 
         Returns:
             The type of the iterable var.
+
         """
         try:
             if self.iterable._var_type.mro()[0] == dict:
@@ -51,6 +53,7 @@ class IterTag(Tag):
 
         Returns:
             The index var.
+
         """
         return BaseVar(
             _var_name=self.index_var_name,
@@ -64,6 +67,7 @@ class IterTag(Tag):
 
         Returns:
             The arg var.
+
         """
         return BaseVar(
             _var_name=self.arg_var_name,
@@ -77,6 +81,7 @@ class IterTag(Tag):
 
         Returns:
             The index var.
+
         """
         return BaseVar(
             _var_name=self.index_var_name,
@@ -91,6 +96,7 @@ class IterTag(Tag):
 
         Returns:
             The arg var.
+
         """
         return BaseVar(
             _var_name=self.arg_var_name,
@@ -103,6 +109,7 @@ class IterTag(Tag):
 
         Returns:
             The rendered component.
+
         """
         # Import here to avoid circular imports.
         from reflex.components.base.fragment import Fragment

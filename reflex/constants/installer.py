@@ -1,11 +1,12 @@
 """File for constants related to the installation process. (Bun/FNM/Node)."""
+
 from __future__ import annotations
 
 import os
 import platform
 from types import SimpleNamespace
 
-from .base import IS_WINDOWS, Dirs, Reflex
+from .base import IS_WINDOWS, Reflex
 
 
 def get_fnm_name() -> str | None:
@@ -13,6 +14,7 @@ def get_fnm_name() -> str | None:
 
     Returns:
             The fnm executable name for the current platform.
+
     """
     platform_os = platform.system()
 
@@ -105,7 +107,7 @@ class PackageJson(SimpleNamespace):
         EXPORT_SITEMAP = "next build && next-sitemap"
         PROD = "next start"
 
-    PATH = os.path.join(Dirs.WEB, "package.json")
+    PATH = "package.json"
 
     DEPENDENCIES = {
         "@emotion/react": "11.11.1",
@@ -119,6 +121,7 @@ class PackageJson(SimpleNamespace):
         "react-focus-lock": "2.11.3",
         "socket.io-client": "4.6.1",
         "universal-cookie": "4.0.4",
+        "react-error-boundary": "4.0.13",
     }
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.14",

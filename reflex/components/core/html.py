@@ -1,4 +1,5 @@
 """A html component."""
+
 from typing import Dict
 
 from reflex.components.el.elements.typography import Div
@@ -10,6 +11,7 @@ class Html(Div):
 
     Returns:
         The code to render the html component.
+
     """
 
     # The HTML to render.
@@ -28,6 +30,7 @@ class Html(Div):
 
         Raises:
             ValueError: If children are not provided or more than one child is provided.
+
         """
         # If children are not provided, throw an error.
         if len(children) != 1:

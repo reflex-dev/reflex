@@ -1,4 +1,5 @@
 """Integration tests for special server side events."""
+
 import time
 from typing import Generator
 
@@ -85,6 +86,7 @@ def server_side_event(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("server_side_event"),
@@ -103,6 +105,7 @@ def driver(server_side_event: AppHarness):
 
     Yields:
         WebDriver instance.
+
     """
     assert server_side_event.app_instance is not None, "app is not running"
     driver = server_side_event.frontend()
@@ -133,6 +136,7 @@ def test_set_value(driver, button_id: str):
     Args:
         driver: selenium WebDriver open to the app
         button_id: id of the button to click (parametrized)
+
     """
     input_a = driver.find_element(By.ID, "a")
     input_b = driver.find_element(By.ID, "b")
@@ -159,6 +163,7 @@ def test_set_value_return_c(driver):
 
     Args:
         driver: selenium WebDriver open to the app
+
     """
     input_a = driver.find_element(By.ID, "a")
     input_b = driver.find_element(By.ID, "b")

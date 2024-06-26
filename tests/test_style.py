@@ -47,6 +47,7 @@ def test_convert(style_dict, expected):
     Args:
         style_dict: The style to check.
         expected: The expected formatted style.
+
     """
     converted_dict, _var_data = style.convert(style_dict)
     assert converted_dict == expected
@@ -62,6 +63,7 @@ def test_create_style(style_dict, expected):
     Args:
         style_dict: The style to check.
         expected: The expected formatted style.
+
     """
     assert style.Style(style_dict) == expected
 
@@ -72,6 +74,7 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
     Args:
         d1: The first dictionary.
         d2: The second dictionary.
+
     """
     assert len(d1) == len(d2)
     for key, value in d1.items():
@@ -344,6 +347,7 @@ def test_style_via_component(
         kwargs: The kwargs to pass to the component.
         style_dict: The style_dict to pass to the component.
         expected_get_style: The expected style dict.
+
     """
     comp = rx.el.div(style=style_dict, **kwargs)  # type: ignore
     compare_dict_of_var(comp._get_style(), expected_get_style)
@@ -489,6 +493,7 @@ def test_style_via_component_with_state(
     Args:
         kwargs: The kwargs to pass to the component.
         expected_get_style: The expected style dict.
+
     """
     comp = rx.el.div(**kwargs)
 

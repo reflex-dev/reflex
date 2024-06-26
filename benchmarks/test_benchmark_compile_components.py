@@ -13,6 +13,9 @@ from reflex import constants
 from reflex.compiler import utils
 from reflex.testing import AppHarness, chdir
 from reflex.utils import build
+from reflex.utils.prerequisites import get_web_dir
+
+web_pages = get_web_dir() / constants.Dirs.PAGES
 
 
 def render_component(num: int):
@@ -23,6 +26,7 @@ def render_component(num: int):
 
     Returns:
         The rendered number of components.
+
     """
     import reflex as rx
 
@@ -156,6 +160,7 @@ def app_with_10_components(
 
     Yields:
         running AppHarness instance
+
     """
     root = tmp_path_factory.mktemp("app10components")
 
@@ -179,6 +184,7 @@ def app_with_100_components(
 
     Yields:
         running AppHarness instance
+
     """
     root = tmp_path_factory.mktemp("app100components")
 
@@ -202,6 +208,7 @@ def app_with_1000_components(
 
     Yields:
         an AppHarness instance
+
     """
     root = tmp_path_factory.mktemp("app1000components")
 
@@ -227,11 +234,12 @@ def test_app_10_compile_time_cold(benchmark, app_with_10_components):
     Args:
         benchmark: The benchmark fixture.
         app_with_10_components: The app harness.
+
     """
 
     def setup():
         with chdir(app_with_10_components.app_path):
-            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            utils.empty_dir(web_pages, ["_app.js"])
             app_with_10_components._initialize_app()
             build.setup_frontend(app_with_10_components.app_path)
 
@@ -255,6 +263,7 @@ def test_app_10_compile_time_warm(benchmark, app_with_10_components):
     Args:
         benchmark: The benchmark fixture.
         app_with_10_components: The app harness.
+
     """
     with chdir(app_with_10_components.app_path):
         app_with_10_components._initialize_app()
@@ -280,11 +289,12 @@ def test_app_100_compile_time_cold(benchmark, app_with_100_components):
     Args:
         benchmark: The benchmark fixture.
         app_with_100_components: The app harness.
+
     """
 
     def setup():
         with chdir(app_with_100_components.app_path):
-            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            utils.empty_dir(web_pages, ["_app.js"])
             app_with_100_components._initialize_app()
             build.setup_frontend(app_with_100_components.app_path)
 
@@ -308,6 +318,7 @@ def test_app_100_compile_time_warm(benchmark, app_with_100_components):
     Args:
         benchmark: The benchmark fixture.
         app_with_100_components: The app harness.
+
     """
     with chdir(app_with_100_components.app_path):
         app_with_100_components._initialize_app()
@@ -333,11 +344,12 @@ def test_app_1000_compile_time_cold(benchmark, app_with_1000_components):
     Args:
         benchmark: The benchmark fixture.
         app_with_1000_components: The app harness.
+
     """
 
     def setup():
         with chdir(app_with_1000_components.app_path):
-            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            utils.empty_dir(web_pages, keep_files=["_app.js"])
             app_with_1000_components._initialize_app()
             build.setup_frontend(app_with_1000_components.app_path)
 
@@ -361,6 +373,7 @@ def test_app_1000_compile_time_warm(benchmark, app_with_1000_components):
     Args:
         benchmark: The benchmark fixture.
         app_with_1000_components: The app harness.
+
     """
     with chdir(app_with_1000_components.app_path):
         app_with_1000_components._initialize_app()

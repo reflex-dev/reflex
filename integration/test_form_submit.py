@@ -1,4 +1,5 @@
 """Integration tests for forms."""
+
 import functools
 import time
 from typing import Generator
@@ -16,6 +17,7 @@ def FormSubmit(form_component):
 
     Args:
         form_component: The str name of the form component to use.
+
     """
     from typing import Dict, List
 
@@ -75,6 +77,7 @@ def FormSubmitName(form_component):
 
     Args:
         form_component: The str name of the form component to use.
+
     """
     from typing import Dict, List
 
@@ -168,6 +171,7 @@ def form_submit(request, tmp_path_factory) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     param_id = request._pyfuncitem.callspec.id.replace("-", "_")
     with AppHarness.create(
@@ -188,6 +192,7 @@ def driver(form_submit: AppHarness):
 
     Yields:
         WebDriver instance.
+
     """
     driver = form_submit.frontend()
     try:
@@ -204,6 +209,7 @@ async def test_submit(driver, form_submit: AppHarness):
     Args:
         driver: selenium WebDriver open to the app
         form_submit: harness for FormSubmit app
+
     """
     assert form_submit.app_instance is not None, "app is not running"
     by = By.ID if form_submit.app_source is FormSubmit else By.NAME

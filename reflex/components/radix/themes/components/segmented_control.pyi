@@ -8,7 +8,8 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
-from typing import Literal
+from typing import List, Literal, Union
+from reflex.event import EventHandler
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -22,10 +23,10 @@ class SegmentedControlRoot(RadixThemesComponent):
             Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
         variant: Optional[
-            Union[
-                Var[Literal["classic", "surface", "soft"]],
-                Literal["classic", "surface", "soft"],
-            ]
+            Union[Var[Literal["classic", "surface"]], Literal["classic", "surface"]]
+        ] = None,
+        type: Optional[
+            Union[Var[Literal["single", "multiple"]], Literal["single", "multiple"]]
         ] = None,
         color_scheme: Optional[
             Union[
@@ -95,7 +96,12 @@ class SegmentedControlRoot(RadixThemesComponent):
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
+        default_value: Optional[
+            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
+        ] = None,
+        value: Optional[
+            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -103,6 +109,9 @@ class SegmentedControlRoot(RadixThemesComponent):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -157,7 +166,7 @@ class SegmentedControlRoot(RadixThemesComponent):
         Args:
             *children: Child components.
             size: The size of the segmented control: "1" | "2" | "3"
-            variant: Variant of button: "classic" | "surface" | "soft"
+            variant: Variant of button: "classic" | "surface"
             color_scheme: Override theme color for button
             radius: The radius of the segmented control: "none" | "small" | "medium" | "large" | "full"
             default_value: The default value of the segmented control.

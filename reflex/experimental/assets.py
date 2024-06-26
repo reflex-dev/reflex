@@ -1,4 +1,5 @@
 """Helper functions for adding assets to the app."""
+
 import inspect
 from pathlib import Path
 from typing import Optional
@@ -26,6 +27,7 @@ def asset(relative_filename: str, subfolder: Optional[str] = None) -> str:
 
     Returns:
         The relative URL to the copied asset.
+
     """
     # Determine the file by which the asset is exposed.
     calling_file = inspect.stack()[1].filename

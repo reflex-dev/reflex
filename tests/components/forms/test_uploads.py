@@ -9,6 +9,7 @@ def upload_root_component():
 
     Returns:
         A test upload component function.
+
     """
 
     def upload_root_component():
@@ -27,6 +28,7 @@ def upload_component():
 
     Returns:
         A test upload component function.
+
     """
 
     def upload_component():
@@ -40,11 +42,25 @@ def upload_component():
 
 
 @pytest.fixture
+def upload_component_id_special():
+    def upload_component():
+        return rx.upload(
+            rx.button("select file"),
+            rx.text("Drag and drop files here or click to select files"),
+            border="1px dotted black",
+            id="#spec!`al-_98ID",
+        )
+
+    return upload_component()
+
+
+@pytest.fixture
 def upload_component_with_props():
     """A test upload component with props function.
 
     Returns:
         A test upload component with props function.
+
     """
 
     def upload_component_with_props():
@@ -64,6 +80,7 @@ def test_upload_root_component_render(upload_root_component):
 
     Args:
         upload_root_component: component fixture
+
     """
     upload = upload_root_component.render()
 
@@ -72,7 +89,12 @@ def test_upload_root_component_render(upload_root_component):
     assert upload["props"] == [
         "id={`default`}",
         "multiple={true}",
-        "onDrop={e => setFilesById(filesById => ({...filesById, default: e}))}",
+        "onDrop={e => setFilesById(filesById => {\n"
+        "    const updatedFilesById = Object.assign({}, filesById);\n"
+        "    updatedFilesById[`default`] = e;\n"
+        "    return updatedFilesById;\n"
+        "  })\n"
+        "    }",
         "ref={ref_default}",
     ]
     assert upload["args"] == ("getRootProps", "getInputProps")
@@ -106,6 +128,7 @@ def test_upload_component_render(upload_component):
 
     Args:
         upload_component: component fixture
+
     """
     upload = upload_component.render()
 
@@ -114,7 +137,12 @@ def test_upload_component_render(upload_component):
     assert upload["props"] == [
         "id={`default`}",
         "multiple={true}",
-        "onDrop={e => setFilesById(filesById => ({...filesById, default: e}))}",
+        "onDrop={e => setFilesById(filesById => {\n"
+        "    const updatedFilesById = Object.assign({}, filesById);\n"
+        "    updatedFilesById[`default`] = e;\n"
+        "    return updatedFilesById;\n"
+        "  })\n"
+        "    }",
         "ref={ref_default}",
     ]
     assert upload["args"] == ("getRootProps", "getInputProps")
@@ -148,6 +176,7 @@ def test_upload_component_with_props_render(upload_component_with_props):
 
     Args:
         upload_component_with_props: component fixture
+
     """
     upload = upload_component_with_props.render()
 
@@ -156,6 +185,27 @@ def test_upload_component_with_props_render(upload_component_with_props):
         "maxFiles={2}",
         "multiple={true}",
         "noDrag={true}",
-        "onDrop={e => setFilesById(filesById => ({...filesById, default: e}))}",
+        "onDrop={e => setFilesById(filesById => {\n"
+        "    const updatedFilesById = Object.assign({}, filesById);\n"
+        "    updatedFilesById[`default`] = e;\n"
+        "    return updatedFilesById;\n"
+        "  })\n"
+        "    }",
         "ref={ref_default}",
+    ]
+
+
+def test_upload_component_id_with_special_chars(upload_component_id_special):
+    upload = upload_component_id_special.render()
+
+    assert upload["props"] == [
+        r"id={`#spec!\`al-_98ID`}",
+        "multiple={true}",
+        "onDrop={e => setFilesById(filesById => {\n"
+        "    const updatedFilesById = Object.assign({}, filesById);\n"
+        "    updatedFilesById[`#spec!\\`al-_98ID`] = e;\n"
+        "    return updatedFilesById;\n"
+        "  })\n"
+        "    }",
+        "ref={ref__spec_al__98ID}",
     ]

@@ -18,6 +18,7 @@ def extract_stats_from_json(json_file: str) -> list[dict]:
 
     Returns:
         list[dict]: The stats for each test.
+
     """
     with open(json_file, "r") as file:
         json_data = json.load(file)
@@ -75,6 +76,7 @@ def insert_benchmarking_data(
         event_type: Type of github event(push, pull request, etc)
         actor: Username of the user that triggered the run.
         pr_id: Id of the PR.
+
     """
     # Serialize the JSON data
     simple_app_performance_json = json.dumps(performance_data)

@@ -1,4 +1,5 @@
 """Welcome to Reflex! This file outlines the steps to create a basic app."""
+
 from typing import Callable
 
 import reflex as rx
@@ -24,6 +25,7 @@ def template(main_content: Callable[[], rx.Component]) -> rx.Component:
 
     Returns:
         rx.Component: The template for each page of the app.
+
     """
     menu_button = rx.chakra.box(
         rx.chakra.menu(
@@ -74,6 +76,7 @@ def home() -> rx.Component:
 
     Returns:
         rx.Component: The home page.
+
     """
     return home_page()
 
@@ -85,6 +88,7 @@ def forms() -> rx.Component:
 
     Returns:
         rx.Component: The settings page.
+
     """
     return forms_page()
 
@@ -96,6 +100,7 @@ def graphing() -> rx.Component:
 
     Returns:
         rx.Component: The graphing page.
+
     """
     return graphing_page()
 
@@ -107,6 +112,7 @@ def datatable() -> rx.Component:
 
     Returns:
         rx.Component: The chatapp page.
+
     """
     return datatable_page()
 
@@ -118,6 +124,7 @@ def chatapp() -> rx.Component:
 
     Returns:
         rx.Component: The chatapp page.
+
     """
     return chatapp_page()
 

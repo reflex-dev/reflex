@@ -30,6 +30,7 @@ def get_os() -> str:
 
     Returns:
         The operating system.
+
     """
     return platform.system()
 
@@ -39,6 +40,7 @@ def get_detailed_platform_str() -> str:
 
     Returns:
         The platform string
+
     """
     return platform.platform()
 
@@ -48,6 +50,7 @@ def get_python_version() -> str:
 
     Returns:
         The Python version.
+
     """
     return platform.python_version()
 
@@ -57,6 +60,7 @@ def get_reflex_version() -> str:
 
     Returns:
         The Reflex version.
+
     """
     return constants.Reflex.VERSION
 
@@ -66,6 +70,7 @@ def get_cpu_count() -> int:
 
     Returns:
         The number of CPUs.
+
     """
     return multiprocessing.cpu_count()
 
@@ -75,6 +80,7 @@ def get_memory() -> int:
 
     Returns:
         The total memory in MB.
+
     """
     try:
         return psutil.virtual_memory().total >> 20
@@ -92,6 +98,7 @@ def _raise_on_missing_project_hash() -> bool:
     Returns:
         False when compilation should be skipped (i.e. no .web directory is required).
         Otherwise return True.
+
     """
     if should_skip_compile():
         return False
@@ -107,6 +114,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
 
     Returns:
         The event data.
+
     """
     from reflex.utils.prerequisites import get_cpu_info
 
@@ -183,6 +191,7 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
         event: The event name.
         telemetry_enabled: Whether to send the telemetry (If None, get from config).
         kwargs: Additional data to send with the event.
+
     """
 
     async def async_send(event, telemetry_enabled, **kwargs):
@@ -206,5 +215,6 @@ def send_error(error: Exception, context: str):
 
     Returns:
         Whether the telemetry was sent successfully.
+
     """
     return send("error", detail=type(error).__name__, context=context)

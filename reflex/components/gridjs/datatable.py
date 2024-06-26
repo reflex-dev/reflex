@@ -6,7 +6,8 @@ from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
-from reflex.utils import imports, types
+from reflex.utils import types
+from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serialize
 from reflex.vars import BaseVar, ComputedVar, Var
 
@@ -58,6 +59,7 @@ class DataTable(Gridjs):
 
         Raises:
             ValueError: If a pandas dataframe is passed in and columns are also provided.
+
         """
         data = props.get("data")
         columns = props.get("columns")
@@ -102,11 +104,13 @@ class DataTable(Gridjs):
             **props,
         )
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {"": {imports.ImportVar(tag="gridjs/dist/theme/mermaid.css")}},
-        )
+    def add_imports(self) -> ImportDict:
+        """Add the imports for the datatable component.
+
+        Returns:
+            The import dict for the component.
+        """
+        return {"": "gridjs/dist/theme/mermaid.css"}
 
     def _render(self) -> Tag:
         if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):

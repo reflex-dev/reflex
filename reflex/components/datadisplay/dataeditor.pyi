@@ -8,12 +8,13 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from enum import Enum
-from typing import Any, Callable, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
-from reflex.utils import console, format, imports, types
-from reflex.utils.imports import ImportVar
+from reflex.event import EventHandler
+from reflex.utils import console, format, types
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
 from reflex.vars import Var, get_unique_variable_name
 
@@ -79,8 +80,10 @@ class DataEditorTheme(Base):
     text_light: Optional[str]
     text_medium: Optional[str]
 
+def on_edit_spec(pos, data: dict[str, Any]): ...
+
 class DataEditor(NoSSRComponent):
-    def get_event_triggers(self) -> Dict[str, Callable]: ...
+    def add_imports(self) -> ImportDict: ...
     def add_hooks(self) -> list[str]: ...
     @overload
     @classmethod
@@ -136,6 +139,9 @@ class DataEditor(NoSSRComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_cell_activated: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -148,13 +154,25 @@ class DataEditor(NoSSRComponent):
         on_cell_edited: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_column_resize: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_delete: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_finished_editing: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_group_header_clicked: Optional[
@@ -178,10 +196,40 @@ class DataEditor(NoSSRComponent):
         on_item_hovered: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_row_appended: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_selection_cleared: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props

@@ -15,6 +15,7 @@ class Spacer(Flex):
 
         Returns:
             The style of the component.
+
         """
         return {
             "flex": 1,

@@ -30,6 +30,7 @@ class Stack(Flex):
 
         Returns:
             The stack component.
+
         """
         # Apply the default classname
         given_class_name = props.pop("class_name", [])

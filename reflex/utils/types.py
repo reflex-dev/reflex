@@ -56,6 +56,7 @@ else:
 
         Returns:
             The unmodified function.
+
         """
         return func
 
@@ -111,6 +112,7 @@ class Unset:
 
         Returns:
             The string representation of the class.
+
         """
         return "Unset"
 
@@ -119,6 +121,7 @@ class Unset:
 
         Returns:
             False
+
         """
         return False
 
@@ -131,6 +134,7 @@ def is_generic_alias(cls: GenericType) -> bool:
 
     Returns:
         Whether the class is a generic alias.
+
     """
     return isinstance(cls, GenericAliasTypes)
 
@@ -143,6 +147,7 @@ def is_none(cls: GenericType) -> bool:
 
     Returns:
         Whether the class is None.
+
     """
     return cls is type(None) or cls is None
 
@@ -155,6 +160,7 @@ def is_union(cls: GenericType) -> bool:
 
     Returns:
         Whether the class is a Union.
+
     """
     return get_origin(cls) in UnionTypes
 
@@ -167,6 +173,7 @@ def is_literal(cls: GenericType) -> bool:
 
     Returns:
         Whether the class is a literal.
+
     """
     return get_origin(cls) is Literal
 
@@ -179,6 +186,7 @@ def is_optional(cls: GenericType) -> bool:
 
     Returns:
         Whether the class is an Optional.
+
     """
     return is_union(cls) and type(None) in get_args(cls)
 
@@ -191,6 +199,7 @@ def get_property_hint(attr: Any | None) -> GenericType | None:
 
     Returns:
         The type hint of the property, if it is a property, else None.
+
     """
     if not isinstance(attr, (property, hybrid_property)):
         return None
@@ -209,6 +218,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
 
     Returns:
         The type of the attribute, if accessible, or None
+
     """
     from reflex.model import Model
 
@@ -310,6 +320,7 @@ def get_base_class(cls: GenericType) -> Type:
 
     Raises:
         TypeError: If a literal has multiple types.
+
     """
     if is_literal(cls):
         # only literals of the same type are supported.
@@ -336,6 +347,7 @@ def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
 
     Raises:
         TypeError: If the base class is not valid for issubclass.
+
     """
     # Special check for Any.
     if cls_check == Any:
@@ -369,6 +381,7 @@ def _isinstance(obj: Any, cls: GenericType) -> bool:
 
     Returns:
         Whether the object is an instance of the class.
+
     """
     return isinstance(obj, get_base_class(cls))
 
@@ -381,6 +394,7 @@ def is_dataframe(value: Type) -> bool:
 
     Returns:
         Whether the value is a dataframe.
+
     """
     if is_generic_alias(value) or value == Any:
         return False
@@ -395,6 +409,7 @@ def is_valid_var_type(type_: Type) -> bool:
 
     Returns:
         Whether the type is a valid prop type.
+
     """
     from reflex.utils import serializers
 
@@ -412,6 +427,7 @@ def is_backend_variable(name: str, cls: Type | None = None) -> bool:
 
     Returns:
         bool: The result of the check
+
     """
     if cls is not None and name.startswith(f"_{cls.__name__}__"):
         return False
@@ -427,6 +443,7 @@ def check_type_in_allowed_types(value_type: Type, allowed_types: Iterable) -> bo
 
     Returns:
         If the type is found in the allowed types.
+
     """
     return get_base_class(value_type) in allowed_types
 
@@ -441,6 +458,7 @@ def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
 
     Returns:
         If the prop type match one of the allowed_types.
+
     """
     from reflex.vars import Var
 
@@ -456,6 +474,7 @@ def is_encoded_fstring(value) -> bool:
 
     Returns:
         Whether the value is an f-string
+
     """
     return isinstance(value, str) and constants.REFLEX_VAR_OPENING_TAG in value
 
@@ -471,6 +490,7 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
 
     Raises:
         ValueError: When the value is not a valid literal.
+
     """
     from reflex.vars import Var
 
@@ -501,6 +521,7 @@ def validate_parameter_literals(func):
 
     Returns:
         The wrapper function.
+
     """
 
     @wraps(func)

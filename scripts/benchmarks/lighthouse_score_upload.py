@@ -23,6 +23,7 @@ def insert_benchmarking_data(
         lighthouse_data: The Lighthouse data to insert.
         commit_sha: The commit SHA to insert.
         pr_title: The PR title to insert.
+
     """
     # Serialize the JSON data
     lighthouse_json = json.dumps(lighthouse_data)
@@ -57,6 +58,7 @@ def get_lighthouse_scores(directory_path: str) -> dict:
 
     Returns:
         dict: The Lighthouse scores.
+
     """
     scores = {}
 

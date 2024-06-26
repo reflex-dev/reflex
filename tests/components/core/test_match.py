@@ -133,6 +133,7 @@ def test_match_vars(cases, expected):
     Args:
         cases: The match cases.
         expected: The expected var full name.
+
     """
     match_comp = Match.create(MatchState.value, *cases)
     assert isinstance(match_comp, BaseVar)
@@ -196,6 +197,7 @@ def test_match_default_not_last_arg(match_case):
 
     Args:
         match_case: The cases to match.
+
     """
     with pytest.raises(
         ValueError,
@@ -226,6 +228,7 @@ def test_match_case_tuple_elements(match_case):
 
     Args:
         match_case: The cases to match.
+
     """
     with pytest.raises(
         ValueError,
@@ -271,6 +274,7 @@ def test_match_different_return_types(cases: Tuple, error_msg: str):
     Args:
         cases: The match cases.
         error_msg: Expected error message.
+
     """
     with pytest.raises(MatchTypeError, match=error_msg):
         Match.create(MatchState.value, *cases)
@@ -303,6 +307,7 @@ def test_match_multiple_default_cases(match_case):
 
     Args:
         match_case: the cases to match.
+
     """
     with pytest.raises(ValueError, match="rx.match can only have one default case."):
         Match.create(MatchState.value, *match_case)

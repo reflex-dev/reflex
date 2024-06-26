@@ -12,7 +12,7 @@ from reflex.utils.imports import ImportVar
 SETTER_PREFIX = "set_"
 
 # The file used to specify no compilation.
-NOCOMPILE_FILE = ".web/nocompile"
+NOCOMPILE_FILE = "nocompile"
 
 
 class Ext(SimpleNamespace):
@@ -80,6 +80,8 @@ class PageNames(SimpleNamespace):
     DOCUMENT_ROOT = "_document"
     # The name of the theme page.
     THEME = "theme"
+    # The module containing components.
+    COMPONENTS = "components"
     # The module containing shared stateful components
     STATEFUL_COMPONENTS = "stateful_components"
 
@@ -95,6 +97,7 @@ class ComponentName(Enum):
 
         Returns:
             The lower-case filename with zip extension.
+
         """
         return self.value.lower() + Ext.ZIP
 
@@ -108,11 +111,40 @@ class Imports(SimpleNamespace):
         f"/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
     }
 
+    FRONTEND_ERRORS = {
+        "react-error-boundary": [ImportVar(tag="ErrorBoundary")],
+    }
+
 
 class Hooks(SimpleNamespace):
     """Common sets of hook declarations."""
 
     EVENTS = f"const [{CompileVars.ADD_EVENTS}, {CompileVars.CONNECT_ERROR}] = useContext(EventLoopContext);"
+
+    FRONTEND_ERRORS = f"""
+
+    function Fallback({{ error, resetErrorBoundary }}) {{
+
+        return (
+            <div role="alert">
+            <h2>Unknown Error:</h2>
+            <p>{{ error.message }}</p>
+            </div>
+        );
+    }}
+
+    const [{CompileVars.ADD_EVENTS}, {CompileVars.CONNECT_ERROR}] = useContext(EventLoopContext);
+
+    const logFrontendError = (error, info) => {{
+        if (process.env.NODE_ENV === "production") {{
+            addEvents([Event("frontend_event_exception_state.handle_frontend_exception", {{
+                stack: error.stack,
+            }})])
+        }}
+
+    }}
+    """
+
     AUTOFOCUS = """
                 // Set focus to the specified element.
                 const focusRef = useRef(null)

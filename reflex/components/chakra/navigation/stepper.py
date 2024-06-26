@@ -41,6 +41,7 @@ class Stepper(ChakraComponent):
 
         Returns:
             The stepper component.
+
         """
         if len(children) == 0:
             children = []

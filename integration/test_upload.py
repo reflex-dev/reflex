@@ -1,4 +1,5 @@
 """Integration tests for file upload."""
+
 from __future__ import annotations
 
 import asyncio
@@ -128,6 +129,7 @@ def upload_file(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("upload_file"),
@@ -145,6 +147,7 @@ def driver(upload_file: AppHarness):
 
     Yields:
         WebDriver instance.
+
     """
     assert upload_file.app_instance is not None, "app is not running"
     driver = upload_file.frontend()
@@ -166,6 +169,7 @@ async def test_upload_file(
         upload_file: harness for UploadFile app.
         driver: WebDriver instance.
         secondary: whether to use the secondary upload form
+
     """
     assert upload_file.app_instance is not None
     token_input = driver.find_element(By.ID, "token")
@@ -223,6 +227,7 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
         tmp_path: pytest tmp_path fixture
         upload_file: harness for UploadFile app.
         driver: WebDriver instance.
+
     """
     assert upload_file.app_instance is not None
     token_input = driver.find_element(By.ID, "token")
@@ -281,6 +286,7 @@ def test_clear_files(
         upload_file: harness for UploadFile app.
         driver: WebDriver instance.
         secondary: whether to use the secondary upload form.
+
     """
     assert upload_file.app_instance is not None
     token_input = driver.find_element(By.ID, "token")
@@ -335,6 +341,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
         tmp_path: pytest tmp_path fixture
         upload_file: harness for UploadFile app.
         driver: WebDriver instance.
+
     """
     assert upload_file.app_instance is not None
     token_input = driver.find_element(By.ID, "token")

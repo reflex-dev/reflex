@@ -55,6 +55,7 @@ def serializer(
 
     Raises:
         ValueError: If the function does not take a single argument.
+
     """
     if fn is None:
         # If the function is not provided, return a partial that acts as a decorator.
@@ -94,18 +95,15 @@ def serializer(
 @overload
 def serialize(
     value: Any, get_type: Literal[True]
-) -> Tuple[Optional[SerializedType], Optional[types.GenericType]]:
-    ...
+) -> Tuple[Optional[SerializedType], Optional[types.GenericType]]: ...
 
 
 @overload
-def serialize(value: Any, get_type: Literal[False]) -> Optional[SerializedType]:
-    ...
+def serialize(value: Any, get_type: Literal[False]) -> Optional[SerializedType]: ...
 
 
 @overload
-def serialize(value: Any) -> Optional[SerializedType]:
-    ...
+def serialize(value: Any) -> Optional[SerializedType]: ...
 
 
 def serialize(
@@ -122,6 +120,7 @@ def serialize(
 
     Returns:
         The serialized value, or None if a serializer is not found.
+
     """
     # Get the serializer for the type.
     serializer = get_serializer(type(value))
@@ -151,6 +150,7 @@ def get_serializer(type_: Type) -> Optional[Serializer]:
 
     Returns:
         The serializer for the type, or None if there is no serializer.
+
     """
     # First, check if the type is registered.
     serializer = SERIALIZERS.get(type_)
@@ -175,6 +175,7 @@ def get_serializer_type(type_: Type) -> Optional[Type]:
 
     Returns:
         The serialized type for the type, or None if there is no type conversion registered.
+
     """
     # First, check if the type is registered.
     serializer = SERIALIZER_TYPES.get(type_)
@@ -198,6 +199,7 @@ def has_serializer(type_: Type) -> bool:
 
     Returns:
         Whether there is a serializer for the type.
+
     """
     return get_serializer(type_) is not None
 
@@ -211,6 +213,7 @@ def serialize_type(value: type) -> str:
 
     Returns:
         The serialized type.
+
     """
     return value.__name__
 
@@ -224,6 +227,7 @@ def serialize_str(value: str) -> str:
 
     Returns:
         The serialized string.
+
     """
     return value
 
@@ -237,6 +241,7 @@ def serialize_primitive(value: Union[bool, int, float, None]) -> str:
 
     Returns:
         The serialized number/bool/None.
+
     """
     from reflex.utils import format
 
@@ -252,6 +257,7 @@ def serialize_base(value: Base) -> str:
 
     Returns:
         The serialized Base.
+
     """
     return value.json()
 
@@ -265,6 +271,7 @@ def serialize_list(value: Union[List, Tuple, Set]) -> str:
 
     Returns:
         The serialized list.
+
     """
     from reflex.utils import format
 
@@ -287,6 +294,7 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
 
     Raises:
         InvalidStylePropError: If the style prop is invalid.
+
     """
     # Import here to avoid circular imports.
     from reflex.event import EventHandler
@@ -319,6 +327,7 @@ def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
 
     Returns:
         The serialized datetime.
+
     """
     return str(dt)
 
@@ -332,6 +341,7 @@ def serialize_path(path: Path) -> str:
 
     Returns:
         The serialized path.
+
     """
     return str(path.as_posix())
 
@@ -345,6 +355,7 @@ def serialize_enum(en: Enum) -> str:
 
     Returns:
         The serialized enum.
+
     """
     return en.value
 
@@ -358,6 +369,7 @@ def serialize_color(color: Color) -> str:
 
     Returns:
         The serialized color.
+
     """
     return format_color(color.color, color.shade, color.alpha)
 
@@ -373,6 +385,7 @@ try:
 
         Returns:
             The dataframe as a list of lists.
+
         """
         return [
             [str(d) if isinstance(d, (list, tuple)) else d for d in data]
@@ -388,6 +401,7 @@ try:
 
         Returns:
             The serialized dataframe.
+
         """
         return {
             "columns": df.columns.tolist(),
@@ -410,6 +424,7 @@ try:
 
         Returns:
             The serialized figure.
+
         """
         return json.loads(str(to_json(figure)))
 
@@ -422,6 +437,7 @@ try:
 
         Returns:
             The serialized template.
+
         """
         return {
             "data": json.loads(str(to_json(template.data))),
@@ -448,6 +464,7 @@ try:
 
         Returns:
             The serialized image.
+
         """
         buff = io.BytesIO()
         image_format = getattr(image, "format", None) or "PNG"

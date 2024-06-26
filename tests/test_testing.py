@@ -1,4 +1,5 @@
 """Unit tests for the included testing tools."""
+
 import pytest
 
 from reflex.constants import IS_WINDOWS
@@ -11,6 +12,7 @@ def test_app_harness(tmp_path):
 
     Args:
         tmp_path: pytest tmp_path fixture
+
     """
     # Skip in Windows CI.
     if IS_WINDOWS:

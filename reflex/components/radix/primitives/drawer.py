@@ -4,13 +4,13 @@
 # Style based on https://ui.shadcn.com/docs/components/drawer
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
 from reflex.components.radix.themes.layout.flex import Flex
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 
@@ -59,16 +59,8 @@ class DrawerRoot(DrawerComponent):
     # When `True`, it prevents scroll restoration. Defaults to `True`.
     preventScrollRestoration: Var[bool]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
-        }
+    # Fires when the drawer is opened.
+    on_open_change: EventHandler[lambda e0: [e0]]
 
 
 class DrawerTrigger(DrawerComponent):
@@ -91,6 +83,7 @@ class DrawerTrigger(DrawerComponent):
 
         Returns:
             The new DrawerTrigger instance.
+
         """
         for child in children:
             if "on_click" in getattr(child, "event_triggers", {}):
@@ -121,6 +114,7 @@ class DrawerContent(DrawerComponent):
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
+
         """
         base_style = {
             "left": "0",
@@ -135,22 +129,20 @@ class DrawerContent(DrawerComponent):
         base_style.update(style)
         return {"css": base_style}
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
+    # Fired when the drawer content is opened.
+    on_open_auto_focus: EventHandler[lambda e0: [e0.target.value]]
 
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            # DrawerContent is based on Radix DialogContent
-            # These are the same triggers as DialogContent
-            EventTriggers.ON_OPEN_AUTO_FOCUS: lambda e0: [e0.target.value],
-            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0.target.value],
-            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0.target.value],
-            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0.target.value],
-            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0.target.value],
-        }
+    # Fired when the drawer content is closed.
+    on_close_auto_focus: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when the escape key is pressed.
+    on_escape_key_down: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when the pointer is down outside the drawer content.
+    on_pointer_down_outside: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when interacting outside the drawer content.
+    on_interact_outside: EventHandler[lambda e0: [e0.target.value]]
 
     @classmethod
     def create(cls, *children, **props):
@@ -166,6 +158,7 @@ class DrawerContent(DrawerComponent):
 
         Returns:
                  The drawer content.
+
         """
         comp = super().create(*children, **props)
 
@@ -185,6 +178,7 @@ class DrawerOverlay(DrawerComponent):
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
+
         """
         base_style = {
             "position": "fixed",
@@ -221,6 +215,7 @@ class DrawerTitle(DrawerComponent):
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
+
         """
         base_style = {
             "font-size": "1.125rem",
@@ -246,6 +241,7 @@ class DrawerDescription(DrawerComponent):
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
+
         """
         base_style = {
             "font-size": "0.875rem",

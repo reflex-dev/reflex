@@ -21,6 +21,7 @@ class PieChartState(State):
 
         Returns:
             The resource types.
+
         """
         return [r["type_"] for r in self.resources]
 
@@ -29,6 +30,7 @@ class PieChartState(State):
 
         Args:
             type_: The type of resource to increment.
+
         """
         for resource in self.resources:
             if resource["type_"] == type_:
@@ -40,6 +42,7 @@ class PieChartState(State):
 
         Args:
             type_: The type of resource to decrement.
+
         """
         for resource in self.resources:
             if resource["type_"] == type_ and resource["count"] > 0:

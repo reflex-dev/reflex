@@ -39,7 +39,12 @@ from reflex.utils import console, imports, serializers, types
 from reflex.utils.exceptions import VarAttributeError, VarTypeError, VarValueError
 
 # This module used to export ImportVar itself, so we still import it for export here
-from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.imports import (
+    ImportDict,
+    ImportVar,
+    ParsedImportDict,
+    parse_imports,
+)
 from reflex.utils.types import override
 
 if TYPE_CHECKING:
@@ -105,6 +110,7 @@ def get_unique_variable_name() -> str:
 
     Returns:
         The unique variable name.
+
     """
     name = "".join([random.choice(string.ascii_lowercase) for _ in range(8)])
     if name not in USED_VARIABLES:
@@ -120,7 +126,7 @@ class VarData(Base):
     state: str = ""
 
     # Imports needed to render this var
-    imports: ImportDict = {}
+    imports: ParsedImportDict = {}
 
     # Hooks that need to be present in the component to render this var
     hooks: Dict[str, None] = {}
@@ -129,6 +135,19 @@ class VarData(Base):
     # out where the interpolations are and only escape the non-interpolated
     # segments.
     interpolations: List[Tuple[int, int]] = []
+
+    def __init__(
+        self, imports: Union[ImportDict, ParsedImportDict] | None = None, **kwargs: Any
+    ):
+        """Initialize the var data.
+
+        Args:
+            imports: The imports needed to render this var.
+            **kwargs: The var data fields.
+        """
+        if imports:
+            kwargs["imports"] = parse_imports(imports)
+        super().__init__(**kwargs)
 
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None:
@@ -139,6 +158,7 @@ class VarData(Base):
 
         Returns:
             The merged var data object.
+
         """
         state = ""
         _imports = {}
@@ -167,6 +187,7 @@ class VarData(Base):
 
         Returns:
             True if any field is set to a non-default value.
+
         """
         return bool(self.state or self.imports or self.hooks or self.interpolations)
 
@@ -178,6 +199,7 @@ class VarData(Base):
 
         Returns:
             True if all fields are equal and collapsed imports are equal.
+
         """
         if not isinstance(other, VarData):
             return False
@@ -196,6 +218,7 @@ class VarData(Base):
 
         Returns:
             The var data dictionary.
+
         """
         return {
             "state": self.state,
@@ -216,6 +239,7 @@ def _encode_var(value: Var) -> str:
 
     Returns:
         The encoded var.
+
     """
     if value._var_data:
         from reflex.utils.serializers import serialize
@@ -248,6 +272,7 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
 
     Returns:
         The extracted state name and the value without the state name.
+
     """
     var_datas = []
     if isinstance(value, str):
@@ -295,6 +320,7 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
 
     Returns:
         The extracted VarDatas.
+
     """
     from reflex.style import Style
 
@@ -363,6 +389,7 @@ class Var:
 
         Raises:
             VarTypeError: If the value is JSON-unserializable.
+
         """
         from reflex.utils import format
 
@@ -434,6 +461,7 @@ class Var:
 
         Returns:
             The var.
+
         """
         var = cls.create(
             value,
@@ -453,6 +481,7 @@ class Var:
 
         Returns:
             The var class item.
+
         """
         return _GenericAlias(cls, type_)
 
@@ -464,7 +493,7 @@ class Var:
             self._var_name = _var_name
             self._var_data = VarData.merge(self._var_data, _var_data)
 
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> Var:
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> BaseVar:
         """Make a copy of this Var with updated fields.
 
         Args:
@@ -473,6 +502,7 @@ class Var:
 
         Returns:
             A new BaseVar with the updated fields overwriting the corresponding fields in this Var.
+
         """
         field_values = dict(
             _var_name=kwargs.pop("_var_name", self._var_name),
@@ -497,6 +527,7 @@ class Var:
 
         Returns:
             The decoded value or the Var name.
+
         """
         if self._var_is_string:
             return self._var_name
@@ -513,6 +544,7 @@ class Var:
 
         Returns:
             Whether the vars are equal.
+
         """
         return (
             self._var_name == other._var_name
@@ -531,6 +563,7 @@ class Var:
 
         Returns:
             The merged var.
+
         """
         if other is None:
             return self._replace()
@@ -548,6 +581,7 @@ class Var:
 
         Returns:
             The stringified var.
+
         """
         fn = "JSON.stringify" if json else "String"
         return self.operation(fn=fn, type_=str)
@@ -557,6 +591,7 @@ class Var:
 
         Returns:
             The parseInt var.
+
         """
         return self.operation(fn="parseInt", type_=int)
 
@@ -565,6 +600,7 @@ class Var:
 
         Returns:
             The hash of the var.
+
         """
         return hash((self._var_name, str(self._var_type)))
 
@@ -573,6 +609,7 @@ class Var:
 
         Returns:
             The wrapped var, i.e. {state.var}.
+
         """
         from reflex.utils import format
 
@@ -590,6 +627,7 @@ class Var:
 
         Raises:
             VarTypeError: when attempting to bool-ify the Var.
+
         """
         raise VarTypeError(
             f"Cannot convert Var {self._var_full_name!r} to bool for use with `if`, `and`, `or`, and `not`. "
@@ -601,6 +639,7 @@ class Var:
 
         Raises:
             VarTypeError: when attempting to iterate over the Var.
+
         """
         raise VarTypeError(
             f"Cannot iterate over Var {self._var_full_name!r}. Instead use `rx.foreach`."
@@ -614,6 +653,7 @@ class Var:
 
         Returns:
             The formatted var.
+
         """
         # Encode the _var_data into the formatted output for tracking purposes.
         str_self = _encode_var(self)
@@ -632,6 +672,7 @@ class Var:
 
         Raises:
             VarTypeError: If the var is not indexable.
+
         """
         from reflex.utils import format
 
@@ -737,6 +778,7 @@ class Var:
 
         Raises:
             VarAttributeError: If the attribute cannot be found, or if __getattr__ fallback should be used.
+
         """
         try:
             var_attribute = super().__getattribute__(name)
@@ -771,6 +813,7 @@ class Var:
         Raises:
             VarAttributeError: If the var is wrongly annotated or can't find attribute.
             VarTypeError: If an annotation to the var isn't provided.
+
         """
         # Check if the attribute is one of the class fields.
         if not name.startswith("_"):
@@ -827,6 +870,7 @@ class Var:
         Raises:
             VarTypeError: If the operation between two operands is invalid.
             VarValueError: If flip is set to true and value of operand is not provided
+
         """
         from reflex.utils import format
 
@@ -876,19 +920,19 @@ class Var:
                 if invoke_fn:
                     # invoke the function on left operand.
                     operation_name = (
-                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"
-                    )  # type: ignore
+                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
+                    )
                 else:
                     # pass the operands as arguments to the function.
                     operation_name = (
-                        f"{left_operand_full_name} {op} {right_operand_full_name}"
-                    )  # type: ignore
+                        f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                    )
                     operation_name = f"{fn}({operation_name})"
             else:
                 # apply operator to operands (left operand <operator> right_operand)
                 operation_name = (
-                    f"{left_operand_full_name} {op} {right_operand_full_name}"
-                )  # type: ignore
+                    f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                )
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
@@ -948,6 +992,7 @@ class Var:
 
         Returns:
             The comparison result.
+
         """
         return self.operation(op, other, bool)
 
@@ -956,6 +1001,7 @@ class Var:
 
         Returns:
             The inverted var.
+
         """
         return self.operation("!", type_=bool)
 
@@ -964,6 +1010,7 @@ class Var:
 
         Returns:
             The negated var.
+
         """
         return self.operation(fn="-")
 
@@ -972,6 +1019,7 @@ class Var:
 
         Returns:
             A var with the absolute value.
+
         """
         return self.operation(fn="Math.abs")
 
@@ -983,6 +1031,7 @@ class Var:
 
         Raises:
             VarTypeError: If the var is not a list.
+
         """
         if not types._issubclass(self._var_type, List):
             raise VarTypeError(f"Cannot get length of non-list var {self}.")
@@ -997,6 +1046,7 @@ class Var:
 
         Returns:
             A var representing the type check.
+
         """
         return self._replace(
             _var_name=f"typeof {self._var_full_name}",
@@ -1013,6 +1063,7 @@ class Var:
 
         Returns:
             A var representing the equality comparison.
+
         """
         for python_types, js_type in PYTHON_JS_TYPE_MAP.items():
             if not isinstance(other, Var) and other in python_types:
@@ -1027,6 +1078,7 @@ class Var:
 
         Returns:
             A var representing the inequality comparison.
+
         """
         for python_types, js_type in PYTHON_JS_TYPE_MAP.items():
             if not isinstance(other, Var) and other in python_types:
@@ -1041,6 +1093,7 @@ class Var:
 
         Returns:
             A var representing the greater than comparison.
+
         """
         return self.compare(">", other)
 
@@ -1052,6 +1105,7 @@ class Var:
 
         Returns:
             A var representing the greater than or equal to comparison.
+
         """
         return self.compare(">=", other)
 
@@ -1063,6 +1117,7 @@ class Var:
 
         Returns:
             A var representing the less than comparison.
+
         """
         return self.compare("<", other)
 
@@ -1074,6 +1129,7 @@ class Var:
 
         Returns:
             A var representing the less than or equal to comparison.
+
         """
         return self.compare("<=", other)
 
@@ -1086,6 +1142,7 @@ class Var:
 
         Returns:
             A var representing the sum.
+
         """
         other_type = other._var_type if isinstance(other, Var) else type(other)
         # For list-list addition, javascript concatenates the content of the lists instead of
@@ -1116,6 +1173,7 @@ class Var:
 
         Returns:
             A var representing the sum.
+
         """
         return self.__add__(other=other, flip=True)
 
@@ -1127,6 +1185,7 @@ class Var:
 
         Returns:
             A var representing the difference.
+
         """
         return self.operation("-", other)
 
@@ -1138,6 +1197,7 @@ class Var:
 
         Returns:
             A var representing the difference.
+
         """
         return self.operation("-", other, flip=True)
 
@@ -1150,6 +1210,7 @@ class Var:
 
         Returns:
             A var representing the product.
+
         """
         other_type = other._var_type if isinstance(other, Var) else type(other)
         # For str-int multiplication, we use the repeat function.
@@ -1185,6 +1246,7 @@ class Var:
 
         Returns:
             A var representing the product.
+
         """
         return self.__mul__(other=other, flip=True)
 
@@ -1196,6 +1258,7 @@ class Var:
 
         Returns:
             A var representing the power.
+
         """
         return self.operation(",", other, fn="Math.pow")
 
@@ -1207,6 +1270,7 @@ class Var:
 
         Returns:
             A var representing the power.
+
         """
         return self.operation(",", other, flip=True, fn="Math.pow")
 
@@ -1218,6 +1282,7 @@ class Var:
 
         Returns:
             A var representing the quotient.
+
         """
         return self.operation("/", other)
 
@@ -1229,6 +1294,7 @@ class Var:
 
         Returns:
             A var representing the quotient.
+
         """
         return self.operation("/", other, flip=True)
 
@@ -1240,6 +1306,7 @@ class Var:
 
         Returns:
             A var representing the quotient.
+
         """
         return self.operation("/", other, fn="Math.floor")
 
@@ -1251,6 +1318,7 @@ class Var:
 
         Returns:
             A var representing the remainder.
+
         """
         return self.operation("%", other)
 
@@ -1262,6 +1330,7 @@ class Var:
 
         Returns:
             A var representing the remainder.
+
         """
         return self.operation("%", other, flip=True)
 
@@ -1292,6 +1361,7 @@ class Var:
         >>> js_code = var1 & var2
         >>> print(js_code._var_full_name)
         '(true && false)'
+
         """
         return self.operation("&&", other, type_=bool)
 
@@ -1322,6 +1392,7 @@ class Var:
         >>> js_code = var1 & var2
         >>> print(js_code._var_full_name)
         '(false && true)'
+
         """
         return self.operation("&&", other, type_=bool, flip=True)
 
@@ -1350,6 +1421,7 @@ class Var:
         >>> js_code = var1 | var2
         >>> print(js_code._var_full_name)
         '(true || false)'
+
         """
         return self.operation("||", other, type_=bool)
 
@@ -1378,6 +1450,7 @@ class Var:
         >>> js_code = var1 | var2
         >>> print(js_code)
         'false || true'
+
         """
         return self.operation("||", other, type_=bool, flip=True)
 
@@ -1386,6 +1459,7 @@ class Var:
 
         Raises:
             VarTypeError: the operation is not supported
+
         """
         raise VarTypeError(
             "'in' operator not supported for Var types, use Var.contains() instead."
@@ -1403,6 +1477,7 @@ class Var:
 
         Returns:
             A var representing the contain check.
+
         """
         if not (types._issubclass(self._var_type, Union[dict, list, tuple, str, set])):
             raise VarTypeError(
@@ -1455,6 +1530,7 @@ class Var:
 
         Returns:
             A var with the reversed list.
+
         """
         if not types._issubclass(self._var_type, list):
             raise VarTypeError(f"Cannot reverse non-list var {self._var_full_name}.")
@@ -1473,6 +1549,7 @@ class Var:
 
         Raises:
             VarTypeError: If the var is not a string.
+
         """
         if not types._issubclass(self._var_type, str):
             raise VarTypeError(
@@ -1493,6 +1570,7 @@ class Var:
 
         Raises:
             VarTypeError: If the var is not a string.
+
         """
         if not types._issubclass(self._var_type, str):
             raise VarTypeError(
@@ -1516,6 +1594,7 @@ class Var:
 
         Raises:
             VarTypeError: If the var is not a string.
+
         """
         if not types._issubclass(self._var_type, str):
             raise VarTypeError(f"Cannot strip non-string var {self._var_full_name}.")
@@ -1543,6 +1622,7 @@ class Var:
 
         Raises:
             VarTypeError: If the var is not a string.
+
         """
         if not types._issubclass(self._var_type, str):
             raise VarTypeError(f"Cannot split non-string var {self._var_full_name}.")
@@ -1571,6 +1651,7 @@ class Var:
 
         Raises:
             VarTypeError: If the var is not a list.
+
         """
         if not types._issubclass(self._var_type, list):
             raise VarTypeError(f"Cannot join non-list var {self._var_full_name}.")
@@ -1600,6 +1681,7 @@ class Var:
 
         Raises:
             VarTypeError: If the var is not a list.
+
         """
         inner_types = get_args(self._var_type)
         if not inner_types:
@@ -1641,6 +1723,7 @@ class Var:
 
         Raises:
             VarTypeError: If the var is not an int.
+
         """
         if not isinstance(v1, Var):
             v1 = Var.create_safe(v1)
@@ -1688,6 +1771,7 @@ class Var:
 
         Returns:
             The converted var.
+
         """
         return self._replace(_var_type=type_)
 
@@ -1696,6 +1780,7 @@ class Var:
 
         Returns:
             The var as a ref.
+
         """
         return self._replace(
             _var_name=f"refs['{self._var_full_name}']",
@@ -1715,6 +1800,7 @@ class Var:
 
         Returns:
             The full name of the var.
+
         """
         from reflex.utils import format
 
@@ -1736,6 +1822,7 @@ class Var:
 
         Returns:
             The var with the set state.
+
         """
         from reflex.utils import format
 
@@ -1762,6 +1849,7 @@ class Var:
 
         Returns:
             The state name associated with the var.
+
         """
         return self._var_data.state if self._var_data else ""
 
@@ -1771,21 +1859,20 @@ class Var:
 
         Returns:
             The str var without the wrapped curly braces
+
         """
         from reflex.style import Style
 
-        type_ = (
-            get_origin(self._var_type)
-            if types.is_generic_alias(self._var_type)
-            else self._var_type
-        )
+        generic_alias = types.is_generic_alias(self._var_type)
+
+        type_ = get_origin(self._var_type) if generic_alias else self._var_type
         wrapped_var = str(self)
 
         return (
             wrapped_var
             if not self._var_state
-            and types._issubclass(type_, dict)
-            or types._issubclass(type_, Style)
+            and not generic_alias
+            and (types._issubclass(type_, dict) or types._issubclass(type_, Style))
             else wrapped_var.strip("{}")
         )
 
@@ -1824,6 +1911,7 @@ class BaseVar(Var):
 
         Returns:
             The hash of the var.
+
         """
         return hash((self._var_name, str(self._var_type)))
 
@@ -1835,6 +1923,7 @@ class BaseVar(Var):
 
         Raises:
             ImportError: If the var is a dataframe and pandas is not installed.
+
         """
         if types.is_optional(self._var_type):
             return None
@@ -1878,6 +1967,7 @@ class BaseVar(Var):
 
         Returns:
             The name of the setter function.
+
         """
         setter = constants.SETTER_PREFIX + self._var_name
         if self._var_data is None:
@@ -1891,6 +1981,7 @@ class BaseVar(Var):
 
         Returns:
             A function that that creates a setter for the var.
+
         """
 
         def setter(state: BaseState, value: Any):
@@ -1899,6 +1990,7 @@ class BaseVar(Var):
             Args:
                 state: The state within which we add the setter function.
                 value: The value to set.
+
             """
             if self._var_type in [int, float]:
                 try:
@@ -1955,6 +2047,9 @@ class ComputedVar(Var, property):
             auto_deps: Whether var dependencies should be auto-determined.
             interval: Interval at which the computed var should be updated.
             **kwargs: additional attributes to set on the instance
+
+        Raises:
+            TypeError: If the computed var dependencies are not Var instances or var names.
         """
         self._initial_value = initial_value
         self._cache = cache
@@ -1963,6 +2058,15 @@ class ComputedVar(Var, property):
         self._update_interval = interval
         if deps is None:
             deps = []
+        else:
+            for dep in deps:
+                if isinstance(dep, Var):
+                    continue
+                if isinstance(dep, str) and dep != "":
+                    continue
+                raise TypeError(
+                    "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
+                )
         self._static_deps = {
             dep._var_name if isinstance(dep, Var) else dep for dep in deps
         }
@@ -1982,6 +2086,7 @@ class ComputedVar(Var, property):
 
         Returns:
             The new ComputedVar instance.
+
         """
         return ComputedVar(
             fget=kwargs.get("fget", self.fget),
@@ -2007,6 +2112,7 @@ class ComputedVar(Var, property):
 
         Returns:
             An attribute name.
+
         """
         return f"__cached_{self._var_name}"
 
@@ -2016,6 +2122,7 @@ class ComputedVar(Var, property):
 
         Returns:
             An attribute name.
+
         """
         return f"__last_updated_{self._var_name}"
 
@@ -2027,6 +2134,7 @@ class ComputedVar(Var, property):
 
         Returns:
             True if the computed var needs to be updated, False otherwise.
+
         """
         if self._update_interval is None:
             return False
@@ -2046,6 +2154,7 @@ class ComputedVar(Var, property):
 
         Returns:
             The value of the var for the given instance.
+
         """
         if instance is None or not self._cache:
             return super().__get__(instance, owner)
@@ -2083,6 +2192,7 @@ class ComputedVar(Var, property):
         Raises:
             VarValueError: if the function references the get_state, parent_state, or substates attributes
                 (cannot track deps in a related state, only implicitly via parent state).
+
         """
         if not self._auto_deps:
             return self._static_deps
@@ -2164,6 +2274,7 @@ class ComputedVar(Var, property):
 
         Args:
             instance: the state instance that needs to recompute the value.
+
         """
         with contextlib.suppress(AttributeError):
             delattr(instance, self._cache_attr)
@@ -2173,6 +2284,7 @@ class ComputedVar(Var, property):
 
         Returns:
             The type of the var.
+
         """
         hints = get_type_hints(property.__getattribute__(self, "fget"))
         if "return" in hints:
@@ -2205,6 +2317,7 @@ def computed_var(
 
     Raises:
         ValueError: If caching is disabled and an update interval is set.
+
     """
     if cache is False and interval is not None:
         raise ValueError("Cannot set update interval without caching.")
@@ -2242,6 +2355,7 @@ class CallableVar(BaseVar):
 
         Args:
             fn: The function to decorate (must return Var)
+
         """
         self.fn = fn
         default_var = fn()
@@ -2256,6 +2370,7 @@ class CallableVar(BaseVar):
 
         Returns:
             The Var returned from calling the function.
+
         """
         return self.fn(*args, **kwargs)
 
@@ -2265,6 +2380,7 @@ def get_uuid_string_var() -> Var:
 
     Returns:
         the var to generate UUIDs at runtime.
+
     """
     from reflex.utils.imports import ImportVar
 

@@ -60,6 +60,7 @@ def component_state_app(tmp_path) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path,
@@ -74,6 +75,7 @@ async def test_component_state_app(component_state_app: AppHarness):
 
     Args:
         component_state_app: harness for ComponentStateApp app
+
     """
     assert component_state_app.app_instance is not None, "app is not running"
     driver = component_state_app.frontend()

@@ -1,4 +1,5 @@
 """Element classes."""
+
 from __future__ import annotations
 
 from reflex.utils import lazy_loader
@@ -64,6 +65,9 @@ _MAPPING = {
         "portal",
         "source",
         "svg",
+        "defs",
+        "lineargradient",
+        "stop",
         "path",
     ],
     "metadata": [
@@ -72,6 +76,7 @@ _MAPPING = {
         "link",
         "meta",
         "title",
+        "style",
     ],
     "other": ["details", "dialog", "summary", "slot", "template", "math", "html"],
     "scripts": ["canvas", "noscript", "script"],

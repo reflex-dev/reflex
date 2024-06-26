@@ -1,4 +1,5 @@
 """Chakra Tag Component."""
+
 from typing import Optional
 
 from reflex.components.chakra import (
@@ -77,6 +78,7 @@ class Tag(ChakraComponent):
 
         Returns:
             The `create()` method returns a Tag object.
+
         """
         children = [
             x for x in (left_icon, label, right_icon, close_button) if x is not None

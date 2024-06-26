@@ -1,4 +1,5 @@
 """Base components."""
+
 from __future__ import annotations
 
 from reflex.utils import lazy_loader
@@ -11,6 +12,10 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
     "fragment": [
         "Fragment",
         "fragment",
+    ],
+    "error_boundary": [
+        "ErrorBoundary",
+        "error_boundary",
     ],
     "head": [
         "head",

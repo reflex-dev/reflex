@@ -8,8 +8,9 @@ from reflex.components.component import BaseComponent, Component, MemoizationLea
 from reflex.components.core.colors import Color
 from reflex.components.tags import MatchTag, Tag
 from reflex.style import Style
-from reflex.utils import format, imports, types
+from reflex.utils import format, types
 from reflex.utils.exceptions import MatchTypeError
+from reflex.utils.imports import ImportDict
 from reflex.vars import BaseVar, Var, VarData
 
 
@@ -38,6 +39,7 @@ class Match(MemoizationLeaf):
 
         Raises:
             ValueError: When a default case is not provided for cases with Var return types.
+
         """
         match_cond_var = cls._create_condition_var(cond)
         cases, default = cls._process_cases(list(cases))
@@ -66,6 +68,7 @@ class Match(MemoizationLeaf):
 
         Raises:
             ValueError: If the condition is not provided.
+
         """
         match_cond_var = Var.create(cond, _var_is_string=isinstance(cond, str))
 
@@ -87,6 +90,7 @@ class Match(MemoizationLeaf):
 
         Raises:
             ValueError: If there are multiple default cases.
+
         """
         default = None
 
@@ -115,6 +119,7 @@ class Match(MemoizationLeaf):
 
         Returns:
             The case element Var.
+
         """
         _var_data = case_element._var_data if isinstance(case_element, Style) else None  # type: ignore
         case_element = Var.create(
@@ -137,6 +142,7 @@ class Match(MemoizationLeaf):
 
         Raises:
             ValueError: If the default case is not the last case or the tuple elements are less than 2.
+
         """
         match_cases = []
         for case in cases:
@@ -175,6 +181,7 @@ class Match(MemoizationLeaf):
 
         Raises:
             MatchTypeError: If the return types of cases are different.
+
         """
         first_case_return = match_cases[0][-1]
         return_type = type(first_case_return)
@@ -211,6 +218,7 @@ class Match(MemoizationLeaf):
 
         Raises:
             ValueError: If the return types are not vars when creating a match var for Var types.
+
         """
         if default is None and types._issubclass(
             type(match_cases[0][-1]), BaseComponent
@@ -263,16 +271,19 @@ class Match(MemoizationLeaf):
 
         Returns:
             The dictionary for template of component.
+
         """
         tag = self._render()
         tag.name = "match"
         return dict(tag)
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            getattr(self.cond._var_data, "imports", {}),
-        )
+    def add_imports(self) -> ImportDict:
+        """Add imports for the Match component.
+
+        Returns:
+            The import dict.
+        """
+        return getattr(self.cond._var_data, "imports", {})
 
 
 match = Match.create

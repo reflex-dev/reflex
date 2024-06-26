@@ -39,6 +39,7 @@ def page(
 
     Returns:
         The decorated function.
+
     """
 
     def decorator(render_fn):
@@ -70,6 +71,7 @@ def get_decorated_pages() -> list[dict]:
 
     Returns:
         The decorated pages.
+
     """
     return sorted(
         [page_data for _, page_data in DECORATED_PAGES[get_config().app_name]],

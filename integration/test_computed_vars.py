@@ -37,8 +37,13 @@ def ComputedVars():
 
             return self.count
 
+        # explicit dependency on count var
+        @rx.var(cache=True, deps=["count"], auto_deps=False)
+        def depends_on_count(self) -> int:
+            return self.count
+
         # explicit dependency on count1 var
-        @rx.cached_var(deps=[count1], auto_deps=False)
+        @rx.var(cache=True, deps=[count1], auto_deps=False)
         def depends_on_count1(self) -> int:
             return self.count
 
@@ -70,6 +75,11 @@ def ComputedVars():
                 rx.text(State.count2, id="count2"),
                 rx.text("count3:"),
                 rx.text(State.count3, id="count3"),
+                rx.text("depends_on_count:"),
+                rx.text(
+                    State.depends_on_count,
+                    id="depends_on_count",
+                ),
                 rx.text("depends_on_count1:"),
                 rx.text(
                     State.depends_on_count1,
@@ -90,7 +100,7 @@ def ComputedVars():
 
 @pytest.fixture(scope="module")
 def computed_vars(
-    tmp_path_factory,
+    tmp_path_factory: pytest.TempPathFactory,
 ) -> Generator[AppHarness, None, None]:
     """Start ComputedVars app at tmp_path via AppHarness.
 
@@ -99,6 +109,7 @@ def computed_vars(
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp(f"computed_vars"),
@@ -116,6 +127,7 @@ def driver(computed_vars: AppHarness) -> Generator[WebDriver, None, None]:
 
     Yields:
         WebDriver instance.
+
     """
     assert computed_vars.app_instance is not None, "app is not running"
     driver = computed_vars.frontend()
@@ -135,6 +147,7 @@ def token(computed_vars: AppHarness, driver: WebDriver) -> str:
 
     Returns:
         The token for the connected client
+
     """
     assert computed_vars.app_instance is not None
     token_input = driver.find_element(By.ID, "token")
@@ -158,6 +171,7 @@ def test_computed_vars(
         computed_vars: harness for ComputedVars app.
         driver: WebDriver instance.
         token: The token for the connected client.
+
     """
     assert computed_vars.app_instance is not None
 
@@ -176,6 +190,10 @@ def test_computed_vars(
     count3 = driver.find_element(By.ID, "count3")
     assert count3
     assert count3.text == "0"
+
+    depends_on_count = driver.find_element(By.ID, "depends_on_count")
+    assert depends_on_count
+    assert depends_on_count.text == "0"
 
     depends_on_count1 = driver.find_element(By.ID, "depends_on_count1")
     assert depends_on_count1
@@ -197,10 +215,14 @@ def test_computed_vars(
     assert computed_vars.poll_for_content(count, timeout=2, exp_not_equal="0") == "1"
     assert computed_vars.poll_for_content(count1, timeout=2, exp_not_equal="0") == "1"
     assert computed_vars.poll_for_content(count2, timeout=2, exp_not_equal="0") == "1"
+    assert (
+        computed_vars.poll_for_content(depends_on_count, timeout=2, exp_not_equal="0")
+        == "1"
+    )
 
     mark_dirty.click()
     with pytest.raises(TimeoutError):
-        computed_vars.poll_for_content(count3, timeout=5, exp_not_equal="0")
+        _ = computed_vars.poll_for_content(count3, timeout=5, exp_not_equal="0")
 
     time.sleep(10)
     assert count3.text == "0"

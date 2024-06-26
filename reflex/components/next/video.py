@@ -29,5 +29,6 @@ class Video(NextComponent):
 
         Returns:
             The Video component.
+
         """
         return super().create(*children, **props)

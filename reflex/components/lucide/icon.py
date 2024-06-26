@@ -35,6 +35,7 @@ class Icon(LucideIconComponent):
 
         Returns:
             The created component.
+
         """
 
         def map_deprecated_icon_names_05(tag: str) -> str:

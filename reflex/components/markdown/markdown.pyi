@@ -11,7 +11,6 @@ import textwrap
 from functools import lru_cache
 from hashlib import md5
 from typing import Any, Callable, Dict, Union
-from reflex.compiler import utils
 from reflex.components.component import Component, CustomComponent
 from reflex.components.radix.themes.layout.list import (
     ListItem,
@@ -22,8 +21,8 @@ from reflex.components.radix.themes.typography.heading import Heading
 from reflex.components.radix.themes.typography.link import Link
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.tags.tag import Tag
-from reflex.utils import imports, types
-from reflex.utils.imports import ImportVar
+from reflex.utils import types
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 _CHILDREN = Var.create_safe("children", _var_is_local=False, _var_is_string=False)
@@ -124,6 +123,8 @@ class Markdown(Component):
             The markdown component.
         """
         ...
+
+    def add_imports(self) -> ImportDict | list[ImportDict]: ...
     def get_component(self, tag: str, **props) -> Component: ...
     def format_component(self, tag: str, **props) -> str: ...
     def format_component_map(self) -> dict[str, str]: ...

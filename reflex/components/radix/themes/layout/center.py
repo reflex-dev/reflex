@@ -15,6 +15,7 @@ class Center(Flex):
 
         Returns:
             The style of the component.
+
         """
         return {
             "display": "flex",

@@ -24,6 +24,7 @@ class Bare(Component):
 
         Returns:
             The component.
+
         """
         if isinstance(contents, Var) and contents._var_data:
             contents = contents.to(str)
@@ -42,5 +43,6 @@ class Bare(Component):
 
         Yields:
             The contents if it is a Var, otherwise nothing.
+
         """
         yield self.contents

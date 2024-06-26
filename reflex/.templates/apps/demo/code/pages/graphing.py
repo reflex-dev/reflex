@@ -1,4 +1,5 @@
 """The dashboard page for the template."""
+
 import reflex as rx
 
 from ..states.pie_state import PieChartState
@@ -110,6 +111,7 @@ def graphing_page() -> rx.Component:
 
     Returns:
         rx.Component: The UI for the dashboard page.
+
     """
     return rx.chakra.box(
         rx.chakra.vstack(

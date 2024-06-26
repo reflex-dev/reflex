@@ -1,7 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
 
-from reflex.constants import EventTriggers
+from typing import Literal
+
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from ..base import (
@@ -56,16 +57,8 @@ class Switch(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger name to the argspec passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda checked: [checked],
-        }
+    # Fired when the value of the switch changes
+    on_change: EventHandler[lambda checked: [checked]]
 
 
 switch = Switch.create

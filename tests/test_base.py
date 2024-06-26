@@ -9,6 +9,7 @@ def child() -> Base:
 
     Returns:
         A child class.
+
     """
 
     class Child(Base):
@@ -23,6 +24,7 @@ def test_get_fields(child):
 
     Args:
         child: A child class.
+
     """
     assert child.get_fields().keys() == {"num", "key"}
 
@@ -32,6 +34,7 @@ def test_set(child):
 
     Args:
         child: A child class.
+
     """
     child.set(num=1, key="a")
     assert child.num == 1
@@ -43,6 +46,7 @@ def test_json(child):
 
     Args:
         child: A child class.
+
     """
     assert child.json().replace(" ", "") == '{"num":3.14,"key":"pi"}'
 
@@ -53,6 +57,7 @@ def complex_child() -> Base:
 
     Returns:
         A child class.
+
     """
 
     class Child(Base):
@@ -70,6 +75,7 @@ def test_complex_get_fields(complex_child):
 
     Args:
         complex_child: A child class.
+
     """
     assert complex_child.get_fields().keys() == {"num", "key", "name", "age", "active"}
 
@@ -79,6 +85,7 @@ def test_complex_set(complex_child):
 
     Args:
         complex_child: A child class.
+
     """
     complex_child.set(num=1, key="a", name="Jane Doe", age=28, active=False)
     assert complex_child.num == 1
@@ -93,6 +100,7 @@ def test_complex_json(complex_child):
 
     Args:
         complex_child: A child class.
+
     """
     assert (
         complex_child.json().replace(" ", "")

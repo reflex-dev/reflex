@@ -1,4 +1,5 @@
 """Event-related constants."""
+
 from enum import Enum
 from types import SimpleNamespace
 
@@ -15,6 +16,7 @@ class Endpoint(Enum):
 
         Returns:
             The path for the endpoint.
+
         """
         return f"/{self.value}"
 
@@ -23,6 +25,7 @@ class Endpoint(Enum):
 
         Returns:
             The full URL for the endpoint.
+
         """
         # Import here to avoid circular imports.
         from reflex.config import get_config
@@ -51,6 +54,7 @@ class SocketEvent(SimpleNamespace):
 
         Returns:
             The event name string.
+
         """
         return str(self.value)
 

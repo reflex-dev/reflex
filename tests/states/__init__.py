@@ -1,4 +1,5 @@
 """Common rx.BaseState subclasses for use in tests."""
+
 import reflex as rx
 from reflex.state import BaseState
 
@@ -27,6 +28,7 @@ class GenState(BaseState):
 
         Yields:
             After each increment.
+
         """
         for _ in range(c):
             self.value += 1

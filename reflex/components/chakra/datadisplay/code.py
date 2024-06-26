@@ -1,4 +1,5 @@
 """A code component."""
+
 from reflex.components.chakra import (
     ChakraComponent,
 )

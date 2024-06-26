@@ -54,6 +54,7 @@ def format_color(color: ColorType, shade: ShadeType, alpha: bool) -> str:
 
     Returns:
         The formatted color.
+
     """
     return f"var(--{color}-{'a' if alpha else ''}{shade})"
 
@@ -79,5 +80,6 @@ class Color:
 
         Returns:
             The formatted color.
+
         """
         return format_color(self.color, self.shade, self.alpha)

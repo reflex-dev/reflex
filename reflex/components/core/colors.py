@@ -15,5 +15,6 @@ def color(color: ColorType, shade: ShadeType = 7, alpha: bool = False) -> Color:
 
     Returns:
         The color object.
+
     """
     return Color(color, shade, alpha)

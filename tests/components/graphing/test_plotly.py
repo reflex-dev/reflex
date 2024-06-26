@@ -12,6 +12,7 @@ def plotly_fig() -> go.Figure:
 
     Returns:
         A random plotly figure.
+
     """
     # Generate random data.
     data = np.random.randint(0, 10, size=(10, 4))
@@ -28,6 +29,7 @@ def test_serialize_plotly(plotly_fig: go.Figure):
 
     Args:
         plotly_fig: The figure to serialize.
+
     """
     value = serialize(plotly_fig)
     assert isinstance(value, dict)
@@ -39,6 +41,7 @@ def test_plotly_config_option(plotly_fig: go.Figure):
 
     Args:
         plotly_fig: The figure to display.
+
     """
     # This tests just confirm that the component can be created with a config option.
     _ = rx.plotly(data=plotly_fig, config={"showLink": True})

@@ -1,4 +1,5 @@
 """Integration tests for links and related components."""
+
 from typing import Generator
 from urllib.parse import urlsplit
 
@@ -48,6 +49,7 @@ def navigation_app(tmp_path) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path,
@@ -62,6 +64,7 @@ async def test_navigation_app(navigation_app: AppHarness):
 
     Args:
         navigation_app: harness for NavigationApp app
+
     """
     assert navigation_app.app_instance is not None, "app is not running"
     driver = navigation_app.frontend()

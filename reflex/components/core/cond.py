@@ -9,12 +9,13 @@ from reflex.components.component import BaseComponent, Component, MemoizationLea
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.constants.colors import Color
-from reflex.style import LIGHT_COLOR_MODE, color_mode
-from reflex.utils import format, imports
-from reflex.vars import Var, VarData
+from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
+from reflex.utils import format
+from reflex.utils.imports import ImportDict, ImportVar
+from reflex.vars import BaseVar, Var, VarData
 
-_IS_TRUE_IMPORT = {
-    f"/{Dirs.STATE_PATH}": [imports.ImportVar(tag="isTrue")],
+_IS_TRUE_IMPORT: ImportDict = {
+    f"/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
 }
 
 
@@ -46,6 +47,7 @@ class Cond(MemoizationLeaf):
 
         Returns:
             The conditional component.
+
         """
         # Wrap everything in fragments.
         if comp1.__class__.__name__ != "Fragment":
@@ -66,6 +68,7 @@ class Cond(MemoizationLeaf):
 
         Returns:
             The imports for the component's props of the component.
+
         """
         return []
 
@@ -81,6 +84,7 @@ class Cond(MemoizationLeaf):
 
         Returns:
             The dictionary for template of component.
+
         """
         tag = self._render()
         return dict(
@@ -96,27 +100,28 @@ class Cond(MemoizationLeaf):
             cond_state=f"isTrue({self.cond._var_full_name})",
         )
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            getattr(self.cond._var_data, "imports", {}),
-            _IS_TRUE_IMPORT,
+    def add_imports(self) -> ImportDict:
+        """Add imports for the Cond component.
+
+        Returns:
+            The import dict for the component.
+        """
+        cond_imports: dict[str, str | ImportVar | list[str | ImportVar]] = getattr(
+            self.cond._var_data, "imports", {}
         )
+        return {**cond_imports, **_IS_TRUE_IMPORT}
 
 
 @overload
-def cond(condition: Any, c1: Component, c2: Any) -> Component:
-    ...
+def cond(condition: Any, c1: Component, c2: Any) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Component) -> Component:
-    ...
+def cond(condition: Any, c1: Component) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Any, c2: Any) -> Var:
-    ...
+def cond(condition: Any, c1: Any, c2: Any) -> BaseVar: ...
 
 
 def cond(condition: Any, c1: Any, c2: Any = None):
@@ -132,6 +137,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
 
     Raises:
         ValueError: If the arguments are invalid.
+
     """
     var_datas: list[VarData | None] = [
         VarData(  # type: ignore
@@ -201,9 +207,10 @@ def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
 
     Returns:
         The conditional component or prop.
+
     """
     return cond(
-        color_mode == Var.create(LIGHT_COLOR_MODE, _var_is_string=True),
+        resolved_color_mode == Var.create(LIGHT_COLOR_MODE, _var_is_string=True),
         light,
         dark,
     )

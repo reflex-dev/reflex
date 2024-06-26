@@ -1,4 +1,5 @@
 """Declarative layout and common spacing props."""
+
 from __future__ import annotations
 
 from typing import Literal
@@ -41,6 +42,7 @@ class Container(elements.Div, RadixThemesComponent):
 
         Returns:
             The container component.
+
         """
         if stack_children_full_width:
             props["style"] = {**STACK_CHILDREN_FULL_WIDTH, **props.pop("style", {})}

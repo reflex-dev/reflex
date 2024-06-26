@@ -7,6 +7,7 @@ setting a reactive state var "routeNotFound" to true if the redirect fails.  The
 `wait_for_client_redirect` function will render the component only after
 routeNotFound becomes true.
 """
+
 from __future__ import annotations
 
 from reflex import constants
@@ -28,6 +29,7 @@ class ClientSideRouting(Component):
 
         Returns:
             The useClientSideRouting hook.
+
         """
         return [f"const {constants.ROUTE_NOT_FOUND} = {self.tag}()"]
 
@@ -36,6 +38,7 @@ class ClientSideRouting(Component):
 
         Returns:
             Empty string, because this component is only used for its hooks.
+
         """
         return ""
 
@@ -50,6 +53,7 @@ def wait_for_client_redirect(component) -> Component:
 
     Returns:
         The conditionally rendered component.
+
     """
     return cond(
         condition=route_not_found,

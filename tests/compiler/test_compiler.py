@@ -4,8 +4,7 @@ from typing import List
 import pytest
 
 from reflex.compiler import compiler, utils
-from reflex.utils import imports
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportVar, ParsedImportDict
 
 
 @pytest.mark.parametrize(
@@ -41,6 +40,7 @@ def test_compile_import_statement(
         fields: The fields to import.
         test_default: The expected output of default library.
         test_rest: The expected output rest libraries.
+
     """
     default, rest = utils.compile_import_statement(fields)
     assert default == test_default
@@ -93,12 +93,13 @@ def test_compile_import_statement(
         ),
     ],
 )
-def test_compile_imports(import_dict: imports.ImportDict, test_dicts: List[dict]):
+def test_compile_imports(import_dict: ParsedImportDict, test_dicts: List[dict]):
     """Test the compile_imports function.
 
     Args:
         import_dict: The import dictionary.
         test_dicts: The expected output.
+
     """
     imports = utils.compile_imports(import_dict)
     for import_dict, test_dict in zip(imports, test_dicts):
@@ -113,6 +114,7 @@ def test_compile_stylesheets(tmp_path, mocker):
     Args:
         tmp_path: The test directory.
         mocker: Pytest mocker object.
+
     """
     project = tmp_path / "test_project"
     project.mkdir()
@@ -146,6 +148,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
     Args:
         tmp_path: The test directory.
         mocker: Pytest mocker object.
+
     """
     project = tmp_path / "test_project"
     project.mkdir()
@@ -176,6 +179,7 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker):
     Args:
         tmp_path: The test directory.
         mocker: Pytest mocker object.
+
     """
     project = tmp_path / "test_project"
     project.mkdir()

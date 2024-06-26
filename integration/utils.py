@@ -1,4 +1,5 @@
 """Helper utilities for integration tests."""
+
 from __future__ import annotations
 
 from contextlib import contextmanager
@@ -24,6 +25,7 @@ def poll_for_navigation(
 
     Yields:
         None
+
     """
     prev_url = driver.current_url
 
@@ -45,6 +47,7 @@ class LocalStorage:
 
         Args:
             driver: WebDriver instance.
+
         """
         self.driver = driver
 
@@ -53,6 +56,7 @@ class LocalStorage:
 
         Returns:
             The number of items in local storage.
+
         """
         return int(
             self.driver.execute_script(f"return window.{self.storage_key}.length;")
@@ -63,6 +67,7 @@ class LocalStorage:
 
         Returns:
             A dict mapping keys to values.
+
         """
         return self.driver.execute_script(
             f"var ls = window.{self.storage_key}, items = {{}}; "
@@ -76,6 +81,7 @@ class LocalStorage:
 
         Returns:
             A list of keys.
+
         """
         return self.driver.execute_script(
             f"var ls = window.{self.storage_key}, keys = []; "
@@ -92,6 +98,7 @@ class LocalStorage:
 
         Returns:
             The value of the key.
+
         """
         return self.driver.execute_script(
             f"return window.{self.storage_key}.getItem(arguments[0]);", key
@@ -103,6 +110,7 @@ class LocalStorage:
         Args:
             key: The key to set.
             value: The value to set the key to.
+
         """
         self.driver.execute_script(
             f"window.{self.storage_key}.setItem(arguments[0], arguments[1]);",
@@ -118,6 +126,7 @@ class LocalStorage:
 
         Returns:
             True if key is in local storage, False otherwise.
+
         """
         return key in self
 
@@ -126,6 +135,7 @@ class LocalStorage:
 
         Args:
             key: The key to remove.
+
         """
         self.driver.execute_script(
             f"window.{self.storage_key}.removeItem(arguments[0]);", key
@@ -146,6 +156,7 @@ class LocalStorage:
 
         Raises:
             KeyError: If key is not in local storage.
+
         """
         value = self.get(key)
         if value is None:
@@ -158,6 +169,7 @@ class LocalStorage:
         Args:
             key: The key to set.
             value: The value to set the key to.
+
         """
         self.set(key, value)
 
@@ -169,6 +181,7 @@ class LocalStorage:
 
         Returns:
             True if key is in local storage, False otherwise.
+
         """
         return self.has(key)
 
@@ -177,6 +190,7 @@ class LocalStorage:
 
         Returns:
             An iterator over the items in local storage.
+
         """
         return iter(self.keys())
 

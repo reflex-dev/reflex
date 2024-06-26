@@ -23,7 +23,7 @@ from reflex.components.radix.themes.typography.text import Text
 from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serialize
 from reflex.vars import Var, VarData
 
@@ -35,6 +35,7 @@ has_connection_errors: Var
 has_too_many_connection_errors: Var
 
 class WebsocketTargetURL(Bare):
+    def add_imports(self) -> ImportDict: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -104,7 +105,7 @@ class WebsocketTargetURL(Bare):
 def default_connection_error() -> list[str | Var | Component]: ...
 
 class ConnectionToaster(Toaster):
-    def add_hooks(self) -> list[str]: ...
+    def add_hooks(self) -> list[str | Var]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -430,6 +431,7 @@ class WifiOffPulse(Icon):
         """Create a wifi_off icon with an animated opacity pulse.
 
         Args:
+            *children: The children of the component.
             size: The size of the icon in pixels.
             style: The style of the component.
             key: A unique key for the component.
@@ -443,6 +445,8 @@ class WifiOffPulse(Icon):
             The icon component with default props applied.
         """
         ...
+
+    def add_imports(self) -> dict[str, str | ImportVar | list[str | ImportVar]]: ...
 
 class ConnectionPulser(Div):
     @overload

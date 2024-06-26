@@ -24,7 +24,7 @@ from reflex.utils import console
 from reflex.utils.compat import sqlmodel
 
 
-def get_engine(url: str | None = None):
+def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     """Get the database engine.
 
     Args:
@@ -35,6 +35,7 @@ def get_engine(url: str | None = None):
 
     Raises:
         ValueError: If the database url is None.
+
     """
     conf = get_config()
     url = url or conf.db_url
@@ -73,6 +74,7 @@ class ModelRegistry:
 
         Returns:
             The model passed in as an argument (Allows decorator usage)
+
         """
         cls.models.add(model)
         return model
@@ -86,6 +88,7 @@ class ModelRegistry:
 
         Returns:
             The registered models.
+
         """
         if include_empty:
             return cls.models
@@ -102,6 +105,7 @@ class ModelRegistry:
 
         Returns:
             True if the model metadata is empty, False otherwise.
+
         """
         return len(model.metadata.tables) == 0
 
@@ -111,6 +115,7 @@ class ModelRegistry:
 
         Returns:
             The database metadata.
+
         """
         if cls._metadata is not None:
             return cls._metadata
@@ -161,6 +166,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
 
         Returns:
             The serialized value.
+
         """
         if hasattr(value, "dict"):
             return value.dict()
@@ -176,6 +182,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
 
         Returns:
             The object as a dictionary.
+
         """
         base_fields = {name: getattr(self, name) for name in self.__fields__}
         relationships = {}
@@ -203,6 +210,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
 
         Returns:
             The database engine.
+
         """
         return get_engine()
 
@@ -212,6 +220,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
 
         Returns:
             tuple of (config, script_directory)
+
         """
         config = alembic.config.Config(constants.ALEMBIC_CONFIG)
         return config, alembic.script.ScriptDirectory(
@@ -240,6 +249,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
 
         Returns:
             False - Indicating that the default rendering should be used.
+
         """
         autogen_context.imports.add("import sqlmodel")
         return False
@@ -268,6 +278,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
 
         Returns:
             True when changes have been detected.
+
         """
         if not Path(constants.ALEMBIC_CONFIG).exists():
             return False
@@ -334,6 +345,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         Args:
             connection: SQLAlchemy connection to use when performing upgrade.
             to_rev: Revision to migrate towards.
+
         """
         config, script_directory = cls._alembic_config()
 
@@ -369,6 +381,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         Returns:
             True - indicating the process was successful.
             None - indicating the process was skipped.
+
         """
         if not Path(constants.ALEMBIC_CONFIG).exists():
             return
@@ -388,6 +401,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
 
         Returns:
             The select statement.
+
         """
         return sqlmodel.select(cls)
 
@@ -396,7 +410,20 @@ ModelRegistry.register(Model)
 
 
 def session(url: str | None = None) -> sqlmodel.Session:
-    """Get a session to interact with the database.
+    """Get a sqlmodel session to interact with the database.
+
+    Args:
+        url: The database url.
+
+    Returns:
+        A database session.
+
+    """
+    return sqlmodel.Session(get_engine(url))
+
+
+def sqla_session(url: str | None = None) -> sqlalchemy.orm.Session:
+    """Get a bare sqlalchemy session to interact with the database.
 
     Args:
         url: The database url.
@@ -404,4 +431,4 @@ def session(url: str | None = None) -> sqlmodel.Session:
     Returns:
         A database session.
     """
-    return sqlmodel.Session(get_engine(url))
+    return sqlalchemy.orm.Session(get_engine(url))

@@ -60,6 +60,7 @@ def test_get_url(engine, username, password, host, port, database, expected_url)
         port: Database port.
         database: Database name.
         expected_url: Expected database URL generated.
+
     """
     db_config = DBConfig(
         engine=engine,
@@ -142,6 +143,7 @@ def test_constructor_postgresql(username, password, host, port, database, expect
         port: Database port.
         database: Database name.
         expected_url: Expected database URL generated.
+
     """
     db_config = DBConfig.postgresql(
         username=username, password=password, host=host, port=port, database=database
@@ -191,6 +193,7 @@ def test_constructor_postgresql_psycopg2(
         port: Database port.
         database: Database name.
         expected_url: Expected database URL generated.
+
     """
     db_config = DBConfig.postgresql_psycopg2(
         username=username, password=password, host=host, port=port, database=database

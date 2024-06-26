@@ -1,4 +1,5 @@
 """Ensure stopPropagation and preventDefault work as expected."""
+
 from __future__ import annotations
 
 import asyncio
@@ -167,6 +168,7 @@ def event_action(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp(f"event_action"),
@@ -184,6 +186,7 @@ def driver(event_action: AppHarness) -> Generator[WebDriver, None, None]:
 
     Yields:
         WebDriver instance.
+
     """
     assert event_action.app_instance is not None, "app is not running"
     driver = event_action.frontend()
@@ -203,6 +206,7 @@ def token(event_action: AppHarness, driver: WebDriver) -> str:
 
     Returns:
         The token visible in the driver browser.
+
     """
     assert event_action.app_instance is not None
     token_input = driver.find_element(By.ID, "token")
@@ -227,6 +231,7 @@ def poll_for_order(
 
     Returns:
         An async function that polls for the order list to match the expected order.
+
     """
 
     async def _poll_for_order(exp_order: list[str]):
@@ -285,6 +290,7 @@ async def test_event_actions(
         poll_for_order: function that polls for the order list to match the expected order.
         element_id: The id of the element to click.
         exp_order: The expected order of events.
+
     """
     el = driver.find_element(By.ID, element_id)
     assert el
@@ -314,6 +320,7 @@ async def test_event_actions_throttle_debounce(
     Args:
         driver: WebDriver instance.
         poll_for_order: function that polls for the order list to match the expected order.
+
     """
     btn_throttle = driver.find_element(By.ID, "btn-throttle")
     assert btn_throttle

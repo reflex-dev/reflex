@@ -25,6 +25,7 @@ def hydrate_middleware() -> HydrateMiddleware:
 
     Returns:
         instance of HydrateMiddleware
+
     """
     return HydrateMiddleware()
 
@@ -37,6 +38,7 @@ async def test_preprocess_no_events(hydrate_middleware, event1, mocker):
         hydrate_middleware: Instance of HydrateMiddleware
         event1: An Event.
         mocker: pytest mock object.
+
     """
     mocker.patch("reflex.state.State.class_subclasses", {TestState})
     state = State()

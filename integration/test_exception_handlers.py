@@ -1,4 +1,5 @@
 """Integration tests for event exception handlers."""
+
 from __future__ import annotations
 
 import time
@@ -28,6 +29,7 @@ def TestApp():
 
             Args:
                 number: number to divide by
+
             """
             print(1 / number)
 
@@ -58,6 +60,7 @@ def test_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("test_app"),
@@ -75,6 +78,7 @@ def driver(test_app: AppHarness) -> Generator[WebDriver, None, None]:
 
     Yields:
         WebDriver instance.
+
     """
     assert test_app.app_instance is not None, "app is not running"
     driver = test_app.frontend()
@@ -96,6 +100,7 @@ def test_frontend_exception_handler_during_runtime(
     Args:
         driver: WebDriver instance.
         capsys: pytest fixture for capturing stdout and stderr.
+
     """
     reset_button = WebDriverWait(driver, 20).until(
         EC.element_to_be_clickable((By.ID, "induce-frontend-error-btn"))
@@ -125,6 +130,7 @@ def test_backend_exception_handler_during_runtime(
     Args:
         driver: WebDriver instance.
         capsys: pytest fixture for capturing stdout and stderr.
+
     """
     reset_button = WebDriverWait(driver, 20).until(
         EC.element_to_be_clickable((By.ID, "induce-backend-error-btn"))

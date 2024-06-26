@@ -12,6 +12,7 @@ def sidebar_chat(chat: str) -> rx.Component:
 
     Returns:
         The sidebar chat item.
+
     """
     return rx.chakra.hstack(
         rx.chakra.box(
@@ -39,6 +40,7 @@ def sidebar() -> rx.Component:
 
     Returns:
         The sidebar component.
+
     """
     return rx.chakra.drawer(
         rx.chakra.drawer_overlay(

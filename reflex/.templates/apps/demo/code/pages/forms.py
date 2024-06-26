@@ -1,4 +1,5 @@
 """The settings page for the template."""
+
 import reflex as rx
 
 from ..states.form_state import FormState, UploadState
@@ -108,6 +109,7 @@ def forms_page() -> rx.Component:
 
     Returns:
         rx.Component: The UI for the settings page.
+
     """
     return rx.chakra.box(
         rx.chakra.vstack(

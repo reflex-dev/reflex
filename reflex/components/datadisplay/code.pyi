@@ -17,8 +17,8 @@ from reflex.components.core.cond import color_mode_cond
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
-from reflex.utils import format, imports
-from reflex.utils.imports import ImportVar
+from reflex.utils import format
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 LiteralCodeBlockTheme = Literal[
@@ -351,6 +351,7 @@ LiteralCodeLanguage = Literal[
 ]
 
 class CodeBlock(Component):
+    def add_imports(self) -> ImportDict: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -1111,6 +1112,7 @@ class CodeBlock(Component):
             The text component.
         """
         ...
+
     def add_style(self): ...
     @staticmethod
     def convert_theme_name(theme) -> str: ...

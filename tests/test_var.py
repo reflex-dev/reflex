@@ -1,6 +1,6 @@
 import json
 import typing
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Union
 
 import pytest
 from pandas import DataFrame
@@ -9,6 +9,7 @@ from reflex.base import Base
 from reflex.state import BaseState
 from reflex.vars import (
     BaseVar,
+    ComputedVar,
     Var,
     computed_var,
 )
@@ -162,6 +163,7 @@ def test_full_name(prop, expected):
     Args:
         prop: The var to test.
         expected: The expected full name.
+
     """
     assert prop._var_full_name == expected
 
@@ -179,6 +181,7 @@ def test_str(prop, expected):
     Args:
         prop: The var to test.
         expected: The expected string representation.
+
     """
     assert str(prop) == expected
 
@@ -202,6 +205,7 @@ def test_default_value(prop, expected):
     Args:
         prop: The var to test.
         expected: The expected default value.
+
     """
     assert prop.get_default_value() == expected
 
@@ -225,6 +229,7 @@ def test_get_setter(prop, expected):
     Args:
         prop: The var to test.
         expected: The expected name of the setter function.
+
     """
     assert prop.get_setter_name() == expected
 
@@ -249,6 +254,7 @@ def test_create(value, expected):
     Args:
         value: The value to create a var from.
         expected: The expected name of the setter function.
+
     """
     prop = Var.create(value)
     if value is None:
@@ -284,6 +290,7 @@ def test_basic_operations(TestObj):
 
     Args:
         TestObj: The test object.
+
     """
     assert str(v(1) == v(2)) == "{((1) === (2))}"
     assert str(v(1) != v(2)) == "{((1) !== (2))}"
@@ -494,6 +501,7 @@ def test_var_indexing_lists(var):
 
     Args:
         var : The str, list or tuple base var.
+
     """
     # Test basic indexing.
     assert str(var[0]) == f"{{{var._var_name}.at(0)}}"
@@ -603,6 +611,7 @@ def test_var_unsupported_indexing_lists(var, index):
     Args:
         var: The base var.
         index: The base var index.
+
     """
     with pytest.raises(TypeError):
         var[index]
@@ -621,6 +630,7 @@ def test_var_list_slicing(var):
 
     Args:
         var : The str, list or tuple base var.
+
     """
     assert str(var[:1]) == f"{{{var._var_name}.slice(0, 1)}}"
     assert str(var[:1]) == f"{{{var._var_name}.slice(0, 1)}}"
@@ -709,6 +719,7 @@ def test_var_unsupported_indexing_dicts(var, index):
     Args:
         var: The base var.
         index: The base var index.
+
     """
     with pytest.raises(TypeError):
         var[index]
@@ -734,6 +745,7 @@ def test_computed_var_without_annotation_error(request, fixture, full_name):
         request: Fixture Request.
         fixture: The state fixture.
         full_name: The full name of the state var.
+
     """
     with pytest.raises(TypeError) as err:
         state = request.getfixturevalue(fixture)
@@ -765,6 +777,7 @@ def test_computed_var_with_annotation_error(request, fixture, full_name):
         request: Fixture Request.
         fixture: The state fixture.
         full_name: The full name of the state var.
+
     """
     with pytest.raises(AttributeError) as err:
         state = request.getfixturevalue(fixture)
@@ -820,6 +833,7 @@ def test_state_with_initial_computed_var(
         expected_initial: The expected initial value of the computed var.
         expected_runtime: The expected runtime value of the computed var.
         raises_at_runtime: Whether the computed var is runtime only.
+
     """
     state = request.getfixturevalue(fixture)()
     state_name = state.get_full_name()
@@ -867,6 +881,7 @@ def test_extract_state_from_container(value, expect_state):
     Args:
         value: The value to create a var from.
         expect_state: The expected state.
+
     """
     assert Var.create_safe(value)._var_state == expect_state
 
@@ -883,6 +898,7 @@ def test_fstring_roundtrip(value):
 
     Args:
         value: The value to create a Var from.
+
     """
     var = BaseVar.create_safe(value)._var_set_state("state")
     rt_var = Var.create_safe(f"{var}")
@@ -910,6 +926,7 @@ def test_unsupported_types_for_reverse(var):
 
     Args:
         var: The base var.
+
     """
     with pytest.raises(TypeError) as err:
         var.reverse()
@@ -930,6 +947,7 @@ def test_unsupported_types_for_contains(var):
 
     Args:
         var: The base var.
+
     """
     with pytest.raises(TypeError) as err:
         assert var.contains(1)
@@ -1057,6 +1075,7 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
         operand1_var: left operand.
         operand2_var: right operand.
         operators: list of supported operators.
+
     """
     for operator in operators:
         operand1_var.operation(op=operator, other=operand2_var)
@@ -1388,3 +1407,43 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List
 )
 def test_var_name_unwrapped(var, expected):
     assert var._var_name_unwrapped == expected
+
+
+def cv_fget(state: BaseState) -> int:
+    return 1
+
+
+@pytest.mark.parametrize(
+    "deps,expected",
+    [
+        (["a"], {"a"}),
+        (["b"], {"b"}),
+        ([ComputedVar(fget=cv_fget)], {"cv_fget"}),
+    ],
+)
+def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
+    @computed_var(
+        deps=deps,
+    )
+    def test_var(state) -> int:
+        return 1
+
+    assert test_var._static_deps == expected
+
+
+@pytest.mark.parametrize(
+    "deps",
+    [
+        [""],
+        [1],
+        ["", "abc"],
+    ],
+)
+def test_invalid_computed_var_deps(deps: List):
+    with pytest.raises(TypeError):
+
+        @computed_var(
+            deps=deps,
+        )
+        def test_var(state) -> int:
+            return 1

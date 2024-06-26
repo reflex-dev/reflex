@@ -14,6 +14,7 @@ def test_custom_component_declare_event_handlers_in_fields():
 
             Returns:
                 Test controlled triggers.
+
             """
             return {
                 **super().get_event_triggers(),

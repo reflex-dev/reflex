@@ -1,4 +1,5 @@
 """Component for displaying a plotly graph."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List
@@ -28,6 +29,7 @@ def _event_data_signature(e0: Var) -> List[Any]:
 
     Returns:
         The event key extracted from the event data (if defined).
+
     """
     return [Var.create_safe(f"{e0}?.event", _var_is_string=False)]
 
@@ -40,6 +42,7 @@ def _event_points_data_signature(e0: Var) -> List[Any]:
 
     Returns:
         The event data and the extracted points.
+
     """
     return [
         Var.create_safe(f"{e0}?.event", _var_is_string=False),
@@ -66,6 +69,7 @@ def _button_click_signature(e0: _ButtonClickData) -> List[Any]:
 
     Returns:
         The menu, button, and active state.
+
     """
     return [e0.menu, e0.button, e0.active]
 
@@ -78,6 +82,7 @@ def _passthrough_signature(e0: Var) -> List[Any]:
 
     Returns:
         The event data.
+
     """
     return [e0]
 
@@ -87,6 +92,7 @@ def _null_signature() -> List[Any]:
 
     Returns:
         An empty list (nothing passed through).
+
     """
     return []
 
@@ -182,6 +188,7 @@ class Plotly(NoSSRComponent):
 
         Returns:
             The imports for the plotly component.
+
         """
         return {
             # For merging plotly data/layout/templates.
@@ -193,6 +200,7 @@ class Plotly(NoSSRComponent):
 
         Returns:
             Custom code snippets for the module level.
+
         """
         return [
             "const removeUndefined = (obj) => {Object.keys(obj).forEach(key => obj[key] === undefined && delete obj[key]); return obj}",
@@ -237,6 +245,7 @@ const extractPoints = (points) => {
 
         Returns:
             The Plotly component.
+
         """
         from plotly.io import templates
 

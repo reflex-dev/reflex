@@ -12,7 +12,7 @@ from reflex.event import (
     EventSpec,
     call_script,
 )
-from reflex.style import Style, color_mode
+from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serialize, serializer
@@ -47,6 +47,7 @@ def serialize_action(action: ToastAction) -> dict:
 
     Returns:
         The serialized toast action with on_click formatted to queue the given event.
+
     """
     return {
         "label": action.label,
@@ -62,6 +63,7 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
 
     Returns:
         A function call stripping non-serializable members of the toast object.
+
     """
     return [
         Var.create_safe(
@@ -137,6 +139,7 @@ class ToastProps(PropsBase):
 
         Returns:
             The object as a dictionary with ToastAction fields intact.
+
         """
         kwargs.setdefault("exclude_none", True)  # type: ignore
         d = super().dict(*args, **kwargs)
@@ -168,7 +171,7 @@ class Toaster(Component):
     tag = "Toaster"
 
     # the theme of the toast
-    theme: Var[str] = color_mode
+    theme: Var[str] = resolved_color_mode
 
     # whether to show rich colors
     rich_colors: Var[bool] = Var.create_safe(True)
@@ -216,6 +219,7 @@ class Toaster(Component):
 
         Returns:
             The hooks for the toaster component.
+
         """
         hook = Var.create_safe(
             f"{toast_ref} = toast",
@@ -241,6 +245,7 @@ class Toaster(Component):
 
         Returns:
             The toast event.
+
         """
         toast_command = f"{toast_ref}.{level}" if level is not None else toast_ref
         if props:
@@ -262,6 +267,7 @@ class Toaster(Component):
 
         Returns:
             The toast event.
+
         """
         return Toaster.send_toast(message, level="info", **kwargs)
 
@@ -275,6 +281,7 @@ class Toaster(Component):
 
         Returns:
             The toast event.
+
         """
         return Toaster.send_toast(message, level="warning", **kwargs)
 
@@ -288,6 +295,7 @@ class Toaster(Component):
 
         Returns:
             The toast event.
+
         """
         return Toaster.send_toast(message, level="error", **kwargs)
 
@@ -301,6 +309,7 @@ class Toaster(Component):
 
         Returns:
             The toast event.
+
         """
         return Toaster.send_toast(message, level="success", **kwargs)
 
@@ -313,6 +322,7 @@ class Toaster(Component):
 
         Returns:
             The toast dismiss event.
+
         """
         dismiss_var_data = None
 

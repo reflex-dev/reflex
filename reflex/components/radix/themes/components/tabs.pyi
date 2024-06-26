@@ -10,14 +10,13 @@ from reflex.style import Style
 from typing import Any, Dict, List, Literal
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
 vertical_orientation_css = "&[data-orientation='vertical']"
 
 class TabsRoot(RadixThemesComponent):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     def add_style(self) -> Dict[str, Any] | None: ...
     @overload
     @classmethod
@@ -335,6 +334,7 @@ class TabsTrigger(RadixThemesComponent):
             The TabsTrigger Component.
         """
         ...
+
     def add_style(self) -> Dict[str, Any] | None: ...
 
 class TabsContent(RadixThemesComponent):

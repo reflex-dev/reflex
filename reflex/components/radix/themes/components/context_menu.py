@@ -1,8 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, List, Literal
+
+from typing import List, Literal
 
 from reflex.components.component import ComponentNamespace
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from ..base import (
@@ -21,16 +22,8 @@ class ContextMenuRoot(RadixThemesComponent):
 
     _invalid_children: List[str] = ["ContextMenuItem"]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
-        }
+    # Fired when the open state changes.
+    on_open_change: EventHandler[lambda e0: [e0]]
 
 
 class ContextMenuTrigger(RadixThemesComponent):
@@ -69,20 +62,20 @@ class ContextMenuContent(RadixThemesComponent):
     # When true, overrides the side and aligns preferences to prevent collisions with boundary edges.
     avoid_collisions: Var[bool]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
+    # Fired when the context menu is closed.
+    on_close_auto_focus: EventHandler[lambda e0: [e0]]
 
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0],
-            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
-            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
-            EventTriggers.ON_FOCUS_OUTSIDE: lambda e0: [e0],
-            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
-        }
+    # Fired when the escape key is pressed.
+    on_escape_key_down: EventHandler[lambda e0: [e0]]
+
+    # Fired when a pointer down event happens outside the context menu.
+    on_pointer_down_outside: EventHandler[lambda e0: [e0]]
+
+    # Fired when focus moves outside the context menu.
+    on_focus_outside: EventHandler[lambda e0: [e0]]
+
+    # Fired when interacting outside the context menu.
+    on_interact_outside: EventHandler[lambda e0: [e0]]
 
 
 class ContextMenuSub(RadixThemesComponent):
@@ -112,19 +105,17 @@ class ContextMenuSubContent(RadixThemesComponent):
 
     _valid_parents: List[str] = ["ContextMenuSub"]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
+    # Fired when the escape key is pressed.
+    on_escape_key_down: EventHandler[lambda e0: [e0]]
 
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
-            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
-            EventTriggers.ON_FOCUS_OUTSIDE: lambda e0: [e0],
-            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
-        }
+    # Fired when a pointer down event happens outside the context menu.
+    on_pointer_down_outside: EventHandler[lambda e0: [e0]]
+
+    # Fired when focus moves outside the context menu.
+    on_focus_outside: EventHandler[lambda e0: [e0]]
+
+    # Fired when interacting outside the context menu.
+    on_interact_outside: EventHandler[lambda e0: [e0]]
 
 
 class ContextMenuItem(RadixThemesComponent):

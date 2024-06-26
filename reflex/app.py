@@ -106,6 +106,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
 
     Returns:
         EventSpec: The window alert event.
+
     """
     error = traceback.format_exc()
 
@@ -119,6 +120,7 @@ def default_overlay_component() -> Component:
 
     Returns:
         The default overlay_component, which is a connection_modal.
+
     """
     return Fragment.create(connection_pulser(), connection_toaster())
 
@@ -166,6 +168,7 @@ class LifespanMixin(Base):
         Args:
             task: The task to register.
             task_kwargs: The kwargs of the task.
+
         """
         if task_kwargs:
             task = functools.partial(task, **task_kwargs)  # type: ignore
@@ -203,9 +206,9 @@ class App(LifespanMixin, Base):
     stylesheets: List[str] = []
 
     # A component that is present on every page (defaults to the Connection Error banner).
-    overlay_component: Optional[
-        Union[Component, ComponentCallable]
-    ] = default_overlay_component
+    overlay_component: Optional[Union[Component, ComponentCallable]] = (
+        default_overlay_component
+    )
 
     # Components to add to the head of every page.
     head_components: List[Component] = []
@@ -247,9 +250,9 @@ class App(LifespanMixin, Base):
     background_tasks: Set[asyncio.Task] = set()
 
     # Frontend Error Handler Function
-    frontend_exception_handler: Callable[
-        [Exception], None
-    ] = default_frontend_exception_handler
+    frontend_exception_handler: Callable[[Exception], None] = (
+        default_frontend_exception_handler
+    )
 
     # Backend Error Handler Function
     backend_exception_handler: Callable[
@@ -266,6 +269,7 @@ class App(LifespanMixin, Base):
             ValueError: If the event namespace is not provided in the config.
                         Also, if there are multiple client subclasses of rx.BaseState(Subclasses of rx.BaseState should consist
                         of the DefaultState and the client app state).
+
         """
         if "connect_error_component" in kwargs:
             raise ValueError(
@@ -308,6 +312,7 @@ class App(LifespanMixin, Base):
 
         Raises:
             RuntimeError: If the socket server is invalid.
+
         """
         if not self.state:
             return
@@ -353,6 +358,7 @@ class App(LifespanMixin, Base):
 
         Returns:
             The string representation of the app.
+
         """
         return f"<App state={self.state.__name__ if self.state else None}>"
 
@@ -361,6 +367,7 @@ class App(LifespanMixin, Base):
 
         Returns:
             The backend api.
+
         """
         return self.api
 
@@ -401,6 +408,7 @@ class App(LifespanMixin, Base):
 
         Raises:
             ValueError: if the state has not been initialized.
+
         """
         if self._state_manager is None:
             raise ValueError("The state manager has not been initialized.")
@@ -421,6 +429,7 @@ class App(LifespanMixin, Base):
 
         Returns:
             An optional state to return.
+
         """
         for middleware in self.middleware:
             if asyncio.iscoroutinefunction(middleware.preprocess):
@@ -445,6 +454,7 @@ class App(LifespanMixin, Base):
 
         Returns:
             The state update to return.
+
         """
         for middleware in self.middleware:
             if asyncio.iscoroutinefunction(middleware.postprocess):
@@ -471,6 +481,7 @@ class App(LifespanMixin, Base):
         Args:
             middleware: The middleware to add.
             index: The index to add the middleware at.
+
         """
         if index is None:
             self.middleware.append(middleware)
@@ -491,6 +502,7 @@ class App(LifespanMixin, Base):
             VarOperationTypeError: When an invalid component var related function is passed.
             TypeError: When an invalid component function is passed.
             exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
+
         """
         from reflex.utils.exceptions import VarOperationTypeError
 
@@ -536,6 +548,7 @@ class App(LifespanMixin, Base):
 
         Raises:
             ValueError: When the specified route name already exists.
+
         """
         # If the route is not set, get it from the callable.
         if route is None:
@@ -581,7 +594,7 @@ class App(LifespanMixin, Base):
 
         # Ensure state is enabled if this page uses state.
         if self.state is None:
-            if on_load or component._has_event_triggers():
+            if on_load or component._has_stateful_event_triggers():
                 self._enable_state()
             else:
                 for var in component._get_vars(include_children=True):
@@ -631,6 +644,7 @@ class App(LifespanMixin, Base):
 
         Returns:
             The load events for the route.
+
         """
         route = route.lstrip("/")
         if route == "":
@@ -647,6 +661,7 @@ class App(LifespanMixin, Base):
 
         Args:
             new_route: the route being newly added.
+
         """
         from reflex.utils.exceptions import RouteValueError
 
@@ -699,6 +714,7 @@ class App(LifespanMixin, Base):
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
+
         """
         if component is None:
             component = Default404Page.create()
@@ -743,6 +759,7 @@ class App(LifespanMixin, Base):
 
         Example:
             >>> _get_frontend_packages({"react": "16.14.0", "react-dom": "16.14.0"})
+
         """
         page_imports = {
             i
@@ -786,15 +803,18 @@ class App(LifespanMixin, Base):
 
         Returns:
             Whether the app should be compiled.
+
         """
         # Check the environment variable.
         if should_skip_compile():
             return False
 
+        nocompile = prerequisites.get_web_dir() / constants.NOCOMPILE_FILE
+
         # Check the nocompile file.
-        if os.path.exists(constants.NOCOMPILE_FILE):
+        if nocompile.exists():
             # Delete the nocompile file
-            os.remove(constants.NOCOMPILE_FILE)
+            nocompile.unlink()
             return False
 
         # By default, compile the app.
@@ -835,6 +855,34 @@ class App(LifespanMixin, Base):
         for render, kwargs in DECORATED_PAGES[get_config().app_name]:
             self.add_page(render, **kwargs)
 
+    def _validate_var_dependencies(
+        self, state: Optional[Type[BaseState]] = None
+    ) -> None:
+        """Validate the dependencies of the vars in the app.
+
+        Args:
+            state: The state to validate the dependencies for.
+
+        Raises:
+            VarDependencyError: When a computed var has an invalid dependency.
+        """
+        if not self.state:
+            return
+
+        if not state:
+            state = self.state
+
+        for var in state.computed_vars.values():
+            deps = var._deps(objclass=state)
+            for dep in deps:
+                if dep not in state.vars and dep not in state.backend_vars:
+                    raise exceptions.VarDependencyError(
+                        f"ComputedVar {var._var_name} on state {state.__name__} has an invalid dependency {dep}"
+                    )
+
+        for substate in state.class_subclasses:
+            self._validate_var_dependencies(substate)
+
     def _compile(self, export: bool = False):
         """Compile the app and output it to the pages folder.
 
@@ -843,6 +891,7 @@ class App(LifespanMixin, Base):
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
+
         """
         from reflex.utils.exceptions import ReflexRuntimeError
 
@@ -856,6 +905,7 @@ class App(LifespanMixin, Base):
         if not self._should_compile():
             return
 
+        self._validate_var_dependencies()
         self._setup_overlay_component()
 
         # Create a progress bar.
@@ -1075,6 +1125,7 @@ class App(LifespanMixin, Base):
 
         Raises:
             RuntimeError: If the app has not been initialized yet.
+
         """
         if self.event_namespace is None:
             raise RuntimeError("App has not been initialized yet.")
@@ -1103,6 +1154,7 @@ class App(LifespanMixin, Base):
 
         Returns:
             Task if the event was backgroundable, otherwise None
+
         """
         substate, handler = state._get_event_handler(event)
         if not handler.is_background:
@@ -1113,6 +1165,7 @@ class App(LifespanMixin, Base):
 
             Raises:
                 RuntimeError: If the app has not been initialized yet.
+
             """
             if self.event_namespace is None:
                 raise RuntimeError("App has not been initialized yet.")
@@ -1248,6 +1301,7 @@ async def process(
 
     Yields:
         The state updates after processing the event.
+
     """
     from reflex.utils import telemetry
 
@@ -1295,6 +1349,8 @@ async def process(
                     yield update
     except Exception as ex:
         telemetry.send_error(ex, context="backend")
+
+        app.backend_exception_handler(ex)
         raise
 
 
@@ -1303,6 +1359,7 @@ async def ping() -> str:
 
     Returns:
         The response.
+
     """
     return "pong"
 
@@ -1315,6 +1372,7 @@ def upload(app: App):
 
     Returns:
         The upload function.
+
     """
 
     async def upload_file(request: Request, files: List[UploadFile]):
@@ -1332,6 +1390,7 @@ def upload(app: App):
             UploadValueError: if there are no args with supported annotation.
             UploadTypeError: if a background task is used as the handler.
             HTTPException: when the request does not include token / handler headers.
+
         """
         from reflex.utils.exceptions import UploadTypeError, UploadValueError
 
@@ -1410,6 +1469,7 @@ def upload(app: App):
 
             Yields:
                 Each state update as JSON followed by a new line.
+
             """
             # Process the event.
             async with app.state_manager.modify_state(event.substate_token) as state:
@@ -1445,6 +1505,7 @@ class EventNamespace(AsyncNamespace):
         Args:
             namespace: The namespace.
             app: The application object.
+
         """
         super().__init__(namespace)
         self.app = app
@@ -1455,6 +1516,7 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
+
         """
         pass
 
@@ -1463,6 +1525,7 @@ class EventNamespace(AsyncNamespace):
 
         Args:
             sid: The Socket.IO session id.
+
         """
         disconnect_token = self.sid_to_token.pop(sid, None)
         if disconnect_token:
@@ -1474,6 +1537,7 @@ class EventNamespace(AsyncNamespace):
         Args:
             update: The state update to send.
             sid: The Socket.IO session id.
+
         """
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
@@ -1486,6 +1550,7 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id.
             data: The event data.
+
         """
         # Get the event.
         event = Event.parse_raw(data)
@@ -1520,6 +1585,7 @@ class EventNamespace(AsyncNamespace):
 
         Args:
             sid: The Socket.IO session id.
+
         """
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)

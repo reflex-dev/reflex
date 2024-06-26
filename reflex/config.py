@@ -50,6 +50,7 @@ class DBConfig(Base):
 
         Returns:
             DBConfig instance.
+
         """
         return cls(
             engine="postgresql",
@@ -80,6 +81,7 @@ class DBConfig(Base):
 
         Returns:
             DBConfig instance.
+
         """
         return cls(
             engine="postgresql+psycopg2",
@@ -102,6 +104,7 @@ class DBConfig(Base):
 
         Returns:
             DBConfig instance.
+
         """
         return cls(
             engine="sqlite",
@@ -113,6 +116,7 @@ class DBConfig(Base):
 
         Returns:
             The database URL.
+
         """
         host = (
             f"{self.host}:{self.port}" if self.host and self.port else self.host or ""
@@ -219,6 +223,12 @@ class Config(Base):
     # Number of gunicorn workers from user
     gunicorn_workers: Optional[int] = None
 
+    # Maximum expiration lock time for redis state manager
+    redis_lock_expiration: int = constants.Expiration.LOCK
+
+    # Token expiration time for redis state manager
+    redis_token_expiration: int = constants.Expiration.TOKEN
+
     # Attributes that were explicitly set by the user.
     _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
 
@@ -228,6 +238,7 @@ class Config(Base):
         Args:
             *args: The args to pass to the Pydantic init method.
             **kwargs: The kwargs to pass to the Pydantic init method.
+
         """
         super().__init__(*args, **kwargs)
 
@@ -247,6 +258,7 @@ class Config(Base):
 
         Returns:
             The module name.
+
         """
         return ".".join([self.app_name, self.app_name])
 
@@ -258,6 +270,7 @@ class Config(Base):
 
         Raises:
             EnvVarValueError: If an environment variable is set to an invalid type.
+
         """
         from reflex.utils.exceptions import EnvVarValueError
 
@@ -297,6 +310,7 @@ class Config(Base):
 
         Returns:
             The namespace for websocket.
+
         """
         event_url = constants.Endpoint.EVENT.get_url()
         return urllib.parse.urlsplit(event_url).path
@@ -306,6 +320,7 @@ class Config(Base):
 
         Args:
             **kwargs: The kwargs passed to the config or from the env.
+
         """
         if "api_url" not in self._non_default_attributes and "backend_port" in kwargs:
             self.api_url = f"http://localhost:{kwargs['backend_port']}"
@@ -338,6 +353,7 @@ class Config(Base):
 
         Args:
             **kwargs: The kwargs passed to the config.
+
         """
         for key, value in kwargs.items():
             if value is not None:
@@ -355,6 +371,7 @@ def get_config(reload: bool = False) -> Config:
 
     Returns:
         The app config.
+
     """
     sys.path.insert(0, os.getcwd())
     # only import the module if it exists. If a module spec exists then

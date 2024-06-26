@@ -13,9 +13,9 @@ from jinja2 import Environment
 from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
-from reflex.event import EventChain
-from reflex.utils import imports
+from reflex.event import EventChain, EventHandler
 from reflex.utils.format import format_event_chain
+from reflex.utils.imports import ImportDict
 from reflex.vars import BaseVar, Var
 from .base import BaseHTML
 
@@ -409,7 +409,6 @@ class Fieldset(Element):
         ...
 
 class Form(BaseHTML):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -581,10 +580,11 @@ class Form(BaseHTML):
             The form component.
         """
         ...
+
+    def add_imports(self) -> ImportDict: ...
     def add_hooks(self) -> list[str]: ...
 
 class Input(BaseHTML):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -1822,7 +1822,6 @@ class Progress(BaseHTML):
         ...
 
 class Select(BaseHTML):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -1987,7 +1986,6 @@ AUTO_HEIGHT_JS = '\nconst autoHeightOnInput = (e, is_enabled) => {\n    if (is_e
 ENTER_KEY_SUBMIT_JS = "\nconst enterKeySubmitOnKeyDown = (e, is_enabled) => {\n    if (is_enabled && e.which === 13 && !e.shiftKey) {\n        e.preventDefault();\n        if (!e.repeat) {\n            if (e.target.form) {\n                e.target.form.requestSubmit();\n            }\n        }\n    }\n}\n"
 
 class Textarea(BaseHTML):
-    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore

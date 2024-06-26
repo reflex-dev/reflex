@@ -15,6 +15,7 @@ def verify_route_validity(route: str) -> None:
 
     Raises:
         ValueError: If the route is invalid.
+
     """
     pattern = catchall_in_route(route)
     if pattern and not route.endswith(pattern):
@@ -33,6 +34,7 @@ def get_route_args(route: str) -> dict[str, str]:
 
     Returns:
         The route arguments.
+
     """
     args = {}
 
@@ -45,6 +47,7 @@ def get_route_args(route: str) -> dict[str, str]:
 
         Raises:
             ValueError: If the route is invalid.
+
         """
         arg_name = match.groups()[0]
         if arg_name in args:
@@ -85,6 +88,7 @@ def catchall_in_route(route: str) -> str:
 
     Returns:
         str: the catchall part of the URI
+
     """
     match_ = constants.RouteRegex.CATCHALL.search(route)
     return match_.group() if match_ else ""
@@ -98,6 +102,7 @@ def catchall_prefix(route: str) -> str:
 
     Returns:
         str: the prefix part of the URI
+
     """
     pattern = catchall_in_route(route)
     return route.replace(pattern, "") if pattern else ""
@@ -111,6 +116,7 @@ def replace_brackets_with_keywords(input_string):
 
     Returns:
         new string containing keywords.
+
     """
     # /posts -> /post
     # /posts/[slug] -> /posts/__SINGLE_SEGMENT__

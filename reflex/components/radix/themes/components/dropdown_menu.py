@@ -1,8 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, List, Literal, Union
+
+from typing import Dict, List, Literal, Union
 
 from reflex.components.component import ComponentNamespace
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from ..base import (
@@ -47,16 +48,8 @@ class DropdownMenuRoot(RadixThemesComponent):
 
     _invalid_children: List[str] = ["DropdownMenuItem"]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
-        }
+    # Fired when the open state changes.
+    on_open_change: EventHandler[lambda e0: [e0]]
 
 
 class DropdownMenuTrigger(RadixThemesTriggerComponent):
@@ -125,20 +118,20 @@ class DropdownMenuContent(RadixThemesComponent):
     # Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
     hide_when_detached: Var[bool]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
+    # Fired when the dialog is closed.
+    on_close_auto_focus: EventHandler[lambda e0: [e0]]
 
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0],
-            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
-            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
-            EventTriggers.ON_FOCUS_OUTSIDE: lambda e0: [e0],
-            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
-        }
+    # Fired when the escape key is pressed.
+    on_escape_key_down: EventHandler[lambda e0: [e0]]
+
+    # Fired when the pointer is down outside the dialog.
+    on_pointer_down_outside: EventHandler[lambda e0: [e0]]
+
+    # Fired when focus moves outside the dialog.
+    on_focus_outside: EventHandler[lambda e0: [e0]]
+
+    # Fired when the pointer interacts outside the dialog.
+    on_interact_outside: EventHandler[lambda e0: [e0]]
 
 
 class DropdownMenuSubTrigger(RadixThemesTriggerComponent):
@@ -169,16 +162,8 @@ class DropdownMenuSub(RadixThemesComponent):
     # The open state of the submenu when it is initially rendered. Use when you do not need to control its open state.
     default_open: Var[bool]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0.target.value],
-        }
+    # Fired when the open state changes.
+    on_open_change: EventHandler[lambda e0: [e0.target.value]]
 
 
 class DropdownMenuSubContent(RadixThemesComponent):
@@ -218,19 +203,17 @@ class DropdownMenuSubContent(RadixThemesComponent):
 
     _valid_parents: List[str] = ["DropdownMenuSub"]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
+    # Fired when the escape key is pressed.
+    on_escape_key_down: EventHandler[lambda e0: [e0]]
 
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
-            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
-            EventTriggers.ON_FOCUS_OUTSIDE: lambda e0: [e0],
-            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0],
-        }
+    # Fired when the pointer is down outside the dialog.
+    on_pointer_down_outside: EventHandler[lambda e0: [e0]]
+
+    # Fired when focus moves outside the dialog.
+    on_focus_outside: EventHandler[lambda e0: [e0]]
+
+    # Fired when the pointer interacts outside the dialog.
+    on_interact_outside: EventHandler[lambda e0: [e0]]
 
 
 class DropdownMenuItem(RadixThemesComponent):
@@ -255,16 +238,8 @@ class DropdownMenuItem(RadixThemesComponent):
 
     _valid_parents: List[str] = ["DropdownMenuContent", "DropdownMenuSubContent"]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_SELECT: lambda e0: [e0.target.value],
-        }
+    # Fired when the item is selected.
+    on_select: EventHandler[lambda e0: [e0.target.value]]
 
 
 class DropdownMenuSeparator(RadixThemesComponent):

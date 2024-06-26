@@ -1,4 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from __future__ import annotations
 
 from typing import Literal
@@ -57,6 +58,7 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
 
         Returns:
             The IconButton component.
+
         """
         if children:
             if isinstance(children[0], str):
@@ -90,6 +92,7 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
 
         Returns:
             The style of the component.
+
         """
         return Style({"padding": "6px"})
 

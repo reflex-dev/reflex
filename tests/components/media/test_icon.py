@@ -25,6 +25,7 @@ def test_valid_icon(tag: str):
 
     Args:
         tag: The icon tag.
+
     """
     icon = Icon.create(tag=tag)
     assert icon.tag == format.to_title_case(tag) + "Icon"
@@ -36,6 +37,7 @@ def test_invalid_icon(tag):
 
     Args:
         tag: The icon tag.
+
     """
     with pytest.raises(ValueError):
         Icon.create(tag=tag)
@@ -50,6 +52,7 @@ def test_tag_with_capital(tag: str):
 
     Args:
         tag: The icon tag.
+
     """
     icon = Icon.create(tag=tag)
     assert icon.tag == format.to_title_case(tag) + "Icon"

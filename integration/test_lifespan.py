@@ -1,4 +1,5 @@
 """Test cases for the FastAPI lifespan integration."""
+
 from typing import Generator
 
 import pytest
@@ -75,6 +76,7 @@ def lifespan_app(tmp_path) -> Generator[AppHarness, None, None]:
 
     Yields:
         running AppHarness instance
+
     """
     with AppHarness.create(
         root=tmp_path,
@@ -89,6 +91,7 @@ async def test_lifespan(lifespan_app: AppHarness):
 
     Args:
         lifespan_app: harness for LifespanApp app
+
     """
     assert lifespan_app.app_module is not None, "app module is not found"
     assert lifespan_app.app_instance is not None, "app is not running"

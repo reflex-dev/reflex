@@ -83,6 +83,7 @@ class Card(ChakraComponent):
 
         Returns:
             The `create()` method returns a Card object.
+
         """
         children = []
         param_to_component_class = (
