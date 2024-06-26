@@ -281,7 +281,6 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
             The IconButton component.
         """
         ...
-
     def add_style(self): ...
 
 icon_button = IconButton.create
