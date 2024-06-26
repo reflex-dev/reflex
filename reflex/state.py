@@ -1741,12 +1741,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     else self.get_value(getattr(self, prop_name))
                 )
                 for prop_name, cv in self.computed_vars.items()
+                if not cv._backend
             }
         elif include_computed:
             computed_vars = {
                 # Include the computed vars.
                 prop_name: self.get_value(getattr(self, prop_name))
-                for prop_name in self.computed_vars
+                for prop_name, cv in self.computed_vars.items()
+                if not cv._backend
             }
         else:
             computed_vars = {}

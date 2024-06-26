@@ -1939,6 +1939,9 @@ class ComputedVar(Var, property):
     # Whether to track dependencies and cache computed values
     _cache: bool = dataclasses.field(default=False)
 
+    # Whether the computed var is a backend var
+    _backend: bool = dataclasses.field(default=False)
+
     # The initial value of the computed var
     _initial_value: Any | types.Unset = dataclasses.field(default=types.Unset())
 
@@ -1959,6 +1962,7 @@ class ComputedVar(Var, property):
         deps: Optional[List[Union[str, Var]]] = None,
         auto_deps: bool = True,
         interval: Optional[Union[int, datetime.timedelta]] = None,
+        backend: bool = False,
         **kwargs,
     ):
         """Initialize a ComputedVar.
@@ -1970,6 +1974,7 @@ class ComputedVar(Var, property):
             deps: Explicit var dependencies to track.
             auto_deps: Whether var dependencies should be auto-determined.
             interval: Interval at which the computed var should be updated.
+            backend: Whether the computed var is a backend var.
             **kwargs: additional attributes to set on the instance
 
         Raises:
@@ -1977,6 +1982,7 @@ class ComputedVar(Var, property):
         """
         self._initial_value = initial_value
         self._cache = cache
+        self._backend = backend
         if isinstance(interval, int):
             interval = datetime.timedelta(seconds=interval)
         self._update_interval = interval
