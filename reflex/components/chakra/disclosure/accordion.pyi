@@ -26,7 +26,7 @@ class Accordion(ChakraComponent):
             Union[Var[Optional[List[int]]], Optional[List[int]]]
         ] = None,
         index: Optional[
-            Union[Var[Union[int, List[int]]], Union[int, List[int]]]
+            Union[Var[Union[List[int], int]], Union[List[int], int]]
         ] = None,
         reduce_motion: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,

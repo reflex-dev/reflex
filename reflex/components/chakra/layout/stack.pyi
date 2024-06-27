@@ -20,8 +20,8 @@ class Stack(ChakraComponent):
         align_items: Optional[Union[Var[str], str]] = None,
         direction: Optional[
             Union[
-                Var[Union[Literal["row", "column"], List[str]]],
-                Union[Literal["row", "column"], List[str]],
+                Var[Union[List[str], Literal["row", "column"]]],
+                Union[List[str], Literal["row", "column"]],
             ]
         ] = None,
         is_inline: Optional[Union[Var[bool], bool]] = None,
@@ -117,8 +117,8 @@ class Hstack(Stack):
         align_items: Optional[Union[Var[str], str]] = None,
         direction: Optional[
             Union[
-                Var[Union[Literal["row", "column"], List[str]]],
-                Union[Literal["row", "column"], List[str]],
+                Var[Union[List[str], Literal["row", "column"]]],
+                Union[List[str], Literal["row", "column"]],
             ]
         ] = None,
         is_inline: Optional[Union[Var[bool], bool]] = None,
@@ -214,8 +214,8 @@ class Vstack(Stack):
         align_items: Optional[Union[Var[str], str]] = None,
         direction: Optional[
             Union[
-                Var[Union[Literal["row", "column"], List[str]]],
-                Union[Literal["row", "column"], List[str]],
+                Var[Union[List[str], Literal["row", "column"]]],
+                Union[List[str], Literal["row", "column"]],
             ]
         ] = None,
         is_inline: Optional[Union[Var[bool], bool]] = None,

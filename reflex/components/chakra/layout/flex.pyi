@@ -20,11 +20,11 @@ class Flex(ChakraComponent):
         align: Optional[Union[Var[str], str]] = None,
         basis: Optional[Union[Var[str], str]] = None,
         direction: Optional[
-            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
+            Union[Var[Union[List[str], str]], Union[List[str], str]]
         ] = None,
         grow: Optional[Union[Var[str], str]] = None,
         justify: Optional[Union[Var[str], str]] = None,
-        wrap: Optional[Union[Var[Union[str, List[str]]], Union[str, List[str]]]] = None,
+        wrap: Optional[Union[Var[Union[List[str], str]], Union[List[str], str]]] = None,
         shrink: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
