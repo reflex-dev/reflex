@@ -816,6 +816,8 @@ class App(LifespanMixin, Base):
             state = self.state
 
         for var in state.computed_vars.values():
+            if not var._cache:
+                continue
             deps = var._deps(objclass=state)
             for dep in deps:
                 if dep not in state.vars and dep not in state.backend_vars:

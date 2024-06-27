@@ -1564,7 +1564,7 @@ def test_app_with_invalid_var_dependencies(compilable_app: tuple[App, Path]):
     app, _ = compilable_app
 
     class InvalidDepState(BaseState):
-        @computed_var(deps=["foolksjdf"])
+        @computed_var(deps=["foolksjdf"], cache=True)
         def bar(self) -> str:
             return "bar"
 
