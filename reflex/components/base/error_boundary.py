@@ -1,6 +1,6 @@
 """A React Error Boundary component that catches unhandled frontend exceptions."""
 
-from typing import Any
+from typing import Any, Dict, Union
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
@@ -14,7 +14,7 @@ class ErrorBoundary(Component):
     library = "react-error-boundary"
     tag = "ErrorBoundary"
 
-    def _render(self, props: dict[str, Any] | None = None) -> Tag:
+    def _render(self, props: Union[Dict[str, Any], None] = None) -> Tag:
         """Define how to render the component in React.
 
         Args:

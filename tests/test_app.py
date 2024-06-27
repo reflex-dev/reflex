@@ -1666,7 +1666,7 @@ def test_frontend_exception_handler_validation(handler_fn, expected):
 
     """
     with expected:
-        rx.App(frontend_exception_handler=handler_fn)
+        rx.App(frontend_exception_handler=handler_fn)._validate_exception_handlers()
 
 
 def backend_exception_handler_with_wrong_return_type(exception: Exception) -> int:
@@ -1734,4 +1734,4 @@ def test_backend_exception_handler_validation(handler_fn, expected):
 
     """
     with expected:
-        rx.App(backend_exception_handler=handler_fn)
+        rx.App(backend_exception_handler=handler_fn)._validate_exception_handlers()
