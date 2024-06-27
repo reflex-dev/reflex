@@ -19,8 +19,8 @@ class Image(NextComponent):
     def create(  # type: ignore
         cls,
         *children,
-        width: Optional[Union[str, int]] = None,
-        height: Optional[Union[str, int]] = None,
+        width: Optional[Union[int, str]] = None,
+        height: Optional[Union[int, str]] = None,
         src: Optional[Union[Var[Any], Any]] = None,
         alt: Optional[Union[Var[str], str]] = None,
         loader: Optional[Union[Var[Any], Any]] = None,
