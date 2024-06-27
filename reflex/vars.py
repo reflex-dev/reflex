@@ -36,7 +36,12 @@ from typing import (
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, imports, serializers, types
-from reflex.utils.exceptions import VarAttributeError, VarTypeError, VarValueError
+from reflex.utils.exceptions import (
+    VarAttributeError,
+    VarDependencyError,
+    VarTypeError,
+    VarValueError,
+)
 
 # This module used to export ImportVar itself, so we still import it for export here
 from reflex.utils.imports import (
@@ -2233,9 +2238,13 @@ def computed_var(
 
     Raises:
         ValueError: If caching is disabled and an update interval is set.
+        VarDependencyError: If user supplies dependencies without caching.
     """
     if cache is False and interval is not None:
         raise ValueError("Cannot set update interval without caching.")
+
+    if cache is False and (deps is not None or auto_deps is False):
+        raise VarDependencyError("Cannot track dependencies without caching.")
 
     if fget is not None:
         return ComputedVar(fget=fget, cache=cache)
