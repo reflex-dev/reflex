@@ -4,11 +4,13 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
 from reflex.components.component import Component
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -18,20 +20,35 @@ class Progress(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[int], int]] = None,
-        max: Optional[Union[Var[int], int]] = None,
+        value: Optional[Union[reflex.vars.Var[int], int]] = None,
+        max: Optional[Union[reflex.vars.Var[int], int]] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2", "3"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2", "3"]
+                    ],
+                ],
+            ]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                reflex.vars.Var[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -91,14 +108,14 @@ class Progress(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        duration: Optional[Union[Var[str], str]] = None,
+        duration: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

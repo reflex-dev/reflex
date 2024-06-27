@@ -4,10 +4,12 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 from ..base import RadixLoadingProp, RadixThemesComponent
 
@@ -20,9 +22,24 @@ class Spinner(RadixLoadingProp, RadixThemesComponent):
         cls,
         *children,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2", "3"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2", "3"]
+                    ],
+                ],
+            ]
         ] = None,
-        loading: Optional[Union[Var[bool], bool]] = None,
+        loading: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

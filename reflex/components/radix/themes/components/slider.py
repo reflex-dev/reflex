@@ -3,6 +3,7 @@
 from typing import List, Literal, Optional, Union
 
 from reflex.components.component import Component
+from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
 from reflex.vars import Var
 
@@ -21,7 +22,7 @@ class Slider(RadixThemesComponent):
     as_child: Var[bool]
 
     # Button size "1" - "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Variant of button
     variant: Var[Literal["classic", "surface", "soft"]]

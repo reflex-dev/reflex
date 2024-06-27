@@ -4,12 +4,14 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import List, Literal, Union
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
@@ -20,15 +22,30 @@ class SelectRoot(RadixThemesComponent):
         cls,
         *children,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2", "3"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2", "3"]
+                    ],
+                ],
+            ]
         ] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        default_open: Optional[Union[Var[bool], bool]] = None,
-        open: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
+        default_value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        default_open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        required: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -124,13 +141,13 @@ class SelectTrigger(RadixThemesComponent):
         *children,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft", "ghost"]],
+                reflex.vars.Var[Literal["classic", "surface", "soft", "ghost"]],
                 Literal["classic", "surface", "soft", "ghost"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -192,11 +209,11 @@ class SelectTrigger(RadixThemesComponent):
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
+        placeholder: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -281,11 +298,11 @@ class SelectContent(RadixThemesComponent):
         cls,
         *children,
         variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
+            Union[reflex.vars.Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -345,27 +362,27 @@ class SelectContent(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         position: Optional[
             Union[
-                Var[Literal["item-aligned", "popper"]],
+                reflex.vars.Var[Literal["item-aligned", "popper"]],
                 Literal["item-aligned", "popper"],
             ]
         ] = None,
         side: Optional[
             Union[
-                Var[Literal["top", "right", "bottom", "left"]],
+                reflex.vars.Var[Literal["top", "right", "bottom", "left"]],
                 Literal["top", "right", "bottom", "left"],
             ]
         ] = None,
-        side_offset: Optional[Union[Var[int], int]] = None,
+        side_offset: Optional[Union[reflex.vars.Var[int], int]] = None,
         align: Optional[
             Union[
-                Var[Literal["start", "center", "end"]],
+                reflex.vars.Var[Literal["start", "center", "end"]],
                 Literal["start", "center", "end"],
             ]
         ] = None,
-        align_offset: Optional[Union[Var[int], int]] = None,
+        align_offset: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -541,8 +558,8 @@ class SelectItem(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -782,12 +799,12 @@ class HighLevelSelect(SelectRoot):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Var[List[str]], List[str]]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
-        label: Optional[Union[Var[str], str]] = None,
+        items: Optional[Union[reflex.vars.Var[List[str]], List[str]]] = None,
+        placeholder: Optional[Union[reflex.vars.Var[str], str]] = None,
+        label: Optional[Union[reflex.vars.Var[str], str]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -847,36 +864,51 @@ class HighLevelSelect(SelectRoot):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft", "ghost"]],
+                reflex.vars.Var[Literal["classic", "surface", "soft", "ghost"]],
                 Literal["classic", "surface", "soft", "ghost"],
             ]
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        width: Optional[Union[Var[str], str]] = None,
+        width: Optional[Union[reflex.vars.Var[str], str]] = None,
         position: Optional[
             Union[
-                Var[Literal["item-aligned", "popper"]],
+                reflex.vars.Var[Literal["item-aligned", "popper"]],
                 Literal["item-aligned", "popper"],
             ]
         ] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2", "3"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2", "3"]
+                    ],
+                ],
+            ]
         ] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        default_open: Optional[Union[Var[bool], bool]] = None,
-        open: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
+        default_value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        default_open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        required: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -982,12 +1014,12 @@ class Select(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        items: Optional[Union[Var[List[str]], List[str]]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
-        label: Optional[Union[Var[str], str]] = None,
+        items: Optional[Union[reflex.vars.Var[List[str]], List[str]]] = None,
+        placeholder: Optional[Union[reflex.vars.Var[str], str]] = None,
+        label: Optional[Union[reflex.vars.Var[str], str]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -1047,36 +1079,51 @@ class Select(ComponentNamespace):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft", "ghost"]],
+                reflex.vars.Var[Literal["classic", "surface", "soft", "ghost"]],
                 Literal["classic", "surface", "soft", "ghost"],
             ]
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        width: Optional[Union[Var[str], str]] = None,
+        width: Optional[Union[reflex.vars.Var[str], str]] = None,
         position: Optional[
             Union[
-                Var[Literal["item-aligned", "popper"]],
+                reflex.vars.Var[Literal["item-aligned", "popper"]],
                 Literal["item-aligned", "popper"],
             ]
         ] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2", "3"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2", "3"]
+                    ],
+                ],
+            ]
         ] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        default_open: Optional[Union[Var[bool], bool]] = None,
-        open: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
+        default_value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        default_open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        required: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

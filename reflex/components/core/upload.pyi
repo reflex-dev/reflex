@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -127,16 +128,16 @@ class Upload(MemoizationLeaf):
         cls,
         *children,
         accept: Optional[
-            Union[Var[Optional[Dict[str, List]]], Optional[Dict[str, List]]]
+            Union[reflex.vars.Var[Optional[Dict[str, List]]], Optional[Dict[str, List]]]
         ] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        max_files: Optional[Union[Var[int], int]] = None,
-        max_size: Optional[Union[Var[int], int]] = None,
-        min_size: Optional[Union[Var[int], int]] = None,
-        multiple: Optional[Union[Var[bool], bool]] = None,
-        no_click: Optional[Union[Var[bool], bool]] = None,
-        no_drag: Optional[Union[Var[bool], bool]] = None,
-        no_keyboard: Optional[Union[Var[bool], bool]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        max_files: Optional[Union[reflex.vars.Var[int], int]] = None,
+        max_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        min_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        multiple: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        no_click: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        no_drag: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        no_keyboard: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -226,16 +227,16 @@ class StyledUpload(Upload):
         cls,
         *children,
         accept: Optional[
-            Union[Var[Optional[Dict[str, List]]], Optional[Dict[str, List]]]
+            Union[reflex.vars.Var[Optional[Dict[str, List]]], Optional[Dict[str, List]]]
         ] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        max_files: Optional[Union[Var[int], int]] = None,
-        max_size: Optional[Union[Var[int], int]] = None,
-        min_size: Optional[Union[Var[int], int]] = None,
-        multiple: Optional[Union[Var[bool], bool]] = None,
-        no_click: Optional[Union[Var[bool], bool]] = None,
-        no_drag: Optional[Union[Var[bool], bool]] = None,
-        no_keyboard: Optional[Union[Var[bool], bool]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        max_files: Optional[Union[reflex.vars.Var[int], int]] = None,
+        max_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        min_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        multiple: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        no_click: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        no_drag: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        no_keyboard: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -325,16 +326,16 @@ class UploadNamespace(ComponentNamespace):
     def __call__(
         *children,
         accept: Optional[
-            Union[Var[Optional[Dict[str, List]]], Optional[Dict[str, List]]]
+            Union[reflex.vars.Var[Optional[Dict[str, List]]], Optional[Dict[str, List]]]
         ] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        max_files: Optional[Union[Var[int], int]] = None,
-        max_size: Optional[Union[Var[int], int]] = None,
-        min_size: Optional[Union[Var[int], int]] = None,
-        multiple: Optional[Union[Var[bool], bool]] = None,
-        no_click: Optional[Union[Var[bool], bool]] = None,
-        no_drag: Optional[Union[Var[bool], bool]] = None,
-        no_keyboard: Optional[Union[Var[bool], bool]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        max_files: Optional[Union[reflex.vars.Var[int], int]] = None,
+        max_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        min_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        multiple: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        no_click: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        no_drag: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        no_keyboard: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

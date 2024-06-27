@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -19,17 +20,17 @@ class ScrollArea(RadixThemesComponent):
         *children,
         scrollbars: Optional[
             Union[
-                Var[Literal["vertical", "horizontal", "both"]],
+                reflex.vars.Var[Literal["vertical", "horizontal", "both"]],
                 Literal["vertical", "horizontal", "both"],
             ]
         ] = None,
         type: Optional[
             Union[
-                Var[Literal["auto", "always", "scroll", "hover"]],
+                reflex.vars.Var[Literal["auto", "always", "scroll", "hover"]],
                 Literal["auto", "always", "scroll", "hover"],
             ]
         ] = None,
-        scroll_hide_delay: Optional[Union[Var[int], int]] = None,
+        scroll_hide_delay: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -4,11 +4,13 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
 from typing import Literal
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -20,17 +22,56 @@ class DataListRoot(RadixThemesComponent):
         *children,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
-                Literal["horizontal", "vertical"],
+                reflex.vars.Var[
+                    Union[
+                        Literal["horizontal", "vertical"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["horizontal", "vertical"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["horizontal", "vertical"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["horizontal", "vertical"]
+                    ],
+                ],
             ]
         ] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2", "3"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2", "3"]
+                    ],
+                ],
+            ]
         ] = None,
         trim: Optional[
             Union[
-                Var[Literal["normal", "start", "end", "both"]],
-                Literal["normal", "start", "end", "both"],
+                reflex.vars.Var[
+                    Union[
+                        Literal["normal", "start", "end", "both"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["normal", "start", "end", "both"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["normal", "start", "end", "both"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["normal", "start", "end", "both"]
+                    ],
+                ],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -117,8 +158,21 @@ class DataListItem(RadixThemesComponent):
         *children,
         align: Optional[
             Union[
-                Var[Literal["start", "center", "end", "baseline", "stretch"]],
-                Literal["start", "center", "end", "baseline", "stretch"],
+                reflex.vars.Var[
+                    Union[
+                        Literal["start", "center", "end", "baseline", "stretch"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Literal["start", "center", "end", "baseline", "stretch"],
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["start", "center", "end", "baseline", "stretch"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["start", "center", "end", "baseline", "stretch"]
+                    ],
+                ],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -200,12 +254,33 @@ class DataListLabel(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        width: Optional[Union[Var[str], str]] = None,
-        min_width: Optional[Union[Var[str], str]] = None,
-        max_width: Optional[Union[Var[str], str]] = None,
+        width: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[str, reflex.components.core.breakpoints.Breakpoints[str, str]]
+                ],
+                Union[str, reflex.components.core.breakpoints.Breakpoints[str, str]],
+            ]
+        ] = None,
+        min_width: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[str, reflex.components.core.breakpoints.Breakpoints[str, str]]
+                ],
+                Union[str, reflex.components.core.breakpoints.Breakpoints[str, str]],
+            ]
+        ] = None,
+        max_width: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[str, reflex.components.core.breakpoints.Breakpoints[str, str]]
+                ],
+                Union[str, reflex.components.core.breakpoints.Breakpoints[str, str]],
+            ]
+        ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",

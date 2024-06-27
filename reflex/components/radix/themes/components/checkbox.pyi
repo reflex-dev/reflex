@@ -4,11 +4,13 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler
@@ -24,19 +26,34 @@ class Checkbox(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2", "3"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2", "3"]
+                    ],
+                ],
+            ]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                reflex.vars.Var[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -96,13 +113,13 @@ class Checkbox(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        default_checked: Optional[Union[Var[bool], bool]] = None,
-        checked: Optional[Union[Var[bool], bool]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        default_checked: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        checked: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        required: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -196,26 +213,28 @@ class HighLevelCheckbox(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        text: Optional[Union[Var[str], str]] = None,
+        text: Optional[Union[reflex.vars.Var[str], str]] = None,
         spacing: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[reflex.vars.Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                reflex.vars.Var[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -275,13 +294,13 @@ class HighLevelCheckbox(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        default_checked: Optional[Union[Var[bool], bool]] = None,
-        checked: Optional[Union[Var[bool], bool]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        default_checked: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        checked: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        required: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -372,26 +391,28 @@ class CheckboxNamespace(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        text: Optional[Union[Var[str], str]] = None,
+        text: Optional[Union[reflex.vars.Var[str], str]] = None,
         spacing: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[reflex.vars.Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                reflex.vars.Var[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -451,13 +472,13 @@ class CheckboxNamespace(ComponentNamespace):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        default_checked: Optional[Union[Var[bool], bool]] = None,
-        checked: Optional[Union[Var[bool], bool]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        default_checked: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        checked: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        required: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

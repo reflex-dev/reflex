@@ -4,11 +4,13 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Dict, List, Literal, Union
 from reflex.components.component import ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent, RadixThemesTriggerComponent
@@ -26,10 +28,12 @@ class DropdownMenuRoot(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        default_open: Optional[Union[Var[bool], bool]] = None,
-        open: Optional[Union[Var[bool], bool]] = None,
-        modal: Optional[Union[Var[bool], bool]] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        default_open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        modal: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        dir: Optional[
+            Union[reflex.vars.Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -116,7 +120,7 @@ class DropdownMenuTrigger(RadixThemesTriggerComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -187,13 +191,30 @@ class DropdownMenuContent(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
+        size: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2"]
+                    ],
+                ],
+            ]
+        ] = None,
         variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
+            Union[reflex.vars.Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -253,38 +274,45 @@ class DropdownMenuContent(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        loop: Optional[Union[Var[bool], bool]] = None,
-        force_mount: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        loop: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        force_mount: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         side: Optional[
             Union[
-                Var[Literal["top", "right", "bottom", "left"]],
+                reflex.vars.Var[Literal["top", "right", "bottom", "left"]],
                 Literal["top", "right", "bottom", "left"],
             ]
         ] = None,
-        side_offset: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
+        side_offset: Optional[
+            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+        ] = None,
         align: Optional[
             Union[
-                Var[Literal["start", "center", "end"]],
+                reflex.vars.Var[Literal["start", "center", "end"]],
                 Literal["start", "center", "end"],
             ]
         ] = None,
-        align_offset: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
-        avoid_collisions: Optional[Union[Var[bool], bool]] = None,
+        align_offset: Optional[
+            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+        ] = None,
+        avoid_collisions: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
-                Var[Union[float, int, Dict[str, Union[float, int]]]],
+                reflex.vars.Var[Union[float, int, Dict[str, Union[float, int]]]],
                 Union[float, int, Dict[str, Union[float, int]]],
             ]
         ] = None,
         arrow_padding: Optional[
-            Union[Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
         ] = None,
         sticky: Optional[
-            Union[Var[Literal["partial", "always"]], Literal["partial", "always"]]
+            Union[
+                reflex.vars.Var[Literal["partial", "always"]],
+                Literal["partial", "always"],
+            ]
         ] = None,
-        hide_when_detached: Optional[Union[Var[bool], bool]] = None,
+        hide_when_detached: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -395,9 +423,9 @@ class DropdownMenuSubTrigger(RadixThemesTriggerComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        text_value: Optional[Union[Var[str], str]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        text_value: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -468,8 +496,8 @@ class DropdownMenuSub(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        open: Optional[Union[Var[bool], bool]] = None,
-        default_open: Optional[Union[Var[bool], bool]] = None,
+        open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        default_open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -554,25 +582,32 @@ class DropdownMenuSubContent(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        loop: Optional[Union[Var[bool], bool]] = None,
-        force_mount: Optional[Union[Var[bool], bool]] = None,
-        side_offset: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
-        align_offset: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
-        avoid_collisions: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        loop: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        force_mount: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        side_offset: Optional[
+            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+        ] = None,
+        align_offset: Optional[
+            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+        ] = None,
+        avoid_collisions: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
-                Var[Union[float, int, Dict[str, Union[float, int]]]],
+                reflex.vars.Var[Union[float, int, Dict[str, Union[float, int]]]],
                 Union[float, int, Dict[str, Union[float, int]]],
             ]
         ] = None,
         arrow_padding: Optional[
-            Union[Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
         ] = None,
         sticky: Optional[
-            Union[Var[Literal["partial", "always"]], Literal["partial", "always"]]
+            Union[
+                reflex.vars.Var[Literal["partial", "always"]],
+                Literal["partial", "always"],
+            ]
         ] = None,
-        hide_when_detached: Optional[Union[Var[bool], bool]] = None,
+        hide_when_detached: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -676,7 +711,7 @@ class DropdownMenuItem(RadixThemesComponent):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -736,10 +771,10 @@ class DropdownMenuItem(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        shortcut: Optional[Union[Var[str], str]] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        text_value: Optional[Union[Var[str], str]] = None,
+        shortcut: Optional[Union[reflex.vars.Var[str], str]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        text_value: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

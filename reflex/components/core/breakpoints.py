@@ -1,6 +1,6 @@
 """Breakpoints utility."""
 
-from typing import Optional, Tuple, TypeVar
+from typing import Optional, Tuple, TypeVar, Union
 
 breakpoints_values = ["30em", "48em", "62em", "80em", "96em"]
 breakpoint_names = ["xs", "sm", "md", "lg", "xl"]
@@ -87,3 +87,7 @@ class Breakpoints(dict[K, V]):
 
 
 breakpoints = Breakpoints.create
+
+T = TypeVar("T")
+
+Responsive = Union[T, Breakpoints[str, T]]

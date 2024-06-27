@@ -4,11 +4,13 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
 from typing import List, Literal, Union
+from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -20,17 +22,38 @@ class SegmentedControlRoot(RadixThemesComponent):
         cls,
         *children,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2", "3"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2", "3"]
+                    ],
+                ],
+            ]
         ] = None,
         variant: Optional[
-            Union[Var[Literal["classic", "surface"]], Literal["classic", "surface"]]
+            Union[
+                reflex.vars.Var[Literal["classic", "surface"]],
+                Literal["classic", "surface"],
+            ]
         ] = None,
         type: Optional[
-            Union[Var[Literal["single", "multiple"]], Literal["single", "multiple"]]
+            Union[
+                reflex.vars.Var[Literal["single", "multiple"]],
+                Literal["single", "multiple"],
+            ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -92,15 +115,15 @@ class SegmentedControlRoot(RadixThemesComponent):
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
         default_value: Optional[
-            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
+            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
         ] = None,
         value: Optional[
-            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
+            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -189,7 +212,7 @@ class SegmentedControlItem(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

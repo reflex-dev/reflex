@@ -4,10 +4,12 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
@@ -20,17 +22,29 @@ class Avatar(RadixThemesComponent):
         cls,
         *children,
         variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
+            Union[reflex.vars.Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
         ] = None,
         size: Optional[
             Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                    ],
+                ],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -90,15 +104,15 @@ class Avatar(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        src: Optional[Union[Var[str], str]] = None,
-        fallback: Optional[Union[Var[str], str]] = None,
+        src: Optional[Union[reflex.vars.Var[str], str]] = None,
+        fallback: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

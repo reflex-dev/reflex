@@ -4,11 +4,13 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import List, Literal
 from reflex.components.component import ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -19,7 +21,7 @@ class ContextMenuRoot(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        modal: Optional[Union[Var[bool], bool]] = None,
+        modal: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -103,7 +105,7 @@ class ContextMenuTrigger(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -184,13 +186,30 @@ class ContextMenuContent(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
+        size: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2"]
+                    ],
+                ],
+            ]
+        ] = None,
         variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
+            Union[reflex.vars.Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -250,9 +269,9 @@ class ContextMenuContent(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        align_offset: Optional[Union[Var[int], int]] = None,
-        avoid_collisions: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        align_offset: Optional[Union[reflex.vars.Var[int], int]] = None,
+        avoid_collisions: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -432,7 +451,7 @@ class ContextMenuSubTrigger(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -513,7 +532,7 @@ class ContextMenuSubContent(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        loop: Optional[Union[Var[bool], bool]] = None,
+        loop: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -608,7 +627,7 @@ class ContextMenuItem(RadixThemesComponent):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -668,7 +687,7 @@ class ContextMenuItem(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        shortcut: Optional[Union[Var[str], str]] = None,
+        shortcut: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

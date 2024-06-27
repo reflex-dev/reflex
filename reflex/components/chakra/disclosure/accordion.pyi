@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -20,15 +21,15 @@ class Accordion(ChakraComponent):
         *children,
         items=None,
         icon_pos="right",
-        allow_multiple: Optional[Union[Var[bool], bool]] = None,
-        allow_toggle: Optional[Union[Var[bool], bool]] = None,
+        allow_multiple: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        allow_toggle: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         default_index: Optional[
-            Union[Var[Optional[List[int]]], Optional[List[int]]]
+            Union[reflex.vars.Var[Optional[List[int]]], Optional[List[int]]]
         ] = None,
         index: Optional[
-            Union[Var[Union[int, List[int]]], Union[int, List[int]]]
+            Union[reflex.vars.Var[Union[int, List[int]]], Union[int, List[int]]]
         ] = None,
-        reduce_motion: Optional[Union[Var[bool], bool]] = None,
+        reduce_motion: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -112,9 +113,9 @@ class AccordionItem(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        id_: Optional[Union[Var[str], str]] = None,
-        is_disabled: Optional[Union[Var[bool], bool]] = None,
-        is_focusable: Optional[Union[Var[bool], bool]] = None,
+        id_: Optional[Union[reflex.vars.Var[str], str]] = None,
+        is_disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_focusable: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

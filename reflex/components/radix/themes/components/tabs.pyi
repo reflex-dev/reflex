@@ -4,11 +4,13 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Literal
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
 from reflex.event import EventHandler
 from reflex.vars import Var
@@ -23,17 +25,22 @@ class TabsRoot(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        default_value: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        default_value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
+                reflex.vars.Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        dir: Optional[
+            Union[reflex.vars.Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+        ] = None,
         activation_mode: Optional[
-            Union[Var[Literal["automatic", "manual"]], Literal["automatic", "manual"]]
+            Union[
+                reflex.vars.Var[Literal["automatic", "manual"]],
+                Literal["automatic", "manual"],
+            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -123,8 +130,25 @@ class TabsList(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
-        loop: Optional[Union[Var[bool], bool]] = None,
+        size: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2"]
+                    ],
+                ],
+            ]
+        ] = None,
+        loop: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -206,11 +230,11 @@ class TabsTrigger(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -352,8 +376,8 @@ class TabsContent(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
-        force_mount: Optional[Union[Var[bool], bool]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        force_mount: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -438,17 +462,22 @@ class Tabs(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        default_value: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        default_value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
+                reflex.vars.Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        dir: Optional[
+            Union[reflex.vars.Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+        ] = None,
         activation_mode: Optional[
-            Union[Var[Literal["automatic", "manual"]], Literal["automatic", "manual"]]
+            Union[
+                reflex.vars.Var[Literal["automatic", "manual"]],
+                Literal["automatic", "manual"],
+            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

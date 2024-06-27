@@ -6,6 +6,7 @@ from typing import List, Literal, Optional, Union
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler
@@ -26,7 +27,9 @@ class RadioGroupRoot(RadixThemesComponent):
     tag = "RadioGroup.Root"
 
     # The size of the radio group: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]] = Var.create_safe("2", _var_is_string=True)
+    size: Var[Responsive[Literal["1", "2", "3"]]] = Var.create_safe(
+        "2", _var_is_string=True
+    )
 
     # The variant of the radio group
     variant: Var[Literal["classic", "surface", "soft"]] = Var.create_safe(

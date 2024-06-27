@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -28,29 +29,32 @@ class Popover(ChakraComponent):
         body=None,
         footer=None,
         use_close_button=False,
-        arrow_padding: Optional[Union[Var[int], int]] = None,
-        arrow_shadow_color: Optional[Union[Var[str], str]] = None,
-        arrow_size: Optional[Union[Var[int], int]] = None,
-        auto_focus: Optional[Union[Var[bool], bool]] = None,
-        boundary: Optional[Union[Var[str], str]] = None,
-        close_on_blur: Optional[Union[Var[bool], bool]] = None,
-        close_on_esc: Optional[Union[Var[bool], bool]] = None,
-        default_is_open: Optional[Union[Var[bool], bool]] = None,
+        arrow_padding: Optional[Union[reflex.vars.Var[int], int]] = None,
+        arrow_shadow_color: Optional[Union[reflex.vars.Var[str], str]] = None,
+        arrow_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        auto_focus: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        boundary: Optional[Union[reflex.vars.Var[str], str]] = None,
+        close_on_blur: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        close_on_esc: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        default_is_open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         direction: Optional[
-            Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+            Union[reflex.vars.Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
         ] = None,
-        flip: Optional[Union[Var[bool], bool]] = None,
-        gutter: Optional[Union[Var[int], int]] = None,
-        id_: Optional[Union[Var[str], str]] = None,
-        is_lazy: Optional[Union[Var[bool], bool]] = None,
-        lazy_behavior: Optional[Union[Var[str], str]] = None,
-        is_open: Optional[Union[Var[bool], bool]] = None,
-        match_width: Optional[Union[Var[bool], bool]] = None,
-        placement: Optional[Union[Var[str], str]] = None,
-        prevent_overflow: Optional[Union[Var[bool], bool]] = None,
-        return_focus_on_close: Optional[Union[Var[bool], bool]] = None,
+        flip: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        gutter: Optional[Union[reflex.vars.Var[int], int]] = None,
+        id_: Optional[Union[reflex.vars.Var[str], str]] = None,
+        is_lazy: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        lazy_behavior: Optional[Union[reflex.vars.Var[str], str]] = None,
+        is_open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        match_width: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        placement: Optional[Union[reflex.vars.Var[str], str]] = None,
+        prevent_overflow: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        return_focus_on_close: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         strategy: Optional[
-            Union[Var[Literal["fixed", "absolute"]], Literal["fixed", "absolute"]]
+            Union[
+                reflex.vars.Var[Literal["fixed", "absolute"]],
+                Literal["fixed", "absolute"],
+            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

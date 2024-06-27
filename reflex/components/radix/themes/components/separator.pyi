@@ -4,10 +4,12 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -20,11 +22,26 @@ class Separator(RadixThemesComponent):
         cls,
         *children,
         size: Optional[
-            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3", "4"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3", "4"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2", "3", "4"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2", "3", "4"]
+                    ],
+                ],
+            ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -86,11 +103,23 @@ class Separator(RadixThemesComponent):
         ] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
-                Literal["horizontal", "vertical"],
+                reflex.vars.Var[
+                    Union[
+                        Literal["horizontal", "vertical"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["horizontal", "vertical"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["horizontal", "vertical"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["horizontal", "vertical"]
+                    ],
+                ],
             ]
         ] = None,
-        decorative: Optional[Union[Var[bool], bool]] = None,
+        decorative: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

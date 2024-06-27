@@ -148,7 +148,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 if arg is not type(None)
             ]
         )
-        res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
+        res = f"{value.__module__ + "." + value.__name__ if value.__module__.startswith("reflex") else value.__name__}[{', '.join(inner_container_type_args)}]"
 
         if value.__name__ == "Var":
             # For Var types, Union with the inner args so they can be passed directly.
@@ -205,6 +205,7 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
         *ast.parse(  # type: ignore
             textwrap.dedent(
                 """
+                import reflex
                 from reflex.vars import Var, BaseVar, ComputedVar
                 from reflex.event import EventChain, EventHandler, EventSpec
                 from reflex.style import Style"""

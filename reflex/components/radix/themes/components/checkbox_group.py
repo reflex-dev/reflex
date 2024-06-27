@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 from typing import List, Literal
 
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -14,7 +15,7 @@ class CheckboxGroupRoot(RadixThemesComponent):
     tag = "CheckboxGroup.Root"
 
     # Use the size prop to control the checkbox size.
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Variant of button: "classic" | "surface" | "soft"
     variant: Var[Literal["classic", "surface", "soft"]]

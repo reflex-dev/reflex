@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -20,8 +21,8 @@ class Breadcrumb(ChakraComponent):
         cls,
         *children,
         items=None,
-        separator: Optional[Union[Var[str], str]] = None,
-        separator_margin: Optional[Union[Var[str], str]] = None,
+        separator: Optional[Union[reflex.vars.Var[str], str]] = None,
+        separator_margin: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -105,10 +106,10 @@ class BreadcrumbItem(ChakraComponent):
         *children,
         label=None,
         href=None,
-        is_current_page: Optional[Union[Var[bool], bool]] = None,
-        is_last_child: Optional[Union[Var[bool], bool]] = None,
-        separator: Optional[Union[Var[str], str]] = None,
-        spacing: Optional[Union[Var[str], str]] = None,
+        is_current_page: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_last_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        separator: Optional[Union[reflex.vars.Var[str], str]] = None,
+        spacing: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -267,12 +268,12 @@ class BreadcrumbLink(Link):
     def create(  # type: ignore
         cls,
         *children,
-        is_current_page: Optional[Union[Var[bool], bool]] = None,
-        rel: Optional[Union[Var[str], str]] = None,
-        href: Optional[Union[Var[str], str]] = None,
-        text: Optional[Union[Var[str], str]] = None,
-        as_: Optional[Union[Var[str], str]] = None,
-        is_external: Optional[Union[Var[bool], bool]] = None,
+        is_current_page: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        rel: Optional[Union[reflex.vars.Var[str], str]] = None,
+        href: Optional[Union[reflex.vars.Var[str], str]] = None,
+        text: Optional[Union[reflex.vars.Var[str], str]] = None,
+        as_: Optional[Union[reflex.vars.Var[str], str]] = None,
+        is_external: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

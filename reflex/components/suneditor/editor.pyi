@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -56,7 +57,7 @@ class Editor(NoSSRComponent):
         *children,
         lang: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Union[
                         Literal[
                             "en",
@@ -106,21 +107,21 @@ class Editor(NoSSRComponent):
                 ],
             ]
         ] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        width: Optional[Union[Var[str], str]] = None,
-        height: Optional[Union[Var[str], str]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
-        auto_focus: Optional[Union[Var[bool], bool]] = None,
-        set_options: Optional[Union[Var[Dict], Dict]] = None,
-        set_all_plugins: Optional[Union[Var[bool], bool]] = None,
-        set_contents: Optional[Union[Var[str], str]] = None,
-        append_contents: Optional[Union[Var[str], str]] = None,
-        set_default_style: Optional[Union[Var[str], str]] = None,
-        disable: Optional[Union[Var[bool], bool]] = None,
-        hide: Optional[Union[Var[bool], bool]] = None,
-        hide_toolbar: Optional[Union[Var[bool], bool]] = None,
-        disable_toolbar: Optional[Union[Var[bool], bool]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
+        default_value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        width: Optional[Union[reflex.vars.Var[str], str]] = None,
+        height: Optional[Union[reflex.vars.Var[str], str]] = None,
+        placeholder: Optional[Union[reflex.vars.Var[str], str]] = None,
+        auto_focus: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        set_options: Optional[Union[reflex.vars.Var[Dict], Dict]] = None,
+        set_all_plugins: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        set_contents: Optional[Union[reflex.vars.Var[str], str]] = None,
+        append_contents: Optional[Union[reflex.vars.Var[str], str]] = None,
+        set_default_style: Optional[Union[reflex.vars.Var[str], str]] = None,
+        disable: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        hide: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        hide_toolbar: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        disable_toolbar: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

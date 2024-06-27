@@ -4,11 +4,13 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
 from typing import List, Literal
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -19,17 +21,32 @@ class CheckboxGroupRoot(RadixThemesComponent):
         cls,
         *children,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3"]
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["1", "2", "3"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str, Literal["1", "2", "3"]
+                    ],
+                ],
+            ]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                reflex.vars.Var[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -89,9 +106,9 @@ class CheckboxGroupRoot(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        default_value: Optional[Union[Var[List[str]], List[str]]] = None,
-        name: Optional[Union[Var[str], str]] = None,
+        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        default_value: Optional[Union[reflex.vars.Var[List[str]], List[str]]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -177,8 +194,8 @@ class CheckboxGroupItem(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

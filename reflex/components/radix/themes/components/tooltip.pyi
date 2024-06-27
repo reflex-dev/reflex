@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -24,43 +25,50 @@ class Tooltip(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        content: Optional[Union[Var[str], str]] = None,
-        default_open: Optional[Union[Var[bool], bool]] = None,
-        open: Optional[Union[Var[bool], bool]] = None,
+        content: Optional[Union[reflex.vars.Var[str], str]] = None,
+        default_open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         side: Optional[
             Union[
-                Var[Literal["top", "right", "bottom", "left"]],
+                reflex.vars.Var[Literal["top", "right", "bottom", "left"]],
                 Literal["top", "right", "bottom", "left"],
             ]
         ] = None,
-        side_offset: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
+        side_offset: Optional[
+            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+        ] = None,
         align: Optional[
             Union[
-                Var[Literal["start", "center", "end"]],
+                reflex.vars.Var[Literal["start", "center", "end"]],
                 Literal["start", "center", "end"],
             ]
         ] = None,
-        align_offset: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
-        avoid_collisions: Optional[Union[Var[bool], bool]] = None,
+        align_offset: Optional[
+            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+        ] = None,
+        avoid_collisions: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
-                Var[Union[float, int, Dict[str, Union[float, int]]]],
+                reflex.vars.Var[Union[float, int, Dict[str, Union[float, int]]]],
                 Union[float, int, Dict[str, Union[float, int]]],
             ]
         ] = None,
         arrow_padding: Optional[
-            Union[Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
         ] = None,
         sticky: Optional[
-            Union[Var[Literal["partial", "always"]], Literal["partial", "always"]]
+            Union[
+                reflex.vars.Var[Literal["partial", "always"]],
+                Literal["partial", "always"],
+            ]
         ] = None,
-        hide_when_detached: Optional[Union[Var[bool], bool]] = None,
+        hide_when_detached: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         delay_duration: Optional[
-            Union[Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
         ] = None,
-        disable_hoverable_content: Optional[Union[Var[bool], bool]] = None,
-        force_mount: Optional[Union[Var[bool], bool]] = None,
-        aria_label: Optional[Union[Var[str], str]] = None,
+        disable_hoverable_content: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        force_mount: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        aria_label: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -17,15 +18,17 @@ class Flex(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        align: Optional[Union[Var[str], str]] = None,
-        basis: Optional[Union[Var[str], str]] = None,
+        align: Optional[Union[reflex.vars.Var[str], str]] = None,
+        basis: Optional[Union[reflex.vars.Var[str], str]] = None,
         direction: Optional[
-            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
+            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
         ] = None,
-        grow: Optional[Union[Var[str], str]] = None,
-        justify: Optional[Union[Var[str], str]] = None,
-        wrap: Optional[Union[Var[Union[str, List[str]]], Union[str, List[str]]]] = None,
-        shrink: Optional[Union[Var[str], str]] = None,
+        grow: Optional[Union[reflex.vars.Var[str], str]] = None,
+        justify: Optional[Union[reflex.vars.Var[str], str]] = None,
+        wrap: Optional[
+            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
+        ] = None,
+        shrink: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
