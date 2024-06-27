@@ -2215,6 +2215,7 @@ def computed_var(
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
+    _deprecated_cached_var: bool = False,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
     """A ComputedVar decorator with or without kwargs.
@@ -2226,6 +2227,7 @@ def computed_var(
         deps: Explicit var dependencies to track.
         auto_deps: Whether var dependencies should be auto-determined.
         interval: Interval at which the computed var should be updated.
+        deprecated_cached_var: Indicate usage of deprecated cached_var partial function.
         **kwargs: additional attributes to set on the instance
 
     Returns:
@@ -2234,6 +2236,14 @@ def computed_var(
     Raises:
         ValueError: If caching is disabled and an update interval is set.
     """
+    if _deprecated_cached_var:
+        console.deprecate(
+            feature_name="cached_var",
+            reason=("Use @rx.var(cache=True) instead of @rx.cached_var."),
+            deprecation_version="0.5.6",
+            removal_version="0.6.0",
+        )
+
     if cache is False and interval is not None:
         raise ValueError("Cannot set update interval without caching.")
 
@@ -2255,7 +2265,7 @@ def computed_var(
 
 
 # Partial function of computed_var with cache=True
-cached_var = functools.partial(computed_var, cache=True)
+cached_var = functools.partial(computed_var, cache=True, _deprecated_cached_var=True)
 
 
 class CallableVar(BaseVar):
