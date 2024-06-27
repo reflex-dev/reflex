@@ -499,7 +499,7 @@ class LabelList(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         position: Optional[
             Union[
                 Var[

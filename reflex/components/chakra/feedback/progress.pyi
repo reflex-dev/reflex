@@ -22,7 +22,7 @@ class Progress(ChakraComponent):
         is_indeterminate: Optional[Union[Var[bool], bool]] = None,
         max_: Optional[Union[Var[int], int]] = None,
         min_: Optional[Union[Var[int], int]] = None,
-        value: Optional[Union[Var[Union[int, float]], Union[int, float]]] = None,
+        value: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
         color_scheme: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

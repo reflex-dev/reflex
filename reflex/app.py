@@ -52,6 +52,7 @@ from reflex.components.component import (
     evaluate_style_namespaces,
 )
 from reflex.components.core.banner import connection_pulser, connection_toaster
+from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
@@ -79,7 +80,7 @@ from reflex.state import (
     _substate_key,
     code_uses_state_contexts,
 )
-from reflex.utils import console, exceptions, format, prerequisites, types
+from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
 from reflex.utils.exec import is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
 
@@ -94,7 +95,11 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    return Fragment.create(connection_pulser(), connection_toaster())
+    return Fragment.create(
+        connection_pulser(),
+        connection_toaster(),
+        *codespaces.codespaces_auto_redirect(),
+    )
 
 
 class OverlayFragment(Fragment):
@@ -245,6 +250,9 @@ class App(LifespanMixin, Base):
                 "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
             )
 
+        if "breakpoints" in self.style:
+            set_breakpoints(self.style.pop("breakpoints"))
+
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
 
@@ -341,6 +349,10 @@ class App(LifespanMixin, Base):
                 str(constants.Endpoint.UPLOAD),
                 StaticFiles(directory=get_upload_dir()),
                 name="uploaded_files",
+            )
+        if codespaces.is_running_in_codespaces():
+            self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(
+                codespaces.auth_codespace
             )
 
     def _add_cors(self):

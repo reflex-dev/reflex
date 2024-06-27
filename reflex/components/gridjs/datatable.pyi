@@ -102,7 +102,7 @@ class DataTable(Gridjs):
         search: Optional[Union[Var[bool], bool]] = None,
         sort: Optional[Union[Var[bool], bool]] = None,
         resizable: Optional[Union[Var[bool], bool]] = None,
-        pagination: Optional[Union[Var[Union[bool, Dict]], Union[bool, Dict]]] = None,
+        pagination: Optional[Union[Var[Union[Dict, bool]], Union[Dict, bool]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

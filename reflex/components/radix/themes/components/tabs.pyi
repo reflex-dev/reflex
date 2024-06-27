@@ -31,6 +31,10 @@ class TabsRoot(RadixThemesComponent):
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
+        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        activation_mode: Optional[
+            Union[Var[Literal["automatic", "manual"]], Literal["automatic", "manual"]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -97,6 +101,8 @@ class TabsRoot(RadixThemesComponent):
             default_value: The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
             value: The controlled value of the tab that should be active. Use when you need to control the state of the tabs.
             orientation: The orientation of the tabs.
+            dir: Reading direction of the tabs.
+            activation_mode: The mode of activation for the tabs. "automatic" will activate the tab when focused. "manual" will activate the tab when clicked.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -118,6 +124,7 @@ class TabsList(RadixThemesComponent):
         cls,
         *children,
         size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
+        loop: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -179,6 +186,7 @@ class TabsList(RadixThemesComponent):
         Args:
             *children: Child components.
             size: Tabs size "1" - "2"
+            loop: When true, the tabs will loop when reaching the end.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -344,6 +352,7 @@ class TabsContent(RadixThemesComponent):
         cls,
         *children,
         value: Optional[Union[Var[str], str]] = None,
+        force_mount: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -405,6 +414,7 @@ class TabsContent(RadixThemesComponent):
         Args:
             *children: Child components.
             value: The value of the tab. Must be unique for each tab.
+            force_mount: Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -434,6 +444,10 @@ class Tabs(ComponentNamespace):
                 Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
+        ] = None,
+        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        activation_mode: Optional[
+            Union[Var[Literal["automatic", "manual"]], Literal["automatic", "manual"]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -501,6 +515,8 @@ class Tabs(ComponentNamespace):
             default_value: The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
             value: The controlled value of the tab that should be active. Use when you need to control the state of the tabs.
             orientation: The orientation of the tabs.
+            dir: Reading direction of the tabs.
+            activation_mode: The mode of activation for the tabs. "automatic" will activate the tab when focused. "manual" will activate the tab when clicked.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
