@@ -2988,4 +2988,4 @@ def test_mixin_state() -> None:
     """Test that a mixin state works correctly."""
     assert "num" in UsesMixinState.base_vars
     assert "num" in UsesMixinState.vars
-    assert UsesMixinState.backend_vars.keys() == ["_backend"]
+    assert UsesMixinState.backend_vars == {"_backend": 0}
