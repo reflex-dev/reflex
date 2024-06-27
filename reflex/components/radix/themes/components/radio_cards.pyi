@@ -91,14 +91,14 @@ class RadioCardsRoot(RadixThemesComponent):
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         columns: Optional[
             Union[
-                Var[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]],
-                Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Var[Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str]],
+                Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
             ]
         ] = None,
         gap: Optional[
             Union[
-                Var[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]],
-                Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Var[Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str]],
+                Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
             ]
         ] = None,
         default_value: Optional[Union[Var[str], str]] = None,

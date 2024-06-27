@@ -28,7 +28,7 @@ class Pie(Recharts):
         cls,
         *children,
         data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         cx: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         cy: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         inner_radius: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
@@ -139,7 +139,7 @@ class Radar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         points: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
         dot: Optional[Union[Var[bool], bool]] = None,
         stroke: Optional[Union[Var[str], str]] = None,
@@ -243,11 +243,11 @@ class RadialBar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         min_angle: Optional[Union[Var[int], int]] = None,
         legend_type: Optional[Union[Var[str], str]] = None,
         label: Optional[
-            Union[Var[Union[bool, Dict[str, Any]]], Union[bool, Dict[str, Any]]]
+            Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
         ] = None,
         background: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
@@ -304,16 +304,16 @@ class PolarAngleAxis(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         cx: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         cy: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         radius: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         axis_line: Optional[
-            Union[Var[Union[bool, Dict[str, Any]]], Union[bool, Dict[str, Any]]]
+            Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
         ] = None,
         axis_line_type: Optional[Union[Var[str], str]] = None,
         tick_line: Optional[
-            Union[Var[Union[bool, Dict[str, Any]]], Union[bool, Dict[str, Any]]]
+            Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
         ] = None,
         tick: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         ticks: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
@@ -509,7 +509,7 @@ class PolarRadiusAxis(Recharts):
         reversed: Optional[Union[Var[bool], bool]] = None,
         orientation: Optional[Union[Var[str], str]] = None,
         axis_line: Optional[
-            Union[Var[Union[bool, Dict[str, Any]]], Union[bool, Dict[str, Any]]]
+            Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
         ] = None,
         tick: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         tick_count: Optional[Union[Var[int], int]] = None,

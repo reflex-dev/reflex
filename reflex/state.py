@@ -202,10 +202,6 @@ def _no_chain_background_task(
 RESERVED_BACKEND_VAR_NAMES = {
     "_abc_impl",
     "_backend_vars",
-    "_computed_var_dependencies",
-    "_substate_var_dependencies",
-    "_always_dirty_computed_vars",
-    "_always_dirty_substates",
     "_was_touched",
 }
 
