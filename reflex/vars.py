@@ -2227,7 +2227,7 @@ def computed_var(
         deps: Explicit var dependencies to track.
         auto_deps: Whether var dependencies should be auto-determined.
         interval: Interval at which the computed var should be updated.
-        deprecated_cached_var: Indicate usage of deprecated cached_var partial function.
+        _deprecated_cached_var: Indicate usage of deprecated cached_var partial function.
         **kwargs: additional attributes to set on the instance
 
     Returns:
