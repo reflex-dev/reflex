@@ -193,6 +193,7 @@ class AccordionRoot(AccordionComponent):
         value: Optional[
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
         ] = None,
         default_value: Optional[
@@ -203,17 +204,37 @@ class AccordionRoot(AccordionComponent):
         dir: Optional[
             Union[reflex.vars.Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
 =======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
             Union[Var[Union[List[str], str]], Union[List[str], str]]
         ] = None,
         default_value: Optional[
             Union[Var[Union[List[str], str]], Union[List[str], str]]
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+<<<<<<< HEAD
+            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
+        ] = None,
+        default_value: Optional[
+            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
+        ] = None,
+        collapsible: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        dir: Optional[
+            Union[reflex.vars.Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
 =======
             Union[Var[Union[List[str], str]], Union[List[str], str]]
         ] = None,
         default_value: Optional[
             Union[Var[Union[List[str], str]], Union[List[str], str]]
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         ] = None,
         orientation: Optional[
             Union[

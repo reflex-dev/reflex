@@ -100,6 +100,11 @@ class DataTable(Gridjs):
         *children,
         data: Optional[Any] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+=======
+<<<<<<< HEAD
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         columns: Optional[Union[reflex.vars.Var[List], List]] = None,
         search: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         sort: Optional[Union[reflex.vars.Var[bool], bool]] = None,
@@ -108,15 +113,25 @@ class DataTable(Gridjs):
             Union[reflex.vars.Var[Union[bool, Dict]], Union[bool, Dict]]
         ] = None,
 =======
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         columns: Optional[Union[Var[List], List]] = None,
         search: Optional[Union[Var[bool], bool]] = None,
         sort: Optional[Union[Var[bool], bool]] = None,
         resizable: Optional[Union[Var[bool], bool]] = None,
         pagination: Optional[Union[Var[Union[Dict, bool]], Union[Dict, bool]]] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

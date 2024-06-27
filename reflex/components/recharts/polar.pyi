@@ -29,6 +29,11 @@ class Pie(Recharts):
         cls,
         *children,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+=======
+<<<<<<< HEAD
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         data: Optional[
             Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
         ] = None,
@@ -49,6 +54,10 @@ class Pie(Recharts):
         padding_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
         name_key: Optional[Union[reflex.vars.Var[str], str]] = None,
 =======
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         cx: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
@@ -60,7 +69,14 @@ class Pie(Recharts):
         min_angle: Optional[Union[Var[int], int]] = None,
         padding_angle: Optional[Union[Var[int], int]] = None,
         name_key: Optional[Union[Var[str], str]] = None,
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         legend_type: Optional[
             Union[
                 reflex.vars.Var[
@@ -164,6 +180,10 @@ class Radar(Recharts):
         *children,
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
         data_key: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -179,8 +199,12 @@ class Radar(Recharts):
         animation_begin: Optional[Union[reflex.vars.Var[int], int]] = None,
         animation_duration: Optional[Union[reflex.vars.Var[int], int]] = None,
 =======
+<<<<<<< HEAD
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         points: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
         dot: Optional[Union[Var[bool], bool]] = None,
@@ -191,7 +215,14 @@ class Radar(Recharts):
         label: Optional[Union[Var[bool], bool]] = None,
         animation_begin: Optional[Union[Var[int], int]] = None,
         animation_duration: Optional[Union[Var[int], int]] = None,
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         animation_easing: Optional[
             Union[
                 reflex.vars.Var[
@@ -290,14 +321,32 @@ class RadialBar(Recharts):
         *children,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         data_key: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
 =======
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         min_angle: Optional[Union[Var[int], int]] = None,
         legend_type: Optional[Union[Var[str], str]] = None,
+=======
+<<<<<<< HEAD
+        data_key: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+=======
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        min_angle: Optional[Union[Var[int], int]] = None,
+        legend_type: Optional[Union[Var[str], str]] = None,
+        label: Optional[
+            Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+        ] = None,
+        min_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
+        legend_type: Optional[Union[reflex.vars.Var[str], str]] = None,
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
         label: Optional[
             Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
 <<<<<<< HEAD
@@ -370,6 +419,7 @@ class PolarAngleAxis(Recharts):
         *children,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         data_key: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -386,6 +436,8 @@ class PolarAngleAxis(Recharts):
 =======
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         cx: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         cy: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
@@ -393,12 +445,40 @@ class PolarAngleAxis(Recharts):
         axis_line: Optional[
             Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+<<<<<<< HEAD
+        data_key: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        cx: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
+        cy: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
+        radius: Optional[
+            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
+        ] = None,
+        axis_line: Optional[
+            Union[
+                reflex.vars.Var[Union[bool, Dict[str, Any]]],
+                Union[bool, Dict[str, Any]],
+            ]
+=======
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        cx: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        cy: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        radius: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        axis_line: Optional[
+            Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         ] = None,
         axis_line_type: Optional[Union[reflex.vars.Var[str], str]] = None,
         tick_line: Optional[
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
             Union[
@@ -411,6 +491,19 @@ class PolarAngleAxis(Recharts):
 =======
             Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+            Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
+=======
+<<<<<<< HEAD
+            Union[
+                reflex.vars.Var[Union[bool, Dict[str, Any]]],
+                Union[bool, Dict[str, Any]],
+            ]
+=======
+            Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         ] = None,
         tick: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
         ticks: Optional[
@@ -620,6 +713,7 @@ class PolarRadiusAxis(Recharts):
         axis_line: Optional[
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             Union[
                 reflex.vars.Var[Union[bool, Dict[str, Any]]],
                 Union[bool, Dict[str, Any]],
@@ -630,6 +724,19 @@ class PolarRadiusAxis(Recharts):
 =======
             Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+            Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
+=======
+<<<<<<< HEAD
+            Union[
+                reflex.vars.Var[Union[bool, Dict[str, Any]]],
+                Union[bool, Dict[str, Any]],
+            ]
+=======
+            Union[Var[Union[Dict[str, Any], bool]], Union[Dict[str, Any], bool]]
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         ] = None,
         tick: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
         tick_count: Optional[Union[reflex.vars.Var[int], int]] = None,

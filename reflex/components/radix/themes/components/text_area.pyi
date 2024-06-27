@@ -137,6 +137,28 @@ class TextArea(RadixThemesComponent, elements.Textarea):
             ]
         ] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        auto_complete: Optional[Union[Var[bool], bool]] = None,
+        auto_focus: Optional[Union[Var[bool], bool]] = None,
+        dirname: Optional[Union[Var[str], str]] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
+        form: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        max_length: Optional[Union[Var[int], int]] = None,
+        min_length: Optional[Union[Var[int], int]] = None,
+        name: Optional[Union[Var[str], str]] = None,
+        placeholder: Optional[Union[Var[str], str]] = None,
+        read_only: Optional[Union[Var[bool], bool]] = None,
+        required: Optional[Union[Var[bool], bool]] = None,
+        rows: Optional[Union[Var[str], str]] = None,
+        value: Optional[Union[Var[str], str]] = None,
+        wrap: Optional[Union[Var[str], str]] = None,
+        auto_height: Optional[Union[Var[bool], bool]] = None,
+        cols: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        enter_key_submit: Optional[Union[Var[bool], bool]] = None,
+=======
+<<<<<<< HEAD
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         auto_complete: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         auto_focus: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         dirname: Optional[Union[reflex.vars.Var[str], str]] = None,
@@ -158,6 +180,7 @@ class TextArea(RadixThemesComponent, elements.Textarea):
             Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         enter_key_submit: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+<<<<<<< HEAD
         access_key: Optional[
             Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -204,6 +227,50 @@ class TextArea(RadixThemesComponent, elements.Textarea):
             Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         title: Optional[
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+        access_key: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        auto_capitalize: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        content_editable: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        context_menu: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        draggable: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        enter_key_hint: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        hidden: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        input_mode: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        item_prop: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        spell_check: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        tab_index: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        title: Optional[
+<<<<<<< HEAD
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
             Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
 =======
         auto_complete: Optional[Union[Var[bool], bool]] = None,
@@ -263,9 +330,14 @@ class TextArea(RadixThemesComponent, elements.Textarea):
         title: Optional[
             Union[Var[Union[bool, int, str]], Union[bool, int, str]]
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

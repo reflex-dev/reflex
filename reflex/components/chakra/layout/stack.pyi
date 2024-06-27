@@ -23,6 +23,7 @@ class Stack(ChakraComponent):
             Union[
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                 reflex.vars.Var[Union[Literal["row", "column"], List[str]]],
                 Union[Literal["row", "column"], List[str]],
 =======
@@ -32,7 +33,19 @@ class Stack(ChakraComponent):
 =======
                 Var[Union[List[str], Literal["row", "column"]]],
                 Union[List[str], Literal["row", "column"]],
+=======
+<<<<<<< HEAD
+                reflex.vars.Var[Union[Literal["row", "column"], List[str]]],
+                Union[Literal["row", "column"], List[str]],
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+=======
+                Var[Union[List[str], Literal["row", "column"]]],
+                Union[List[str], Literal["row", "column"]],
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
             ]
         ] = None,
         is_inline: Optional[Union[reflex.vars.Var[bool], bool]] = None,
@@ -130,6 +143,7 @@ class Hstack(Stack):
             Union[
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                 reflex.vars.Var[Union[Literal["row", "column"], List[str]]],
                 Union[Literal["row", "column"], List[str]],
 =======
@@ -139,7 +153,19 @@ class Hstack(Stack):
 =======
                 Var[Union[List[str], Literal["row", "column"]]],
                 Union[List[str], Literal["row", "column"]],
+=======
+<<<<<<< HEAD
+                reflex.vars.Var[Union[Literal["row", "column"], List[str]]],
+                Union[Literal["row", "column"], List[str]],
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+=======
+                Var[Union[List[str], Literal["row", "column"]]],
+                Union[List[str], Literal["row", "column"]],
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
             ]
         ] = None,
         is_inline: Optional[Union[reflex.vars.Var[bool], bool]] = None,
@@ -237,6 +263,7 @@ class Vstack(Stack):
             Union[
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                 reflex.vars.Var[Union[Literal["row", "column"], List[str]]],
                 Union[Literal["row", "column"], List[str]],
 =======
@@ -246,7 +273,19 @@ class Vstack(Stack):
 =======
                 Var[Union[List[str], Literal["row", "column"]]],
                 Union[List[str], Literal["row", "column"]],
+=======
+<<<<<<< HEAD
+                reflex.vars.Var[Union[Literal["row", "column"], List[str]]],
+                Union[Literal["row", "column"], List[str]],
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+=======
+                Var[Union[List[str], Literal["row", "column"]]],
+                Union[List[str], Literal["row", "column"]],
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
             ]
         ] = None,
         is_inline: Optional[Union[reflex.vars.Var[bool], bool]] = None,

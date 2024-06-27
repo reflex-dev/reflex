@@ -51,6 +51,7 @@ class Tooltip(RadixThemesComponent):
             Union[
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                 reflex.vars.Var[Union[float, int, Dict[str, Union[float, int]]]],
                 Union[float, int, Dict[str, Union[float, int]]],
 =======
@@ -60,7 +61,19 @@ class Tooltip(RadixThemesComponent):
 =======
                 Var[Union[Dict[str, Union[float, int]], float, int]],
                 Union[Dict[str, Union[float, int]], float, int],
+=======
+<<<<<<< HEAD
+                reflex.vars.Var[Union[float, int, Dict[str, Union[float, int]]]],
+                Union[float, int, Dict[str, Union[float, int]]],
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+=======
+                Var[Union[Dict[str, Union[float, int]], float, int]],
+                Union[Dict[str, Union[float, int]], float, int],
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
             ]
         ] = None,
         arrow_padding: Optional[

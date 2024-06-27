@@ -29,6 +29,11 @@ class DebounceInput(Component):
         value: Optional[
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+            Union[Var[Union[float, int, str]], Union[float, int, str]]
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
             Union[reflex.vars.Var[Union[str, int, float]], Union[str, int, float]]
         ] = None,
         input_ref: Optional[Union[reflex.vars.Var[str], str]] = None,
@@ -37,9 +42,13 @@ class DebounceInput(Component):
 =======
             Union[Var[Union[float, int, str]], Union[float, int, str]]
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
 =======
             Union[Var[Union[float, int, str]], Union[float, int, str]]
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

@@ -39,6 +39,10 @@ class Axis(Recharts):
         *children,
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
         data_key: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -50,16 +54,26 @@ class Axis(Recharts):
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
 =======
+<<<<<<< HEAD
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         orientation: Optional[
             Union[reflex.vars.Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
         ] = None,
@@ -117,22 +131,38 @@ class Axis(Recharts):
         ] = None,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         unit: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         name: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         ticks: Optional[
             Union[reflex.vars.Var[List[Union[str, int]]], List[Union[str, int]]]
 =======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         unit: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         name: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         ticks: Optional[
             Union[Var[List[Union[int, str]]], List[Union[int, str]]]
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+<<<<<<< HEAD
+        unit: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
+        name: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
+        ticks: Optional[
+            Union[reflex.vars.Var[List[Union[str, int]]], List[Union[str, int]]]
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
 =======
         unit: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         name: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         ticks: Optional[
             Union[Var[List[Union[int, str]]], List[Union[int, str]]]
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         ] = None,
         tick: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         tick_count: Optional[Union[reflex.vars.Var[int], int]] = None,
@@ -238,6 +268,10 @@ class XAxis(Axis):
         *children,
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
         x_axis_id: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -253,8 +287,12 @@ class XAxis(Axis):
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
 =======
+<<<<<<< HEAD
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         include_hidden: Optional[Union[Var[bool], bool]] = None,
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
@@ -262,9 +300,15 @@ class XAxis(Axis):
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         orientation: Optional[
             Union[reflex.vars.Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
         ] = None,
@@ -322,22 +366,38 @@ class XAxis(Axis):
         ] = None,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         unit: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         name: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         ticks: Optional[
             Union[reflex.vars.Var[List[Union[str, int]]], List[Union[str, int]]]
 =======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         unit: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         name: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         ticks: Optional[
             Union[Var[List[Union[int, str]]], List[Union[int, str]]]
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+<<<<<<< HEAD
+        unit: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
+        name: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
+        ticks: Optional[
+            Union[reflex.vars.Var[List[Union[str, int]]], List[Union[str, int]]]
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
 =======
         unit: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         name: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         ticks: Optional[
             Union[Var[List[Union[int, str]]], List[Union[int, str]]]
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         ] = None,
         tick: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         tick_count: Optional[Union[reflex.vars.Var[int], int]] = None,
@@ -447,6 +507,7 @@ class YAxis(Axis):
             Union[reflex.vars.Var[Literal["left", "right"]], Literal["left", "right"]]
         ] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
         data_key: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -464,15 +525,27 @@ class YAxis(Axis):
 =======
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         type_: Optional[
             Union[
                 reflex.vars.Var[Literal["number", "category"]],
@@ -527,22 +600,38 @@ class YAxis(Axis):
         ] = None,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         unit: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         name: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         ticks: Optional[
             Union[reflex.vars.Var[List[Union[str, int]]], List[Union[str, int]]]
 =======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         unit: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         name: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         ticks: Optional[
             Union[Var[List[Union[int, str]]], List[Union[int, str]]]
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+<<<<<<< HEAD
+        unit: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
+        name: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
+        ticks: Optional[
+            Union[reflex.vars.Var[List[Union[str, int]]], List[Union[str, int]]]
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
 =======
         unit: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         name: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         ticks: Optional[
             Union[Var[List[Union[int, str]]], List[Union[int, str]]]
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         ] = None,
         tick: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         tick_count: Optional[Union[reflex.vars.Var[int], int]] = None,
@@ -649,6 +738,10 @@ class ZAxis(Recharts):
         *children,
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
         data_key: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -656,16 +749,26 @@ class ZAxis(Recharts):
         unit: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         name: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
 =======
+<<<<<<< HEAD
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         range: Optional[Union[Var[List[int]], List[int]]] = None,
         unit: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         name: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         scale: Optional[
             Union[
                 reflex.vars.Var[
@@ -790,6 +893,10 @@ class Brush(Recharts):
         *children,
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
         stroke: Optional[
             Union[reflex.vars.Var[Union[str, Color]], Union[str, Color]]
         ] = None,
@@ -806,8 +913,12 @@ class Brush(Recharts):
         start_index: Optional[Union[reflex.vars.Var[int], int]] = None,
         end_index: Optional[Union[reflex.vars.Var[int], int]] = None,
 =======
+<<<<<<< HEAD
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         stroke: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         x: Optional[Union[Var[int], int]] = None,
@@ -819,7 +930,14 @@ class Brush(Recharts):
         gap: Optional[Union[Var[int], int]] = None,
         start_index: Optional[Union[Var[int], int]] = None,
         end_index: Optional[Union[Var[int], int]] = None,
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -873,6 +991,7 @@ class Cartesian(Recharts):
         ] = None,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         data_key: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -891,7 +1010,27 @@ class Cartesian(Recharts):
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+=======
+<<<<<<< HEAD
+        data_key: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        x_axis_id: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        y_axis_id: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+=======
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         legend_type: Optional[
             Union[
                 reflex.vars.Var[
@@ -1007,6 +1146,7 @@ class Area(Cartesian):
         *children,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         stroke: Optional[
             Union[reflex.vars.Var[Union[str, Color]], Union[str, Color]]
         ] = None,
@@ -1023,7 +1163,25 @@ class Area(Cartesian):
         stroke: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
         stroke_width: Optional[Union[Var[int], int]] = None,
         fill: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
+=======
+<<<<<<< HEAD
+        stroke: Optional[
+            Union[reflex.vars.Var[Union[str, Color]], Union[str, Color]]
+        ] = None,
+        stroke_width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        fill: Optional[
+            Union[reflex.vars.Var[Union[str, Color]], Union[str, Color]]
+        ] = None,
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+=======
+        stroke: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
+        stroke_width: Optional[Union[Var[int], int]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         type_: Optional[
             Union[
                 reflex.vars.Var[
@@ -1065,6 +1223,11 @@ class Area(Cartesian):
             ]
         ] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+=======
+<<<<<<< HEAD
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         dot: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         active_dot: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         label: Optional[Union[reflex.vars.Var[bool], bool]] = None,
@@ -1074,6 +1237,10 @@ class Area(Cartesian):
         unit: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         name: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
 =======
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         dot: Optional[Union[Var[bool], bool]] = None,
         active_dot: Optional[Union[Var[bool], bool]] = None,
         label: Optional[Union[Var[bool], bool]] = None,
@@ -1081,15 +1248,22 @@ class Area(Cartesian):
         unit: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         name: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         layout: Optional[
             Union[
                 reflex.vars.Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
         data_key: Optional[
@@ -1110,7 +1284,27 @@ class Area(Cartesian):
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+=======
+<<<<<<< HEAD
+        data_key: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        x_axis_id: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        y_axis_id: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+=======
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         legend_type: Optional[
             Union[
                 reflex.vars.Var[
@@ -1236,6 +1430,10 @@ class Bar(Cartesian):
         *children,
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
         stroke: Optional[
             Union[reflex.vars.Var[Union[str, Color]], Union[str, Color]]
         ] = None,
@@ -1255,8 +1453,12 @@ class Bar(Cartesian):
         animation_begin: Optional[Union[reflex.vars.Var[int], int]] = None,
         animation_duration: Optional[Union[reflex.vars.Var[int], int]] = None,
 =======
+<<<<<<< HEAD
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         stroke: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
         stroke_width: Optional[Union[Var[int], int]] = None,
         fill: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
@@ -1271,7 +1473,14 @@ class Bar(Cartesian):
         is_animation_active: Optional[Union[Var[bool], bool]] = None,
         animation_begin: Optional[Union[Var[int], int]] = None,
         animation_duration: Optional[Union[Var[int], int]] = None,
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         animation_easing: Optional[
             Union[
                 reflex.vars.Var[
@@ -1286,6 +1495,7 @@ class Bar(Cartesian):
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
         data_key: Optional[
@@ -1306,7 +1516,27 @@ class Bar(Cartesian):
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+=======
+<<<<<<< HEAD
+        data_key: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        x_axis_id: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        y_axis_id: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+=======
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         legend_type: Optional[
             Union[
                 reflex.vars.Var[
@@ -1483,6 +1713,10 @@ class Line(Cartesian):
         ] = None,
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
         stroke: Optional[
             Union[reflex.vars.Var[Union[str, Color]], Union[str, Color]]
         ] = None,
@@ -1495,8 +1729,12 @@ class Line(Cartesian):
         unit: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         name: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
 =======
+<<<<<<< HEAD
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         stroke: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
         stoke_width: Optional[Union[Var[int], int]] = None,
         dot: Optional[Union[Var[bool], bool]] = None,
@@ -1507,15 +1745,22 @@ class Line(Cartesian):
         unit: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         name: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         layout: Optional[
             Union[
                 reflex.vars.Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
         data_key: Optional[
@@ -1536,7 +1781,27 @@ class Line(Cartesian):
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+=======
+<<<<<<< HEAD
+        data_key: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        x_axis_id: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        y_axis_id: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+=======
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         legend_type: Optional[
             Union[
                 reflex.vars.Var[
@@ -1697,6 +1962,10 @@ class Scatter(Recharts):
         ] = None,
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
         x_axis_id: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -1706,13 +1975,24 @@ class Scatter(Recharts):
         z_axis_id: Optional[Union[reflex.vars.Var[str], str]] = None,
         line: Optional[Union[reflex.vars.Var[bool], bool]] = None,
 =======
+<<<<<<< HEAD
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         z_axis_id: Optional[Union[Var[str], str]] = None,
         line: Optional[Union[Var[bool], bool]] = None,
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         shape: Optional[
             Union[
                 reflex.vars.Var[
@@ -1739,6 +2019,10 @@ class Scatter(Recharts):
         ] = None,
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
         fill: Optional[
             Union[reflex.vars.Var[Union[str, Color]], Union[str, Color]]
         ] = None,
@@ -1747,14 +2031,25 @@ class Scatter(Recharts):
         animation_begin: Optional[Union[reflex.vars.Var[int], int]] = None,
         animation_duration: Optional[Union[reflex.vars.Var[int], int]] = None,
 =======
+<<<<<<< HEAD
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         fill: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
         name: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         is_animation_active: Optional[Union[Var[bool], bool]] = None,
         animation_begin: Optional[Union[Var[int], int]] = None,
         animation_duration: Optional[Union[Var[int], int]] = None,
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         animation_easing: Optional[
             Union[
                 reflex.vars.Var[
@@ -1854,6 +2149,7 @@ class Funnel(Recharts):
         cls,
         *children,
 <<<<<<< HEAD
+<<<<<<< HEAD
         data: Optional[
             Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
         ] = None,
@@ -1866,6 +2162,26 @@ class Funnel(Recharts):
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         name_key: Optional[Union[Var[str], str]] = None,
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        name_key: Optional[Union[Var[str], str]] = None,
+=======
+<<<<<<< HEAD
+        data: Optional[
+            Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
+        ] = None,
+        data_key: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        name_key: Optional[Union[reflex.vars.Var[str], str]] = None,
+=======
+        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        name_key: Optional[Union[Var[str], str]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         legend_type: Optional[
             Union[
                 reflex.vars.Var[
@@ -2004,6 +2320,10 @@ class ErrorBar(Recharts):
         ] = None,
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
         data_key: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -2013,13 +2333,24 @@ class ErrorBar(Recharts):
         ] = None,
         stroke_width: Optional[Union[reflex.vars.Var[int], int]] = None,
 =======
+<<<<<<< HEAD
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         width: Optional[Union[Var[int], int]] = None,
         stroke: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
         stroke_width: Optional[Union[Var[int], int]] = None,
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2103,6 +2434,7 @@ class Reference(Recharts):
         *children,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         x_axis_id: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -2116,7 +2448,23 @@ class Reference(Recharts):
 =======
         x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+=======
+<<<<<<< HEAD
+        x_axis_id: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        y_axis_id: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+=======
+        x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         if_overflow: Optional[
             Union[
                 reflex.vars.Var[
@@ -2125,6 +2473,7 @@ class Reference(Recharts):
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
         label: Optional[
@@ -2137,6 +2486,21 @@ class Reference(Recharts):
         label: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         is_front: Optional[Union[Var[bool], bool]] = None,
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+        label: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        is_front: Optional[Union[Var[bool], bool]] = None,
+=======
+<<<<<<< HEAD
+        label: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        is_front: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+=======
+        label: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        is_front: Optional[Union[Var[bool], bool]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2220,6 +2584,7 @@ class ReferenceLine(Reference):
         *children,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         x: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         y: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         stroke: Optional[
@@ -2236,6 +2601,8 @@ class ReferenceLine(Reference):
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
 =======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         x: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         stroke: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
@@ -2243,7 +2610,27 @@ class ReferenceLine(Reference):
         segment: Optional[List[Any]] = None,
         x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+<<<<<<< HEAD
+        x: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
+        y: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
+        stroke: Optional[
+            Union[reflex.vars.Var[Union[str, Color]], Union[str, Color]]
+        ] = None,
+        stroke_width: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        segment: Optional[List[Any]] = None,
+        x_axis_id: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        y_axis_id: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
 =======
         x: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
@@ -2253,6 +2640,10 @@ class ReferenceLine(Reference):
         x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         if_overflow: Optional[
             Union[
                 reflex.vars.Var[
@@ -2261,6 +2652,7 @@ class ReferenceLine(Reference):
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
         label: Optional[
@@ -2273,6 +2665,21 @@ class ReferenceLine(Reference):
         label: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         is_front: Optional[Union[Var[bool], bool]] = None,
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+        label: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        is_front: Optional[Union[Var[bool], bool]] = None,
+=======
+<<<<<<< HEAD
+        label: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        is_front: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+=======
+        label: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        is_front: Optional[Union[Var[bool], bool]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2361,6 +2768,10 @@ class ReferenceDot(Reference):
         *children,
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
         x: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         y: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         r: Optional[Union[reflex.vars.Var[int], int]] = None,
@@ -2377,8 +2788,12 @@ class ReferenceDot(Reference):
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
 =======
+<<<<<<< HEAD
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         x: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         r: Optional[Union[Var[int], int]] = None,
@@ -2387,9 +2802,15 @@ class ReferenceDot(Reference):
         x_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         if_overflow: Optional[
             Union[
                 reflex.vars.Var[
@@ -2398,6 +2819,7 @@ class ReferenceDot(Reference):
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
         label: Optional[
@@ -2410,6 +2832,21 @@ class ReferenceDot(Reference):
         label: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         is_front: Optional[Union[Var[bool], bool]] = None,
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+        label: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        is_front: Optional[Union[Var[bool], bool]] = None,
+=======
+<<<<<<< HEAD
+        label: Optional[
+            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+        ] = None,
+        is_front: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+=======
+        label: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        is_front: Optional[Union[Var[bool], bool]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2498,6 +2935,10 @@ class ReferenceArea(Recharts):
         *children,
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
         stroke: Optional[
             Union[reflex.vars.Var[Union[str, Color]], Union[str, Color]]
         ] = None,
@@ -2516,8 +2957,12 @@ class ReferenceArea(Recharts):
         y1: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
         y2: Optional[Union[reflex.vars.Var[Union[str, int]], Union[str, int]]] = None,
 =======
+<<<<<<< HEAD
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         stroke: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
         fill: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
         fill_opacity: Optional[Union[Var[float], float]] = None,
@@ -2528,9 +2973,15 @@ class ReferenceArea(Recharts):
         y1: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         y2: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         if_overflow: Optional[
             Union[
                 reflex.vars.Var[
@@ -2716,11 +3167,25 @@ class CartesianGrid(Grid):
         vertical_points: Optional[
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             Union[reflex.vars.Var[List[Union[str, int]]], List[Union[str, int]]]
         ] = None,
         horizontal_points: Optional[
             Union[reflex.vars.Var[List[Union[str, int]]], List[Union[str, int]]]
         ] = None,
+=======
+            Union[Var[List[Union[int, str]]], List[Union[int, str]]]
+=======
+<<<<<<< HEAD
+            Union[reflex.vars.Var[List[Union[str, int]]], List[Union[str, int]]]
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+        ] = None,
+        horizontal_points: Optional[
+            Union[Var[List[Union[int, str]]], List[Union[int, str]]]
+        ] = None,
+<<<<<<< HEAD
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         fill: Optional[
             Union[reflex.vars.Var[Union[str, Color]], Union[str, Color]]
         ] = None,
@@ -2736,6 +3201,7 @@ class CartesianGrid(Grid):
         horizontal_points: Optional[
             Union[Var[List[Union[int, str]]], List[Union[int, str]]]
         ] = None,
+<<<<<<< HEAD
 =======
             Union[Var[List[Union[int, str]]], List[Union[int, str]]]
         ] = None,
@@ -2743,6 +3209,9 @@ class CartesianGrid(Grid):
             Union[Var[List[Union[int, str]]], List[Union[int, str]]]
         ] = None,
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         fill: Optional[Union[Var[Union[Color, str]], Union[Color, str]]] = None,
         fill_opacity: Optional[Union[Var[float], float]] = None,
         stroke_dasharray: Optional[Union[Var[str], str]] = None,
@@ -2750,7 +3219,14 @@ class CartesianGrid(Grid):
         y: Optional[Union[Var[int], int]] = None,
         width: Optional[Union[Var[int], int]] = None,
         height: Optional[Union[Var[int], int]] = None,
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

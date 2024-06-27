@@ -221,11 +221,17 @@ class ColorModeIconButton(IconButton):
         auto_focus: Optional[
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
             Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         form: Optional[
             Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+<<<<<<< HEAD
         ] = None,
         form_action: Optional[
             Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
@@ -301,6 +307,9 @@ class ColorModeIconButton(IconButton):
 =======
 =======
             Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         ] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         form: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
@@ -362,7 +371,15 @@ class ColorModeIconButton(IconButton):
             Union[Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+<<<<<<< HEAD
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+=======
+            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+=======
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
             Union[Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
@@ -427,6 +444,10 @@ class ColorModeIconButton(IconButton):
         title: Optional[
             Union[Var[Union[bool, int, str]], Union[bool, int, str]]
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         ] = None,
         loading: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,

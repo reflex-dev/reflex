@@ -111,6 +111,7 @@ class CheckboxCardsRoot(RadixThemesComponent):
             Union[
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                 reflex.vars.Var[
                     Union[
                         str,
@@ -141,13 +142,47 @@ class CheckboxCardsRoot(RadixThemesComponent):
 =======
                 Var[Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str]],
                 Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+=======
+<<<<<<< HEAD
+                reflex.vars.Var[
+                    Union[
+                        str,
+                        Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Union[
+                                str,
+                                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                            ],
+                        ],
+                    ]
+                ],
+                Union[
+                    str,
+                    Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str,
+                        Union[
+                            str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                        ],
+                    ],
+                ],
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+=======
+                Var[Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str]],
+                Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
             ]
         ] = None,
         gap: Optional[
             Union[
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                 reflex.vars.Var[
                     Union[
                         str,
@@ -178,7 +213,40 @@ class CheckboxCardsRoot(RadixThemesComponent):
 =======
                 Var[Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str]],
                 Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+=======
+<<<<<<< HEAD
+                reflex.vars.Var[
+                    Union[
+                        str,
+                        Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Union[
+                                str,
+                                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                            ],
+                        ],
+                    ]
+                ],
+                Union[
+                    str,
+                    Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    reflex.components.core.breakpoints.Breakpoints[
+                        str,
+                        Union[
+                            str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                        ],
+                    ],
+                ],
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+=======
+                Var[Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str]],
+                Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
             ]
         ] = None,
         style: Optional[Style] = None,

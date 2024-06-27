@@ -103,6 +103,11 @@ class DrawerRoot(DrawerComponent):
         cls,
         *children,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+=======
+<<<<<<< HEAD
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         should_scale_background: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         close_threshold: Optional[Union[reflex.vars.Var[float], float]] = None,
@@ -111,6 +116,10 @@ class DrawerRoot(DrawerComponent):
         scroll_lock_timeout: Optional[Union[reflex.vars.Var[int], int]] = None,
         modal: Optional[Union[reflex.vars.Var[bool], bool]] = None,
 =======
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         open: Optional[Union[Var[bool], bool]] = None,
         should_scale_background: Optional[Union[Var[bool], bool]] = None,
         close_threshold: Optional[Union[Var[float], float]] = None,
@@ -118,7 +127,14 @@ class DrawerRoot(DrawerComponent):
         fade_from_index: Optional[Union[Var[int], int]] = None,
         scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
         modal: Optional[Union[Var[bool], bool]] = None,
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         direction: Optional[
             Union[
                 reflex.vars.Var[Literal["top", "bottom", "left", "right"]],
@@ -775,6 +791,11 @@ class Drawer(ComponentNamespace):
     def __call__(
         *children,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+=======
+<<<<<<< HEAD
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         should_scale_background: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         close_threshold: Optional[Union[reflex.vars.Var[float], float]] = None,
@@ -783,6 +804,10 @@ class Drawer(ComponentNamespace):
         scroll_lock_timeout: Optional[Union[reflex.vars.Var[int], int]] = None,
         modal: Optional[Union[reflex.vars.Var[bool], bool]] = None,
 =======
+<<<<<<< HEAD
+=======
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         open: Optional[Union[Var[bool], bool]] = None,
         should_scale_background: Optional[Union[Var[bool], bool]] = None,
         close_threshold: Optional[Union[Var[float], float]] = None,
@@ -790,7 +815,14 @@ class Drawer(ComponentNamespace):
         fade_from_index: Optional[Union[Var[int], int]] = None,
         scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
         modal: Optional[Union[Var[bool], bool]] = None,
+<<<<<<< HEAD
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+>>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
+>>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         direction: Optional[
             Union[
                 reflex.vars.Var[Literal["top", "bottom", "left", "right"]],
