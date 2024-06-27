@@ -113,6 +113,9 @@ class DataTable(Gridjs):
         sort: Optional[Union[Var[bool], bool]] = None,
         resizable: Optional[Union[Var[bool], bool]] = None,
         pagination: Optional[Union[Var[Union[Dict, bool]], Union[Dict, bool]]] = None,
+<<<<<<< HEAD
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,

@@ -22,8 +22,13 @@ class Stack(ChakraComponent):
         direction: Optional[
             Union[
 <<<<<<< HEAD
+<<<<<<< HEAD
                 reflex.vars.Var[Union[Literal["row", "column"], List[str]]],
                 Union[Literal["row", "column"], List[str]],
+=======
+                Var[Union[List[str], Literal["row", "column"]]],
+                Union[List[str], Literal["row", "column"]],
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
                 Var[Union[List[str], Literal["row", "column"]]],
                 Union[List[str], Literal["row", "column"]],
@@ -124,8 +129,13 @@ class Hstack(Stack):
         direction: Optional[
             Union[
 <<<<<<< HEAD
+<<<<<<< HEAD
                 reflex.vars.Var[Union[Literal["row", "column"], List[str]]],
                 Union[Literal["row", "column"], List[str]],
+=======
+                Var[Union[List[str], Literal["row", "column"]]],
+                Union[List[str], Literal["row", "column"]],
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
                 Var[Union[List[str], Literal["row", "column"]]],
                 Union[List[str], Literal["row", "column"]],
@@ -226,8 +236,13 @@ class Vstack(Stack):
         direction: Optional[
             Union[
 <<<<<<< HEAD
+<<<<<<< HEAD
                 reflex.vars.Var[Union[Literal["row", "column"], List[str]]],
                 Union[Literal["row", "column"], List[str]],
+=======
+                Var[Union[List[str], Literal["row", "column"]]],
+                Union[List[str], Literal["row", "column"]],
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
                 Var[Union[List[str], Literal["row", "column"]]],
                 Union[List[str], Literal["row", "column"]],

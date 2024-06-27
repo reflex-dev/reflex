@@ -30,12 +30,17 @@ class ChartBase(RechartsCharts):
         cls,
         *children,
 <<<<<<< HEAD
+<<<<<<< HEAD
         width: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
         height: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
+=======
+        width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
@@ -139,12 +144,17 @@ class CategoricalChartBase(ChartBase):
             ]
         ] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
         width: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
         height: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
+=======
+        width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
@@ -236,8 +246,13 @@ class AreaChart(CategoricalChartBase):
         base_value: Optional[
             Union[
 <<<<<<< HEAD
+<<<<<<< HEAD
                 reflex.vars.Var[Union[int, Literal["dataMin", "dataMax", "auto"]]],
                 Union[int, Literal["dataMin", "dataMax", "auto"]],
+=======
+                Var[Union[Literal["dataMin", "dataMax", "auto"], int]],
+                Union[Literal["dataMin", "dataMax", "auto"], int],
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
                 Var[Union[Literal["dataMin", "dataMax", "auto"], int]],
                 Union[Literal["dataMin", "dataMax", "auto"], int],
@@ -265,12 +280,17 @@ class AreaChart(CategoricalChartBase):
             ]
         ] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
         width: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
         height: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
+=======
+        width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
@@ -361,6 +381,7 @@ class BarChart(CategoricalChartBase):
         cls,
         *children,
 <<<<<<< HEAD
+<<<<<<< HEAD
         bar_category_gap: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -370,6 +391,8 @@ class BarChart(CategoricalChartBase):
         bar_size: Optional[Union[reflex.vars.Var[int], int]] = None,
         max_bar_size: Optional[Union[reflex.vars.Var[int], int]] = None,
 =======
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         bar_category_gap: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         bar_gap: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
@@ -397,12 +420,17 @@ class BarChart(CategoricalChartBase):
             ]
         ] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
         width: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
         height: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
+=======
+        width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
@@ -517,12 +545,17 @@ class LineChart(CategoricalChartBase):
             ]
         ] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
         width: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
         height: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
+=======
+        width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
@@ -614,6 +647,7 @@ class ComposedChart(CategoricalChartBase):
         base_value: Optional[
             Union[
 <<<<<<< HEAD
+<<<<<<< HEAD
                 reflex.vars.Var[Union[int, Literal["dataMin", "dataMax", "auto"]]],
                 Union[int, Literal["dataMin", "dataMax", "auto"]],
             ]
@@ -636,6 +670,12 @@ class ComposedChart(CategoricalChartBase):
                 Union[Literal["dataMin", "dataMax", "auto"], int],
             ]
         ] = None,
+=======
+                Var[Union[Literal["dataMin", "dataMax", "auto"], int]],
+                Union[Literal["dataMin", "dataMax", "auto"], int],
+            ]
+        ] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         bar_category_gap: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         bar_gap: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
@@ -660,12 +700,17 @@ class ComposedChart(CategoricalChartBase):
             ]
         ] = None,
 <<<<<<< HEAD
+<<<<<<< HEAD
         width: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
         height: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
+=======
+        width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
@@ -771,6 +816,9 @@ class PieChart(ChartBase):
         margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+<<<<<<< HEAD
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -884,6 +932,9 @@ class RadarChart(ChartBase):
         outer_radius: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+<<<<<<< HEAD
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -975,6 +1026,9 @@ class RadialBarChart(ChartBase):
         bar_size: Optional[Union[Var[int], int]] = None,
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+<<<<<<< HEAD
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1078,6 +1132,9 @@ class ScatterChart(ChartBase):
         margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+<<<<<<< HEAD
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1151,6 +1208,9 @@ class FunnelChart(ChartBase):
         margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+<<<<<<< HEAD
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1233,6 +1293,7 @@ class Treemap(RechartsCharts):
         cls,
         *children,
 <<<<<<< HEAD
+<<<<<<< HEAD
         width: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -1250,6 +1311,8 @@ class Treemap(RechartsCharts):
         animation_begin: Optional[Union[reflex.vars.Var[int], int]] = None,
         animation_duration: Optional[Union[reflex.vars.Var[int], int]] = None,
 =======
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         width: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         height: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,

@@ -121,10 +121,17 @@ class SegmentedControlRoot(RadixThemesComponent):
         ] = None,
         default_value: Optional[
 <<<<<<< HEAD
+<<<<<<< HEAD
             Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
         ] = None,
         value: Optional[
             Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
+=======
+            Union[Var[Union[List[str], str]], Union[List[str], str]]
+        ] = None,
+        value: Optional[
+            Union[Var[Union[List[str], str]], Union[List[str], str]]
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
             Union[Var[Union[List[str], str]], Union[List[str], str]]
         ] = None,

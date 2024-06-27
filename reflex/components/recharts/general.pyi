@@ -523,9 +523,13 @@ class LabelList(Recharts):
         cls,
         *children,
 <<<<<<< HEAD
+<<<<<<< HEAD
         data_key: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
+=======
+        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
 =======
         data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))

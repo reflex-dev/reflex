@@ -345,6 +345,7 @@ class SlideFade(Transition):
         cls,
         *children,
 <<<<<<< HEAD
+<<<<<<< HEAD
         offsetX: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -355,6 +356,8 @@ class SlideFade(Transition):
         in_: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         unmount_on_exit: Optional[Union[reflex.vars.Var[bool], bool]] = None,
 =======
+=======
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         offsetX: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         offsetY: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
         reverse: Optional[Union[Var[bool], bool]] = None,

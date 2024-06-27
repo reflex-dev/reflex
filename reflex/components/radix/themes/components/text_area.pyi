@@ -262,6 +262,9 @@ class TextArea(RadixThemesComponent, elements.Textarea):
         ] = None,
         title: Optional[
             Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+<<<<<<< HEAD
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
+=======
 >>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         ] = None,
         style: Optional[Style] = None,
