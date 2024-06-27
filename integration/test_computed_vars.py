@@ -15,7 +15,10 @@ def ComputedVars():
     """Test app for computed vars."""
     import reflex as rx
 
-    class State(rx.State):
+    class StateMixin(rx.State, mixin=True):
+        pass
+
+    class State(StateMixin, rx.State):
         count: int = 0
 
         # cached var with dep on count
@@ -56,6 +59,8 @@ def ComputedVars():
 
         def mark_dirty(self):
             self._mark_dirty()
+
+    assert State.backend_vars == {}
 
     def index() -> rx.Component:
         return rx.center(
