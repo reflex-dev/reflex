@@ -72,7 +72,7 @@ class ErrorBoundary(Component):
 
         return tag.add_props(**props)
 
-    def _get_events_hooks(self) -> dict[str, None]:
+    def _get_events_hooks(self) -> Dict[str, None]:
         """Get the hooks required by events referenced in this component.
 
         Returns:
