@@ -10,6 +10,7 @@ from functools import wraps
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Dict,
     Iterable,
     List,
@@ -444,9 +445,22 @@ def is_backend_variable(name: str, cls: Type | None = None) -> bool:
     Returns:
         bool: The result of the check
     """
-    if cls is not None and name.startswith(f"_{cls.__name__}__"):
+    if not name.startswith("_"):
         return False
-    return name.startswith("_") and not name.startswith("__")
+
+    if name.startswith("__"):
+        return False
+
+    if cls is not None:
+        if name.startswith(f"_{cls.__name__}__"):
+            return False
+        hints = get_type_hints(cls)
+        if name in hints:
+            hint = get_origin(hints[name])
+            if hint == ClassVar:
+                return False
+
+    return True
 
 
 def check_type_in_allowed_types(value_type: Type, allowed_types: Iterable) -> bool:
