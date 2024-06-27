@@ -200,6 +200,7 @@ def _no_chain_background_task(
 
 
 RESERVED_BACKEND_VAR_NAMES = {
+    "_abc_impl",
     "_backend_vars",
     "_computed_var_dependencies",
     "_substate_var_dependencies",
@@ -561,6 +562,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     setattr(cls, name, newcv)
                     cls.computed_vars[newcv._var_name] = newcv
                     cls.vars[newcv._var_name] = newcv
+                    continue
+                if (
+                    types.is_backend_variable(name, cls)
+                    and name not in RESERVED_BACKEND_VAR_NAMES
+                    and name not in cls.inherited_backend_vars
+                    and not isinstance(value, FunctionType)
+                ):
+                    cls.backend_vars[name] = copy.deepcopy(value)
                     continue
                 if events.get(name) is not None:
                     continue
