@@ -31,6 +31,12 @@ class TabsRoot(RadixThemesComponent):
     # The orientation of the tabs.
     orientation: Var[Literal["horizontal", "vertical"]]
 
+    # Reading direction of the tabs.
+    dir: Var[Literal["ltr", "rtl"]]
+
+    # The mode of activation for the tabs. "automatic" will activate the tab when focused. "manual" will activate the tab when clicked.
+    activation_mode: Var[Literal["automatic", "manual"]]
+
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
@@ -57,6 +63,9 @@ class TabsList(RadixThemesComponent):
 
     # Tabs size "1" - "2"
     size: Var[Literal["1", "2"]]
+
+    # When true, the tabs will loop when reaching the end.
+    loop: Var[bool]
 
     def add_style(self):
         """Add style for the component.
@@ -123,6 +132,9 @@ class TabsContent(RadixThemesComponent):
 
     # The value of the tab. Must be unique for each tab.
     value: Var[str]
+
+    # Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
+    force_mount: Var[bool]
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style for the component.

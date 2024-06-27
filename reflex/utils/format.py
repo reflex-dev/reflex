@@ -210,10 +210,31 @@ def _escape_js_string(string: str) -> str:
     Returns:
         The escaped string.
     """
-    # Escape backticks.
-    string = string.replace(r"\`", "`")
-    string = string.replace("`", r"\`")
-    return string
+
+    # TODO: we may need to re-vist this logic after new Var API is implemented.
+    def escape_outside_segments(segment):
+        """Escape backticks in segments outside of `${}`.
+
+        Args:
+            segment: The part of the string to escape.
+
+        Returns:
+            The escaped or unescaped segment.
+        """
+        if segment.startswith("${") and segment.endswith("}"):
+            # Return the `${}` segment unchanged
+            return segment
+        else:
+            # Escape backticks in the segment
+            segment = segment.replace(r"\`", "`")
+            segment = segment.replace("`", r"\`")
+            return segment
+
+    # Split the string into parts, keeping the `${}` segments
+    parts = re.split(r"(\$\{.*?\})", string)
+    escaped_parts = [escape_outside_segments(part) for part in parts]
+    escaped_string = "".join(escaped_parts)
+    return escaped_string
 
 
 def _wrap_js_string(string: str) -> str:
