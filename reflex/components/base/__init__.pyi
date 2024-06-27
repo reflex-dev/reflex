@@ -13,6 +13,8 @@ from .document import Main as Main
 from .document import NextScript as NextScript
 from .fragment import Fragment as Fragment
 from .fragment import fragment as fragment
+from .error_boundary import ErrorBoundary as ErrorBoundary
+from .error_boundary import error_boundary as error_boundary
 from .head import head as head
 from .head import Head as Head
 from .link import RawLink as RawLink
