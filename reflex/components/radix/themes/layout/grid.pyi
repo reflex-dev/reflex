@@ -7,7 +7,8 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Dict, Literal
+from typing import Dict, Literal, Union
+from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el import elements
 from reflex.vars import Var
 from ..base import LiteralAlign, LiteralJustify, LiteralSpacing, RadixThemesComponent
@@ -21,42 +22,154 @@ class Grid(elements.Div, RadixThemesComponent):
         cls,
         *children,
         as_child: Optional[Union[Var[bool], bool]] = None,
-        columns: Optional[Union[Var[str], str]] = None,
-        rows: Optional[Union[Var[str], str]] = None,
+        columns: Optional[
+            Union[
+                Var[
+                    Union[
+                        str,
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                    ]
+                ],
+                Union[
+                    str,
+                    Breakpoints[
+                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                    ],
+                ],
+            ]
+        ] = None,
+        rows: Optional[
+            Union[
+                Var[
+                    Union[
+                        str,
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                    ]
+                ],
+                Union[
+                    str,
+                    Breakpoints[
+                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                    ],
+                ],
+            ]
+        ] = None,
         flow: Optional[
             Union[
-                Var[Literal["row", "column", "dense", "row-dense", "column-dense"]],
-                Literal["row", "column", "dense", "row-dense", "column-dense"],
+                Var[
+                    Union[
+                        Literal["row", "column", "dense", "row-dense", "column-dense"],
+                        Breakpoints[
+                            str,
+                            Literal[
+                                "row", "column", "dense", "row-dense", "column-dense"
+                            ],
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["row", "column", "dense", "row-dense", "column-dense"],
+                    Breakpoints[
+                        str,
+                        Literal["row", "column", "dense", "row-dense", "column-dense"],
+                    ],
+                ],
             ]
         ] = None,
         align: Optional[
             Union[
-                Var[Literal["start", "center", "end", "baseline", "stretch"]],
-                Literal["start", "center", "end", "baseline", "stretch"],
+                Var[
+                    Union[
+                        Literal["start", "center", "end", "baseline", "stretch"],
+                        Breakpoints[
+                            str,
+                            Literal["start", "center", "end", "baseline", "stretch"],
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["start", "center", "end", "baseline", "stretch"],
+                    Breakpoints[
+                        str, Literal["start", "center", "end", "baseline", "stretch"]
+                    ],
+                ],
             ]
         ] = None,
         justify: Optional[
             Union[
-                Var[Literal["start", "center", "end", "between"]],
-                Literal["start", "center", "end", "between"],
+                Var[
+                    Union[
+                        Literal["start", "center", "end", "between"],
+                        Breakpoints[str, Literal["start", "center", "end", "between"]],
+                    ]
+                ],
+                Union[
+                    Literal["start", "center", "end", "between"],
+                    Breakpoints[str, Literal["start", "center", "end", "between"]],
+                ],
             ]
         ] = None,
         spacing: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    Breakpoints[
+                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                    ],
+                ],
             ]
         ] = None,
         spacing_x: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    Breakpoints[
+                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                    ],
+                ],
             ]
         ] = None,
         spacing_y: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                    ]
+                ],
+                Union[
+                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    Breakpoints[
+                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                    ],
+                ],
             ]
         ] = None,
         access_key: Optional[
