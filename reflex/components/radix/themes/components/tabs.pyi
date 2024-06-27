@@ -342,6 +342,7 @@ class TabsTrigger(RadixThemesComponent):
             The TabsTrigger Component.
         """
         ...
+
     def add_style(self) -> Dict[str, Any] | None: ...
 
 class TabsContent(RadixThemesComponent):
