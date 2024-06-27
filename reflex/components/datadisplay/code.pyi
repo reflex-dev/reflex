@@ -358,7 +358,7 @@ class CodeBlock(Component):
         cls,
         *children,
         can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[bool, Component]] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         theme: Optional[
             Union[
                 Var[

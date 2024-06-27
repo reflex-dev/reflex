@@ -97,10 +97,10 @@ class SegmentedControlRoot(RadixThemesComponent):
             ]
         ] = None,
         default_value: Optional[
-            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
+            Union[Var[Union[List[str], str]], Union[List[str], str]]
         ] = None,
         value: Optional[
-            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
+            Union[Var[Union[List[str], str]], Union[List[str], str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
