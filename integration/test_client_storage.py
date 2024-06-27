@@ -437,17 +437,17 @@ async def test_client_side_state(
     session_storage_items = session_storage.items()
     session_storage_items.pop("token", None)
     assert (
-        session_storage_items.pop("state.client_side_state.client_side_sub_state.s1")
+        session_storage_items.pop(f"{sub_state_name}.s1")
         == "s1 value"
     )
     assert (
-        session_storage_items.pop("state.client_side_state.client_side_sub_state.s2")
+        session_storage_items.pop(f"{sub_state_name}.s2")
         == "s2 value"
     )
     assert session_storage_items.pop("s3") == "s3 value"
     assert (
         session_storage_items.pop(
-            "state.client_side_state.client_side_sub_state.client_side_sub_sub_state.s1s"
+            f"{sub_sub_state_name}.s1s"
         )
         == "s1s value"
     )
