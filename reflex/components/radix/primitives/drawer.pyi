@@ -102,6 +102,7 @@ class DrawerRoot(DrawerComponent):
     def create(  # type: ignore
         cls,
         *children,
+<<<<<<< HEAD
         open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         should_scale_background: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         close_threshold: Optional[Union[reflex.vars.Var[float], float]] = None,
@@ -109,6 +110,15 @@ class DrawerRoot(DrawerComponent):
         fade_from_index: Optional[Union[reflex.vars.Var[int], int]] = None,
         scroll_lock_timeout: Optional[Union[reflex.vars.Var[int], int]] = None,
         modal: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+=======
+        open: Optional[Union[Var[bool], bool]] = None,
+        should_scale_background: Optional[Union[Var[bool], bool]] = None,
+        close_threshold: Optional[Union[Var[float], float]] = None,
+        snap_points: Optional[List[Union[float, str]]] = None,
+        fade_from_index: Optional[Union[Var[int], int]] = None,
+        scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
+        modal: Optional[Union[Var[bool], bool]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         direction: Optional[
             Union[
                 reflex.vars.Var[Literal["top", "bottom", "left", "right"]],
@@ -764,6 +774,7 @@ class Drawer(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
+<<<<<<< HEAD
         open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         should_scale_background: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         close_threshold: Optional[Union[reflex.vars.Var[float], float]] = None,
@@ -771,6 +782,15 @@ class Drawer(ComponentNamespace):
         fade_from_index: Optional[Union[reflex.vars.Var[int], int]] = None,
         scroll_lock_timeout: Optional[Union[reflex.vars.Var[int], int]] = None,
         modal: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+=======
+        open: Optional[Union[Var[bool], bool]] = None,
+        should_scale_background: Optional[Union[Var[bool], bool]] = None,
+        close_threshold: Optional[Union[Var[float], float]] = None,
+        snap_points: Optional[List[Union[float, str]]] = None,
+        fade_from_index: Optional[Union[Var[int], int]] = None,
+        scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
+        modal: Optional[Union[Var[bool], bool]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         direction: Optional[
             Union[
                 reflex.vars.Var[Literal["top", "bottom", "left", "right"]],

@@ -21,8 +21,13 @@ class Stack(ChakraComponent):
         align_items: Optional[Union[reflex.vars.Var[str], str]] = None,
         direction: Optional[
             Union[
+<<<<<<< HEAD
                 reflex.vars.Var[Union[Literal["row", "column"], List[str]]],
                 Union[Literal["row", "column"], List[str]],
+=======
+                Var[Union[List[str], Literal["row", "column"]]],
+                Union[List[str], Literal["row", "column"]],
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
             ]
         ] = None,
         is_inline: Optional[Union[reflex.vars.Var[bool], bool]] = None,
@@ -118,8 +123,13 @@ class Hstack(Stack):
         align_items: Optional[Union[reflex.vars.Var[str], str]] = None,
         direction: Optional[
             Union[
+<<<<<<< HEAD
                 reflex.vars.Var[Union[Literal["row", "column"], List[str]]],
                 Union[Literal["row", "column"], List[str]],
+=======
+                Var[Union[List[str], Literal["row", "column"]]],
+                Union[List[str], Literal["row", "column"]],
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
             ]
         ] = None,
         is_inline: Optional[Union[reflex.vars.Var[bool], bool]] = None,
@@ -215,8 +225,13 @@ class Vstack(Stack):
         align_items: Optional[Union[reflex.vars.Var[str], str]] = None,
         direction: Optional[
             Union[
+<<<<<<< HEAD
                 reflex.vars.Var[Union[Literal["row", "column"], List[str]]],
                 Union[Literal["row", "column"], List[str]],
+=======
+                Var[Union[List[str], Literal["row", "column"]]],
+                Union[List[str], Literal["row", "column"]],
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
             ]
         ] = None,
         is_inline: Optional[Union[reflex.vars.Var[bool], bool]] = None,

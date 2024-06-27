@@ -20,6 +20,7 @@ class CircularProgress(ChakraComponent):
         cls,
         *children,
         label=None,
+<<<<<<< HEAD
         cap_is_round: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         is_indeterminate: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         max_: Optional[Union[reflex.vars.Var[int], int]] = None,
@@ -32,6 +33,18 @@ class CircularProgress(ChakraComponent):
         value_text: Optional[Union[reflex.vars.Var[str], str]] = None,
         color: Optional[Union[reflex.vars.Var[str], str]] = None,
         size: Optional[Union[reflex.vars.Var[str], str]] = None,
+=======
+        cap_is_round: Optional[Union[Var[bool], bool]] = None,
+        is_indeterminate: Optional[Union[Var[bool], bool]] = None,
+        max_: Optional[Union[Var[int], int]] = None,
+        min_: Optional[Union[Var[int], int]] = None,
+        thickness: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        track_color: Optional[Union[Var[str], str]] = None,
+        value: Optional[Union[Var[int], int]] = None,
+        value_text: Optional[Union[Var[str], str]] = None,
+        color: Optional[Union[Var[str], str]] = None,
+        size: Optional[Union[Var[str], str]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

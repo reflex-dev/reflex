@@ -99,6 +99,7 @@ class DataTable(Gridjs):
         cls,
         *children,
         data: Optional[Any] = None,
+<<<<<<< HEAD
         columns: Optional[Union[reflex.vars.Var[List], List]] = None,
         search: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         sort: Optional[Union[reflex.vars.Var[bool], bool]] = None,
@@ -106,6 +107,13 @@ class DataTable(Gridjs):
         pagination: Optional[
             Union[reflex.vars.Var[Union[bool, Dict]], Union[bool, Dict]]
         ] = None,
+=======
+        columns: Optional[Union[Var[List], List]] = None,
+        search: Optional[Union[Var[bool], bool]] = None,
+        sort: Optional[Union[Var[bool], bool]] = None,
+        resizable: Optional[Union[Var[bool], bool]] = None,
+        pagination: Optional[Union[Var[Union[Dict, bool]], Union[Dict, bool]]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

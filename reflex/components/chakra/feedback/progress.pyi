@@ -18,6 +18,7 @@ class Progress(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
+<<<<<<< HEAD
         has_stripe: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         is_animated: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         is_indeterminate: Optional[Union[reflex.vars.Var[bool], bool]] = None,
@@ -27,6 +28,15 @@ class Progress(ChakraComponent):
             Union[reflex.vars.Var[Union[int, float]], Union[int, float]]
         ] = None,
         color_scheme: Optional[Union[reflex.vars.Var[str], str]] = None,
+=======
+        has_stripe: Optional[Union[Var[bool], bool]] = None,
+        is_animated: Optional[Union[Var[bool], bool]] = None,
+        is_indeterminate: Optional[Union[Var[bool], bool]] = None,
+        max_: Optional[Union[Var[int], int]] = None,
+        min_: Optional[Union[Var[int], int]] = None,
+        value: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
+        color_scheme: Optional[Union[Var[str], str]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -344,6 +344,7 @@ class SlideFade(Transition):
     def create(  # type: ignore
         cls,
         *children,
+<<<<<<< HEAD
         offsetX: Optional[
             Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
         ] = None,
@@ -353,6 +354,13 @@ class SlideFade(Transition):
         reverse: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         in_: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         unmount_on_exit: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+=======
+        offsetX: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        offsetY: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        reverse: Optional[Union[Var[bool], bool]] = None,
+        in_: Optional[Union[Var[bool], bool]] = None,
+        unmount_on_exit: Optional[Union[Var[bool], bool]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -434,6 +442,7 @@ class Collapse(Transition):
     def create(  # type: ignore
         cls,
         *children,
+<<<<<<< HEAD
         animateOpacity: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         endingHeight: Optional[Union[reflex.vars.Var[str], str]] = None,
         startingHeight: Optional[
@@ -441,6 +450,13 @@ class Collapse(Transition):
         ] = None,
         in_: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         unmount_on_exit: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+=======
+        animateOpacity: Optional[Union[Var[bool], bool]] = None,
+        endingHeight: Optional[Union[Var[str], str]] = None,
+        startingHeight: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        in_: Optional[Union[Var[bool], bool]] = None,
+        unmount_on_exit: Optional[Union[Var[bool], bool]] = None,
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

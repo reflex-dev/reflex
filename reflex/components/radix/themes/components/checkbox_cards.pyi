@@ -109,6 +109,7 @@ class CheckboxCardsRoot(RadixThemesComponent):
         high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         columns: Optional[
             Union[
+<<<<<<< HEAD
                 reflex.vars.Var[
                     Union[
                         str,
@@ -132,10 +133,15 @@ class CheckboxCardsRoot(RadixThemesComponent):
                         ],
                     ],
                 ],
+=======
+                Var[Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str]],
+                Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
             ]
         ] = None,
         gap: Optional[
             Union[
+<<<<<<< HEAD
                 reflex.vars.Var[
                     Union[
                         str,
@@ -159,6 +165,10 @@ class CheckboxCardsRoot(RadixThemesComponent):
                         ],
                     ],
                 ],
+=======
+                Var[Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str]],
+                Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
             ]
         ] = None,
         style: Optional[Style] = None,

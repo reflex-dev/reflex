@@ -299,8 +299,13 @@ class DropdownMenuContent(RadixThemesComponent):
         avoid_collisions: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
+<<<<<<< HEAD
                 reflex.vars.Var[Union[float, int, Dict[str, Union[float, int]]]],
                 Union[float, int, Dict[str, Union[float, int]]],
+=======
+                Var[Union[Dict[str, Union[float, int]], float, int]],
+                Union[Dict[str, Union[float, int]], float, int],
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
             ]
         ] = None,
         arrow_padding: Optional[
@@ -594,8 +599,13 @@ class DropdownMenuSubContent(RadixThemesComponent):
         avoid_collisions: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
+<<<<<<< HEAD
                 reflex.vars.Var[Union[float, int, Dict[str, Union[float, int]]]],
                 Union[float, int, Dict[str, Union[float, int]]],
+=======
+                Var[Union[Dict[str, Union[float, int]], float, int]],
+                Union[Dict[str, Union[float, int]], float, int],
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
             ]
         ] = None,
         arrow_padding: Optional[

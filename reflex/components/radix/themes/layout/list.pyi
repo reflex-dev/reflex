@@ -45,7 +45,6 @@ class BaseList(Component):
             Union[
                 reflex.vars.Var[
                     Union[
-                        Literal["none", "disc", "circle", "square"],
                         Literal[
                             "none",
                             "decimal",
@@ -62,10 +61,10 @@ class BaseList(Component):
                             "hiragana",
                             "katakana",
                         ],
+                        Literal["none", "disc", "circle", "square"],
                     ]
                 ],
                 Union[
-                    Literal["none", "disc", "circle", "square"],
                     Literal[
                         "none",
                         "decimal",
@@ -82,6 +81,7 @@ class BaseList(Component):
                         "hiragana",
                         "katakana",
                     ],
+                    Literal["none", "disc", "circle", "square"],
                 ],
             ]
         ] = None,
@@ -169,6 +169,7 @@ class UnorderedList(BaseList, Ul):
         items: Optional[Union[reflex.vars.Var[Iterable], Iterable]] = None,
         list_style_type: Optional[LiteralListStyleTypeUnordered] = "disc",
         access_key: Optional[
+<<<<<<< HEAD
             Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         auto_capitalize: Optional[
@@ -215,6 +216,46 @@ class UnorderedList(BaseList, Ul):
         ] = None,
         title: Optional[
             Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+=======
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        auto_capitalize: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        content_editable: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        context_menu: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        draggable: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        enter_key_hint: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        hidden: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        input_mode: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        item_prop: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        spell_check: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        tab_index: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        title: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -314,6 +355,7 @@ class OrderedList(BaseList, Ol):
         items: Optional[Union[reflex.vars.Var[Iterable], Iterable]] = None,
         list_style_type: Optional[LiteralListStyleTypeOrdered] = "decimal",
         reversed: Optional[
+<<<<<<< HEAD
             Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         start: Optional[
@@ -369,6 +411,53 @@ class OrderedList(BaseList, Ol):
         ] = None,
         title: Optional[
             Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+=======
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        start: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        type: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        access_key: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        auto_capitalize: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        content_editable: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        context_menu: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        draggable: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        enter_key_hint: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        hidden: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        input_mode: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        item_prop: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        spell_check: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        tab_index: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        title: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -469,6 +558,7 @@ class ListItem(Li):
         cls,
         *children,
         access_key: Optional[
+<<<<<<< HEAD
             Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         auto_capitalize: Optional[
@@ -515,6 +605,46 @@ class ListItem(Li):
         ] = None,
         title: Optional[
             Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+=======
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        auto_capitalize: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        content_editable: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        context_menu: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        draggable: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        enter_key_hint: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        hidden: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        input_mode: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        item_prop: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        spell_check: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        tab_index: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+        ] = None,
+        title: Optional[
+            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+>>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -616,7 +746,6 @@ class List(ComponentNamespace):
             Union[
                 reflex.vars.Var[
                     Union[
-                        Literal["none", "disc", "circle", "square"],
                         Literal[
                             "none",
                             "decimal",
@@ -633,10 +762,10 @@ class List(ComponentNamespace):
                             "hiragana",
                             "katakana",
                         ],
+                        Literal["none", "disc", "circle", "square"],
                     ]
                 ],
                 Union[
-                    Literal["none", "disc", "circle", "square"],
                     Literal[
                         "none",
                         "decimal",
@@ -653,6 +782,7 @@ class List(ComponentNamespace):
                         "hiragana",
                         "katakana",
                     ],
+                    Literal["none", "disc", "circle", "square"],
                 ],
             ]
         ] = None,
