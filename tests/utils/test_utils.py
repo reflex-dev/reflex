@@ -161,6 +161,10 @@ def test_backend_variable_cls():
         def _hidden_method(self):
             pass
 
+        @property
+        def _hidden_property(self):
+            pass
+
     return TestBackendVariable
 
 
@@ -173,6 +177,7 @@ def test_backend_variable_cls():
         ("_hidden", True),
         ("not_hidden", False),
         ("__dundermethod__", False),
+        ("_hidden_property", False),
     ],
 )
 def test_is_backend_base_variable(
