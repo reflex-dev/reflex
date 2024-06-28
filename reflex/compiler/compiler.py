@@ -80,7 +80,7 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
         The compiled context file.
     """
     appearance = getattr(theme, "appearance", None)
-    if appearance is None:
+    if appearance is None or Var.create_safe(appearance)._var_name == "inherit":
         appearance = SYSTEM_COLOR_MODE
 
     last_compiled_time = str(datetime.now())
