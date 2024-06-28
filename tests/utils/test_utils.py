@@ -1,5 +1,6 @@
 import os
 import typing
+from functools import cached_property
 from pathlib import Path
 from typing import Any, ClassVar, List, Literal, Type, Union
 
@@ -165,6 +166,10 @@ def test_backend_variable_cls():
         def _hidden_property(self):
             pass
 
+        @cached_property
+        def _cached_hidden_property(self):
+            pass
+
     return TestBackendVariable
 
 
@@ -178,6 +183,7 @@ def test_backend_variable_cls():
         ("not_hidden", False),
         ("__dundermethod__", False),
         ("_hidden_property", False),
+        ("_cached_hidden_property", False),
     ],
 )
 def test_is_backend_base_variable(

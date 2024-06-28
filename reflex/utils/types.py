@@ -6,7 +6,7 @@ import contextlib
 import inspect
 import sys
 import types
-from functools import wraps
+from functools import cached_property, wraps
 from typing import (
     Any,
     Callable,
@@ -449,7 +449,9 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
             return False
         from reflex.vars import ComputedVar
 
-        if isinstance(value, (types.FunctionType, property, ComputedVar)):
+        if isinstance(
+            value, (types.FunctionType, property, cached_property, ComputedVar)
+        ):
             return False
 
     return True
