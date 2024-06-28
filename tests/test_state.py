@@ -2969,3 +2969,23 @@ config = rx.Config(
         state_manager = StateManager.create(state=State)
         assert state_manager.lock_expiration == expected_values[0]  # type: ignore
         assert state_manager.token_expiration == expected_values[1]  # type: ignore
+
+
+class MixinState(State, mixin=True):
+    """A mixin state for testing."""
+
+    num: int = 0
+    _backend: int = 0
+
+
+class UsesMixinState(MixinState, State):
+    """A state that uses the mixin state."""
+
+    pass
+
+
+def test_mixin_state() -> None:
+    """Test that a mixin state works correctly."""
+    assert "num" in UsesMixinState.base_vars
+    assert "num" in UsesMixinState.vars
+    assert UsesMixinState.backend_vars == {"_backend": 0}
