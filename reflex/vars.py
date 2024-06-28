@@ -2174,8 +2174,21 @@ class ComputedVar(Var, property):
                             obj=ref_obj,
                         )
                     )
-                else:
-                    # normal attribute access
+                # recurse into property fget functions
+                elif isinstance(ref_obj, property) and not isinstance(
+                    ref_obj, ComputedVar
+                ):
+                    d.update(
+                        self._deps(
+                            objclass=objclass,
+                            obj=ref_obj.fget,  # type: ignore
+                        )
+                    )
+                elif (
+                    instruction.argval in objclass.backend_vars
+                    or instruction.argval in objclass.vars
+                ):
+                    # var access
                     d.add(instruction.argval)
             elif instruction.opname == "LOAD_CONST" and isinstance(
                 instruction.argval, CodeType

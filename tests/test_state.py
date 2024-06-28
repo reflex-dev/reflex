@@ -1282,6 +1282,10 @@ def test_computed_var_dependencies():
         y: List[int] = [1, 2, 3]
         _z: List[int] = [1, 2, 3]
 
+        @property
+        def testprop(self) -> int:
+            return self.v
+
         @rx.var(cache=True)
         def comp_v(self) -> int:
             """Direct access.
@@ -1290,6 +1294,15 @@ def test_computed_var_dependencies():
                 The value of self.v.
             """
             return self.v
+
+        @rx.var(cache=True)
+        def comp_v_via_property(self) -> int:
+            """Access v via property.
+
+            Returns:
+                The value of v via property.
+            """
+            return self.testprop
 
         @rx.var(cache=True)
         def comp_w(self):
@@ -1332,7 +1345,7 @@ def test_computed_var_dependencies():
             return [z in self._z for z in range(5)]
 
     cs = ComputedState()
-    assert cs._computed_var_dependencies["v"] == {"comp_v"}
+    assert cs._computed_var_dependencies["v"] == {"comp_v", "comp_v_via_property"}
     assert cs._computed_var_dependencies["w"] == {"comp_w"}
     assert cs._computed_var_dependencies["x"] == {"comp_x"}
     assert cs._computed_var_dependencies["y"] == {"comp_y"}
