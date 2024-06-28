@@ -447,11 +447,9 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
             return False
         if callable(value):
             return False
-        if isinstance(value, types.FunctionType):
-            return False
         from reflex.vars import ComputedVar
 
-        if isinstance(value, ComputedVar):
+        if isinstance(value, (types.FunctionType, property, ComputedVar)):
             return False
 
     return True
