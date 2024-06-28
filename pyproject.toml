@@ -95,7 +95,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.pyright]
 
 [tool.ruff]
-exclude = ["*.pyi"]
 target-version = "py38"
 lint.select = ["B", "D", "E", "F", "I", "SIM", "W"]
 lint.ignore = ["B008", "D203", "D205", "D213", "D401", "D406", "D407", "E501", "F403", "F405", "F541"]
@@ -105,5 +104,5 @@ lint.pydocstyle.convention = "google"
 "__init__.py" = ["F401"]
 "tests/*.py" = ["D100", "D103", "D104", "B018"]
 "reflex/.templates/*.py" = ["D100", "D103", "D104"]
-"*.pyi" = ["ALL"]
+"*.pyi" = ["D301", "D415", "D417", "D418", "E742"]
 "*/blank.py" = ["I001"]
