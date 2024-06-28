@@ -1548,11 +1548,11 @@ def test_app_with_valid_var_dependencies(compilable_app: tuple[App, Path]):
         base: int = 0
         _backend: int = 0
 
-        @computed_var
+        @computed_var(cache=True)
         def foo(self) -> str:
             return "foo"
 
-        @computed_var(deps=["_backend", "base", foo])
+        @computed_var(deps=["_backend", "base", foo], cache=True)
         def bar(self) -> str:
             return "bar"
 
@@ -1564,7 +1564,7 @@ def test_app_with_invalid_var_dependencies(compilable_app: tuple[App, Path]):
     app, _ = compilable_app
 
     class InvalidDepState(BaseState):
-        @computed_var(deps=["foolksjdf"])
+        @computed_var(deps=["foolksjdf"], cache=True)
         def bar(self) -> str:
             return "bar"
 

@@ -1,7 +1,7 @@
 import os
 import typing
 from pathlib import Path
-from typing import Any, List, Literal, Union
+from typing import Any, ClassVar, List, Literal, Union
 
 import pytest
 import typer
@@ -149,6 +149,7 @@ def test_backend_variable_cls():
     class TestBackendVariable:
         """Test backend variable."""
 
+        _classvar: ClassVar[int] = 0
         _hidden: int = 0
         not_hidden: int = 0
         __dunderattr__: int = 0
@@ -159,6 +160,7 @@ def test_backend_variable_cls():
 @pytest.mark.parametrize(
     "input, output",
     [
+        ("_classvar", False),
         ("_hidden", True),
         ("not_hidden", False),
         ("__dundermethod__", False),

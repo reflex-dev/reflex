@@ -44,8 +44,8 @@ class Tooltip(RadixThemesComponent):
         avoid_collisions: Optional[Union[Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
-                Var[Union[float, int, Dict[str, Union[float, int]]]],
-                Union[float, int, Dict[str, Union[float, int]]],
+                Var[Union[Dict[str, Union[float, int]], float, int]],
+                Union[Dict[str, Union[float, int]], float, int],
             ]
         ] = None,
         arrow_padding: Optional[

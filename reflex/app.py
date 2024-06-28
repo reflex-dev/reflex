@@ -81,7 +81,7 @@ from reflex.state import (
     _substate_key,
     code_uses_state_contexts,
 )
-from reflex.utils import console, exceptions, format, prerequisites, types
+from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
 from reflex.utils.exec import is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
 
@@ -96,7 +96,11 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    return Fragment.create(connection_pulser(), connection_toaster())
+    return Fragment.create(
+        connection_pulser(),
+        connection_toaster(),
+        *codespaces.codespaces_auto_redirect(),
+    )
 
 
 class OverlayFragment(Fragment):
@@ -346,6 +350,10 @@ class App(LifespanMixin, Base):
                 str(constants.Endpoint.UPLOAD),
                 StaticFiles(directory=get_upload_dir()),
                 name="uploaded_files",
+            )
+        if codespaces.is_running_in_codespaces():
+            self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(
+                codespaces.auth_codespace
             )
 
     def _add_cors(self):
@@ -821,6 +829,8 @@ class App(LifespanMixin, Base):
             state = self.state
 
         for var in state.computed_vars.values():
+            if not var._cache:
+                continue
             deps = var._deps(objclass=state)
             for dep in deps:
                 if dep not in state.vars and dep not in state.backend_vars:
