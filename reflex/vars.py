@@ -1987,10 +1987,10 @@ class ComputedVar(Var, property):
         """
         if backend is None:
             backend = fget.__name__.startswith("_")
+        self._backend = backend
 
         self._initial_value = initial_value
         self._cache = cache
-        self._backend = backend
         if isinstance(interval, int):
             interval = datetime.timedelta(seconds=interval)
         self._update_interval = interval
