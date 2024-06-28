@@ -140,12 +140,8 @@ class TabsList(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["1", "2"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["1", "2"]
-                    ],
-                ],
+                Literal["1", "2"],
+                reflex.components.core.breakpoints.Breakpoints[str, Literal["1", "2"]],
             ]
         ] = None,
         loop: Optional[Union[reflex.vars.Var[bool], bool]] = None,

@@ -19,55 +19,55 @@ class Caption(BaseHTML):
         cls,
         *children,
         align: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         title: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -163,58 +163,58 @@ class Col(BaseHTML):
         cls,
         *children,
         align: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         span: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         title: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -311,58 +311,58 @@ class Colgroup(BaseHTML):
         cls,
         *children,
         align: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         span: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         title: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -459,58 +459,58 @@ class Table(BaseHTML):
         cls,
         *children,
         align: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         summary: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         title: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -607,55 +607,55 @@ class Tbody(BaseHTML):
         cls,
         *children,
         align: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         title: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -751,64 +751,64 @@ class Td(BaseHTML):
         cls,
         *children,
         align: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         col_span: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         headers: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         row_span: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         title: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -907,55 +907,55 @@ class Tfoot(BaseHTML):
         cls,
         *children,
         align: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         title: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1051,67 +1051,67 @@ class Th(BaseHTML):
         cls,
         *children,
         align: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         col_span: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         headers: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         row_span: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         scope: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         title: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1211,55 +1211,55 @@ class Thead(BaseHTML):
         cls,
         *children,
         align: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         title: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1355,55 +1355,55 @@ class Tr(BaseHTML):
         cls,
         *children,
         align: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         title: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

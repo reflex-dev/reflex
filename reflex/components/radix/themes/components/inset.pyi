@@ -32,11 +32,9 @@ class Inset(elements.Div, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["x", "y", "top", "bottom", "right", "left"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["x", "y", "top", "bottom", "right", "left"]
-                    ],
+                Literal["x", "y", "top", "bottom", "right", "left"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["x", "y", "top", "bottom", "right", "left"]
                 ],
             ]
         ] = None,
@@ -50,11 +48,9 @@ class Inset(elements.Div, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["border-box", "padding-box"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["border-box", "padding-box"]
-                    ],
+                Literal["border-box", "padding-box"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["border-box", "padding-box"]
                 ],
             ]
         ] = None,
@@ -69,13 +65,9 @@ class Inset(elements.Div, RadixThemesComponent):
                         str,
                     ]
                 ],
-                Union[
-                    int,
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Union[int, str]
-                    ],
-                    str,
-                ],
+                int,
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, Union[int, str]],
             ]
         ] = None,
         px: Optional[
@@ -89,13 +81,9 @@ class Inset(elements.Div, RadixThemesComponent):
                         str,
                     ]
                 ],
-                Union[
-                    int,
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Union[int, str]
-                    ],
-                    str,
-                ],
+                int,
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, Union[int, str]],
             ]
         ] = None,
         py: Optional[
@@ -109,13 +97,9 @@ class Inset(elements.Div, RadixThemesComponent):
                         str,
                     ]
                 ],
-                Union[
-                    int,
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Union[int, str]
-                    ],
-                    str,
-                ],
+                int,
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, Union[int, str]],
             ]
         ] = None,
         pt: Optional[
@@ -129,13 +113,9 @@ class Inset(elements.Div, RadixThemesComponent):
                         str,
                     ]
                 ],
-                Union[
-                    int,
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Union[int, str]
-                    ],
-                    str,
-                ],
+                int,
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, Union[int, str]],
             ]
         ] = None,
         pr: Optional[
@@ -149,13 +129,9 @@ class Inset(elements.Div, RadixThemesComponent):
                         str,
                     ]
                 ],
-                Union[
-                    int,
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Union[int, str]
-                    ],
-                    str,
-                ],
+                int,
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, Union[int, str]],
             ]
         ] = None,
         pb: Optional[
@@ -169,13 +145,9 @@ class Inset(elements.Div, RadixThemesComponent):
                         str,
                     ]
                 ],
-                Union[
-                    int,
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Union[int, str]
-                    ],
-                    str,
-                ],
+                int,
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, Union[int, str]],
             ]
         ] = None,
         pl: Optional[
@@ -189,62 +161,58 @@ class Inset(elements.Div, RadixThemesComponent):
                         str,
                     ]
                 ],
-                Union[
-                    int,
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Union[int, str]
-                    ],
-                    str,
-                ],
+                int,
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, Union[int, str]],
             ]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         title: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

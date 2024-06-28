@@ -31,11 +31,9 @@ class SegmentedControlRoot(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["1", "2", "3"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["1", "2", "3"]
-                    ],
+                Literal["1", "2", "3"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["1", "2", "3"]
                 ],
             ]
         ] = None,
@@ -120,10 +118,10 @@ class SegmentedControlRoot(RadixThemesComponent):
             ]
         ] = None,
         default_value: Optional[
-            Union[reflex.vars.Var[Union[List[str], str]], Union[List[str], str]]
+            Union[reflex.vars.Var[Union[List[str], str]], str, List[str]]
         ] = None,
         value: Optional[
-            Union[reflex.vars.Var[Union[List[str], str]], Union[List[str], str]]
+            Union[reflex.vars.Var[Union[List[str], str]], str, List[str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

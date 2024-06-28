@@ -191,10 +191,10 @@ class AccordionRoot(AccordionComponent):
             ]
         ] = None,
         value: Optional[
-            Union[reflex.vars.Var[Union[List[str], str]], Union[List[str], str]]
+            Union[reflex.vars.Var[Union[List[str], str]], str, List[str]]
         ] = None,
         default_value: Optional[
-            Union[reflex.vars.Var[Union[List[str], str]], Union[List[str], str]]
+            Union[reflex.vars.Var[Union[List[str], str]], str, List[str]]
         ] = None,
         collapsible: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,

@@ -27,7 +27,7 @@ class DebounceInput(Component):
         force_notify_by_enter: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         force_notify_on_blur: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         value: Optional[
-            Union[reflex.vars.Var[Union[float, int, str]], Union[float, int, str]]
+            Union[reflex.vars.Var[Union[float, int, str]], str, int, float]
         ] = None,
         input_ref: Optional[Union[reflex.vars.Var[str], str]] = None,
         element: Optional[

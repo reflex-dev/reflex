@@ -18,9 +18,7 @@ class AspectRatio(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        ratio: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
-        ] = None,
+        ratio: Optional[Union[reflex.vars.Var[Union[float, int]], float, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

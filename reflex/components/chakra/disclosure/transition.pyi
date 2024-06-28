@@ -344,12 +344,8 @@ class SlideFade(Transition):
     def create(  # type: ignore
         cls,
         *children,
-        offsetX: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        offsetY: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        offsetX: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        offsetY: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         reverse: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         in_: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         unmount_on_exit: Optional[Union[reflex.vars.Var[bool], bool]] = None,
@@ -437,7 +433,7 @@ class Collapse(Transition):
         animateOpacity: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         endingHeight: Optional[Union[reflex.vars.Var[str], str]] = None,
         startingHeight: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
+            Union[reflex.vars.Var[Union[int, str]], str, int]
         ] = None,
         in_: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         unmount_on_exit: Optional[Union[reflex.vars.Var[bool], bool]] = None,

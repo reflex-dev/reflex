@@ -29,12 +29,8 @@ class ChartBase(RechartsCharts):
     def create(  # type: ignore
         cls,
         *children,
-        width: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        height: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -133,12 +129,8 @@ class CategoricalChartBase(ChartBase):
                 Literal["expand", "none", "wiggle", "silhouette"],
             ]
         ] = None,
-        width: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        height: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -226,7 +218,8 @@ class AreaChart(CategoricalChartBase):
         base_value: Optional[
             Union[
                 reflex.vars.Var[Union[Literal["dataMin", "dataMax", "auto"], int]],
-                Union[Literal["dataMin", "dataMax", "auto"], int],
+                int,
+                Literal["dataMin", "dataMax", "auto"],
             ]
         ] = None,
         data: Optional[
@@ -249,12 +242,8 @@ class AreaChart(CategoricalChartBase):
                 Literal["expand", "none", "wiggle", "silhouette"],
             ]
         ] = None,
-        width: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        height: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -341,11 +330,9 @@ class BarChart(CategoricalChartBase):
         cls,
         *children,
         bar_category_gap: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
+            Union[reflex.vars.Var[Union[int, str]], str, int]
         ] = None,
-        bar_gap: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        bar_gap: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         bar_size: Optional[Union[reflex.vars.Var[int], int]] = None,
         max_bar_size: Optional[Union[reflex.vars.Var[int], int]] = None,
         stack_offset: Optional[
@@ -369,12 +356,8 @@ class BarChart(CategoricalChartBase):
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        width: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        height: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -484,12 +467,8 @@ class LineChart(CategoricalChartBase):
                 Literal["expand", "none", "wiggle", "silhouette"],
             ]
         ] = None,
-        width: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        height: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -577,15 +556,14 @@ class ComposedChart(CategoricalChartBase):
         base_value: Optional[
             Union[
                 reflex.vars.Var[Union[Literal["dataMin", "dataMax", "auto"], int]],
-                Union[Literal["dataMin", "dataMax", "auto"], int],
+                int,
+                Literal["dataMin", "dataMax", "auto"],
             ]
         ] = None,
         bar_category_gap: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
+            Union[reflex.vars.Var[Union[int, str]], str, int]
         ] = None,
-        bar_gap: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        bar_gap: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         bar_size: Optional[Union[reflex.vars.Var[int], int]] = None,
         reverse_stack_order: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         data: Optional[
@@ -608,12 +586,8 @@ class ComposedChart(CategoricalChartBase):
                 Literal["expand", "none", "wiggle", "silhouette"],
             ]
         ] = None,
-        width: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        height: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -704,12 +678,8 @@ class PieChart(ChartBase):
         cls,
         *children,
         margin: Optional[Union[reflex.vars.Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        width: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        height: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -794,22 +764,18 @@ class RadarChart(ChartBase):
             Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
         ] = None,
         margin: Optional[Union[reflex.vars.Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        cx: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
-        cy: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
+        cx: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        cy: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
         start_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
         end_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
         inner_radius: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
+            Union[reflex.vars.Var[Union[int, str]], int, str]
         ] = None,
         outer_radius: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
+            Union[reflex.vars.Var[Union[int, str]], int, str]
         ] = None,
-        width: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        height: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -864,27 +830,23 @@ class RadialBarChart(ChartBase):
             Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
         ] = None,
         margin: Optional[Union[reflex.vars.Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        cx: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
-        cy: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
+        cx: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        cy: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
         start_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
         end_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
         inner_radius: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
+            Union[reflex.vars.Var[Union[int, str]], int, str]
         ] = None,
         outer_radius: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
+            Union[reflex.vars.Var[Union[int, str]], int, str]
         ] = None,
         bar_category_gap: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
+            Union[reflex.vars.Var[Union[int, str]], int, str]
         ] = None,
         bar_gap: Optional[Union[reflex.vars.Var[str], str]] = None,
         bar_size: Optional[Union[reflex.vars.Var[int], int]] = None,
-        width: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        height: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -976,12 +938,8 @@ class ScatterChart(ChartBase):
         cls,
         *children,
         margin: Optional[Union[reflex.vars.Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        width: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        height: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1042,12 +1000,8 @@ class FunnelChart(ChartBase):
         *children,
         layout: Optional[Union[reflex.vars.Var[str], str]] = None,
         margin: Optional[Union[reflex.vars.Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        width: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        height: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1128,18 +1082,12 @@ class Treemap(RechartsCharts):
     def create(  # type: ignore
         cls,
         *children,
-        width: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        height: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         data: Optional[
             Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
         ] = None,
-        data_key: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         aspect_ratio: Optional[Union[reflex.vars.Var[int], int]] = None,
         is_animation_active: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         animation_begin: Optional[Union[reflex.vars.Var[int], int]] = None,

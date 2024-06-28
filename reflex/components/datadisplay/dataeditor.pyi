@@ -134,10 +134,7 @@ class DataEditor(NoSSRComponent):
         scroll_offset_x: Optional[Union[reflex.vars.Var[int], int]] = None,
         scroll_offset_y: Optional[Union[reflex.vars.Var[int], int]] = None,
         theme: Optional[
-            Union[
-                reflex.vars.Var[Union[DataEditorTheme, Dict]],
-                Union[DataEditorTheme, Dict],
-            ]
+            Union[reflex.vars.Var[Union[DataEditorTheme, Dict]], DataEditorTheme, Dict]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

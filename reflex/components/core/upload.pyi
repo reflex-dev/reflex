@@ -128,7 +128,7 @@ class Upload(MemoizationLeaf):
         cls,
         *children,
         accept: Optional[
-            Union[reflex.vars.Var[Optional[Dict[str, List]]], Optional[Dict[str, List]]]
+            Union[reflex.vars.Var[Optional[Dict[str, List]]], Dict[str, List]]
         ] = None,
         disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         max_files: Optional[Union[reflex.vars.Var[int], int]] = None,
@@ -227,7 +227,7 @@ class StyledUpload(Upload):
         cls,
         *children,
         accept: Optional[
-            Union[reflex.vars.Var[Optional[Dict[str, List]]], Optional[Dict[str, List]]]
+            Union[reflex.vars.Var[Optional[Dict[str, List]]], Dict[str, List]]
         ] = None,
         disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         max_files: Optional[Union[reflex.vars.Var[int], int]] = None,
@@ -326,7 +326,7 @@ class UploadNamespace(ComponentNamespace):
     def __call__(
         *children,
         accept: Optional[
-            Union[reflex.vars.Var[Optional[Dict[str, List]]], Optional[Dict[str, List]]]
+            Union[reflex.vars.Var[Optional[Dict[str, List]]], Dict[str, List]]
         ] = None,
         disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         max_files: Optional[Union[reflex.vars.Var[int], int]] = None,

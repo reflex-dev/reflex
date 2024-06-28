@@ -24,9 +24,7 @@ class CircularProgress(ChakraComponent):
         is_indeterminate: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         max_: Optional[Union[reflex.vars.Var[int], int]] = None,
         min_: Optional[Union[reflex.vars.Var[int], int]] = None,
-        thickness: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        thickness: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         track_color: Optional[Union[reflex.vars.Var[str], str]] = None,
         value: Optional[Union[reflex.vars.Var[int], int]] = None,
         value_text: Optional[Union[reflex.vars.Var[str], str]] = None,

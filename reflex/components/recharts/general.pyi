@@ -29,12 +29,8 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
         cls,
         *children,
         aspect: Optional[Union[reflex.vars.Var[int], int]] = None,
-        width: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        height: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
         min_width: Optional[Union[reflex.vars.Var[int], int]] = None,
         min_height: Optional[Union[reflex.vars.Var[int], int]] = None,
         debounce: Optional[Union[reflex.vars.Var[int], int]] = None,
@@ -522,9 +518,7 @@ class LabelList(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         position: Optional[
             Union[
                 reflex.vars.Var[

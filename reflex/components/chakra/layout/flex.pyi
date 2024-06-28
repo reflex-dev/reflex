@@ -21,12 +21,12 @@ class Flex(ChakraComponent):
         align: Optional[Union[reflex.vars.Var[str], str]] = None,
         basis: Optional[Union[reflex.vars.Var[str], str]] = None,
         direction: Optional[
-            Union[reflex.vars.Var[Union[List[str], str]], Union[List[str], str]]
+            Union[reflex.vars.Var[Union[List[str], str]], str, List[str]]
         ] = None,
         grow: Optional[Union[reflex.vars.Var[str], str]] = None,
         justify: Optional[Union[reflex.vars.Var[str], str]] = None,
         wrap: Optional[
-            Union[reflex.vars.Var[Union[List[str], str]], Union[List[str], str]]
+            Union[reflex.vars.Var[Union[List[str], str]], str, List[str]]
         ] = None,
         shrink: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,

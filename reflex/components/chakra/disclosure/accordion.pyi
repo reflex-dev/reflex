@@ -24,10 +24,10 @@ class Accordion(ChakraComponent):
         allow_multiple: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         allow_toggle: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         default_index: Optional[
-            Union[reflex.vars.Var[Optional[List[int]]], Optional[List[int]]]
+            Union[reflex.vars.Var[Optional[List[int]]], List[int]]
         ] = None,
         index: Optional[
-            Union[reflex.vars.Var[Union[List[int], int]], Union[List[int], int]]
+            Union[reflex.vars.Var[Union[List[int], int]], int, List[int]]
         ] = None,
         reduce_motion: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,

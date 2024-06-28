@@ -196,12 +196,8 @@ class ContextMenuContent(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["1", "2"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["1", "2"]
-                    ],
-                ],
+                Literal["1", "2"],
+                reflex.components.core.breakpoints.Breakpoints[str, Literal["1", "2"]],
             ]
         ] = None,
         variant: Optional[

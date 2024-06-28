@@ -201,12 +201,8 @@ class DropdownMenuContent(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["1", "2"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["1", "2"]
-                    ],
-                ],
+                Literal["1", "2"],
+                reflex.components.core.breakpoints.Breakpoints[str, Literal["1", "2"]],
             ]
         ] = None,
         variant: Optional[
@@ -285,7 +281,7 @@ class DropdownMenuContent(RadixThemesComponent):
             ]
         ] = None,
         side_offset: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], float, int]
         ] = None,
         align: Optional[
             Union[
@@ -294,17 +290,19 @@ class DropdownMenuContent(RadixThemesComponent):
             ]
         ] = None,
         align_offset: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], float, int]
         ] = None,
         avoid_collisions: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
                 reflex.vars.Var[Union[Dict[str, Union[float, int]], float, int]],
-                Union[Dict[str, Union[float, int]], float, int],
+                float,
+                int,
+                Dict[str, Union[float, int]],
             ]
         ] = None,
         arrow_padding: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], float, int]
         ] = None,
         sticky: Optional[
             Union[
@@ -586,20 +584,22 @@ class DropdownMenuSubContent(RadixThemesComponent):
         loop: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         force_mount: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         side_offset: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], float, int]
         ] = None,
         align_offset: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], float, int]
         ] = None,
         avoid_collisions: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
                 reflex.vars.Var[Union[Dict[str, Union[float, int]], float, int]],
-                Union[Dict[str, Union[float, int]], float, int],
+                float,
+                int,
+                Dict[str, Union[float, int]],
             ]
         ] = None,
         arrow_padding: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], float, int]
         ] = None,
         sticky: Optional[
             Union[

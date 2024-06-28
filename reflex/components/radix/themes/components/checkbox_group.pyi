@@ -30,11 +30,9 @@ class CheckboxGroupRoot(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["1", "2", "3"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["1", "2", "3"]
-                    ],
+                Literal["1", "2", "3"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["1", "2", "3"]
                 ],
             ]
         ] = None,

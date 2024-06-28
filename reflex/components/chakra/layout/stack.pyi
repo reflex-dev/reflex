@@ -22,7 +22,8 @@ class Stack(ChakraComponent):
         direction: Optional[
             Union[
                 reflex.vars.Var[Union[List[str], Literal["row", "column"]]],
-                Union[List[str], Literal["row", "column"]],
+                Literal["row", "column"],
+                List[str],
             ]
         ] = None,
         is_inline: Optional[Union[reflex.vars.Var[bool], bool]] = None,
@@ -119,7 +120,8 @@ class Hstack(Stack):
         direction: Optional[
             Union[
                 reflex.vars.Var[Union[List[str], Literal["row", "column"]]],
-                Union[List[str], Literal["row", "column"]],
+                Literal["row", "column"],
+                List[str],
             ]
         ] = None,
         is_inline: Optional[Union[reflex.vars.Var[bool], bool]] = None,
@@ -216,7 +218,8 @@ class Vstack(Stack):
         direction: Optional[
             Union[
                 reflex.vars.Var[Union[List[str], Literal["row", "column"]]],
-                Union[List[str], Literal["row", "column"]],
+                Literal["row", "column"],
+                List[str],
             ]
         ] = None,
         is_inline: Optional[Union[reflex.vars.Var[bool], bool]] = None,

@@ -35,7 +35,7 @@ class Tooltip(RadixThemesComponent):
             ]
         ] = None,
         side_offset: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], float, int]
         ] = None,
         align: Optional[
             Union[
@@ -44,17 +44,19 @@ class Tooltip(RadixThemesComponent):
             ]
         ] = None,
         align_offset: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], float, int]
         ] = None,
         avoid_collisions: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
                 reflex.vars.Var[Union[Dict[str, Union[float, int]], float, int]],
-                Union[Dict[str, Union[float, int]], float, int],
+                float,
+                int,
+                Dict[str, Union[float, int]],
             ]
         ] = None,
         arrow_padding: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], float, int]
         ] = None,
         sticky: Optional[
             Union[
@@ -64,7 +66,7 @@ class Tooltip(RadixThemesComponent):
         ] = None,
         hide_when_detached: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         delay_duration: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
+            Union[reflex.vars.Var[Union[float, int]], float, int]
         ] = None,
         disable_hoverable_content: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         force_mount: Optional[Union[reflex.vars.Var[bool], bool]] = None,

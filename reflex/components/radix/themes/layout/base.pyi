@@ -32,11 +32,9 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                    ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
@@ -51,11 +49,9 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                    ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
@@ -70,11 +66,9 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                    ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
@@ -89,11 +83,9 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                    ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
@@ -108,11 +100,9 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                    ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
@@ -127,11 +117,9 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                    ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
@@ -146,11 +134,9 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                    ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
@@ -164,12 +150,8 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["0", "1"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["0", "1"]
-                    ],
-                ],
+                Literal["0", "1"],
+                reflex.components.core.breakpoints.Breakpoints[str, Literal["0", "1"]],
             ]
         ] = None,
         flex_grow: Optional[
@@ -182,12 +164,8 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["0", "1"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["0", "1"]
-                    ],
-                ],
+                Literal["0", "1"],
+                reflex.components.core.breakpoints.Breakpoints[str, Literal["0", "1"]],
             ]
         ] = None,
         m: Optional[

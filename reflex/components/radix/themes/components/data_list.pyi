@@ -30,11 +30,9 @@ class DataListRoot(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["horizontal", "vertical"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["horizontal", "vertical"]
-                    ],
+                Literal["horizontal", "vertical"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["horizontal", "vertical"]
                 ],
             ]
         ] = None,
@@ -48,11 +46,9 @@ class DataListRoot(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["1", "2", "3"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["1", "2", "3"]
-                    ],
+                Literal["1", "2", "3"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["1", "2", "3"]
                 ],
             ]
         ] = None,
@@ -66,11 +62,9 @@ class DataListRoot(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["normal", "start", "end", "both"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["normal", "start", "end", "both"]
-                    ],
+                Literal["normal", "start", "end", "both"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["normal", "start", "end", "both"]
                 ],
             ]
         ] = None,
@@ -167,11 +161,9 @@ class DataListItem(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["start", "center", "end", "baseline", "stretch"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["start", "center", "end", "baseline", "stretch"]
-                    ],
+                Literal["start", "center", "end", "baseline", "stretch"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["start", "center", "end", "baseline", "stretch"]
                 ],
             ]
         ] = None,
@@ -259,7 +251,8 @@ class DataListLabel(RadixThemesComponent):
                 reflex.vars.Var[
                     Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
             ]
         ] = None,
         min_width: Optional[
@@ -267,7 +260,8 @@ class DataListLabel(RadixThemesComponent):
                 reflex.vars.Var[
                     Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
             ]
         ] = None,
         max_width: Optional[
@@ -275,7 +269,8 @@ class DataListLabel(RadixThemesComponent):
                 reflex.vars.Var[
                     Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
             ]
         ] = None,
         color_scheme: Optional[

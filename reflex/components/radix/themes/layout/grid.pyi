@@ -28,7 +28,8 @@ class Grid(elements.Div, RadixThemesComponent):
                 reflex.vars.Var[
                     Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
             ]
         ] = None,
         rows: Optional[
@@ -36,7 +37,8 @@ class Grid(elements.Div, RadixThemesComponent):
                 reflex.vars.Var[
                     Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
             ]
         ] = None,
         flow: Optional[
@@ -52,12 +54,9 @@ class Grid(elements.Div, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["row", "column", "dense", "row-dense", "column-dense"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str,
-                        Literal["row", "column", "dense", "row-dense", "column-dense"],
-                    ],
+                Literal["row", "column", "dense", "row-dense", "column-dense"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["row", "column", "dense", "row-dense", "column-dense"]
                 ],
             ]
         ] = None,
@@ -72,11 +71,9 @@ class Grid(elements.Div, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["start", "center", "end", "baseline", "stretch"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["start", "center", "end", "baseline", "stretch"]
-                    ],
+                Literal["start", "center", "end", "baseline", "stretch"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["start", "center", "end", "baseline", "stretch"]
                 ],
             ]
         ] = None,
@@ -90,11 +87,9 @@ class Grid(elements.Div, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["start", "center", "end", "between"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["start", "center", "end", "between"]
-                    ],
+                Literal["start", "center", "end", "between"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["start", "center", "end", "between"]
                 ],
             ]
         ] = None,
@@ -109,11 +104,9 @@ class Grid(elements.Div, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                    ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
@@ -128,11 +121,9 @@ class Grid(elements.Div, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                    ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
@@ -147,61 +138,59 @@ class Grid(elements.Div, RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                    ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         title: Optional[
-            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

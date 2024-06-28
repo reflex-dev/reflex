@@ -31,11 +31,9 @@ class Separator(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["1", "2", "3", "4"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["1", "2", "3", "4"]
-                    ],
+                Literal["1", "2", "3", "4"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["1", "2", "3", "4"]
                 ],
             ]
         ] = None,
@@ -111,11 +109,9 @@ class Separator(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["horizontal", "vertical"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["horizontal", "vertical"]
-                    ],
+                Literal["horizontal", "vertical"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["horizontal", "vertical"]
                 ],
             ]
         ] = None,

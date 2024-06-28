@@ -104,7 +104,7 @@ class DataTable(Gridjs):
         sort: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         resizable: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         pagination: Optional[
-            Union[reflex.vars.Var[Union[Dict, bool]], Union[Dict, bool]]
+            Union[reflex.vars.Var[Union[Dict, bool]], bool, Dict]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

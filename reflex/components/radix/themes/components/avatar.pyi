@@ -11,7 +11,7 @@ from reflex.style import Style
 from typing import Literal
 from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
-from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
+from ..base import RadixThemesComponent
 
 LiteralSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
@@ -21,9 +21,6 @@ class Avatar(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        variant: Optional[
-            Union[reflex.vars.Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
-        ] = None,
         size: Optional[
             Union[
                 reflex.vars.Var[
@@ -34,85 +31,12 @@ class Avatar(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                    ],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
-        color_scheme: Optional[
-            Union[
-                reflex.vars.Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
-            ]
-        ] = None,
-        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
-        radius: Optional[
-            Union[
-                reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
-                Literal["none", "small", "medium", "large", "full"],
-            ]
-        ] = None,
-        src: Optional[Union[reflex.vars.Var[str], str]] = None,
-        fallback: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -173,13 +97,7 @@ class Avatar(RadixThemesComponent):
 
         Args:
             *children: Child components.
-            variant: The variant of the avatar
             size: The size of the avatar: "1" - "9"
-            color_scheme: Color theme of the avatar
-            high_contrast: Whether to render the avatar with higher contrast color against background
-            radius: Override theme radius for avatar: "none" | "small" | "medium" | "large" | "full"
-            src: The src of the avatar image
-            fallback: The rendered fallback text
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

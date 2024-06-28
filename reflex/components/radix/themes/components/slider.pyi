@@ -33,11 +33,9 @@ class Slider(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["1", "2", "3"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["1", "2", "3"]
-                    ],
+                Literal["1", "2", "3"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["1", "2", "3"]
                 ],
             ]
         ] = None,
@@ -119,22 +117,18 @@ class Slider(RadixThemesComponent):
         default_value: Optional[
             Union[
                 reflex.vars.Var[Union[List[Union[float, int]], float, int]],
-                Union[List[Union[float, int]], float, int],
+                List[Union[float, int]],
+                float,
+                int,
             ]
         ] = None,
         value: Optional[
             Union[reflex.vars.Var[List[Union[float, int]]], List[Union[float, int]]]
         ] = None,
         name: Optional[Union[reflex.vars.Var[str], str]] = None,
-        min: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
-        ] = None,
-        max: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
-        ] = None,
-        step: Optional[
-            Union[reflex.vars.Var[Union[float, int]], Union[float, int]]
-        ] = None,
+        min: Optional[Union[reflex.vars.Var[Union[float, int]], float, int]] = None,
+        max: Optional[Union[reflex.vars.Var[Union[float, int]], float, int]] = None,
+        step: Optional[Union[reflex.vars.Var[Union[float, int]], float, int]] = None,
         disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         orientation: Optional[
             Union[

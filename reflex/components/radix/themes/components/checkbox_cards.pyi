@@ -30,11 +30,9 @@ class CheckboxCardsRoot(RadixThemesComponent):
                         ],
                     ]
                 ],
-                Union[
-                    Literal["1", "2", "3"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str, Literal["1", "2", "3"]
-                    ],
+                Literal["1", "2", "3"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["1", "2", "3"]
                 ],
             ]
         ] = None,
@@ -122,15 +120,11 @@ class CheckboxCardsRoot(RadixThemesComponent):
                         str,
                     ]
                 ],
-                Union[
-                    Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str,
-                        Union[
-                            Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str
-                        ],
-                    ],
+                str,
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
                     str,
+                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
                 ],
             ]
         ] = None,
@@ -149,15 +143,11 @@ class CheckboxCardsRoot(RadixThemesComponent):
                         str,
                     ]
                 ],
-                Union[
-                    Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                    reflex.components.core.breakpoints.Breakpoints[
-                        str,
-                        Union[
-                            Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str
-                        ],
-                    ],
+                str,
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
                     str,
+                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
                 ],
             ]
         ] = None,

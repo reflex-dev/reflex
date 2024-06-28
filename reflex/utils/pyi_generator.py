@@ -12,6 +12,7 @@ import subprocess
 import textwrap
 import typing
 from inspect import getfullargspec
+from itertools import chain
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
@@ -160,6 +161,12 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
         res = f"{type_name}[{', '.join(inner_container_type_args)}]"
 
         if value.__name__ == "Var":
+            args = list(
+                chain.from_iterable(
+                    [get_args(arg) if rx_types.is_union(arg) else [arg] for arg in args]
+                )
+            )
+
             # For Var types, Union with the inner args so they can be passed directly.
             types = [res] + [
                 _get_type_hint(arg, type_hint_globals, is_optional=False)

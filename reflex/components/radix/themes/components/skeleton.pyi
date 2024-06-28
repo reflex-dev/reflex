@@ -23,7 +23,8 @@ class Skeleton(RadixLoadingProp, RadixThemesComponent):
                 reflex.vars.Var[
                     Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
             ]
         ] = None,
         min_width: Optional[
@@ -31,7 +32,8 @@ class Skeleton(RadixLoadingProp, RadixThemesComponent):
                 reflex.vars.Var[
                     Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
             ]
         ] = None,
         max_width: Optional[
@@ -39,7 +41,8 @@ class Skeleton(RadixLoadingProp, RadixThemesComponent):
                 reflex.vars.Var[
                     Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
             ]
         ] = None,
         height: Optional[
@@ -47,7 +50,8 @@ class Skeleton(RadixLoadingProp, RadixThemesComponent):
                 reflex.vars.Var[
                     Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
             ]
         ] = None,
         min_height: Optional[
@@ -55,7 +59,8 @@ class Skeleton(RadixLoadingProp, RadixThemesComponent):
                 reflex.vars.Var[
                     Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
             ]
         ] = None,
         max_height: Optional[
@@ -63,7 +68,8 @@ class Skeleton(RadixLoadingProp, RadixThemesComponent):
                 reflex.vars.Var[
                     Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
             ]
         ] = None,
         loading: Optional[Union[reflex.vars.Var[bool], bool]] = None,

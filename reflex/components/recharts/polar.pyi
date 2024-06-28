@@ -31,16 +31,14 @@ class Pie(Recharts):
         data: Optional[
             Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
         ] = None,
-        data_key: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        cx: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
-        cy: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        cx: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        cy: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
         inner_radius: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
+            Union[reflex.vars.Var[Union[int, str]], int, str]
         ] = None,
         outer_radius: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
+            Union[reflex.vars.Var[Union[int, str]], int, str]
         ] = None,
         start_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
         end_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
@@ -148,9 +146,7 @@ class Radar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         points: Optional[
             Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
         ] = None,
@@ -258,16 +254,11 @@ class RadialBar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         min_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
         legend_type: Optional[Union[reflex.vars.Var[str], str]] = None,
         label: Optional[
-            Union[
-                reflex.vars.Var[Union[Dict[str, Any], bool]],
-                Union[Dict[str, Any], bool],
-            ]
+            Union[reflex.vars.Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
         background: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
@@ -324,28 +315,18 @@ class PolarAngleAxis(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
-        cx: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
-        cy: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
-        radius: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
-        ] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        cx: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        cy: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        radius: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
         axis_line: Optional[
-            Union[
-                reflex.vars.Var[Union[Dict[str, Any], bool]],
-                Union[Dict[str, Any], bool],
-            ]
+            Union[reflex.vars.Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
         axis_line_type: Optional[Union[reflex.vars.Var[str], str]] = None,
         tick_line: Optional[
-            Union[
-                reflex.vars.Var[Union[Dict[str, Any], bool]],
-                Union[Dict[str, Any], bool],
-            ]
+            Union[reflex.vars.Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        tick: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
+        tick: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
         ticks: Optional[
             Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
         ] = None,
@@ -438,13 +419,13 @@ class PolarGrid(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        cx: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
-        cy: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
+        cx: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        cy: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
         inner_radius: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
+            Union[reflex.vars.Var[Union[int, str]], int, str]
         ] = None,
         outer_radius: Optional[
-            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
+            Union[reflex.vars.Var[Union[int, str]], int, str]
         ] = None,
         polar_angles: Optional[Union[reflex.vars.Var[List[int]], List[int]]] = None,
         polar_radius: Optional[Union[reflex.vars.Var[List[int]], List[int]]] = None,
@@ -546,17 +527,14 @@ class PolarRadiusAxis(Recharts):
             ]
         ] = None,
         allow_duplicated_category: Optional[Union[reflex.vars.Var[bool], bool]] = None,
-        cx: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
-        cy: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
+        cx: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        cy: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
         reversed: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         orientation: Optional[Union[reflex.vars.Var[str], str]] = None,
         axis_line: Optional[
-            Union[
-                reflex.vars.Var[Union[Dict[str, Any], bool]],
-                Union[Dict[str, Any], bool],
-            ]
+            Union[reflex.vars.Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        tick: Optional[Union[reflex.vars.Var[Union[int, str]], Union[int, str]]] = None,
+        tick: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
         tick_count: Optional[Union[reflex.vars.Var[int], int]] = None,
         scale: Optional[
             Union[

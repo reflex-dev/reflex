@@ -187,8 +187,8 @@ class ProgressIndicator(ProgressComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[reflex.vars.Var[Optional[int]], Optional[int]]] = None,
-        max: Optional[Union[reflex.vars.Var[Optional[int]], Optional[int]]] = None,
+        value: Optional[Union[reflex.vars.Var[Optional[int]], int]] = None,
+        max: Optional[Union[reflex.vars.Var[Optional[int]], int]] = None,
         color_scheme: Optional[
             Union[
                 reflex.vars.Var[
@@ -394,8 +394,8 @@ class Progress(ProgressRoot):
                 ],
             ]
         ] = None,
-        value: Optional[Union[reflex.vars.Var[Optional[int]], Optional[int]]] = None,
-        max: Optional[Union[reflex.vars.Var[Optional[int]], Optional[int]]] = None,
+        value: Optional[Union[reflex.vars.Var[Optional[int]], int]] = None,
+        max: Optional[Union[reflex.vars.Var[Optional[int]], int]] = None,
         radius: Optional[
             Union[
                 reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
@@ -546,8 +546,8 @@ class ProgressNamespace(ComponentNamespace):
                 ],
             ]
         ] = None,
-        value: Optional[Union[reflex.vars.Var[Optional[int]], Optional[int]]] = None,
-        max: Optional[Union[reflex.vars.Var[Optional[int]], Optional[int]]] = None,
+        value: Optional[Union[reflex.vars.Var[Optional[int]], int]] = None,
+        max: Optional[Union[reflex.vars.Var[Optional[int]], int]] = None,
         radius: Optional[
             Union[
                 reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
