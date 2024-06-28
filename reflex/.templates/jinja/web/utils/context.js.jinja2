@@ -64,6 +64,8 @@ export const initialEvents = () => []
 
 export const isDevMode = {{ is_dev_mode|json_dumps }}
 
+export const lastCompiledTimeStamp = {{ last_compiled_time|json_dumps }}
+
 export function UploadFilesProvider({ children }) {
   const [filesById, setFilesById] = useState({})
   refs["__clear_selected_files"] = (id) => setFilesById(filesById => {

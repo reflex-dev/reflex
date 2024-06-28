@@ -10,6 +10,7 @@ from functools import wraps
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Dict,
     Iterable,
     List,
@@ -97,6 +98,12 @@ PrimitiveToAnnotation = {
     list: List,
     tuple: Tuple,
     dict: Dict,
+}
+
+RESERVED_BACKEND_VAR_NAMES = {
+    "_abc_impl",
+    "_backend_vars",
+    "_was_touched",
 }
 
 
@@ -413,9 +420,42 @@ def is_backend_variable(name: str, cls: Type | None = None) -> bool:
     Returns:
         bool: The result of the check
     """
-    if cls is not None and name.startswith(f"_{cls.__name__}__"):
+    if name in RESERVED_BACKEND_VAR_NAMES:
         return False
-    return name.startswith("_") and not name.startswith("__")
+
+    if not name.startswith("_"):
+        return False
+
+    if name.startswith("__"):
+        return False
+
+    if cls is not None:
+        if name.startswith(f"_{cls.__name__}__"):
+            return False
+        hints = get_type_hints(cls)
+        if name in hints:
+            hint = get_origin(hints[name])
+            if hint == ClassVar:
+                return False
+
+        if name in cls.inherited_backend_vars:
+            return False
+
+        if name in cls.__dict__:
+            value = cls.__dict__[name]
+            if type(value) == classmethod:
+                return False
+            if callable(value):
+                return False
+            if isinstance(value, types.FunctionType):
+                return False
+            # enable after #3573 is merged
+            # from reflex.vars import ComputedVar
+            #
+            # if isinstance(value, ComputedVar):
+            #     return False
+
+    return True
 
 
 def check_type_in_allowed_types(value_type: Type, allowed_types: Iterable) -> bool:

@@ -1,7 +1,7 @@
 import os
 import typing
 from pathlib import Path
-from typing import Any, List, Literal, Union
+from typing import Any, ClassVar, List, Literal, Union
 
 import pytest
 import typer
@@ -146,12 +146,20 @@ def test_setup_frontend(tmp_path, mocker):
 
 @pytest.fixture
 def test_backend_variable_cls():
-    class TestBackendVariable:
+    class TestBackendVariable(BaseState):
         """Test backend variable."""
 
+        _classvar: ClassVar[int] = 0
         _hidden: int = 0
         not_hidden: int = 0
         __dunderattr__: int = 0
+
+        @classmethod
+        def _class_method(cls):
+            pass
+
+        def _hidden_method(self):
+            pass
 
     return TestBackendVariable
 
@@ -159,6 +167,9 @@ def test_backend_variable_cls():
 @pytest.mark.parametrize(
     "input, output",
     [
+        ("_classvar", False),
+        ("_class_method", False),
+        ("_hidden_method", False),
         ("_hidden", True),
         ("not_hidden", False),
         ("__dundermethod__", False),
