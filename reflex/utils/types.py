@@ -100,6 +100,12 @@ PrimitiveToAnnotation = {
     dict: Dict,
 }
 
+RESERVED_BACKEND_VAR_NAMES = {
+    "_abc_impl",
+    "_backend_vars",
+    "_was_touched",
+}
+
 
 class Unset:
     """A class to represent an unset value.
@@ -414,6 +420,9 @@ def is_backend_variable(name: str, cls: Type | None = None) -> bool:
     Returns:
         bool: The result of the check
     """
+    if name in RESERVED_BACKEND_VAR_NAMES:
+        return False
+
     if not name.startswith("_"):
         return False
 
