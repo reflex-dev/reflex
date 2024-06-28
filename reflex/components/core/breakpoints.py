@@ -1,6 +1,6 @@
 """Breakpoints utility."""
 
-from typing import Optional, Tuple, TypeVar, Union
+from typing import Dict, Optional, Tuple, TypeVar, Union
 
 breakpoints_values = ["30em", "48em", "62em", "80em", "96em"]
 breakpoint_names = ["xs", "sm", "md", "lg", "xl"]
@@ -20,7 +20,7 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-class Breakpoints(dict[K, V]):
+class Breakpoints(Dict[K, V]):
     """A responsive styling helper."""
 
     def factorize(self):
@@ -44,7 +44,7 @@ class Breakpoints(dict[K, V]):
     @classmethod
     def create(
         cls,
-        custom: Optional[dict[K, V]] = None,
+        custom: Optional[Dict[K, V]] = None,
         initial: Optional[V] = None,
         xs: Optional[V] = None,
         sm: Optional[V] = None,
