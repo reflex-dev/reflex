@@ -305,10 +305,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # Vars inherited by the parent state.
     inherited_vars: ClassVar[Dict[str, Var]] = {}
 
-    # Backend vars that are never sent to the client.
+    # Backend base vars that are never sent to the client.
     backend_vars: ClassVar[Dict[str, Any]] = {}
 
-    # Backend vars inherited
+    # Backend base vars inherited
     inherited_backend_vars: ClassVar[Dict[str, Any]] = {}
 
     # The event handlers.
@@ -344,7 +344,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # The routing path that triggered the state
     router_data: Dict[str, Any] = {}
 
-    # Per-instance copy of backend variable values
+    # Per-instance copy of backend base variable values
     _backend_vars: Dict[str, Any] = {}
 
     # The router data for the current page

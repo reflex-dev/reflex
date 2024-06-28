@@ -31,6 +31,11 @@ def ComputedVars():
         def count1_backend(self) -> int:
             return self.count
 
+        # same as above but implicit backend with `_` prefix
+        @rx.var(cache=True, interval=15)
+        def _count1_backend(self) -> int:
+            return self.count
+
         # explicit disabled auto_deps
         @rx.var(interval=15, cache=True, auto_deps=False)
         def count3(self) -> int:
@@ -77,6 +82,8 @@ def ComputedVars():
                 rx.text(State.count1, id="count1"),
                 rx.text("count1_backend:"),
                 rx.text(State.count1_backend, id="count1_backend"),
+                rx.text("_count1_backend:"),
+                rx.text(State._count1_backend, id="_count1_backend"),
                 rx.text("count3:"),
                 rx.text(State.count3, id="count3"),
                 rx.text("depends_on_count:"),
@@ -180,11 +187,15 @@ async def test_computed_vars(
     state = (await computed_vars.get_state(token)).substates["state"]
     assert state is not None
     assert state.count1_backend == 0
+    assert state._count1_backend == 0
 
     # test that backend var is not rendered
     count1_backend = driver.find_element(By.ID, "count1_backend")
     assert count1_backend
     assert count1_backend.text == ""
+    _count1_backend = driver.find_element(By.ID, "_count1_backend")
+    assert _count1_backend
+    assert _count1_backend.text == ""
 
     count = driver.find_element(By.ID, "count")
     assert count
@@ -229,6 +240,8 @@ async def test_computed_vars(
     assert state is not None
     assert state.count1_backend == 1
     assert count1_backend.text == ""
+    assert state._count1_backend == 1
+    assert _count1_backend.text == ""
 
     mark_dirty.click()
     with pytest.raises(TimeoutError):

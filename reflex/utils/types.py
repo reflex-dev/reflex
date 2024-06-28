@@ -410,7 +410,7 @@ def is_valid_var_type(type_: Type) -> bool:
     return _issubclass(type_, StateVar) or serializers.has_serializer(type_)
 
 
-def is_backend_variable(name: str, cls: Type | None = None) -> bool:
+def is_backend_base_variable(name: str, cls: Type | None = None) -> bool:
     """Check if this variable name correspond to a backend variable.
 
     Args:

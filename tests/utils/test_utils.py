@@ -176,7 +176,7 @@ def test_backend_variable_cls():
     ],
 )
 def test_is_backend_variable(test_backend_variable_cls, input, output):
-    assert types.is_backend_variable(input, test_backend_variable_cls) == output
+    assert types.is_backend_base_variable(input, test_backend_variable_cls) == output
 
 
 @pytest.mark.parametrize(
