@@ -146,7 +146,7 @@ def test_setup_frontend(tmp_path, mocker):
 
 @pytest.fixture
 def test_backend_variable_cls():
-    class TestBackendVariable:
+    class TestBackendVariable(BaseState):
         """Test backend variable."""
 
         _classvar: ClassVar[int] = 0
