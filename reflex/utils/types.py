@@ -449,11 +449,10 @@ def is_backend_variable(name: str, cls: Type | None = None) -> bool:
                 return False
             if isinstance(value, types.FunctionType):
                 return False
-            # enable after #3573 is merged
-            # from reflex.vars import ComputedVar
-            #
-            # if isinstance(value, ComputedVar):
-            #     return False
+            from reflex.vars import ComputedVar
+
+            if isinstance(value, ComputedVar):
+                return False
 
     return True
 

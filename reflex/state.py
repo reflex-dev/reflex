@@ -495,18 +495,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if types.is_backend_variable(name, cls)
         }
 
-        # Get backend computed vars
-        backend_computed_vars = {
-            v._var_name: v._var_set_state(cls)
-            for v in computed_vars
-            if types.is_backend_variable(v._var_name, cls)
-            and v._var_name not in cls.inherited_backend_vars
-        }
-
         cls.backend_vars = {
             **cls.inherited_backend_vars,
             **new_backend_vars,
-            **backend_computed_vars,
         }
 
         # Set the base and computed vars.

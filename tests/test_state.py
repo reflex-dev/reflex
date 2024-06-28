@@ -1011,11 +1011,11 @@ def test_dirty_computed_var_from_backend_var(
     Args:
         interdependent_state: A state with varying Var dependencies.
     """
+    assert InterdependentState._v3._backend is True
     interdependent_state._v2 = 2
     assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"v2x2": 4, "v3x2": 4},
     }
-    assert "_v3" in InterdependentState.backend_vars
 
 
 def test_per_state_backend_var(interdependent_state: InterdependentState) -> None:

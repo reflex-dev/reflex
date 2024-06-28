@@ -1967,7 +1967,7 @@ class ComputedVar(Var, property):
         deps: Optional[List[Union[str, Var]]] = None,
         auto_deps: bool = True,
         interval: Optional[Union[int, datetime.timedelta]] = None,
-        backend: bool = False,
+        backend: bool | None = None,
         **kwargs,
     ):
         """Initialize a ComputedVar.
@@ -1985,6 +1985,9 @@ class ComputedVar(Var, property):
         Raises:
             TypeError: If the computed var dependencies are not Var instances or var names.
         """
+        if backend is None:
+            backend = fget.__name__.startswith("_")
+
         self._initial_value = initial_value
         self._cache = cache
         self._backend = backend
@@ -2277,9 +2280,6 @@ def computed_var(
 
     if cache is False and (deps is not None or auto_deps is False):
         raise VarDependencyError("Cannot track dependencies without caching.")
-
-    if backend is None:
-        backend = fget is not None and fget.__name__.startswith("_")
 
     if fget is not None:
         return ComputedVar(fget=fget, cache=cache)
