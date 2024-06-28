@@ -9,11 +9,11 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 import re
 from typing import Dict, Literal, Optional, Union
-from reflex.components.chakra.forms import Button
-from reflex.components.chakra.layout import Box
-from reflex.components.chakra.media import Icon
 from reflex.components.component import Component
 from reflex.components.core.cond import color_mode_cond
+from reflex.components.lucide.icon import Icon
+from reflex.components.radix.themes.components.button import Button
+from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
@@ -358,7 +358,7 @@ class CodeBlock(Component):
         cls,
         *children,
         can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[bool, Component]] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         theme: Optional[
             Union[
                 Var[

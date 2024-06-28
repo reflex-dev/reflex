@@ -126,6 +126,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 for arg in value.__args__
                 if arg is not type(None)
             ]
+            res_args.sort()
             if len(res_args) == 1:
                 return f"Optional[{res_args[0]}]"
             else:
@@ -136,6 +137,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
             _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
             for arg in value.__args__
         ]
+        res_args.sort()
         return f"Union[{', '.join(res_args)}]"
 
     if args:
@@ -960,7 +962,6 @@ class PyiGenerator:
                 target_path.is_file()
                 and target_path.suffix == ".py"
                 and target_path.name not in EXCLUDED_FILES
-                and "reflex/components" in str(target_path)
             ):
                 file_targets.append(target_path)
                 continue

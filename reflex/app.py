@@ -13,6 +13,7 @@ import multiprocessing
 import os
 import platform
 import sys
+from datetime import datetime
 from typing import (
     Any,
     AsyncIterator,
@@ -51,6 +52,7 @@ from reflex.components.component import (
     evaluate_style_namespaces,
 )
 from reflex.components.core.banner import connection_pulser, connection_toaster
+from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
@@ -78,7 +80,7 @@ from reflex.state import (
     _substate_key,
     code_uses_state_contexts,
 )
-from reflex.utils import console, exceptions, format, prerequisites, types
+from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
 from reflex.utils.exec import is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
 
@@ -93,7 +95,11 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    return Fragment.create(connection_pulser(), connection_toaster())
+    return Fragment.create(
+        connection_pulser(),
+        connection_toaster(),
+        *codespaces.codespaces_auto_redirect(),
+    )
 
 
 class OverlayFragment(Fragment):
@@ -244,6 +250,9 @@ class App(LifespanMixin, Base):
                 "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
             )
 
+        if "breakpoints" in self.style:
+            set_breakpoints(self.style.pop("breakpoints"))
+
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
 
@@ -340,6 +349,10 @@ class App(LifespanMixin, Base):
                 str(constants.Endpoint.UPLOAD),
                 StaticFiles(directory=get_upload_dir()),
                 name="uploaded_files",
+            )
+        if codespaces.is_running_in_codespaces():
+            self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(
+                codespaces.auth_codespace
             )
 
     def _add_cors(self):
@@ -797,6 +810,36 @@ class App(LifespanMixin, Base):
         for render, kwargs in DECORATED_PAGES[get_config().app_name]:
             self.add_page(render, **kwargs)
 
+    def _validate_var_dependencies(
+        self, state: Optional[Type[BaseState]] = None
+    ) -> None:
+        """Validate the dependencies of the vars in the app.
+
+        Args:
+            state: The state to validate the dependencies for.
+
+        Raises:
+            VarDependencyError: When a computed var has an invalid dependency.
+        """
+        if not self.state:
+            return
+
+        if not state:
+            state = self.state
+
+        for var in state.computed_vars.values():
+            if not var._cache:
+                continue
+            deps = var._deps(objclass=state)
+            for dep in deps:
+                if dep not in state.vars and dep not in state.backend_vars:
+                    raise exceptions.VarDependencyError(
+                        f"ComputedVar {var._var_name} on state {state.__name__} has an invalid dependency {dep}"
+                    )
+
+        for substate in state.class_subclasses:
+            self._validate_var_dependencies(substate)
+
     def _compile(self, export: bool = False):
         """Compile the app and output it to the pages folder.
 
@@ -808,6 +851,9 @@ class App(LifespanMixin, Base):
         """
         from reflex.utils.exceptions import ReflexRuntimeError
 
+        def get_compilation_time() -> str:
+            return str(datetime.now().time()).split(".")[0]
+
         # Render a default 404 page if the user didn't supply one
         if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
@@ -818,6 +864,7 @@ class App(LifespanMixin, Base):
         if not self._should_compile():
             return
 
+        self._validate_var_dependencies()
         self._setup_overlay_component()
 
         # try to be somewhat accurate - but still not 100%
@@ -826,7 +873,7 @@ class App(LifespanMixin, Base):
 
         # Create a progress bar.
         progress = tqdm(
-            desc="Compiling:",
+            f"[{get_compilation_time()}] Compiling:",
             total=len(self.pages)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
