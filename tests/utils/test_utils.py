@@ -1,7 +1,7 @@
 import os
 import typing
 from pathlib import Path
-from typing import Any, ClassVar, List, Literal, Union
+from typing import Any, ClassVar, List, Literal, Type, Union
 
 import pytest
 import typer
@@ -175,7 +175,9 @@ def test_backend_variable_cls():
         ("__dundermethod__", False),
     ],
 )
-def test_is_backend_variable(test_backend_variable_cls, input, output):
+def test_is_backend_base_variable(
+    test_backend_variable_cls: Type[BaseState], input: str, output: bool
+):
     assert types.is_backend_base_variable(input, test_backend_variable_cls) == output
 
 
