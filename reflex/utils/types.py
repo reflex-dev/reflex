@@ -388,7 +388,7 @@ def _issubclass(cls: GenericType, cls_check: GenericType, instance: Any = None) 
         return False
 
     # Check that fields of breakpoints match the expected values.
-    if issubclass(cls_base, Breakpoints) and instance is not None:
+    if isinstance(instance, Breakpoints):
         return _breakpoints_satisfies_typing(cls_check, instance)
 
     # Check if the types match.
