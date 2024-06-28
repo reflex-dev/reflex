@@ -154,6 +154,13 @@ def test_backend_variable_cls():
         not_hidden: int = 0
         __dunderattr__: int = 0
 
+        @classmethod
+        def _class_method(cls):
+            pass
+
+        def _hidden_method(self):
+            pass
+
     return TestBackendVariable
 
 
@@ -161,6 +168,8 @@ def test_backend_variable_cls():
     "input, output",
     [
         ("_classvar", False),
+        ("_class_method", False),
+        ("_hidden_method", False),
         ("_hidden", True),
         ("not_hidden", False),
         ("__dundermethod__", False),
