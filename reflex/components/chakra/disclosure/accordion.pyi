@@ -27,26 +27,7 @@ class Accordion(ChakraComponent):
             Union[reflex.vars.Var[Optional[List[int]]], Optional[List[int]]]
         ] = None,
         index: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[int, List[int]]], Union[int, List[int]]]
-=======
-            Union[Var[Union[List[int], int]], Union[List[int], int]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
-            Union[Var[Union[List[int], int]], Union[List[int], int]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
-            Union[Var[Union[List[int], int]], Union[List[int], int]]
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[int, List[int]]], Union[int, List[int]]]
-=======
-            Union[Var[Union[List[int], int]], Union[List[int], int]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[List[int], int]], Union[List[int], int]]
         ] = None,
         reduce_motion: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,

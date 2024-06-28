@@ -120,40 +120,10 @@ class SegmentedControlRoot(RadixThemesComponent):
             ]
         ] = None,
         default_value: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
+            Union[reflex.vars.Var[Union[List[str], str]], Union[List[str], str]]
         ] = None,
         value: Optional[
-            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
-=======
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[Var[Union[List[str], str]], Union[List[str], str]]
-        ] = None,
-        value: Optional[
-            Union[Var[Union[List[str], str]], Union[List[str], str]]
-<<<<<<< HEAD
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
-        ] = None,
-        value: Optional[
-            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-=======
-            Union[Var[Union[List[str], str]], Union[List[str], str]]
-        ] = None,
-        value: Optional[
-            Union[Var[Union[List[str], str]], Union[List[str], str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[List[str], str]], Union[List[str], str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

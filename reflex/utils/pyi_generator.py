@@ -150,7 +150,14 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 if arg is not type(None)
             ]
         )
-        res = f"{value.__module__ + "." + value.__name__ if value.__module__.startswith("reflex") else value.__name__}[{', '.join(inner_container_type_args)}]"
+
+        type_name = (
+            value.__module__ + "." + value.__name__
+            if value.__module__.startswith("reflex")
+            else value.__name__
+        )
+
+        res = f"{type_name}[{', '.join(inner_container_type_args)}]"
 
         if value.__name__ == "Var":
             # For Var types, Union with the inner args so they can be passed directly.
@@ -491,9 +498,11 @@ def _generate_staticmethod_call_functiondef(
         kwonlyargs=[],
         kw_defaults=[],
         kwarg=ast.arg(arg="props"),
-        defaults=[ast.Constant(value=default) for default in fullspec.defaults]
-        if fullspec.defaults
-        else [],
+        defaults=(
+            [ast.Constant(value=default) for default in fullspec.defaults]
+            if fullspec.defaults
+            else []
+        ),
     )
     definition = ast.FunctionDef(
         name="__call__",

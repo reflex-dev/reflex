@@ -522,30 +522,9 @@ class LabelList(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
         data_key: Optional[
-            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
         ] = None,
-=======
-        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
-        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
-        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-=======
-<<<<<<< HEAD
-        data_key: Optional[
-            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
-        ] = None,
-=======
-        data_key: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         position: Optional[
             Union[
                 reflex.vars.Var[

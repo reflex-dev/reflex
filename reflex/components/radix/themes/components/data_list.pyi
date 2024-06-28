@@ -257,25 +257,25 @@ class DataListLabel(RadixThemesComponent):
         width: Optional[
             Union[
                 reflex.vars.Var[
-                    Union[str, reflex.components.core.breakpoints.Breakpoints[str, str]]
+                    Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[str, reflex.components.core.breakpoints.Breakpoints[str, str]],
+                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
             ]
         ] = None,
         min_width: Optional[
             Union[
                 reflex.vars.Var[
-                    Union[str, reflex.components.core.breakpoints.Breakpoints[str, str]]
+                    Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[str, reflex.components.core.breakpoints.Breakpoints[str, str]],
+                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
             ]
         ] = None,
         max_width: Optional[
             Union[
                 reflex.vars.Var[
-                    Union[str, reflex.components.core.breakpoints.Breakpoints[str, str]]
+                    Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
                 ],
-                Union[str, reflex.components.core.breakpoints.Breakpoints[str, str]],
+                Union[reflex.components.core.breakpoints.Breakpoints[str, str], str],
             ]
         ] = None,
         color_scheme: Optional[

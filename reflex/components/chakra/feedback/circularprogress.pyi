@@ -20,47 +20,18 @@ class CircularProgress(ChakraComponent):
         cls,
         *children,
         label=None,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
-<<<<<<< HEAD
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         cap_is_round: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         is_indeterminate: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         max_: Optional[Union[reflex.vars.Var[int], int]] = None,
         min_: Optional[Union[reflex.vars.Var[int], int]] = None,
         thickness: Optional[
-            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
         ] = None,
         track_color: Optional[Union[reflex.vars.Var[str], str]] = None,
         value: Optional[Union[reflex.vars.Var[int], int]] = None,
         value_text: Optional[Union[reflex.vars.Var[str], str]] = None,
         color: Optional[Union[reflex.vars.Var[str], str]] = None,
         size: Optional[Union[reflex.vars.Var[str], str]] = None,
-=======
-<<<<<<< HEAD
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-        cap_is_round: Optional[Union[Var[bool], bool]] = None,
-        is_indeterminate: Optional[Union[Var[bool], bool]] = None,
-        max_: Optional[Union[Var[int], int]] = None,
-        min_: Optional[Union[Var[int], int]] = None,
-        thickness: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        track_color: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[int], int]] = None,
-        value_text: Optional[Union[Var[str], str]] = None,
-        color: Optional[Union[Var[str], str]] = None,
-        size: Optional[Union[Var[str], str]] = None,
-<<<<<<< HEAD
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
-<<<<<<< HEAD
-=======
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

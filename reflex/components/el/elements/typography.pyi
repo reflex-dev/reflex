@@ -18,196 +18,56 @@ class Blockquote(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-        cite: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
         cite: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
-<<<<<<< HEAD
         access_key: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-        cite: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-        cite: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -303,185 +163,52 @@ class Dd(BaseHTML):
         cls,
         *children,
         access_key: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -576,185 +303,52 @@ class Div(BaseHTML):
         cls,
         *children,
         access_key: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -849,185 +443,52 @@ class Dl(BaseHTML):
         cls,
         *children,
         access_key: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1122,185 +583,52 @@ class Dt(BaseHTML):
         cls,
         *children,
         access_key: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1395,185 +723,52 @@ class Figcaption(BaseHTML):
         cls,
         *children,
         access_key: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1668,197 +863,55 @@ class Hr(BaseHTML):
         cls,
         *children,
         align: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        ] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1954,185 +1007,52 @@ class Li(BaseHTML):
         cls,
         *children,
         access_key: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -2226,196 +1146,56 @@ class Menu(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-        type: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
         type: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
-<<<<<<< HEAD
         access_key: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-        type: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-        type: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -2511,215 +1291,61 @@ class Ol(BaseHTML):
         cls,
         *children,
         reversed: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         start: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         type: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        ] = None,
-        start: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        type: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        start: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        type: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        start: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        type: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -2817,185 +1443,52 @@ class P(BaseHTML):
         cls,
         *children,
         access_key: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -3090,185 +1583,52 @@ class Pre(BaseHTML):
         cls,
         *children,
         access_key: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -3363,185 +1723,52 @@ class Ul(BaseHTML):
         cls,
         *children,
         access_key: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -3635,208 +1862,59 @@ class Ins(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-        cite: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
         cite: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
-<<<<<<< HEAD
         date_time: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        date_time: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-        cite: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        date_time: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-        cite: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        date_time: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -3932,208 +2010,59 @@ class Del(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-        cite: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
         cite: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
-<<<<<<< HEAD
         date_time: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         access_key: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         auto_capitalize: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         content_editable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         context_menu: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         dir: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         draggable: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         enter_key_hint: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         hidden: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         input_mode: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         item_prop: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         lang: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         role: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         slot: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         spell_check: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         tab_index: Optional[
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         title: Optional[
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        date_time: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-<<<<<<< HEAD
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[reflex.vars.Var[Union[str, int, bool]], Union[str, int, bool]]
-=======
-        cite: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        date_time: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-        cite: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        date_time: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
+            Union[reflex.vars.Var[Union[bool, int, str]], Union[bool, int, str]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

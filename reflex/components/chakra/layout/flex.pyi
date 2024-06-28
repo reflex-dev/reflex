@@ -21,50 +21,14 @@ class Flex(ChakraComponent):
         align: Optional[Union[reflex.vars.Var[str], str]] = None,
         basis: Optional[Union[reflex.vars.Var[str], str]] = None,
         direction: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
+            Union[reflex.vars.Var[Union[List[str], str]], Union[List[str], str]]
         ] = None,
         grow: Optional[Union[reflex.vars.Var[str], str]] = None,
         justify: Optional[Union[reflex.vars.Var[str], str]] = None,
         wrap: Optional[
-            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
+            Union[reflex.vars.Var[Union[List[str], str]], Union[List[str], str]]
         ] = None,
         shrink: Optional[Union[reflex.vars.Var[str], str]] = None,
-=======
-=======
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-            Union[Var[Union[List[str], str]], Union[List[str], str]]
-        ] = None,
-=======
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
-        ] = None,
-        grow: Optional[Union[reflex.vars.Var[str], str]] = None,
-        justify: Optional[Union[reflex.vars.Var[str], str]] = None,
-        wrap: Optional[
-            Union[reflex.vars.Var[Union[str, List[str]]], Union[str, List[str]]]
-        ] = None,
-        shrink: Optional[Union[reflex.vars.Var[str], str]] = None,
-=======
-            Union[Var[Union[List[str], str]], Union[List[str], str]]
-        ] = None,
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
-        grow: Optional[Union[Var[str], str]] = None,
-        justify: Optional[Union[Var[str], str]] = None,
-        wrap: Optional[Union[Var[Union[List[str], str]], Union[List[str], str]]] = None,
-        shrink: Optional[Union[Var[str], str]] = None,
-<<<<<<< HEAD
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
-<<<<<<< HEAD
-=======
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

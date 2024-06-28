@@ -344,41 +344,15 @@ class SlideFade(Transition):
     def create(  # type: ignore
         cls,
         *children,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
         offsetX: Optional[
-            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
         ] = None,
         offsetY: Optional[
-            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
         ] = None,
         reverse: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         in_: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         unmount_on_exit: Optional[Union[reflex.vars.Var[bool], bool]] = None,
-=======
-<<<<<<< HEAD
-=======
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-        offsetX: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        offsetY: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        reverse: Optional[Union[Var[bool], bool]] = None,
-        in_: Optional[Union[Var[bool], bool]] = None,
-        unmount_on_exit: Optional[Union[Var[bool], bool]] = None,
-<<<<<<< HEAD
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
-<<<<<<< HEAD
-=======
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -460,37 +434,13 @@ class Collapse(Transition):
     def create(  # type: ignore
         cls,
         *children,
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
-<<<<<<< HEAD
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         animateOpacity: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         endingHeight: Optional[Union[reflex.vars.Var[str], str]] = None,
         startingHeight: Optional[
-            Union[reflex.vars.Var[Union[str, int]], Union[str, int]]
+            Union[reflex.vars.Var[Union[int, str]], Union[int, str]]
         ] = None,
         in_: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         unmount_on_exit: Optional[Union[reflex.vars.Var[bool], bool]] = None,
-=======
-<<<<<<< HEAD
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-        animateOpacity: Optional[Union[Var[bool], bool]] = None,
-        endingHeight: Optional[Union[Var[str], str]] = None,
-        startingHeight: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        in_: Optional[Union[Var[bool], bool]] = None,
-        unmount_on_exit: Optional[Union[Var[bool], bool]] = None,
-<<<<<<< HEAD
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
-<<<<<<< HEAD
-=======
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

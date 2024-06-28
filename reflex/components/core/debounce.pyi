@@ -27,28 +27,11 @@ class DebounceInput(Component):
         force_notify_by_enter: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         force_notify_on_blur: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         value: Optional[
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-            Union[Var[Union[float, int, str]], Union[float, int, str]]
-=======
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-            Union[reflex.vars.Var[Union[str, int, float]], Union[str, int, float]]
+            Union[reflex.vars.Var[Union[float, int, str]], Union[float, int, str]]
         ] = None,
         input_ref: Optional[Union[reflex.vars.Var[str], str]] = None,
         element: Optional[
             Union[reflex.vars.Var[Type[Component]], Type[Component]]
-=======
-            Union[Var[Union[float, int, str]], Union[float, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-<<<<<<< HEAD
-=======
-            Union[Var[Union[float, int, str]], Union[float, int, str]]
->>>>>>> 2027a2f0 (order type annotations in pyi_generator (#3585))
-=======
->>>>>>> 2a1e1416 (order type annotations in pyi_generator (#3585))
->>>>>>> 39b78a62 (order type annotations in pyi_generator (#3585))
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
