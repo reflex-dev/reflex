@@ -9,7 +9,6 @@ import inspect
 import logging
 import re
 import subprocess
-import textwrap
 import typing
 from inspect import getfullargspec
 from itertools import chain
@@ -71,6 +70,15 @@ DEFAULT_TYPING_IMPORTS = {
     "Union",
 }
 
+# TODO: fix import ordering and unused imports with ruff later
+DEFAULT_IMPORTS = {
+    "typing": sorted(DEFAULT_TYPING_IMPORTS),
+    "reflex.vars": ["Var", "BaseVar", "ComputedVar"],
+    "reflex.components.core.breakpoints": ["Breakpoints"],
+    "reflex.event": ["EventChain", "EventHandler", "EventSpec"],
+    "reflex.style": ["Style"],
+}
+
 
 def _walk_files(path):
     """Walk all files in a path.
@@ -113,6 +121,9 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
 
     Returns:
         The resolved type hint as a str.
+
+    Raises:
+        TypeError: If the value name is not visible in the type hint globals.
     """
     res = ""
     args = get_args(value)
@@ -152,13 +163,13 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
             ]
         )
 
-        type_name = (
-            value.__module__ + "." + value.__name__
-            if value.__module__.startswith("reflex")
-            else value.__name__
-        )
+        if value.__name__ not in type_hint_globals:
+            raise TypeError(
+                f"{value.__module__ + '.' + value.__name__} is not a default import, "
+                "add it to DEFAULT_IMPORTS in pyi_generator.py"
+            )
 
-        res = f"{type_name}[{', '.join(inner_container_type_args)}]"
+        res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
 
         if value.__name__ == "Var":
             args = list(
@@ -214,23 +225,10 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
         The list of import statements.
     """
     return [
-        ast.ImportFrom(
-            module="typing",
-            names=[ast.alias(name=imp) for imp in sorted(typing_imports)],
-        ),
-        *ast.parse(  # type: ignore
-            textwrap.dedent(
-                """
-                import reflex
-                from reflex.vars import Var, BaseVar, ComputedVar
-                from reflex.event import EventChain, EventHandler, EventSpec
-                from reflex.style import Style"""
-            )
-        ).body,
-        # *[
-        #     ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
-        #     for name, values in EXTRA_IMPORTS.items()
-        # ],
+        *[
+            ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
+            for name, values in DEFAULT_IMPORTS.items()
+        ],
     ]
 
 
@@ -597,7 +595,7 @@ class StubGenerator(ast.NodeTransformer):
         # Track the last class node that was visited.
         self.current_class = None
         # These imports will be included in the AST of stub files.
-        self.typing_imports = DEFAULT_TYPING_IMPORTS
+        self.typing_imports = DEFAULT_TYPING_IMPORTS.copy()
         # Whether those typing imports have been inserted yet.
         self.inserted_imports = False
         # Collected import statements from the module.
@@ -665,7 +663,9 @@ class StubGenerator(ast.NodeTransformer):
         self.import_statements.append(ast.unparse(node))
         if not self.inserted_imports:
             self.inserted_imports = True
-            return _generate_imports(self.typing_imports) + [node]
+            default_imports = _generate_imports(self.typing_imports)
+            self.import_statements.extend(ast.unparse(i) for i in default_imports)
+            return default_imports + [node]
         return node
 
     def visit_ImportFrom(
