@@ -1,6 +1,8 @@
 """Breakpoints utility."""
 
-from typing import Dict, Optional, Tuple, TypeVar, Union
+from __future__ import annotations
+
+from typing import Dict, Tuple, TypeVar, Union
 
 breakpoints_values = ["30em", "48em", "62em", "80em", "96em"]
 breakpoint_names = ["xs", "sm", "md", "lg", "xl"]
@@ -44,13 +46,13 @@ class Breakpoints(Dict[K, V]):
     @classmethod
     def create(
         cls,
-        custom: Optional[Dict[K, V]] = None,
-        initial: Optional[V] = None,
-        xs: Optional[V] = None,
-        sm: Optional[V] = None,
-        md: Optional[V] = None,
-        lg: Optional[V] = None,
-        xl: Optional[V] = None,
+        custom: Dict[K, V] | None = None,
+        initial: V | None = None,
+        xs: V | None = None,
+        sm: V | None = None,
+        md: V | None = None,
+        lg: V | None = None,
+        xl: V | None = None,
     ):
         """Create a new instance of the helper. Only provide a custom component OR use named props.
 
