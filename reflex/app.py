@@ -81,7 +81,7 @@ from reflex.state import (
     code_uses_state_contexts,
 )
 from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
-from reflex.utils.exec import is_testing_env, should_skip_compile
+from reflex.utils.exec import is_prod_mode, is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
@@ -265,6 +265,12 @@ class App(LifespanMixin, Base):
 
         # Set up the admin dash.
         self._setup_admin_dash()
+
+        if sys.platform == "win32" and not is_prod_mode():
+            # Hack to fix Windows hot reload issue.
+            from reflex.utils.compat import windows_hot_reload_lifespan_hack
+
+            self.register_lifespan_task(windows_hot_reload_lifespan_hack)
 
     def _enable_state(self) -> None:
         """Enable state for the app."""
