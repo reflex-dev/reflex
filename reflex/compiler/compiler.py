@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Type, Union
 
@@ -79,20 +80,24 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
         The compiled context file.
     """
     appearance = getattr(theme, "appearance", None)
-    if appearance is None:
+    if appearance is None or Var.create_safe(appearance)._var_name == "inherit":
         appearance = SYSTEM_COLOR_MODE
+
+    last_compiled_time = str(datetime.now())
     return (
         templates.CONTEXT.render(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
+            last_compiled_time=last_compiled_time,
             default_color_mode=appearance,
         )
         if state
         else templates.CONTEXT.render(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=appearance,
+            last_compiled_time=last_compiled_time,
         )
     )
 
