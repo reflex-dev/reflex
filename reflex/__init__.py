@@ -214,6 +214,7 @@ COMPONENTS_CORE_MAPPING: dict = {
     "components.core.match": ["match"],
     "components.core.clipboard": ["clipboard"],
     "components.core.colors": ["color"],
+    "components.core.breakpoints": ["breakpoints"],
     "components.core.responsive": [
         "desktop_only",
         "mobile_and_tablet",

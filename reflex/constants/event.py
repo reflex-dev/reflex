@@ -10,6 +10,7 @@ class Endpoint(Enum):
     PING = "ping"
     EVENT = "_event"
     UPLOAD = "_upload"
+    AUTH_CODESPACE = "auth-codespace"
 
     def __str__(self) -> str:
         """Get the string representation of the endpoint.

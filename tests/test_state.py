@@ -1157,7 +1157,7 @@ def test_computed_var_cached():
 
 
 def test_computed_var_cached_depends_on_non_cached():
-    """Test that a cached_var is recalculated if it depends on non-cached ComputedVar."""
+    """Test that a cached var is recalculated if it depends on non-cached ComputedVar."""
 
     class ComputedState(BaseState):
         v: int = 0
@@ -1198,7 +1198,7 @@ def test_computed_var_cached_depends_on_non_cached():
 
 
 def test_computed_var_depends_on_parent_non_cached():
-    """Child state cached_var that depends on parent state un cached var is always recalculated."""
+    """Child state cached var that depends on parent state un cached var is always recalculated."""
     counter = 0
 
     class ParentState(BaseState):
@@ -1242,7 +1242,7 @@ def test_computed_var_depends_on_parent_non_cached():
 
 @pytest.mark.parametrize("use_partial", [True, False])
 def test_cached_var_depends_on_event_handler(use_partial: bool):
-    """A cached_var that calls an event handler calculates deps correctly.
+    """A cached var that calls an event handler calculates deps correctly.
 
     Args:
         use_partial: if true, replace the EventHandler with functools.partial
@@ -1287,6 +1287,10 @@ def test_computed_var_dependencies():
         y: List[int] = [1, 2, 3]
         _z: List[int] = [1, 2, 3]
 
+        @property
+        def testprop(self) -> int:
+            return self.v
+
         @rx.var(cache=True)
         def comp_v(self) -> int:
             """Direct access.
@@ -1304,6 +1308,15 @@ def test_computed_var_dependencies():
                 The value of self.v.
             """
             return self.v
+
+        @rx.var(cache=True)
+        def comp_v_via_property(self) -> int:
+            """Access v via property.
+
+            Returns:
+                The value of v via property.
+            """
+            return self.testprop
 
         @rx.var(cache=True)
         def comp_w(self):
@@ -1346,7 +1359,11 @@ def test_computed_var_dependencies():
             return [z in self._z for z in range(5)]
 
     cs = ComputedState()
-    assert cs._computed_var_dependencies["v"] == {"comp_v", "comp_v_backend"}
+    assert cs._computed_var_dependencies["v"] == {
+        "comp_v",
+        "comp_v_backend",
+        "comp_v_via_property",
+    }
     assert cs._computed_var_dependencies["w"] == {"comp_w"}
     assert cs._computed_var_dependencies["x"] == {"comp_x"}
     assert cs._computed_var_dependencies["y"] == {"comp_y"}
@@ -2987,3 +3004,23 @@ config = rx.Config(
         state_manager = StateManager.create(state=State)
         assert state_manager.lock_expiration == expected_values[0]  # type: ignore
         assert state_manager.token_expiration == expected_values[1]  # type: ignore
+
+
+class MixinState(State, mixin=True):
+    """A mixin state for testing."""
+
+    num: int = 0
+    _backend: int = 0
+
+
+class UsesMixinState(MixinState, State):
+    """A state that uses the mixin state."""
+
+    pass
+
+
+def test_mixin_state() -> None:
+    """Test that a mixin state works correctly."""
+    assert "num" in UsesMixinState.base_vars
+    assert "num" in UsesMixinState.vars
+    assert UsesMixinState.backend_vars == {"_backend": 0}

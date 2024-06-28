@@ -15,7 +15,10 @@ def ComputedVars():
     """Test app for computed vars."""
     import reflex as rx
 
-    class State(rx.State):
+    class StateMixin(rx.State, mixin=True):
+        pass
+
+    class State(StateMixin, rx.State):
         count: int = 0
 
         # cached var with dep on count
@@ -28,17 +31,11 @@ def ComputedVars():
         def count1_backend(self) -> int:
             return self.count
 
-        # same as above, different notation
-        @rx.var(interval=15, cache=True)
-        def count2(self) -> int:
-            return self.count
-
         # explicit disabled auto_deps
         @rx.var(interval=15, cache=True, auto_deps=False)
         def count3(self) -> int:
             # this will not add deps, because auto_deps is False
             print(self.count1)
-            print(self.count2)
 
             return self.count
 
@@ -62,6 +59,8 @@ def ComputedVars():
         def mark_dirty(self):
             self._mark_dirty()
 
+    assert State.backend_vars == {}
+
     def index() -> rx.Component:
         return rx.center(
             rx.vstack(
@@ -78,8 +77,6 @@ def ComputedVars():
                 rx.text(State.count1, id="count1"),
                 rx.text("count1_backend:"),
                 rx.text(State.count1_backend, id="count1_backend"),
-                rx.text("count2:"),
-                rx.text(State.count2, id="count2"),
                 rx.text("count3:"),
                 rx.text(State.count3, id="count3"),
                 rx.text("depends_on_count:"),
@@ -197,10 +194,6 @@ async def test_computed_vars(
     assert count1
     assert count1.text == "0"
 
-    count2 = driver.find_element(By.ID, "count2")
-    assert count2
-    assert count2.text == "0"
-
     count3 = driver.find_element(By.ID, "count3")
     assert count3
     assert count3.text == "0"
@@ -228,7 +221,6 @@ async def test_computed_vars(
     increment.click()
     assert computed_vars.poll_for_content(count, timeout=2, exp_not_equal="0") == "1"
     assert computed_vars.poll_for_content(count1, timeout=2, exp_not_equal="0") == "1"
-    assert computed_vars.poll_for_content(count2, timeout=2, exp_not_equal="0") == "1"
     assert (
         computed_vars.poll_for_content(depends_on_count, timeout=2, exp_not_equal="0")
         == "1"
