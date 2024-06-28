@@ -965,7 +965,9 @@ def interdependent_state() -> BaseState:
     return s
 
 
-def test_not_dirty_computed_var_from_var(interdependent_state):
+def test_not_dirty_computed_var_from_var(
+    interdependent_state: InterdependentState,
+) -> None:
     """Set Var that no ComputedVar depends on, expect no recalculation.
 
     Args:
@@ -977,7 +979,7 @@ def test_not_dirty_computed_var_from_var(interdependent_state):
     }
 
 
-def test_dirty_computed_var_from_var(interdependent_state):
+def test_dirty_computed_var_from_var(interdependent_state: InterdependentState) -> None:
     """Set Var that ComputedVar depends on, expect recalculation.
 
     The other ComputedVar depends on the changed ComputedVar and should also be
@@ -992,7 +994,9 @@ def test_dirty_computed_var_from_var(interdependent_state):
     }
 
 
-def test_dirty_computed_var_from_backend_var(interdependent_state):
+def test_dirty_computed_var_from_backend_var(
+    interdependent_state: InterdependentState,
+) -> None:
     """Set backend var that ComputedVar depends on, expect recalculation.
 
     Args:
@@ -1005,7 +1009,7 @@ def test_dirty_computed_var_from_backend_var(interdependent_state):
     assert "_v3" in InterdependentState.backend_vars
 
 
-def test_per_state_backend_var(interdependent_state):
+def test_per_state_backend_var(interdependent_state: InterdependentState) -> None:
     """Set backend var on one instance, expect no affect in other instances.
 
     Args:

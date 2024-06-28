@@ -199,13 +199,6 @@ def _no_chain_background_task(
     raise TypeError(f"{fn} is marked as a background task, but is not async.")
 
 
-RESERVED_BACKEND_VAR_NAMES = {
-    "_abc_impl",
-    "_backend_vars",
-    "_was_touched",
-}
-
-
 def _substate_key(
     token: str,
     state_cls_or_name: BaseState | Type[BaseState] | str | list[str],
@@ -500,10 +493,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             name: value
             for name, value in cls.__dict__.items()
             if types.is_backend_variable(name, cls)
-            and name not in RESERVED_BACKEND_VAR_NAMES
-            and name not in cls.inherited_backend_vars
-            and not isinstance(value, FunctionType)
-            and not isinstance(value, ComputedVar)
         }
 
         # Get backend computed vars
@@ -559,12 +548,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     cls.computed_vars[newcv._var_name] = newcv
                     cls.vars[newcv._var_name] = newcv
                     continue
-                if (
-                    types.is_backend_variable(name, cls)
-                    and name not in RESERVED_BACKEND_VAR_NAMES
-                    and name not in cls.inherited_backend_vars
-                    and not isinstance(value, FunctionType)
-                ):
+                if types.is_backend_variable(name, mixin):
                     cls.backend_vars[name] = copy.deepcopy(value)
                     continue
                 if events.get(name) is not None:
@@ -750,7 +734,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 "dirty_substates",
                 "router_data",
             }
-            | RESERVED_BACKEND_VAR_NAMES
+            | types.RESERVED_BACKEND_VAR_NAMES
         )
 
     @classmethod
@@ -1103,10 +1087,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             setattr(self.parent_state, name, value)
             return
 
-        if (
-            types.is_backend_variable(name, self.__class__)
-            and name not in RESERVED_BACKEND_VAR_NAMES
-        ):
+        if types.is_backend_variable(name, type(self)):
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -1617,7 +1598,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         subdelta = {
             prop: getattr(self, prop)
             for prop in delta_vars
-            if not types.is_backend_variable(prop, self.__class__)
+            if not types.is_backend_variable(prop, type(self))
         }
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
