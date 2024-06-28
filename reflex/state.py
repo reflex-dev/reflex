@@ -492,7 +492,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         new_backend_vars = {
             name: value
             for name, value in cls.__dict__.items()
-            if types.is_backend_variable(name, cls)
+            if types.is_backend_base_variable(name, cls)
         }
 
         cls.backend_vars = {
@@ -539,7 +539,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     cls.computed_vars[newcv._var_name] = newcv
                     cls.vars[newcv._var_name] = newcv
                     continue
-                if types.is_backend_variable(name, mixin):
+                if types.is_backend_base_variable(name, mixin):
                     cls.backend_vars[name] = copy.deepcopy(value)
                     continue
                 if events.get(name) is not None:
@@ -1078,7 +1078,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             setattr(self.parent_state, name, value)
             return
 
-        if types.is_backend_variable(name, type(self)):
+        if types.is_backend_base_variable(name, type(self)):
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -1597,7 +1597,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         subdelta = {
             prop: getattr(self, prop)
             for prop in delta_vars
-            if not types.is_backend_variable(prop, type(self))
+            if not types.is_backend_base_variable(prop, type(self))
         }
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
