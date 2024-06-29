@@ -22,7 +22,9 @@ class Script(Component):
         src: Optional[Union[reflex.vars.Var[str], str]] = None,
         strategy: Optional[
             Union[
-                reflex.vars.Var[Literal["afterInteractive", "beforeInteractive", "lazyOnload"]],
+                reflex.vars.Var[
+                    Literal["afterInteractive", "beforeInteractive", "lazyOnload"]
+                ],
                 Literal["afterInteractive", "beforeInteractive", "lazyOnload"],
             ]
         ] = None,
