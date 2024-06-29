@@ -6,7 +6,7 @@ import contextlib
 import inspect
 import sys
 import types
-from functools import wraps
+from functools import cached_property, wraps
 from typing import (
     Any,
     Callable,
@@ -410,7 +410,7 @@ def is_valid_var_type(type_: Type) -> bool:
     return _issubclass(type_, StateVar) or serializers.has_serializer(type_)
 
 
-def is_backend_variable(name: str, cls: Type | None = None) -> bool:
+def is_backend_base_variable(name: str, cls: Type) -> bool:
     """Check if this variable name correspond to a backend variable.
 
     Args:
@@ -429,31 +429,30 @@ def is_backend_variable(name: str, cls: Type | None = None) -> bool:
     if name.startswith("__"):
         return False
 
-    if cls is not None:
-        if name.startswith(f"_{cls.__name__}__"):
-            return False
-        hints = get_type_hints(cls)
-        if name in hints:
-            hint = get_origin(hints[name])
-            if hint == ClassVar:
-                return False
+    if name.startswith(f"_{cls.__name__}__"):
+        return False
 
-        if name in cls.inherited_backend_vars:
+    hints = get_type_hints(cls)
+    if name in hints:
+        hint = get_origin(hints[name])
+        if hint == ClassVar:
             return False
 
-        if name in cls.__dict__:
-            value = cls.__dict__[name]
-            if type(value) == classmethod:
-                return False
-            if callable(value):
-                return False
-            if isinstance(value, types.FunctionType):
-                return False
-            # enable after #3573 is merged
-            # from reflex.vars import ComputedVar
-            #
-            # if isinstance(value, ComputedVar):
-            #     return False
+    if name in cls.inherited_backend_vars:
+        return False
+
+    if name in cls.__dict__:
+        value = cls.__dict__[name]
+        if type(value) == classmethod:
+            return False
+        if callable(value):
+            return False
+        from reflex.vars import ComputedVar
+
+        if isinstance(
+            value, (types.FunctionType, property, cached_property, ComputedVar)
+        ):
+            return False
 
     return True
 

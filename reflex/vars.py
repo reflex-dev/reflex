@@ -1944,6 +1944,9 @@ class ComputedVar(Var, property):
     # Whether to track dependencies and cache computed values
     _cache: bool = dataclasses.field(default=False)
 
+    # Whether the computed var is a backend var
+    _backend: bool = dataclasses.field(default=False)
+
     # The initial value of the computed var
     _initial_value: Any | types.Unset = dataclasses.field(default=types.Unset())
 
@@ -1964,6 +1967,7 @@ class ComputedVar(Var, property):
         deps: Optional[List[Union[str, Var]]] = None,
         auto_deps: bool = True,
         interval: Optional[Union[int, datetime.timedelta]] = None,
+        backend: bool | None = None,
         **kwargs,
     ):
         """Initialize a ComputedVar.
@@ -1975,11 +1979,16 @@ class ComputedVar(Var, property):
             deps: Explicit var dependencies to track.
             auto_deps: Whether var dependencies should be auto-determined.
             interval: Interval at which the computed var should be updated.
+            backend: Whether the computed var is a backend var.
             **kwargs: additional attributes to set on the instance
 
         Raises:
             TypeError: If the computed var dependencies are not Var instances or var names.
         """
+        if backend is None:
+            backend = fget.__name__.startswith("_")
+        self._backend = backend
+
         self._initial_value = initial_value
         self._cache = cache
         if isinstance(interval, int):
@@ -2023,6 +2032,7 @@ class ComputedVar(Var, property):
             deps=kwargs.get("deps", self._static_deps),
             auto_deps=kwargs.get("auto_deps", self._auto_deps),
             interval=kwargs.get("interval", self._update_interval),
+            backend=kwargs.get("backend", self._backend),
             _var_name=kwargs.get("_var_name", self._var_name),
             _var_type=kwargs.get("_var_type", self._var_type),
             _var_is_local=kwargs.get("_var_is_local", self._var_is_local),
@@ -2233,6 +2243,7 @@ def computed_var(
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
+    backend: bool | None = None,
     _deprecated_cached_var: bool = False,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
@@ -2245,6 +2256,7 @@ def computed_var(
         deps: Explicit var dependencies to track.
         auto_deps: Whether var dependencies should be auto-determined.
         interval: Interval at which the computed var should be updated.
+        backend: Whether the computed var is a backend var.
         _deprecated_cached_var: Indicate usage of deprecated cached_var partial function.
         **kwargs: additional attributes to set on the instance
 
@@ -2280,6 +2292,7 @@ def computed_var(
             deps=deps,
             auto_deps=auto_deps,
             interval=interval,
+            backend=backend,
             **kwargs,
         )
 
