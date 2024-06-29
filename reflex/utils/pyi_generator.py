@@ -1004,6 +1004,10 @@ class PyiGenerator:
         subprocess.run(["ruff", "format", *self.written_files])
         subprocess.run(["ruff", "check", "--fix", *self.written_files])
 
+        # For some reason, we need to format the __init__.pyi files again after fixing...
+        init_files = [f for f in self.written_files if "/__init__.pyi" in f]
+        subprocess.run(["ruff", "format", *init_files])
+
         # Post-process the generated pyi files to add hacky type: ignore comments
         for file_path in self.written_files:
             with FileInput(file_path, inplace=True) as f:
