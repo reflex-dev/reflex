@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -18,13 +19,13 @@ class Wrap(ChakraComponent):
         cls,
         *children,
         items=None,
-        align: Optional[Union[Var[str], str]] = None,
-        direction: Optional[Union[Var[str], str]] = None,
-        justify: Optional[Union[Var[str], str]] = None,
-        should_wrap_children: Optional[Union[Var[bool], bool]] = None,
-        spacing: Optional[Union[Var[str], str]] = None,
-        spacing_x: Optional[Union[Var[str], str]] = None,
-        spacing_y: Optional[Union[Var[str], str]] = None,
+        align: Optional[Union[reflex.vars.Var[str], str]] = None,
+        direction: Optional[Union[reflex.vars.Var[str], str]] = None,
+        justify: Optional[Union[reflex.vars.Var[str], str]] = None,
+        should_wrap_children: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        spacing: Optional[Union[reflex.vars.Var[str], str]] = None,
+        spacing_x: Optional[Union[reflex.vars.Var[str], str]] = None,
+        spacing_y: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

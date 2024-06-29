@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.vars import Var
 
@@ -25,7 +26,7 @@ class Button(elements.Button, RadixLoadingProp, RadixThemesComponent):
     as_child: Var[bool]
 
     # Button size "1" - "4"
-    size: Var[LiteralButtonSize]
+    size: Var[Responsive[LiteralButtonSize]]
 
     # Variant of button: "solid" | "soft" | "outline" | "ghost"
     variant: Var[LiteralVariant]

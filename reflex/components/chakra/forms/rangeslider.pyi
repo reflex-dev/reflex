@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -21,19 +22,19 @@ class RangeSlider(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[List[int]], List[int]]] = None,
-        default_value: Optional[Union[Var[List[int]], List[int]]] = None,
+        value: Optional[Union[reflex.vars.Var[List[int]], List[int]]] = None,
+        default_value: Optional[Union[reflex.vars.Var[List[int]], List[int]]] = None,
         direction: Optional[
-            Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+            Union[reflex.vars.Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
         ] = None,
-        focus_thumb_on_change: Optional[Union[Var[bool], bool]] = None,
-        is_disabled: Optional[Union[Var[bool], bool]] = None,
-        is_read_only: Optional[Union[Var[bool], bool]] = None,
-        is_reversed: Optional[Union[Var[bool], bool]] = None,
-        min_: Optional[Union[Var[int], int]] = None,
-        max_: Optional[Union[Var[int], int]] = None,
-        min_steps_between_thumbs: Optional[Union[Var[int], int]] = None,
-        name: Optional[Union[Var[str], str]] = None,
+        focus_thumb_on_change: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_read_only: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_reversed: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        min_: Optional[Union[reflex.vars.Var[int], int]] = None,
+        max_: Optional[Union[reflex.vars.Var[int], int]] = None,
+        min_steps_between_thumbs: Optional[Union[reflex.vars.Var[int], int]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -285,7 +286,7 @@ class RangeSliderThumb(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        index: Optional[Union[Var[int], int]] = None,
+        index: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

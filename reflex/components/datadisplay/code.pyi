@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -358,10 +359,10 @@ class CodeBlock(Component):
         cls,
         *children,
         can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[bool, Component]] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         theme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "a11y-dark",
                         "atom-dark",
@@ -461,7 +462,7 @@ class CodeBlock(Component):
         ] = None,
         language: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "abap",
                         "abnf",
@@ -1027,12 +1028,14 @@ class CodeBlock(Component):
                 ],
             ]
         ] = None,
-        code: Optional[Union[Var[str], str]] = None,
-        show_line_numbers: Optional[Union[Var[bool], bool]] = None,
-        starting_line_number: Optional[Union[Var[int], int]] = None,
-        wrap_long_lines: Optional[Union[Var[bool], bool]] = None,
+        code: Optional[Union[reflex.vars.Var[str], str]] = None,
+        show_line_numbers: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        starting_line_number: Optional[Union[reflex.vars.Var[int], int]] = None,
+        wrap_long_lines: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         custom_style: Optional[Dict[str, Union[str, Var, Color]]] = None,
-        code_tag_props: Optional[Union[Var[Dict[str, str]], Dict[str, str]]] = None,
+        code_tag_props: Optional[
+            Union[reflex.vars.Var[Dict[str, str]], Dict[str, str]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -16,11 +17,11 @@ class Skeleton(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        end_color: Optional[Union[Var[str], str]] = None,
-        fade_duration: Optional[Union[Var[float], float]] = None,
-        is_loaded: Optional[Union[Var[bool], bool]] = None,
-        speed: Optional[Union[Var[float], float]] = None,
-        start_color: Optional[Union[Var[str], str]] = None,
+        end_color: Optional[Union[reflex.vars.Var[str], str]] = None,
+        fade_duration: Optional[Union[reflex.vars.Var[float], float]] = None,
+        is_loaded: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        speed: Optional[Union[reflex.vars.Var[float], float]] = None,
+        start_color: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -102,11 +103,11 @@ class SkeletonCircle(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        end_color: Optional[Union[Var[str], str]] = None,
-        fade_duration: Optional[Union[Var[float], float]] = None,
-        is_loaded: Optional[Union[Var[bool], bool]] = None,
-        speed: Optional[Union[Var[float], float]] = None,
-        start_color: Optional[Union[Var[str], str]] = None,
+        end_color: Optional[Union[reflex.vars.Var[str], str]] = None,
+        fade_duration: Optional[Union[reflex.vars.Var[float], float]] = None,
+        is_loaded: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        speed: Optional[Union[reflex.vars.Var[float], float]] = None,
+        start_color: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -188,12 +189,12 @@ class SkeletonText(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        end_color: Optional[Union[Var[str], str]] = None,
-        fade_duration: Optional[Union[Var[float], float]] = None,
-        is_loaded: Optional[Union[Var[bool], bool]] = None,
-        speed: Optional[Union[Var[float], float]] = None,
-        start_color: Optional[Union[Var[str], str]] = None,
-        no_of_lines: Optional[Union[Var[int], int]] = None,
+        end_color: Optional[Union[reflex.vars.Var[str], str]] = None,
+        fade_duration: Optional[Union[reflex.vars.Var[float], float]] = None,
+        is_loaded: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        speed: Optional[Union[reflex.vars.Var[float], float]] = None,
+        start_color: Optional[Union[reflex.vars.Var[str], str]] = None,
+        no_of_lines: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -4,9 +4,11 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 from ..base import RadixLoadingProp, RadixThemesComponent
 
@@ -16,13 +18,61 @@ class Skeleton(RadixLoadingProp, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        width: Optional[Union[Var[str], str]] = None,
-        min_width: Optional[Union[Var[str], str]] = None,
-        max_width: Optional[Union[Var[str], str]] = None,
-        height: Optional[Union[Var[str], str]] = None,
-        min_height: Optional[Union[Var[str], str]] = None,
-        max_height: Optional[Union[Var[str], str]] = None,
-        loading: Optional[Union[Var[bool], bool]] = None,
+        width: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
+                ],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
+            ]
+        ] = None,
+        min_width: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
+                ],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
+            ]
+        ] = None,
+        max_width: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
+                ],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
+            ]
+        ] = None,
+        height: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
+                ],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
+            ]
+        ] = None,
+        min_height: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
+                ],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
+            ]
+        ] = None,
+        max_height: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[reflex.components.core.breakpoints.Breakpoints[str, str], str]
+                ],
+                str,
+                reflex.components.core.breakpoints.Breakpoints[str, str],
+            ]
+        ] = None,
+        loading: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

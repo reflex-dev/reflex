@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -98,11 +99,13 @@ class DataTable(Gridjs):
         cls,
         *children,
         data: Optional[Any] = None,
-        columns: Optional[Union[Var[List], List]] = None,
-        search: Optional[Union[Var[bool], bool]] = None,
-        sort: Optional[Union[Var[bool], bool]] = None,
-        resizable: Optional[Union[Var[bool], bool]] = None,
-        pagination: Optional[Union[Var[Union[bool, Dict]], Union[bool, Dict]]] = None,
+        columns: Optional[Union[reflex.vars.Var[List], List]] = None,
+        search: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        sort: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        resizable: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        pagination: Optional[
+            Union[reflex.vars.Var[Union[Dict, bool]], bool, Dict]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

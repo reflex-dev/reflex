@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -22,13 +23,15 @@ class Alert(ChakraComponent):
         desc=None,
         status: Optional[
             Union[
-                Var[Literal["success", "info", "warning", "error"]],
+                reflex.vars.Var[Literal["success", "info", "warning", "error"]],
                 Literal["success", "info", "warning", "error"],
             ]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["subtle", "left-accent", "top-accent", "solid"]],
+                reflex.vars.Var[
+                    Literal["subtle", "left-accent", "top-accent", "solid"]
+                ],
                 Literal["subtle", "left-accent", "top-accent", "solid"],
             ]
         ] = None,

@@ -51,6 +51,7 @@ from reflex.components.component import (
     evaluate_style_namespaces,
 )
 from reflex.components.core.banner import connection_pulser, connection_toaster
+from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
@@ -77,8 +78,8 @@ from reflex.state import (
     _substate_key,
     code_uses_state_contexts,
 )
-from reflex.utils import console, exceptions, format, prerequisites, types
-from reflex.utils.exec import is_testing_env, should_skip_compile
+from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
+from reflex.utils.exec import is_prod_mode, is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
@@ -92,7 +93,11 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    return Fragment.create(connection_pulser(), connection_toaster())
+    return Fragment.create(
+        connection_pulser(),
+        connection_toaster(),
+        *codespaces.codespaces_auto_redirect(),
+    )
 
 
 class OverlayFragment(Fragment):
@@ -197,6 +202,9 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
             )
 
+        if "breakpoints" in self.style:
+            set_breakpoints(self.style.pop("breakpoints"))
+
         # Set up the API.
         self.api = FastAPI(lifespan=self._run_lifespan_tasks)
         self._add_cors()
@@ -212,6 +220,12 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
         # Set up the admin dash.
         self._setup_admin_dash()
+
+        if sys.platform == "win32" and not is_prod_mode():
+            # Hack to fix Windows hot reload issue.
+            from reflex.utils.compat import windows_hot_reload_lifespan_hack
+
+            self.register_lifespan_task(windows_hot_reload_lifespan_hack)
 
     def _enable_state(self) -> None:
         """Enable state for the app."""
@@ -296,6 +310,10 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 str(constants.Endpoint.UPLOAD),
                 StaticFiles(directory=get_upload_dir()),
                 name="uploaded_files",
+            )
+        if codespaces.is_running_in_codespaces():
+            self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(
+                codespaces.auth_codespace
             )
 
     def _add_cors(self):
@@ -700,6 +718,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             state = self.state
 
         for var in state.computed_vars.values():
+            if not var._cache:
+                continue
             deps = var._deps(objclass=state)
             for dep in deps:
                 if dep not in state.vars and dep not in state.backend_vars:
