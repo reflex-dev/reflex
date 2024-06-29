@@ -312,6 +312,7 @@ async def test_client_side_state(
     assert not driver.get_cookies()
     local_storage_items = local_storage.items()
     local_storage_items.pop("chakra-ui-color-mode", None)
+    local_storage_items.pop("last_compiled_time", None)
     assert not local_storage_items
 
     # set some cookies and local storage values
@@ -427,6 +428,7 @@ async def test_client_side_state(
 
     local_storage_items = local_storage.items()
     local_storage_items.pop("chakra-ui-color-mode", None)
+    local_storage_items.pop("last_compiled_time", None)
     assert local_storage_items.pop(f"{sub_state_name}.l1") == "l1 value"
     assert local_storage_items.pop(f"{sub_state_name}.l2") == "l2 value"
     assert local_storage_items.pop("l3") == "l3 value"

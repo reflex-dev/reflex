@@ -4,11 +4,13 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 from .recharts import (
     LiteralAnimationEasing,
@@ -26,20 +28,26 @@ class Pie(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        cx: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        cy: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        inner_radius: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        outer_radius: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        start_angle: Optional[Union[Var[int], int]] = None,
-        end_angle: Optional[Union[Var[int], int]] = None,
-        min_angle: Optional[Union[Var[int], int]] = None,
-        padding_angle: Optional[Union[Var[int], int]] = None,
-        name_key: Optional[Union[Var[str], str]] = None,
+        data: Optional[
+            Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
+        ] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        cx: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        cy: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        inner_radius: Optional[
+            Union[reflex.vars.Var[Union[int, str]], int, str]
+        ] = None,
+        outer_radius: Optional[
+            Union[reflex.vars.Var[Union[int, str]], int, str]
+        ] = None,
+        start_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
+        end_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
+        min_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
+        padding_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
+        name_key: Optional[Union[reflex.vars.Var[str], str]] = None,
         legend_type: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "line",
                         "plainline",
@@ -69,10 +77,10 @@ class Pie(Recharts):
                 ],
             ]
         ] = None,
-        label: Optional[Union[Var[bool], bool]] = None,
-        label_line: Optional[Union[Var[bool], bool]] = None,
-        fill: Optional[Union[Var[str], str]] = None,
-        stroke: Optional[Union[Var[str], str]] = None,
+        label: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        label_line: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        fill: Optional[Union[reflex.vars.Var[str], str]] = None,
+        stroke: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -138,19 +146,23 @@ class Radar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        points: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        dot: Optional[Union[Var[bool], bool]] = None,
-        stroke: Optional[Union[Var[str], str]] = None,
-        fill: Optional[Union[Var[str], str]] = None,
-        fill_opacity: Optional[Union[Var[float], float]] = None,
-        legend_type: Optional[Union[Var[str], str]] = None,
-        label: Optional[Union[Var[bool], bool]] = None,
-        animation_begin: Optional[Union[Var[int], int]] = None,
-        animation_duration: Optional[Union[Var[int], int]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        points: Optional[
+            Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
+        ] = None,
+        dot: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        stroke: Optional[Union[reflex.vars.Var[str], str]] = None,
+        fill: Optional[Union[reflex.vars.Var[str], str]] = None,
+        fill_opacity: Optional[Union[reflex.vars.Var[float], float]] = None,
+        legend_type: Optional[Union[reflex.vars.Var[str], str]] = None,
+        label: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        animation_begin: Optional[Union[reflex.vars.Var[int], int]] = None,
+        animation_duration: Optional[Union[reflex.vars.Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                reflex.vars.Var[
+                    Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
+                ],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
@@ -242,13 +254,13 @@ class RadialBar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        min_angle: Optional[Union[Var[int], int]] = None,
-        legend_type: Optional[Union[Var[str], str]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        min_angle: Optional[Union[reflex.vars.Var[int], int]] = None,
+        legend_type: Optional[Union[reflex.vars.Var[str], str]] = None,
         label: Optional[
-            Union[Var[Union[bool, Dict[str, Any]]], Union[bool, Dict[str, Any]]]
+            Union[reflex.vars.Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        background: Optional[Union[Var[bool], bool]] = None,
+        background: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -298,34 +310,53 @@ class RadialBar(Recharts):
         ...
 
 class PolarAngleAxis(Recharts):
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        cx: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        cy: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        radius: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        cx: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        cy: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        radius: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
         axis_line: Optional[
-            Union[Var[Union[bool, Dict[str, Any]]], Union[bool, Dict[str, Any]]]
+            Union[reflex.vars.Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        axis_line_type: Optional[Union[Var[str], str]] = None,
+        axis_line_type: Optional[Union[reflex.vars.Var[str], str]] = None,
         tick_line: Optional[
-            Union[Var[Union[bool, Dict[str, Any]]], Union[bool, Dict[str, Any]]]
+            Union[reflex.vars.Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        tick: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        ticks: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        orient: Optional[Union[Var[str], str]] = None,
-        allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
+        tick: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        ticks: Optional[
+            Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
+        ] = None,
+        orient: Optional[Union[reflex.vars.Var[str], str]] = None,
+        allow_duplicated_category: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_enter: Optional[
@@ -341,6 +372,15 @@ class PolarAngleAxis(Recharts):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         **props
@@ -379,14 +419,21 @@ class PolarGrid(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        cx: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        cy: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        inner_radius: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        outer_radius: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        polar_angles: Optional[Union[Var[List[int]], List[int]]] = None,
-        polar_radius: Optional[Union[Var[List[int]], List[int]]] = None,
+        cx: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        cy: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        inner_radius: Optional[
+            Union[reflex.vars.Var[Union[int, str]], int, str]
+        ] = None,
+        outer_radius: Optional[
+            Union[reflex.vars.Var[Union[int, str]], int, str]
+        ] = None,
+        polar_angles: Optional[Union[reflex.vars.Var[List[int]], List[int]]] = None,
+        polar_radius: Optional[Union[reflex.vars.Var[List[int]], List[int]]] = None,
         grid_type: Optional[
-            Union[Var[Literal["polygon", "circle"]], Literal["polygon", "circle"]]
+            Union[
+                reflex.vars.Var[Literal["polygon", "circle"]],
+                Literal["polygon", "circle"],
+            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -472,23 +519,26 @@ class PolarRadiusAxis(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        angle: Optional[Union[Var[int], int]] = None,
+        angle: Optional[Union[reflex.vars.Var[int], int]] = None,
         type_: Optional[
-            Union[Var[Literal["number", "category"]], Literal["number", "category"]]
+            Union[
+                reflex.vars.Var[Literal["number", "category"]],
+                Literal["number", "category"],
+            ]
         ] = None,
-        allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
-        cx: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        cy: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        reversed: Optional[Union[Var[bool], bool]] = None,
-        orientation: Optional[Union[Var[str], str]] = None,
+        allow_duplicated_category: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        cx: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        cy: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        reversed: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        orientation: Optional[Union[reflex.vars.Var[str], str]] = None,
         axis_line: Optional[
-            Union[Var[Union[bool, Dict[str, Any]]], Union[bool, Dict[str, Any]]]
+            Union[reflex.vars.Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        tick: Optional[Union[Var[Union[int, str]], Union[int, str]]] = None,
-        tick_count: Optional[Union[Var[int], int]] = None,
+        tick: Optional[Union[reflex.vars.Var[Union[int, str]], int, str]] = None,
+        tick_count: Optional[Union[reflex.vars.Var[int], int]] = None,
         scale: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "auto",
                         "linear",

@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -19,19 +20,19 @@ class Image(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        align: Optional[Union[Var[str], str]] = None,
+        align: Optional[Union[reflex.vars.Var[str], str]] = None,
         fallback: Optional[Component] = None,
-        fallback_src: Optional[Union[Var[str], str]] = None,
-        fit: Optional[Union[Var[str], str]] = None,
-        html_height: Optional[Union[Var[str], str]] = None,
-        html_width: Optional[Union[Var[str], str]] = None,
-        ignore_fallback: Optional[Union[Var[bool], bool]] = None,
+        fallback_src: Optional[Union[reflex.vars.Var[str], str]] = None,
+        fit: Optional[Union[reflex.vars.Var[str], str]] = None,
+        html_height: Optional[Union[reflex.vars.Var[str], str]] = None,
+        html_width: Optional[Union[reflex.vars.Var[str], str]] = None,
+        ignore_fallback: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         loading: Optional[
-            Union[Var[Literal["eager", "lazy"]], Literal["eager", "lazy"]]
+            Union[reflex.vars.Var[Literal["eager", "lazy"]], Literal["eager", "lazy"]]
         ] = None,
-        src: Optional[Union[Var[Any], Any]] = None,
-        alt: Optional[Union[Var[str], str]] = None,
-        src_set: Optional[Union[Var[str], str]] = None,
+        src: Optional[Union[reflex.vars.Var[Any], Any]] = None,
+        alt: Optional[Union[reflex.vars.Var[str], str]] = None,
+        src_set: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

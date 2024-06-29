@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -21,7 +22,7 @@ class DrawerComponent(RadixPrimitiveComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -101,21 +102,21 @@ class DrawerRoot(DrawerComponent):
     def create(  # type: ignore
         cls,
         *children,
-        open: Optional[Union[Var[bool], bool]] = None,
-        should_scale_background: Optional[Union[Var[bool], bool]] = None,
-        close_threshold: Optional[Union[Var[float], float]] = None,
-        snap_points: Optional[List[Union[str, float]]] = None,
-        fade_from_index: Optional[Union[Var[int], int]] = None,
-        scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
-        modal: Optional[Union[Var[bool], bool]] = None,
+        open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        should_scale_background: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        close_threshold: Optional[Union[reflex.vars.Var[float], float]] = None,
+        snap_points: Optional[List[Union[float, str]]] = None,
+        fade_from_index: Optional[Union[reflex.vars.Var[int], int]] = None,
+        scroll_lock_timeout: Optional[Union[reflex.vars.Var[int], int]] = None,
+        modal: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         direction: Optional[
             Union[
-                Var[Literal["top", "bottom", "left", "right"]],
+                reflex.vars.Var[Literal["top", "bottom", "left", "right"]],
                 Literal["top", "bottom", "left", "right"],
             ]
         ] = None,
-        preventScrollRestoration: Optional[Union[Var[bool], bool]] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        preventScrollRestoration: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -205,7 +206,7 @@ class DrawerTrigger(DrawerComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -276,7 +277,7 @@ class DrawerPortal(DrawerComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -354,7 +355,7 @@ class DrawerContent(DrawerComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -451,7 +452,7 @@ class DrawerOverlay(DrawerComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -529,7 +530,7 @@ class DrawerClose(DrawerTrigger):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -600,7 +601,7 @@ class DrawerTitle(DrawerComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -678,7 +679,7 @@ class DrawerDescription(DrawerComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -763,21 +764,21 @@ class Drawer(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        open: Optional[Union[Var[bool], bool]] = None,
-        should_scale_background: Optional[Union[Var[bool], bool]] = None,
-        close_threshold: Optional[Union[Var[float], float]] = None,
-        snap_points: Optional[List[Union[str, float]]] = None,
-        fade_from_index: Optional[Union[Var[int], int]] = None,
-        scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
-        modal: Optional[Union[Var[bool], bool]] = None,
+        open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        should_scale_background: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        close_threshold: Optional[Union[reflex.vars.Var[float], float]] = None,
+        snap_points: Optional[List[Union[float, str]]] = None,
+        fade_from_index: Optional[Union[reflex.vars.Var[int], int]] = None,
+        scroll_lock_timeout: Optional[Union[reflex.vars.Var[int], int]] = None,
+        modal: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         direction: Optional[
             Union[
-                Var[Literal["top", "bottom", "left", "right"]],
+                reflex.vars.Var[Literal["top", "bottom", "left", "right"]],
                 Literal["top", "bottom", "left", "right"],
             ]
         ] = None,
-        preventScrollRestoration: Optional[Union[Var[bool], bool]] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        preventScrollRestoration: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -3,6 +3,7 @@
 from typing import Literal, Union
 
 from reflex.components.component import Component
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
 from reflex.event import EventHandler
@@ -25,13 +26,13 @@ class TextArea(RadixThemesComponent, elements.Textarea):
     tag = "TextArea"
 
     # The size of the text area: "1" | "2" | "3"
-    size: Var[LiteralTextAreaSize]
+    size: Var[Responsive[LiteralTextAreaSize]]
 
     # The variant of the text area
     variant: Var[Literal["classic", "surface", "soft"]]
 
     # The resize behavior of the text area: "none" | "vertical" | "horizontal" | "both"
-    resize: Var[LiteralTextAreaResize]
+    resize: Var[Responsive[LiteralTextAreaResize]]
 
     # The color of the text area
     color_scheme: Var[LiteralAccentColor]

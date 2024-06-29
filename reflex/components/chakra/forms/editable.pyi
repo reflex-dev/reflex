@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -17,14 +18,14 @@ class Editable(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        is_disabled: Optional[Union[Var[bool], bool]] = None,
-        is_preview_focusable: Optional[Union[Var[bool], bool]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
-        select_all_on_focus: Optional[Union[Var[bool], bool]] = None,
-        start_with_edit_view: Optional[Union[Var[bool], bool]] = None,
-        submit_on_blur: Optional[Union[Var[bool], bool]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
+        is_disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_preview_focusable: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        placeholder: Optional[Union[reflex.vars.Var[str], str]] = None,
+        select_all_on_focus: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        start_with_edit_view: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        submit_on_blur: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        default_value: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

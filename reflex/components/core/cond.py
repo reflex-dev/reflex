@@ -12,7 +12,7 @@ from reflex.constants.colors import Color
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import BaseVar, Var, VarData
 
 _IS_TRUE_IMPORT: ImportDict = {
     f"/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
@@ -118,7 +118,7 @@ def cond(condition: Any, c1: Component) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Any, c2: Any) -> Var: ...
+def cond(condition: Any, c1: Any, c2: Any) -> BaseVar: ...
 
 
 def cond(condition: Any, c1: Any, c2: Any = None):

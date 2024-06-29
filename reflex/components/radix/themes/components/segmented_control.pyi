@@ -4,11 +4,14 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
-from typing import Literal
+from typing import List, Literal, Union
+from reflex.components.core.breakpoints import Responsive
+from reflex.event import EventHandler
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -19,17 +22,36 @@ class SegmentedControlRoot(RadixThemesComponent):
         cls,
         *children,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3"]
+                        ],
+                    ]
+                ],
+                Literal["1", "2", "3"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["1", "2", "3"]
+                ],
+            ]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
-                Literal["classic", "surface", "soft"],
+                reflex.vars.Var[Literal["classic", "surface"]],
+                Literal["classic", "surface"],
+            ]
+        ] = None,
+        type: Optional[
+            Union[
+                reflex.vars.Var[Literal["single", "multiple"]],
+                Literal["single", "multiple"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -91,11 +113,16 @@ class SegmentedControlRoot(RadixThemesComponent):
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
+        default_value: Optional[
+            Union[reflex.vars.Var[Union[List[str], str]], str, List[str]]
+        ] = None,
+        value: Optional[
+            Union[reflex.vars.Var[Union[List[str], str]], str, List[str]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -103,6 +130,9 @@ class SegmentedControlRoot(RadixThemesComponent):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -157,7 +187,7 @@ class SegmentedControlRoot(RadixThemesComponent):
         Args:
             *children: Child components.
             size: The size of the segmented control: "1" | "2" | "3"
-            variant: Variant of button: "classic" | "surface" | "soft"
+            variant: Variant of button: "classic" | "surface"
             color_scheme: Override theme color for button
             radius: The radius of the segmented control: "none" | "small" | "medium" | "large" | "full"
             default_value: The default value of the segmented control.
@@ -180,7 +210,7 @@ class SegmentedControlItem(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

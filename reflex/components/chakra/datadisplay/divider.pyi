@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -21,12 +22,14 @@ class Divider(ChakraComponent):
         *children,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
+                reflex.vars.Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
         variant: Optional[
-            Union[Var[Literal["solid", "dashed"]], Literal["solid", "dashed"]]
+            Union[
+                reflex.vars.Var[Literal["solid", "dashed"]], Literal["solid", "dashed"]
+            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

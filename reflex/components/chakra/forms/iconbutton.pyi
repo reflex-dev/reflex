@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -18,16 +19,16 @@ class IconButton(Text):
     def create(  # type: ignore
         cls,
         *children,
-        type: Optional[Union[Var[str], str]] = None,
-        aria_label: Optional[Union[Var[str], str]] = None,
+        type: Optional[Union[reflex.vars.Var[str], str]] = None,
+        aria_label: Optional[Union[reflex.vars.Var[str], str]] = None,
         icon: Optional[Component] = None,
-        is_active: Optional[Union[Var[bool], bool]] = None,
-        is_disabled: Optional[Union[Var[bool], bool]] = None,
-        is_loading: Optional[Union[Var[bool], bool]] = None,
-        is_round: Optional[Union[Var[bool], bool]] = None,
-        spinner: Optional[Union[Var[str], str]] = None,
-        as_: Optional[Union[Var[str], str]] = None,
-        no_of_lines: Optional[Union[Var[int], int]] = None,
+        is_active: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_loading: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_round: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        spinner: Optional[Union[reflex.vars.Var[str], str]] = None,
+        as_: Optional[Union[reflex.vars.Var[str], str]] = None,
+        no_of_lines: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

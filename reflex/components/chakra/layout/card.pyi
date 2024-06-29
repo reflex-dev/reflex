@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -253,12 +254,12 @@ class Card(ChakraComponent):
         *children,
         header: Optional[Component] = None,
         footer: Optional[Component] = None,
-        align: Optional[Union[Var[str], str]] = None,
-        direction: Optional[Union[Var[str], str]] = None,
-        justify: Optional[Union[Var[str], str]] = None,
+        align: Optional[Union[reflex.vars.Var[str], str]] = None,
+        direction: Optional[Union[reflex.vars.Var[str], str]] = None,
+        justify: Optional[Union[reflex.vars.Var[str], str]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "none",
                         "gray",
@@ -305,11 +306,11 @@ class Card(ChakraComponent):
             ]
         ] = None,
         size: Optional[
-            Union[Var[Literal["sm", "md", "lg"]], Literal["sm", "md", "lg"]]
+            Union[reflex.vars.Var[Literal["sm", "md", "lg"]], Literal["sm", "md", "lg"]]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["outline", "filled", "elevated", "unstyled"]],
+                reflex.vars.Var[Literal["outline", "filled", "elevated", "unstyled"]],
                 Literal["outline", "filled", "elevated", "unstyled"],
             ]
         ] = None,

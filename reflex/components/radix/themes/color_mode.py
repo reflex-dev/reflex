@@ -25,8 +25,13 @@ from reflex.components.core.cond import Cond, color_mode_cond, cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.dropdown_menu import dropdown_menu
 from reflex.components.radix.themes.components.switch import Switch
-from reflex.event import EventChain
-from reflex.style import LIGHT_COLOR_MODE, color_mode, set_color_mode, toggle_color_mode
+from reflex.style import (
+    LIGHT_COLOR_MODE,
+    color_mode,
+    resolved_color_mode,
+    set_color_mode,
+    toggle_color_mode,
+)
 from reflex.utils import console
 from reflex.vars import BaseVar, Var
 
@@ -144,15 +149,9 @@ class ColorModeIconButton(IconButton):
         if allow_system:
 
             def color_mode_item(_color_mode):
-                setter = Var.create_safe(
-                    f'() => {set_color_mode._var_name}("{_color_mode}")',
-                    _var_is_string=False,
-                    _var_is_local=True,
-                    _var_data=set_color_mode._var_data,
+                return dropdown_menu.item(
+                    _color_mode.title(), on_click=set_color_mode(_color_mode)
                 )
-                setter._var_type = EventChain
-
-                return dropdown_menu.item(_color_mode.title(), on_click=setter)  # type: ignore
 
             return dropdown_menu.root(
                 dropdown_menu.trigger(
@@ -190,7 +189,7 @@ class ColorModeSwitch(Switch):
         """
         return Switch.create(
             *children,
-            checked=color_mode != LIGHT_COLOR_MODE,
+            checked=resolved_color_mode != LIGHT_COLOR_MODE,
             on_change=toggle_color_mode,
             **props,
         )

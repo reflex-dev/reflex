@@ -4,11 +4,14 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
 from typing import Literal, Union
+from reflex.components.core.breakpoints import Responsive
+from reflex.event import EventHandler
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -18,15 +21,32 @@ class RadioCardsRoot(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3"]
+                        ],
+                    ]
+                ],
+                Literal["1", "2", "3"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["1", "2", "3"]
+                ],
+            ]
         ] = None,
         variant: Optional[
-            Union[Var[Literal["classic", "surface"]], Literal["classic", "surface"]]
+            Union[
+                reflex.vars.Var[Literal["classic", "surface"]],
+                Literal["classic", "surface"],
+            ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -86,19 +106,68 @@ class RadioCardsRoot(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         columns: Optional[
             Union[
-                Var[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]],
-                Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Union[
+                                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                                str,
+                            ],
+                        ],
+                        str,
+                    ]
+                ],
+                str,
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str,
+                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+                ],
             ]
         ] = None,
         gap: Optional[
             Union[
-                Var[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]],
-                Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Union[
+                                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                                str,
+                            ],
+                        ],
+                        str,
+                    ]
+                ],
+                str,
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str,
+                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+                ],
             ]
         ] = None,
+        default_value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        required: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        orientation: Optional[
+            Union[
+                reflex.vars.Var[Literal["horizontal", "vertical", "undefined"]],
+                Literal["horizontal", "vertical", "undefined"],
+            ]
+        ] = None,
+        dir: Optional[
+            Union[reflex.vars.Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+        ] = None,
+        loop: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -150,6 +219,9 @@ class RadioCardsRoot(RadixThemesComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_value_change: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         **props
     ) -> "RadioCardsRoot":
         """Create a new component instance.
@@ -159,12 +231,20 @@ class RadioCardsRoot(RadixThemesComponent):
 
         Args:
             *children: Child components.
+            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             size: The size of the checkbox cards: "1" | "2" | "3"
             variant: Variant of button: "classic" | "surface" | "soft"
             color_scheme: Override theme color for button
             high_contrast: Uses a higher contrast color for the component.
             columns: The number of columns:
             gap: The gap between the checkbox cards:
+            value: The controlled value of the radio item to check. Should be used in conjunction with onValueChange.
+            name: The name of the group. Submitted with its owning form as part of a name/value pair.
+            disabled: When true, prevents the user from interacting with radio items.
+            required: When true, indicates that the user must check a radio item before the owning form can be submitted.
+            orientation: The orientation of the component.
+            dir: The reading direction of the radio group. If omitted,  inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
+            loop: When true, keyboard navigation will loop from last item to first, and vice versa.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -184,6 +264,10 @@ class RadioCardsItem(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        required: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -244,6 +328,10 @@ class RadioCardsItem(RadixThemesComponent):
 
         Args:
             *children: Child components.
+            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
+            value: The value given as data when submitted with a name.
+            disabled: When true, prevents the user from interacting with the radio item.
+            required: When true, indicates that the user must check the radio item before the owning form can be submitted.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

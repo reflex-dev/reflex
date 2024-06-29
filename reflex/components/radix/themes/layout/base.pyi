@@ -4,10 +4,12 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 from ..base import CommonMarginProps, LiteralSpacing, RadixThemesComponent
 
@@ -21,87 +23,204 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
         *children,
         p: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Union[
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                    ]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
             ]
         ] = None,
         px: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Union[
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                    ]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
             ]
         ] = None,
         py: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Union[
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                    ]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
             ]
         ] = None,
         pt: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Union[
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                    ]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
             ]
         ] = None,
         pr: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Union[
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                    ]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
             ]
         ] = None,
         pb: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Union[
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                    ]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
             ]
         ] = None,
         pl: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Union[
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                    ]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
             ]
         ] = None,
-        flex_shrink: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
-        flex_grow: Optional[Union[Var[Literal["0", "1"]], Literal["0", "1"]]] = None,
+        flex_shrink: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["0", "1"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["0", "1"]
+                        ],
+                    ]
+                ],
+                Literal["0", "1"],
+                reflex.components.core.breakpoints.Breakpoints[str, Literal["0", "1"]],
+            ]
+        ] = None,
+        flex_grow: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["0", "1"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["0", "1"]
+                        ],
+                    ]
+                ],
+                Literal["0", "1"],
+                reflex.components.core.breakpoints.Breakpoints[str, Literal["0", "1"]],
+            ]
+        ] = None,
         m: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mx: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         my: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mt: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mr: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mb: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         ml: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,

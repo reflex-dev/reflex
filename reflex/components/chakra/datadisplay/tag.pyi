@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -332,7 +333,7 @@ class Tag(ChakraComponent):
         close_button: Optional[Component] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "gray",
                         "red",
@@ -361,11 +362,11 @@ class Tag(ChakraComponent):
             ]
         ] = None,
         size: Optional[
-            Union[Var[Literal["sm", "md", "lg"]], Literal["sm", "md", "lg"]]
+            Union[reflex.vars.Var[Literal["sm", "md", "lg"]], Literal["sm", "md", "lg"]]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["solid", "subtle", "outline"]],
+                reflex.vars.Var[Literal["solid", "subtle", "outline"]],
                 Literal["solid", "subtle", "outline"],
             ]
         ] = None,

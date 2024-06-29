@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -26,19 +27,19 @@ class Tabs(ChakraComponent):
         items: Optional[List[Tuple[str, str]]] = None,
         align: Optional[
             Union[
-                Var[Literal["center", "end", "start"]],
+                reflex.vars.Var[Literal["center", "end", "start"]],
                 Literal["center", "end", "start"],
             ]
         ] = None,
-        default_index: Optional[Union[Var[int], int]] = None,
-        id_: Optional[Union[Var[str], str]] = None,
-        is_fitted: Optional[Union[Var[bool], bool]] = None,
-        is_lazy: Optional[Union[Var[bool], bool]] = None,
-        is_manual: Optional[Union[Var[bool], bool]] = None,
-        orientation: Optional[Union[Var[str], str]] = None,
+        default_index: Optional[Union[reflex.vars.Var[int], int]] = None,
+        id_: Optional[Union[reflex.vars.Var[str], str]] = None,
+        is_fitted: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_lazy: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_manual: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        orientation: Optional[Union[reflex.vars.Var[str], str]] = None,
         variant: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "line",
                         "enclosed",
@@ -60,7 +61,7 @@ class Tabs(ChakraComponent):
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "none",
                         "gray",
@@ -106,7 +107,7 @@ class Tabs(ChakraComponent):
                 ],
             ]
         ] = None,
-        index: Optional[Union[Var[int], int]] = None,
+        index: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -194,10 +195,10 @@ class Tab(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        is_disabled: Optional[Union[Var[bool], bool]] = None,
-        is_selected: Optional[Union[Var[bool], bool]] = None,
-        id_: Optional[Union[Var[str], str]] = None,
-        panel_id: Optional[Union[Var[str], str]] = None,
+        is_disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_selected: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        id_: Optional[Union[reflex.vars.Var[str], str]] = None,
+        panel_id: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

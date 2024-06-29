@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -17,25 +18,25 @@ class Tooltip(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        arrow_padding: Optional[Union[Var[int], int]] = None,
-        arrow_shadow_color: Optional[Union[Var[str], str]] = None,
-        arrow_size: Optional[Union[Var[int], int]] = None,
-        delay: Optional[Union[Var[int], int]] = None,
-        close_on_click: Optional[Union[Var[bool], bool]] = None,
-        close_on_esc: Optional[Union[Var[bool], bool]] = None,
-        close_on_mouse_down: Optional[Union[Var[bool], bool]] = None,
-        default_is_open: Optional[Union[Var[bool], bool]] = None,
+        arrow_padding: Optional[Union[reflex.vars.Var[int], int]] = None,
+        arrow_shadow_color: Optional[Union[reflex.vars.Var[str], str]] = None,
+        arrow_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        delay: Optional[Union[reflex.vars.Var[int], int]] = None,
+        close_on_click: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        close_on_esc: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        close_on_mouse_down: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        default_is_open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         direction: Optional[
-            Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+            Union[reflex.vars.Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
         ] = None,
-        gutter: Optional[Union[Var[int], int]] = None,
-        has_arrow: Optional[Union[Var[bool], bool]] = None,
-        is_disabled: Optional[Union[Var[bool], bool]] = None,
-        is_open: Optional[Union[Var[bool], bool]] = None,
-        label: Optional[Union[Var[str], str]] = None,
-        open_delay: Optional[Union[Var[int], int]] = None,
-        placement: Optional[Union[Var[str], str]] = None,
-        should_wrap_children: Optional[Union[Var[bool], bool]] = None,
+        gutter: Optional[Union[reflex.vars.Var[int], int]] = None,
+        has_arrow: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        label: Optional[Union[reflex.vars.Var[str], str]] = None,
+        open_delay: Optional[Union[reflex.vars.Var[int], int]] = None,
+        placement: Optional[Union[reflex.vars.Var[str], str]] = None,
+        should_wrap_children: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

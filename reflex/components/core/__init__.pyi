@@ -13,6 +13,8 @@ from .banner import connection_banner as connection_banner
 from .banner import connection_modal as connection_modal
 from .banner import connection_toaster as connection_toaster
 from .banner import connection_pulser as connection_pulser
+from .clipboard import Clipboard as Clipboard
+from .clipboard import clipboard as clipboard
 from .colors import color as color
 from .cond import Cond as Cond
 from .cond import color_mode_cond as color_mode_cond
@@ -25,6 +27,8 @@ from .html import html as html
 from .html import Html as Html
 from .match import match as match
 from .match import Match as Match
+from .breakpoints import breakpoints as breakpoints
+from .breakpoints import set_breakpoints as set_breakpoints
 from .responsive import desktop_only as desktop_only
 from .responsive import mobile_and_tablet as mobile_and_tablet
 from .responsive import mobile_only as mobile_only

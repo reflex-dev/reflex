@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -17,8 +18,8 @@ class Transition(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        in_: Optional[Union[Var[bool], bool]] = None,
-        unmount_on_exit: Optional[Union[Var[bool], bool]] = None,
+        in_: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        unmount_on_exit: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -97,8 +98,8 @@ class Fade(Transition):
     def create(  # type: ignore
         cls,
         *children,
-        in_: Optional[Union[Var[bool], bool]] = None,
-        unmount_on_exit: Optional[Union[Var[bool], bool]] = None,
+        in_: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        unmount_on_exit: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -177,10 +178,10 @@ class ScaleFade(Transition):
     def create(  # type: ignore
         cls,
         *children,
-        initial_scale: Optional[Union[Var[float], float]] = None,
-        reverse: Optional[Union[Var[bool], bool]] = None,
-        in_: Optional[Union[Var[bool], bool]] = None,
-        unmount_on_exit: Optional[Union[Var[bool], bool]] = None,
+        initial_scale: Optional[Union[reflex.vars.Var[float], float]] = None,
+        reverse: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        in_: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        unmount_on_exit: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -261,9 +262,9 @@ class Slide(Transition):
     def create(  # type: ignore
         cls,
         *children,
-        direction: Optional[Union[Var[str], str]] = None,
-        in_: Optional[Union[Var[bool], bool]] = None,
-        unmount_on_exit: Optional[Union[Var[bool], bool]] = None,
+        direction: Optional[Union[reflex.vars.Var[str], str]] = None,
+        in_: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        unmount_on_exit: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -343,11 +344,11 @@ class SlideFade(Transition):
     def create(  # type: ignore
         cls,
         *children,
-        offsetX: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        offsetY: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        reverse: Optional[Union[Var[bool], bool]] = None,
-        in_: Optional[Union[Var[bool], bool]] = None,
-        unmount_on_exit: Optional[Union[Var[bool], bool]] = None,
+        offsetX: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        offsetY: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        reverse: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        in_: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        unmount_on_exit: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -429,11 +430,13 @@ class Collapse(Transition):
     def create(  # type: ignore
         cls,
         *children,
-        animateOpacity: Optional[Union[Var[bool], bool]] = None,
-        endingHeight: Optional[Union[Var[str], str]] = None,
-        startingHeight: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        in_: Optional[Union[Var[bool], bool]] = None,
-        unmount_on_exit: Optional[Union[Var[bool], bool]] = None,
+        animateOpacity: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        endingHeight: Optional[Union[reflex.vars.Var[str], str]] = None,
+        startingHeight: Optional[
+            Union[reflex.vars.Var[Union[int, str]], str, int]
+        ] = None,
+        in_: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        unmount_on_exit: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -441,7 +441,7 @@ class Component(BaseComponent, ABC):
                 ) or (
                     # Else just check if the passed var type is valid.
                     not passed_types
-                    and not types._issubclass(passed_type, expected_type)
+                    and not types._issubclass(passed_type, expected_type, value)
                 ):
                     value_name = value._var_name if isinstance(value, Var) else value
                     raise TypeError(
@@ -1022,10 +1022,10 @@ class Component(BaseComponent, ABC):
                     f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
                 )
 
-            if child._valid_parents and comp_name not in [
-                *child._valid_parents,
-                *allowed_components,
-            ]:
+            if child._valid_parents and all(
+                clz_name not in [*child._valid_parents, *allowed_components]
+                for clz_name in self._iter_parent_classes_names()
+            ):
                 valid_parent_list = ", ".join(
                     [f"`{v_parent}`" for v_parent in child._valid_parents]
                 )
@@ -1152,6 +1152,13 @@ class Component(BaseComponent, ABC):
                 ):
                     return True
         return False
+
+    @classmethod
+    def _iter_parent_classes_names(cls) -> Iterator[str]:
+        for clz in cls.mro():
+            if clz is Component:
+                break
+            yield clz.__name__
 
     @classmethod
     def _iter_parent_classes_with_method(cls, method: str) -> Iterator[Type[Component]]:
@@ -1531,7 +1538,8 @@ class Component(BaseComponent, ABC):
         if hooks is not None:
             code[hooks] = None
 
-        code.update(self._get_added_hooks())
+        for hook in self._get_added_hooks():
+            code[hook] = None
 
         # Add the hook code for the children.
         for child in self.children:
@@ -2031,6 +2039,7 @@ class StatefulComponent(BaseComponent):
         from reflex.components.base.bare import Bare
         from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
+        from reflex.components.core.match import Match
 
         if isinstance(child, Bare):
             return child.contents
@@ -2038,6 +2047,8 @@ class StatefulComponent(BaseComponent):
             return child.cond
         if isinstance(child, Foreach):
             return child.iterable
+        if isinstance(child, Match):
+            return child.cond
         return child
 
     @classmethod
@@ -2114,10 +2125,20 @@ class StatefulComponent(BaseComponent):
         Returns:
             A list of var names created by the hook declaration.
         """
-        var_name = hook.partition("=")[0].strip().split(None, 1)[1].strip()
-        if var_name.startswith("["):
-            # Break up array destructuring.
-            return [v.strip() for v in var_name.strip("[]").split(",")]
+        # Ensure that the hook is a var declaration.
+        var_decl = hook.partition("=")[0].strip()
+        if not any(var_decl.startswith(kw) for kw in ["const ", "let ", "var "]):
+            return []
+
+        # Extract the var name from the declaration.
+        _, _, var_name = var_decl.partition(" ")
+        var_name = var_name.strip()
+
+        # Break up array and object destructuring if used.
+        if var_name.startswith("[") or var_name.startswith("{"):
+            return [
+                v.strip().replace("...", "") for v in var_name.strip("[]{}").split(",")
+            ]
         return [var_name]
 
     @classmethod

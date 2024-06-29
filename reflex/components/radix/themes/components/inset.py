@@ -2,6 +2,7 @@
 
 from typing import Literal, Union
 
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.vars import Var
 
@@ -18,31 +19,31 @@ class Inset(elements.Div, RadixThemesComponent):
     tag = "Inset"
 
     # The side
-    side: Var[Literal["x", "y", "top", "bottom", "right", "left"]]
+    side: Var[Responsive[Literal["x", "y", "top", "bottom", "right", "left"]]]
 
     # How to clip the element's content: "border-box" | "padding-box"
-    clip: Var[Literal["border-box", "padding-box"]]
+    clip: Var[Responsive[Literal["border-box", "padding-box"]]]
 
     # Padding
-    p: Var[Union[int, str]]
+    p: Var[Responsive[Union[int, str]]]
 
     # Padding on the x axis
-    px: Var[Union[int, str]]
+    px: Var[Responsive[Union[int, str]]]
 
     # Padding on the y axis
-    py: Var[Union[int, str]]
+    py: Var[Responsive[Union[int, str]]]
 
     # Padding on the top
-    pt: Var[Union[int, str]]
+    pt: Var[Responsive[Union[int, str]]]
 
     # Padding on the right
-    pr: Var[Union[int, str]]
+    pr: Var[Responsive[Union[int, str]]]
 
     # Padding on the bottom
-    pb: Var[Union[int, str]]
+    pb: Var[Responsive[Union[int, str]]]
 
     # Padding on the left
-    pl: Var[Union[int, str]]
+    pl: Var[Responsive[Union[int, str]]]
 
 
 inset = Inset.create

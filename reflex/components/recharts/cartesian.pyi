@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -36,25 +37,28 @@ class Axis(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        hide: Optional[Union[Var[bool], bool]] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        hide: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         orientation: Optional[
-            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
+            Union[reflex.vars.Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
         ] = None,
         type_: Optional[
-            Union[Var[Literal["number", "category"]], Literal["number", "category"]]
+            Union[
+                reflex.vars.Var[Literal["number", "category"]],
+                Literal["number", "category"],
+            ]
         ] = None,
-        allow_decimals: Optional[Union[Var[bool], bool]] = None,
-        allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
-        allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
-        axis_line: Optional[Union[Var[bool], bool]] = None,
-        mirror: Optional[Union[Var[bool], bool]] = None,
-        reversed: Optional[Union[Var[bool], bool]] = None,
+        allow_decimals: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        allow_data_overflow: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        allow_duplicated_category: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        axis_line: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        mirror: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        reversed: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         scale: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "auto",
                         "linear",
@@ -92,16 +96,16 @@ class Axis(Recharts):
                 ],
             ]
         ] = None,
-        unit: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        unit: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        name: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         ticks: Optional[
-            Union[Var[List[Union[str, int]]], List[Union[str, int]]]
+            Union[reflex.vars.Var[List[Union[int, str]]], List[Union[int, str]]]
         ] = None,
-        tick: Optional[Union[Var[bool], bool]] = None,
-        tick_count: Optional[Union[Var[int], int]] = None,
-        tick_line: Optional[Union[Var[bool], bool]] = None,
-        tick_size: Optional[Union[Var[int], int]] = None,
-        min_tick_gap: Optional[Union[Var[int], int]] = None,
+        tick: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        tick_count: Optional[Union[reflex.vars.Var[int], int]] = None,
+        tick_line: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        tick_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        min_tick_gap: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -199,27 +203,30 @@ class XAxis(Axis):
     def create(  # type: ignore
         cls,
         *children,
-        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        include_hidden: Optional[Union[Var[bool], bool]] = None,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        hide: Optional[Union[Var[bool], bool]] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        x_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        include_hidden: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        hide: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         orientation: Optional[
-            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
+            Union[reflex.vars.Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
         ] = None,
         type_: Optional[
-            Union[Var[Literal["number", "category"]], Literal["number", "category"]]
+            Union[
+                reflex.vars.Var[Literal["number", "category"]],
+                Literal["number", "category"],
+            ]
         ] = None,
-        allow_decimals: Optional[Union[Var[bool], bool]] = None,
-        allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
-        allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
-        axis_line: Optional[Union[Var[bool], bool]] = None,
-        mirror: Optional[Union[Var[bool], bool]] = None,
-        reversed: Optional[Union[Var[bool], bool]] = None,
+        allow_decimals: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        allow_data_overflow: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        allow_duplicated_category: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        axis_line: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        mirror: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        reversed: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         scale: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "auto",
                         "linear",
@@ -257,16 +264,16 @@ class XAxis(Axis):
                 ],
             ]
         ] = None,
-        unit: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        unit: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        name: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         ticks: Optional[
-            Union[Var[List[Union[str, int]]], List[Union[str, int]]]
+            Union[reflex.vars.Var[List[Union[int, str]]], List[Union[int, str]]]
         ] = None,
-        tick: Optional[Union[Var[bool], bool]] = None,
-        tick_count: Optional[Union[Var[int], int]] = None,
-        tick_line: Optional[Union[Var[bool], bool]] = None,
-        tick_size: Optional[Union[Var[int], int]] = None,
-        min_tick_gap: Optional[Union[Var[int], int]] = None,
+        tick: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        tick_count: Optional[Union[reflex.vars.Var[int], int]] = None,
+        tick_line: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        tick_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        min_tick_gap: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -367,25 +374,28 @@ class YAxis(Axis):
         cls,
         *children,
         orientation: Optional[
-            Union[Var[Literal["left", "right"]], Literal["left", "right"]]
+            Union[reflex.vars.Var[Literal["left", "right"]], Literal["left", "right"]]
         ] = None,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        hide: Optional[Union[Var[bool], bool]] = None,
-        width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        height: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        hide: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        width: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         type_: Optional[
-            Union[Var[Literal["number", "category"]], Literal["number", "category"]]
+            Union[
+                reflex.vars.Var[Literal["number", "category"]],
+                Literal["number", "category"],
+            ]
         ] = None,
-        allow_decimals: Optional[Union[Var[bool], bool]] = None,
-        allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
-        allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
-        axis_line: Optional[Union[Var[bool], bool]] = None,
-        mirror: Optional[Union[Var[bool], bool]] = None,
-        reversed: Optional[Union[Var[bool], bool]] = None,
+        allow_decimals: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        allow_data_overflow: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        allow_duplicated_category: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        axis_line: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        mirror: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        reversed: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         scale: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "auto",
                         "linear",
@@ -423,16 +433,16 @@ class YAxis(Axis):
                 ],
             ]
         ] = None,
-        unit: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        unit: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        name: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         ticks: Optional[
-            Union[Var[List[Union[str, int]]], List[Union[str, int]]]
+            Union[reflex.vars.Var[List[Union[int, str]]], List[Union[int, str]]]
         ] = None,
-        tick: Optional[Union[Var[bool], bool]] = None,
-        tick_count: Optional[Union[Var[int], int]] = None,
-        tick_line: Optional[Union[Var[bool], bool]] = None,
-        tick_size: Optional[Union[Var[int], int]] = None,
-        min_tick_gap: Optional[Union[Var[int], int]] = None,
+        tick: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        tick_count: Optional[Union[reflex.vars.Var[int], int]] = None,
+        tick_line: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        tick_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        min_tick_gap: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -531,13 +541,13 @@ class ZAxis(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        range: Optional[Union[Var[List[int]], List[int]]] = None,
-        unit: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        range: Optional[Union[reflex.vars.Var[List[int]], List[int]]] = None,
+        unit: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        name: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         scale: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "auto",
                         "linear",
@@ -657,17 +667,17 @@ class Brush(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        x: Optional[Union[Var[int], int]] = None,
-        y: Optional[Union[Var[int], int]] = None,
-        width: Optional[Union[Var[int], int]] = None,
-        height: Optional[Union[Var[int], int]] = None,
-        data: Optional[Union[Var[List[Any]], List[Any]]] = None,
-        traveller_width: Optional[Union[Var[int], int]] = None,
-        gap: Optional[Union[Var[int], int]] = None,
-        start_index: Optional[Union[Var[int], int]] = None,
-        end_index: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        x: Optional[Union[reflex.vars.Var[int], int]] = None,
+        y: Optional[Union[reflex.vars.Var[int], int]] = None,
+        width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        height: Optional[Union[reflex.vars.Var[int], int]] = None,
+        data: Optional[Union[reflex.vars.Var[List[Any]], List[Any]]] = None,
+        traveller_width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        gap: Optional[Union[reflex.vars.Var[int], int]] = None,
+        start_index: Optional[Union[reflex.vars.Var[int], int]] = None,
+        end_index: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -715,16 +725,16 @@ class Cartesian(Recharts):
         *children,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
+                reflex.vars.Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         legend_type: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "line",
                         "plainline",
@@ -835,12 +845,12 @@ class Area(Cartesian):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        stroke_width: Optional[Union[Var[int], int]] = None,
-        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
+        stroke: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
+        stroke_width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        fill: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
         type_: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "basis",
                         "basisClosed",
@@ -878,24 +888,24 @@ class Area(Cartesian):
                 ],
             ]
         ] = None,
-        dot: Optional[Union[Var[bool], bool]] = None,
-        active_dot: Optional[Union[Var[bool], bool]] = None,
-        label: Optional[Union[Var[bool], bool]] = None,
-        stack_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        unit: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        dot: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        active_dot: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        label: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        stack_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        unit: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        name: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
+                reflex.vars.Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         legend_type: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "line",
                         "plainline",
@@ -1016,38 +1026,40 @@ class Bar(Cartesian):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        stroke_width: Optional[Union[Var[int], int]] = None,
-        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        background: Optional[Union[Var[bool], bool]] = None,
-        label: Optional[Union[Var[bool], bool]] = None,
-        stack_id: Optional[Union[Var[str], str]] = None,
-        unit: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        min_point_size: Optional[Union[Var[int], int]] = None,
-        name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        bar_size: Optional[Union[Var[int], int]] = None,
-        max_bar_size: Optional[Union[Var[int], int]] = None,
-        is_animation_active: Optional[Union[Var[bool], bool]] = None,
-        animation_begin: Optional[Union[Var[int], int]] = None,
-        animation_duration: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
+        stroke_width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        fill: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
+        background: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        label: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        stack_id: Optional[Union[reflex.vars.Var[str], str]] = None,
+        unit: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        min_point_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        name: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        bar_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        max_bar_size: Optional[Union[reflex.vars.Var[int], int]] = None,
+        is_animation_active: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        animation_begin: Optional[Union[reflex.vars.Var[int], int]] = None,
+        animation_duration: Optional[Union[reflex.vars.Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                reflex.vars.Var[
+                    Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
+                ],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
+                reflex.vars.Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         legend_type: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "line",
                         "plainline",
@@ -1181,7 +1193,7 @@ class Line(Cartesian):
         *children,
         type_: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "basis",
                         "basisClosed",
@@ -1219,27 +1231,27 @@ class Line(Cartesian):
                 ],
             ]
         ] = None,
-        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        stoke_width: Optional[Union[Var[int], int]] = None,
-        dot: Optional[Union[Var[bool], bool]] = None,
-        active_dot: Optional[Union[Var[bool], bool]] = None,
-        label: Optional[Union[Var[bool], bool]] = None,
-        hide: Optional[Union[Var[bool], bool]] = None,
-        connect_nulls: Optional[Union[Var[bool], bool]] = None,
-        unit: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        stroke: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
+        stoke_width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        dot: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        active_dot: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        label: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        hide: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        connect_nulls: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        unit: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        name: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
+                reflex.vars.Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         legend_type: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "line",
                         "plainline",
@@ -1360,10 +1372,12 @@ class Scatter(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        data: Optional[
+            Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
+        ] = None,
         legend_type: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "line",
                         "plainline",
@@ -1393,13 +1407,13 @@ class Scatter(Recharts):
                 ],
             ]
         ] = None,
-        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        z_axis_id: Optional[Union[Var[str], str]] = None,
-        line: Optional[Union[Var[bool], bool]] = None,
+        x_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        z_axis_id: Optional[Union[reflex.vars.Var[str], str]] = None,
+        line: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         shape: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "square",
                         "circle",
@@ -1416,16 +1430,21 @@ class Scatter(Recharts):
             ]
         ] = None,
         line_type: Optional[
-            Union[Var[Literal["joint", "fitting"]], Literal["joint", "fitting"]]
+            Union[
+                reflex.vars.Var[Literal["joint", "fitting"]],
+                Literal["joint", "fitting"],
+            ]
         ] = None,
-        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        name: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        is_animation_active: Optional[Union[Var[bool], bool]] = None,
-        animation_begin: Optional[Union[Var[int], int]] = None,
-        animation_duration: Optional[Union[Var[int], int]] = None,
+        fill: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
+        name: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        is_animation_active: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        animation_begin: Optional[Union[reflex.vars.Var[int], int]] = None,
+        animation_duration: Optional[Union[reflex.vars.Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                reflex.vars.Var[
+                    Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
+                ],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
@@ -1519,12 +1538,14 @@ class Funnel(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        name_key: Optional[Union[Var[str], str]] = None,
+        data: Optional[
+            Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
+        ] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        name_key: Optional[Union[reflex.vars.Var[str], str]] = None,
         legend_type: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "line",
                         "plainline",
@@ -1554,12 +1575,14 @@ class Funnel(Recharts):
                 ],
             ]
         ] = None,
-        is_animation_active: Optional[Union[Var[bool], bool]] = None,
-        animation_begin: Optional[Union[Var[int], int]] = None,
-        animation_duration: Optional[Union[Var[int], int]] = None,
+        is_animation_active: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        animation_begin: Optional[Union[reflex.vars.Var[int], int]] = None,
+        animation_duration: Optional[Union[reflex.vars.Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                reflex.vars.Var[
+                    Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
+                ],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
@@ -1654,12 +1677,12 @@ class ErrorBar(Recharts):
         cls,
         *children,
         direction: Optional[
-            Union[Var[Literal["x", "y", "both"]], Literal["x", "y", "both"]]
+            Union[reflex.vars.Var[Literal["x", "y", "both"]], Literal["x", "y", "both"]]
         ] = None,
-        data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        width: Optional[Union[Var[int], int]] = None,
-        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        stroke_width: Optional[Union[Var[int], int]] = None,
+        data_key: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        stroke: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
+        stroke_width: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1741,16 +1764,18 @@ class Reference(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        x_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         if_overflow: Optional[
             Union[
-                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
+                reflex.vars.Var[
+                    Literal["discard", "hidden", "visible", "extendDomain"]
+                ],
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
-        label: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        is_front: Optional[Union[Var[bool], bool]] = None,
+        label: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        is_front: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1832,21 +1857,25 @@ class ReferenceLine(Reference):
     def create(  # type: ignore
         cls,
         *children,
-        x: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        stroke_width: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        x: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        stroke: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
+        stroke_width: Optional[
+            Union[reflex.vars.Var[Union[int, str]], str, int]
+        ] = None,
         segment: Optional[List[Any]] = None,
-        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        x_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         if_overflow: Optional[
             Union[
-                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
+                reflex.vars.Var[
+                    Literal["discard", "hidden", "visible", "extendDomain"]
+                ],
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
-        label: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        is_front: Optional[Union[Var[bool], bool]] = None,
+        label: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        is_front: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1933,21 +1962,23 @@ class ReferenceDot(Reference):
     def create(  # type: ignore
         cls,
         *children,
-        x: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        r: Optional[Union[Var[int], int]] = None,
-        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        x: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        r: Optional[Union[reflex.vars.Var[int], int]] = None,
+        fill: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
+        x_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         if_overflow: Optional[
             Union[
-                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
+                reflex.vars.Var[
+                    Literal["discard", "hidden", "visible", "extendDomain"]
+                ],
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
-        label: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        is_front: Optional[Union[Var[bool], bool]] = None,
+        label: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        is_front: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2034,22 +2065,24 @@ class ReferenceArea(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        fill_opacity: Optional[Union[Var[float], float]] = None,
-        x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        x1: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        x2: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y1: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        y2: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
+        stroke: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
+        fill_opacity: Optional[Union[reflex.vars.Var[float], float]] = None,
+        x_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        x1: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        x2: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y1: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        y2: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
         if_overflow: Optional[
             Union[
-                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
+                reflex.vars.Var[
+                    Literal["discard", "hidden", "visible", "extendDomain"]
+                ],
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
-        is_front: Optional[Union[Var[bool], bool]] = None,
+        is_front: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2137,10 +2170,10 @@ class Grid(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        x: Optional[Union[Var[int], int]] = None,
-        y: Optional[Union[Var[int], int]] = None,
-        width: Optional[Union[Var[int], int]] = None,
-        height: Optional[Union[Var[int], int]] = None,
+        x: Optional[Union[reflex.vars.Var[int], int]] = None,
+        y: Optional[Union[reflex.vars.Var[int], int]] = None,
+        width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        height: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2221,21 +2254,21 @@ class CartesianGrid(Grid):
     def create(  # type: ignore
         cls,
         *children,
-        horizontal: Optional[Union[Var[bool], bool]] = None,
-        vertical: Optional[Union[Var[bool], bool]] = None,
+        horizontal: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        vertical: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         vertical_points: Optional[
-            Union[Var[List[Union[str, int]]], List[Union[str, int]]]
+            Union[reflex.vars.Var[List[Union[int, str]]], List[Union[int, str]]]
         ] = None,
         horizontal_points: Optional[
-            Union[Var[List[Union[str, int]]], List[Union[str, int]]]
+            Union[reflex.vars.Var[List[Union[int, str]]], List[Union[int, str]]]
         ] = None,
-        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        fill_opacity: Optional[Union[Var[float], float]] = None,
-        stroke_dasharray: Optional[Union[Var[str], str]] = None,
-        x: Optional[Union[Var[int], int]] = None,
-        y: Optional[Union[Var[int], int]] = None,
-        width: Optional[Union[Var[int], int]] = None,
-        height: Optional[Union[Var[int], int]] = None,
+        fill: Optional[Union[reflex.vars.Var[Union[Color, str]], str, Color]] = None,
+        fill_opacity: Optional[Union[reflex.vars.Var[float], float]] = None,
+        stroke_dasharray: Optional[Union[reflex.vars.Var[str], str]] = None,
+        x: Optional[Union[reflex.vars.Var[int], int]] = None,
+        y: Optional[Union[reflex.vars.Var[int], int]] = None,
+        width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        height: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2325,27 +2358,29 @@ class CartesianAxis(Grid):
         *children,
         orientation: Optional[
             Union[
-                Var[Literal["top", "bottom", "left", "right"]],
+                reflex.vars.Var[Literal["top", "bottom", "left", "right"]],
                 Literal["top", "bottom", "left", "right"],
             ]
         ] = None,
-        axis_line: Optional[Union[Var[bool], bool]] = None,
-        tick_line: Optional[Union[Var[bool], bool]] = None,
-        tick_size: Optional[Union[Var[int], int]] = None,
+        axis_line: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        tick_line: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        tick_size: Optional[Union[reflex.vars.Var[int], int]] = None,
         interval: Optional[
             Union[
-                Var[Literal["preserveStart", "preserveEnd", "preserveStartEnd"]],
+                reflex.vars.Var[
+                    Literal["preserveStart", "preserveEnd", "preserveStartEnd"]
+                ],
                 Literal["preserveStart", "preserveEnd", "preserveStartEnd"],
             ]
         ] = None,
-        ticks: Optional[Union[Var[bool], bool]] = None,
-        label: Optional[Union[Var[str], str]] = None,
-        mirror: Optional[Union[Var[bool], bool]] = None,
-        tick_margin: Optional[Union[Var[int], int]] = None,
-        x: Optional[Union[Var[int], int]] = None,
-        y: Optional[Union[Var[int], int]] = None,
-        width: Optional[Union[Var[int], int]] = None,
-        height: Optional[Union[Var[int], int]] = None,
+        ticks: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        label: Optional[Union[reflex.vars.Var[str], str]] = None,
+        mirror: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        tick_margin: Optional[Union[reflex.vars.Var[int], int]] = None,
+        x: Optional[Union[reflex.vars.Var[int], int]] = None,
+        y: Optional[Union[reflex.vars.Var[int], int]] = None,
+        width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        height: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
