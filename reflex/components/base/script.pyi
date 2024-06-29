@@ -8,6 +8,7 @@ import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from typing import Literal
 from reflex.components.component import Component
 from reflex.event import EventHandler
 from reflex.vars import Var
@@ -19,7 +20,14 @@ class Script(Component):
         cls,
         *children,
         src: Optional[Union[reflex.vars.Var[str], str]] = None,
-        strategy: Optional[Union[reflex.vars.Var[str], str]] = None,
+        strategy: Optional[
+            Union[
+                reflex.vars.Var[
+                    Literal["afterInteractive", "beforeInteractive", "lazyOnload"]
+                ],
+                Literal["afterInteractive", "beforeInteractive", "lazyOnload"],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -97,7 +105,7 @@ class Script(Component):
         Args:
             *children: The children of the component.
             src: Required unless inline script is used
-            strategy: When the script will execute: afterInteractive | beforeInteractive | lazyOnload
+            strategy: When the script will execute: afterInteractive (defer-like behavior) | beforeInteractive | lazyOnload (async-like behavior)
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
