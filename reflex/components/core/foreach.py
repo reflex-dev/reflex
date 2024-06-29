@@ -25,6 +25,8 @@ class ForeachRenderError(TypeError):
 class Foreach(Component):
     """A component that takes in an iterable and a render function and renders a list of components."""
 
+    tag = ""
+
     _memoization_mode = MemoizationMode(recursive=False)
 
     # The iterable to create components from.
