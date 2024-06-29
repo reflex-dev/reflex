@@ -1079,7 +1079,9 @@ class App(LifespanMixin, Base):
         else:
             # In dev mode, delete removed pages and update existing pages.
             keep_files = [Path(output_path) for output_path, _ in compile_results]
-            for p in Path(prerequisites.get_web_dir() / "pages").rglob("*"):
+            for p in Path(prerequisites.get_web_dir() / constants.Dirs.PAGES).rglob(
+                "*"
+            ):
                 if p.is_file() and p not in keep_files:
                     # Remove pages that are no longer in the app.
                     p.unlink()
