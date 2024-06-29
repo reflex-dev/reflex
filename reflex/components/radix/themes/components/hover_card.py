@@ -3,6 +3,7 @@
 from typing import Literal
 
 from reflex.components.component import ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.event import EventHandler
 from reflex.vars import Var
@@ -46,7 +47,7 @@ class HoverCardContent(elements.Div, RadixThemesComponent):
     tag = "HoverCard.Content"
 
     # The preferred side of the trigger to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
-    side: Var[Literal["top", "right", "bottom", "left"]]
+    side: Var[Responsive[Literal["top", "right", "bottom", "left"]]]
 
     # The distance in pixels from the trigger.
     side_offset: Var[int]

@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -21,13 +22,13 @@ class Stepper(ChakraComponent):
         items: Optional[List[Tuple]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["vertical", "horizontal"]],
+                reflex.vars.Var[Literal["vertical", "horizontal"]],
                 Literal["vertical", "horizontal"],
             ]
         ] = None,
         colorScheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "none",
                         "gray",
@@ -73,8 +74,8 @@ class Stepper(ChakraComponent):
                 ],
             ]
         ] = None,
-        index: Optional[Union[Var[int], int]] = None,
-        size: Optional[Union[Var[str], str]] = None,
+        index: Optional[Union[reflex.vars.Var[int], int]] = None,
+        size: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -613,9 +614,9 @@ class StepStatus(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        active: Optional[Union[Var[str], str]] = None,
-        complete: Optional[Union[Var[str], str]] = None,
-        incomplete: Optional[Union[Var[str], str]] = None,
+        active: Optional[Union[reflex.vars.Var[str], str]] = None,
+        complete: Optional[Union[reflex.vars.Var[str], str]] = None,
+        incomplete: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

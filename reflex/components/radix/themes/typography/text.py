@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Literal
 
 from reflex.components.component import ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.vars import Var
 
@@ -56,16 +57,16 @@ class Text(elements.Span, RadixThemesComponent):
     as_: Var[LiteralType] = "p"  # type: ignore
 
     # Text size: "1" - "9"
-    size: Var[LiteralTextSize]
+    size: Var[Responsive[LiteralTextSize]]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[LiteralTextWeight]
+    weight: Var[Responsive[LiteralTextWeight]]
 
     # Alignment of text in element: "left" | "center" | "right"
-    align: Var[LiteralTextAlign]
+    align: Var[Responsive[LiteralTextAlign]]
 
     # Removes the leading trim space: "normal" | "start" | "end" | "both"
-    trim: Var[LiteralTextTrim]
+    trim: Var[Responsive[LiteralTextTrim]]
 
     # Overrides the accent color inherited from the Theme.
     color_scheme: Var[LiteralAccentColor]

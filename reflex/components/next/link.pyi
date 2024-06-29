@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -16,8 +17,8 @@ class NextLink(Component):
     def create(  # type: ignore
         cls,
         *children,
-        href: Optional[Union[Var[str], str]] = None,
-        pass_href: Optional[Union[Var[bool], bool]] = None,
+        href: Optional[Union[reflex.vars.Var[str], str]] = None,
+        pass_href: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

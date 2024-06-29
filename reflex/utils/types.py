@@ -27,6 +27,9 @@ from typing import (
 
 import sqlalchemy
 
+import reflex
+from reflex.components.core.breakpoints import Breakpoints
+
 try:
     from pydantic.v1.fields import ModelField
 except ModuleNotFoundError:
@@ -331,12 +334,44 @@ def get_base_class(cls: GenericType) -> Type:
     return get_base_class(cls.__origin__) if is_generic_alias(cls) else cls
 
 
-def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
+def _breakpoints_satisfies_typing(cls_check: GenericType, instance: Any) -> bool:
+    """Check if the breakpoints instance satisfies the typing.
+
+    Args:
+        cls_check: The class to check against.
+        instance: The instance to check.
+
+    Returns:
+        Whether the breakpoints instance satisfies the typing.
+    """
+    cls_check_base = get_base_class(cls_check)
+
+    if cls_check_base == Breakpoints:
+        _, expected_type = get_args(cls_check)
+        if is_literal(expected_type):
+            for value in instance.values():
+                if not isinstance(value, str) or value not in get_args(expected_type):
+                    return False
+        return True
+    elif isinstance(cls_check_base, tuple):
+        # union type, so check all types
+        return any(
+            _breakpoints_satisfies_typing(type_to_check, instance)
+            for type_to_check in get_args(cls_check)
+        )
+    elif cls_check_base == reflex.vars.Var and "__args__" in cls_check.__dict__:
+        return _breakpoints_satisfies_typing(get_args(cls_check)[0], instance)
+
+    return False
+
+
+def _issubclass(cls: GenericType, cls_check: GenericType, instance: Any = None) -> bool:
     """Check if a class is a subclass of another class.
 
     Args:
         cls: The class to check.
         cls_check: The class to check against.
+        instance: An instance of cls to aid in checking generics.
 
     Returns:
         Whether the class is a subclass of the other class.
@@ -357,6 +392,10 @@ def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
     # The class we're checking should not be a union.
     if isinstance(cls_base, tuple):
         return False
+
+    # Check that fields of breakpoints match the expected values.
+    if isinstance(instance, Breakpoints):
+        return _breakpoints_satisfies_typing(cls_check, instance)
 
     # Check if the types match.
     try:

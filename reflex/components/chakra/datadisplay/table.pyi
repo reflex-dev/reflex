@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -24,10 +25,10 @@ class Table(ChakraComponent):
         headers=None,
         rows=None,
         footers=None,
-        color_scheme: Optional[Union[Var[str], str]] = None,
-        variant: Optional[Union[Var[str], str]] = None,
-        size: Optional[Union[Var[str], str]] = None,
-        placement: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[Union[reflex.vars.Var[str], str]] = None,
+        variant: Optional[Union[reflex.vars.Var[str], str]] = None,
+        size: Optional[Union[reflex.vars.Var[str], str]] = None,
+        placement: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -436,7 +437,7 @@ class Th(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        is_numeric: Optional[Union[Var[bool], bool]] = None,
+        is_numeric: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -514,7 +515,7 @@ class Td(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        is_numeric: Optional[Union[Var[bool], bool]] = None,
+        is_numeric: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -592,7 +593,7 @@ class TableCaption(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        placement: Optional[Union[Var[str], str]] = None,
+        placement: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

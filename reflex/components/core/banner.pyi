@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -41,7 +42,7 @@ class WebsocketTargetURL(Bare):
     def create(  # type: ignore
         cls,
         *children,
-        contents: Optional[Union[Var[str], str]] = None,
+        contents: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -111,13 +112,13 @@ class ConnectionToaster(Toaster):
     def create(  # type: ignore
         cls,
         *children,
-        theme: Optional[Union[Var[str], str]] = None,
-        rich_colors: Optional[Union[Var[bool], bool]] = None,
-        expand: Optional[Union[Var[bool], bool]] = None,
-        visible_toasts: Optional[Union[Var[int], int]] = None,
+        theme: Optional[Union[reflex.vars.Var[str], str]] = None,
+        rich_colors: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        expand: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        visible_toasts: Optional[Union[reflex.vars.Var[int], int]] = None,
         position: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "top-left",
                         "top-center",
@@ -137,15 +138,15 @@ class ConnectionToaster(Toaster):
                 ],
             ]
         ] = None,
-        close_button: Optional[Union[Var[bool], bool]] = None,
-        offset: Optional[Union[Var[str], str]] = None,
-        dir: Optional[Union[Var[str], str]] = None,
-        hotkey: Optional[Union[Var[str], str]] = None,
-        invert: Optional[Union[Var[bool], bool]] = None,
-        toast_options: Optional[Union[Var[ToastProps], ToastProps]] = None,
-        gap: Optional[Union[Var[int], int]] = None,
-        loading_icon: Optional[Union[Var[Icon], Icon]] = None,
-        pause_when_page_is_hidden: Optional[Union[Var[bool], bool]] = None,
+        close_button: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        offset: Optional[Union[reflex.vars.Var[str], str]] = None,
+        dir: Optional[Union[reflex.vars.Var[str], str]] = None,
+        hotkey: Optional[Union[reflex.vars.Var[str], str]] = None,
+        invert: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        toast_options: Optional[Union[reflex.vars.Var[ToastProps], ToastProps]] = None,
+        gap: Optional[Union[reflex.vars.Var[int], int]] = None,
+        loading_icon: Optional[Union[reflex.vars.Var[Icon], Icon]] = None,
+        pause_when_page_is_hidden: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -374,7 +375,7 @@ class WifiOffPulse(Icon):
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[Union[Var[int], int]] = None,
+        size: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -455,44 +456,52 @@ class ConnectionPulser(Div):
         cls,
         *children,
         access_key: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        dir: Optional[
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
+        ] = None,
         draggable: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         hidden: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         input_mode: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         item_prop: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], Union[bool, int, str]]] = None,
+        lang: Optional[
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
+        ] = None,
         spell_check: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         tab_index: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         title: Optional[
-            Union[Var[Union[bool, int, str]], Union[bool, int, str]]
+            Union[reflex.vars.Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

@@ -5,6 +5,7 @@ https://www.radix-ui.com/themes/docs/theme/typography
 
 from __future__ import annotations
 
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.vars import Var
 
@@ -28,10 +29,10 @@ class Code(elements.Code, RadixThemesComponent):
     variant: Var[LiteralVariant]
 
     # Text size: "1" - "9"
-    size: Var[LiteralTextSize]
+    size: Var[Responsive[LiteralTextSize]]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[LiteralTextWeight]
+    weight: Var[Responsive[LiteralTextWeight]]
 
     # Overrides the accent color inherited from the Theme.
     color_scheme: Var[LiteralAccentColor]

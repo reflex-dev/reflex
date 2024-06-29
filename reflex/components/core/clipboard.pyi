@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -21,9 +22,12 @@ class Clipboard(Fragment):
     def create(  # type: ignore
         cls,
         *children,
-        targets: Optional[Union[Var[List[str]], List[str]]] = None,
+        targets: Optional[Union[reflex.vars.Var[List[str]], List[str]]] = None,
         on_paste_event_actions: Optional[
-            Union[Var[Dict[str, Union[bool, int]]], Dict[str, Union[bool, int]]]
+            Union[
+                reflex.vars.Var[Dict[str, Union[bool, int]]],
+                Dict[str, Union[bool, int]],
+            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

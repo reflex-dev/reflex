@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -26,24 +27,24 @@ class Modal(ChakraComponent):
         body: Optional[Union[Component, str]] = None,
         footer: Optional[Union[Component, str]] = None,
         close_button: Optional[Component] = None,
-        is_open: Optional[Union[Var[bool], bool]] = None,
-        allow_pinch_zoom: Optional[Union[Var[bool], bool]] = None,
-        auto_focus: Optional[Union[Var[bool], bool]] = None,
-        block_scroll_on_mount: Optional[Union[Var[bool], bool]] = None,
-        close_on_esc: Optional[Union[Var[bool], bool]] = None,
-        close_on_overlay_click: Optional[Union[Var[bool], bool]] = None,
-        is_centered: Optional[Union[Var[bool], bool]] = None,
-        lock_focus_across_frames: Optional[Union[Var[bool], bool]] = None,
-        motion_preset: Optional[Union[Var[str], str]] = None,
-        preserve_scroll_bar_gap: Optional[Union[Var[bool], bool]] = None,
-        return_focus_on_close: Optional[Union[Var[bool], bool]] = None,
+        is_open: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        allow_pinch_zoom: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        auto_focus: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        block_scroll_on_mount: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        close_on_esc: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        close_on_overlay_click: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_centered: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        lock_focus_across_frames: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        motion_preset: Optional[Union[reflex.vars.Var[str], str]] = None,
+        preserve_scroll_bar_gap: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        return_focus_on_close: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         size: Optional[
             Union[
-                Var[Literal["xs", "sm", "md", "lg", "xl", "full"]],
+                reflex.vars.Var[Literal["xs", "sm", "md", "lg", "xl", "full"]],
                 Literal["xs", "sm", "md", "lg", "xl", "full"],
             ]
         ] = None,
-        use_inert: Optional[Union[Var[bool], bool]] = None,
+        use_inert: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

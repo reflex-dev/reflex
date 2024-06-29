@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -16,7 +17,7 @@ class AspectRatio(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        ratio: Optional[Union[Var[float], float]] = None,
+        ratio: Optional[Union[reflex.vars.Var[float], float]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

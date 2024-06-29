@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -21,7 +22,7 @@ class ProgressComponent(RadixPrimitiveComponentWithClassName):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -102,11 +103,11 @@ class ProgressRoot(ProgressComponent):
         *children,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -186,11 +187,11 @@ class ProgressIndicator(ProgressComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[Optional[int]], Optional[int]]] = None,
-        max: Optional[Union[Var[Optional[int]], Optional[int]]] = None,
+        value: Optional[Union[reflex.vars.Var[Optional[int]], int]] = None,
+        max: Optional[Union[reflex.vars.Var[Optional[int]], int]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -250,7 +251,7 @@ class ProgressIndicator(ProgressComponent):
                 ],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -333,7 +334,7 @@ class Progress(ProgressRoot):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -393,15 +394,15 @@ class Progress(ProgressRoot):
                 ],
             ]
         ] = None,
-        value: Optional[Union[Var[Optional[int]], Optional[int]]] = None,
-        max: Optional[Union[Var[Optional[int]], Optional[int]]] = None,
+        value: Optional[Union[reflex.vars.Var[Optional[int]], int]] = None,
+        max: Optional[Union[reflex.vars.Var[Optional[int]], int]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -485,7 +486,7 @@ class ProgressNamespace(ComponentNamespace):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -545,15 +546,15 @@ class ProgressNamespace(ComponentNamespace):
                 ],
             ]
         ] = None,
-        value: Optional[Union[Var[Optional[int]], Optional[int]]] = None,
-        max: Optional[Union[Var[Optional[int]], Optional[int]]] = None,
+        value: Optional[Union[reflex.vars.Var[Optional[int]], int]] = None,
+        max: Optional[Union[reflex.vars.Var[Optional[int]], int]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

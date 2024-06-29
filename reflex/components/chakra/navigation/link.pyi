@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -22,11 +23,11 @@ class Link(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        rel: Optional[Union[Var[str], str]] = None,
-        href: Optional[Union[Var[str], str]] = None,
-        text: Optional[Union[Var[str], str]] = None,
-        as_: Optional[Union[Var[str], str]] = None,
-        is_external: Optional[Union[Var[bool], bool]] = None,
+        rel: Optional[Union[reflex.vars.Var[str], str]] = None,
+        href: Optional[Union[reflex.vars.Var[str], str]] = None,
+        text: Optional[Union[reflex.vars.Var[str], str]] = None,
+        as_: Optional[Union[reflex.vars.Var[str], str]] = None,
+        is_external: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

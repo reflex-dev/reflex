@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -24,7 +25,7 @@ class ColorModeIcon(Cond):
     def create(  # type: ignore
         cls,
         *children,
-        cond: Optional[Union[Var[Any], Any]] = None,
+        cond: Optional[Union[reflex.vars.Var[Any], Any]] = None,
         comp1: Optional[BaseComponent] = None,
         comp2: Optional[BaseComponent] = None,
         style: Optional[Style] = None,
@@ -97,19 +98,19 @@ class ColorModeSwitch(Switch):
     def create(  # type: ignore
         cls,
         *children,
-        is_checked: Optional[Union[Var[bool], bool]] = None,
-        is_disabled: Optional[Union[Var[bool], bool]] = None,
-        is_focusable: Optional[Union[Var[bool], bool]] = None,
-        is_invalid: Optional[Union[Var[bool], bool]] = None,
-        is_read_only: Optional[Union[Var[bool], bool]] = None,
-        is_required: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        spacing: Optional[Union[Var[str], str]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
+        is_checked: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_focusable: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_invalid: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_read_only: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_required: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        spacing: Optional[Union[reflex.vars.Var[str], str]] = None,
+        placeholder: Optional[Union[reflex.vars.Var[str], str]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "none",
                         "gray",
@@ -245,24 +246,29 @@ class ColorModeButton(Button):
     def create(  # type: ignore
         cls,
         *children,
-        icon_spacing: Optional[Union[Var[int], int]] = None,
-        is_active: Optional[Union[Var[bool], bool]] = None,
-        is_disabled: Optional[Union[Var[bool], bool]] = None,
-        is_full_width: Optional[Union[Var[bool], bool]] = None,
-        is_loading: Optional[Union[Var[bool], bool]] = None,
-        loading_text: Optional[Union[Var[str], str]] = None,
+        icon_spacing: Optional[Union[reflex.vars.Var[int], int]] = None,
+        is_active: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_full_width: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_loading: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        loading_text: Optional[Union[reflex.vars.Var[str], str]] = None,
         size: Optional[
-            Union[Var[Literal["sm", "md", "lg", "xs"]], Literal["sm", "md", "lg", "xs"]]
+            Union[
+                reflex.vars.Var[Literal["sm", "md", "lg", "xs"]],
+                Literal["sm", "md", "lg", "xs"],
+            ]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["ghost", "outline", "solid", "link", "unstyled"]],
+                reflex.vars.Var[
+                    Literal["ghost", "outline", "solid", "link", "unstyled"]
+                ],
                 Literal["ghost", "outline", "solid", "link", "unstyled"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "none",
                         "gray",
@@ -309,10 +315,10 @@ class ColorModeButton(Button):
             ]
         ] = None,
         spinner_placement: Optional[
-            Union[Var[Literal["start", "end"]], Literal["start", "end"]]
+            Union[reflex.vars.Var[Literal["start", "end"]], Literal["start", "end"]]
         ] = None,
-        type_: Optional[Union[Var[str], str]] = None,
-        name: Optional[Union[Var[str], str]] = None,
+        type_: Optional[Union[reflex.vars.Var[str], str]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

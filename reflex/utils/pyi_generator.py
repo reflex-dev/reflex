@@ -12,6 +12,7 @@ import subprocess
 import textwrap
 import typing
 from inspect import getfullargspec
+from itertools import chain
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
@@ -150,9 +151,22 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 if arg is not type(None)
             ]
         )
-        res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
+
+        type_name = (
+            value.__module__ + "." + value.__name__
+            if value.__module__.startswith("reflex")
+            else value.__name__
+        )
+
+        res = f"{type_name}[{', '.join(inner_container_type_args)}]"
 
         if value.__name__ == "Var":
+            args = list(
+                chain.from_iterable(
+                    [get_args(arg) if rx_types.is_union(arg) else [arg] for arg in args]
+                )
+            )
+
             # For Var types, Union with the inner args so they can be passed directly.
             types = [res] + [
                 _get_type_hint(arg, type_hint_globals, is_optional=False)
@@ -207,6 +221,7 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
         *ast.parse(  # type: ignore
             textwrap.dedent(
                 """
+                import reflex
                 from reflex.vars import Var, BaseVar, ComputedVar
                 from reflex.event import EventChain, EventHandler, EventSpec
                 from reflex.style import Style"""
@@ -490,9 +505,11 @@ def _generate_staticmethod_call_functiondef(
         kwonlyargs=[],
         kw_defaults=[],
         kwarg=ast.arg(arg="props"),
-        defaults=[ast.Constant(value=default) for default in fullspec.defaults]
-        if fullspec.defaults
-        else [],
+        defaults=(
+            [ast.Constant(value=default) for default in fullspec.defaults]
+            if fullspec.defaults
+            else []
+        ),
     )
     definition = ast.FunctionDef(
         name="__call__",

@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -16,8 +17,8 @@ class RawLink(Component):
     def create(  # type: ignore
         cls,
         *children,
-        href: Optional[Union[Var[str], str]] = None,
-        rel: Optional[Union[Var[str], str]] = None,
+        href: Optional[Union[reflex.vars.Var[str], str]] = None,
+        rel: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -96,13 +97,13 @@ class ScriptTag(Component):
     def create(  # type: ignore
         cls,
         *children,
-        type_: Optional[Union[Var[str], str]] = None,
-        source: Optional[Union[Var[str], str]] = None,
-        integrity: Optional[Union[Var[str], str]] = None,
-        crossorigin: Optional[Union[Var[str], str]] = None,
-        referrer_policy: Optional[Union[Var[str], str]] = None,
-        is_async: Optional[Union[Var[bool], bool]] = None,
-        defer: Optional[Union[Var[bool], bool]] = None,
+        type_: Optional[Union[reflex.vars.Var[str], str]] = None,
+        source: Optional[Union[reflex.vars.Var[str], str]] = None,
+        integrity: Optional[Union[reflex.vars.Var[str], str]] = None,
+        crossorigin: Optional[Union[reflex.vars.Var[str], str]] = None,
+        referrer_policy: Optional[Union[reflex.vars.Var[str], str]] = None,
+        is_async: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        defer: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

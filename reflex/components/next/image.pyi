@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -21,18 +22,18 @@ class Image(NextComponent):
         *children,
         width: Optional[Union[int, str]] = None,
         height: Optional[Union[int, str]] = None,
-        src: Optional[Union[Var[Any], Any]] = None,
-        alt: Optional[Union[Var[str], str]] = None,
-        loader: Optional[Union[Var[Any], Any]] = None,
-        fill: Optional[Union[Var[bool], bool]] = None,
-        sizes: Optional[Union[Var[str], str]] = None,
-        quality: Optional[Union[Var[int], int]] = None,
-        priority: Optional[Union[Var[bool], bool]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
+        src: Optional[Union[reflex.vars.Var[Any], Any]] = None,
+        alt: Optional[Union[reflex.vars.Var[str], str]] = None,
+        loader: Optional[Union[reflex.vars.Var[Any], Any]] = None,
+        fill: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        sizes: Optional[Union[reflex.vars.Var[str], str]] = None,
+        quality: Optional[Union[reflex.vars.Var[int], int]] = None,
+        priority: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        placeholder: Optional[Union[reflex.vars.Var[str], str]] = None,
         loading: Optional[
-            Union[Var[Literal["lazy", "eager"]], Literal["lazy", "eager"]]
+            Union[reflex.vars.Var[Literal["lazy", "eager"]], Literal["lazy", "eager"]]
         ] = None,
-        blurDataURL: Optional[Union[Var[str], str]] = None,
+        blurDataURL: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

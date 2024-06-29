@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Dict, Literal
 
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.vars import Var
 
@@ -27,19 +28,19 @@ class Flex(elements.Div, RadixThemesComponent):
     as_child: Var[bool]
 
     # How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
-    direction: Var[LiteralFlexDirection]
+    direction: Var[Responsive[LiteralFlexDirection]]
 
     # Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
-    align: Var[LiteralAlign]
+    align: Var[Responsive[LiteralAlign]]
 
     # Alignment of children along the cross axis: "start" | "center" | "end" | "between"
-    justify: Var[LiteralJustify]
+    justify: Var[Responsive[LiteralJustify]]
 
     # Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
-    wrap: Var[LiteralFlexWrap]
+    wrap: Var[Responsive[LiteralFlexWrap]]
 
     # Gap between children: "0" - "9"
-    spacing: Var[LiteralSpacing]
+    spacing: Var[Responsive[LiteralSpacing]]
 
     # Reflex maps the "spacing" prop to "gap" prop.
     _rename_props: Dict[str, str] = {"spacing": "gap"}
