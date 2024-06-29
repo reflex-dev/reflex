@@ -925,6 +925,15 @@ class InterdependentState(BaseState):
         """
         return self._v2 * 2
 
+    @rx.var(cache=True, backend=True)
+    def v2x2_backend(self) -> int:
+        """Depends on backend var _v2.
+
+        Returns:
+            backend var _v2 multiplied by 2
+        """
+        return self._v2 * 2
+
     @rx.var(cache=True)
     def v1x2x2(self) -> int:
         """Depends on ComputedVar v1x2.
@@ -1002,11 +1011,11 @@ def test_dirty_computed_var_from_backend_var(
     Args:
         interdependent_state: A state with varying Var dependencies.
     """
+    assert InterdependentState._v3._backend is True
     interdependent_state._v2 = 2
     assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"v2x2": 4, "v3x2": 4},
     }
-    assert "_v3" in InterdependentState.backend_vars
 
 
 def test_per_state_backend_var(interdependent_state: InterdependentState) -> None:
@@ -1295,6 +1304,15 @@ def test_computed_var_dependencies():
             """
             return self.v
 
+        @rx.var(cache=True, backend=True)
+        def comp_v_backend(self) -> int:
+            """Direct access backend var.
+
+            Returns:
+                The value of self.v.
+            """
+            return self.v
+
         @rx.var(cache=True)
         def comp_v_via_property(self) -> int:
             """Access v via property.
@@ -1345,7 +1363,11 @@ def test_computed_var_dependencies():
             return [z in self._z for z in range(5)]
 
     cs = ComputedState()
-    assert cs._computed_var_dependencies["v"] == {"comp_v", "comp_v_via_property"}
+    assert cs._computed_var_dependencies["v"] == {
+        "comp_v",
+        "comp_v_backend",
+        "comp_v_via_property",
+    }
     assert cs._computed_var_dependencies["w"] == {"comp_w"}
     assert cs._computed_var_dependencies["x"] == {"comp_x"}
     assert cs._computed_var_dependencies["y"] == {"comp_y"}

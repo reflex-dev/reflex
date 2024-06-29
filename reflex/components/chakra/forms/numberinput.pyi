@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -23,31 +24,34 @@ class NumberInput(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[Number], Number]] = None,
-        allow_mouse_wheel: Optional[Union[Var[bool], bool]] = None,
-        clamped_value_on_blur: Optional[Union[Var[bool], bool]] = None,
-        default_value: Optional[Union[Var[Number], Number]] = None,
-        error_border_color: Optional[Union[Var[str], str]] = None,
-        focus_border_color: Optional[Union[Var[str], str]] = None,
-        focus_input_on_change: Optional[Union[Var[bool], bool]] = None,
-        is_disabled: Optional[Union[Var[bool], bool]] = None,
-        is_invalid: Optional[Union[Var[bool], bool]] = None,
-        is_read_only: Optional[Union[Var[bool], bool]] = None,
-        is_required: Optional[Union[Var[bool], bool]] = None,
-        is_valid_character: Optional[Union[Var[str], str]] = None,
-        keep_within_range: Optional[Union[Var[bool], bool]] = None,
-        max_: Optional[Union[Var[Number], Number]] = None,
-        min_: Optional[Union[Var[Number], Number]] = None,
+        value: Optional[Union[reflex.vars.Var[Number], Number]] = None,
+        allow_mouse_wheel: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        clamped_value_on_blur: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        default_value: Optional[Union[reflex.vars.Var[Number], Number]] = None,
+        error_border_color: Optional[Union[reflex.vars.Var[str], str]] = None,
+        focus_border_color: Optional[Union[reflex.vars.Var[str], str]] = None,
+        focus_input_on_change: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_invalid: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_read_only: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_required: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_valid_character: Optional[Union[reflex.vars.Var[str], str]] = None,
+        keep_within_range: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        max_: Optional[Union[reflex.vars.Var[Number], Number]] = None,
+        min_: Optional[Union[reflex.vars.Var[Number], Number]] = None,
         variant: Optional[
             Union[
-                Var[Literal["outline", "filled", "flushed", "unstyled"]],
+                reflex.vars.Var[Literal["outline", "filled", "flushed", "unstyled"]],
                 Literal["outline", "filled", "flushed", "unstyled"],
             ]
         ] = None,
         size: Optional[
-            Union[Var[Literal["sm", "md", "lg", "xs"]], Literal["sm", "md", "lg", "xs"]]
+            Union[
+                reflex.vars.Var[Literal["sm", "md", "lg", "xs"]],
+                Literal["sm", "md", "lg", "xs"],
+            ]
         ] = None,
-        name: Optional[Union[Var[str], str]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

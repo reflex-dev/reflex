@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 
 from ..base import (
@@ -22,7 +23,7 @@ class Avatar(RadixThemesComponent):
     variant: Var[Literal["solid", "soft"]]
 
     # The size of the avatar: "1" - "9"
-    size: Var[LiteralSize]
+    size: Var[Responsive[LiteralSize]]
 
     # Color theme of the avatar
     color_scheme: Var[LiteralAccentColor]

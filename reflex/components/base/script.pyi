@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -18,10 +19,10 @@ class Script(Component):
     def create(  # type: ignore
         cls,
         *children,
-        src: Optional[Union[Var[str], str]] = None,
+        src: Optional[Union[reflex.vars.Var[str], str]] = None,
         strategy: Optional[
             Union[
-                Var[Literal["afterInteractive", "beforeInteractive", "lazyOnload"]],
+                reflex.vars.Var[Literal["afterInteractive", "beforeInteractive", "lazyOnload"]],
                 Literal["afterInteractive", "beforeInteractive", "lazyOnload"],
             ]
         ] = None,

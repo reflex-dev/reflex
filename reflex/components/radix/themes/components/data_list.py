@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 from typing import Literal
 
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -14,13 +15,13 @@ class DataListRoot(RadixThemesComponent):
     tag = "DataList.Root"
 
     # The orientation of the data list item: "horizontal" | "vertical"
-    orientation: Var[Literal["horizontal", "vertical"]]
+    orientation: Var[Responsive[Literal["horizontal", "vertical"]]]
 
     # The size of the data list item: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Trims the leading whitespace from the start or end of the text.
-    trim: Var[Literal["normal", "start", "end", "both"]]
+    trim: Var[Responsive[Literal["normal", "start", "end", "both"]]]
 
 
 class DataListItem(RadixThemesComponent):
@@ -28,7 +29,7 @@ class DataListItem(RadixThemesComponent):
 
     tag = "DataList.Item"
 
-    align: Var[Literal["start", "center", "end", "baseline", "stretch"]]
+    align: Var[Responsive[Literal["start", "center", "end", "baseline", "stretch"]]]
 
 
 class DataListLabel(RadixThemesComponent):
@@ -36,11 +37,11 @@ class DataListLabel(RadixThemesComponent):
 
     tag = "DataList.Label"
 
-    width: Var[str]
+    width: Var[Responsive[str]]
 
-    min_width: Var[str]
+    min_width: Var[Responsive[str]]
 
-    max_width: Var[str]
+    max_width: Var[Responsive[str]]
 
     color_scheme: Var[LiteralAccentColor]
 

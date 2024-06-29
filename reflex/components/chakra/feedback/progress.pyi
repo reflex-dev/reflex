@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -17,13 +18,13 @@ class Progress(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        has_stripe: Optional[Union[Var[bool], bool]] = None,
-        is_animated: Optional[Union[Var[bool], bool]] = None,
-        is_indeterminate: Optional[Union[Var[bool], bool]] = None,
-        max_: Optional[Union[Var[int], int]] = None,
-        min_: Optional[Union[Var[int], int]] = None,
-        value: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
-        color_scheme: Optional[Union[Var[str], str]] = None,
+        has_stripe: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_animated: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_indeterminate: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        max_: Optional[Union[reflex.vars.Var[int], int]] = None,
+        min_: Optional[Union[reflex.vars.Var[int], int]] = None,
+        value: Optional[Union[reflex.vars.Var[Union[float, int]], int, float]] = None,
+        color_scheme: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

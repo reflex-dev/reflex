@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -17,16 +18,18 @@ class Avatar(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        icon: Optional[Union[Var[str], str]] = None,
-        icon_label: Optional[Union[Var[str], str]] = None,
-        ignore_fallback: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        show_border: Optional[Union[Var[bool], bool]] = None,
-        src: Optional[Union[Var[str], str]] = None,
-        src_set: Optional[Union[Var[str], str]] = None,
+        icon: Optional[Union[reflex.vars.Var[str], str]] = None,
+        icon_label: Optional[Union[reflex.vars.Var[str], str]] = None,
+        ignore_fallback: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
+        show_border: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        src: Optional[Union[reflex.vars.Var[str], str]] = None,
+        src_set: Optional[Union[reflex.vars.Var[str], str]] = None,
         size: Optional[
             Union[
-                Var[Literal["sm", "md", "lg", "xl", "xs", "2xl", "full", "2xs"]],
+                reflex.vars.Var[
+                    Literal["sm", "md", "lg", "xl", "xs", "2xl", "full", "2xs"]
+                ],
                 Literal["sm", "md", "lg", "xl", "xs", "2xl", "full", "2xs"],
             ]
         ] = None,
@@ -193,8 +196,8 @@ class AvatarGroup(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        max_: Optional[Union[Var[int], int]] = None,
-        spacing: Optional[Union[Var[int], int]] = None,
+        max_: Optional[Union[reflex.vars.Var[int], int]] = None,
+        spacing: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

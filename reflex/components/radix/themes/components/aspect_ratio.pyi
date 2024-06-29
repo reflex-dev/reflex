@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -17,7 +18,7 @@ class AspectRatio(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        ratio: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
+        ratio: Optional[Union[reflex.vars.Var[Union[float, int]], float, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -90,48 +91,50 @@ class DataEditor(NoSSRComponent):
     def create(  # type: ignore
         cls,
         *children,
-        rows: Optional[Union[Var[int], int]] = None,
+        rows: Optional[Union[reflex.vars.Var[int], int]] = None,
         columns: Optional[
-            Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
+            Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
         ] = None,
-        data: Optional[Union[Var[List[List[Any]]], List[List[Any]]]] = None,
-        get_cell_content: Optional[Union[Var[str], str]] = None,
-        get_cell_for_selection: Optional[Union[Var[bool], bool]] = None,
-        on_paste: Optional[Union[Var[bool], bool]] = None,
-        draw_focus_ring: Optional[Union[Var[bool], bool]] = None,
-        fixed_shadow_x: Optional[Union[Var[bool], bool]] = None,
-        fixed_shadow_y: Optional[Union[Var[bool], bool]] = None,
-        freeze_columns: Optional[Union[Var[int], int]] = None,
-        group_header_height: Optional[Union[Var[int], int]] = None,
-        header_height: Optional[Union[Var[int], int]] = None,
-        max_column_auto_width: Optional[Union[Var[int], int]] = None,
-        max_column_width: Optional[Union[Var[int], int]] = None,
-        min_column_width: Optional[Union[Var[int], int]] = None,
-        row_height: Optional[Union[Var[int], int]] = None,
+        data: Optional[Union[reflex.vars.Var[List[List[Any]]], List[List[Any]]]] = None,
+        get_cell_content: Optional[Union[reflex.vars.Var[str], str]] = None,
+        get_cell_for_selection: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        on_paste: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        draw_focus_ring: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        fixed_shadow_x: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        fixed_shadow_y: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        freeze_columns: Optional[Union[reflex.vars.Var[int], int]] = None,
+        group_header_height: Optional[Union[reflex.vars.Var[int], int]] = None,
+        header_height: Optional[Union[reflex.vars.Var[int], int]] = None,
+        max_column_auto_width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        max_column_width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        min_column_width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        row_height: Optional[Union[reflex.vars.Var[int], int]] = None,
         row_markers: Optional[
             Union[
-                Var[Literal["none", "number", "checkbox", "both", "clickable-number"]],
+                reflex.vars.Var[
+                    Literal["none", "number", "checkbox", "both", "clickable-number"]
+                ],
                 Literal["none", "number", "checkbox", "both", "clickable-number"],
             ]
         ] = None,
-        row_marker_start_index: Optional[Union[Var[int], int]] = None,
-        row_marker_width: Optional[Union[Var[int], int]] = None,
-        smooth_scroll_x: Optional[Union[Var[bool], bool]] = None,
-        smooth_scroll_y: Optional[Union[Var[bool], bool]] = None,
-        vertical_border: Optional[Union[Var[bool], bool]] = None,
+        row_marker_start_index: Optional[Union[reflex.vars.Var[int], int]] = None,
+        row_marker_width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        smooth_scroll_x: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        smooth_scroll_y: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        vertical_border: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         column_select: Optional[
             Union[
-                Var[Literal["none", "single", "multi"]],
+                reflex.vars.Var[Literal["none", "single", "multi"]],
                 Literal["none", "single", "multi"],
             ]
         ] = None,
-        prevent_diagonal_scrolling: Optional[Union[Var[bool], bool]] = None,
-        overscroll_x: Optional[Union[Var[int], int]] = None,
-        overscroll_y: Optional[Union[Var[int], int]] = None,
-        scroll_offset_x: Optional[Union[Var[int], int]] = None,
-        scroll_offset_y: Optional[Union[Var[int], int]] = None,
+        prevent_diagonal_scrolling: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        overscroll_x: Optional[Union[reflex.vars.Var[int], int]] = None,
+        overscroll_y: Optional[Union[reflex.vars.Var[int], int]] = None,
+        scroll_offset_x: Optional[Union[reflex.vars.Var[int], int]] = None,
+        scroll_offset_y: Optional[Union[reflex.vars.Var[int], int]] = None,
         theme: Optional[
-            Union[Var[Union[DataEditorTheme, Dict]], Union[DataEditorTheme, Dict]]
+            Union[reflex.vars.Var[Union[DataEditorTheme, Dict]], DataEditorTheme, Dict]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
