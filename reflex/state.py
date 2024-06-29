@@ -401,11 +401,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Create a fresh copy of the backend variables for this instance
         self._backend_vars = copy.deepcopy(
-            {
-                name: item
-                for name, item in self.backend_vars.items()
-                if name not in self.computed_vars
-            }
+            {name: item for name, item in self.backend_vars.items()}
         )
 
     def __repr__(self) -> str:
