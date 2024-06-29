@@ -18,5 +18,5 @@ def test_html_create():
     assert str(html.dangerouslySetInnerHTML) == '{"__html": "<p>Hello !</p>"}'  # type: ignore
     assert (
         str(html)
-        == '<div className={`rx-Html`} dangerouslySetInnerHTML={{"__html": "<p>Hello !</p>"}}/>'
+        == '<div className={`rx-Html prose`} dangerouslySetInnerHTML={{"__html": "<p>Hello !</p>"}}/>'
     )
