@@ -108,6 +108,18 @@ export const getBackendURL = (url_str) => {
 };
 
 /**
+ * Determine if any event in the event queue is stateful.
+ *
+ * @returns True if there's any event that requires state and False if none of them do.
+ */
+export const isStateful = () => {
+  if (event_queue.length === 0) {
+    return false;
+  }
+  return event_queue.some(event => event.name.startsWith("state"));
+}
+
+/**
  * Apply a delta to the state.
  * @param state The state to apply the delta to.
  * @param delta The delta to apply.
@@ -115,6 +127,20 @@ export const getBackendURL = (url_str) => {
 export const applyDelta = (state, delta) => {
   return { ...state, ...delta };
 };
+
+/**
+ * Only Queue and process events when websocket connection exists.
+ * @param event The event to queue.
+ * @param socket The socket object to send the event on.
+ *
+ * @returns Adds event to queue and processes it if websocket exits, does nothing otherwise.
+ */
+export const queueEventIfSocketExists = async (events, socket) => {
+  if (!socket) {
+    return;
+  }
+  await queueEvents(events, socket);
+}
 
 /**
  * Handle frontend event or send the event to the backend via Websocket.
@@ -143,18 +169,30 @@ export const applyEvent = async (event, socket) => {
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    queueEvents(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket);
     return false;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
-    queueEvents(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket);
     return false;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
+    queueEventIfSocketExists(initialEvents(), socket);
+    return false;
+  }
+
+  if (event.name == "_clear_session_storage") {
+    sessionStorage.clear();
+    queueEvents(initialEvents(), socket);
+    return false;
+  }
+
+  if (event.name == "_remove_session_storage") {
+    sessionStorage.removeItem(event.payload.key);
     queueEvents(initialEvents(), socket);
     return false;
   }
@@ -249,7 +287,7 @@ export const applyRestEvent = async (event, socket) => {
   let eventSent = false;
   if (event.handler === "uploadFiles") {
 
-    if (event.payload.files === undefined || event.payload.files.length === 0){
+    if (event.payload.files === undefined || event.payload.files.length === 0) {
       // Submit the event over the websocket to trigger the event handler.
       return await applyEvent(Event(event.name), socket)
     }
@@ -282,8 +320,8 @@ export const queueEvents = async (events, socket) => {
  * @param socket The socket object to send the event on.
  */
 export const processEvent = async (socket) => {
-  // Only proceed if the socket is up, otherwise we throw the event into the void
-  if (!socket) {
+  // Only proceed if the socket is up and no event in the queue uses state, otherwise we throw the event into the void
+  if (!socket && isStateful()) {
     return;
   }
 
@@ -350,9 +388,17 @@ export const connect = async (
     }
   }
 
+  const pagehideHandler = (event) => {
+    if (event.persisted && socket.current?.connected) {
+      console.log("Disconnect backend before bfcache on navigation");
+      socket.current.disconnect();
+    }
+  }
+
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
     setConnectErrors([]);
+    window.addEventListener("pagehide", pagehideHandler);
   });
 
   socket.current.on("connect_error", (error) => {
@@ -362,6 +408,7 @@ export const connect = async (
   // When the socket disconnects reset the event_processing flag
   socket.current.on("disconnect", () => {
     event_processing = false;
+    window.removeEventListener("pagehide", pagehideHandler);
   });
 
   // On each received message, queue the updates and events.
@@ -512,7 +559,18 @@ export const hydrateClientStorage = (client_storage) => {
       }
     }
   }
-  if (client_storage.cookies || client_storage.local_storage) {
+  if (client_storage.session_storage && typeof window != "undefined") {
+    for (const state_key in client_storage.session_storage) {
+      const session_options = client_storage.session_storage[state_key];
+      const session_storage_value = sessionStorage.getItem(
+        session_options.name || state_key
+      );
+      if (session_storage_value != null) {
+        client_storage_values[state_key] = session_storage_value;
+      }
+    }
+  }
+  if (client_storage.cookies || client_storage.local_storage || client_storage.session_storage) {
     return client_storage_values;
   }
   return {};
@@ -552,7 +610,15 @@ const applyClientStorageDelta = (client_storage, delta) => {
       ) {
         const options = client_storage.local_storage[state_key];
         localStorage.setItem(options.name || state_key, delta[substate][key]);
+      } else if(
+        client_storage.session_storage &&
+        state_key in client_storage.session_storage &&
+        typeof window !== "undefined"
+      ) {
+        const session_options = client_storage.session_storage[state_key];
+        sessionStorage.setItem(session_options.name || state_key, delta[substate][key]);
       }
+
     }
   }
 };
@@ -684,7 +750,7 @@ export const useEventLoop = (
     const change_start = () => {
       const main_state_dispatch = dispatch["state"]
       if (main_state_dispatch !== undefined) {
-        main_state_dispatch({is_hydrated: false})
+        main_state_dispatch({ is_hydrated: false })
       }
     }
     const change_complete = () => addEvents(onLoadInternalEvent());

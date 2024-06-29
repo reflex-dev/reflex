@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -90,74 +91,50 @@ class DataEditor(NoSSRComponent):
     def create(  # type: ignore
         cls,
         *children,
-        rows: Optional[Union[Var[int], int]] = None,
+        rows: Optional[Union[reflex.vars.Var[int], int]] = None,
         columns: Optional[
-            Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
+            Union[reflex.vars.Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
         ] = None,
-        data: Optional[Union[Var[List[List[Any]]], List[List[Any]]]] = None,
-        get_cell_content: Optional[Union[Var[str], str]] = None,
-        get_cell_for_selection: Optional[Union[Var[bool], bool]] = None,
-        on_paste: Optional[Union[Var[bool], bool]] = None,
-        draw_focus_ring: Optional[Union[Var[bool], bool]] = None,
-        fixed_shadow_x: Optional[Union[Var[bool], bool]] = None,
-        fixed_shadow_y: Optional[Union[Var[bool], bool]] = None,
-        freeze_columns: Optional[Union[Var[int], int]] = None,
-        group_header_height: Optional[Union[Var[int], int]] = None,
-        header_height: Optional[Union[Var[int], int]] = None,
-        max_column_auto_width: Optional[Union[Var[int], int]] = None,
-        max_column_width: Optional[Union[Var[int], int]] = None,
-        min_column_width: Optional[Union[Var[int], int]] = None,
-        row_height: Optional[Union[Var[int], int]] = None,
+        data: Optional[Union[reflex.vars.Var[List[List[Any]]], List[List[Any]]]] = None,
+        get_cell_content: Optional[Union[reflex.vars.Var[str], str]] = None,
+        get_cell_for_selection: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        on_paste: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        draw_focus_ring: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        fixed_shadow_x: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        fixed_shadow_y: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        freeze_columns: Optional[Union[reflex.vars.Var[int], int]] = None,
+        group_header_height: Optional[Union[reflex.vars.Var[int], int]] = None,
+        header_height: Optional[Union[reflex.vars.Var[int], int]] = None,
+        max_column_auto_width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        max_column_width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        min_column_width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        row_height: Optional[Union[reflex.vars.Var[int], int]] = None,
         row_markers: Optional[
             Union[
-                Var[Literal["none", "number", "checkbox", "both", "clickable-number"]],
+                reflex.vars.Var[
+                    Literal["none", "number", "checkbox", "both", "clickable-number"]
+                ],
                 Literal["none", "number", "checkbox", "both", "clickable-number"],
             ]
         ] = None,
-        row_marker_start_index: Optional[Union[Var[int], int]] = None,
-        row_marker_width: Optional[Union[Var[int], int]] = None,
-        smooth_scroll_x: Optional[Union[Var[bool], bool]] = None,
-        smooth_scroll_y: Optional[Union[Var[bool], bool]] = None,
-        vertical_border: Optional[Union[Var[bool], bool]] = None,
+        row_marker_start_index: Optional[Union[reflex.vars.Var[int], int]] = None,
+        row_marker_width: Optional[Union[reflex.vars.Var[int], int]] = None,
+        smooth_scroll_x: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        smooth_scroll_y: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        vertical_border: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         column_select: Optional[
             Union[
-                Var[Literal["none", "single", "multi"]],
+                reflex.vars.Var[Literal["none", "single", "multi"]],
                 Literal["none", "single", "multi"],
             ]
         ] = None,
-        prevent_diagonal_scrolling: Optional[Union[Var[bool], bool]] = None,
-        overscroll_x: Optional[Union[Var[int], int]] = None,
-        overscroll_y: Optional[Union[Var[int], int]] = None,
-        scroll_offset_x: Optional[Union[Var[int], int]] = None,
-        scroll_offset_y: Optional[Union[Var[int], int]] = None,
+        prevent_diagonal_scrolling: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        overscroll_x: Optional[Union[reflex.vars.Var[int], int]] = None,
+        overscroll_y: Optional[Union[reflex.vars.Var[int], int]] = None,
+        scroll_offset_x: Optional[Union[reflex.vars.Var[int], int]] = None,
+        scroll_offset_y: Optional[Union[reflex.vars.Var[int], int]] = None,
         theme: Optional[
-            Union[Var[Union[DataEditorTheme, Dict]], Union[DataEditorTheme, Dict]]
-        ] = None,
-        on_cell_activated: Optional[EventHandler[lambda pos: [pos]]] = None,
-        on_cell_clicked: Optional[EventHandler[lambda pos: [pos]]] = None,
-        on_cell_context_menu: Optional[EventHandler[lambda pos: [pos]]] = None,
-        on_cell_edited: Optional[EventHandler[on_edit_spec]] = None,
-        on_group_header_clicked: Optional[EventHandler[on_edit_spec]] = None,
-        on_group_header_context_menu: Optional[
-            EventHandler[lambda grp_idx, data: [grp_idx, data]]
-        ] = None,
-        on_group_header_renamed: Optional[
-            EventHandler[lambda idx, val: [idx, val]]
-        ] = None,
-        on_header_clicked: Optional[EventHandler[lambda pos: [pos]]] = None,
-        on_header_context_menu: Optional[EventHandler[lambda pos: [pos]]] = None,
-        on_header_menu_click: Optional[
-            EventHandler[lambda col, pos: [col, pos]]
-        ] = None,
-        on_item_hovered: Optional[EventHandler[lambda pos: [pos]]] = None,
-        on_delete: Optional[EventHandler[lambda selection: [selection]]] = None,
-        on_finished_editing: Optional[
-            EventHandler[lambda new_value, movement: [new_value, movement]]
-        ] = None,
-        on_row_appended: Optional[EventHandler[lambda: []]] = None,
-        on_selection_cleared: Optional[EventHandler[lambda: []]] = None,
-        on_column_resize: Optional[
-            EventHandler[lambda col, width: [col, width]]
+            Union[reflex.vars.Var[Union[DataEditorTheme, Dict]], DataEditorTheme, Dict]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -165,6 +142,99 @@ class DataEditor(NoSSRComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_cell_activated: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_cell_clicked: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_cell_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_cell_edited: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_column_resize: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_delete: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_finished_editing: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_group_header_clicked: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_group_header_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_group_header_renamed: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_header_clicked: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_header_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_header_menu_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_item_hovered: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_row_appended: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_selection_cleared: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         **props
     ) -> "DataEditor":
         """Create the DataEditor component.
@@ -200,22 +270,6 @@ class DataEditor(NoSSRComponent):
             scroll_offset_x: Initial scroll offset on the horizontal axis.
             scroll_offset_y: Initial scroll offset on the vertical axis.
             theme: global theme
-            on_cell_activated: Fired when a cell is activated.
-            on_cell_clicked: Fired when a cell is clicked.
-            on_cell_context_menu: Fired when a cell is right-clicked.
-            on_cell_edited: Fired when a cell is edited.
-            on_group_header_clicked: Fired when a group header is clicked.
-            on_group_header_context_menu: Fired when a group header is right-clicked.
-            on_group_header_renamed: Fired when a group header is renamed.
-            on_header_clicked: Fired when a header is clicked.
-            on_header_context_menu: Fired when a header is right-clicked.
-            on_header_menu_click: Fired when a header menu item is clicked.
-            on_item_hovered: Fired when an item is hovered.
-            on_delete: Fired when a selection is deleted.
-            on_finished_editing: Fired when editing is finished.
-            on_row_appended: Fired when a row is appended.
-            on_selection_cleared: Fired when the selection is cleared.
-            on_column_resize: Fired when a column is resized.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -231,7 +285,6 @@ class DataEditor(NoSSRComponent):
             The DataEditor component.&
         """
         ...
-    def get_event_triggers(self) -> dict[str, Any]: ...
 
 @serializer
 def serialize_dataeditortheme(theme: DataEditorTheme): ...

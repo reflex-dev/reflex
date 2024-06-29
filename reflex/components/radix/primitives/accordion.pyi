@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -34,7 +35,7 @@ class AccordionComponent(RadixPrimitiveComponent):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -96,11 +97,13 @@ class AccordionComponent(RadixPrimitiveComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                reflex.vars.Var[
+                    Literal["classic", "soft", "surface", "outline", "ghost"]
+                ],
                 Literal["classic", "soft", "surface", "outline", "ghost"],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -182,35 +185,40 @@ class AccordionRoot(AccordionComponent):
         cls,
         *children,
         type: Optional[
-            Union[Var[Literal["single", "multiple"]], Literal["single", "multiple"]]
+            Union[
+                reflex.vars.Var[Literal["single", "multiple"]],
+                Literal["single", "multiple"],
+            ]
         ] = None,
         value: Optional[
-            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
+            Union[reflex.vars.Var[Union[List[str], str]], str, List[str]]
         ] = None,
         default_value: Optional[
-            Union[Var[Union[str, List[str]]], Union[str, List[str]]]
+            Union[reflex.vars.Var[Union[List[str], str]], str, List[str]]
         ] = None,
-        collapsible: Optional[Union[Var[bool], bool]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        collapsible: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        dir: Optional[
+            Union[reflex.vars.Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+        ] = None,
         orientation: Optional[
             Union[
-                Var[Literal["vertical", "horizontal"]],
+                reflex.vars.Var[Literal["vertical", "horizontal"]],
                 Literal["vertical", "horizontal"],
             ]
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                reflex.vars.Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        duration: Optional[Union[Var[int], int]] = None,
-        easing: Optional[Union[Var[str], str]] = None,
-        show_dividers: Optional[Union[Var[bool], bool]] = None,
+        duration: Optional[Union[reflex.vars.Var[int], int]] = None,
+        easing: Optional[Union[reflex.vars.Var[str], str]] = None,
+        show_dividers: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -272,11 +280,13 @@ class AccordionRoot(AccordionComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                reflex.vars.Var[
+                    Literal["classic", "soft", "surface", "outline", "ghost"]
+                ],
                 Literal["classic", "soft", "surface", "outline", "ghost"],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -372,11 +382,11 @@ class AccordionItem(AccordionComponent):
         *children,
         header: Optional[Union[Component, Var]] = None,
         content: Optional[Union[Component, Var]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -438,11 +448,13 @@ class AccordionItem(AccordionComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                reflex.vars.Var[
+                    Literal["classic", "soft", "surface", "outline", "ghost"]
+                ],
                 Literal["classic", "soft", "surface", "outline", "ghost"],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -519,6 +531,7 @@ class AccordionItem(AccordionComponent):
             The accordion item.
         """
         ...
+
     def add_style(self) -> dict[str, Any] | None: ...
 
 class AccordionHeader(AccordionComponent):
@@ -529,7 +542,7 @@ class AccordionHeader(AccordionComponent):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -591,11 +604,13 @@ class AccordionHeader(AccordionComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                reflex.vars.Var[
+                    Literal["classic", "soft", "surface", "outline", "ghost"]
+                ],
                 Literal["classic", "soft", "surface", "outline", "ghost"],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -668,6 +683,7 @@ class AccordionHeader(AccordionComponent):
             The Accordion header Component.
         """
         ...
+
     def add_style(self) -> dict[str, Any] | None: ...
 
 class AccordionTrigger(AccordionComponent):
@@ -678,7 +694,7 @@ class AccordionTrigger(AccordionComponent):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -740,11 +756,13 @@ class AccordionTrigger(AccordionComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                reflex.vars.Var[
+                    Literal["classic", "soft", "surface", "outline", "ghost"]
+                ],
                 Literal["classic", "soft", "surface", "outline", "ghost"],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -817,6 +835,7 @@ class AccordionTrigger(AccordionComponent):
             The Accordion trigger Component.
         """
         ...
+
     def add_style(self) -> dict[str, Any] | None: ...
 
 class AccordionIcon(Icon):
@@ -825,7 +844,7 @@ class AccordionIcon(Icon):
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[Union[Var[int], int]] = None,
+        size: Optional[Union[reflex.vars.Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -906,7 +925,7 @@ class AccordionContent(AccordionComponent):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -968,11 +987,13 @@ class AccordionContent(AccordionComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                reflex.vars.Var[
+                    Literal["classic", "soft", "surface", "outline", "ghost"]
+                ],
                 Literal["classic", "soft", "surface", "outline", "ghost"],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1045,6 +1066,7 @@ class AccordionContent(AccordionComponent):
             The Accordion content Component.
         """
         ...
+
     def add_custom_code(self) -> list[str]: ...
     def add_style(self) -> dict[str, Any] | None: ...
 

@@ -4,11 +4,13 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Literal
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
 from reflex.event import EventHandler
 from reflex.vars import Var
@@ -23,12 +25,21 @@ class TabsRoot(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        default_value: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        default_value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
+                reflex.vars.Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+            ]
+        ] = None,
+        dir: Optional[
+            Union[reflex.vars.Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+        ] = None,
+        activation_mode: Optional[
+            Union[
+                reflex.vars.Var[Literal["automatic", "manual"]],
+                Literal["automatic", "manual"],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -97,6 +108,8 @@ class TabsRoot(RadixThemesComponent):
             default_value: The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
             value: The controlled value of the tab that should be active. Use when you need to control the state of the tabs.
             orientation: The orientation of the tabs.
+            dir: Reading direction of the tabs.
+            activation_mode: The mode of activation for the tabs. "automatic" will activate the tab when focused. "manual" will activate the tab when clicked.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -117,7 +130,21 @@ class TabsList(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
+        size: Optional[
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2"]
+                        ],
+                    ]
+                ],
+                Literal["1", "2"],
+                reflex.components.core.breakpoints.Breakpoints[str, Literal["1", "2"]],
+            ]
+        ] = None,
+        loop: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -179,6 +206,7 @@ class TabsList(RadixThemesComponent):
         Args:
             *children: Child components.
             size: Tabs size "1" - "2"
+            loop: When true, the tabs will loop when reaching the end.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -198,11 +226,11 @@ class TabsTrigger(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -334,6 +362,7 @@ class TabsTrigger(RadixThemesComponent):
             The TabsTrigger Component.
         """
         ...
+
     def add_style(self) -> Dict[str, Any] | None: ...
 
 class TabsContent(RadixThemesComponent):
@@ -343,7 +372,8 @@ class TabsContent(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        force_mount: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -405,6 +435,7 @@ class TabsContent(RadixThemesComponent):
         Args:
             *children: Child components.
             value: The value of the tab. Must be unique for each tab.
+            force_mount: Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -427,12 +458,21 @@ class Tabs(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        default_value: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        default_value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
+                reflex.vars.Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+            ]
+        ] = None,
+        dir: Optional[
+            Union[reflex.vars.Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+        ] = None,
+        activation_mode: Optional[
+            Union[
+                reflex.vars.Var[Literal["automatic", "manual"]],
+                Literal["automatic", "manual"],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -501,6 +541,8 @@ class Tabs(ComponentNamespace):
             default_value: The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
             value: The controlled value of the tab that should be active. Use when you need to control the state of the tabs.
             orientation: The orientation of the tabs.
+            dir: Reading direction of the tabs.
+            activation_mode: The mode of activation for the tabs. "automatic" will activate the tab when focused. "manual" will activate the tab when clicked.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

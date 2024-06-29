@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -19,16 +20,16 @@ class CircularProgress(ChakraComponent):
         cls,
         *children,
         label=None,
-        cap_is_round: Optional[Union[Var[bool], bool]] = None,
-        is_indeterminate: Optional[Union[Var[bool], bool]] = None,
-        max_: Optional[Union[Var[int], int]] = None,
-        min_: Optional[Union[Var[int], int]] = None,
-        thickness: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None,
-        track_color: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[int], int]] = None,
-        value_text: Optional[Union[Var[str], str]] = None,
-        color: Optional[Union[Var[str], str]] = None,
-        size: Optional[Union[Var[str], str]] = None,
+        cap_is_round: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_indeterminate: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        max_: Optional[Union[reflex.vars.Var[int], int]] = None,
+        min_: Optional[Union[reflex.vars.Var[int], int]] = None,
+        thickness: Optional[Union[reflex.vars.Var[Union[int, str]], str, int]] = None,
+        track_color: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[int], int]] = None,
+        value_text: Optional[Union[reflex.vars.Var[str], str]] = None,
+        color: Optional[Union[reflex.vars.Var[str], str]] = None,
+        size: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -1,7 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from typing import Literal
 
 from reflex.components.component import ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.event import EventHandler
 from reflex.vars import Var
@@ -35,7 +37,7 @@ class AlertDialogContent(elements.Div, RadixThemesComponent):
     tag = "AlertDialog.Content"
 
     # The size of the content.
-    size: Var[LiteralContentSize]
+    size: Var[Responsive[LiteralContentSize]]
 
     # Whether to force mount the content on open.
     force_mount: Var[bool]

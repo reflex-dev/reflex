@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -18,11 +19,11 @@ class Badge(ChakraComponent):
         *children,
         variant: Optional[
             Union[
-                Var[Literal["solid", "subtle", "outline"]],
+                reflex.vars.Var[Literal["solid", "subtle", "outline"]],
                 Literal["solid", "subtle", "outline"],
             ]
         ] = None,
-        color_scheme: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

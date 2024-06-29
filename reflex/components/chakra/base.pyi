@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -95,7 +96,7 @@ class ChakraProvider(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        theme: Optional[Union[Var[str], str]] = None,
+        theme: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -155,6 +156,7 @@ class ChakraProvider(ChakraComponent):
             A new ChakraProvider component.
         """
         ...
+
     def add_imports(self) -> ImportDict: ...
 
 chakra_provider = ChakraProvider.create()

@@ -4,11 +4,13 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from types import SimpleNamespace
 from typing import Literal, Union
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -19,14 +21,30 @@ class CheckboxCardsRoot(RadixThemesComponent):
         cls,
         *children,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str, Literal["1", "2", "3"]
+                        ],
+                    ]
+                ],
+                Literal["1", "2", "3"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str, Literal["1", "2", "3"]
+                ],
+            ]
         ] = None,
         variant: Optional[
-            Union[Var[Literal["classic", "surface"]], Literal["classic", "surface"]]
+            Union[
+                reflex.vars.Var[Literal["classic", "surface"]],
+                Literal["classic", "surface"],
+            ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "tomato",
                         "red",
@@ -86,17 +104,51 @@ class CheckboxCardsRoot(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         columns: Optional[
             Union[
-                Var[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]],
-                Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Union[
+                                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                                str,
+                            ],
+                        ],
+                        str,
+                    ]
+                ],
+                str,
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str,
+                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+                ],
             ]
         ] = None,
         gap: Optional[
             Union[
-                Var[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]],
-                Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                reflex.vars.Var[
+                    Union[
+                        Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        reflex.components.core.breakpoints.Breakpoints[
+                            str,
+                            Union[
+                                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                                str,
+                            ],
+                        ],
+                        str,
+                    ]
+                ],
+                str,
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                reflex.components.core.breakpoints.Breakpoints[
+                    str,
+                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+                ],
             ]
         ] = None,
         style: Optional[Style] = None,

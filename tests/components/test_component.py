@@ -2069,3 +2069,76 @@ def test_add_style_foreach():
 
     # Expect only one instance of this CSS dict in the rendered page
     assert str(page).count('css={{"color": "red"}}') == 1
+
+
+class TriggerState(rx.State):
+    """Test state with event handlers."""
+
+    def do_something(self):
+        """Sample event handler."""
+        pass
+
+
+@pytest.mark.parametrize(
+    "component, output",
+    [
+        (rx.box(rx.text("random text")), False),
+        (
+            rx.box(rx.text("random text", on_click=rx.console_log("log"))),
+            False,
+        ),
+        (
+            rx.box(
+                rx.text("random text", on_click=TriggerState.do_something),
+                rx.text(
+                    "random text",
+                    on_click=BaseVar(_var_name="toggleColorMode", _var_type=EventChain),
+                ),
+            ),
+            True,
+        ),
+        (
+            rx.box(
+                rx.text("random text", on_click=rx.console_log("log")),
+                rx.text(
+                    "random text",
+                    on_click=BaseVar(_var_name="toggleColorMode", _var_type=EventChain),
+                ),
+            ),
+            False,
+        ),
+        (
+            rx.box(rx.text("random text", on_click=TriggerState.do_something)),
+            True,
+        ),
+        (
+            rx.box(
+                rx.text(
+                    "random text",
+                    on_click=[rx.console_log("log"), rx.window_alert("alert")],
+                ),
+            ),
+            False,
+        ),
+        (
+            rx.box(
+                rx.text(
+                    "random text",
+                    on_click=[rx.console_log("log"), TriggerState.do_something],
+                ),
+            ),
+            True,
+        ),
+        (
+            rx.box(
+                rx.text(
+                    "random text",
+                    on_blur=lambda: TriggerState.do_something,
+                ),
+            ),
+            True,
+        ),
+    ],
+)
+def test_has_state_event_triggers(component, output):
+    assert component._has_stateful_event_triggers() == output

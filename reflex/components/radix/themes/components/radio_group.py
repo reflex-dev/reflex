@@ -1,10 +1,12 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from __future__ import annotations
 
 from typing import List, Literal, Optional, Union
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler
@@ -25,10 +27,14 @@ class RadioGroupRoot(RadixThemesComponent):
     tag = "RadioGroup.Root"
 
     # The size of the radio group: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]] = Var.create_safe(
+        "2", _var_is_string=True
+    )
 
     # The variant of the radio group
-    variant: Var[Literal["classic", "surface", "soft"]]
+    variant: Var[Literal["classic", "surface", "soft"]] = Var.create_safe(
+        "classic", _var_is_string=True
+    )
 
     # The color of the radio group
     color_scheme: Var[LiteralAccentColor]
@@ -80,7 +86,9 @@ class HighLevelRadioGroup(RadixThemesComponent):
     items: Var[List[str]]
 
     # The direction of the radio group.
-    direction: Var[LiteralFlexDirection]
+    direction: Var[LiteralFlexDirection] = Var.create_safe(
+        "column", _var_is_string=True
+    )
 
     # The gap between the items of the radio group.
     spacing: Var[LiteralSpacing] = Var.create_safe("2", _var_is_string=True)
@@ -89,7 +97,9 @@ class HighLevelRadioGroup(RadixThemesComponent):
     size: Var[Literal["1", "2", "3"]] = Var.create_safe("2", _var_is_string=True)
 
     # The variant of the radio group
-    variant: Var[Literal["classic", "surface", "soft"]]
+    variant: Var[Literal["classic", "surface", "soft"]] = Var.create_safe(
+        "classic", _var_is_string=True
+    )
 
     # The color of the radio group
     color_scheme: Var[LiteralAccentColor]
@@ -133,7 +143,11 @@ class HighLevelRadioGroup(RadixThemesComponent):
         direction = props.pop("direction", "column")
         spacing = props.pop("spacing", "2")
         size = props.pop("size", "2")
+        variant = props.pop("variant", "classic")
+        color_scheme = props.pop("color_scheme", None)
         default_value = props.pop("default_value", "")
+
+        default_value = Var.create(default_value, _var_is_string=True)
 
         # convert only non-strings to json(JSON.stringify) so quotes are not rendered
         # for string literal types.
@@ -158,7 +172,10 @@ class HighLevelRadioGroup(RadixThemesComponent):
 
             return Text.create(
                 Flex.create(
-                    RadioGroupItem.create(value=item_value),
+                    RadioGroupItem.create(
+                        value=item_value,
+                        disabled=props.get("disabled", Var.create(False)),
+                    ),
                     item_value,
                     spacing="2",
                 ),
@@ -176,6 +193,8 @@ class HighLevelRadioGroup(RadixThemesComponent):
                 spacing=spacing,
             ),
             size=size,
+            variant=variant,
+            color_scheme=color_scheme,
             default_value=default_value,
             **props,
         )

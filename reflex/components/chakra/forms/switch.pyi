@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -17,19 +18,19 @@ class Switch(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        is_checked: Optional[Union[Var[bool], bool]] = None,
-        is_disabled: Optional[Union[Var[bool], bool]] = None,
-        is_focusable: Optional[Union[Var[bool], bool]] = None,
-        is_invalid: Optional[Union[Var[bool], bool]] = None,
-        is_read_only: Optional[Union[Var[bool], bool]] = None,
-        is_required: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        spacing: Optional[Union[Var[str], str]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
+        is_checked: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_focusable: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_invalid: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_read_only: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_required: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        spacing: Optional[Union[reflex.vars.Var[str], str]] = None,
+        placeholder: Optional[Union[reflex.vars.Var[str], str]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "none",
                         "gray",

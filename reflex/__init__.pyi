@@ -129,7 +129,9 @@ from .components.core.foreach import foreach as foreach
 from .components.core.debounce import debounce_input as debounce_input
 from .components.core.html import html as html
 from .components.core.match import match as match
+from .components.core.clipboard import clipboard as clipboard
 from .components.core.colors import color as color
+from .components.core.breakpoints import breakpoints as breakpoints
 from .components.core.responsive import desktop_only as desktop_only
 from .components.core.responsive import mobile_and_tablet as mobile_and_tablet
 from .components.core.responsive import mobile_only as mobile_only
@@ -157,12 +159,14 @@ from .event import EventHandler as EventHandler
 from .event import background as background
 from .event import call_script as call_script
 from .event import clear_local_storage as clear_local_storage
+from .event import clear_session_storage as clear_session_storage
 from .event import console_log as console_log
 from .event import download as download
 from .event import prevent_default as prevent_default
 from .event import redirect as redirect
 from .event import remove_cookie as remove_cookie
 from .event import remove_local_storage as remove_local_storage
+from .event import remove_session_storage as remove_session_storage
 from .event import set_clipboard as set_clipboard
 from .event import set_focus as set_focus
 from .event import scroll_to as scroll_to
@@ -177,6 +181,7 @@ from .model import Model as Model
 from .state import var as var
 from .state import Cookie as Cookie
 from .state import LocalStorage as LocalStorage
+from .state import SessionStorage as SessionStorage
 from .state import ComponentState as ComponentState
 from .state import State as State
 from .style import Style as Style

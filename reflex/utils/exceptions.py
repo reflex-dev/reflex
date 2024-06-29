@@ -61,6 +61,10 @@ class VarOperationTypeError(ReflexError, TypeError):
     """Custom TypeError for when unsupported operations are performed on vars."""
 
 
+class VarDependencyError(ReflexError, ValueError):
+    """Custom ValueError for when a var depends on a non-existent var."""
+
+
 class InvalidStylePropError(ReflexError, TypeError):
     """Custom Type Error when style props have invalid values."""
 

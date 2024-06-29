@@ -1,6 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from typing import Literal
 
+from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
 from reflex.vars import Var
 
@@ -39,7 +41,7 @@ class Switch(RadixThemesComponent):
     value: Var[str]
 
     # Switch size "1" - "4"
-    size: Var[LiteralSwitchSize]
+    size: Var[Responsive[LiteralSwitchSize]]
 
     # Variant of switch: "classic" | "surface" | "soft"
     variant: Var[Literal["classic", "surface", "soft"]]

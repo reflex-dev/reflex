@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -23,26 +24,26 @@ class PinInput(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
-        auto_focus: Optional[Union[Var[bool], bool]] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        error_border_color: Optional[Union[Var[str], str]] = None,
-        focus_border_color: Optional[Union[Var[str], str]] = None,
-        id_: Optional[Union[Var[str], str]] = None,
-        length: Optional[Union[Var[int], int]] = None,
-        is_disabled: Optional[Union[Var[bool], bool]] = None,
-        is_invalid: Optional[Union[Var[bool], bool]] = None,
-        manage_focus: Optional[Union[Var[bool], bool]] = None,
-        mask: Optional[Union[Var[bool], bool]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
-        type_: Optional[Union[Var[str], str]] = None,
+        value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        auto_focus: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        default_value: Optional[Union[reflex.vars.Var[str], str]] = None,
+        error_border_color: Optional[Union[reflex.vars.Var[str], str]] = None,
+        focus_border_color: Optional[Union[reflex.vars.Var[str], str]] = None,
+        id_: Optional[Union[reflex.vars.Var[str], str]] = None,
+        length: Optional[Union[reflex.vars.Var[int], int]] = None,
+        is_disabled: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        is_invalid: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        manage_focus: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        mask: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        placeholder: Optional[Union[reflex.vars.Var[str], str]] = None,
+        type_: Optional[Union[reflex.vars.Var[str], str]] = None,
         variant: Optional[
             Union[
-                Var[Literal["outline", "filled", "flushed", "unstyled"]],
+                reflex.vars.Var[Literal["outline", "filled", "flushed", "unstyled"]],
                 Literal["outline", "filled", "flushed", "unstyled"],
             ]
         ] = None,
-        name: Optional[Union[Var[str], str]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -146,8 +147,8 @@ class PinInputField(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        index: Optional[Union[Var[int], int]] = None,
-        name: Optional[Union[Var[str], str]] = None,
+        index: Optional[Union[reflex.vars.Var[int], int]] = None,
+        name: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

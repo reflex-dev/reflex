@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -18,10 +19,10 @@ class List(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Var[list], list]] = None,
-        spacing: Optional[Union[Var[str], str]] = None,
-        style_position: Optional[Union[Var[str], str]] = None,
-        style_type: Optional[Union[Var[str], str]] = None,
+        items: Optional[Union[reflex.vars.Var[list], list]] = None,
+        spacing: Optional[Union[reflex.vars.Var[str], str]] = None,
+        style_position: Optional[Union[reflex.vars.Var[str], str]] = None,
+        style_type: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -178,10 +179,10 @@ class OrderedList(List):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Var[list], list]] = None,
-        spacing: Optional[Union[Var[str], str]] = None,
-        style_position: Optional[Union[Var[str], str]] = None,
-        style_type: Optional[Union[Var[str], str]] = None,
+        items: Optional[Union[reflex.vars.Var[list], list]] = None,
+        spacing: Optional[Union[reflex.vars.Var[str], str]] = None,
+        style_position: Optional[Union[reflex.vars.Var[str], str]] = None,
+        style_type: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -262,10 +263,10 @@ class UnorderedList(List):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Var[list], list]] = None,
-        spacing: Optional[Union[Var[str], str]] = None,
-        style_position: Optional[Union[Var[str], str]] = None,
-        style_type: Optional[Union[Var[str], str]] = None,
+        items: Optional[Union[reflex.vars.Var[list], list]] = None,
+        spacing: Optional[Union[reflex.vars.Var[str], str]] = None,
+        style_position: Optional[Union[reflex.vars.Var[str], str]] = None,
+        style_type: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

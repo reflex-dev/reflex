@@ -617,6 +617,34 @@ def remove_local_storage(key: str) -> EventSpec:
     )
 
 
+def clear_session_storage() -> EventSpec:
+    """Set a value in the session storage on the frontend.
+
+    Returns:
+        EventSpec: An event to clear the session storage.
+    """
+    return server_side(
+        "_clear_session_storage",
+        get_fn_signature(clear_session_storage),
+    )
+
+
+def remove_session_storage(key: str) -> EventSpec:
+    """Set a value in the session storage on the frontend.
+
+    Args:
+        key: The key identifying the variable in the session storage to remove.
+
+    Returns:
+        EventSpec: An event to remove an item based on the provided key in session storage.
+    """
+    return server_side(
+        "_remove_session_storage",
+        get_fn_signature(remove_session_storage),
+        key=key,
+    )
+
+
 def set_clipboard(content: str) -> EventSpec:
     """Set the text in content in the clipboard.
 
@@ -738,10 +766,12 @@ def call_script(
     callback_kwargs = {}
     if callback is not None:
         callback_kwargs = {
-            "callback": format.format_queue_events(
-                callback,
-                args_spec=lambda result: [result],
-            )
+            "callback": str(
+                format.format_queue_events(
+                    callback,
+                    args_spec=lambda result: [result],
+                ),
+            ),
         }
     return server_side(
         "_call_script",

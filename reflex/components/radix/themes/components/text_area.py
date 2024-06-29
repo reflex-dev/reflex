@@ -1,7 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from typing import Literal, Union
 
 from reflex.components.component import Component
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
 from reflex.event import EventHandler
@@ -24,13 +26,13 @@ class TextArea(RadixThemesComponent, elements.Textarea):
     tag = "TextArea"
 
     # The size of the text area: "1" | "2" | "3"
-    size: Var[LiteralTextAreaSize]
+    size: Var[Responsive[LiteralTextAreaSize]]
 
     # The variant of the text area
     variant: Var[Literal["classic", "surface", "soft"]]
 
     # The resize behavior of the text area: "none" | "vertical" | "horizontal" | "both"
-    resize: Var[LiteralTextAreaResize]
+    resize: Var[Responsive[LiteralTextAreaResize]]
 
     # The color of the text area
     color_scheme: Var[LiteralAccentColor]
@@ -106,7 +108,7 @@ class TextArea(RadixThemesComponent, elements.Textarea):
         Returns:
             The component.
         """
-        if props.get("value") is not None and props.get("on_change"):
+        if props.get("value") is not None and props.get("on_change") is not None:
             # create a debounced input if the user requests full control to avoid typing jank
             return DebounceInput.create(super().create(*children, **props))
         return super().create(*children, **props)

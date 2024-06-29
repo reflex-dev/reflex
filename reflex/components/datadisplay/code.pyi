@@ -4,16 +4,17 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 import re
 from typing import Dict, Literal, Optional, Union
-from reflex.components.chakra.forms import Button
-from reflex.components.chakra.layout import Box
-from reflex.components.chakra.media import Icon
 from reflex.components.component import Component
 from reflex.components.core.cond import color_mode_cond
+from reflex.components.lucide.icon import Icon
+from reflex.components.radix.themes.components.button import Button
+from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
@@ -358,10 +359,10 @@ class CodeBlock(Component):
         cls,
         *children,
         can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[bool, Component]] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         theme: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "a11y-dark",
                         "atom-dark",
@@ -461,7 +462,7 @@ class CodeBlock(Component):
         ] = None,
         language: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "abap",
                         "abnf",
@@ -1027,12 +1028,14 @@ class CodeBlock(Component):
                 ],
             ]
         ] = None,
-        code: Optional[Union[Var[str], str]] = None,
-        show_line_numbers: Optional[Union[Var[bool], bool]] = None,
-        starting_line_number: Optional[Union[Var[int], int]] = None,
-        wrap_long_lines: Optional[Union[Var[bool], bool]] = None,
+        code: Optional[Union[reflex.vars.Var[str], str]] = None,
+        show_line_numbers: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        starting_line_number: Optional[Union[reflex.vars.Var[int], int]] = None,
+        wrap_long_lines: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         custom_style: Optional[Dict[str, Union[str, Var, Color]]] = None,
-        code_tag_props: Optional[Union[Var[Dict[str, str]], Dict[str, str]]] = None,
+        code_tag_props: Optional[
+            Union[reflex.vars.Var[Dict[str, str]], Dict[str, str]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1112,6 +1115,7 @@ class CodeBlock(Component):
             The text component.
         """
         ...
+
     def add_style(self): ...
     @staticmethod
     def convert_theme_name(theme) -> str: ...

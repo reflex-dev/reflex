@@ -1,4 +1,5 @@
 """Integration tests for forms."""
+
 import functools
 import time
 from typing import Generator

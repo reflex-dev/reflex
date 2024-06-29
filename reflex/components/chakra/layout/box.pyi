@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -17,9 +18,9 @@ class Box(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        element: Optional[Union[Var[str], str]] = None,
-        src: Optional[Union[Var[str], str]] = None,
-        alt: Optional[Union[Var[str], str]] = None,
+        element: Optional[Union[reflex.vars.Var[str], str]] = None,
+        src: Optional[Union[reflex.vars.Var[str], str]] = None,
+        alt: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

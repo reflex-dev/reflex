@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -123,6 +124,7 @@ class Markdown(Component):
             The markdown component.
         """
         ...
+
     def add_imports(self) -> ImportDict | list[ImportDict]: ...
     def get_component(self, tag: str, **props) -> Component: ...
     def format_component(self, tag: str, **props) -> str: ...

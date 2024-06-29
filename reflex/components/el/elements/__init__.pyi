@@ -125,11 +125,13 @@ from .metadata import head as head
 from .metadata import link as link
 from .metadata import meta as meta
 from .metadata import title as title
+from .metadata import style as style
 from .metadata import Base as Base
 from .metadata import Head as Head
 from .metadata import Link as Link
 from .metadata import Meta as Meta
 from .metadata import Title as Title
+from .metadata import Style as Style
 from .other import details as details
 from .other import dialog as dialog
 from .other import summary as summary
@@ -296,7 +298,7 @@ _MAPPING = {
         "stop",
         "path",
     ],
-    "metadata": ["base", "head", "link", "meta", "title"],
+    "metadata": ["base", "head", "link", "meta", "title", "style"],
     "other": ["details", "dialog", "summary", "slot", "template", "math", "html"],
     "scripts": ["canvas", "noscript", "script"],
     "sectioning": [

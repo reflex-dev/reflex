@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -37,11 +38,11 @@ class Plotly(NoSSRComponent):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[Figure], Figure]] = None,  # type: ignore
-        layout: Optional[Union[Var[Dict], Dict]] = None,
-        template: Optional[Union[Var[Template], Template]] = None,  # type: ignore
-        config: Optional[Union[Var[Dict], Dict]] = None,
-        use_resize_handler: Optional[Union[Var[bool], bool]] = None,
+        data: Optional[Union[reflex.vars.Var[Figure], Figure]] = None,  # type: ignore
+        layout: Optional[Union[reflex.vars.Var[Dict], Dict]] = None,
+        template: Optional[Union[reflex.vars.Var[Template], Template]] = None,  # type: ignore
+        config: Optional[Union[reflex.vars.Var[Dict], Dict]] = None,
+        use_resize_handler: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

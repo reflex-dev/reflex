@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -17,15 +18,15 @@ class Video(ReactPlayer):
     def create(  # type: ignore
         cls,
         *children,
-        url: Optional[Union[Var[str], str]] = None,
-        playing: Optional[Union[Var[bool], bool]] = None,
-        loop: Optional[Union[Var[bool], bool]] = None,
-        controls: Optional[Union[Var[bool], bool]] = None,
-        light: Optional[Union[Var[bool], bool]] = None,
-        volume: Optional[Union[Var[float], float]] = None,
-        muted: Optional[Union[Var[bool], bool]] = None,
-        width: Optional[Union[Var[str], str]] = None,
-        height: Optional[Union[Var[str], str]] = None,
+        url: Optional[Union[reflex.vars.Var[str], str]] = None,
+        playing: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        loop: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        controls: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        light: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        volume: Optional[Union[reflex.vars.Var[float], float]] = None,
+        muted: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        width: Optional[Union[reflex.vars.Var[str], str]] = None,
+        height: Optional[Union[reflex.vars.Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

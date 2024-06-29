@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -18,7 +19,7 @@ class Video(NextComponent):
     def create(  # type: ignore
         cls,
         *children,
-        src: Optional[Union[Var[str], str]] = None,
+        src: Optional[Union[reflex.vars.Var[str], str]] = None,
         as_: Optional[Component] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

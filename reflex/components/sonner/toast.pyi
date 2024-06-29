@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -13,7 +14,7 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.components.props import PropsBase
 from reflex.event import EventSpec, call_script
-from reflex.style import Style, color_mode
+from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serialize, serializer
@@ -75,13 +76,13 @@ class Toaster(Component):
     def create(  # type: ignore
         cls,
         *children,
-        theme: Optional[Union[Var[str], str]] = None,
-        rich_colors: Optional[Union[Var[bool], bool]] = None,
-        expand: Optional[Union[Var[bool], bool]] = None,
-        visible_toasts: Optional[Union[Var[int], int]] = None,
+        theme: Optional[Union[reflex.vars.Var[str], str]] = None,
+        rich_colors: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        expand: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        visible_toasts: Optional[Union[reflex.vars.Var[int], int]] = None,
         position: Optional[
             Union[
-                Var[
+                reflex.vars.Var[
                     Literal[
                         "top-left",
                         "top-center",
@@ -101,15 +102,15 @@ class Toaster(Component):
                 ],
             ]
         ] = None,
-        close_button: Optional[Union[Var[bool], bool]] = None,
-        offset: Optional[Union[Var[str], str]] = None,
-        dir: Optional[Union[Var[str], str]] = None,
-        hotkey: Optional[Union[Var[str], str]] = None,
-        invert: Optional[Union[Var[bool], bool]] = None,
-        toast_options: Optional[Union[Var[ToastProps], ToastProps]] = None,
-        gap: Optional[Union[Var[int], int]] = None,
-        loading_icon: Optional[Union[Var[Icon], Icon]] = None,
-        pause_when_page_is_hidden: Optional[Union[Var[bool], bool]] = None,
+        close_button: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        offset: Optional[Union[reflex.vars.Var[str], str]] = None,
+        dir: Optional[Union[reflex.vars.Var[str], str]] = None,
+        hotkey: Optional[Union[reflex.vars.Var[str], str]] = None,
+        invert: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        toast_options: Optional[Union[reflex.vars.Var[ToastProps], ToastProps]] = None,
+        gap: Optional[Union[reflex.vars.Var[int], int]] = None,
+        loading_icon: Optional[Union[reflex.vars.Var[Icon], Icon]] = None,
+        pause_when_page_is_hidden: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

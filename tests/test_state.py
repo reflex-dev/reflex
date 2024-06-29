@@ -7,6 +7,7 @@ import functools
 import json
 import os
 import sys
+from textwrap import dedent
 from typing import Any, Dict, Generator, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
 
@@ -14,6 +15,8 @@ import pytest
 from plotly.graph_objects import Figure
 
 import reflex as rx
+import reflex.config
+from reflex import constants
 from reflex.app import App
 from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
@@ -33,6 +36,7 @@ from reflex.state import (
     StateUpdate,
     _substate_key,
 )
+from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
 from reflex.vars import BaseVar, ComputedVar, mark_used
@@ -192,7 +196,7 @@ mark_used(GrandchildState.value2)
 class GrandchildState2(ChildState2):
     """A grandchild state fixture."""
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def cached(self) -> str:
         """A cached var.
 
@@ -982,7 +986,7 @@ class InterdependentState(BaseState):
     v1: int = 0
     _v2: int = 1
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def v1x2(self) -> int:
         """Depends on var v1.
 
@@ -991,7 +995,7 @@ class InterdependentState(BaseState):
         """
         return self.v1 * 2
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def v2x2(self) -> int:
         """Depends on backend var _v2.
 
@@ -1000,7 +1004,16 @@ class InterdependentState(BaseState):
         """
         return self._v2 * 2
 
-    @rx.cached_var
+    @rx.var(cache=True, backend=True)
+    def v2x2_backend(self) -> int:
+        """Depends on backend var _v2.
+
+        Returns:
+            backend var _v2 multiplied by 2
+        """
+        return self._v2 * 2
+
+    @rx.var(cache=True)
     def v1x2x2(self) -> int:
         """Depends on ComputedVar v1x2.
 
@@ -1009,7 +1022,7 @@ class InterdependentState(BaseState):
         """
         return self.v1x2 * 2  # type: ignore
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def _v3(self) -> int:
         """Depends on backend var _v2.
 
@@ -1018,7 +1031,7 @@ class InterdependentState(BaseState):
         """
         return self._v2
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def v3x2(self) -> int:
         """Depends on ComputedVar _v3.
 
@@ -1040,7 +1053,9 @@ def interdependent_state() -> BaseState:
     return s
 
 
-def test_not_dirty_computed_var_from_var(interdependent_state):
+def test_not_dirty_computed_var_from_var(
+    interdependent_state: InterdependentState,
+) -> None:
     """Set Var that no ComputedVar depends on, expect no recalculation.
 
     Args:
@@ -1052,7 +1067,7 @@ def test_not_dirty_computed_var_from_var(interdependent_state):
     }
 
 
-def test_dirty_computed_var_from_var(interdependent_state):
+def test_dirty_computed_var_from_var(interdependent_state: InterdependentState) -> None:
     """Set Var that ComputedVar depends on, expect recalculation.
 
     The other ComputedVar depends on the changed ComputedVar and should also be
@@ -1067,20 +1082,22 @@ def test_dirty_computed_var_from_var(interdependent_state):
     }
 
 
-def test_dirty_computed_var_from_backend_var(interdependent_state):
+def test_dirty_computed_var_from_backend_var(
+    interdependent_state: InterdependentState,
+) -> None:
     """Set backend var that ComputedVar depends on, expect recalculation.
 
     Args:
         interdependent_state: A state with varying Var dependencies.
     """
+    assert InterdependentState._v3._backend is True
     interdependent_state._v2 = 2
     assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"v2x2": 4, "v3x2": 4},
     }
-    assert "_v3" in InterdependentState.backend_vars
 
 
-def test_per_state_backend_var(interdependent_state):
+def test_per_state_backend_var(interdependent_state: InterdependentState) -> None:
     """Set backend var on one instance, expect no affect in other instances.
 
     Args:
@@ -1203,7 +1220,7 @@ def test_computed_var_cached():
     class ComputedState(BaseState):
         v: int = 0
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def comp_v(self) -> int:
             nonlocal comp_v_calls
             comp_v_calls += 1
@@ -1228,7 +1245,7 @@ def test_computed_var_cached():
 
 
 def test_computed_var_cached_depends_on_non_cached():
-    """Test that a cached_var is recalculated if it depends on non-cached ComputedVar."""
+    """Test that a cached var is recalculated if it depends on non-cached ComputedVar."""
 
     class ComputedState(BaseState):
         v: int = 0
@@ -1237,11 +1254,11 @@ def test_computed_var_cached_depends_on_non_cached():
         def no_cache_v(self) -> int:
             return self.v
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def dep_v(self) -> int:
             return self.no_cache_v  # type: ignore
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def comp_v(self) -> int:
             return self.v
 
@@ -1276,7 +1293,7 @@ def test_computed_var_cached_depends_on_non_cached():
 
 
 def test_computed_var_depends_on_parent_non_cached():
-    """Child state cached_var that depends on parent state un cached var is always recalculated."""
+    """Child state cached var that depends on parent state un cached var is always recalculated."""
     counter = 0
 
     class ParentState(BaseState):
@@ -1287,7 +1304,7 @@ def test_computed_var_depends_on_parent_non_cached():
             return counter
 
     class ChildState(ParentState):
-        @rx.cached_var
+        @rx.var(cache=True)
         def dep_v(self) -> int:
             return self.no_cache_v  # type: ignore
 
@@ -1326,7 +1343,7 @@ def test_computed_var_depends_on_parent_non_cached():
 
 @pytest.mark.parametrize("use_partial", [True, False])
 def test_cached_var_depends_on_event_handler(use_partial: bool):
-    """A cached_var that calls an event handler calculates deps correctly.
+    """A cached var that calls an event handler calculates deps correctly.
 
     Args:
         use_partial: if true, replace the EventHandler with functools.partial
@@ -1339,7 +1356,7 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
         def handler(self):
             self.x = self.x + 1
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def cached_x_side_effect(self) -> int:
             self.handler()
             nonlocal counter
@@ -1376,7 +1393,11 @@ def test_computed_var_dependencies():
         y: List[int] = [1, 2, 3]
         _z: List[int] = [1, 2, 3]
 
-        @rx.cached_var
+        @property
+        def testprop(self) -> int:
+            return self.v
+
+        @rx.var(cache=True)
         def comp_v(self) -> int:
             """Direct access.
 
@@ -1385,7 +1406,25 @@ def test_computed_var_dependencies():
             """
             return self.v
 
-        @rx.cached_var
+        @rx.var(cache=True, backend=True)
+        def comp_v_backend(self) -> int:
+            """Direct access backend var.
+
+            Returns:
+                The value of self.v.
+            """
+            return self.v
+
+        @rx.var(cache=True)
+        def comp_v_via_property(self) -> int:
+            """Access v via property.
+
+            Returns:
+                The value of v via property.
+            """
+            return self.testprop
+
+        @rx.var(cache=True)
         def comp_w(self):
             """Nested lambda.
 
@@ -1394,7 +1433,7 @@ def test_computed_var_dependencies():
             """
             return lambda: self.w
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def comp_x(self):
             """Nested function.
 
@@ -1407,7 +1446,7 @@ def test_computed_var_dependencies():
 
             return _
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def comp_y(self) -> List[int]:
             """Comprehension iterating over attribute.
 
@@ -1416,7 +1455,7 @@ def test_computed_var_dependencies():
             """
             return [round(y) for y in self.y]
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def comp_z(self) -> List[bool]:
             """Comprehension accesses attribute.
 
@@ -1434,7 +1473,11 @@ def test_computed_var_dependencies():
     )
 
     cs = ComputedState()
-    assert cs._computed_var_dependencies["v"] == {"comp_v"}
+    assert cs._computed_var_dependencies["v"] == {
+        "comp_v",
+        "comp_v_backend",
+        "comp_v_via_property",
+    }
     assert cs._computed_var_dependencies["w"] == {"comp_w"}
     assert cs._computed_var_dependencies["x"] == {"comp_x"}
     assert cs._computed_var_dependencies["y"] == {"comp_y"}
@@ -1808,9 +1851,9 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     parent_state = child_state.parent_state
     assert parent_state is not None
     if isinstance(mock_app.state_manager, StateManagerMemory):
-        mock_app.state_manager.states[
-            parent_state.router.session.client_token
-        ] = parent_state
+        mock_app.state_manager.states[parent_state.router.session.client_token] = (
+            parent_state
+        )
 
     sp = StateProxy(grandchild_state)
     assert sp.__wrapped__ == grandchild_state
@@ -3058,3 +3101,63 @@ async def test_setvar(mock_app: rx.App, token: str):
     # Cannot setvar with non-string
     with pytest.raises(ValueError):
         TestState.setvar(42, 42)
+
+
+@pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")
+@pytest.mark.parametrize(
+    "expiration_kwargs, expected_values",
+    [
+        ({"redis_lock_expiration": 20000}, (20000, constants.Expiration.TOKEN)),
+        (
+            {"redis_lock_expiration": 50000, "redis_token_expiration": 5600},
+            (50000, 5600),
+        ),
+        ({"redis_token_expiration": 7600}, (constants.Expiration.LOCK, 7600)),
+    ],
+)
+def test_redis_state_manager_config_knobs(tmp_path, expiration_kwargs, expected_values):
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+
+    config_items = ",\n    ".join(
+        f"{key} = {value}" for key, value in expiration_kwargs.items()
+    )
+
+    config_string = f"""
+import reflex as rx
+config = rx.Config(
+    app_name="project1",
+    redis_url="redis://localhost:6379",
+    {config_items}
+)
+"""
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        # reload config for each parameter to avoid stale values
+        reflex.config.get_config(reload=True)
+        from reflex.state import State, StateManager
+
+        state_manager = StateManager.create(state=State)
+        assert state_manager.lock_expiration == expected_values[0]  # type: ignore
+        assert state_manager.token_expiration == expected_values[1]  # type: ignore
+
+
+class MixinState(State, mixin=True):
+    """A mixin state for testing."""
+
+    num: int = 0
+    _backend: int = 0
+
+
+class UsesMixinState(MixinState, State):
+    """A state that uses the mixin state."""
+
+    pass
+
+
+def test_mixin_state() -> None:
+    """Test that a mixin state works correctly."""
+    assert "num" in UsesMixinState.base_vars
+    assert "num" in UsesMixinState.vars
+    assert UsesMixinState.backend_vars == {"_backend": 0}

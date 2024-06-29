@@ -1,10 +1,12 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from __future__ import annotations
 
 from typing import Literal, Union
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
 from reflex.event import EventHandler
@@ -28,7 +30,7 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
     tag = "TextField.Root"
 
     # Text field size "1" - "3"
-    size: Var[LiteralTextFieldSize]
+    size: Var[Responsive[LiteralTextFieldSize]]
 
     # Variant of text field: "classic" | "surface" | "soft"
     variant: Var[LiteralTextFieldVariant]
@@ -99,7 +101,7 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
             The component.
         """
         component = super().create(*children, **props)
-        if props.get("value") is not None and props.get("on_change"):
+        if props.get("value") is not None and props.get("on_change") is not None:
             # create a debounced input if the user requests full control to avoid typing jank
             return DebounceInput.create(component)
         return component

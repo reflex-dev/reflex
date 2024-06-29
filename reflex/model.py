@@ -24,7 +24,7 @@ from reflex.utils import console
 from reflex.utils.compat import sqlmodel
 
 
-def get_engine(url: str | None = None):
+def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     """Get the database engine.
 
     Args:
@@ -396,7 +396,7 @@ ModelRegistry.register(Model)
 
 
 def session(url: str | None = None) -> sqlmodel.Session:
-    """Get a session to interact with the database.
+    """Get a sqlmodel session to interact with the database.
 
     Args:
         url: The database url.
@@ -405,3 +405,15 @@ def session(url: str | None = None) -> sqlmodel.Session:
         A database session.
     """
     return sqlmodel.Session(get_engine(url))
+
+
+def sqla_session(url: str | None = None) -> sqlalchemy.orm.Session:
+    """Get a bare sqlalchemy session to interact with the database.
+
+    Args:
+        url: The database url.
+
+    Returns:
+        A database session.
+    """
+    return sqlalchemy.orm.Session(get_engine(url))

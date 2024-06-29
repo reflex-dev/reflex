@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -16,13 +17,13 @@ class Spinner(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        empty_color: Optional[Union[Var[str], str]] = None,
-        label: Optional[Union[Var[str], str]] = None,
-        speed: Optional[Union[Var[str], str]] = None,
-        thickness: Optional[Union[Var[int], int]] = None,
+        empty_color: Optional[Union[reflex.vars.Var[str], str]] = None,
+        label: Optional[Union[reflex.vars.Var[str], str]] = None,
+        speed: Optional[Union[reflex.vars.Var[str], str]] = None,
+        thickness: Optional[Union[reflex.vars.Var[int], int]] = None,
         size: Optional[
             Union[
-                Var[Literal["sm", "md", "lg", "xs", "xl"]],
+                reflex.vars.Var[Literal["sm", "md", "lg", "xs", "xl"]],
                 Literal["sm", "md", "lg", "xs", "xl"],
             ]
         ] = None,

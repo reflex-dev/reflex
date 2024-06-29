@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -21,15 +22,17 @@ class DebounceInput(Component):
     def create(  # type: ignore
         cls,
         *children,
-        min_length: Optional[Union[Var[int], int]] = None,
-        debounce_timeout: Optional[Union[Var[int], int]] = None,
-        force_notify_by_enter: Optional[Union[Var[bool], bool]] = None,
-        force_notify_on_blur: Optional[Union[Var[bool], bool]] = None,
+        min_length: Optional[Union[reflex.vars.Var[int], int]] = None,
+        debounce_timeout: Optional[Union[reflex.vars.Var[int], int]] = None,
+        force_notify_by_enter: Optional[Union[reflex.vars.Var[bool], bool]] = None,
+        force_notify_on_blur: Optional[Union[reflex.vars.Var[bool], bool]] = None,
         value: Optional[
-            Union[Var[Union[str, int, float]], Union[str, int, float]]
+            Union[reflex.vars.Var[Union[float, int, str]], str, int, float]
         ] = None,
-        input_ref: Optional[Union[Var[str], str]] = None,
-        element: Optional[Union[Var[Type[Component]], Type[Component]]] = None,
+        input_ref: Optional[Union[reflex.vars.Var[str], str]] = None,
+        element: Optional[
+            Union[reflex.vars.Var[Type[Component]], Type[Component]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

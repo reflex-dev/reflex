@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from typing import Any, Dict, Literal, Optional, Union, overload
+import reflex
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
@@ -16,10 +17,12 @@ class Heading(ChakraComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_: Optional[Union[Var[str], str]] = None,
+        as_: Optional[Union[reflex.vars.Var[str], str]] = None,
         size: Optional[
             Union[
-                Var[Literal["lg", "md", "sm", "xs", "xl", "2xl", "3xl", "4xl"]],
+                reflex.vars.Var[
+                    Literal["lg", "md", "sm", "xs", "xl", "2xl", "3xl", "4xl"]
+                ],
                 Literal["lg", "md", "sm", "xs", "xl", "2xl", "3xl", "4xl"],
             ]
         ] = None,

@@ -1,7 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from typing import List, Literal
 
 from reflex.components.component import ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
 from reflex.vars import Var
 
@@ -44,7 +46,7 @@ class ContextMenuContent(RadixThemesComponent):
     tag = "ContextMenu.Content"
 
     # Button size "1" - "4"
-    size: Var[Literal["1", "2"]]
+    size: Var[Responsive[Literal["1", "2"]]]
 
     # Variant of button: "solid" | "soft" | "outline" | "ghost"
     variant: Var[Literal["solid", "soft"]]
