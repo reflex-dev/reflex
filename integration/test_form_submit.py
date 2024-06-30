@@ -21,6 +21,7 @@ def FormSubmit(form_component):
     from typing import Dict, List
 
     import reflex as rx
+    from reflex.vars import mark_used
 
     class FormState(rx.State):
         form_data: Dict = {}
@@ -29,6 +30,11 @@ def FormSubmit(form_component):
 
         def form_submit(self, form_data: Dict):
             self.form_data = form_data
+
+    mark_used(
+        FormState.form_data,
+        FormState.var_options,
+    )
 
     app = rx.App(state=rx.State)
 
@@ -80,6 +86,7 @@ def FormSubmitName(form_component):
     from typing import Dict, List
 
     import reflex as rx
+    from reflex.vars import mark_used
 
     class FormState(rx.State):
         form_data: Dict = {}
@@ -88,6 +95,12 @@ def FormSubmitName(form_component):
 
         def form_submit(self, form_data: Dict):
             self.form_data = form_data
+
+    mark_used(
+        FormState.form_data,
+        FormState.val,
+        FormState.options,
+    )
 
     app = rx.App(state=rx.State)
 
