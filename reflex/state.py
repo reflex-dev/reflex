@@ -34,8 +34,8 @@ try:
 except ModuleNotFoundError:
     import pydantic
 
-from pydantic.v1 import Field
 import wrapt
+from pydantic.v1 import Field
 from redis.asyncio import Redis
 from redis.exceptions import ResponseError
 
