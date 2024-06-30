@@ -35,7 +35,6 @@ except ModuleNotFoundError:
     import pydantic
 
 import wrapt
-from pydantic.v1 import Field
 from redis.asyncio import Redis
 from redis.exceptions import ResponseError
 
@@ -2344,10 +2343,10 @@ class StateManagerRedis(StateManager):
     redis: Redis
 
     # The token expiration time (s).
-    token_expiration: int = Field(default_factory=_default_token_expiration)
+    token_expiration: int = pydantic.Field(default_factory=_default_token_expiration)
 
     # The maximum time to hold a lock (ms).
-    lock_expiration: int = Field(default_factory=_default_lock_expiration)
+    lock_expiration: int = pydantic.Field(default_factory=_default_lock_expiration)
 
     # The keyspace subscription string when redis is waiting for lock to be released
     _redis_notify_keyspace_events: str = (
