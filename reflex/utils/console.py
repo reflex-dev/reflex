@@ -17,6 +17,9 @@ _LOG_LEVEL = LogLevel.INFO
 # Deprecated features who's warning has been printed.
 _EMITTED_DEPRECATION_WARNINGS = set()
 
+# Info messages which have been printed.
+_EMITTED_INFO = set()
+
 
 def set_log_level(log_level: LogLevel):
     """Set the log level.
@@ -62,14 +65,20 @@ def debug(msg: str, **kwargs):
             print(msg_, **kwargs)
 
 
-def info(msg: str, **kwargs):
+def info(msg: str, dedupe: bool = False, **kwargs):
     """Print an info message.
 
     Args:
         msg: The info message.
+        dedupe: If True, suppress multiple console logs of info message.
         kwargs: Keyword arguments to pass to the print function.
     """
     if _LOG_LEVEL <= LogLevel.INFO:
+        if dedupe:
+            if msg in _EMITTED_INFO:
+                return
+            else:
+                _EMITTED_INFO.add(msg)
         print(f"[cyan]Info: {msg}[/cyan]", **kwargs)
 
 
