@@ -67,6 +67,9 @@ class Axis(Recharts):
     # Reverse the ticks or not.
     reversed: Var[bool]
 
+    # The label of axis, which appears next to the axis.
+    label: Var[Union[str, int, dict[str, Any]]]
+
     # If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
     scale: Var[LiteralScale]
 
