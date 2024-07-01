@@ -133,16 +133,6 @@ class Hooks(SimpleNamespace):
 
     FRONTEND_ERRORS = f"""
 
-    function Fallback({{ error, resetErrorBoundary }}) {{
-
-        return (
-            <div role="alert">
-            <h2>Unknown Error:</h2>
-            <p>{{ error.message }}</p>
-            </div>
-        );
-    }}
-
     const [{CompileVars.ADD_EVENTS}, {CompileVars.CONNECT_ERROR}] = useContext(EventLoopContext);
 
     const logFrontendError = (error, info) => {{

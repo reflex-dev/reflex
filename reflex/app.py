@@ -854,7 +854,11 @@ class App(LifespanMixin, Base):
         """If a State is not used and no error_boundary is specified, do not render the error boundary."""
         if self.state is None and self.error_boundary is default_error_boundary:
             self.error_boundary = None
+
         for k, component in self.pages.items():
+            # Skip the 404 page
+            if k == constants.Page404.SLUG:
+                continue
             self.pages[k] = self._add_error_boundary_to_component(component)
 
     def _apply_decorated_pages(self):

@@ -2,7 +2,9 @@
 
 from typing import Any, Dict, Union
 
+from reflex.compiler.compiler import _compile_component
 from reflex.components.component import Component
+from reflex.components.el import div, p
 from reflex.components.tags import Tag
 from reflex.constants import EventTriggers, Hooks
 from reflex.vars import Var
@@ -79,6 +81,35 @@ class ErrorBoundary(Component):
             The hooks for the events.
         """
         return {Hooks.FRONTEND_ERRORS: None}
+
+    def add_custom_code(self) -> list[str]:
+        """Add custom Javascript code into the page that contains this component.
+
+        Custom code is inserted at module level, after any imports.
+
+        Returns:
+            The custom code to add.
+        """
+        fallback_container = div(
+            p("Ooops...Unknown Reflex error has occured:"),
+            p(
+                Var.create("error.message", _var_is_local=False, _var_is_string=False),
+                color_scheme="red",
+            ),
+            p("Please contact the support."),
+        )
+
+        compiled_fallback = _compile_component(fallback_container)
+
+        return [
+            f"""
+                function Fallback({{ error, resetErrorBoundary }}) {{
+                    return (
+                        {compiled_fallback}
+                    );
+                }}
+            """
+        ]
 
 
 error_boundary = ErrorBoundary.create
