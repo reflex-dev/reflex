@@ -1,6 +1,11 @@
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { ColorModeContext, defaultColorMode } from "/utils/context.js";
+import {
+  ColorModeContext,
+  defaultColorMode,
+  isDevMode,
+  lastCompiledTimeStamp
+} from "/utils/context.js";
 
 export default function RadixThemesColorModeProvider({ children }) {
   const { theme, resolvedTheme, setTheme } = useTheme();
@@ -8,6 +13,19 @@ export default function RadixThemesColorModeProvider({ children }) {
   const [resolvedColorMode, setResolvedColorMode] = useState("dark");
 
   useEffect(() => {
+    if (isDevMode) {
+      const lastCompiledTimeInLocalStorage =
+        localStorage.getItem("last_compiled_time");
+      if (
+        lastCompiledTimeInLocalStorage &&
+        lastCompiledTimeInLocalStorage !== lastCompiledTimeStamp
+      ) {
+        // on app startup, make sure the application color mode is persisted correctly.
+        setTheme(defaultColorMode);
+        localStorage.setItem("last_compiled_time", lastCompiledTimeStamp);
+        return;
+      }
+    }
     setRawColorMode(theme);
     setResolvedColorMode(resolvedTheme);
   }, [theme, resolvedTheme]);
@@ -19,7 +37,7 @@ export default function RadixThemesColorModeProvider({ children }) {
     const allowedModes = ["light", "dark", "system"];
     if (!allowedModes.includes(mode)) {
       console.error(
-        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`
+        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
       );
       mode = defaultColorMode;
     }

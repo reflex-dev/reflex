@@ -441,7 +441,7 @@ class Component(BaseComponent, ABC):
                 ) or (
                     # Else just check if the passed var type is valid.
                     not passed_types
-                    and not types._issubclass(passed_type, expected_type)
+                    and not types._issubclass(passed_type, expected_type, value)
                 ):
                     value_name = value._var_name if isinstance(value, Var) else value
                     raise TypeError(

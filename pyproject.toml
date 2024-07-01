@@ -39,10 +39,7 @@ redis = ">=4.3.5,<6.0"
 rich = ">=13.0.0,<14.0"
 sqlmodel = ">=0.0.14,<0.1"
 typer = ">=0.4.2,<1.0"
-uvicorn = [
-    {version = "^0.24.0", python = ">=3.12"},
-    {version = "^0.20.0", python = "<3.12"},
-]
+uvicorn = ">=0.20.0"
 watchdog = ">=2.3.1,<5.0"
 watchfiles = ">=0.19.0,<1.0"
 starlette-admin = ">=0.11.0,<1.0"
@@ -73,7 +70,6 @@ darglint = ">=1.8.1,<2.0"
 toml = ">=0.10.2,<1.0"
 pytest-asyncio = ">=0.20.1,<0.22.0" # https://github.com/pytest-dev/pytest-asyncio/issues/706
 pytest-cov = ">=4.0.0,<5.0"
-black = "^24.3.0"
 ruff = "^0.4.9"
 pandas = [
     {version = ">=2.1.1,<3.0", python = ">=3.9,<3.13"},
@@ -98,7 +94,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.pyright]
 
 [tool.ruff]
-exclude = ["*.pyi"]
 target-version = "py38"
 lint.select = ["B", "D", "E", "F", "I", "SIM", "W"]
 lint.ignore = ["B008", "D203", "D205", "D213", "D401", "D406", "D407", "E501", "F403", "F405", "F541"]
@@ -108,5 +103,5 @@ lint.pydocstyle.convention = "google"
 "__init__.py" = ["F401"]
 "tests/*.py" = ["D100", "D103", "D104", "B018"]
 "reflex/.templates/*.py" = ["D100", "D103", "D104"]
-"*.pyi" = ["ALL"]
+"*.pyi" = ["D301", "D415", "D417", "D418", "E742"]
 "*/blank.py" = ["I001"]

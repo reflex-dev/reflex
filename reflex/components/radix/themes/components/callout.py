@@ -4,6 +4,7 @@ from typing import Literal, Union
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.lucide.icon import Icon
 from reflex.vars import Var
@@ -25,7 +26,7 @@ class CalloutRoot(elements.Div, RadixThemesComponent):
     as_child: Var[bool]
 
     # Size "1" - "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Variant of button: "soft" | "surface" | "outline"
     variant: Var[CalloutVariant]

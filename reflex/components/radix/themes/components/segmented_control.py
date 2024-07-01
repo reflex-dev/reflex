@@ -5,6 +5,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import List, Literal, Union
 
+from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
 from reflex.vars import Var
 
@@ -17,7 +18,7 @@ class SegmentedControlRoot(RadixThemesComponent):
     tag = "SegmentedControl.Root"
 
     # The size of the segmented control: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Variant of button: "classic" | "surface"
     variant: Var[Literal["classic", "surface"]]

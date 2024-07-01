@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal, Tuple, Type
 
 from reflex import constants
+from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
 from reflex.event import EventChain
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
@@ -86,8 +87,6 @@ toggle_color_mode = _color_mode_var(
     _var_type=EventChain,
 )
 
-breakpoints = ["0", "30em", "48em", "62em", "80em", "96em"]
-
 STYLE_PROP_SHORTHAND_MAPPING = {
     "paddingX": ("paddingInlineStart", "paddingInlineEnd"),
     "paddingY": ("paddingTop", "paddingBottom"),
@@ -100,16 +99,16 @@ STYLE_PROP_SHORTHAND_MAPPING = {
 }
 
 
-def media_query(breakpoint_index: int):
+def media_query(breakpoint_expr: str):
     """Create a media query selector.
 
     Args:
-        breakpoint_index: The index of the breakpoint to use.
+        breakpoint_expr: The CSS expression representing the breakpoint.
 
     Returns:
         The media query selector used as a key in emotion css dict.
     """
-    return f"@media screen and (min-width: {breakpoints[breakpoint_index]})"
+    return f"@media screen and (min-width: {breakpoint_expr})"
 
 
 def convert_item(style_item: str | Var) -> tuple[str, VarData | None]:
@@ -189,6 +188,10 @@ def convert(style_dict):
             update_out_dict(return_val, keys)
         # Combine all the collected VarData instances.
         var_data = VarData.merge(var_data, new_var_data)
+
+    if isinstance(style_dict, Breakpoints):
+        out = Breakpoints(out).factorize()
+
     return out, var_data
 
 
@@ -295,14 +298,22 @@ def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
 
     for orig_key, value in style_dict.items():
         key = _format_emotion_style_pseudo_selector(orig_key)
-        if isinstance(value, list):
-            # Apply media queries from responsive value list.
-            mbps = {
-                media_query(bp): (
-                    bp_value if isinstance(bp_value, dict) else {key: bp_value}
-                )
-                for bp, bp_value in enumerate(value)
-            }
+        if isinstance(value, (Breakpoints, list)):
+            if isinstance(value, Breakpoints):
+                mbps = {
+                    media_query(bp): (
+                        bp_value if isinstance(bp_value, dict) else {key: bp_value}
+                    )
+                    for bp, bp_value in value.items()
+                }
+            else:
+                # Apply media queries from responsive value list.
+                mbps = {
+                    media_query([0, *breakpoints_values][bp]): (
+                        bp_value if isinstance(bp_value, dict) else {key: bp_value}
+                    )
+                    for bp, bp_value in enumerate(value)
+                }
             if key.startswith("&:"):
                 emotion_style[key] = mbps
             else:
