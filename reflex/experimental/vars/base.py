@@ -1,5 +1,7 @@
 """Collection of base classes."""
 
+from __future__ import annotations
+
 import dataclasses
 import sys
 from typing import Any, Optional, Self, Type
@@ -23,17 +25,35 @@ class ImmutableVar(Var):
     # The type of the var.
     _var_type: Type = dataclasses.field(default=Any)
 
-    # Whether this is a local javascript variable.
-    _var_is_local: bool = dataclasses.field(default=False)
-
-    # Whether the var is a string literal.
-    _var_is_string: bool = dataclasses.field(default=False)
-
-    # _var_full_name should be prefixed with _var_state
-    _var_full_name_needs_state_prefix: bool = dataclasses.field(default=False)
-
     # Extra metadata associated with the Var
     _var_data: Optional[VarData] = dataclasses.field(default=None)
+
+    @property
+    def _var_is_local(self) -> bool:
+        """Whether this is a local javascript variable.
+
+        Returns:
+            False
+        """
+        return False
+
+    @property
+    def _var_is_string(self) -> bool:
+        """Whether the var is a string literal.
+
+        Returns:
+            False
+        """
+        return False
+
+    @property
+    def _var_full_name_needs_state_prefix(self) -> bool:
+        """Whether the full name of the var needs a _var_state prefix.
+
+        Returns:
+            False
+        """
+        return False
 
     def _replace(self, merge_var_data=None, **kwargs: Any) -> Self:
         """Make a copy of this Var with updated fields.
@@ -44,7 +64,25 @@ class ImmutableVar(Var):
 
         Returns:
             A new ImmutableVar with the updated fields overwriting the corresponding fields in this Var.
+
+        Raises:
+            TypeError: If _var_is_local, _var_is_string, or _var_full_name_needs_state_prefix is not None.
         """
+        if kwargs.get("_var_is_local", None) is not None:
+            raise TypeError(
+                "The _var_is_local argument is not supported for ImmutableVar."
+            )
+
+        if kwargs.get("_var_is_string", None) is not None:
+            raise TypeError(
+                "The _var_is_string argument is not supported for ImmutableVar."
+            )
+
+        if kwargs.get("_var_full_name_needs_state_prefix", None) is not None:
+            raise TypeError(
+                "The _var_full_name_needs_state_prefix argument is not supported for ImmutableVar."
+            )
+
         field_values = dict(
             _var_name=kwargs.pop("_var_name", self._var_name),
             _var_type=kwargs.pop("_var_type", self._var_type),
@@ -64,16 +102,16 @@ class ImmutableVar(Var):
     def create(
         cls,
         value: Any,
-        _var_is_local: bool = True,
+        _var_is_local: bool | None = None,
         _var_is_string: bool | None = None,
-        _var_data: Optional[VarData] = None,
+        _var_data: VarData | None = None,
     ) -> Var | None:
         """Create a var from a value.
 
         Args:
             value: The value to create the var from.
-            _var_is_local: Whether the var is local.
-            _var_is_string: Whether the var is a string literal.
+            _var_is_local: Whether the var is local. Deprecated.
+            _var_is_string: Whether the var is a string literal. Deprecated.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -81,7 +119,18 @@ class ImmutableVar(Var):
 
         Raises:
             VarTypeError: If the value is JSON-unserializable.
+            TypeError: If _var_is_local or _var_is_string is not None.
         """
+        if _var_is_local is not None:
+            raise TypeError(
+                "The _var_is_local argument is not supported for ImmutableVar."
+            )
+
+        if _var_is_string is not None:
+            raise TypeError(
+                "The _var_is_string argument is not supported for ImmutableVar."
+            )
+
         from reflex.utils import format
 
         # Check for none values.
@@ -129,7 +178,5 @@ class ImmutableVar(Var):
         return ImmutableVar(
             _var_name=name,
             _var_type=type_,
-            _var_is_local=_var_is_local,
-            _var_is_string=_var_is_string if _var_is_string is not None else False,
             _var_data=_var_data,
         )
