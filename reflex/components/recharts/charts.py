@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Union
 
+from reflex.constants.colors import Color
 from reflex.components.component import Component
 from reflex.components.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
@@ -441,6 +442,9 @@ class FunnelChart(ChartBase):
 
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]
+
+    # The stroke color of each bar. String | Object
+    stroke: Var[Union[str, Color]] 
 
     # Valid children components
     _valid_children: List[str] = ["Legend", "GraphingTooltip", "Funnel"]
