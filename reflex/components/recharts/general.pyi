@@ -11,6 +11,8 @@ from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
 from reflex.vars import BaseVar, Var
 
+from reflex.event import EventHandler
+from reflex.vars import Var
 from .recharts import (
     Recharts,
 )
