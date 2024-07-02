@@ -6,7 +6,7 @@ import dataclasses
 import sys
 from typing import Any, Optional, Self, Type
 
-from reflex.utils import console, serializers, types
+from reflex.utils import serializers, types
 from reflex.utils.exceptions import VarTypeError
 from reflex.vars import Var, VarData, _extract_var_data
 
@@ -68,17 +68,17 @@ class ImmutableVar(Var):
         Raises:
             TypeError: If _var_is_local, _var_is_string, or _var_full_name_needs_state_prefix is not None.
         """
-        if kwargs.get("_var_is_local", None) is not None:
+        if kwargs.get("_var_is_local", False) is not False:
             raise TypeError(
                 "The _var_is_local argument is not supported for ImmutableVar."
             )
 
-        if kwargs.get("_var_is_string", None) is not None:
+        if kwargs.get("_var_is_string", False) is not False:
             raise TypeError(
                 "The _var_is_string argument is not supported for ImmutableVar."
             )
 
-        if kwargs.get("_var_full_name_needs_state_prefix", None) is not None:
+        if kwargs.get("_var_full_name_needs_state_prefix", False) is not False:
             raise TypeError(
                 "The _var_full_name_needs_state_prefix argument is not supported for ImmutableVar."
             )
@@ -86,12 +86,6 @@ class ImmutableVar(Var):
         field_values = dict(
             _var_name=kwargs.pop("_var_name", self._var_name),
             _var_type=kwargs.pop("_var_type", self._var_type),
-            _var_is_local=kwargs.pop("_var_is_local", self._var_is_local),
-            _var_is_string=kwargs.pop("_var_is_string", self._var_is_string),
-            _var_full_name_needs_state_prefix=kwargs.pop(
-                "_var_full_name_needs_state_prefix",
-                self._var_full_name_needs_state_prefix,
-            ),
             _var_data=VarData.merge(
                 kwargs.get("_var_data", self._var_data), merge_var_data
             ),
@@ -150,30 +144,12 @@ class ImmutableVar(Var):
         if type_ in types.JSONType:
             name = value
         else:
-            name, serialized_type = serializers.serialize(value, get_type=True)
-            if (
-                serialized_type is not None
-                and _var_is_string is None
-                and issubclass(serialized_type, str)
-            ):
-                _var_is_string = True
+            name, _serialized_type = serializers.serialize(value, get_type=True)
         if name is None:
             raise VarTypeError(
                 f"No JSON serializer found for var {value} of type {type_}."
             )
         name = name if isinstance(name, str) else format.json_dumps(name)
-
-        if _var_is_string is None and type_ is str:
-            console.deprecate(
-                feature_name=f"Creating a Var ({value}) from a string without specifying _var_is_string",
-                reason=(
-                    "Specify _var_is_string=False to create a Var that is not a string literal. "
-                    "In the future, creating a Var from a string will be treated as a string literal "
-                    "by default."
-                ),
-                deprecation_version="0.5.4",
-                removal_version="0.6.0",
-            )
 
         return ImmutableVar(
             _var_name=name,
