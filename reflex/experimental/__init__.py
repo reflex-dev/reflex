@@ -42,6 +42,7 @@ _x = ExperimentalNamespace(
     asset=asset,
     client_state=ClientStateVar.create,
     hooks=hooks,
+    vars=vars,
     layout=layout,
     progress=progress,
     PropsBase=PropsBase,
