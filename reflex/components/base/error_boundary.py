@@ -1,6 +1,6 @@
 """A React Error Boundary component that catches unhandled frontend exceptions."""
 
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 from reflex.compiler.compiler import _compile_component
 from reflex.components.component import Component
@@ -82,7 +82,7 @@ class ErrorBoundary(Component):
         """
         return {Hooks.FRONTEND_ERRORS: None}
 
-    def add_custom_code(self) -> list[str]:
+    def add_custom_code(self) -> List[str]:
         """Add custom Javascript code into the page that contains this component.
 
         Custom code is inserted at module level, after any imports.
