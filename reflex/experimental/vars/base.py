@@ -4,7 +4,9 @@ import dataclasses
 import sys
 from typing import Any, Optional, Self, Type
 
-from reflex.vars import Var, VarData
+from reflex.utils import console, serializers, types
+from reflex.utils.exceptions import VarTypeError
+from reflex.vars import Var, VarData, _extract_var_data
 
 
 @dataclasses.dataclass(
@@ -57,3 +59,77 @@ class ImmutableVar(Var):
             ),
         )
         return ImmutableVar(**field_values)
+
+    @classmethod
+    def create(
+        cls,
+        value: Any,
+        _var_is_local: bool = True,
+        _var_is_string: bool | None = None,
+        _var_data: Optional[VarData] = None,
+    ) -> Var | None:
+        """Create a var from a value.
+
+        Args:
+            value: The value to create the var from.
+            _var_is_local: Whether the var is local.
+            _var_is_string: Whether the var is a string literal.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+
+        Raises:
+            VarTypeError: If the value is JSON-unserializable.
+        """
+        from reflex.utils import format
+
+        # Check for none values.
+        if value is None:
+            return None
+
+        # If the value is already a var, do nothing.
+        if isinstance(value, Var):
+            return value
+
+        # Try to pull the imports and hooks from contained values.
+        if not isinstance(value, str):
+            _var_data = VarData.merge(*_extract_var_data(value), _var_data)
+
+        # Try to serialize the value.
+        type_ = type(value)
+        if type_ in types.JSONType:
+            name = value
+        else:
+            name, serialized_type = serializers.serialize(value, get_type=True)
+            if (
+                serialized_type is not None
+                and _var_is_string is None
+                and issubclass(serialized_type, str)
+            ):
+                _var_is_string = True
+        if name is None:
+            raise VarTypeError(
+                f"No JSON serializer found for var {value} of type {type_}."
+            )
+        name = name if isinstance(name, str) else format.json_dumps(name)
+
+        if _var_is_string is None and type_ is str:
+            console.deprecate(
+                feature_name=f"Creating a Var ({value}) from a string without specifying _var_is_string",
+                reason=(
+                    "Specify _var_is_string=False to create a Var that is not a string literal. "
+                    "In the future, creating a Var from a string will be treated as a string literal "
+                    "by default."
+                ),
+                deprecation_version="0.5.4",
+                removal_version="0.6.0",
+            )
+
+        return ImmutableVar(
+            _var_name=name,
+            _var_type=type_,
+            _var_is_local=_var_is_local,
+            _var_is_string=_var_is_string if _var_is_string is not None else False,
+            _var_data=_var_data,
+        )
