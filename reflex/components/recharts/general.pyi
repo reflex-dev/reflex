@@ -11,8 +11,6 @@ from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
 from reflex.vars import BaseVar, Var
 
-from reflex.event import EventHandler
-from reflex.vars import Var
 from .recharts import (
     Recharts,
 )
@@ -543,8 +541,8 @@ class LabelList(Recharts):
             ]
         ] = None,
         offset: Optional[Union[Var[int], int]] = None,
-        stroke: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
-        fill: Optional[Union[Var[Union[str, Color]], Union[str, Color]]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

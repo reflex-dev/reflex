@@ -154,7 +154,7 @@ class GraphingTooltip(Recharts):
     content_style: Var[Dict[str, Any]]
 
     # The style of default tooltip label which is a p element. DEFAULT: {}
-    label_style: Var[Dict[str, Any]] 
+    label_style: Var[Dict[str, Any]]
 
     # This option allows the tooltip to extend beyond the viewBox of the chart itself. DEFAULT: { x: false, y: false }
     allow_escape_view_box: Var[Dict[str, bool]] = Var.create_safe(
