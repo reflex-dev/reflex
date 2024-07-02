@@ -2,9 +2,8 @@
 
 import dataclasses
 import sys
-from typing import Any, Literal, Optional, Self, Type, Union, get_args, get_origin
+from typing import Any, Optional, Self, Type
 
-from reflex.utils import types
 from reflex.vars import Var, VarData
 
 
