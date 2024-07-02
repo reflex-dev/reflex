@@ -1464,11 +1464,13 @@ def test_error_on_state_method_shadow():
 
 
 @pytest.mark.asyncio
-async def test_state_with_invalid_yield(capsys):
+async def test_state_with_invalid_yield(capsys, mock_app):
     """Test that an error is thrown when a state yields an invalid value.
 
     Args:
         capsys: Pytest fixture for capture standard streams.
+        mock_app: Mock app fixture.
+
     """
 
     class StateWithInvalidYield(BaseState):
