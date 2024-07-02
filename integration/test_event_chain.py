@@ -301,7 +301,8 @@ def assert_token(event_chain: AppHarness, driver: WebDriver) -> str:
     token = event_chain.poll_for_value(token_input)
     assert token is not None
 
-    return f"{token}_state.state"
+    state_name = event_chain.get_full_state_name(["_state"])
+    return f"{token}_{state_name}"
 
 
 @pytest.mark.parametrize(
@@ -400,16 +401,17 @@ async def test_event_chain_click(
         exp_event_order: the expected events recorded in the State
     """
     token = assert_token(event_chain, driver)
+    state_name = event_chain.get_state_name("_state")
     btn = driver.find_element(By.ID, button_id)
     btn.click()
 
     async def _has_all_events():
         return len(
-            (await event_chain.get_state(token)).substates["state"].event_order
+            (await event_chain.get_state(token)).substates[state_name].event_order
         ) == len(exp_event_order)
 
     await AppHarness._poll_for_async(_has_all_events)
-    event_order = (await event_chain.get_state(token)).substates["state"].event_order
+    event_order = (await event_chain.get_state(token)).substates[state_name].event_order
     assert event_order == exp_event_order
 
 
@@ -454,14 +456,15 @@ async def test_event_chain_on_load(
     assert event_chain.frontend_url is not None
     driver.get(event_chain.frontend_url + uri)
     token = assert_token(event_chain, driver)
+    state_name = event_chain.get_state_name("_state")
 
     async def _has_all_events():
         return len(
-            (await event_chain.get_state(token)).substates["state"].event_order
+            (await event_chain.get_state(token)).substates[state_name].event_order
         ) == len(exp_event_order)
 
     await AppHarness._poll_for_async(_has_all_events)
-    backend_state = (await event_chain.get_state(token)).substates["state"]
+    backend_state = (await event_chain.get_state(token)).substates[state_name]
     assert backend_state.event_order == exp_event_order
     assert backend_state.is_hydrated is True
 
@@ -526,6 +529,7 @@ async def test_event_chain_on_mount(
     assert event_chain.frontend_url is not None
     driver.get(event_chain.frontend_url + uri)
     token = assert_token(event_chain, driver)
+    state_name = event_chain.get_state_name("_state")
 
     unmount_button = driver.find_element(By.ID, "unmount")
     assert unmount_button
@@ -533,11 +537,11 @@ async def test_event_chain_on_mount(
 
     async def _has_all_events():
         return len(
-            (await event_chain.get_state(token)).substates["state"].event_order
+            (await event_chain.get_state(token)).substates[state_name].event_order
         ) == len(exp_event_order)
 
     await AppHarness._poll_for_async(_has_all_events)
-    event_order = (await event_chain.get_state(token)).substates["state"].event_order
+    event_order = (await event_chain.get_state(token)).substates[state_name].event_order
     assert event_order == exp_event_order
 
 

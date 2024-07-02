@@ -16,14 +16,14 @@ from reflex.utils.serializers import serialize, serialize_dataframe
                     [["foo", "bar"], ["foo1", "bar1"]], columns=["column1", "column2"]
                 )
             },
-            "data_table_state.data",
+            "data",
         ),
-        pytest.param({"data": ["foo", "bar"]}, "data_table_state"),
-        pytest.param({"data": [["foo", "bar"], ["foo1", "bar1"]]}, "data_table_state"),
+        pytest.param({"data": ["foo", "bar"]}, ""),
+        pytest.param({"data": [["foo", "bar"], ["foo1", "bar1"]]}, ""),
     ],
     indirect=["data_table_state"],
 )
-def test_validate_data_table(data_table_state: rx.Var, expected):
+def test_validate_data_table(data_table_state: rx.State, expected):
     """Test the str/render function.
 
     Args:
@@ -39,6 +39,10 @@ def test_validate_data_table(data_table_state: rx.Var, expected):
         data_table_component = DataTable.create(data=data_table_state.data)
 
     data_table_dict = data_table_component.render()
+
+    # prefix expected with state name
+    state_name = data_table_state.get_name()
+    expected = f"{state_name}.{expected}" if expected else state_name
 
     assert data_table_dict["props"] == [
         f"columns={{{expected}.columns}}",

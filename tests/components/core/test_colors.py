@@ -14,6 +14,9 @@ class ColorState(rx.State):
     shade: int = 4
 
 
+color_state_name = ColorState.get_full_name().replace(".", "__")
+
+
 def create_color_var(color):
     return Var.create(color)
 
@@ -26,27 +29,27 @@ def create_color_var(color):
         (create_color_var(rx.color("mint", 3, True)), "var(--mint-a3)"),
         (
             create_color_var(rx.color(ColorState.color, ColorState.shade)),  # type: ignore
-            "var(--${state__color_state.color}-${state__color_state.shade})",
+            f"var(--${{{color_state_name}.color}}-${{{color_state_name}.shade}})",
         ),
         (
             create_color_var(rx.color(f"{ColorState.color}", f"{ColorState.shade}")),  # type: ignore
-            "var(--${state__color_state.color}-${state__color_state.shade})",
+            f"var(--${{{color_state_name}.color}}-${{{color_state_name}.shade}})",
         ),
         (
             create_color_var(
                 rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}")  # type: ignore
             ),
-            "var(--${state__color_state.color_part}ato-${state__color_state.shade})",
+            f"var(--${{{color_state_name}.color_part}}ato-${{{color_state_name}.shade}})",
         ),
         (
             create_color_var(f'{rx.color(ColorState.color, f"{ColorState.shade}")}'),  # type: ignore
-            "var(--${state__color_state.color}-${state__color_state.shade})",
+            f"var(--${{{color_state_name}.color}}-${{{color_state_name}.shade}})",
         ),
         (
             create_color_var(
                 f'{rx.color(f"{ColorState.color}", f"{ColorState.shade}")}'  # type: ignore
             ),
-            "var(--${state__color_state.color}-${state__color_state.shade})",
+            f"var(--${{{color_state_name}.color}}-${{{color_state_name}.shade}})",
         ),
     ],
 )
@@ -68,7 +71,7 @@ def test_color(color, expected):
         ),
         (
             rx.cond(True, rx.color(ColorState.color), rx.color(ColorState.color, 5)),  # type: ignore
-            "{isTrue(true) ? `var(--${state__color_state.color}-7)` : `var(--${state__color_state.color}-5)`}",
+            f"{{isTrue(true) ? `var(--${{{color_state_name}.color}}-7)` : `var(--${{{color_state_name}.color}}-5)`}}",
         ),
         (
             rx.match(
@@ -79,7 +82,7 @@ def test_color(color, expected):
             ),
             "{(() => { switch (JSON.stringify(`condition`)) {case JSON.stringify(`first`):  return (`var(--mint-7)`);"
             "  break;case JSON.stringify(`second`):  return (`var(--tomato-5)`);  break;default:  "
-            "return (`var(--${state__color_state.color}-2)`);  break;};})()}",
+            f"return (`var(--${{{color_state_name}.color}}-2)`);  break;}};}})()}}",
         ),
         (
             rx.match(
@@ -89,9 +92,9 @@ def test_color(color, expected):
                 rx.color(ColorState.color, 2),  # type: ignore
             ),
             "{(() => { switch (JSON.stringify(`condition`)) {case JSON.stringify(`first`):  "
-            "return (`var(--${state__color_state.color}-7)`);  break;case JSON.stringify(`second`):  "
-            "return (`var(--${state__color_state.color}-5)`);  break;default:  "
-            "return (`var(--${state__color_state.color}-2)`);  break;};})()}",
+            f"return (`var(--${{{color_state_name}.color}}-7)`);  break;case JSON.stringify(`second`):  "
+            f"return (`var(--${{{color_state_name}.color}}-5)`);  break;default:  "
+            f"return (`var(--${{{color_state_name}.color}}-2)`);  break;}};}})()}}",
         ),
     ],
 )
