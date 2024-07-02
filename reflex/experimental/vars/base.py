@@ -2,7 +2,7 @@
 
 import dataclasses
 import sys
-from typing import Any, Literal, Optional, Type, Union, get_args, get_origin
+from typing import Any, Literal, Optional, Self, Type, Union, get_args, get_origin
 
 from reflex.utils import types
 from reflex.vars import Var, VarData
@@ -34,45 +34,27 @@ class ImmutableVar(Var):
     # Extra metadata associated with the Var
     _var_data: Optional[VarData] = dataclasses.field(default=None)
 
-    def get_default_value(self) -> Any:
-        """Get the default value of the var.
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> Self:
+        """Make a copy of this Var with updated fields.
+
+        Args:
+            merge_var_data: VarData to merge into the existing VarData.
+            **kwargs: Var fields to update.
 
         Returns:
-            The default value of the var.
-
-        Raises:
-            ImportError: If the var is a dataframe and pandas is not installed.
+            A new ImmutableVar with the updated fields overwriting the corresponding fields in this Var.
         """
-        if types.is_optional(self._var_type):
-            return None
-
-        type_ = (
-            get_origin(self._var_type)
-            if types.is_generic_alias(self._var_type)
-            else self._var_type
+        field_values = dict(
+            _var_name=kwargs.pop("_var_name", self._var_name),
+            _var_type=kwargs.pop("_var_type", self._var_type),
+            _var_is_local=kwargs.pop("_var_is_local", self._var_is_local),
+            _var_is_string=kwargs.pop("_var_is_string", self._var_is_string),
+            _var_full_name_needs_state_prefix=kwargs.pop(
+                "_var_full_name_needs_state_prefix",
+                self._var_full_name_needs_state_prefix,
+            ),
+            _var_data=VarData.merge(
+                kwargs.get("_var_data", self._var_data), merge_var_data
+            ),
         )
-        if type_ is Literal:
-            args = get_args(self._var_type)
-            return args[0] if args else None
-        if issubclass(type_, str):
-            return ""
-        if issubclass(type_, types.get_args(Union[int, float])):
-            return 0
-        if issubclass(type_, bool):
-            return False
-        if issubclass(type_, list):
-            return []
-        if issubclass(type_, dict):
-            return {}
-        if issubclass(type_, tuple):
-            return ()
-        if types.is_dataframe(type_):
-            try:
-                import pandas as pd
-
-                return pd.DataFrame()
-            except ImportError as e:
-                raise ImportError(
-                    "Please install pandas to use dataframes in your app."
-                ) from e
-        return set() if issubclass(type_, set) else None
+        return ImmutableVar(**field_values)
