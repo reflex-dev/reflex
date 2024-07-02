@@ -1,6 +1,9 @@
+"""Collection of base classes."""
+
 import dataclasses
 import sys
 from typing import Any, Literal, Optional, Type, Union, get_args, get_origin
+
 from reflex.utils import types
 from reflex.vars import Var, VarData
 
@@ -11,6 +14,8 @@ from reflex.vars import Var, VarData
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
 class ImmutableVar(Var):
+    """Base class for immutable vars."""
+
     # The name of the var.
     _var_name: str = dataclasses.field()
 
