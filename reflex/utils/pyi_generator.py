@@ -159,13 +159,15 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
             ]
         )
 
-        if value.__name__ not in type_hint_globals:
+        if value.__module__ == 'builtins':
+            res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
+        elif value.__name__ not in type_hint_globals:
             raise TypeError(
                 f"{value.__module__ + '.' + value.__name__} is not a default import, "
                 "add it to DEFAULT_IMPORTS in pyi_generator.py"
             )
-
-        res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
+        else:
+            res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
 
         if value.__name__ == "Var":
             args = list(
