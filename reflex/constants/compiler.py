@@ -110,13 +110,6 @@ class Imports(SimpleNamespace):
         f"/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
     }
 
-    FRONTEND_ERRORS = {
-        "react-error-boundary": [ImportVar(tag="ErrorBoundary")],
-        "react": [ImportVar(tag="useContext")],
-        f"/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
-        f"/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
-    }
-
 
 class Hooks(SimpleNamespace):
     """Common sets of hook declarations."""
@@ -131,18 +124,14 @@ class Hooks(SimpleNamespace):
                   }
                 })"""
 
-    FRONTEND_ERRORS = f"""
-
-    const [{CompileVars.ADD_EVENTS}, {CompileVars.CONNECT_ERROR}] = useContext(EventLoopContext);
-
-    const logFrontendError = (error, info) => {{
-        if (process.env.NODE_ENV === "production") {{
-            addEvents([Event("frontend_event_exception_state.handle_frontend_exception", {{
+    FRONTEND_ERRORS = """
+    const logFrontendError = (error, info) => {
+        if (process.env.NODE_ENV === "production") {
+            addEvents([Event("frontend_event_exception_state.handle_frontend_exception", {
                 stack: error.stack,
-            }})])
-        }}
-
-    }}
+            })])
+        }
+    }
     """
 
 

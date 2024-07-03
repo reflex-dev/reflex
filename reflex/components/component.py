@@ -1350,9 +1350,6 @@ class Component(BaseComponent, ABC):
         # Get static imports required for event processing.
         event_imports = Imports.EVENTS if self.event_triggers else {}
 
-        # Get static imports required for error handling.
-        errors_imports = Imports.FRONTEND_ERRORS if self.tag == "ErrorBoundary" else {}
-
         # Collect imports from Vars used directly by this component.
         var_imports = [
             var._var_data.imports for var in self._get_vars() if var._var_data
@@ -1374,7 +1371,6 @@ class Component(BaseComponent, ABC):
             self._get_hooks_imports(),
             _imports,
             event_imports,
-            errors_imports,
             *var_imports,
             *added_import_dicts,
         )

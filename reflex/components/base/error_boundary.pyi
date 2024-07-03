@@ -8,15 +8,19 @@ from typing import Any, Callable, Dict, List, Optional, Union, overload
 from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
+from reflex.utils.imports import ImportVar
 from reflex.vars import BaseVar, Var
 
 class ErrorBoundary(Component):
+    def add_imports(self) -> dict[str, list[ImportVar]]: ...
+    def add_hooks(self) -> List[str | Var]: ...
     def add_custom_code(self) -> List[str]: ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
+        Fallback_component: Optional[Union[Var[Component], Component]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -33,6 +37,9 @@ class ErrorBoundary(Component):
             Union[EventHandler, EventSpec, list, Callable, BaseVar]
         ] = None,
         on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+        ] = None,
+        on_error: Optional[
             Union[EventHandler, EventSpec, list, Callable, BaseVar]
         ] = None,
         on_focus: Optional[
@@ -74,6 +81,7 @@ class ErrorBoundary(Component):
 
         Args:
             *children: The children of the component.
+            Fallback_component: Rendered instead of the children when an error is caught.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
