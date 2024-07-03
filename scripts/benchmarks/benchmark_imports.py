@@ -107,11 +107,6 @@ def main():
         help="The JSON file containing the benchmark results.",
     )
     parser.add_argument(
-        "--posthog-api-key",
-        help="The API key for PostHog.",
-        required=True,
-    )
-    parser.add_argument(
         "--pr-title",
         help="The PR title to send to PostHog.",
     )

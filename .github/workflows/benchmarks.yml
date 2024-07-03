@@ -73,7 +73,7 @@ jobs:
           poetry run python scripts/benchmarks/simple_app_benchmark_upload.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --benchmark-json "${{ env.OUTPUT_FILE }}"
-          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+          --branch-name "${{ github.head_ref || github.ref_name }}"
           --event-type "${{ github.event_name }}" --actor "${{ github.actor }}" --pr-id "${{ github.event.pull_request.id }}"
 
   reflex-build-size:
@@ -98,7 +98,7 @@ jobs:
         run:
           poetry run python scripts/benchmarks/benchmark_reflex_size.py --os ubuntu-latest
           --python-version 3.11.5 --commit-sha "${{ github.sha }}" --pr-id "${{ github.event.pull_request.id }}"
-          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+          --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "reflex-build" --path ./dist
 
   reflex-plus-dependency-size:
@@ -136,7 +136,7 @@ jobs:
         run:
           poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}"
+          --pr-id "${{ github.event.pull_request.id }}"
           --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "reflex-package" --path ./.venv
 

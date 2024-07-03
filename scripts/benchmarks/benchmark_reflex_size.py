@@ -158,11 +158,6 @@ def main():
     )
     parser.add_argument("--commit-sha", help="The commit SHA to send to PostHog.")
     parser.add_argument(
-        "--posthog-api-key",
-        help="The API key for PostHog.",
-        required=True,
-    )
-    parser.add_argument(
         "--pr-title",
         help="The PR title to send to PostHog.",
     )
