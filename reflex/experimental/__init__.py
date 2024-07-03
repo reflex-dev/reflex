@@ -8,6 +8,7 @@ from reflex.components.sonner.toast import toast as toast
 
 from ..utils.console import warn
 from . import hooks as hooks
+from . import vars as vars
 from .assets import asset as asset
 from .client_state import ClientStateVar as ClientStateVar
 from .layout import layout as layout
