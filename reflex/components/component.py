@@ -441,7 +441,7 @@ class Component(BaseComponent, ABC):
                 ) or (
                     # Else just check if the passed var type is valid.
                     not passed_types
-                    and not types._issubclass(passed_type, expected_type)
+                    and not types._issubclass(passed_type, expected_type, value)
                 ):
                     value_name = value._var_name if isinstance(value, Var) else value
                     raise TypeError(
@@ -1538,7 +1538,8 @@ class Component(BaseComponent, ABC):
         if hooks is not None:
             code[hooks] = None
 
-        code.update(self._get_added_hooks())
+        for hook in self._get_added_hooks():
+            code[hook] = None
 
         # Add the hook code for the children.
         for child in self.children:
@@ -2038,6 +2039,7 @@ class StatefulComponent(BaseComponent):
         from reflex.components.base.bare import Bare
         from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
+        from reflex.components.core.match import Match
 
         if isinstance(child, Bare):
             return child.contents
@@ -2045,6 +2047,8 @@ class StatefulComponent(BaseComponent):
             return child.cond
         if isinstance(child, Foreach):
             return child.iterable
+        if isinstance(child, Match):
+            return child.cond
         return child
 
     @classmethod

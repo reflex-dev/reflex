@@ -3,6 +3,7 @@
 from typing import Dict, List, Literal, Union
 
 from reflex.components.component import ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
 from reflex.vars import Var
 
@@ -71,7 +72,7 @@ class DropdownMenuContent(RadixThemesComponent):
     tag = "DropdownMenu.Content"
 
     # Dropdown Menu Content size "1" - "2"
-    size: Var[LiteralSizeType]
+    size: Var[Responsive[LiteralSizeType]]
 
     # Variant of Dropdown Menu Content: "solid" | "soft"
     variant: Var[LiteralVariantType]
