@@ -283,13 +283,13 @@ class Area(Cartesian):
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
     type_: Var[LiteralAreaType]
 
-    # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
+    # If set false, dots will not be drawn. If set true, dots will be drawn which have the props calculated internally.
     dot: Var[bool]
 
-    # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
+    # The dot is shown when a user enters an area chart and this chart has a tooltip. If set false, no active dot will be drawn. If set true, an active dot will be drawn which will have the props calculated internally.
     active_dot: Var[bool]
 
-    # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
+    # If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally.
     label: Var[bool]
 
     # The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
@@ -383,10 +383,10 @@ class Line(Cartesian):
     # The width of the line stroke.
     stoke_width: Var[int]
 
-    # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
+    # If set false, dots will not be drawn. If set true, dots will be drawn which have the props calculated internally.
     dot: Var[bool]
 
-    # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
+    # The dot is shown when a user enters an area chart and this chart has a tooltip. If set false, no active dot will be drawn. If set true, an active dot will be drawn which will have the props calculated internally.
     active_dot: Var[bool]
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
