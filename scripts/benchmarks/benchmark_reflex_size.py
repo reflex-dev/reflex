@@ -7,8 +7,6 @@ from datetime import datetime
 
 import httpx
 
-from reflex import constants
-
 
 def get_directory_size(directory):
     """Get the size of a directory in bytes.
