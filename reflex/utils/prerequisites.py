@@ -404,9 +404,15 @@ def initialize_gitignore(
         files_to_ignore: The files to add to the .gitignore file.
     """
     # Combine with the current ignored files.
+    current_ignore: set[str] = set()
     if os.path.exists(gitignore_file):
         with open(gitignore_file, "r") as f:
-            files_to_ignore |= set([line.strip() for line in f.readlines()])
+            current_ignore |= set([line.strip() for line in f.readlines()])
+
+    if files_to_ignore == current_ignore:
+        console.debug(f"{gitignore_file} already up to date.")
+        return
+    files_to_ignore |= current_ignore
 
     # Write files to the .gitignore file.
     with open(gitignore_file, "w", newline="\n") as f:
