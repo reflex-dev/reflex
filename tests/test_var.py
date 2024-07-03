@@ -839,34 +839,37 @@ def test_state_with_initial_computed_var(
 
 
 def test_retrival():
-    var_with_data = ImmutableVar.create("test")._replace(
-        merge_var_data=VarData(
-            state="Test",
-            imports={
-                "/utils/context": [
-                    {
-                        "tag": "StateContexts",
-                        "is_default": False,
-                        "alias": None,
-                        "install": True,
-                        "render": True,
-                        "transpile": False,
-                    }
-                ],
-                "react": [
-                    {
-                        "tag": "useContext",
-                        "is_default": False,
-                        "alias": None,
-                        "install": True,
-                        "render": True,
-                        "transpile": False,
-                    }
-                ],
-            },
-            hooks={"const state = useContext(StateContexts.state)": None},
-        )
+    var_without_data = ImmutableVar.create("test")
+    assert var_without_data is not None
+
+    original_var_data = VarData(
+        state="Test",
+        imports={
+            "/utils/context": [
+                {
+                    "tag": "StateContexts",
+                    "is_default": False,
+                    "alias": None,
+                    "install": True,
+                    "render": True,
+                    "transpile": False,
+                }
+            ],
+            "react": [
+                {
+                    "tag": "useContext",
+                    "is_default": False,
+                    "alias": None,
+                    "install": True,
+                    "render": True,
+                    "transpile": False,
+                }
+            ],
+        },
+        hooks={"const state = useContext(StateContexts.state)": None},
     )
+
+    var_with_data = var_without_data._replace(merge_var_data=original_var_data)
 
     f_string = f"foo{var_with_data}bar"
 
@@ -875,9 +878,9 @@ def test_retrival():
 
     result_var_data = Var.create(f"foo{var_with_data}bar")._var_data
     assert result_var_data is not None
-    assert result_var_data.state == var_with_data._var_data.state
-    assert result_var_data._var_data.imports == var_with_data._var_data.imports
-    assert result_var_data._var_data.hooks == var_with_data._var_data.hooks
+    assert result_var_data.state == original_var_data.state
+    assert result_var_data._var_data.imports == original_var_data.imports
+    assert result_var_data._var_data.hooks == original_var_data.hooks
 
 
 @pytest.mark.parametrize(
