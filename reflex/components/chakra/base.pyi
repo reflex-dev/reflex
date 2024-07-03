@@ -153,6 +153,7 @@ class ChakraProvider(ChakraComponent):
             A new ChakraProvider component.
         """
         ...
+
     def add_imports(self) -> ImportDict: ...
 
 chakra_provider = ChakraProvider.create()
