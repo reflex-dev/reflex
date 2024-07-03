@@ -120,7 +120,7 @@ def send_benchmarking_data_to_posthog(
     # Prepare the event data
     event_data = {
         "api_key": posthog_api_key,
-        "event": "size_benchmark",
+        "event": measurement_type,
         "properties": {
             "distinct_id": os.environ.get("GITHUB_ACTOR", "unknown"),
             "os": os_type_version,
@@ -130,7 +130,6 @@ def send_benchmarking_data_to_posthog(
             "pr_title": pr_title,
             "branch_name": branch_name,
             "pr_id": pr_id,
-            "measurement_type": measurement_type,
             "size_mb": round(size / (1024 * 1024), 3),  # size in mb rounded to 3 places
         },
     }
