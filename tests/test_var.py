@@ -6,11 +6,14 @@ import pytest
 from pandas import DataFrame
 
 from reflex.base import Base
+from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex.experimental.vars.base import ImmutableVar
 from reflex.state import BaseState
 from reflex.vars import (
     BaseVar,
     ComputedVar,
     Var,
+    VarData,
     computed_var,
 )
 
@@ -833,6 +836,54 @@ def test_state_with_initial_computed_var(
     else:
         runtime_dict = state.dict()[state_name]
         assert runtime_dict[var_name] == expected_runtime
+
+
+def test_retrival():
+    var_with_data = ImmutableVar.create("test")._replace(
+        merge_var_data=VarData(
+            state="Test",
+            imports={
+                "/utils/context": [
+                    {
+                        "tag": "StateContexts",
+                        "is_default": False,
+                        "alias": None,
+                        "install": True,
+                        "render": True,
+                        "transpile": False,
+                    }
+                ],
+                "react": [
+                    {
+                        "tag": "useContext",
+                        "is_default": False,
+                        "alias": None,
+                        "install": True,
+                        "render": True,
+                        "transpile": False,
+                    }
+                ],
+            },
+            hooks={"const state = useContext(StateContexts.state)": None},
+        )
+    )
+
+    f_string = f"foo{var_with_data}bar"
+
+    assert REFLEX_VAR_OPENING_TAG in f_string
+    assert REFLEX_VAR_CLOSING_TAG in f_string
+    assert (
+        Var.create(f"foo{var_with_data}bar")._var_data.state
+        == var_with_data._var_data.state
+    )
+    assert (
+        Var.create(f"foo{var_with_data}bar")._var_data.imports
+        == var_with_data._var_data.imports
+    )
+    assert (
+        Var.create(f"foo{var_with_data}bar")._var_data.hooks
+        == var_with_data._var_data.hooks
+    )
 
 
 @pytest.mark.parametrize(
