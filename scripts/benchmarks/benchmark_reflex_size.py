@@ -1,3 +1,5 @@
+"""Module for benchmarking the size of the reflex package and sending the data to PostHog."""
+
 import argparse
 import os
 import subprocess
