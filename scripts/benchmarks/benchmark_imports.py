@@ -6,9 +6,10 @@ import argparse
 import json
 import os
 from datetime import datetime
-from reflex import constants
 
 import httpx
+
+from reflex import constants
 
 
 def extract_stats_from_json(json_file: str) -> dict:
@@ -78,18 +79,17 @@ def send_benchmarking_data_to_posthog(
             "event_type": event_type,
             "pr_id": pr_id,
             "performance": performance_data,
-        }
+        },
     }
 
     # Send the data to PostHog
     with httpx.Client() as client:
-        response = client.post(
-            "https://app.posthog.com/capture/",
-            json=event_data
-        )
+        response = client.post("https://app.posthog.com/capture/", json=event_data)
 
     if response.status_code != 200:
-        print(f"Error sending data to PostHog: {response.status_code} - {response.text}")
+        print(
+            f"Error sending data to PostHog: {response.status_code} - {response.text}"
+        )
     else:
         print("Successfully sent data to PostHog")
 
@@ -97,15 +97,11 @@ def send_benchmarking_data_to_posthog(
 def main():
     """Runs the benchmarks and sends the results to PostHog."""
     parser = argparse.ArgumentParser(description="Run benchmarks and process results.")
-    parser.add_argument(
-        "--os", help="The OS type and version to send to PostHog."
-    )
+    parser.add_argument("--os", help="The OS type and version to send to PostHog.")
     parser.add_argument(
         "--python-version", help="The Python version to send to PostHog."
     )
-    parser.add_argument(
-        "--commit-sha", help="The commit SHA to send to PostHog."
-    )
+    parser.add_argument("--commit-sha", help="The commit SHA to send to PostHog.")
     parser.add_argument(
         "--benchmark-json",
         help="The JSON file containing the benchmark results.",
@@ -147,7 +143,7 @@ def main():
     cleaned_benchmark_results = extract_stats_from_json(args.benchmark_json)
     # Send the data to PostHog
     send_benchmarking_data_to_posthog(
-        posthog_api_key= constants.POSTHOG_API_KEY,
+        posthog_api_key=constants.POSTHOG_API_KEY,
         os_type_version=args.os,
         python_version=args.python_version,
         performance_data=cleaned_benchmark_results,

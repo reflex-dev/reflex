@@ -5,6 +5,9 @@ from datetime import datetime
 
 import httpx
 
+from reflex import constants
+
+
 def get_directory_size(directory):
     """Get the size of a directory in bytes.
 
@@ -20,6 +23,7 @@ def get_directory_size(directory):
             fp = os.path.join(dirpath, f)
             total_size += os.path.getsize(fp)
     return total_size
+
 
 def get_python_version(venv_path, os_name):
     """Get the python version of python in a virtual env.
@@ -44,6 +48,7 @@ def get_python_version(venv_path, os_name):
         return ".".join(python_version.split(".")[:-1])
     except subprocess.CalledProcessError:
         return None
+
 
 def get_package_size(venv_path, os_name):
     """Get the size of a specified package.
@@ -78,6 +83,7 @@ def get_package_size(venv_path, os_name):
 
     total_size = get_directory_size(package_dir)
     return total_size
+
 
 def send_benchmarking_data_to_posthog(
     posthog_api_key: str,
@@ -126,33 +132,29 @@ def send_benchmarking_data_to_posthog(
             "pr_id": pr_id,
             "measurement_type": measurement_type,
             "size_mb": round(size / (1024 * 1024), 3),  # size in mb rounded to 3 places
-        }
+        },
     }
 
     # Send the data to PostHog
     with httpx.Client() as client:
-        response = client.post(
-            "https://app.posthog.com/capture/",
-            json=event_data
-        )
+        response = client.post("https://app.posthog.com/capture/", json=event_data)
 
     if response.status_code != 200:
-        print(f"Error sending data to PostHog: {response.status_code} - {response.text}")
+        print(
+            f"Error sending data to PostHog: {response.status_code} - {response.text}"
+        )
     else:
         print("Successfully sent data to PostHog")
+
 
 def main():
     """Runs the benchmarks and sends the results to PostHog."""
     parser = argparse.ArgumentParser(description="Run benchmarks and process results.")
-    parser.add_argument(
-        "--os", help="The OS type and version to send to PostHog."
-    )
+    parser.add_argument("--os", help="The OS type and version to send to PostHog.")
     parser.add_argument(
         "--python-version", help="The Python version to send to PostHog."
     )
-    parser.add_argument(
-        "--commit-sha", help="The commit SHA to send to PostHog."
-    )
+    parser.add_argument("--commit-sha", help="The commit SHA to send to PostHog.")
     parser.add_argument(
         "--posthog-api-key",
         help="The API key for PostHog.",
@@ -189,7 +191,7 @@ def main():
 
     # Send the data to PostHog
     send_benchmarking_data_to_posthog(
-        posthog_api_key="phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
+        posthog_api_key=constants.POSTHOG_API_KEY,
         os_type_version=args.os,
         python_version=args.python_version,
         measurement_type=args.measurement_type,
@@ -199,6 +201,7 @@ def main():
         pr_id=args.pr_id,
         path=args.path,
     )
+
 
 if __name__ == "__main__":
     main()

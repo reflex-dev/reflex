@@ -9,7 +9,6 @@ from importlib import metadata
 from types import SimpleNamespace
 
 from platformdirs import PlatformDirs
-from reflex import constants
 
 IS_WINDOWS = platform.system() == "Windows"
 

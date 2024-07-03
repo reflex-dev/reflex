@@ -6,13 +6,13 @@ from .base import (
     IS_WINDOWS,
     LOCAL_STORAGE,
     POLLING_MAX_HTTP_BUFFER_SIZE,
+    POSTHOG_API_KEY,
     PYTEST_CURRENT_TEST,
     REFLEX_VAR_CLOSING_TAG,
     REFLEX_VAR_OPENING_TAG,
     RELOAD_CONFIG,
     SESSION_STORAGE,
     SKIP_COMPILE_ENV_VAR,
-    POSTHOG_API_KEY,
     ColorMode,
     Dirs,
     Env,
@@ -21,7 +21,7 @@ from .base import (
     Ping,
     Reflex,
     ReflexHostingCLI,
-    Templates
+    Templates,
 )
 from .compiler import (
     NOCOMPILE_FILE,

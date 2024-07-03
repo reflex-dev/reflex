@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 import os
 import sys
-import httpx
 from datetime import datetime
 
+import httpx
 
 
 def send_benchmarking_data_to_posthog(
@@ -33,19 +33,18 @@ def send_benchmarking_data_to_posthog(
             "commit_sha": commit_sha,
             "pr_title": pr_title,
             "lighthouse_data": lighthouse_data,
-            "timestamp": datetime.now().isoformat()
-        }
+            "timestamp": datetime.now().isoformat(),
+        },
     }
 
     # Send the data to PostHog using httpx
     with httpx.Client() as client:
-        response = client.post(
-            "https://app.posthog.com/capture/",
-            json=event_data
-        )
+        response = client.post("https://app.posthog.com/capture/", json=event_data)
 
     if response.status_code != 200:
-        print(f"Error sending data to PostHog: {response.status_code} - {response.text}")
+        print(
+            f"Error sending data to PostHog: {response.status_code} - {response.text}"
+        )
     else:
         print("Successfully sent data to PostHog")
 
@@ -103,7 +102,12 @@ def main():
     lighthouse_scores = get_lighthouse_scores(json_dir)
 
     # Insert the data into the database
-    send_benchmarking_data_to_posthog("phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb", lighthouse_scores, commit_sha, pr_title)
+    send_benchmarking_data_to_posthog(
+        "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
+        lighthouse_scores,
+        commit_sha,
+        pr_title,
+    )
 
 
 if __name__ == "__main__":

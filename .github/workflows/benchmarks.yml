@@ -1,9 +1,6 @@
 name: benchmarking
-
 on:
-  pull_request:
-    types:
-      - closed
+  push:
     paths-ignore:
       - '**/*.md'
 
