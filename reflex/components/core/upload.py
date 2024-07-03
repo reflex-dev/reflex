@@ -107,7 +107,7 @@ def cancel_upload(upload_id: str) -> EventSpec:
         An event spec that cancels the upload when triggered.
     """
     return call_script(
-        f"upload_controllers[{Var.create_safe(upload_id, _var_is_string=True)._var_name_unwrapped!r}]?.abort()"
+        f"upload_controllers[{Var.create_safe(upload_id, _var_is_string=True)._var_name_unwrapped}]?.abort()"
     )
 
 
