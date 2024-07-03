@@ -577,6 +577,7 @@ class Theme(RadixThemesComponent):
             A new component instance.
         """
         ...
+
     def add_imports(self) -> ImportDict | list[ImportDict]: ...
 
 class ThemePanel(RadixThemesComponent):

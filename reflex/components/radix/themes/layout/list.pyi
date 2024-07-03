@@ -150,6 +150,7 @@ class BaseList(Component):
 
         """
         ...
+
     def add_style(self) -> dict[str, Any] | None: ...
 
 class UnorderedList(BaseList, Ul):

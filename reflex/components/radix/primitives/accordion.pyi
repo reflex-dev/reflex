@@ -511,6 +511,7 @@ class AccordionItem(AccordionComponent):
             The accordion item.
         """
         ...
+
     def add_style(self) -> dict[str, Any] | None: ...
 
 class AccordionHeader(AccordionComponent):
@@ -660,6 +661,7 @@ class AccordionHeader(AccordionComponent):
             The Accordion header Component.
         """
         ...
+
     def add_style(self) -> dict[str, Any] | None: ...
 
 class AccordionTrigger(AccordionComponent):
@@ -809,6 +811,7 @@ class AccordionTrigger(AccordionComponent):
             The Accordion trigger Component.
         """
         ...
+
     def add_style(self) -> dict[str, Any] | None: ...
 
 class AccordionIcon(Icon):
@@ -1037,6 +1040,7 @@ class AccordionContent(AccordionComponent):
             The Accordion content Component.
         """
         ...
+
     def add_custom_code(self) -> list[str]: ...
     def add_style(self) -> dict[str, Any] | None: ...
 
