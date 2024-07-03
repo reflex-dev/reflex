@@ -373,7 +373,7 @@ class Bar(Cartesian):
 class Line(Cartesian):
     """A Line component in Recharts."""
 
-    tag = "Line" 
+    tag = "Line"
 
     alias = "RechartsLine"
 
