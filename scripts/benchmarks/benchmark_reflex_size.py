@@ -186,7 +186,7 @@ def main():
 
     # Send the data to PostHog
     send_benchmarking_data_to_posthog(
-        posthog_api_key=constants.POSTHOG_API_KEY,
+        posthog_api_key="phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
         os_type_version=args.os,
         python_version=args.python_version,
         measurement_type=args.measurement_type,
