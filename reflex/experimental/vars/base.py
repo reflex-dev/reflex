@@ -6,9 +6,10 @@ import dataclasses
 import sys
 from typing import Any, Optional, Type
 
+from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.utils import serializers, types
 from reflex.utils.exceptions import VarTypeError
-from reflex.vars import Var, VarData, _extract_var_data
+from reflex.vars import Var, VarData, _extract_var_data, _global_vars
 
 
 @dataclasses.dataclass(
@@ -27,6 +28,10 @@ class ImmutableVar(Var):
 
     # Extra metadata associated with the Var
     _var_data: Optional[VarData] = dataclasses.field(default=None)
+
+    def __post_init__(self):
+        """Post-initialization."""
+        _global_vars[hash(self)] = self
 
     @property
     def _var_is_local(self) -> bool:
@@ -156,3 +161,15 @@ class ImmutableVar(Var):
             _var_type=type_,
             _var_data=_var_data,
         )
+
+    def __format__(self, format_spec: str) -> str:
+        """Format the var into a Javascript equivalent to an f-string.
+
+        Args:
+            format_spec: The format specifier (Ignored for now).
+
+        Returns:
+            The formatted var.
+        """
+        # Encode the _var_data into the formatted output for tracking purposes.
+        return f"{REFLEX_VAR_OPENING_TAG}{hash(self)}{REFLEX_VAR_CLOSING_TAG}{self._var_name}"
