@@ -1,12 +1,9 @@
-"""Checks the size of a specific directory and uploads result."""
-
 import argparse
 import os
 import subprocess
 from datetime import datetime
 
-import psycopg2
-
+import httpx
 
 def get_directory_size(directory):
     """Get the size of a directory in bytes.
@@ -23,7 +20,6 @@ def get_directory_size(directory):
             fp = os.path.join(dirpath, f)
             total_size += os.path.getsize(fp)
     return total_size
-
 
 def get_python_version(venv_path, os_name):
     """Get the python version of python in a virtual env.
@@ -48,7 +44,6 @@ def get_python_version(venv_path, os_name):
         return ".".join(python_version.split(".")[:-1])
     except subprocess.CalledProcessError:
         return None
-
 
 def get_package_size(venv_path, os_name):
     """Get the size of a specified package.
@@ -84,9 +79,8 @@ def get_package_size(venv_path, os_name):
     total_size = get_directory_size(package_dir)
     return total_size
 
-
-def insert_benchmarking_data(
-    db_connection_url: str,
+def send_benchmarking_data_to_posthog(
+    posthog_api_key: str,
     os_type_version: str,
     python_version: str,
     measurement_type: str,
@@ -96,15 +90,15 @@ def insert_benchmarking_data(
     pr_id: str,
     path: str,
 ):
-    """Insert the benchmarking data into the database.
+    """Send the benchmarking data to PostHog.
 
     Args:
-        db_connection_url: The URL to connect to the database.
-        os_type_version: The OS type and version to insert.
-        python_version: The Python version to insert.
+        posthog_api_key: The API key for PostHog.
+        os_type_version: The OS type and version to send.
+        python_version: The Python version to send.
         measurement_type: The type of metric to measure.
-        commit_sha: The commit SHA to insert.
-        pr_title: The PR title to insert.
+        commit_sha: The commit SHA to send.
+        pr_title: The PR title to send.
         branch_name: The name of the branch.
         pr_id: The id of the PR.
         path: The path to the dir or file to check size.
@@ -115,54 +109,58 @@ def insert_benchmarking_data(
         size = get_directory_size(path)
 
     # Get the current timestamp
-    current_timestamp = datetime.now()
+    current_timestamp = datetime.now().isoformat()
 
-    # Connect to the database and insert the data
-    with psycopg2.connect(db_connection_url) as conn, conn.cursor() as cursor:
-        insert_query = """
-            INSERT INTO size_benchmarks (os, python_version, commit_sha, created_at, pr_title, branch_name, pr_id, measurement_type, size)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
-            """
-        cursor.execute(
-            insert_query,
-            (
-                os_type_version,
-                python_version,
-                commit_sha,
-                current_timestamp,
-                pr_title,
-                branch_name,
-                pr_id,
-                measurement_type,
-                round(
-                    size / (1024 * 1024), 3
-                ),  # save size in mb and round to 3 places.
-            ),
+    # Prepare the event data
+    event_data = {
+        "api_key": posthog_api_key,
+        "event": "size_benchmark",
+        "properties": {
+            "distinct_id": os.environ.get("GITHUB_ACTOR", "unknown"),
+            "os": os_type_version,
+            "python_version": python_version,
+            "commit_sha": commit_sha,
+            "created_at": current_timestamp,
+            "pr_title": pr_title,
+            "branch_name": branch_name,
+            "pr_id": pr_id,
+            "measurement_type": measurement_type,
+            "size_mb": round(size / (1024 * 1024), 3),  # size in mb rounded to 3 places
+        }
+    }
+
+    # Send the data to PostHog
+    with httpx.Client() as client:
+        response = client.post(
+            "https://app.posthog.com/capture/",
+            json=event_data
         )
-        # Commit the transaction
-        conn.commit()
 
+    if response.status_code != 200:
+        print(f"Error sending data to PostHog: {response.status_code} - {response.text}")
+    else:
+        print("Successfully sent data to PostHog")
 
 def main():
-    """Runs the benchmarks and inserts the results."""
+    """Runs the benchmarks and sends the results to PostHog."""
     parser = argparse.ArgumentParser(description="Run benchmarks and process results.")
     parser.add_argument(
-        "--os", help="The OS type and version to insert into the database."
+        "--os", help="The OS type and version to send to PostHog."
     )
     parser.add_argument(
-        "--python-version", help="The Python version to insert into the database."
+        "--python-version", help="The Python version to send to PostHog."
     )
     parser.add_argument(
-        "--commit-sha", help="The commit SHA to insert into the database."
+        "--commit-sha", help="The commit SHA to send to PostHog."
     )
     parser.add_argument(
-        "--db-url",
-        help="The URL to connect to the database.",
+        "--posthog-api-key",
+        help="The API key for PostHog.",
         required=True,
     )
     parser.add_argument(
         "--pr-title",
-        help="The PR title to insert into the database.",
+        help="The PR title to send to PostHog.",
     )
     parser.add_argument(
         "--branch-name",
@@ -189,9 +187,9 @@ def main():
     # Get the PR title from env or the args. For the PR merge or push event, there is no PR title, leaving it empty.
     pr_title = args.pr_title or os.getenv("PR_TITLE", "")
 
-    # Insert the data into the database
-    insert_benchmarking_data(
-        db_connection_url=args.db_url,
+    # Send the data to PostHog
+    send_benchmarking_data_to_posthog(
+        posthog_api_key="phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
         os_type_version=args.os,
         python_version=args.python_version,
         measurement_type=args.measurement_type,
@@ -201,7 +199,6 @@ def main():
         pr_id=args.pr_id,
         path=args.path,
     )
-
 
 if __name__ == "__main__":
     main()

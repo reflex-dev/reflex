@@ -9,6 +9,7 @@ from importlib import metadata
 from types import SimpleNamespace
 
 from platformdirs import PlatformDirs
+from reflex import constants
 
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -195,3 +196,6 @@ RELOAD_CONFIG = "__REFLEX_RELOAD_CONFIG"
 
 REFLEX_VAR_OPENING_TAG = "<reflex.Var>"
 REFLEX_VAR_CLOSING_TAG = "</reflex.Var>"
+
+# PostHog constants (Public API Key)
+POSTHOG_API_KEY = "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb"

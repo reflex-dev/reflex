@@ -133,7 +133,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
         key: value for key in additional_keys if (value := kwargs.get(key)) is not None
     }
     return {
-        "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
+        "api_key": constants.POSTHOG_API_KEY,
         "event": event,
         "properties": {
             "distinct_id": installation_id,

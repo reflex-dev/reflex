@@ -1,4 +1,4 @@
-"""Runs the benchmarks and inserts the results into the database."""
+"""Runs the benchmarks and sends the results to PostHog."""
 
 from __future__ import annotations
 
@@ -6,8 +6,9 @@ import argparse
 import json
 import os
 from datetime import datetime
+from reflex import constants
 
-import psycopg2
+import httpx
 
 
 def extract_stats_from_json(json_file: str) -> dict:
@@ -33,8 +34,8 @@ def extract_stats_from_json(json_file: str) -> dict:
     }
 
 
-def insert_benchmarking_data(
-    db_connection_url: str,
+def send_benchmarking_data_to_posthog(
+    posthog_api_key: str,
     os_type_version: str,
     python_version: str,
     performance_data: dict,
@@ -45,75 +46,78 @@ def insert_benchmarking_data(
     actor: str,
     pr_id: str,
 ):
-    """Insert the benchmarking data into the database.
+    """Send the benchmarking data to PostHog.
 
     Args:
-        db_connection_url: The URL to connect to the database.
-        os_type_version: The OS type and version to insert.
-        python_version: The Python version to insert.
-        performance_data: The imports performance data to insert.
-        commit_sha: The commit SHA to insert.
-        pr_title: The PR title to insert.
+        posthog_api_key: The API key for PostHog.
+        os_type_version: The OS type and version to send.
+        python_version: The Python version to send.
+        performance_data: The imports performance data to send.
+        commit_sha: The commit SHA to send.
+        pr_title: The PR title to send.
         branch_name: The name of the branch.
         event_type: Type of github event(push, pull request, etc)
         actor: Username of the user that triggered the run.
         pr_id: Id of the PR.
     """
-    # Serialize the JSON data
-    simple_app_performance_json = json.dumps(performance_data)
     # Get the current timestamp
-    current_timestamp = datetime.now()
+    current_timestamp = datetime.now().isoformat()
 
-    # Connect to the database and insert the data
-    with psycopg2.connect(db_connection_url) as conn, conn.cursor() as cursor:
-        insert_query = """
-            INSERT INTO import_benchmarks (os, python_version, commit_sha, time, pr_title, branch_name, event_type, actor, performance, pr_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-            """
-        cursor.execute(
-            insert_query,
-            (
-                os_type_version,
-                python_version,
-                commit_sha,
-                current_timestamp,
-                pr_title,
-                branch_name,
-                event_type,
-                actor,
-                simple_app_performance_json,
-                pr_id,
-            ),
+    # Prepare the event data
+    event_data = {
+        "api_key": posthog_api_key,
+        "event": "import_benchmark",
+        "properties": {
+            "distinct_id": actor,
+            "os": os_type_version,
+            "python_version": python_version,
+            "commit_sha": commit_sha,
+            "timestamp": current_timestamp,
+            "pr_title": pr_title,
+            "branch_name": branch_name,
+            "event_type": event_type,
+            "pr_id": pr_id,
+            "performance": performance_data,
+        }
+    }
+
+    # Send the data to PostHog
+    with httpx.Client() as client:
+        response = client.post(
+            "https://app.posthog.com/capture/",
+            json=event_data
         )
-        # Commit the transaction
-        conn.commit()
+
+    if response.status_code != 200:
+        print(f"Error sending data to PostHog: {response.status_code} - {response.text}")
+    else:
+        print("Successfully sent data to PostHog")
 
 
 def main():
-    """Runs the benchmarks and inserts the results."""
-    # Get the commit SHA and JSON directory from the command line arguments
+    """Runs the benchmarks and sends the results to PostHog."""
     parser = argparse.ArgumentParser(description="Run benchmarks and process results.")
     parser.add_argument(
-        "--os", help="The OS type and version to insert into the database."
+        "--os", help="The OS type and version to send to PostHog."
     )
     parser.add_argument(
-        "--python-version", help="The Python version to insert into the database."
+        "--python-version", help="The Python version to send to PostHog."
     )
     parser.add_argument(
-        "--commit-sha", help="The commit SHA to insert into the database."
+        "--commit-sha", help="The commit SHA to send to PostHog."
     )
     parser.add_argument(
         "--benchmark-json",
         help="The JSON file containing the benchmark results.",
     )
     parser.add_argument(
-        "--db-url",
-        help="The URL to connect to the database.",
+        "--posthog-api-key",
+        help="The API key for PostHog.",
         required=True,
     )
     parser.add_argument(
         "--pr-title",
-        help="The PR title to insert into the database.",
+        help="The PR title to send to PostHog.",
     )
     parser.add_argument(
         "--branch-name",
@@ -141,9 +145,9 @@ def main():
     pr_title = args.pr_title or os.getenv("PR_TITLE", "")
 
     cleaned_benchmark_results = extract_stats_from_json(args.benchmark_json)
-    # Insert the data into the database
-    insert_benchmarking_data(
-        db_connection_url=args.db_url,
+    # Send the data to PostHog
+    send_benchmarking_data_to_posthog(
+        posthog_api_key= constants.POSTHOG_API_KEY,
         os_type_version=args.os,
         python_version=args.python_version,
         performance_data=cleaned_benchmark_results,
