@@ -872,18 +872,12 @@ def test_retrival():
 
     assert REFLEX_VAR_OPENING_TAG in f_string
     assert REFLEX_VAR_CLOSING_TAG in f_string
-    assert (
-        Var.create(f"foo{var_with_data}bar")._var_data.state
-        == var_with_data._var_data.state
-    )
-    assert (
-        Var.create(f"foo{var_with_data}bar")._var_data.imports
-        == var_with_data._var_data.imports
-    )
-    assert (
-        Var.create(f"foo{var_with_data}bar")._var_data.hooks
-        == var_with_data._var_data.hooks
-    )
+
+    result_var_data = Var.create(f"foo{var_with_data}bar")._var_data
+    assert result_var_data is not None
+    assert result_var_data.state == var_with_data._var_data.state
+    assert result_var_data._var_data.imports == var_with_data._var_data.imports
+    assert result_var_data._var_data.hooks == var_with_data._var_data.hooks
 
 
 @pytest.mark.parametrize(
