@@ -29,10 +29,6 @@ class ImmutableVar(Var):
     # Extra metadata associated with the Var
     _var_data: Optional[VarData] = dataclasses.field(default=None)
 
-    def __post_init__(self):
-        """Post-initialization."""
-        _global_vars[hash(self)] = self
-
     @property
     def _var_is_local(self) -> bool:
         """Whether this is a local javascript variable.
@@ -171,5 +167,7 @@ class ImmutableVar(Var):
         Returns:
             The formatted var.
         """
+        _global_vars[hash(self)] = self
+
         # Encode the _var_data into the formatted output for tracking purposes.
         return f"{REFLEX_VAR_OPENING_TAG}{hash(self)}{REFLEX_VAR_CLOSING_TAG}{self._var_name}"
