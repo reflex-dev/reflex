@@ -20,7 +20,11 @@ class SQLAType(TypeDecorator):
 
     @property
     def python_type(self) -> Type[Dict[str, str]]:
-        """Python type."""
+        """Python type.
+
+        Returns:
+            Python Type of the column.
+        """
         return Dict[str, str]
 
 
