@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any, Optional, Self, Type
+from typing import Any, Optional, Type
 
 from reflex.utils import serializers, types
 from reflex.utils.exceptions import VarTypeError
@@ -55,7 +55,7 @@ class ImmutableVar(Var):
         """
         return False
 
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> Self:
+    def _replace(self, merge_var_data=None, **kwargs: Any):
         """Make a copy of this Var with updated fields.
 
         Args:
