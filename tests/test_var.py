@@ -9,6 +9,7 @@ from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.experimental.vars.base import ImmutableVar
 from reflex.state import BaseState
+from reflex.utils.imports import ImportVar
 from reflex.vars import (
     BaseVar,
     ComputedVar,
@@ -844,28 +845,7 @@ def test_retrival():
 
     original_var_data = VarData(
         state="Test",
-        imports={
-            "/utils/context": [
-                {
-                    "tag": "StateContexts",
-                    "is_default": False,
-                    "alias": None,
-                    "install": True,
-                    "render": True,
-                    "transpile": False,
-                }
-            ],
-            "react": [
-                {
-                    "tag": "useContext",
-                    "is_default": False,
-                    "alias": None,
-                    "install": True,
-                    "render": True,
-                    "transpile": False,
-                }
-            ],
-        },
+        imports={"react": [ImportVar(tag="useRef")]},
         hooks={"const state = useContext(StateContexts.state)": None},
     )
 
