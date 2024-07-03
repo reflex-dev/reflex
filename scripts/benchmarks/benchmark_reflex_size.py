@@ -7,7 +7,7 @@ from datetime import datetime
 
 import httpx
 
-from ...reflex import constants
+from reflex import constants
 
 
 def get_directory_size(directory):
