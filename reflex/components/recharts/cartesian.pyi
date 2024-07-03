@@ -37,7 +37,7 @@ class Axis(Recharts):
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
         label: Optional[
-            Union[Var[Union[str, int, dict[str, Any]]], Union[str, int, dict[str, Any]]]
+            Union[Var[Union[dict[str, Any], int, str]], str, int, dict[str, Any]]
         ] = None,
         scale: Optional[
             Union[
@@ -206,7 +206,7 @@ class XAxis(Axis):
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
         label: Optional[
-            Union[Var[Union[str, int, dict[str, Any]]], Union[str, int, dict[str, Any]]]
+            Union[Var[Union[dict[str, Any], int, str]], str, int, dict[str, Any]]
         ] = None,
         scale: Optional[
             Union[
@@ -376,7 +376,7 @@ class YAxis(Axis):
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
         label: Optional[
-            Union[Var[Union[str, int, dict[str, Any]]], Union[str, int, dict[str, Any]]]
+            Union[Var[Union[dict[str, Any], int, str]], str, int, dict[str, Any]]
         ] = None,
         scale: Optional[
             Union[

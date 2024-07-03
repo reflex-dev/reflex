@@ -159,7 +159,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
             ]
         )
 
-        if value.__module__ == 'builtins':
+        if value.__module__ == "builtins":
             res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
         elif value.__name__ not in type_hint_globals:
             raise TypeError(

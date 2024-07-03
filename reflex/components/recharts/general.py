@@ -18,7 +18,7 @@ from .recharts import (
     LiteralVerticalAlign,
     Recharts,
 )
-
+ 
 
 class ResponsiveContainer(Recharts, MemoizationLeaf):
     """A base class for responsive containers in Recharts."""
