@@ -89,7 +89,9 @@ def asset(
 
         dst_file = asset_folder / filename
 
-        if not dst_file.exists():
+        if not dst_file.exists() and (
+            not dst_file.is_symlink() or dst_file.resolve() != src_file_shared.resolve()
+        ):
             dst_file.symlink_to(src_file_shared)
 
     asset_url = f"/{external}/{subfolder}/{filename}"
