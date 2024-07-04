@@ -538,7 +538,13 @@ def test_var_indexing_str():
     # Test negative indexing.
     assert str(str_var[-1]) == "{str.at(-1)}"
 
-
+@pytest.mark.parametrize(
+    "var",
+    [
+        (BaseVar(_var_name="foo", _var_type=int)),
+        (BaseVar(_var_name="bar", _var_type=float)),
+    ],
+)
 def test_var_replace_with_invalid_kwargs(var):
     with pytest.raises(TypeError) as excinfo:
         var._replace(_this_should_fail=True)
