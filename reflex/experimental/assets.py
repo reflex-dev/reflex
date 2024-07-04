@@ -19,18 +19,27 @@ def asset(
     Place the file next to your including python file.
     Links the file to the app's external assets directory.
 
+    Example:
+    ```python
+    # my_custom_javascript.js is a shared asset located next to the including python file.
+    rx.script(src=rx._x.asset(path="my_custom_javascript.js"))
+    rx.image(src=rx._x.asset(path="test_image.png", subfolder="subfolder"))
+    ```
+
     Local/Internal assets:
     Place the file in the app's assets/ directory.
 
     Example:
     ```python
-    rx.script(src=rx._x.asset("my_custom_javascript.js"))
-    rx.image(src=rx._x.asset("test_image.png","subfolder"))
+    # local_image.png is an asset located in the app's assets/ directory. It cannot be shared when developing a library.
+    rx.image(src=rx._x.asset(path="local_image.png"))
+    # Explicit shared=False is only needed if you have a local_image.png next to the including python file.
+    rx.image(src=rx._x.asset(path="local_image.png", shared=False))
     ```
 
     Args:
         path: The relative path of the asset.
-        subfolder: The directory to place the asset in.
+        subfolder: The directory to place the shared asset in.
         shared: Whether to expose the asset to other apps. None means auto-detect.
 
     Raises:
