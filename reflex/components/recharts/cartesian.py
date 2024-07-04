@@ -97,6 +97,12 @@ class Axis(Recharts):
     # The minimum gap between two adjacent labels
     min_tick_gap: Var[int]
 
+    # The stroke color of axis
+    stroke: Var[Union[str, Color]]
+
+    # The text anchor of axis
+    text_anchor: Var[str]  # 'start', 'middle', 'end'
+
     # The customized event handler of click on the ticks of this axis
     on_click: EventHandler[lambda: []]
 
@@ -180,9 +186,6 @@ class Brush(Recharts):
 
     alias = "RechartsBrush"
 
-    # Stroke color
-    stroke: Var[Union[str, Color]]
-
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
 
@@ -212,6 +215,12 @@ class Brush(Recharts):
 
     # The default end index of brush. If the option is not set, the end index will be 1.
     end_index: Var[int]
+
+    # The fill color of brush
+    fill: Var[Union[str, Color]]
+
+    # The stroke color of brush
+    stroke: Var[Union[str, Color]]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -286,13 +295,13 @@ class Area(Cartesian):
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
     type_: Var[LiteralAreaType]
 
-    # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
+    # If set false, dots will not be drawn. If set true, dots will be drawn which have the props calculated internally.
     dot: Var[bool]
 
-    # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
+    # The dot is shown when a user enters an area chart and this chart has a tooltip. If set false, no active dot will be drawn. If set true, an active dot will be drawn which will have the props calculated internally.
     active_dot: Var[bool]
 
-    # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
+    # If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally.
     label: Var[bool]
 
     # The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
@@ -386,10 +395,10 @@ class Line(Cartesian):
     # The width of the line stroke.
     stoke_width: Var[int]
 
-    # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
+    # If set false, dots will not be drawn. If set true, dots will be drawn which have the props calculated internally.
     dot: Var[bool]
 
-    # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
+    # The dot is shown when a user enters an area chart and this chart has a tooltip. If set false, no active dot will be drawn. If set true, an active dot will be drawn which will have the props calculated internally.
     active_dot: Var[bool]
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
