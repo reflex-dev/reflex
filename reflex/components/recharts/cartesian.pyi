@@ -36,6 +36,9 @@ class Axis(Recharts):
         axis_line: Optional[Union[Var[bool], bool]] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
+        label: Optional[
+            Union[Var[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]]
+        ] = None,
         scale: Optional[
             Union[
                 Var[
@@ -157,6 +160,7 @@ class Axis(Recharts):
             axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
             reversed: Reverse the ticks or not.
+            label: The label of axis, which appears next to the axis.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
@@ -205,6 +209,9 @@ class XAxis(Axis):
         axis_line: Optional[Union[Var[bool], bool]] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
+        label: Optional[
+            Union[Var[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]]
+        ] = None,
         scale: Optional[
             Union[
                 Var[
@@ -328,6 +335,7 @@ class XAxis(Axis):
             axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
             reversed: Reverse the ticks or not.
+            label: The label of axis, which appears next to the axis.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
@@ -375,6 +383,9 @@ class YAxis(Axis):
         axis_line: Optional[Union[Var[bool], bool]] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
+        label: Optional[
+            Union[Var[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]]
+        ] = None,
         scale: Optional[
             Union[
                 Var[
@@ -497,6 +508,7 @@ class YAxis(Axis):
             axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
             reversed: Reverse the ticks or not.
+            label: The label of axis, which appears next to the axis.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
