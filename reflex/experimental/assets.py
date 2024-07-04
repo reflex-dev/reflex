@@ -9,7 +9,7 @@ from reflex import constants
 
 
 def asset(
-    filename: str,
+    path: str,
     subfolder: Optional[str] = None,
     shared: Optional[bool] = None,
 ) -> str:
@@ -29,7 +29,7 @@ def asset(
     ```
 
     Args:
-        filename: The relative filename of the asset.
+        path: The relative path of the asset.
         subfolder: The directory to place the asset in.
         shared: Whether to expose the asset to other apps. None means auto-detect.
 
@@ -44,16 +44,13 @@ def asset(
     calling_file = inspect.stack()[1].filename
     module = inspect.getmodule(inspect.stack()[1][0])
     assert module is not None
-    caller_module_path = module.__name__.replace(".", "/")
-
-    subfolder = f"{caller_module_path}/{subfolder}" if subfolder else caller_module_path
 
     cwd = Path.cwd()
     assets = constants.Dirs.APP_ASSETS
     external = constants.Dirs.EXTERNAL_APP_ASSETS
 
-    src_file_shared = Path(calling_file).parent / filename
-    src_file_local = cwd / assets / subfolder / filename
+    src_file_shared = Path(calling_file).parent / path
+    src_file_local = cwd / assets / path
 
     shared_exists = src_file_shared.exists()
     local_exists = src_file_local.exists()
@@ -62,7 +59,7 @@ def asset(
     if shared is None:
         if shared_exists and local_exists:
             raise ValueError(
-                f"Both shared and local assets exist for {filename}. "
+                f"Both shared and local assets exist for {path}. "
                 + "Please explicitly set shared=True or shared=False."
             )
         if not shared_exists and not local_exists:
@@ -73,13 +70,18 @@ def asset(
 
     # Local asset handling
     if not shared:
+        if subfolder is not None:
+            raise ValueError("Subfolder is not supported for local assets.")
         if not local_exists:
             raise FileNotFoundError(f"File not found: {src_file_local}")
-        return f"/{filename}"
+        return f"/{path}"
 
     # Shared asset handling
     if not shared_exists:
         raise FileNotFoundError(f"File not found: {src_file_shared}")
+
+    caller_module_path = module.__name__.replace(".", "/")
+    subfolder = f"{caller_module_path}/{subfolder}" if subfolder else caller_module_path
 
     # Symlink the asset to the app's external assets directory if running frontend.
     if not os.environ.get(constants.ENV_BACKEND_ONLY):
@@ -87,12 +89,12 @@ def asset(
         asset_folder = Path.cwd() / assets / external / subfolder
         asset_folder.mkdir(parents=True, exist_ok=True)
 
-        dst_file = asset_folder / filename
+        dst_file = asset_folder / path
 
         if not dst_file.exists() and (
             not dst_file.is_symlink() or dst_file.resolve() != src_file_shared.resolve()
         ):
             dst_file.symlink_to(src_file_shared)
 
-    asset_url = f"/{external}/{subfolder}/{filename}"
+    asset_url = f"/{external}/{subfolder}/{path}"
     return asset_url
