@@ -57,7 +57,7 @@ class ErrorBoundary(Component):
             p("Ooops...Unknown Reflex error has occured:"),
             p(
                 Var.create("error.message", _var_is_local=False, _var_is_string=False),
-                color_scheme="red",
+                color="red",
             ),
             p("Please contact the support."),
         )
