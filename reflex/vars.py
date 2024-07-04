@@ -497,6 +497,7 @@ class Var:
         Returns:
             A new BaseVar with the updated fields overwriting the corresponding fields in this Var.
         """
+
         field_values = dict(
             _var_name=kwargs.pop("_var_name", self._var_name),
             _var_type=kwargs.pop("_var_type", self._var_type),
@@ -507,9 +508,14 @@ class Var:
                 self._var_full_name_needs_state_prefix,
             ),
             _var_data=VarData.merge(
-                kwargs.get("_var_data", self._var_data), merge_var_data
+                kwargs.pop("_var_data", self._var_data), merge_var_data
             ),
         )
+        
+        if kwargs:
+            unexpected_kwargs = ", ".join(kwargs.keys())
+            raise TypeError(f"Unexpected keyword arguments: {unexpected_kwargs}")
+        
         return BaseVar(**field_values)
 
     def _decode(self) -> Any:
