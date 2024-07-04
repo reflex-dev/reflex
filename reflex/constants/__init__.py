@@ -2,6 +2,7 @@
 
 from .base import (
     COOKIES,
+    ENV_BACKEND_ONLY,
     ENV_MODE_ENV_VAR,
     IS_WINDOWS,
     LOCAL_STORAGE,
@@ -113,6 +114,7 @@ __ALL__ = [
     ROUTER_DATA_INCLUDE,
     ROUTE_NOT_FOUND,
     SETTER_PREFIX,
+    ENV_BACKEND_ONLY,
     SKIP_COMPILE_ENV_VAR,
     SocketEvent,
     Tailwind,
