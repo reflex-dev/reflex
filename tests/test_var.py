@@ -539,6 +539,12 @@ def test_var_indexing_str():
     assert str(str_var[-1]) == "{str.at(-1)}"
 
 
+def test_var_replace_with_invalid_kwargs(var):
+    with pytest.raises(TypeError) as excinfo:
+        var._replace(_this_should_fail=True)
+    assert "Unexpected keyword arguments" in str(excinfo.value)
+
+
 @pytest.mark.parametrize(
     "var, index",
     [
