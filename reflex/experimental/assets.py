@@ -42,6 +42,7 @@ def asset(
 
     Raises:
         FileNotFoundError: If the file does not exist.
+        ValueError: If subfolder is provided for local assets.
 
     Returns:
         The relative URL to the asset.
