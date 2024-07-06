@@ -1,14 +1,15 @@
 """A Rich Text Editor based on SunEditor."""
+
 from __future__ import annotations
 
 import enum
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.utils.format import to_camel_case
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 
@@ -176,34 +177,46 @@ class Editor(NoSSRComponent):
     # default: False
     disable_toolbar: Var[bool]
 
-    def _get_imports(self):
-        imports = super()._get_imports()
-        imports[""] = [
-            ImportVar(tag="suneditor/dist/css/suneditor.min.css", install=False)
-        ]
-        return imports
+    # Fired when the editor content changes.
+    on_change: EventHandler[lambda content: [content]]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
+    # Fired when the something is inputted in the editor.
+    on_input: EventHandler[lambda e: [e]]
+
+    # Fired when the editor loses focus.
+    on_blur: EventHandler[lambda e, content: [content]]
+
+    # Fired when the editor is loaded.
+    on_load: EventHandler[lambda reload: [reload]]
+
+    # Fired when the editor is resized.
+    on_resize_editor: EventHandler[lambda height, prev_height: [height, prev_height]]
+
+    # Fired when the editor content is copied.
+    on_copy: EventHandler[lambda e, clipboard_data: [clipboard_data]]
+
+    # Fired when the editor content is cut.
+    on_cut: EventHandler[lambda e, clipboard_data: [clipboard_data]]
+
+    # Fired when the editor content is pasted.
+    on_paste: EventHandler[
+        lambda e, clean_data, max_char_count: [clean_data, max_char_count]
+    ]
+
+    # Fired when the code view is toggled.
+    toggle_code_view: EventHandler[lambda is_code_view: [is_code_view]]
+
+    # Fired when the full screen mode is toggled.
+    toggle_full_screen: EventHandler[lambda is_full_screen: [is_full_screen]]
+
+    def add_imports(self) -> ImportDict:
+        """Add imports for the Editor component.
 
         Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
+            The import dict.
         """
         return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda content: [content],
-            "on_input": lambda _e: [_e],
-            EventTriggers.ON_BLUR: lambda _e, content: [content],
-            "on_load": lambda reload: [reload],
-            "on_resize_editor": lambda height, prev_height: [height, prev_height],
-            "on_copy": lambda _e, clipboard_data: [clipboard_data],
-            "on_cut": lambda _e, clipboard_data: [clipboard_data],
-            "on_paste": lambda _e, clean_data, max_char_count: [
-                clean_data,
-                max_char_count,
-            ],
-            "toggle_code_view": lambda is_code_view: [is_code_view],
-            "toggle_full_screen": lambda is_full_screen: [is_full_screen],
+            "": ImportVar(tag="suneditor/dist/css/suneditor.min.css", install=False)
         }
 
     @classmethod

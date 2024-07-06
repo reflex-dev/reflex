@@ -1,7 +1,6 @@
 """A number input component."""
 
 from numbers import Number
-from typing import Any, Dict
 
 from reflex.components.chakra import (
     ChakraComponent,
@@ -9,7 +8,7 @@ from reflex.components.chakra import (
     LiteralInputVariant,
 )
 from reflex.components.component import Component
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 
@@ -75,16 +74,8 @@ class NumberInput(ChakraComponent):
     # The name of the form field
     name: Var[str]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0],
-        }
+    # Fired when the input value changes.
+    on_change: EventHandler[lambda e0: [e0]]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

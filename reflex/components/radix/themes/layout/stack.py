@@ -57,3 +57,8 @@ class HStack(Stack):
 
     # The direction of the stack.
     direction: Var[LiteralFlexDirection] = "row"  # type: ignore
+
+
+stack = Stack.create
+hstack = HStack.create
+vstack = VStack.create

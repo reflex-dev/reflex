@@ -1,4 +1,5 @@
 """A Reflex logo component."""
+
 import reflex as rx
 
 

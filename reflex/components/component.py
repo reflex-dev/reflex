@@ -44,7 +44,7 @@ from reflex.event import (
 )
 from reflex.style import Style, format_as_emotion
 from reflex.utils import console, format, imports, types
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.utils.serializers import serializer
 from reflex.vars import BaseVar, Var, VarData
 
@@ -95,7 +95,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def _get_all_imports(self) -> imports.ImportDict:
+    def _get_all_imports(self) -> ParsedImportDict:
         """Get all the libraries and fields that are used by the component.
 
         Returns:
@@ -213,7 +213,7 @@ class Component(BaseComponent, ABC):
     # State class associated with this component instance
     State: Optional[Type[reflex.state.State]] = None
 
-    def add_imports(self) -> dict[str, str | ImportVar | list[str | ImportVar]]:
+    def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the component.
 
         This method should be implemented by subclasses to add new imports for the component.
@@ -319,7 +319,9 @@ class Component(BaseComponent, ABC):
             # Set default values for any props.
             if types._issubclass(field.type_, Var):
                 field.required = False
-                field.default = Var.create(field.default)
+                field.default = Var.create(
+                    field.default, _var_is_string=isinstance(field.default, str)
+                )
             elif types._issubclass(field.type_, EventHandler):
                 field.required = False
 
@@ -348,7 +350,10 @@ class Component(BaseComponent, ABC):
             "id": kwargs.get("id"),
             "children": children,
             **{
-                prop: Var.create(kwargs[prop])
+                prop: Var.create(
+                    kwargs[prop],
+                    _var_is_string=False if isinstance(kwargs[prop], str) else None,
+                )
                 for prop in self.get_initial_props()
                 if prop in kwargs
             },
@@ -360,7 +365,6 @@ class Component(BaseComponent, ABC):
         # Get the component fields, triggers, and props.
         fields = self.get_fields()
         component_specific_triggers = self.get_event_triggers()
-        triggers = component_specific_triggers.keys()
         props = self.get_props()
 
         # Add any events triggers.
@@ -370,13 +374,17 @@ class Component(BaseComponent, ABC):
 
         # Iterate through the kwargs and set the props.
         for key, value in kwargs.items():
-            if key.startswith("on_") and key not in triggers and key not in props:
+            if (
+                key.startswith("on_")
+                and key not in component_specific_triggers
+                and key not in props
+            ):
                 raise ValueError(
                     f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. If {comp_name}"
                     f" is a third party component make sure to add `{key}` to the component's event triggers. "
                     f"visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info."
                 )
-            if key in triggers:
+            if key in component_specific_triggers:
                 # Event triggers are bound to event chains.
                 field_type = EventChain
             elif key in props:
@@ -392,7 +400,10 @@ class Component(BaseComponent, ABC):
                 passed_types = None
                 try:
                     # Try to create a var from the value.
-                    kwargs[key] = Var.create(value)
+                    kwargs[key] = Var.create(
+                        value,
+                        _var_is_string=False if isinstance(value, str) else None,
+                    )
 
                     # Check that the var type is not None.
                     if kwargs[key] is None:
@@ -417,7 +428,9 @@ class Component(BaseComponent, ABC):
                 if types.is_union(passed_type):
                     # We need to check all possible types in the union.
                     passed_types = (
-                        arg for arg in passed_type.__args__ if arg is not type(None)
+                        arg
+                        for arg in passed_type.__args__  # type: ignore
+                        if arg is not type(None)
                     )
                 if (
                     # If the passed var is a union, check if all possible types are valid.
@@ -428,7 +441,7 @@ class Component(BaseComponent, ABC):
                 ) or (
                     # Else just check if the passed var type is valid.
                     not passed_types
-                    and not types._issubclass(passed_type, expected_type)
+                    and not types._issubclass(passed_type, expected_type, value)
                 ):
                     value_name = value._var_name if isinstance(value, Var) else value
                     raise TypeError(
@@ -436,10 +449,11 @@ class Component(BaseComponent, ABC):
                     )
 
             # Check if the key is an event trigger.
-            if key in triggers:
+            if key in component_specific_triggers:
                 # Temporarily disable full control for event triggers.
                 kwargs["event_triggers"][key] = self._create_event_chain(
-                    value=value, args_spec=component_specific_triggers[key]
+                    value=value,  # type: ignore
+                    args_spec=component_specific_triggers[key],
                 )
 
         # Remove any keys that were added as events.
@@ -519,13 +533,23 @@ class Component(BaseComponent, ABC):
                     events.append(event)
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
-                    events.extend(call_event_fn(v, args_spec))
+                    result = call_event_fn(v, args_spec)
+                    if isinstance(result, Var):
+                        raise ValueError(
+                            f"Invalid event chain: {v}. Cannot use a Var-returning "
+                            "lambda inside an EventChain list."
+                        )
+                    events.extend(result)
                 else:
                     raise ValueError(f"Invalid event: {v}")
 
         # If the input is a callable, create an event chain.
         elif isinstance(value, Callable):
-            events = call_event_fn(value, args_spec)
+            result = call_event_fn(value, args_spec)
+            if isinstance(result, Var):
+                # Recursively call this function if the lambda returned an EventChain Var.
+                return self._create_event_chain(args_spec, result)
+            events = result
 
         # Otherwise, raise an error.
         else:
@@ -558,6 +582,7 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The event triggers.
+
         """
         default_triggers = {
             EventTriggers.ON_FOCUS: lambda: [],
@@ -576,6 +601,7 @@ class Component(BaseComponent, ABC):
             EventTriggers.ON_MOUNT: lambda: [],
             EventTriggers.ON_UNMOUNT: lambda: [],
         }
+
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
         for field in self.get_fields().values():
@@ -659,7 +685,9 @@ class Component(BaseComponent, ABC):
             # Add ref to element if `id` is not None.
             ref = self.get_ref()
             if ref is not None:
-                props["ref"] = Var.create(ref, _var_is_local=False)
+                props["ref"] = Var.create(
+                    ref, _var_is_local=False, _var_is_string=False
+                )
         else:
             props = props.copy()
 
@@ -994,10 +1022,10 @@ class Component(BaseComponent, ABC):
                     f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
                 )
 
-            if child._valid_parents and comp_name not in [
-                *child._valid_parents,
-                *allowed_components,
-            ]:
+            if child._valid_parents and all(
+                clz_name not in [*child._valid_parents, *allowed_components]
+                for clz_name in self._iter_parent_classes_names()
+            ):
                 valid_parent_list = ", ".join(
                     [f"`{v_parent}`" for v_parent in child._valid_parents]
                 )
@@ -1078,7 +1106,9 @@ class Component(BaseComponent, ABC):
                 vars.append(comp_prop)
             elif isinstance(comp_prop, str):
                 # Collapse VarData encoded in f-strings.
-                var = Var.create_safe(comp_prop)
+                var = Var.create_safe(
+                    comp_prop, _var_is_string=isinstance(comp_prop, str)
+                )
                 if var._var_data is not None:
                     vars.append(var)
 
@@ -1091,19 +1121,44 @@ class Component(BaseComponent, ABC):
 
         return vars
 
-    def _has_event_triggers(self) -> bool:
-        """Check if the component or children have any event triggers.
+    def _event_trigger_values_use_state(self) -> bool:
+        """Check if the values of a component's event trigger use state.
 
         Returns:
-            True if the component or children have any event triggers.
+            True if any of the component's event trigger values uses State.
         """
-        if self.event_triggers:
+        for trigger in self.event_triggers.values():
+            if isinstance(trigger, EventChain):
+                for event in trigger.events:
+                    if event.handler.state_full_name:
+                        return True
+            elif isinstance(trigger, Var) and trigger._var_state:
+                return True
+        return False
+
+    def _has_stateful_event_triggers(self):
+        """Check if component or children have any event triggers that use state.
+
+        Returns:
+            True if the component or children have any event triggers that uses state.
+        """
+        if self.event_triggers and self._event_trigger_values_use_state():
             return True
         else:
             for child in self.children:
-                if isinstance(child, Component) and child._has_event_triggers():
+                if (
+                    isinstance(child, Component)
+                    and child._has_stateful_event_triggers()
+                ):
                     return True
         return False
+
+    @classmethod
+    def _iter_parent_classes_names(cls) -> Iterator[str]:
+        for clz in cls.mro():
+            if clz is Component:
+                break
+            yield clz.__name__
 
     @classmethod
     def _iter_parent_classes_with_method(cls, method: str) -> Iterator[Type[Component]]:
@@ -1196,7 +1251,7 @@ class Component(BaseComponent, ABC):
         # Return the dynamic imports
         return dynamic_imports
 
-    def _get_props_imports(self) -> List[str]:
+    def _get_props_imports(self) -> List[ParsedImportDict]:
         """Get the imports needed for components props.
 
         Returns:
@@ -1222,7 +1277,7 @@ class Component(BaseComponent, ABC):
             or format.format_library_name(dep or "") in self.transpile_packages
         )
 
-    def _get_dependencies_imports(self) -> imports.ImportDict:
+    def _get_dependencies_imports(self) -> ParsedImportDict:
         """Get the imports from lib_dependencies for installing.
 
         Returns:
@@ -1239,7 +1294,7 @@ class Component(BaseComponent, ABC):
             for dep in self.lib_dependencies
         }
 
-    def _get_hooks_imports(self) -> imports.ImportDict:
+    def _get_hooks_imports(self) -> ParsedImportDict:
         """Get the imports required by certain hooks.
 
         Returns:
@@ -1280,7 +1335,7 @@ class Component(BaseComponent, ABC):
 
         return imports.merge_imports(_imports, *other_imports)
 
-    def _get_imports(self) -> imports.ImportDict:
+    def _get_imports(self) -> ParsedImportDict:
         """Get all the libraries and fields that are used by the component.
 
         Returns:
@@ -1300,25 +1355,15 @@ class Component(BaseComponent, ABC):
             var._var_data.imports for var in self._get_vars() if var._var_data
         ]
 
-        # If any subclass implements add_imports, merge the imports.
-        def _make_list(
-            value: str | ImportVar | list[str | ImportVar],
-        ) -> list[str | ImportVar]:
-            if isinstance(value, (str, ImportVar)):
-                return [value]
-            return value
-
-        _added_import_dicts = []
+        added_import_dicts: list[ParsedImportDict] = []
         for clz in self._iter_parent_classes_with_method("add_imports"):
-            _added_import_dicts.append(
-                {
-                    package: [
-                        ImportVar(tag=tag) if not isinstance(tag, ImportVar) else tag
-                        for tag in _make_list(maybe_tags)
-                    ]
-                    for package, maybe_tags in clz.add_imports(self).items()
-                }
-            )
+            list_of_import_dict = clz.add_imports(self)
+
+            if not isinstance(list_of_import_dict, list):
+                list_of_import_dict = [list_of_import_dict]
+
+            for import_dict in list_of_import_dict:
+                added_import_dicts.append(parse_imports(import_dict))
 
         return imports.merge_imports(
             *self._get_props_imports(),
@@ -1327,10 +1372,10 @@ class Component(BaseComponent, ABC):
             _imports,
             event_imports,
             *var_imports,
-            *_added_import_dicts,
+            *added_import_dicts,
         )
 
-    def _get_all_imports(self, collapse: bool = False) -> imports.ImportDict:
+    def _get_all_imports(self, collapse: bool = False) -> ParsedImportDict:
         """Get all the libraries and fields that are used by the component and its children.
 
         Args:
@@ -1375,7 +1420,7 @@ class Component(BaseComponent, ABC):
         """
         ref = self.get_ref()
         if ref is not None:
-            return f"const {ref} = useRef(null); {str(Var.create_safe(ref).as_ref())} = {ref};"
+            return f"const {ref} = useRef(null); {str(Var.create_safe(ref, _var_is_string=False).as_ref())} = {ref};"
 
     def _get_vars_hooks(self) -> dict[str, None]:
         """Get the hooks required by vars referenced in this component.
@@ -1425,7 +1470,7 @@ class Component(BaseComponent, ABC):
             **self._get_special_hooks(),
         }
 
-    def _get_added_hooks(self) -> dict[str, imports.ImportDict]:
+    def _get_added_hooks(self) -> dict[str, ImportDict]:
         """Get the hooks added via `add_hooks` method.
 
         Returns:
@@ -1493,7 +1538,8 @@ class Component(BaseComponent, ABC):
         if hooks is not None:
             code[hooks] = None
 
-        code.update(self._get_added_hooks())
+        for hook in self._get_added_hooks():
+            code[hook] = None
 
         # Add the hook code for the children.
         for child in self.children:
@@ -1814,7 +1860,7 @@ memo = custom_component
 class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
-    def _get_imports(self) -> imports.ImportDict:
+    def _get_imports(self) -> ParsedImportDict:
         """Get the imports for the component.
 
         Returns:
@@ -1993,6 +2039,7 @@ class StatefulComponent(BaseComponent):
         from reflex.components.base.bare import Bare
         from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
+        from reflex.components.core.match import Match
 
         if isinstance(child, Bare):
             return child.contents
@@ -2000,6 +2047,8 @@ class StatefulComponent(BaseComponent):
             return child.cond
         if isinstance(child, Foreach):
             return child.iterable
+        if isinstance(child, Match):
+            return child.cond
         return child
 
     @classmethod
@@ -2076,10 +2125,20 @@ class StatefulComponent(BaseComponent):
         Returns:
             A list of var names created by the hook declaration.
         """
-        var_name = hook.partition("=")[0].strip().split(None, 1)[1].strip()
-        if var_name.startswith("["):
-            # Break up array destructuring.
-            return [v.strip() for v in var_name.strip("[]").split(",")]
+        # Ensure that the hook is a var declaration.
+        var_decl = hook.partition("=")[0].strip()
+        if not any(var_decl.startswith(kw) for kw in ["const ", "let ", "var "]):
+            return []
+
+        # Extract the var name from the declaration.
+        _, _, var_name = var_decl.partition(" ")
+        var_name = var_name.strip()
+
+        # Break up array and object destructuring if used.
+        if var_name.startswith("[") or var_name.startswith("{"):
+            return [
+                v.strip().replace("...", "") for v in var_name.strip("[]{}").split(",")
+            ]
         return [var_name]
 
     @classmethod
@@ -2134,7 +2193,7 @@ class StatefulComponent(BaseComponent):
 
             # Store the memoized function name and hook code for this event trigger.
             trigger_memo[event_trigger] = (
-                Var.create_safe(memo_name)._replace(
+                Var.create_safe(memo_name, _var_is_string=False)._replace(
                     _var_type=EventChain, merge_var_data=memo_var_data
                 ),
                 f"const {memo_name} = useCallback({rendered_chain}, [{', '.join(var_deps)}])",
@@ -2157,7 +2216,7 @@ class StatefulComponent(BaseComponent):
         """
         return {}
 
-    def _get_all_imports(self) -> imports.ImportDict:
+    def _get_all_imports(self) -> ParsedImportDict:
         """Get all the libraries and fields that are used by the component.
 
         Returns:

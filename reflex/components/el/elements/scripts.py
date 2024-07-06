@@ -1,4 +1,5 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+
 from typing import Union
 
 from reflex.vars import Var as Var
@@ -50,3 +51,8 @@ class Script(BaseHTML):
 
     # Specifies the MIME type of the script
     type: Var[Union[str, int, bool]]
+
+
+canvas = Canvas.create
+noscript = Noscript.create
+script = Script.create

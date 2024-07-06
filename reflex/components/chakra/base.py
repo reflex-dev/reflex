@@ -1,18 +1,19 @@
 """Components that are based on Chakra-UI."""
+
 from __future__ import annotations
 
 from functools import lru_cache
 from typing import List, Literal
 
 from reflex.components.component import Component
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
 
 class ChakraComponent(Component):
     """A component that wraps a Chakra component."""
 
-    library = "@chakra-ui/react@2.6.1"
+    library: str = "@chakra-ui/react@2.6.1"  # type: ignore
     lib_dependencies: List[str] = [
         "@chakra-ui/system@2.5.7",
         "framer-motion@10.16.4",
@@ -35,14 +36,14 @@ class ChakraComponent(Component):
 
     @classmethod
     @lru_cache(maxsize=None)
-    def _get_dependencies_imports(cls) -> imports.ImportDict:
+    def _get_dependencies_imports(cls) -> ImportDict:
         """Get the imports from lib_dependencies for installing.
 
         Returns:
             The dependencies imports of the component.
         """
         return {
-            dep: [imports.ImportVar(tag=None, render=False)]
+            dep: [ImportVar(tag=None, render=False)]
             for dep in [
                 "@chakra-ui/system@2.5.7",
                 "framer-motion@10.16.4",
@@ -65,18 +66,21 @@ class ChakraProvider(ChakraComponent):
             A new ChakraProvider component.
         """
         return super().create(
-            theme=Var.create("extendTheme(theme)", _var_is_local=False),
+            theme=Var.create(
+                "extendTheme(theme)", _var_is_local=False, _var_is_string=False
+            ),
         )
 
-    def _get_imports(self) -> imports.ImportDict:
-        _imports = super()._get_imports()
-        _imports.setdefault(self.__fields__["library"].default, []).append(
-            imports.ImportVar(tag="extendTheme", is_default=False),
-        )
-        _imports.setdefault("/utils/theme.js", []).append(
-            imports.ImportVar(tag="theme", is_default=True),
-        )
-        return _imports
+    def add_imports(self) -> ImportDict:
+        """Add imports for the ChakraProvider component.
+
+        Returns:
+            The import dict for the component.
+        """
+        return {
+            self.library: ImportVar(tag="extendTheme", is_default=False),
+            "/utils/theme.js": ImportVar(tag="theme", is_default=True),
+        }
 
     @staticmethod
     @lru_cache(maxsize=None)

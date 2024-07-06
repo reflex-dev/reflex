@@ -1,7 +1,8 @@
 """Menu components."""
+
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union
+from typing import List, Optional
 
 from reflex.components.chakra import (
     ChakraComponent,
@@ -11,6 +12,7 @@ from reflex.components.chakra import (
 )
 from reflex.components.chakra.forms.button import Button
 from reflex.components.component import Component
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 
@@ -67,17 +69,11 @@ class Menu(ChakraComponent):
     # The CSS positioning strategy to use. ("fixed" | "absolute")
     strategy: Var[LiteralMenuStrategy]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers for the component.
+    # Fired when the menu is closed.
+    on_close: EventHandler[lambda: []]
 
-        Returns:
-            The event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            "on_close": lambda: [],
-            "on_open": lambda: [],
-        }
+    # Fired when the menu is opened.
+    on_open: EventHandler[lambda: []]
 
     @classmethod
     def create(

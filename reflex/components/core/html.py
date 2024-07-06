@@ -1,4 +1,5 @@
 """A html component."""
+
 from typing import Dict
 
 from reflex.components.el.elements.typography import Div
@@ -9,7 +10,7 @@ class Html(Div):
     """Render the html.
 
     Returns:
-        The code to render the  html component.
+        The code to render the html component.
     """
 
     # The HTML to render.
@@ -43,3 +44,6 @@ class Html(Div):
 
         # Create the component.
         return super().create(**props)
+
+
+html = Html.create

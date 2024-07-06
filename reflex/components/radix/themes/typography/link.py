@@ -8,11 +8,12 @@ from __future__ import annotations
 from typing import Literal
 
 from reflex.components.component import Component, MemoizationLeaf
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.next.link import NextLink
-from reflex.utils import imports
+from reflex.utils.imports import ImportDict
 from reflex.vars import Var
 
 from ..base import (
@@ -39,13 +40,13 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
     as_child: Var[bool]
 
     # Text size: "1" - "9"
-    size: Var[LiteralTextSize]
+    size: Var[Responsive[LiteralTextSize]]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[LiteralTextWeight]
+    weight: Var[Responsive[LiteralTextWeight]]
 
     # Removes the leading trim space: "normal" | "start" | "end" | "both"
-    trim: Var[LiteralTextTrim]
+    trim: Var[Responsive[LiteralTextTrim]]
 
     # Sets the visibility of the underline affordance: "auto" | "hover" | "always" | "none"
     underline: Var[LiteralLinkUnderline]
@@ -59,8 +60,13 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
     # If True, the link will open in a new tab
     is_external: Var[bool]
 
-    def _get_imports(self) -> imports.ImportDict:
-        return {**super()._get_imports(), **next_link._get_imports()}
+    def add_imports(self) -> ImportDict:
+        """Add imports for the Link component.
+
+        Returns:
+            The import dict.
+        """
+        return next_link._get_imports()  # type: ignore
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -102,3 +108,6 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
                     **props,
                 )
         return super().create(*children, **props)
+
+
+link = Link.create

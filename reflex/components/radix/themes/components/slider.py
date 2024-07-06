@@ -1,8 +1,10 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, List, Literal, Optional, Union
+
+from typing import List, Literal, Optional, Union
 
 from reflex.components.component import Component
-from reflex.constants import EventTriggers
+from reflex.components.core.breakpoints import Responsive
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from ..base import (
@@ -20,7 +22,7 @@ class Slider(RadixThemesComponent):
     as_child: Var[bool]
 
     # Button size "1" - "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Variant of button
     variant: Var[Literal["classic", "surface", "soft"]]
@@ -61,17 +63,11 @@ class Slider(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
+    # Fired when the value of the slider changes.
+    on_change: EventHandler[lambda e0: [e0]]
 
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0],
-            EventTriggers.ON_VALUE_COMMIT: lambda e0: [e0],
-        }
+    # Fired when a thumb is released after being dragged.
+    on_value_commit: EventHandler[lambda e0: [e0]]
 
     @classmethod
     def create(

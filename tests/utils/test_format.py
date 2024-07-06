@@ -3,12 +3,14 @@ from __future__ import annotations
 import datetime
 from typing import Any, List
 
+import plotly.graph_objects as go
 import pytest
 
 from reflex.components.tags.tag import Tag
 from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
 from reflex.style import Style
 from reflex.utils import format
+from reflex.utils.serializers import serialize_figure
 from reflex.vars import BaseVar, Var
 from tests.test_state import (
     ChildState,
@@ -92,6 +94,36 @@ def test_wrap(text: str, open: str, expected: str, check_first: bool, num: int):
         num: The number of times to wrap the text.
     """
     assert format.wrap(text, open, check_first=check_first, num=num) == expected
+
+
+@pytest.mark.parametrize(
+    "string,expected_output",
+    [
+        ("This is a random string", "This is a random string"),
+        (
+            "This is a random string with `backticks`",
+            "This is a random string with \\`backticks\\`",
+        ),
+        (
+            "This is a random string with `backticks`",
+            "This is a random string with \\`backticks\\`",
+        ),
+        (
+            "This is a string with ${someValue[`string interpolation`]} unescaped",
+            "This is a string with ${someValue[`string interpolation`]} unescaped",
+        ),
+        (
+            "This is a string with `backticks` and ${someValue[`string interpolation`]} unescaped",
+            "This is a string with \\`backticks\\` and ${someValue[`string interpolation`]} unescaped",
+        ),
+        (
+            "This is a string with `backticks`, ${someValue[`the first string interpolation`]} and ${someValue[`the second`]}",
+            "This is a string with \\`backticks\\`, ${someValue[`the first string interpolation`]} and ${someValue[`the second`]}",
+        ),
+    ],
+)
+def test_escape_js_string(string, expected_output):
+    assert format._escape_js_string(string) == expected_output
 
 
 @pytest.mark.parametrize(
@@ -661,7 +693,7 @@ formatted_router = {
                         2: {"prop1": 42, "prop2": "hello"},
                     },
                     "dt": "1989-11-09 18:53:00+01:00",
-                    "fig": [],
+                    "fig": serialize_figure(go.Figure()),
                     "key": "",
                     "map_key": "a",
                     "mapping": {"a": [1, 2, 3], "b": [4, 5, 6]},

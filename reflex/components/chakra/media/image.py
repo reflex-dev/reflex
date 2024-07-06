@@ -1,10 +1,12 @@
 """An image component."""
+
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from reflex.components.chakra import ChakraComponent, LiteralImageLoading
 from reflex.components.component import Component
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 
@@ -49,17 +51,11 @@ class Image(ChakraComponent):
     # Learn more _[here](https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images)_
     src_set: Var[str]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers for the component.
+    # Fired when the image fails to load.
+    on_error: EventHandler[lambda: []]
 
-        Returns:
-            The event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            "on_error": lambda: [],
-            "on_load": lambda: [],
-        }
+    # Fired when the image is loaded.
+    on_load: EventHandler[lambda: []]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

@@ -7,8 +7,9 @@ from __future__ import annotations
 
 from typing import Literal
 
-from reflex import el
 from reflex.components.component import ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
+from reflex.components.el import elements
 from reflex.vars import Var
 
 from ..base import (
@@ -44,7 +45,7 @@ LiteralType = Literal[
 ]
 
 
-class Text(el.Span, RadixThemesComponent):
+class Text(elements.Span, RadixThemesComponent):
     """A foundational text primitive based on the <span> element."""
 
     tag = "Text"
@@ -56,16 +57,16 @@ class Text(el.Span, RadixThemesComponent):
     as_: Var[LiteralType] = "p"  # type: ignore
 
     # Text size: "1" - "9"
-    size: Var[LiteralTextSize]
+    size: Var[Responsive[LiteralTextSize]]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[LiteralTextWeight]
+    weight: Var[Responsive[LiteralTextWeight]]
 
     # Alignment of text in element: "left" | "center" | "right"
-    align: Var[LiteralTextAlign]
+    align: Var[Responsive[LiteralTextAlign]]
 
     # Removes the leading trim space: "normal" | "start" | "end" | "both"
-    trim: Var[LiteralTextTrim]
+    trim: Var[Responsive[LiteralTextTrim]]
 
     # Overrides the accent color inherited from the Theme.
     color_scheme: Var[LiteralAccentColor]
@@ -80,13 +81,13 @@ class Span(Text):
     as_: Var[LiteralType] = "span"  # type: ignore
 
 
-class Em(el.Em, RadixThemesComponent):
+class Em(elements.Em, RadixThemesComponent):
     """Marks text to stress emphasis."""
 
     tag = "Em"
 
 
-class Kbd(el.Kbd, RadixThemesComponent):
+class Kbd(elements.Kbd, RadixThemesComponent):
     """Represents keyboard input or a hotkey."""
 
     tag = "Kbd"
@@ -95,13 +96,13 @@ class Kbd(el.Kbd, RadixThemesComponent):
     size: Var[LiteralTextSize]
 
 
-class Quote(el.Q, RadixThemesComponent):
+class Quote(elements.Q, RadixThemesComponent):
     """A short inline quotation."""
 
     tag = "Quote"
 
 
-class Strong(el.Strong, RadixThemesComponent):
+class Strong(elements.Strong, RadixThemesComponent):
     """Marks text to signify strong importance."""
 
     tag = "Strong"

@@ -1,9 +1,10 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, List, Literal, Union
+
+from typing import List, Literal, Union
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
-from reflex.constants import EventTriggers
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 
 from ..base import (
@@ -19,7 +20,7 @@ class SelectRoot(RadixThemesComponent):
     tag = "Select.Root"
 
     # The size of the select: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # The value of the select when initially rendered. Use when you do not need to control the state of the select.
     default_value: Var[str]
@@ -45,17 +46,11 @@ class SelectRoot(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
+    # Fired when the value of the select changes.
+    on_change: rx.EventHandler[lambda e0: [e0]]
 
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
-            EventTriggers.ON_CHANGE: lambda e0: [e0],
-        }
+    # Fired when the select is opened or closed.
+    on_open_change: rx.EventHandler[lambda e0: [e0]]
 
 
 class SelectTrigger(RadixThemesComponent):
@@ -107,18 +102,14 @@ class SelectContent(RadixThemesComponent):
     # The vertical distance in pixels from the anchor. Only available when position is set to popper.
     align_offset: Var[int]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
+    # Fired when the select content is closed.
+    on_close_auto_focus: rx.EventHandler[lambda e0: [e0]]
 
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0],
-            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0],
-            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0],
-        }
+    # Fired when the escape key is pressed.
+    on_escape_key_down: rx.EventHandler[lambda e0: [e0]]
+
+    # Fired when a pointer down event happens outside the select content.
+    on_pointer_down_outside: rx.EventHandler[lambda e0: [e0]]
 
 
 class SelectGroup(RadixThemesComponent):

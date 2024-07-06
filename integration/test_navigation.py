@@ -1,4 +1,5 @@
 """Integration tests for links and related components."""
+
 from typing import Generator
 from urllib.parse import urlsplit
 
@@ -67,8 +68,7 @@ async def test_navigation_app(navigation_app: AppHarness):
     driver = navigation_app.frontend()
 
     ss = SessionStorage(driver)
-    token = AppHarness._poll_for(lambda: ss.get("token") is not None)
-    assert token is not None
+    assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
 
     internal_link = driver.find_element(By.ID, "internal")
 

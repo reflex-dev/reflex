@@ -1,4 +1,5 @@
 """Specialized test for a larger state tree."""
+
 import asyncio
 from typing import Generator
 
@@ -41,7 +42,7 @@ class SubA_A_A_A(SubA_A_A):
 class SubA_A_A_B(SubA_A_A):
     """SubA_A_A_B is a child of SubA_A_A."""
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def sub_a_a_a_cached(self) -> int:
         """A cached var.
 
@@ -182,7 +183,7 @@ class SubE_A_A_A_D(SubE_A_A_A):
 
     sub_e_a_a_a_d: int
 
-    @rx.cached_var
+    @rx.var(cache=True)
     def sub_e_a_a_a_d_var(self) -> int:
         """A computed var.
 

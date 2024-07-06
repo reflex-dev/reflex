@@ -1,7 +1,5 @@
 """An input component."""
 
-from typing import Any, Dict
-
 from reflex.components.chakra import (
     ChakraComponent,
     LiteralButtonSize,
@@ -10,8 +8,9 @@ from reflex.components.chakra import (
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.literals import LiteralInputType
-from reflex.constants import EventTriggers, MemoizationMode
-from reflex.utils import imports
+from reflex.constants import MemoizationMode
+from reflex.event import EventHandler
+from reflex.utils.imports import ImportDict
 from reflex.vars import Var
 
 
@@ -59,26 +58,28 @@ class Input(ChakraComponent):
     # The name of the form field
     name: Var[str]
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {"/utils/state": {imports.ImportVar(tag="set_val")}},
-        )
+    # Fired when the input value changes.
+    on_change: EventHandler[lambda e0: [e0.target.value]]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
+    # Fired when the input is focused.
+    on_focus: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when the input lose focus.
+    on_blur: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when a key is pressed down.
+    on_key_down: EventHandler[lambda e0: [e0.key]]
+
+    # Fired when a key is released.
+    on_key_up: EventHandler[lambda e0: [e0.key]]
+
+    def add_imports(self) -> ImportDict:
+        """Add imports for the Input component.
 
         Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
+            The import dict.
         """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
-            EventTriggers.ON_FOCUS: lambda e0: [e0.target.value],
-            EventTriggers.ON_BLUR: lambda e0: [e0.target.value],
-            EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
-            EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
-        }
+        return {"/utils/state": "set_val"}
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -91,7 +92,7 @@ class Input(ChakraComponent):
         Returns:
             The component.
         """
-        if props.get("value") is not None and props.get("on_change"):
+        if props.get("value") is not None and props.get("on_change") is not None:
             # create a debounced input if the user requests full control to avoid typing jank
             return DebounceInput.create(super().create(*children, **props))
         return super().create(*children, **props)

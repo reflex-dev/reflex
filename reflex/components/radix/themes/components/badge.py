@@ -2,7 +2,8 @@
 
 from typing import Literal
 
-from reflex import el
+from reflex.components.core.breakpoints import Responsive
+from reflex.components.el import elements
 from reflex.vars import Var
 
 from ..base import (
@@ -12,7 +13,7 @@ from ..base import (
 )
 
 
-class Badge(el.Span, RadixThemesComponent):
+class Badge(elements.Span, RadixThemesComponent):
     """A stylized badge element."""
 
     tag = "Badge"
@@ -21,7 +22,7 @@ class Badge(el.Span, RadixThemesComponent):
     variant: Var[Literal["solid", "soft", "surface", "outline"]]
 
     # The size of the badge
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Color theme of the badge
     color_scheme: Var[LiteralAccentColor]

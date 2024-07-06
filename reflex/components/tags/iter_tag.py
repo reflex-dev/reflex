@@ -1,4 +1,5 @@
 """Tag to loop through a list of components."""
+
 from __future__ import annotations
 
 import inspect

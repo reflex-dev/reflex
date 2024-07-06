@@ -1,12 +1,11 @@
 """A textarea component."""
-from __future__ import annotations
 
-from typing import Any, Union
+from __future__ import annotations
 
 from reflex.components.chakra import ChakraComponent, LiteralInputVariant
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 
@@ -48,20 +47,20 @@ class TextArea(ChakraComponent):
     # The name of the form field
     name: Var[str]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # Fired when the value changes.
+    on_change: EventHandler[lambda e0: [e0.target.value]]
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
-            EventTriggers.ON_FOCUS: lambda e0: [e0.target.value],
-            EventTriggers.ON_BLUR: lambda e0: [e0.target.value],
-            EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
-            EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
-        }
+    # Fired when the textarea gets focus.
+    on_focus: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when the textarea loses focus.
+    on_blur: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when a key is pressed down.
+    on_key_down: EventHandler[lambda e0: [e0.key]]
+
+    # Fired when a key is released.
+    on_key_up: EventHandler[lambda e0: [e0.key]]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -74,7 +73,7 @@ class TextArea(ChakraComponent):
         Returns:
             The component.
         """
-        if props.get("value") is not None and props.get("on_change"):
+        if props.get("value") is not None and props.get("on_change") is not None:
             # create a debounced input if the user requests full control to avoid typing jank
             return DebounceInput.create(super().create(*children, **props))
         return super().create(*children, **props)

@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 from typing import Literal, Union
 
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -14,7 +15,7 @@ class CheckboxCardsRoot(RadixThemesComponent):
     tag = "CheckboxCards.Root"
 
     # The size of the checkbox cards: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Variant of button: "classic" | "surface" | "soft"
     variant: Var[Literal["classic", "surface"]]
@@ -26,10 +27,14 @@ class CheckboxCardsRoot(RadixThemesComponent):
     high_contrast: Var[bool]
 
     # The number of columns:
-    columns: Var[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
+    columns: Var[
+        Responsive[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
+    ]
 
     # The gap between the checkbox cards:
-    gap: Var[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
+    gap: Var[
+        Responsive[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
+    ]
 
 
 class CheckboxCardsItem(RadixThemesComponent):

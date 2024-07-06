@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -13,7 +14,7 @@ class Radio(RadixThemesComponent):
     tag = "Radio"
 
     # The size of the radio: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Variant of button: "classic" | "surface" | "soft"
     variant: Var[Literal["classic", "surface", "soft"]]

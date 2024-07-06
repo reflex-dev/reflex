@@ -1,4 +1,5 @@
 """Create a list of components from an iterable."""
+
 from __future__ import annotations
 
 import inspect
@@ -60,12 +61,12 @@ class Foreach(Component):
                 deprecation_version="0.5.0",
                 removal_version="0.6.0",
             )
-        iterable = Var.create_safe(iterable)
+        iterable = Var.create_safe(iterable, _var_is_string=False)
         if iterable._var_type == Any:
             raise ForeachVarError(
                 f"Could not foreach over var `{iterable._var_full_name}` of type Any. "
                 "(If you are trying to foreach over a state var, add a type annotation to the var). "
-                "See https://reflex.dev/docs/library/layout/foreach/"
+                "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
 
         if (
@@ -94,7 +95,8 @@ class Foreach(Component):
         if len(params) == 0 or len(params) > 2:
             raise ForeachRenderError(
                 "Expected 1 or 2 parameters in foreach render function, got "
-                f"{[p.name for p in params]}. See https://reflex.dev/docs/library/layout/foreach/"
+                f"{[p.name for p in params]}. See "
+                "https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
 
         if len(params) >= 1:
@@ -139,3 +141,6 @@ class Foreach(Component):
             arg_index=tag.get_index_var_arg(),
             iterable_type=tag.iterable._var_type.mro()[0].__name__,
         )
+
+
+foreach = Foreach.create

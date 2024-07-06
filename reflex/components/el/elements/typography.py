@@ -1,4 +1,5 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+
 from typing import Union
 
 from reflex.vars import Var as Var
@@ -124,3 +125,19 @@ class Del(BaseHTML):
 
     # Specifies the date and time of when the text was deleted.
     date_time: Var[Union[str, int, bool]]
+
+
+blockquote = Blockquote.create
+dd = Dd.create
+div = Div.create
+dl = Dl.create
+dt = Dt.create
+figcaption = Figcaption.create
+hr = Hr.create
+li = Li.create
+ol = Ol.create
+p = P.create
+pre = Pre.create
+ul = Ul.create
+ins = Ins.create
+del_ = Del.create  # 'del' is a reserved keyword in Python

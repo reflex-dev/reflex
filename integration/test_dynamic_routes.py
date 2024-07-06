@@ -1,4 +1,5 @@
 """Integration tests for dynamic route page behavior."""
+
 from __future__ import annotations
 
 from typing import Callable, Coroutine, Generator, Type

@@ -27,7 +27,9 @@ from reflex.app import (
     process,
     upload,
 )
-from reflex.components import Component, Cond, Fragment
+from reflex.components import Component
+from reflex.components.base.fragment import Fragment
+from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import Event
 from reflex.middleware import HydrateMiddleware
@@ -44,7 +46,7 @@ from reflex.state import (
 )
 from reflex.style import Style
 from reflex.utils import exceptions, format
-from reflex.vars import ComputedVar
+from reflex.vars import computed_var
 
 from .conftest import chdir
 from .states import (
@@ -233,9 +235,9 @@ def test_add_page_default_route(app: App, index_page, about_page):
     """
     assert app.pages == {}
     app.add_page(index_page)
-    assert set(app.pages.keys()) == {"index"}
+    assert app.pages.keys() == {"index"}
     app.add_page(about_page)
-    assert set(app.pages.keys()) == {"index", "about"}
+    assert app.pages.keys() == {"index", "about"}
 
 
 def test_add_page_set_route(app: App, index_page, windows_platform: bool):
@@ -249,7 +251,7 @@ def test_add_page_set_route(app: App, index_page, windows_platform: bool):
     route = "test" if windows_platform else "/test"
     assert app.pages == {}
     app.add_page(index_page, route=route)
-    assert set(app.pages.keys()) == {"test"}
+    assert app.pages.keys() == {"test"}
 
 
 def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
@@ -266,7 +268,7 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
         route.lstrip("/").replace("/", "\\")
     assert app.pages == {}
     app.add_page(index_page, route=route)
-    assert set(app.pages.keys()) == {"test/[dynamic]"}
+    assert app.pages.keys() == {"test/[dynamic]"}
     assert "dynamic" in app.state.computed_vars
     assert app.state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
         constants.ROUTER
@@ -285,7 +287,7 @@ def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool)
     route = "test\\nested" if windows_platform else "/test/nested"
     assert app.pages == {}
     app.add_page(index_page, route=route)
-    assert set(app.pages.keys()) == {route.strip(os.path.sep)}
+    assert app.pages.keys() == {route.strip(os.path.sep)}
 
 
 def test_add_page_invalid_api_route(app: App, index_page):
@@ -949,7 +951,7 @@ class DynamicState(BaseState):
         """Increment the counter var."""
         self.counter = self.counter + 1
 
-    @ComputedVar
+    @computed_var
     def comp_dynamic(self) -> str:
         """A computed var that depends on the dynamic var.
 
@@ -1269,14 +1271,14 @@ def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
     app_path = tmp_path / "app"
     web_dir = app_path / ".web"
     web_dir.mkdir(parents=True)
-    (web_dir / "package.json").touch()
+    (web_dir / constants.PackageJson.PATH).touch()
     app = App(theme=None)
     app._get_frontend_packages = unittest.mock.Mock()
     with chdir(app_path):
         yield app, web_dir
 
 
-def test_app_wrap_compile_theme(compilable_app):
+def test_app_wrap_compile_theme(compilable_app: tuple[App, Path]):
     """Test that the radix theme component wraps the app.
 
     Args:
@@ -1304,7 +1306,7 @@ def test_app_wrap_compile_theme(compilable_app):
     ) in "".join(app_js_lines)
 
 
-def test_app_wrap_priority(compilable_app):
+def test_app_wrap_priority(compilable_app: tuple[App, Path]):
     """Test that the app wrap components are wrapped in the correct order.
 
     Args:
@@ -1390,8 +1392,12 @@ def test_app_state_determination():
     a4 = App()
     assert a4.state is None
 
-    # Referencing an event handler enables state.
     a4.add_page(rx.box(rx.button("Click", on_click=rx.console_log(""))), route="/")
+    assert a4.state is None
+
+    a4.add_page(
+        rx.box(rx.button("Click", on_click=DynamicState.on_counter)), route="/page2"
+    )
     assert a4.state is not None
 
 
@@ -1484,7 +1490,7 @@ def test_add_page_component_returning_tuple():
 
 
 @pytest.mark.parametrize("export", (True, False))
-def test_app_with_transpile_packages(compilable_app, export):
+def test_app_with_transpile_packages(compilable_app: tuple[App, Path], export: bool):
     class C1(rx.Component):
         library = "foo@1.2.3"
         tag = "Foo"
@@ -1533,3 +1539,35 @@ def test_app_with_transpile_packages(compilable_app, export):
     else:
         assert 'output: "export"' not in next_config
         assert f'distDir: "{constants.Dirs.STATIC}"' not in next_config
+
+
+def test_app_with_valid_var_dependencies(compilable_app: tuple[App, Path]):
+    app, _ = compilable_app
+
+    class ValidDepState(BaseState):
+        base: int = 0
+        _backend: int = 0
+
+        @computed_var(cache=True)
+        def foo(self) -> str:
+            return "foo"
+
+        @computed_var(deps=["_backend", "base", foo], cache=True)
+        def bar(self) -> str:
+            return "bar"
+
+    app.state = ValidDepState
+    app._compile()
+
+
+def test_app_with_invalid_var_dependencies(compilable_app: tuple[App, Path]):
+    app, _ = compilable_app
+
+    class InvalidDepState(BaseState):
+        @computed_var(deps=["foolksjdf"], cache=True)
+        def bar(self) -> str:
+            return "bar"
+
+    app.state = InvalidDepState
+    with pytest.raises(exceptions.VarDependencyError):
+        app._compile()

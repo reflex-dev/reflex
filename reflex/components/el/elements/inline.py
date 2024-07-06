@@ -1,4 +1,5 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+
 from typing import Union
 
 from reflex.vars import Var
@@ -208,3 +209,33 @@ class Wbr(BaseHTML):
     """Display the wbr element."""
 
     tag = "wbr"
+
+
+a = A.create
+abbr = Abbr.create
+b = B.create
+bdi = Bdi.create
+bdo = Bdo.create
+br = Br.create
+cite = Cite.create
+code = Code.create
+data = Data.create
+dfn = Dfn.create
+em = Em.create
+i = I.create
+kbd = Kbd.create
+mark = Mark.create
+q = Q.create
+rp = Rp.create
+rt = Rt.create
+ruby = Ruby.create
+s = S.create
+samp = Samp.create
+small = Small.create
+span = Span.create
+strong = Strong.create
+sub = Sub.create
+sup = Sup.create
+time = Time.create
+u = U.create
+wbr = Wbr.create

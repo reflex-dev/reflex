@@ -1,15 +1,9 @@
-""" Generated with stubgen from mypy, then manually edited, do not regen."""
+"""Generated with stubgen from mypy, then manually edited, do not regen."""
 
 from __future__ import annotations
 
+import datetime
 from dataclasses import dataclass
-from _typeshed import Incomplete
-from reflex import constants as constants
-from reflex.base import Base as Base
-from reflex.state import State as State
-from reflex.state import BaseState as BaseState
-from reflex.utils import console as console, format as format, types as types
-from reflex.utils.imports import ImportVar
 from types import FunctionType
 from typing import (
     Any,
@@ -22,9 +16,20 @@ from typing import (
     Tuple,
     Type,
     Union,
-    overload,
     _GenericAlias,  # type: ignore
+    overload,
 )
+
+from _typeshed import Incomplete
+
+from reflex import constants as constants
+from reflex.base import Base as Base
+from reflex.state import BaseState as BaseState
+from reflex.state import State as State
+from reflex.utils import console as console
+from reflex.utils import format as format
+from reflex.utils import types as types
+from reflex.utils.imports import ImportDict, ParsedImportDict
 
 USED_VARIABLES: Incomplete
 
@@ -35,7 +40,7 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]: ...
 
 class VarData(Base):
     state: str = ""
-    imports: dict[str, List[ImportVar]] = {}
+    imports: Union[ImportDict, ParsedImportDict] = {}
     hooks: Dict[str, None] = {}
     interpolations: List[Tuple[int, int]] = []
     @classmethod
@@ -50,15 +55,23 @@ class Var:
     _var_data: VarData | None = None
     @classmethod
     def create(
-        cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False, _var_data: VarData | None = None,
+        cls,
+        value: Any,
+        _var_is_local: bool = True,
+        _var_is_string: bool | None = None,
+        _var_data: VarData | None = None,
     ) -> Optional[Var]: ...
     @classmethod
     def create_safe(
-        cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False, _var_data: VarData | None = None,
+        cls,
+        value: Any,
+        _var_is_local: bool = True,
+        _var_is_string: bool | None = None,
+        _var_data: VarData | None = None,
     ) -> Var: ...
     @classmethod
     def __class_getitem__(cls, type_: Type) -> _GenericAlias: ...
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> Var: ...
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> BaseVar: ...
     def equals(self, other: Var) -> bool: ...
     def to_string(self) -> Var: ...
     def __hash__(self) -> int: ...
@@ -141,6 +154,7 @@ class ComputedVar(Var):
     def _deps(self, objclass: Type, obj: Optional[FunctionType] = ...) -> Set[str]: ...
     def _replace(self, merge_var_data=None, **kwargs: Any) -> ComputedVar: ...
     def mark_dirty(self, instance) -> None: ...
+    def needs_update(self, instance) -> bool: ...
     def _determine_var_type(self) -> Type: ...
     @overload
     def __init__(
@@ -155,10 +169,24 @@ class ComputedVar(Var):
 def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
     initial_value: Any | None = None,
+    cache: bool = False,
+    deps: Optional[List[Union[str, Var]]] = None,
+    auto_deps: bool = True,
+    interval: Optional[Union[datetime.timedelta, int]] = None,
     **kwargs,
 ) -> Callable[[Callable[[Any], Any]], ComputedVar]: ...
 @overload
 def computed_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
+@overload
+def cached_var(
+    fget: Callable[[BaseState], Any] | None = None,
+    initial_value: Any | None = None,
+    deps: Optional[List[Union[str, Var]]] = None,
+    auto_deps: bool = True,
+    interval: Optional[Union[datetime.timedelta, int]] = None,
+    **kwargs,
+) -> Callable[[Callable[[Any], Any]], ComputedVar]: ...
+@overload
 def cached_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
 
 class CallableVar(BaseVar):

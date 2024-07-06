@@ -1,4 +1,5 @@
 """Config constants."""
+
 import os
 from types import SimpleNamespace
 
@@ -48,6 +49,13 @@ class RequirementsTxt(SimpleNamespace):
     FILE = "requirements.txt"
     # The partial text used to form requirement that pins a reflex version
     DEFAULTS_STUB = f"{Reflex.MODULE_NAME}=="
+
+
+class DefaultPorts(SimpleNamespace):
+    """Default port constants."""
+
+    FRONTEND_PORT = 3000
+    BACKEND_PORT = 8000
 
 
 # The deployment URL.

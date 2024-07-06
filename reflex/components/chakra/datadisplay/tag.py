@@ -1,4 +1,5 @@
 """Chakra Tag Component."""
+
 from typing import Optional
 
 from reflex.components.chakra import (

@@ -1,9 +1,11 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
 
-from reflex import el
+from typing import Literal
+
 from reflex.components.component import ComponentNamespace
-from reflex.constants import EventTriggers
+from reflex.components.core.breakpoints import Responsive
+from reflex.components.el import elements
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from ..base import (
@@ -29,16 +31,8 @@ class HoverCardRoot(RadixThemesComponent):
     # The duration from when the mouse leaves the trigger until the hover card closes.
     close_delay: Var[int]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
-        }
+    # Fired when the open state changes.
+    on_open_change: EventHandler[lambda e0: [e0]]
 
 
 class HoverCardTrigger(RadixThemesTriggerComponent):
@@ -47,13 +41,13 @@ class HoverCardTrigger(RadixThemesTriggerComponent):
     tag = "HoverCard.Trigger"
 
 
-class HoverCardContent(el.Div, RadixThemesComponent):
+class HoverCardContent(elements.Div, RadixThemesComponent):
     """Contains the content of the open hover card."""
 
     tag = "HoverCard.Content"
 
     # The preferred side of the trigger to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
-    side: Var[Literal["top", "right", "bottom", "left"]]
+    side: Var[Responsive[Literal["top", "right", "bottom", "left"]]]
 
     # The distance in pixels from the trigger.
     side_offset: Var[int]

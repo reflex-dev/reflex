@@ -109,6 +109,33 @@ def change_port(port: str, _type: str) -> str:
     return new_port
 
 
+def handle_port(service_name: str, port: str, default_port: str) -> str:
+    """Change port if the specified port is in use and is not explicitly specified as a CLI arg or config arg.
+    otherwise tell the user the port is in use and exit the app.
+
+    We make an assumption that when port is the default port,then it hasnt been explicitly set since its not straightforward
+    to know whether a port was explicitly provided by the user unless its any other than the default.
+
+    Args:
+        service_name: The frontend or backend.
+        port: The provided port.
+        default_port: The default port number associated with the specified service.
+
+    Returns:
+        The port to run the service on.
+
+    Raises:
+        Exit:when the port is in use.
+    """
+    if is_process_on_port(port):
+        if int(port) == int(default_port):
+            return change_port(port, service_name)
+        else:
+            console.error(f"{service_name.capitalize()} port: {port} is already in use")
+            raise typer.Exit()
+    return port
+
+
 def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     """Wrapper over subprocess.Popen to unify the launch of child processes.
 
@@ -158,7 +185,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
 
 @contextlib.contextmanager
 def run_concurrently_context(
-    *fns: Union[Callable, Tuple]
+    *fns: Union[Callable, Tuple],
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
 

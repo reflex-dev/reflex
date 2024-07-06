@@ -2,9 +2,11 @@
 
 https://www.radix-ui.com/themes/docs/theme/typography
 """
+
 from __future__ import annotations
 
-from reflex import el
+from reflex.components.core.breakpoints import Responsive
+from reflex.components.el import elements
 from reflex.vars import Var
 
 from ..base import (
@@ -19,7 +21,7 @@ from .base import (
 )
 
 
-class Heading(el.H1, RadixThemesComponent):
+class Heading(elements.H1, RadixThemesComponent):
     """A foundational text primitive based on the <span> element."""
 
     tag = "Heading"
@@ -31,19 +33,22 @@ class Heading(el.H1, RadixThemesComponent):
     as_: Var[str]
 
     # Text size: "1" - "9"
-    size: Var[LiteralTextSize]
+    size: Var[Responsive[LiteralTextSize]]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[LiteralTextWeight]
+    weight: Var[Responsive[LiteralTextWeight]]
 
     # Alignment of text in element: "left" | "center" | "right"
-    align: Var[LiteralTextAlign]
+    align: Var[Responsive[LiteralTextAlign]]
 
     # Removes the leading trim space: "normal" | "start" | "end" | "both"
-    trim: Var[LiteralTextTrim]
+    trim: Var[Responsive[LiteralTextTrim]]
 
     # Overrides the accent color inherited from the Theme.
     color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the text with higher contrast color
     high_contrast: Var[bool]
+
+
+heading = Heading.create

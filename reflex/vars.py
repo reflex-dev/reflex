@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import datetime
 import dis
 import functools
 import inspect
@@ -34,11 +35,21 @@ from typing import (
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import console, format, imports, serializers, types
-from reflex.utils.exceptions import VarAttributeError, VarTypeError, VarValueError
+from reflex.utils import console, imports, serializers, types
+from reflex.utils.exceptions import (
+    VarAttributeError,
+    VarDependencyError,
+    VarTypeError,
+    VarValueError,
+)
 
 # This module used to export ImportVar itself, so we still import it for export here
-from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.imports import (
+    ImportDict,
+    ImportVar,
+    ParsedImportDict,
+    parse_imports,
+)
 from reflex.utils.types import override
 
 if TYPE_CHECKING:
@@ -119,7 +130,7 @@ class VarData(Base):
     state: str = ""
 
     # Imports needed to render this var
-    imports: ImportDict = {}
+    imports: ParsedImportDict = {}
 
     # Hooks that need to be present in the component to render this var
     hooks: Dict[str, None] = {}
@@ -128,6 +139,19 @@ class VarData(Base):
     # out where the interpolations are and only escape the non-interpolated
     # segments.
     interpolations: List[Tuple[int, int]] = []
+
+    def __init__(
+        self, imports: Union[ImportDict, ParsedImportDict] | None = None, **kwargs: Any
+    ):
+        """Initialize the var data.
+
+        Args:
+            imports: The imports needed to render this var.
+            **kwargs: The var data fields.
+        """
+        if imports:
+            kwargs["imports"] = parse_imports(imports)
+        super().__init__(**kwargs)
 
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None:
@@ -346,7 +370,7 @@ class Var:
         cls,
         value: Any,
         _var_is_local: bool = True,
-        _var_is_string: bool = False,
+        _var_is_string: bool | None = None,
         _var_data: Optional[VarData] = None,
     ) -> Var | None:
         """Create a var from a value.
@@ -363,6 +387,8 @@ class Var:
         Raises:
             VarTypeError: If the value is JSON-unserializable.
         """
+        from reflex.utils import format
+
         # Check for none values.
         if value is None:
             return None
@@ -377,18 +403,39 @@ class Var:
 
         # Try to serialize the value.
         type_ = type(value)
-        name = value if type_ in types.JSONType else serializers.serialize(value)
+        if type_ in types.JSONType:
+            name = value
+        else:
+            name, serialized_type = serializers.serialize(value, get_type=True)
+            if (
+                serialized_type is not None
+                and _var_is_string is None
+                and issubclass(serialized_type, str)
+            ):
+                _var_is_string = True
         if name is None:
             raise VarTypeError(
                 f"No JSON serializer found for var {value} of type {type_}."
             )
         name = name if isinstance(name, str) else format.json_dumps(name)
 
+        if _var_is_string is None and type_ is str:
+            console.deprecate(
+                feature_name=f"Creating a Var ({value}) from a string without specifying _var_is_string",
+                reason=(
+                    "Specify _var_is_string=False to create a Var that is not a string literal. "
+                    "In the future, creating a Var from a string will be treated as a string literal "
+                    "by default."
+                ),
+                deprecation_version="0.5.4",
+                removal_version="0.6.0",
+            )
+
         return BaseVar(
             _var_name=name,
             _var_type=type_,
             _var_is_local=_var_is_local,
-            _var_is_string=_var_is_string,
+            _var_is_string=_var_is_string if _var_is_string is not None else False,
             _var_data=_var_data,
         )
 
@@ -397,7 +444,7 @@ class Var:
         cls,
         value: Any,
         _var_is_local: bool = True,
-        _var_is_string: bool = False,
+        _var_is_string: bool | None = None,
         _var_data: Optional[VarData] = None,
     ) -> Var:
         """Create a var from a value, asserting that it is not None.
@@ -440,7 +487,7 @@ class Var:
             self._var_name = _var_name
             self._var_data = VarData.merge(self._var_data, _var_data)
 
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> Var:
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> BaseVar:
         """Make a copy of this Var with updated fields.
 
         Args:
@@ -511,7 +558,7 @@ class Var:
         if other is None:
             return self._replace()
         if not isinstance(other, Var):
-            other = Var.create(other)
+            other = Var.create(other, _var_is_string=False)
         return self._replace(
             _var_name=f"{{...{self._var_name}, ...{other._var_name}}}"  # type: ignore
         )
@@ -528,6 +575,14 @@ class Var:
         fn = "JSON.stringify" if json else "String"
         return self.operation(fn=fn, type_=str)
 
+    def to_int(self) -> Var:
+        """Convert a var to an int.
+
+        Returns:
+            The parseInt var.
+        """
+        return self.operation(fn="parseInt", type_=int)
+
     def __hash__(self) -> int:
         """Define a hash function for a var.
 
@@ -542,6 +597,8 @@ class Var:
         Returns:
             The wrapped var, i.e. {state.var}.
         """
+        from reflex.utils import format
+
         out = (
             self._var_full_name
             if self._var_is_local
@@ -599,6 +656,8 @@ class Var:
         Raises:
             VarTypeError: If the var is not indexable.
         """
+        from reflex.utils import format
+
         # Indexing is only supported for strings, lists, tuples, dicts, and dataframes.
         if not (
             types._issubclass(self._var_type, Union[List, Dict, Tuple, str])
@@ -704,7 +763,11 @@ class Var:
         """
         try:
             var_attribute = super().__getattribute__(name)
-            if not name.startswith("_"):
+            if (
+                not name.startswith("_")
+                and name not in Var.__dict__
+                and name not in BaseVar.__dict__
+            ):
                 # Check if the attribute should be accessed through the Var instead of
                 # accessing one of the Var operations
                 type_ = types.get_attribute_access_type(
@@ -788,10 +851,12 @@ class Var:
             VarTypeError: If the operation between two operands is invalid.
             VarValueError: If flip is set to true and value of operand is not provided
         """
+        from reflex.utils import format
+
         if isinstance(other, str):
-            other = Var.create(json.dumps(other))
+            other = Var.create(json.dumps(other), _var_is_string=False)
         else:
-            other = Var.create(other)
+            other = Var.create(other, _var_is_string=False)
 
         type_ = type_ or self._var_type
 
@@ -1349,11 +1414,12 @@ class Var:
             "'in' operator not supported for Var types, use Var.contains() instead."
         )
 
-    def contains(self, other: Any) -> Var:
+    def contains(self, other: Any, field: Union[Var, None] = None) -> Var:
         """Check if a var contains the object `other`.
 
         Args:
             other: The object to check.
+            field: Optionally specify a field to check on both object and the other var.
 
         Raises:
             VarTypeError: If the var is not a valid type: dict, list, tuple or str.
@@ -1373,7 +1439,7 @@ class Var:
         if isinstance(other, str):
             other = Var.create(json.dumps(other), _var_is_string=True)
         elif not isinstance(other, Var):
-            other = Var.create(other)
+            other = Var.create(other, _var_is_string=False)
         if types._issubclass(self._var_type, Dict):
             return self._replace(
                 _var_name=f"{self._var_name}.{method}({other._var_full_name})",
@@ -1389,8 +1455,16 @@ class Var:
                 raise VarTypeError(
                     f"'in <string>' requires string as left operand, not {other._var_type}"
                 )
+
+            _var_name = None
+            if field is None:
+                _var_name = f"{self._var_name}.includes({other._var_full_name})"
+            else:
+                field = Var.create_safe(field, _var_is_string=isinstance(field, str))
+                _var_name = f"{self._var_name}.some(e=>e[{field._var_name_unwrapped}]==={other._var_full_name})"
+
             return self._replace(
-                _var_name=f"{self._var_name}.includes({other._var_full_name})",
+                _var_name=_var_name,
                 _var_type=bool,
                 _var_is_string=False,
                 merge_var_data=other._var_data,
@@ -1469,7 +1543,11 @@ class Var:
         if not types._issubclass(self._var_type, str):
             raise VarTypeError(f"Cannot strip non-string var {self._var_full_name}.")
 
-        other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
+        other = (
+            Var.create_safe(json.dumps(other), _var_is_string=False)
+            if isinstance(other, str)
+            else other
+        )
 
         return self._replace(
             _var_name=f"{self._var_name}.replace(/^${other._var_full_name}|${other._var_full_name}$/g, '')",
@@ -1492,7 +1570,11 @@ class Var:
         if not types._issubclass(self._var_type, str):
             raise VarTypeError(f"Cannot split non-string var {self._var_full_name}.")
 
-        other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
+        other = (
+            Var.create_safe(json.dumps(other), _var_is_string=False)
+            if isinstance(other, str)
+            else other
+        )
 
         return self._replace(
             _var_name=f"{self._var_name}.split({other._var_full_name})",
@@ -1517,11 +1599,11 @@ class Var:
             raise VarTypeError(f"Cannot join non-list var {self._var_full_name}.")
 
         if other is None:
-            other = Var.create_safe('""')
+            other = Var.create_safe('""', _var_is_string=False)
         if isinstance(other, str):
-            other = Var.create_safe(json.dumps(other))
+            other = Var.create_safe(json.dumps(other), _var_is_string=False)
         else:
-            other = Var.create_safe(other)
+            other = Var.create_safe(other, _var_is_string=False)
 
         return self._replace(
             _var_name=f"{self._var_name}.join({other._var_full_name})",
@@ -1590,7 +1672,7 @@ class Var:
         if not isinstance(v2, Var):
             v2 = Var.create(v2)
         if v2 is None:
-            v2 = Var.create_safe("undefined")
+            v2 = Var.create_safe("undefined", _var_is_string=False)
         elif v2._var_type != int:
             raise VarTypeError(f"Cannot get range on non-int var {v2._var_full_name}.")
 
@@ -1657,6 +1739,8 @@ class Var:
         Returns:
             The full name of the var.
         """
+        from reflex.utils import format
+
         if not self._var_full_name_needs_state_prefix:
             return self._var_name
         return (
@@ -1676,6 +1760,8 @@ class Var:
         Returns:
             The var with the set state.
         """
+        from reflex.utils import format
+
         state_name = state if isinstance(state, str) else state.get_full_name()
         new_var_data = VarData(
             state=state_name,
@@ -1711,18 +1797,16 @@ class Var:
         """
         from reflex.style import Style
 
-        type_ = (
-            get_origin(self._var_type)
-            if types.is_generic_alias(self._var_type)
-            else self._var_type
-        )
+        generic_alias = types.is_generic_alias(self._var_type)
+
+        type_ = get_origin(self._var_type) if generic_alias else self._var_type
         wrapped_var = str(self)
 
         return (
             wrapped_var
             if not self._var_state
-            and types._issubclass(type_, dict)
-            or types._issubclass(type_, Style)
+            and not generic_alias
+            and (types._issubclass(type_, dict) or types._issubclass(type_, Style))
             else wrapped_var.strip("{}")
         )
 
@@ -1860,13 +1944,30 @@ class ComputedVar(Var, property):
     # Whether to track dependencies and cache computed values
     _cache: bool = dataclasses.field(default=False)
 
-    _initial_value: Any | types.Unset = dataclasses.field(default_factory=types.Unset)
+    # Whether the computed var is a backend var
+    _backend: bool = dataclasses.field(default=False)
+
+    # The initial value of the computed var
+    _initial_value: Any | types.Unset = dataclasses.field(default=types.Unset())
+
+    # Explicit var dependencies to track
+    _static_deps: set[str] = dataclasses.field(default_factory=set)
+
+    # Whether var dependencies should be auto-determined
+    _auto_deps: bool = dataclasses.field(default=True)
+
+    # Interval at which the computed var should be updated
+    _update_interval: Optional[datetime.timedelta] = dataclasses.field(default=None)
 
     def __init__(
         self,
         fget: Callable[[BaseState], Any],
         initial_value: Any | types.Unset = types.Unset(),
         cache: bool = False,
+        deps: Optional[List[Union[str, Var]]] = None,
+        auto_deps: bool = True,
+        interval: Optional[Union[int, datetime.timedelta]] = None,
+        backend: bool | None = None,
         **kwargs,
     ):
         """Initialize a ComputedVar.
@@ -1875,10 +1976,39 @@ class ComputedVar(Var, property):
             fget: The getter function.
             initial_value: The initial value of the computed var.
             cache: Whether to cache the computed value.
+            deps: Explicit var dependencies to track.
+            auto_deps: Whether var dependencies should be auto-determined.
+            interval: Interval at which the computed var should be updated.
+            backend: Whether the computed var is a backend var.
             **kwargs: additional attributes to set on the instance
+
+        Raises:
+            TypeError: If the computed var dependencies are not Var instances or var names.
         """
+        if backend is None:
+            backend = fget.__name__.startswith("_")
+        self._backend = backend
+
         self._initial_value = initial_value
         self._cache = cache
+        if isinstance(interval, int):
+            interval = datetime.timedelta(seconds=interval)
+        self._update_interval = interval
+        if deps is None:
+            deps = []
+        else:
+            for dep in deps:
+                if isinstance(dep, Var):
+                    continue
+                if isinstance(dep, str) and dep != "":
+                    continue
+                raise TypeError(
+                    "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
+                )
+        self._static_deps = {
+            dep._var_name if isinstance(dep, Var) else dep for dep in deps
+        }
+        self._auto_deps = auto_deps
         property.__init__(self, fget)
         kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", self._determine_var_type())
@@ -1899,6 +2029,10 @@ class ComputedVar(Var, property):
             fget=kwargs.get("fget", self.fget),
             initial_value=kwargs.get("initial_value", self._initial_value),
             cache=kwargs.get("cache", self._cache),
+            deps=kwargs.get("deps", self._static_deps),
+            auto_deps=kwargs.get("auto_deps", self._auto_deps),
+            interval=kwargs.get("interval", self._update_interval),
+            backend=kwargs.get("backend", self._backend),
             _var_name=kwargs.get("_var_name", self._var_name),
             _var_type=kwargs.get("_var_type", self._var_type),
             _var_is_local=kwargs.get("_var_is_local", self._var_is_local),
@@ -1919,7 +2053,32 @@ class ComputedVar(Var, property):
         """
         return f"__cached_{self._var_name}"
 
-    def __get__(self, instance, owner):
+    @property
+    def _last_updated_attr(self) -> str:
+        """Get the attribute used to store the last updated timestamp.
+
+        Returns:
+            An attribute name.
+        """
+        return f"__last_updated_{self._var_name}"
+
+    def needs_update(self, instance: BaseState) -> bool:
+        """Check if the computed var needs to be updated.
+
+        Args:
+            instance: The state instance that the computed var is attached to.
+
+        Returns:
+            True if the computed var needs to be updated, False otherwise.
+        """
+        if self._update_interval is None:
+            return False
+        last_updated = getattr(instance, self._last_updated_attr, None)
+        if last_updated is None:
+            return True
+        return datetime.datetime.now() - last_updated > self._update_interval
+
+    def __get__(self, instance: BaseState | None, owner):
         """Get the ComputedVar value.
 
         If the value is already cached on the instance, return the cached value.
@@ -1935,10 +2094,13 @@ class ComputedVar(Var, property):
             return super().__get__(instance, owner)
 
         # handle caching
-        if not hasattr(instance, self._cache_attr):
+        if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
+            # Set cache attr on state instance.
             setattr(instance, self._cache_attr, super().__get__(instance, owner))
             # Ensure the computed var gets serialized to redis.
             instance._was_touched = True
+            # Set the last updated timestamp on the state instance.
+            setattr(instance, self._last_updated_attr, datetime.datetime.now())
         return getattr(instance, self._cache_attr)
 
     def _deps(
@@ -1965,7 +2127,9 @@ class ComputedVar(Var, property):
             VarValueError: if the function references the get_state, parent_state, or substates attributes
                 (cannot track deps in a related state, only implicitly via parent state).
         """
-        d = set()
+        if not self._auto_deps:
+            return self._static_deps
+        d = self._static_deps.copy()
         if obj is None:
             fget = property.__getattribute__(self, "fget")
             if fget is not None:
@@ -2020,8 +2184,21 @@ class ComputedVar(Var, property):
                             obj=ref_obj,
                         )
                     )
-                else:
-                    # normal attribute access
+                # recurse into property fget functions
+                elif isinstance(ref_obj, property) and not isinstance(
+                    ref_obj, ComputedVar
+                ):
+                    d.update(
+                        self._deps(
+                            objclass=objclass,
+                            obj=ref_obj.fget,  # type: ignore
+                        )
+                    )
+                elif (
+                    instruction.argval in objclass.backend_vars
+                    or instruction.argval in objclass.vars
+                ):
+                    # var access
                     d.add(instruction.argval)
             elif instruction.opname == "LOAD_CONST" and isinstance(
                 instruction.argval, CodeType
@@ -2063,6 +2240,11 @@ def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
     initial_value: Any | None = None,
     cache: bool = False,
+    deps: Optional[List[Union[str, Var]]] = None,
+    auto_deps: bool = True,
+    interval: Optional[Union[datetime.timedelta, int]] = None,
+    backend: bool | None = None,
+    _deprecated_cached_var: bool = False,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
     """A ComputedVar decorator with or without kwargs.
@@ -2071,19 +2253,46 @@ def computed_var(
         fget: The getter function.
         initial_value: The initial value of the computed var.
         cache: Whether to cache the computed value.
+        deps: Explicit var dependencies to track.
+        auto_deps: Whether var dependencies should be auto-determined.
+        interval: Interval at which the computed var should be updated.
+        backend: Whether the computed var is a backend var.
+        _deprecated_cached_var: Indicate usage of deprecated cached_var partial function.
         **kwargs: additional attributes to set on the instance
 
     Returns:
         A ComputedVar instance.
+
+    Raises:
+        ValueError: If caching is disabled and an update interval is set.
+        VarDependencyError: If user supplies dependencies without caching.
     """
+    if _deprecated_cached_var:
+        console.deprecate(
+            feature_name="cached_var",
+            reason=("Use @rx.var(cache=True) instead of @rx.cached_var."),
+            deprecation_version="0.5.6",
+            removal_version="0.6.0",
+        )
+
+    if cache is False and interval is not None:
+        raise ValueError("Cannot set update interval without caching.")
+
+    if cache is False and (deps is not None or auto_deps is False):
+        raise VarDependencyError("Cannot track dependencies without caching.")
+
     if fget is not None:
         return ComputedVar(fget=fget, cache=cache)
 
-    def wrapper(fget):
+    def wrapper(fget: Callable[[BaseState], Any]) -> ComputedVar:
         return ComputedVar(
             fget=fget,
             initial_value=initial_value,
             cache=cache,
+            deps=deps,
+            auto_deps=auto_deps,
+            interval=interval,
+            backend=backend,
             **kwargs,
         )
 
@@ -2091,7 +2300,7 @@ def computed_var(
 
 
 # Partial function of computed_var with cache=True
-cached_var = functools.partial(computed_var, cache=True)
+cached_var = functools.partial(computed_var, cache=True, _deprecated_cached_var=True)
 
 
 class CallableVar(BaseVar):

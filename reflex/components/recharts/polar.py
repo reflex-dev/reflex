@@ -1,14 +1,17 @@
 """Polar charts in Recharts."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.vars import Var
 
 from .recharts import (
     LiteralAnimationEasing,
     LiteralGridType,
+    LiteralLegendType,
     LiteralPolarRadiusType,
     LiteralScale,
     Recharts,
@@ -56,7 +59,7 @@ class Pie(Recharts):
     name_key: Var[str]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered.
-    legend_type: Var[str]
+    legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn.
     label: Var[bool] = False  # type: ignore
@@ -140,8 +143,8 @@ class RadialBar(Recharts):
 
     alias = "RechartsRadialBar"
 
-    # The source data which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    # The key of a group of data which should be unique to show the meaning of angle axis.
+    data_key: Var[Union[str, int]]
 
     # Min angle of each bar. A positive value between 0 and 360.
     min_angle: Var[int]
@@ -150,7 +153,7 @@ class RadialBar(Recharts):
     legend_type: Var[str]
 
     # If false set, labels will not be drawn.
-    label: Var[bool]
+    label: Var[Union[bool, Dict[str, Any]]]
 
     # If false set, background sector will not be drawn.
     background: Var[bool]
@@ -214,23 +217,32 @@ class PolarAngleAxis(Recharts):
     # Allow the axis has duplicated categorys or not when the type of axis is "category".
     allow_duplicated_category: Var[bool]
 
-    # Valid children components
+    # Valid children components.
     _valid_children: List[str] = ["Label"]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+    # The customized event handler of click on the ticks of this axis.
+    on_click: EventHandler[lambda: []]
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_OVER: lambda: [],
-            EventTriggers.ON_MOUSE_OUT: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-        }
+    # The customized event handler of mousedown on the the ticks of this axis.
+    on_mouse_down: EventHandler[lambda: []]
+
+    # The customized event handler of mouseup on the ticks of this axis.
+    on_mouse_up: EventHandler[lambda: []]
+
+    # The customized event handler of mousemove on the ticks of this axis.
+    on_mouse_move: EventHandler[lambda: []]
+
+    # The customized event handler of mouseover on the ticks of this axis.
+    on_mouse_over: EventHandler[lambda: []]
+
+    # The customized event handler of mouseout on the ticks of this axis.
+    on_mouse_out: EventHandler[lambda: []]
+
+    # The customized event handler of moustenter on the ticks of this axis.
+    on_mouse_enter: EventHandler[lambda: []]
+
+    # The customized event handler of mouseleave on the ticks of this axis.
+    on_mouse_leave: EventHandler[lambda: []]
 
 
 class PolarGrid(Recharts):
@@ -308,6 +320,9 @@ class PolarRadiusAxis(Recharts):
     # Valid children components
     _valid_children: List[str] = ["Label"]
 
+    # The domain of the polar radius axis, specifying the minimum and maximum values.
+    domain: List[int] = [0, 250]
+
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
@@ -322,3 +337,11 @@ class PolarRadiusAxis(Recharts):
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
+
+
+pie = Pie.create
+radar = Radar.create
+radial_bar = RadialBar.create
+polar_angle_axis = PolarAngleAxis.create
+polar_grid = PolarGrid.create
+polar_radius_axis = PolarRadiusAxis.create

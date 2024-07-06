@@ -1,4 +1,5 @@
 """Helper utilities for integration tests."""
+
 from __future__ import annotations
 
 from contextlib import contextmanager
@@ -54,7 +55,9 @@ class LocalStorage:
         Returns:
             The number of items in local storage.
         """
-        return int(self.driver.execute_script("return window.localStorage.length;"))
+        return int(
+            self.driver.execute_script(f"return window.{self.storage_key}.length;")
+        )
 
     def items(self) -> dict[str, str]:
         """Get all items in local storage.
@@ -63,7 +66,7 @@ class LocalStorage:
             A dict mapping keys to values.
         """
         return self.driver.execute_script(
-            "var ls = window.localStorage, items = {}; "
+            f"var ls = window.{self.storage_key}, items = {{}}; "
             "for (var i = 0, k; i < ls.length; ++i) "
             "  items[k = ls.key(i)] = ls.getItem(k); "
             "return items; "
@@ -76,7 +79,7 @@ class LocalStorage:
             A list of keys.
         """
         return self.driver.execute_script(
-            "var ls = window.localStorage, keys = []; "
+            f"var ls = window.{self.storage_key}, keys = []; "
             "for (var i = 0; i < ls.length; ++i) "
             "  keys[i] = ls.key(i); "
             "return keys; "
@@ -92,7 +95,7 @@ class LocalStorage:
             The value of the key.
         """
         return self.driver.execute_script(
-            "return window.localStorage.getItem(arguments[0]);", key
+            f"return window.{self.storage_key}.getItem(arguments[0]);", key
         )
 
     def set(self, key, value) -> None:
@@ -103,7 +106,9 @@ class LocalStorage:
             value: The value to set the key to.
         """
         self.driver.execute_script(
-            "window.localStorage.setItem(arguments[0], arguments[1]);", key, value
+            f"window.{self.storage_key}.setItem(arguments[0], arguments[1]);",
+            key,
+            value,
         )
 
     def has(self, key) -> bool:
@@ -123,11 +128,13 @@ class LocalStorage:
         Args:
             key: The key to remove.
         """
-        self.driver.execute_script("window.localStorage.removeItem(arguments[0]);", key)
+        self.driver.execute_script(
+            f"window.{self.storage_key}.removeItem(arguments[0]);", key
+        )
 
     def clear(self) -> None:
         """Clear all local storage."""
-        self.driver.execute_script("window.localStorage.clear();")
+        self.driver.execute_script(f"window.{self.storage_key}.clear();")
 
     def __getitem__(self, key) -> str:
         """Get a key from local storage.

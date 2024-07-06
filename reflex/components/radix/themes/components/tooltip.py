@@ -1,8 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal, Union
+
+from typing import Dict, Literal, Union
 
 from reflex.components.component import Component
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler
 from reflex.utils import format
 from reflex.vars import Var
 
@@ -83,18 +84,14 @@ class Tooltip(RadixThemesComponent):
     # By default, screenreaders will announce the content inside the component. If this is not descriptive enough, or you have content that cannot be announced, use aria-label as a more descriptive label.
     aria_label: Var[str]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
+    # Fired when the open state changes.
+    on_open_change: EventHandler[lambda e0: [e0.target.value]]
 
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0.target.value],
-            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0.target.value],
-            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0.target.value],
-        }
+    # Fired when the escape key is pressed.
+    on_escape_key_down: EventHandler[lambda e0: [e0.target.value]]
+
+    # Fired when the pointer is down outside the tooltip.
+    on_pointer_down_outside: EventHandler[lambda e0: [e0.target.value]]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

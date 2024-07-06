@@ -58,6 +58,18 @@ class CpuInfo(Base):
     address_width: Optional[int]
 
 
+def get_web_dir() -> Path:
+    """Get the working directory for the next.js commands.
+
+    Can be overriden with REFLEX_WEB_WORKDIR.
+
+    Returns:
+        The working directory.
+    """
+    workdir = Path(os.getenv("REFLEX_WEB_WORKDIR", constants.Dirs.WEB))
+    return workdir
+
+
 def check_latest_package_version(package_name: str):
     """Check if the latest version of the package is installed.
 
@@ -91,15 +103,15 @@ def get_or_set_last_reflex_version_check_datetime():
     Returns:
         The last version check datetime.
     """
-    if not os.path.exists(constants.Reflex.JSON):
+    reflex_json_file = get_web_dir() / constants.Reflex.JSON
+    if not reflex_json_file.exists():
         return None
     # Open and read the file
-    with open(constants.Reflex.JSON, "r") as file:
-        data: dict = json.load(file)
+    data = json.loads(reflex_json_file.read_text())
     last_version_check_datetime = data.get("last_version_check_datetime")
     if not last_version_check_datetime:
         data.update({"last_version_check_datetime": str(datetime.now())})
-        path_ops.update_json_file(constants.Reflex.JSON, data)
+        path_ops.update_json_file(reflex_json_file, data)
     return last_version_check_datetime
 
 
@@ -233,9 +245,8 @@ def get_app(reload: bool = False) -> ModuleType:
 
     Raises:
         RuntimeError: If the app name is not set in the config.
-        exceptions.ReflexError: Reflex specific errors.
     """
-    from reflex.utils import exceptions, telemetry
+    from reflex.utils import telemetry
 
     try:
         os.environ[constants.RELOAD_CONFIG] = str(reload)
@@ -259,8 +270,8 @@ def get_app(reload: bool = False) -> ModuleType:
             importlib.reload(app)
 
         return app
-    except exceptions.ReflexError as ex:
-        telemetry.send("error", context="frontend", detail=str(ex))
+    except Exception as ex:
+        telemetry.send_error(ex, context="frontend")
         raise
 
 
@@ -331,19 +342,6 @@ def parse_redis_url() -> str | dict | None:
         redis_port = 6379
     console.info(f"Using redis at {config.redis_url}")
     return dict(host=redis_url, port=int(redis_port), db=0)
-
-
-def get_production_backend_url() -> str:
-    """Get the production backend URL.
-
-    Returns:
-        The production backend URL.
-    """
-    config = get_config()
-    return constants.PRODUCTION_BACKEND_URL.format(
-        username=config.username,
-        app_name=config.app_name,
-    )
 
 
 def validate_app_name(app_name: str | None = None) -> str:
@@ -527,12 +525,11 @@ def get_project_hash(raise_on_fail: bool = False) -> int | None:
     Returns:
         project_hash: The app hash.
     """
-    if not os.path.exists(constants.Reflex.JSON) and not raise_on_fail:
+    json_file = get_web_dir() / constants.Reflex.JSON
+    if not json_file.exists() and not raise_on_fail:
         return None
-    # Open and read the file
-    with open(constants.Reflex.JSON, "r") as file:
-        data = json.load(file)
-        return data.get("project_hash")
+    data = json.loads(json_file.read_text())
+    return data.get("project_hash")
 
 
 def initialize_web_directory():
@@ -542,11 +539,11 @@ def initialize_web_directory():
     # Re-use the hash if one is already created, so we don't over-write it when running reflex init
     project_hash = get_project_hash()
 
-    path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, constants.Dirs.WEB)
+    path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
 
     initialize_package_json()
 
-    path_ops.mkdir(constants.Dirs.WEB_ASSETS)
+    path_ops.mkdir(get_web_dir() / constants.Dirs.PUBLIC)
 
     update_next_config()
 
@@ -569,10 +566,9 @@ def _compile_package_json():
 
 def initialize_package_json():
     """Render and write in .web the package.json file."""
-    output_path = constants.PackageJson.PATH
+    output_path = get_web_dir() / constants.PackageJson.PATH
     code = _compile_package_json()
-    with open(output_path, "w") as file:
-        file.write(code)
+    output_path.write_text(code)
 
 
 def init_reflex_json(project_hash: int | None):
@@ -597,7 +593,7 @@ def init_reflex_json(project_hash: int | None):
         "version": constants.Reflex.VERSION,
         "project_hash": project_hash,
     }
-    path_ops.update_json_file(constants.Reflex.JSON, reflex_json)
+    path_ops.update_json_file(get_web_dir() / constants.Reflex.JSON, reflex_json)
 
 
 def update_next_config(export=False, transpile_packages: Optional[List[str]] = None):
@@ -607,7 +603,7 @@ def update_next_config(export=False, transpile_packages: Optional[List[str]] = N
         export: if the method run during reflex export.
         transpile_packages: list of packages to transpile via next.config.js.
     """
-    next_config_file = Path(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
+    next_config_file = get_web_dir() / constants.Next.CONFIG_FILE
 
     next_config = _update_next_config(
         get_config(), export=export, transpile_packages=transpile_packages
@@ -626,7 +622,7 @@ def _update_next_config(
     next_config = {
         "basePath": config.frontend_path or "",
         "compress": config.next_compression,
-        "reactStrictMode": True,
+        "reactStrictMode": config.react_strict_mode,
         "trailingSlash": True,
     }
     if transpile_packages:
@@ -859,9 +855,7 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
 
 
 @cached_procedure(
-    cache_file=os.path.join(
-        constants.Dirs.WEB, "reflex.install_frontend_packages.cached"
-    ),
+    cache_file=str(get_web_dir() / "reflex.install_frontend_packages.cached"),
     payload_fn=lambda p, c: f"{repr(sorted(list(p)))},{c.json()}",
 )
 def install_frontend_packages(packages: set[str], config: Config):
@@ -888,7 +882,7 @@ def install_frontend_packages(packages: set[str], config: Config):
         fallback=fallback_command,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
-        cwd=constants.Dirs.WEB,
+        cwd=get_web_dir(),
         shell=constants.IS_WINDOWS,
     )
 
@@ -904,7 +898,7 @@ def install_frontend_packages(packages: set[str], config: Config):
             fallback=fallback_command,
             analytics_enabled=True,
             show_status_message="Installing tailwind",
-            cwd=constants.Dirs.WEB,
+            cwd=get_web_dir(),
             shell=constants.IS_WINDOWS,
         )
 
@@ -915,7 +909,7 @@ def install_frontend_packages(packages: set[str], config: Config):
             fallback=fallback_command,
             analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
-            cwd=constants.Dirs.WEB,
+            cwd=get_web_dir(),
             shell=constants.IS_WINDOWS,
         )
 
@@ -947,7 +941,7 @@ def needs_reinit(frontend: bool = True) -> bool:
         return True
 
     # Make sure the .web directory exists in frontend mode.
-    if not os.path.exists(constants.Dirs.WEB):
+    if not get_web_dir().exists():
         return True
 
     # If the template is out of date, then we need to re-init
@@ -955,21 +949,9 @@ def needs_reinit(frontend: bool = True) -> bool:
         return True
 
     if constants.IS_WINDOWS:
-        import uvicorn
-
-        uvi_ver = uvicorn.__version__
         console.warn(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
-        if sys.version_info >= (3, 12) and uvi_ver != "0.24.0.post1":
-            console.warn(
-                f"""On Python 3.12, `uvicorn==0.24.0.post1` is recommended for improved hot reload times. Found {uvi_ver} instead."""
-            )
-
-        if sys.version_info < (3, 12) and uvi_ver != "0.20.0":
-            console.warn(
-                f"""On Python < 3.12, `uvicorn==0.20.0` is recommended for improved hot reload times.  Found {uvi_ver} instead."""
-            )
 
         if windows_check_onedrive_in_path():
             console.warn(
@@ -985,10 +967,10 @@ def is_latest_template() -> bool:
     Returns:
         Whether the app is using the latest template.
     """
-    if not os.path.exists(constants.Reflex.JSON):
+    json_file = get_web_dir() / constants.Reflex.JSON
+    if not json_file.exists():
         return False
-    with open(constants.Reflex.JSON) as f:  # type: ignore
-        app_version = json.load(f)["version"]
+    app_version = json.load(json_file.open()).get("version")
     return app_version == constants.Reflex.VERSION
 
 
@@ -1184,7 +1166,7 @@ def should_show_rx_chakra_migration_instructions() -> bool:
         return False
 
     existing_init_reflex_version = None
-    reflex_json = Path(constants.Dirs.REFLEX_JSON)
+    reflex_json = get_web_dir() / constants.Dirs.REFLEX_JSON
     if reflex_json.exists():
         with reflex_json.open("r") as f:
             data = json.load(f)

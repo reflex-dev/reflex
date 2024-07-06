@@ -66,7 +66,8 @@ class State(State):
         del self.chats[self.current_chat]
         if len(self.chats) == 0:
             self.chats = DEFAULT_CHATS
-        self.current_chat = list(self.chats.keys())[0]
+        # set self.current_chat to the first chat.
+        self.current_chat = next(iter(self.chats))
         self.toggle_drawer()
 
     def set_chat(self, chat_name: str):
@@ -85,7 +86,7 @@ class State(State):
         Returns:
             The list of chat names.
         """
-        return list(self.chats.keys())
+        return [*self.chats]
 
     async def process_question(self, form_data: dict[str, str]):
         """Get the response from the API.
