@@ -758,11 +758,7 @@ export const useEventLoop = (
     const change_start = () => {
       const main_state_dispatch = dispatch["state"];
       if (main_state_dispatch !== undefined) {
-<<<<<<< HEAD
-        main_state_dispatch({ is_hydrated: false });
-=======
         main_state_dispatch({ is_hydrated: false })
->>>>>>> main
       }
     };
     const change_complete = () => addEvents(onLoadInternalEvent());
