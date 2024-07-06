@@ -28,6 +28,7 @@ from typing import (
 )
 
 import dill
+from sqlalchemy.orm import DeclarativeBase
 
 try:
     import pydantic.v1 as pydantic
@@ -2919,7 +2920,7 @@ class MutableProxy(wrapt.ObjectProxy):
         pydantic.BaseModel.__dict__
     )
 
-    __mutable_types__ = (list, dict, set, Base)
+    __mutable_types__ = (list, dict, set, Base, DeclarativeBase)
 
     def __init__(self, wrapped: Any, state: BaseState, field_name: str):
         """Create a proxy for a mutable object that tracks changes.
