@@ -538,6 +538,7 @@ def test_var_indexing_str():
     # Test negative indexing.
     assert str(str_var[-1]) == "{str.at(-1)}"
 
+
 @pytest.mark.parametrize(
     "var",
     [
@@ -548,6 +549,16 @@ def test_var_indexing_str():
 def test_var_replace_with_invalid_kwargs(var):
     with pytest.raises(TypeError) as excinfo:
         var._replace(_this_should_fail=True)
+    assert "Unexpected keyword arguments" in str(excinfo.value)
+
+
+def test_computed_var_replace_with_invalid_kwargs():
+    @computed_var(initial_value=1)
+    def test_var(state) -> int:
+        return 1
+
+    with pytest.raises(TypeError) as excinfo:
+        test_var._replace(_random_kwarg=True)
     assert "Unexpected keyword arguments" in str(excinfo.value)
 
 
