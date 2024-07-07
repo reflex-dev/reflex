@@ -6,6 +6,7 @@
 from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 
 from reflex.components.component import MemoizationLeaf
+from reflex.constants.colors import Color
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
 from reflex.vars import BaseVar, Var
@@ -540,6 +541,8 @@ class LabelList(Recharts):
             ]
         ] = None,
         offset: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -600,6 +603,8 @@ class LabelList(Recharts):
             data_key: The key of a group of label values in data.
             position: The position of each label relative to it view box。"Top" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
             offset: The offset to the specified "position"
+            stroke: The color of the line stroke.
+            fill: The width of the line stroke.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
