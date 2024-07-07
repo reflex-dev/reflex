@@ -3,6 +3,7 @@
 from typing import Literal
 
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler
@@ -27,7 +28,7 @@ class Checkbox(RadixThemesComponent):
     as_child: Var[bool]
 
     # Checkbox size "1" - "3"
-    size: Var[LiteralCheckboxSize]
+    size: Var[Responsive[LiteralCheckboxSize]]
 
     # Variant of checkbox: "classic" | "surface" | "soft"
     variant: Var[LiteralCheckboxVariant]

@@ -1,7 +1,8 @@
 import os
 import typing
+from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, List, Literal, Union
+from typing import Any, ClassVar, List, Literal, Type, Union
 
 import pytest
 import typer
@@ -146,13 +147,28 @@ def test_setup_frontend(tmp_path, mocker):
 
 @pytest.fixture
 def test_backend_variable_cls():
-    class TestBackendVariable:
+    class TestBackendVariable(BaseState):
         """Test backend variable."""
 
         _classvar: ClassVar[int] = 0
         _hidden: int = 0
         not_hidden: int = 0
         __dunderattr__: int = 0
+
+        @classmethod
+        def _class_method(cls):
+            pass
+
+        def _hidden_method(self):
+            pass
+
+        @property
+        def _hidden_property(self):
+            pass
+
+        @cached_property
+        def _cached_hidden_property(self):
+            pass
 
     return TestBackendVariable
 
@@ -161,13 +177,19 @@ def test_backend_variable_cls():
     "input, output",
     [
         ("_classvar", False),
+        ("_class_method", False),
+        ("_hidden_method", False),
         ("_hidden", True),
         ("not_hidden", False),
         ("__dundermethod__", False),
+        ("_hidden_property", False),
+        ("_cached_hidden_property", False),
     ],
 )
-def test_is_backend_variable(test_backend_variable_cls, input, output):
-    assert types.is_backend_variable(input, test_backend_variable_cls) == output
+def test_is_backend_base_variable(
+    test_backend_variable_cls: Type[BaseState], input: str, output: bool
+):
+    assert types.is_backend_base_variable(input, test_backend_variable_cls) == output
 
 
 @pytest.mark.parametrize(

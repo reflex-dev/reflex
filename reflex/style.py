@@ -190,7 +190,7 @@ def convert(style_dict):
         var_data = VarData.merge(var_data, new_var_data)
 
     if isinstance(style_dict, Breakpoints):
-        out = Breakpoints(out)
+        out = Breakpoints(out).factorize()
 
     return out, var_data
 

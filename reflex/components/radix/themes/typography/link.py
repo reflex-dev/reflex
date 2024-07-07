@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Literal
 
 from reflex.components.component import Component, MemoizationLeaf
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
@@ -39,13 +40,13 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
     as_child: Var[bool]
 
     # Text size: "1" - "9"
-    size: Var[LiteralTextSize]
+    size: Var[Responsive[LiteralTextSize]]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[LiteralTextWeight]
+    weight: Var[Responsive[LiteralTextWeight]]
 
     # Removes the leading trim space: "normal" | "start" | "end" | "both"
-    trim: Var[LiteralTextTrim]
+    trim: Var[Responsive[LiteralTextTrim]]
 
     # Sets the visibility of the underline affordance: "auto" | "hover" | "always" | "none"
     underline: Var[LiteralLinkUnderline]

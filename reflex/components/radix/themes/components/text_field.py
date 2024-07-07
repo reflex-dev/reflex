@@ -6,6 +6,7 @@ from typing import Literal, Union
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
 from reflex.event import EventHandler
@@ -29,7 +30,7 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
     tag = "TextField.Root"
 
     # Text field size "1" - "3"
-    size: Var[LiteralTextFieldSize]
+    size: Var[Responsive[LiteralTextFieldSize]]
 
     # Variant of text field: "classic" | "surface" | "soft"
     variant: Var[LiteralTextFieldVariant]

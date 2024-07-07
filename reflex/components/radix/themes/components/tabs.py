@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Literal
 
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
 from reflex.event import EventHandler
 from reflex.vars import Var
@@ -62,7 +63,7 @@ class TabsList(RadixThemesComponent):
     tag = "Tabs.List"
 
     # Tabs size "1" - "2"
-    size: Var[Literal["1", "2"]]
+    size: Var[Responsive[Literal["1", "2"]]]
 
     # When true, the tabs will loop when reaching the end.
     loop: Var[bool]

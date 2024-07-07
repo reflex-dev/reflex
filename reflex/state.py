@@ -63,7 +63,6 @@ if TYPE_CHECKING:
 
 Delta = Dict[str, Any]
 var = computed_var
-config = get_config()
 
 
 # If the state is this large, it's considered a performance issue.
@@ -235,12 +234,6 @@ def _no_chain_background_task(
     raise TypeError(f"{fn} is marked as a background task, but is not async.")
 
 
-RESERVED_BACKEND_VAR_NAMES = {
-    "_backend_vars",
-    "_was_touched",
-}
-
-
 def _substate_key(
     token: str,
     state_cls_or_name: BaseState | Type[BaseState] | str | list[str],
@@ -347,10 +340,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # Vars inherited by the parent state.
     inherited_vars: ClassVar[Dict[str, Var]] = {}
 
-    # Backend vars that are never sent to the client.
+    # Backend base vars that are never sent to the client.
     backend_vars: ClassVar[Dict[str, Any]] = {}
 
-    # Backend vars inherited
+    # Backend base vars inherited
     inherited_backend_vars: ClassVar[Dict[str, Any]] = {}
 
     # The event handlers.
@@ -386,7 +379,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # The routing path that triggered the state
     router_data: Dict[str, Any] = {}
 
-    # Per-instance copy of backend variable values
+    # Per-instance copy of backend base variable values
     _backend_vars: Dict[str, Any] = {}
 
     # The router data for the current page
@@ -446,11 +439,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Create a fresh copy of the backend variables for this instance
         self._backend_vars = copy.deepcopy(
-            {
-                name: item
-                for name, item in self.backend_vars.items()
-                if name not in self.computed_vars
-            }
+            {name: item for name, item in self.backend_vars.items()}
         )
 
     def __repr__(self) -> str:
@@ -537,25 +526,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         new_backend_vars = {
             name: value
             for name, value in cls.__dict__.items()
-            if types.is_backend_variable(name, cls)
-            and name not in RESERVED_BACKEND_VAR_NAMES
-            and name not in cls.inherited_backend_vars
-            and not isinstance(value, FunctionType)
-            and not isinstance(value, ComputedVar)
-        }
-
-        # Get backend computed vars
-        backend_computed_vars = {
-            v._var_name: v._var_set_state(cls)
-            for v in computed_vars
-            if types.is_backend_variable(v._var_name, cls)
-            and v._var_name not in cls.inherited_backend_vars
+            if types.is_backend_base_variable(name, cls)
         }
 
         cls.backend_vars = {
             **cls.inherited_backend_vars,
             **new_backend_vars,
-            **backend_computed_vars,
         }
 
         # Set the base and computed vars.
@@ -596,6 +572,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     setattr(cls, name, newcv)
                     cls.computed_vars[newcv._var_name] = newcv
                     cls.vars[newcv._var_name] = newcv
+                    continue
+                if types.is_backend_base_variable(name, mixin):
+                    cls.backend_vars[name] = copy.deepcopy(value)
                     continue
                 if events.get(name) is not None:
                     continue
@@ -780,7 +759,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 "dirty_substates",
                 "router_data",
             }
-            | RESERVED_BACKEND_VAR_NAMES
+            | types.RESERVED_BACKEND_VAR_NAMES
         )
 
     @classmethod
@@ -1133,10 +1112,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             setattr(self.parent_state, name, value)
             return
 
-        if (
-            types.is_backend_variable(name, self.__class__)
-            and name not in RESERVED_BACKEND_VAR_NAMES
-        ):
+        if name in self.backend_vars:
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -1587,11 +1563,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if self.computed_vars[cvar].needs_update(instance=self)
         )
 
-    def _dirty_computed_vars(self, from_vars: set[str] | None = None) -> set[str]:
+    def _dirty_computed_vars(
+        self, from_vars: set[str] | None = None, include_backend: bool = True
+    ) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the given vars.
 
         Args:
             from_vars: find ComputedVar that depend on this set of vars. If unspecified, will use the dirty_vars.
+            include_backend: whether to include backend vars in the calculation.
 
         Returns:
             Set of computed vars to include in the delta.
@@ -1600,6 +1579,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cvar
             for dirty_var in from_vars or self.dirty_vars
             for cvar in self._computed_var_dependencies[dirty_var]
+            if include_backend or not self.computed_vars[cvar]._backend
         )
 
     @classmethod
@@ -1635,19 +1615,23 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         self.dirty_vars.update(self._always_dirty_computed_vars)
         self._mark_dirty()
 
+        frontend_computed_vars: set[str] = {
+            name for name, cv in self.computed_vars.items() if not cv._backend
+        }
+
         # Return the dirty vars for this instance, any cached/dependent computed vars,
         # and always dirty computed vars (cache=False)
         delta_vars = (
             self.dirty_vars.intersection(self.base_vars)
-            .union(self.dirty_vars.intersection(self.computed_vars))
-            .union(self._dirty_computed_vars())
+            .union(self.dirty_vars.intersection(frontend_computed_vars))
+            .union(self._dirty_computed_vars(include_backend=False))
             .union(self._always_dirty_computed_vars)
         )
 
         subdelta = {
             prop: getattr(self, prop)
             for prop in delta_vars
-            if not types.is_backend_variable(prop, self.__class__)
+            if not types.is_backend_base_variable(prop, type(self))
         }
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
@@ -1776,12 +1760,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     else self.get_value(getattr(self, prop_name))
                 )
                 for prop_name, cv in self.computed_vars.items()
+                if not cv._backend
             }
         elif include_computed:
             computed_vars = {
                 # Include the computed vars.
                 prop_name: self.get_value(getattr(self, prop_name))
-                for prop_name in self.computed_vars
+                for prop_name, cv in self.computed_vars.items()
+                if not cv._backend
             }
         else:
             computed_vars = {}
@@ -1794,6 +1780,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for v in self.substates.values()
         ]:
             d.update(substate_d)
+
         return d
 
     async def __aenter__(self) -> BaseState:
@@ -2370,6 +2357,24 @@ def _dill_reduce_state(pickler, obj):
         dill.Pickler.dispatch[type](pickler, obj)
 
 
+def _default_lock_expiration() -> int:
+    """Get the default lock expiration time.
+
+    Returns:
+        The default lock expiration time.
+    """
+    return get_config().redis_lock_expiration
+
+
+def _default_token_expiration() -> int:
+    """Get the default token expiration time.
+
+    Returns:
+        The default token expiration time.
+    """
+    return get_config().redis_token_expiration
+
+
 class StateManagerRedis(StateManager):
     """A state manager that stores states in redis."""
 
@@ -2377,10 +2382,10 @@ class StateManagerRedis(StateManager):
     redis: Redis
 
     # The token expiration time (s).
-    token_expiration: int = config.redis_token_expiration
+    token_expiration: int = pydantic.Field(default_factory=_default_token_expiration)
 
     # The maximum time to hold a lock (ms).
-    lock_expiration: int = config.redis_lock_expiration
+    lock_expiration: int = pydantic.Field(default_factory=_default_lock_expiration)
 
     # The keyspace subscription string when redis is waiting for lock to be released
     _redis_notify_keyspace_events: str = (

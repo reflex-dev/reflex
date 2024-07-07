@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Literal
 
 from reflex.components.component import Component
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.match import Match
 from reflex.components.el import elements
 from reflex.components.lucide import Icon
@@ -31,7 +32,7 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
     as_child: Var[bool]
 
     # Button size "1" - "4"
-    size: Var[LiteralButtonSize]
+    size: Var[Responsive[LiteralButtonSize]]
 
     # Variant of button: "classic" | "solid" | "soft" | "surface" | "outline" | "ghost"
     variant: Var[LiteralVariant]

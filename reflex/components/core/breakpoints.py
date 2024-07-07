@@ -1,8 +1,11 @@
 """Breakpoints utility."""
 
-from typing import Optional, Tuple
+from __future__ import annotations
+
+from typing import Dict, Tuple, TypeVar, Union
 
 breakpoints_values = ["30em", "48em", "62em", "80em", "96em"]
+breakpoint_names = ["xs", "sm", "md", "lg", "xl"]
 
 
 def set_breakpoints(values: Tuple[str, str, str, str, str]):
@@ -15,19 +18,41 @@ def set_breakpoints(values: Tuple[str, str, str, str, str]):
     breakpoints_values.extend(values)
 
 
-class Breakpoints(dict):
+K = TypeVar("K")
+V = TypeVar("V")
+
+
+class Breakpoints(Dict[K, V]):
     """A responsive styling helper."""
+
+    def factorize(self):
+        """Removes references to breakpoints names and instead replaces them with their corresponding values.
+
+        Returns:
+            The factorized breakpoints.
+        """
+        return Breakpoints(
+            {
+                (
+                    breakpoints_values[breakpoint_names.index(k)]
+                    if k in breakpoint_names
+                    else ("0px" if k == "initial" else k)
+                ): v
+                for k, v in self.items()
+                if v is not None
+            }
+        )
 
     @classmethod
     def create(
         cls,
-        custom: Optional[dict] = None,
-        initial=None,
-        xs=None,
-        sm=None,
-        md=None,
-        lg=None,
-        xl=None,
+        custom: Dict[K, V] | None = None,
+        initial: V | None = None,
+        xs: V | None = None,
+        sm: V | None = None,
+        md: V | None = None,
+        lg: V | None = None,
+        xl: V | None = None,
     ):
         """Create a new instance of the helper. Only provide a custom component OR use named props.
 
@@ -57,10 +82,14 @@ class Breakpoints(dict):
             return Breakpoints(
                 {
                     k: v
-                    for k, v in zip(["0px", *breakpoints_values], thresholds)
+                    for k, v in zip(["initial", *breakpoint_names], thresholds)
                     if v is not None
                 }
             )
 
 
 breakpoints = Breakpoints.create
+
+T = TypeVar("T")
+
+Responsive = Union[T, Breakpoints[str, T]]
