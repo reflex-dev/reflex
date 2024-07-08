@@ -5,6 +5,8 @@ https://nextjs.org/docs/app/api-reference/components/script
 
 from __future__ import annotations
 
+from typing import Literal
+
 from reflex.components.component import Component
 from reflex.event import EventHandler
 from reflex.vars import Var
@@ -27,8 +29,10 @@ class Script(Component):
     # Required unless inline script is used
     src: Var[str]
 
-    # When the script will execute: afterInteractive | beforeInteractive | lazyOnload
-    strategy: Var[str] = "afterInteractive"  # type: ignore
+    # When the script will execute: afterInteractive (defer-like behavior) | beforeInteractive | lazyOnload (async-like behavior)
+    strategy: Var[Literal["afterInteractive", "beforeInteractive", "lazyOnload"]] = (
+        Var.create_safe("afterInteractive", _var_is_string=True)
+    )
 
     # Triggered when the script is loading
     on_load: EventHandler[lambda: []]

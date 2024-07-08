@@ -66,7 +66,7 @@ class Foreach(Component):
             raise ForeachVarError(
                 f"Could not foreach over var `{iterable._var_full_name}` of type Any. "
                 "(If you are trying to foreach over a state var, add a type annotation to the var). "
-                "See https://reflex.dev/docs/library/layout/foreach/"
+                "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
 
         if (
@@ -95,7 +95,8 @@ class Foreach(Component):
         if len(params) == 0 or len(params) > 2:
             raise ForeachRenderError(
                 "Expected 1 or 2 parameters in foreach render function, got "
-                f"{[p.name for p in params]}. See https://reflex.dev/docs/library/layout/foreach/"
+                f"{[p.name for p in params]}. See "
+                "https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
 
         if len(params) >= 1:

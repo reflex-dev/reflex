@@ -61,7 +61,6 @@ if TYPE_CHECKING:
 
 Delta = Dict[str, Any]
 var = computed_var
-config = get_config()
 
 
 # If the state is this large, it's considered a performance issue.
@@ -401,11 +400,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Create a fresh copy of the backend variables for this instance
         self._backend_vars = copy.deepcopy(
-            {
-                name: item
-                for name, item in self.backend_vars.items()
-                if name not in self.computed_vars
-            }
+            {name: item for name, item in self.backend_vars.items()}
         )
 
     def __repr__(self) -> str:
@@ -2343,6 +2338,24 @@ def _dill_reduce_state(pickler, obj):
         dill.Pickler.dispatch[type](pickler, obj)
 
 
+def _default_lock_expiration() -> int:
+    """Get the default lock expiration time.
+
+    Returns:
+        The default lock expiration time.
+    """
+    return get_config().redis_lock_expiration
+
+
+def _default_token_expiration() -> int:
+    """Get the default token expiration time.
+
+    Returns:
+        The default token expiration time.
+    """
+    return get_config().redis_token_expiration
+
+
 class StateManagerRedis(StateManager):
     """A state manager that stores states in redis."""
 
@@ -2350,10 +2363,10 @@ class StateManagerRedis(StateManager):
     redis: Redis
 
     # The token expiration time (s).
-    token_expiration: int = config.redis_token_expiration
+    token_expiration: int = pydantic.Field(default_factory=_default_token_expiration)
 
     # The maximum time to hold a lock (ms).
-    lock_expiration: int = config.redis_lock_expiration
+    lock_expiration: int = pydantic.Field(default_factory=_default_lock_expiration)
 
     # The keyspace subscription string when redis is waiting for lock to be released
     _redis_notify_keyspace_events: str = (

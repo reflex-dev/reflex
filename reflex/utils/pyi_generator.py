@@ -9,20 +9,14 @@ import inspect
 import logging
 import re
 import subprocess
-import textwrap
 import typing
+from fileinput import FileInput
 from inspect import getfullargspec
 from itertools import chain
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import Any, Callable, Iterable, Type, get_args
-
-try:
-    import black
-    import black.mode
-except ImportError:
-    black = None
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
@@ -64,11 +58,21 @@ EXCLUDED_PROPS = [
 DEFAULT_TYPING_IMPORTS = {
     "overload",
     "Any",
+    "Callable",
     "Dict",
     # "List",
     "Literal",
     "Optional",
     "Union",
+}
+
+# TODO: fix import ordering and unused imports with ruff later
+DEFAULT_IMPORTS = {
+    "typing": sorted(DEFAULT_TYPING_IMPORTS),
+    "reflex.vars": ["Var", "BaseVar", "ComputedVar"],
+    "reflex.components.core.breakpoints": ["Breakpoints"],
+    "reflex.event": ["EventChain", "EventHandler", "EventSpec"],
+    "reflex.style": ["Style"],
 }
 
 
@@ -113,6 +117,9 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
 
     Returns:
         The resolved type hint as a str.
+
+    Raises:
+        TypeError: If the value name is not visible in the type hint globals.
     """
     res = ""
     args = get_args(value)
@@ -152,13 +159,16 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
             ]
         )
 
-        type_name = (
-            value.__module__ + "." + value.__name__
-            if value.__module__.startswith("reflex")
-            else value.__name__
-        )
+        if (
+            value.__module__ not in ["builtins", "__builtins__"]
+            and value.__name__ not in type_hint_globals
+        ):
+            raise TypeError(
+                f"{value.__module__ + '.' + value.__name__} is not a default import, "
+                "add it to DEFAULT_IMPORTS in pyi_generator.py"
+            )
 
-        res = f"{type_name}[{', '.join(inner_container_type_args)}]"
+        res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
 
         if value.__name__ == "Var":
             args = list(
@@ -214,23 +224,10 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
         The list of import statements.
     """
     return [
-        ast.ImportFrom(
-            module="typing",
-            names=[ast.alias(name=imp) for imp in sorted(typing_imports)],
-        ),
-        *ast.parse(  # type: ignore
-            textwrap.dedent(
-                """
-                import reflex
-                from reflex.vars import Var, BaseVar, ComputedVar
-                from reflex.event import EventChain, EventHandler, EventSpec
-                from reflex.style import Style"""
-            )
-        ).body,
-        # *[
-        #     ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
-        #     for name, values in EXTRA_IMPORTS.items()
-        # ],
+        *[
+            ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
+            for name, values in DEFAULT_IMPORTS.items()
+        ],
     ]
 
 
@@ -436,7 +433,7 @@ def _generate_component_create_functiondef(
             ast.arg(
                 arg=trigger,
                 annotation=ast.Name(
-                    id="Optional[Union[EventHandler, EventSpec, list, function, BaseVar]]"
+                    id="Optional[Union[EventHandler, EventSpec, list, Callable, BaseVar]]"
                 ),
             ),
             ast.Constant(value=None),
@@ -597,7 +594,7 @@ class StubGenerator(ast.NodeTransformer):
         # Track the last class node that was visited.
         self.current_class = None
         # These imports will be included in the AST of stub files.
-        self.typing_imports = DEFAULT_TYPING_IMPORTS
+        self.typing_imports = DEFAULT_TYPING_IMPORTS.copy()
         # Whether those typing imports have been inserted yet.
         self.inserted_imports = False
         # Collected import statements from the module.
@@ -665,7 +662,9 @@ class StubGenerator(ast.NodeTransformer):
         self.import_statements.append(ast.unparse(node))
         if not self.inserted_imports:
             self.inserted_imports = True
-            return _generate_imports(self.typing_imports) + [node]
+            default_imports = _generate_imports(self.typing_imports)
+            self.import_statements.extend(ast.unparse(i) for i in default_imports)
+            return default_imports + [node]
         return node
 
     def visit_ImportFrom(
@@ -858,37 +857,25 @@ class PyiGenerator:
     modules: list = []
     root: str = ""
     current_module: Any = {}
+    written_files: list[str] = []
 
     def _write_pyi_file(self, module_path: Path, source: str):
         relpath = str(_relative_to_pwd(module_path)).replace("\\", "/")
-        pyi_content = [
-            f'"""Stub file for {relpath}"""',
-            "# ------------------- DO NOT EDIT ----------------------",
-            "# This file was generated by `reflex/utils/pyi_generator.py`!",
-            "# ------------------------------------------------------",
-            "",
-        ]
-        if black is not None:
-            for formatted_line in black.format_file_contents(
-                src_contents=source,
-                fast=True,
-                mode=black.mode.Mode(is_pyi=True),
-            ).splitlines():
-                # Bit of a hack here, since the AST cannot represent comments.
-                if (
-                    "def create(" in formatted_line
-                    or "Figure" in formatted_line
-                    or "Var[Template]" in formatted_line
-                ):
-                    pyi_content.append(formatted_line + "  # type: ignore")
-                else:
-                    pyi_content.append(formatted_line)
-            pyi_content.append("")  # add empty line at the end for formatting
-        else:
-            pyi_content = source.splitlines()
+        pyi_content = (
+            "\n".join(
+                [
+                    f'"""Stub file for {relpath}"""',
+                    "# ------------------- DO NOT EDIT ----------------------",
+                    "# This file was generated by `reflex/utils/pyi_generator.py`!",
+                    "# ------------------------------------------------------",
+                    "",
+                ]
+            )
+            + source
+        )
 
         pyi_path = module_path.with_suffix(".pyi")
-        pyi_path.write_text("\n".join(pyi_content))
+        pyi_path.write_text(pyi_content)
         logger.info(f"Wrote {relpath}")
 
     def _get_init_lazy_imports(self, mod, new_tree):
@@ -922,7 +909,7 @@ class PyiGenerator:
         text += ast.unparse(new_tree) + "\n"
         return text
 
-    def _scan_file(self, module_path: Path):
+    def _scan_file(self, module_path: Path) -> str | None:
         module_import = (
             _relative_to_pwd(module_path)
             .with_suffix("")
@@ -949,21 +936,25 @@ class PyiGenerator:
                 ast.parse(inspect.getsource(module))
             )
             init_imports = self._get_init_lazy_imports(module, new_tree)
-            if init_imports:
-                self._write_pyi_file(module_path, init_imports)
+            if not init_imports:
+                return
+            self._write_pyi_file(module_path, init_imports)
         else:
             new_tree = StubGenerator(module, class_names).visit(
                 ast.parse(inspect.getsource(module))
             )
             self._write_pyi_file(module_path, ast.unparse(new_tree))
+        return str(module_path.with_suffix(".pyi").resolve())
 
     def _scan_files_multiprocess(self, files: list[Path]):
         with Pool(processes=cpu_count()) as pool:
-            pool.map(self._scan_file, files)
+            self.written_files.extend(f for f in pool.map(self._scan_file, files) if f)
 
     def _scan_files(self, files: list[Path]):
         for file in files:
-            self._scan_file(file)
+            pyi_path = self._scan_file(file)
+            if pyi_path:
+                self.written_files.append(pyi_path)
 
     def scan_all(self, targets, changed_files: list[Path] | None = None):
         """Scan all targets for class inheriting Component and generate the .pyi files.
@@ -1011,3 +1002,24 @@ class PyiGenerator:
             self._scan_files(file_targets)
         else:
             self._scan_files_multiprocess(file_targets)
+
+        # Fix generated pyi files with ruff.
+        subprocess.run(["ruff", "format", *self.written_files])
+        subprocess.run(["ruff", "check", "--fix", *self.written_files])
+
+        # For some reason, we need to format the __init__.pyi files again after fixing...
+        init_files = [f for f in self.written_files if "/__init__.pyi" in f]
+        subprocess.run(["ruff", "format", *init_files])
+
+        # Post-process the generated pyi files to add hacky type: ignore comments
+        for file_path in self.written_files:
+            with FileInput(file_path, inplace=True) as f:
+                for line in f:
+                    # Hack due to ast not supporting comments in the tree.
+                    if (
+                        "def create(" in line
+                        or "Var[Figure]" in line
+                        or "Var[Template]" in line
+                    ):
+                        line = line.rstrip() + "  # type: ignore\n"
+                    print(line, end="")
