@@ -43,9 +43,6 @@ class Axis(Recharts):
     # The height of axis, which can be setted by user.
     height: Var[Union[str, int]]
 
-    # The orientation of axis 'top' | 'bottom'
-    orientation: Var[LiteralOrientationTopBottom]
-
     # The type of axis 'number' | 'category'
     type_: Var[LiteralPolarRadiusType]
 
@@ -131,6 +128,9 @@ class XAxis(Axis):
     tag = "XAxis"
 
     alias = "RechartsXAxis"
+
+    # The orientation of axis 'top' | 'bottom'
+    orientation: Var[LiteralOrientationTopBottom]
 
     # The id of x-axis which is corresponding to the data.
     x_axis_id: Var[Union[str, int]]
