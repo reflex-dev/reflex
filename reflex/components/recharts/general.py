@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Union
 
-from reflex.constants.colors import Color
-
 from reflex.components.component import MemoizationLeaf
+from reflex.constants.colors import Color
 from reflex.event import EventHandler
 from reflex.vars import Var
 
@@ -140,13 +139,18 @@ class GraphingTooltip(Recharts):
     filter_null: Var[bool]
 
     # If set false, no cursor will be drawn when tooltip is active.
-    cursor: Var[Union[Dict[str, Any], bool]] = {"stroke": Var.create_safe(Color("gray", 10)), "strokeWidth": 1}
+    cursor: Var[Union[Dict[str, Any], bool]] = {
+        "stroke": Var.create_safe(Color("gray", 10)),
+        "strokeWidth": 1,
+    }
 
     # The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
     view_box: Var[Dict[str, Any]]
 
     # The style of default tooltip content item which is a li element. DEFAULT: {}
-    item_style: Var[Dict[str, Any]]
+    item_style: Var[Dict[str, Any]] = {
+        "color": Var.create_safe(Color("gray", 11)),
+    }
 
     # The style of tooltip wrapper which is a dom element. DEFAULT: {}
     wrapper_style: Var[Dict[str, Any]]
@@ -159,7 +163,6 @@ class GraphingTooltip(Recharts):
 
     # The style of default tooltip label which is a p element. DEFAULT: {}
     label_style: Var[Dict[str, Any]] = {"color": Var.create_safe(Color("gray", 11))}
-
 
     # This option allows the tooltip to extend beyond the viewBox of the chart itself. DEFAULT: { x: false, y: false }
     allow_escape_view_box: Var[Dict[str, bool]] = Var.create_safe(
@@ -222,10 +225,10 @@ class LabelList(Recharts):
     offset: Var[int]
 
     # The fill color of each label
-    fill:Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
+    fill: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
 
     # The stroke color of each label
-    stroke: Var[Union[str, Color]]  = "none"
+    stroke: Var[Union[str, Color]] = "none"
 
 
 responsive_container = ResponsiveContainer.create

@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
-from reflex.components.component import Component
 from reflex.event import EventHandler
 from reflex.vars import Var
 
@@ -96,7 +95,7 @@ class Axis(Recharts):
     min_tick_gap: Var[int]
 
     # The stroke color of axis
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10)) 
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
 
     # The text anchor of axis
     text_anchor: Var[str]  # 'start', 'middle', 'end'
@@ -185,7 +184,10 @@ class Brush(Recharts):
     alias = "RechartsBrush"
 
     # Stroke color
-    stroke: Var[Union[str, Color]]
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
+
+    # The fill color of brush.
+    fill: Var[Union[str, Color]] = Var.create_safe(Color("gray", 2))
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
@@ -295,8 +297,8 @@ class Area(Cartesian):
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
     active_dot: Var[bool] = {
-        "stroke": Var.create_safe(Color("accent", 2)), 
-        "fill":  Var.create_safe(Color("accent", 10))
+        "stroke": Var.create_safe(Color("accent", 2)),
+        "fill": Var.create_safe(Color("accent", 10)),
     }
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
@@ -314,7 +316,10 @@ class Area(Cartesian):
     # Valid children components
     _valid_children: List[str] = ["LabelList"]
 
- 
+    #
+    color_scheme: Var[str]
+
+
 class Bar(Cartesian):
     """A Bar component in Recharts."""
 
@@ -329,7 +334,7 @@ class Bar(Cartesian):
     stroke_width: Var[int]
 
     # The width of the line stroke.
-    fill: Var[Union[str, Color]] =  Var.create_safe(Color("accent", 7))
+    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 7))
     # If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
     background: Var[bool]
 
@@ -394,14 +399,14 @@ class Line(Cartesian):
 
     # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
     dot: Var[Union[str, Color]] = {
-        "stroke": Var.create_safe(Color("accent", 10)), 
-        "fill":  Var.create_safe(Color("accent", 4))
+        "stroke": Var.create_safe(Color("accent", 10)),
+        "fill": Var.create_safe(Color("accent", 4)),
     }
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
     active_dot: Var[bool] = {
-        "stroke": Var.create_safe(Color("accent", 2)), 
-        "fill":  Var.create_safe(Color("accent", 10))
+        "stroke": Var.create_safe(Color("accent", 2)),
+        "fill": Var.create_safe(Color("accent", 10)),
     }
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
@@ -456,7 +461,7 @@ class Scatter(Recharts):
 
     # The fill
     fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 7))
-  
+
     # the name
     name: Var[Union[str, int]]
 
@@ -536,7 +541,6 @@ class Funnel(Recharts):
 
     # stroke color
     stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 9))
-    
 
     # The customized event handler of animation start
     on_animation_start: EventHandler[lambda: []]

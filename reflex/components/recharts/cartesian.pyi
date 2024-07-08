@@ -86,6 +86,8 @@ class Axis(Recharts):
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -164,6 +166,8 @@ class Axis(Recharts):
             tick_line: If set false, no axis tick lines will be drawn.
             tick_size: The length of tick line.
             min_tick_gap: The minimum gap between two adjacent labels
+            stroke: The stroke color of axis
+            text_anchor: The text anchor of axis
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -251,6 +255,8 @@ class XAxis(Axis):
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -331,6 +337,8 @@ class XAxis(Axis):
             tick_line: If set false, no axis tick lines will be drawn.
             tick_size: The length of tick line.
             min_tick_gap: The minimum gap between two adjacent labels
+            stroke: The stroke color of axis
+            text_anchor: The text anchor of axis
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -417,6 +425,8 @@ class YAxis(Axis):
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -496,6 +506,8 @@ class YAxis(Axis):
             tick_line: If set false, no axis tick lines will be drawn.
             tick_size: The length of tick line.
             min_tick_gap: The minimum gap between two adjacent labels
+            stroke: The stroke color of axis
+            text_anchor: The text anchor of axis
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -642,6 +654,7 @@ class Brush(Recharts):
         cls,
         *children,
         stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         x: Optional[Union[Var[int], int]] = None,
         y: Optional[Union[Var[int], int]] = None,
@@ -668,6 +681,7 @@ class Brush(Recharts):
         Args:
             *children: The children of the component.
             stroke: Stroke color
+            fill: The fill color of brush.
             data_key: The key of data displayed in the axis.
             x: The x-coordinate of brush.
             y: The y-coordinate of brush.
@@ -868,6 +882,7 @@ class Area(Cartesian):
         stack_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
         name: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        color_scheme: Optional[Union[Var[str], str]] = None,
         layout: Optional[
             Union[
                 Var[Literal["horizontal", "vertical"]],
@@ -976,6 +991,7 @@ class Area(Cartesian):
             stack_id: The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
             unit: The unit of data. This option will be used in tooltip.
             name: The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
+            color_scheme:
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
             x_axis_id: The id of x-axis which is corresponding to the data.
@@ -1205,7 +1221,7 @@ class Line(Cartesian):
         ] = None,
         stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         stoke_width: Optional[Union[Var[int], int]] = None,
-        dot: Optional[Union[Var[bool], bool]] = None,
+        dot: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         active_dot: Optional[Union[Var[bool], bool]] = None,
         label: Optional[Union[Var[bool], bool]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
@@ -1547,6 +1563,7 @@ class Funnel(Recharts):
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1618,6 +1635,7 @@ class Funnel(Recharts):
             animation_begin: Specifies when the animation should begin, the unit of this option is ms.
             animation_duration: Specifies the duration of animation, the unit of this option is ms.
             animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
+            stroke: stroke color
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2216,6 +2234,7 @@ class CartesianGrid(Grid):
         fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         fill_opacity: Optional[Union[Var[float], float]] = None,
         stroke_dasharray: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         x: Optional[Union[Var[int], int]] = None,
         y: Optional[Union[Var[int], int]] = None,
         width: Optional[Union[Var[int], int]] = None,
@@ -2284,6 +2303,7 @@ class CartesianGrid(Grid):
             fill: The background of grid.
             fill_opacity: The opacity of the background used to fill the space between grid lines
             stroke_dasharray: The pattern of dashes and gaps used to paint the lines of the grid
+            stroke: the stroke color of grid
             x: The x-coordinate of grid.
             y: The y-coordinate of grid.
             width: The width of grid.

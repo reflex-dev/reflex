@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Union
-from reflex.constants.colors import Color
+
 from reflex.constants import EventTriggers
+from reflex.constants.colors import Color
 from reflex.event import EventHandler
 from reflex.vars import Var
 
@@ -70,11 +71,11 @@ class Pie(Recharts):
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList"]
 
-    # Stoke color 
-    stroke:  Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
+    # Stoke color
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
 
     # Fill color
-    fill: Var[str]  = Var.create_safe(Color("accent", 3))
+    fill: Var[str] = Var.create_safe(Color("accent", 3))
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -108,11 +109,11 @@ class Radar(Recharts):
     # If false set, dots will not be drawn
     dot: Var[bool]
 
-    # Stoke color 
-    stroke:  Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
+    # Stoke color
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
 
     # Fill color
-    fill: Var[str]  = Var.create_safe(Color("accent", 3))
+    fill: Var[str] = Var.create_safe(Color("accent", 3))
 
     # opacity
     fill_opacity: Var[float] = 0.6
@@ -203,7 +204,7 @@ class PolarAngleAxis(Recharts):
     axis_line_type: Var[str]
 
     # If false set, tick lines will not be drawn. If true set, tick lines will be drawn which have the props calculated internally. If object set, tick lines will be drawn which have the props mergered by the internal calculated props and the option.
-    tick_line: Var[Union[bool, Dict[str, Any]]]  = False
+    tick_line: Var[Union[bool, Dict[str, Any]]] = False
 
     # The width or height of tick.
     tick: Var[Union[int, str]]
@@ -215,8 +216,7 @@ class PolarAngleAxis(Recharts):
     orient: Var[str]
 
     # The stroke color of axis
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10)) 
-
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
 
     # Allow the axis has duplicated categorys or not when the type of axis is "category".
     allow_duplicated_category: Var[bool]
@@ -278,8 +278,7 @@ class PolarGrid(Recharts):
     grid_type: Var[LiteralGridType]
 
     # The stroke color of grid
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10)) 
-
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
 
     # Valid children components
     _valid_children: List[str] = ["RadarChart", "RadiarBarChart"]
@@ -332,8 +331,7 @@ class PolarRadiusAxis(Recharts):
     domain: List[int] = [0, 250]
 
     # The stroke color of axis
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10)) 
-
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
