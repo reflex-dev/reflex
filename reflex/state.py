@@ -481,20 +481,22 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.inherited_backend_vars = parent_state.backend_vars
 
             # Check if another substate class with the same name has already been defined.
-            if cls.__name__ in set(c.__name__ for c in parent_state.class_subclasses):
+            if cls.get_name() in set(
+                c.get_name() for c in parent_state.class_subclasses
+            ):
                 if is_testing_env():
                     # Clear existing subclass with same name when app is reloaded via
                     # utils.prerequisites.get_app(reload=True)
                     parent_state.class_subclasses = set(
                         c
                         for c in parent_state.class_subclasses
-                        if c.__name__ != cls.__name__
+                        if c.get_name() != cls.get_name()
                     )
                 else:
                     # During normal operation, subclasses cannot have the same name, even if they are
                     # defined in different modules.
                     raise StateValueError(
-                        f"The substate class '{cls.__name__}' has been defined multiple times. "
+                        f"The substate class '{cls.get_name()}' has been defined multiple times. "
                         "Shadowing substate classes is not allowed."
                     )
             # Track this new subclass in the parent state's subclasses set.
