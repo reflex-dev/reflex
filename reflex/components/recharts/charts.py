@@ -105,7 +105,7 @@ class CategoricalChartBase(ChartBase):
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
 
-    # The sizes of whitespace around the chart.
+    # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
     margin: Var[Dict[str, Any]]
 
     # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
@@ -255,7 +255,7 @@ class PieChart(ChartBase):
 
     alias = "RechartsPieChart"
 
-    # The sizes of whitespace around the chart.
+    # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
     margin: Var[Dict[str, Any]]
 
     # Valid children components
@@ -291,7 +291,7 @@ class RadarChart(ChartBase):
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
 
-    # The sizes of whitespace around the chart.
+    # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
     margin: Var[Dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
@@ -345,7 +345,7 @@ class RadialBarChart(ChartBase):
     # The source data which each element is an object.
     data: Var[List[Dict[str, Any]]]
 
-    # The sizes of whitespace around the chart.
+    # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
     margin: Var[Dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
@@ -393,7 +393,7 @@ class ScatterChart(ChartBase):
 
     alias = "RechartsScatterChart"
 
-    # The sizes of whitespace around the chart.
+    # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
     margin: Var[Dict[str, Any]]
 
     # Valid children components
@@ -439,7 +439,7 @@ class FunnelChart(ChartBase):
     # The layout of bars in the chart. centeric
     layout: Var[str]
 
-    # The sizes of whitespace around the chart.
+    # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
     margin: Var[Dict[str, Any]]
 
     # Valid children components
