@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Union
 
 from reflex.components.component import MemoizationLeaf
+from reflex.constants.colors import Color
 from reflex.event import EventHandler
 from reflex.vars import Var
 
@@ -214,6 +215,12 @@ class LabelList(Recharts):
 
     # The offset to the specified "position"
     offset: Var[int]
+
+    # The color of the line stroke.
+    stroke: Var[Union[str, Color]]
+
+    # The width of the line stroke.
+    fill: Var[Union[str, Color]]
 
 
 responsive_container = ResponsiveContainer.create

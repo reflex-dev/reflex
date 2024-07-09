@@ -15,6 +15,7 @@ import platform
 import sys
 import traceback
 from datetime import datetime
+from pathlib import Path
 from typing import (
     Any,
     AsyncIterator,
@@ -131,6 +132,7 @@ def default_overlay_component() -> Component:
     )
 
 
+
 def default_error_boundary(*children: Component) -> Component:
     """Default error_boundary attribute for App.
 
@@ -142,6 +144,7 @@ def default_error_boundary(*children: Component) -> Component:
 
     """
     return ErrorBoundary.create(*children)
+
 
 
 class OverlayFragment(Fragment):
@@ -1021,9 +1024,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
         progress.advance(task)
 
-        # Empty the .web pages directory.
-        compiler.purge_web_pages_dir()
-
         progress.advance(task)
         progress.stop()
 
@@ -1040,6 +1040,19 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             export=export,
             transpile_packages=transpile_packages,
         )
+
+        if is_prod_mode():
+            # Empty the .web pages directory.
+            compiler.purge_web_pages_dir()
+        else:
+            # In dev mode, delete removed pages and update existing pages.
+            keep_files = [Path(output_path) for output_path, _ in compile_results]
+            for p in Path(prerequisites.get_web_dir() / constants.Dirs.PAGES).rglob(
+                "*"
+            ):
+                if p.is_file() and p not in keep_files:
+                    # Remove pages that are no longer in the app.
+                    p.unlink()
 
         for output_path, code in compile_results:
             compiler_utils.write_page(output_path, code)
