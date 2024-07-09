@@ -187,7 +187,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
     )
 
     # Error boundary component to wrap the app with.
-    error_boundary: Optional[Union[Component, ComponentCallable]] = (
+    error_boundary: Optional[ComponentCallable] = (
         default_error_boundary
     )
 
