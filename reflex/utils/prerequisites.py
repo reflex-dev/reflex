@@ -976,7 +976,7 @@ def is_latest_template() -> bool:
     json_file = get_web_dir() / constants.Reflex.JSON
     if not json_file.exists():
         return False
-    app_version = json.load(json_file.open()).get("version")
+    app_version = json.loads(json_file.read_text()).get("version")
     return app_version == constants.Reflex.VERSION
 
 
