@@ -184,7 +184,7 @@ class Brush(Recharts):
     alias = "RechartsBrush"
 
     # Stroke color
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 9))
 
     # The fill color of brush.
     fill: Var[Union[str, Color]] = Var.create_safe(Color("gray", 2))
@@ -287,7 +287,7 @@ class Area(Cartesian):
     stroke_width: Var[int] = 1
 
     # The color of the area fill.
-    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 3))
+    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 5))
 
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
     type_: Var[LiteralAreaType] = "monotone"
@@ -334,7 +334,7 @@ class Bar(Cartesian):
     stroke_width: Var[int]
 
     # The width of the line stroke.
-    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 7))
+    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
     # If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
     background: Var[bool]
 
@@ -460,7 +460,7 @@ class Scatter(Recharts):
     line_type: Var[LiteralLineType]
 
     # The fill
-    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 7))
+    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
 
     # the name
     name: Var[Union[str, int]]
@@ -540,7 +540,7 @@ class Funnel(Recharts):
     _valid_children: List[str] = ["LabelList", "Cell"]
 
     # stroke color
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 9))
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 3))
 
     # The customized event handler of animation start
     on_animation_start: EventHandler[lambda: []]
@@ -590,7 +590,7 @@ class ErrorBar(Recharts):
     width: Var[int]
 
     # The stroke color of error bar.
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 8))
 
     # The stroke width of error bar.
     stroke_width: Var[int]

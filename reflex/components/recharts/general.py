@@ -140,8 +140,8 @@ class GraphingTooltip(Recharts):
 
     # If set false, no cursor will be drawn when tooltip is active.
     cursor: Var[Union[Dict[str, Any], bool]] = {
-        "stroke": Var.create_safe(Color("gray", 10)),
         "strokeWidth": 1,
+        "fill": Var.create_safe(Color("gray", 3)),
     }
 
     # The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
@@ -149,7 +149,7 @@ class GraphingTooltip(Recharts):
 
     # The style of default tooltip content item which is a li element. DEFAULT: {}
     item_style: Var[Dict[str, Any]] = {
-        "color": Var.create_safe(Color("gray", 11)),
+        "color": Var.create_safe(Color("gray", 12)),
     }
 
     # The style of tooltip wrapper which is a dom element. DEFAULT: {}
