@@ -527,7 +527,7 @@ def window_alert(message: str | Var[str]) -> EventSpec:
     Returns:
         An event to alert the message.
     """
-    return server_side("_alert", get_fn_signature(window_alert), message=message)
+    return call_script("window.history.back()")
 
 
 def set_focus(ref: str) -> EventSpec:
