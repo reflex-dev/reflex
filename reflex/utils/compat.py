@@ -32,6 +32,13 @@ def pydantic_v1_patch():
     Yields:
         None when the Pydantic module is patched.
     """
+    import pydantic
+
+    if pydantic.__version__.startswith("1."):
+        # pydantic v1 is already installed
+        yield
+        return
+
     patched_modules = [
         "pydantic",
         "pydantic.fields",
@@ -41,11 +48,6 @@ def pydantic_v1_patch():
     originals = {module: sys.modules.get(module) for module in patched_modules}
     try:
         import pydantic.v1  # type: ignore
-
-        if pydantic.__version__.startswith("1."):
-            # pydantic v1 is already installed
-            yield
-            return
 
         sys.modules["pydantic.fields"] = pydantic.v1.fields  # type: ignore
         sys.modules["pydantic.main"] = pydantic.v1.main  # type: ignore
