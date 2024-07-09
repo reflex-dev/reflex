@@ -167,6 +167,10 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
+  if (event.name === "_back") {
+    window.history.back();
+  }
+
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
     queueEventIfSocketExists(initialEvents(), socket);
