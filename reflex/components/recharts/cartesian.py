@@ -31,7 +31,7 @@ from .recharts import (
 class Axis(Recharts):
     """A base class for axes in Recharts."""
 
-    # The key of a group of data which should be unique in an area chart.
+    # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
 
     # If set true, the axis do not display in the chart.
@@ -148,9 +148,6 @@ class YAxis(Axis):
 
     # The orientation of axis 'left' | 'right'
     orientation: Var[LiteralOrientationLeftRight]
-
-    # The key of data displayed in the axis.
-    data_key: Var[Union[str, int]]
 
     # The id of y-axis which is corresponding to the data.
     y_axis_id: Var[Union[str, int]]
@@ -358,7 +355,7 @@ class Bar(Cartesian):
     max_bar_size: Var[int]
 
     # The active bar is shown when a user enters a bar chart and this chart has tooltip. If set to false, no active bar will be drawn. If set to true, active bar will be drawn with the props calculated internally. If passed an object, active bar will be drawn, and the internally calculated props will be merged with the key value pairs of the passed object.
-    active_bar: Var[Union[bool, Dict[str, Any]]]
+    #active_bar: Var[Union[bool, Dict[str, Any]]]
 
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]
