@@ -187,9 +187,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
     )
 
     # Error boundary component to wrap the app with.
-    error_boundary: Optional[ComponentCallable] = (
-        default_error_boundary
-    )
+    error_boundary: Optional[ComponentCallable] = default_error_boundary
 
     # Components to add to the head of every page.
     head_components: List[Component] = []
