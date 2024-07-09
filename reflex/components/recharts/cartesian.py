@@ -357,6 +357,9 @@ class Bar(Cartesian):
     # Max size of the bar
     max_bar_size: Var[int]
 
+    # The active bar is shown when a user enters a bar chart and this chart has tooltip. If set to false, no active bar will be drawn. If set to true, active bar will be drawn with the props calculated internally. If passed an object, active bar will be drawn, and the internally calculated props will be merged with the key value pairs of the passed object.
+    active_bar: Var[Union[bool, Dict[str, Any]]]
+
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]
 
@@ -373,7 +376,7 @@ class Bar(Cartesian):
     animation_easing: Var[LiteralAnimationEasing]
 
     # The customized event handler of animation start
-    on_animation_begin: EventHandler[lambda: []]
+    on_animation_start: EventHandler[lambda: []]
 
     # The customized event handler of animation end
     on_animation_end: EventHandler[lambda: []]
