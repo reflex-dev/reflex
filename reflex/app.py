@@ -132,7 +132,6 @@ def default_overlay_component() -> Component:
     )
 
 
-
 def default_error_boundary(*children: Component) -> Component:
     """Default error_boundary attribute for App.
 
@@ -144,7 +143,6 @@ def default_error_boundary(*children: Component) -> Component:
 
     """
     return ErrorBoundary.create(*children)
-
 
 
 class OverlayFragment(Fragment):
