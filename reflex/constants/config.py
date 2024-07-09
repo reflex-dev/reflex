@@ -39,7 +39,7 @@ class GitIgnore(SimpleNamespace):
     # The gitignore file.
     FILE = ".gitignore"
     # Files to gitignore.
-    DEFAULTS = {Dirs.WEB, "*.db", "__pycache__/", "*.py[cod]"}
+    DEFAULTS = {Dirs.WEB, "*.db", "__pycache__/", "*.py[cod]", "assets/external/"}
 
 
 class RequirementsTxt(SimpleNamespace):

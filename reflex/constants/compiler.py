@@ -67,6 +67,8 @@ class CompileVars(SimpleNamespace):
     UPDATE_VARS_INTERNAL = (
         "reflex___state____update_vars_internal_state.update_vars_internal"
     )
+    # The name of the frontend event exception state
+    FRONTEND_EXCEPTION_STATE = "reflex___state____frontend_event_exception_state"
 
 
 class PageNames(SimpleNamespace):
@@ -125,6 +127,16 @@ class Hooks(SimpleNamespace):
                     focusRef.current.focus();
                   }
                 })"""
+
+    FRONTEND_ERRORS = f"""
+    const logFrontendError = (error, info) => {{
+        if (process.env.NODE_ENV === "production") {{
+            addEvents([Event("{CompileVars.FRONTEND_EXCEPTION_STATE}.handle_frontend_exception", {{
+                stack: error.stack,
+            }})])
+        }}
+    }}
+    """
 
 
 class MemoizationDisposition(enum.Enum):
