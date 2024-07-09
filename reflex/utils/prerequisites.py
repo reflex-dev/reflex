@@ -61,7 +61,7 @@ class CpuInfo(Base):
 def get_web_dir() -> Path:
     """Get the working directory for the next.js commands.
 
-    Can be overriden with REFLEX_WEB_WORKDIR.
+    Can be overridden with REFLEX_WEB_WORKDIR.
 
     Returns:
         The working directory.
