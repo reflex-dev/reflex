@@ -515,7 +515,7 @@ def back() -> EventSpec:
     Returns:
         An event to go back one page.
     """
-    return server_side("_back", get_fn_signature(back))
+    return call_script("window.history.back()")
 
 
 def window_alert(message: str | Var[str]) -> EventSpec:
@@ -527,7 +527,7 @@ def window_alert(message: str | Var[str]) -> EventSpec:
     Returns:
         An event to alert the message.
     """
-    return call_script("window.history.back()")
+    return server_side("_alert", get_fn_signature(window_alert), message=message)
 
 
 def set_focus(ref: str) -> EventSpec:
