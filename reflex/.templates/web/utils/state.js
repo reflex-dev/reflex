@@ -11,6 +11,7 @@ import {
   initialState,
   onLoadInternalEvent,
   state_name,
+  exception_state_name,
 } from "utils/context.js";
 import debounce from "/utils/helpers/debounce";
 import throttle from "/utils/helpers/throttle";
@@ -698,7 +699,7 @@ export const useEventLoop = (
       }
   
       window.onerror = function (msg, url, lineNo, columnNo, error) {
-        addEvents([Event("state.frontend_event_exception_state.handle_frontend_exception", {
+        addEvents([Event(`${exception_state_name}.handle_frontend_exception`, {
           stack: error.stack,
         })])
         return false;
@@ -707,7 +708,7 @@ export const useEventLoop = (
       //NOTE: Only works in Chrome v49+
       //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
       window.onunhandledrejection = function (event) {
-          addEvents([Event("state.frontend_event_exception_state.handle_frontend_exception", {
+          addEvents([Event(`${exception_state_name}.handle_frontend_exception`, {
             stack: event.reason.stack,
           })])
           return false;

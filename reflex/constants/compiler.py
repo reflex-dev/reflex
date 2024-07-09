@@ -65,6 +65,8 @@ class CompileVars(SimpleNamespace):
     ON_LOAD_INTERNAL = "on_load_internal_state.on_load_internal"
     # The name of the internal event to update generic state vars.
     UPDATE_VARS_INTERNAL = "update_vars_internal_state.update_vars_internal"
+    # The name of the frontend event exception state
+    FRONTEND_EXCEPTION_STATE = "state.frontend_event_exception_state"
 
 
 class PageNames(SimpleNamespace):
@@ -124,14 +126,14 @@ class Hooks(SimpleNamespace):
                   }
                 })"""
 
-    FRONTEND_ERRORS = """
-    const logFrontendError = (error, info) => {
-        if (process.env.NODE_ENV === "production") {
-            addEvents([Event("frontend_event_exception_state.handle_frontend_exception", {
+    FRONTEND_ERRORS = f"""
+    const logFrontendError = (error, info) => {{
+        if (process.env.NODE_ENV === "production") {{
+            addEvents([Event("{CompileVars.FRONTEND_EXCEPTION_STATE}.handle_frontend_exception", {{
                 stack: error.stack,
-            })])
-        }
-    }
+            }})])
+        }}
+    }}
     """
 
 
