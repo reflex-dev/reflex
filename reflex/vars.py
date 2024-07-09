@@ -496,6 +496,9 @@ class Var:
 
         Returns:
             A new BaseVar with the updated fields overwriting the corresponding fields in this Var.
+
+        Raises:
+            TypeError: If kwargs contains keys that are not allowed.
         """
         field_values = dict(
             _var_name=kwargs.pop("_var_name", self._var_name),
@@ -507,9 +510,14 @@ class Var:
                 self._var_full_name_needs_state_prefix,
             ),
             _var_data=VarData.merge(
-                kwargs.get("_var_data", self._var_data), merge_var_data
+                kwargs.pop("_var_data", self._var_data), merge_var_data
             ),
         )
+
+        if kwargs:
+            unexpected_kwargs = ", ".join(kwargs.keys())
+            raise TypeError(f"Unexpected keyword arguments: {unexpected_kwargs}")
+
         return BaseVar(**field_values)
 
     def _decode(self) -> Any:
@@ -2024,25 +2032,34 @@ class ComputedVar(Var, property):
 
         Returns:
             The new ComputedVar instance.
+
+        Raises:
+            TypeError: If kwargs contains keys that are not allowed.
         """
-        return ComputedVar(
-            fget=kwargs.get("fget", self.fget),
-            initial_value=kwargs.get("initial_value", self._initial_value),
-            cache=kwargs.get("cache", self._cache),
-            deps=kwargs.get("deps", self._static_deps),
-            auto_deps=kwargs.get("auto_deps", self._auto_deps),
-            interval=kwargs.get("interval", self._update_interval),
-            backend=kwargs.get("backend", self._backend),
-            _var_name=kwargs.get("_var_name", self._var_name),
-            _var_type=kwargs.get("_var_type", self._var_type),
-            _var_is_local=kwargs.get("_var_is_local", self._var_is_local),
-            _var_is_string=kwargs.get("_var_is_string", self._var_is_string),
-            _var_full_name_needs_state_prefix=kwargs.get(
+        field_values = dict(
+            fget=kwargs.pop("fget", self.fget),
+            initial_value=kwargs.pop("initial_value", self._initial_value),
+            cache=kwargs.pop("cache", self._cache),
+            deps=kwargs.pop("deps", self._static_deps),
+            auto_deps=kwargs.pop("auto_deps", self._auto_deps),
+            interval=kwargs.pop("interval", self._update_interval),
+            backend=kwargs.pop("backend", self._backend),
+            _var_name=kwargs.pop("_var_name", self._var_name),
+            _var_type=kwargs.pop("_var_type", self._var_type),
+            _var_is_local=kwargs.pop("_var_is_local", self._var_is_local),
+            _var_is_string=kwargs.pop("_var_is_string", self._var_is_string),
+            _var_full_name_needs_state_prefix=kwargs.pop(
                 "_var_full_name_needs_state_prefix",
                 self._var_full_name_needs_state_prefix,
             ),
             _var_data=VarData.merge(self._var_data, merge_var_data),
         )
+
+        if kwargs:
+            unexpected_kwargs = ", ".join(kwargs.keys())
+            raise TypeError(f"Unexpected keyword arguments: {unexpected_kwargs}")
+
+        return ComputedVar(**field_values)
 
     @property
     def _cache_attr(self) -> str:

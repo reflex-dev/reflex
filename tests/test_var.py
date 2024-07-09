@@ -540,6 +540,29 @@ def test_var_indexing_str():
 
 
 @pytest.mark.parametrize(
+    "var",
+    [
+        (BaseVar(_var_name="foo", _var_type=int)),
+        (BaseVar(_var_name="bar", _var_type=float)),
+    ],
+)
+def test_var_replace_with_invalid_kwargs(var):
+    with pytest.raises(TypeError) as excinfo:
+        var._replace(_this_should_fail=True)
+    assert "Unexpected keyword arguments" in str(excinfo.value)
+
+
+def test_computed_var_replace_with_invalid_kwargs():
+    @computed_var(initial_value=1)
+    def test_var(state) -> int:
+        return 1
+
+    with pytest.raises(TypeError) as excinfo:
+        test_var._replace(_random_kwarg=True)
+    assert "Unexpected keyword arguments" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
     "var, index",
     [
         (BaseVar(_var_name="lst", _var_type=List[int]), [1, 2]),
