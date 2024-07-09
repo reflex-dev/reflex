@@ -8,7 +8,6 @@ import copy
 import functools
 import inspect
 import os
-import traceback
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -25,6 +24,8 @@ from typing import (
     Sequence,
     Set,
     Type,
+    Union,
+    cast,
 )
 
 import dill
@@ -47,7 +48,6 @@ from reflex.event import (
     EventHandler,
     EventSpec,
     fix_events,
-    window_alert,
 )
 from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
@@ -1430,15 +1430,39 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Convert valid EventHandler and EventSpec into Event
         fixed_events = fix_events(self._check_valid(handler, events), token)
 
-        # Get the delta after processing the event.
-        delta = state.get_delta()
-        state._clean()
+        try:
+            # Get the delta after processing the event.
+            delta = state.get_delta()
+            state._clean()
 
-        return StateUpdate(
-            delta=delta,
-            events=fixed_events,
-            final=final if not handler.is_background else True,
-        )
+            return StateUpdate(
+                delta=delta,
+                events=fixed_events,
+                final=final if not handler.is_background else True,
+            )
+        except Exception as ex:
+            state._clean()
+
+            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+
+            event_specs = app_instance.backend_exception_handler(ex)
+
+            if event_specs is None:
+                return StateUpdate()
+
+            event_specs_correct_type = cast(
+                Union[List[Union[EventSpec, EventHandler]], None],
+                [event_specs] if isinstance(event_specs, EventSpec) else event_specs,
+            )
+            fixed_events = fix_events(
+                event_specs_correct_type,
+                token,
+                router_data=state.router_data,
+            )
+            return StateUpdate(
+                events=fixed_events,
+                final=True,
+            )
 
     async def _process_event(
         self, handler: EventHandler, state: BaseState | StateProxy, payload: Dict
@@ -1491,12 +1515,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # If an error occurs, throw a window alert.
         except Exception as ex:
-            error = traceback.format_exc()
-            print(error)
             telemetry.send_error(ex, context="backend")
+
+            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+
+            event_specs = app_instance.backend_exception_handler(ex)
+
             yield state._as_state_update(
                 handler,
-                window_alert("An error occurred. See logs for details."),
+                event_specs,
                 final=True,
             )
 
@@ -1796,6 +1823,23 @@ class State(BaseState):
 
     # The hydrated bool.
     is_hydrated: bool = False
+
+
+class FrontendEventExceptionState(State):
+    """Substate for handling frontend exceptions."""
+
+    def handle_frontend_exception(self, stack: str) -> None:
+        """Handle frontend exceptions.
+
+        If a frontend exception handler is provided, it will be called.
+        Otherwise, the default frontend exception handler will be called.
+
+        Args:
+            stack: The stack trace of the exception.
+
+        """
+        app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        app_instance.frontend_exception_handler(Exception(stack))
 
 
 class UpdateVarsInternalState(State):

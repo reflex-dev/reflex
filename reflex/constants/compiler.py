@@ -124,6 +124,16 @@ class Hooks(SimpleNamespace):
                   }
                 })"""
 
+    FRONTEND_ERRORS = """
+    const logFrontendError = (error, info) => {
+        if (process.env.NODE_ENV === "production") {
+            addEvents([Event("frontend_event_exception_state.handle_frontend_exception", {
+                stack: error.stack,
+            })])
+        }
+    }
+    """
+
 
 class MemoizationDisposition(enum.Enum):
     """The conditions under which a component should be memoized."""
