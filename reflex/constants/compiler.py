@@ -69,6 +69,10 @@ class CompileVars(SimpleNamespace):
     )
     # The name of the frontend event exception state
     FRONTEND_EXCEPTION_STATE = "reflex___state____frontend_event_exception_state"
+    # The full name of the frontend exception state
+    FRONTEND_EXCEPTION_STATE_FULL = (
+        f"reflex___state____state.{FRONTEND_EXCEPTION_STATE}"
+    )
 
 
 class PageNames(SimpleNamespace):
@@ -131,7 +135,7 @@ class Hooks(SimpleNamespace):
     FRONTEND_ERRORS = f"""
     const logFrontendError = (error, info) => {{
         if (process.env.NODE_ENV === "production") {{
-            addEvents([Event("{CompileVars.FRONTEND_EXCEPTION_STATE}.handle_frontend_exception", {{
+            addEvents([Event("{CompileVars.FRONTEND_EXCEPTION_STATE_FULL}.handle_frontend_exception", {{
                 stack: error.stack,
             }})])
         }}
