@@ -167,6 +167,34 @@ class ImmutableVar(Var):
             _var_data=_var_data,
         )
 
+    @classmethod
+    def create_safe(
+        cls,
+        value: Any,
+        _var_is_local: bool | None = None,
+        _var_is_string: bool | None = None,
+        _var_data: VarData | None = None,
+    ) -> Var:
+        """Create a var from a value, asserting that it is not None.
+
+        Args:
+            value: The value to create the var from.
+            _var_is_local: Whether the var is local. Deprecated.
+            _var_is_string: Whether the var is a string literal. Deprecated.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        var = cls.create(
+            value,
+            _var_is_local=_var_is_local,
+            _var_is_string=_var_is_string,
+            _var_data=_var_data,
+        )
+        assert var is not None
+        return var
+
     def __format__(self, format_spec: str) -> str:
         """Format the var into a Javascript equivalent to an f-string.
 

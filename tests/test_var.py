@@ -857,10 +857,23 @@ def test_retrival():
     assert REFLEX_VAR_CLOSING_TAG in f_string
 
     result_var_data = Var.create_safe(f_string)._var_data
-    assert result_var_data is not None
-    assert result_var_data.state == original_var_data.state
-    assert result_var_data.imports == original_var_data.imports
-    assert result_var_data.hooks == original_var_data.hooks
+    result_immutable_var_data = ImmutableVar.create_safe(f_string)._var_data
+    assert result_var_data is not None and result_immutable_var_data is not None
+    assert (
+        result_var_data.state
+        == result_immutable_var_data.state
+        == original_var_data.state
+    )
+    assert (
+        result_var_data.imports
+        == result_immutable_var_data.imports
+        == original_var_data.imports
+    )
+    assert (
+        result_var_data.hooks
+        == result_immutable_var_data.hooks
+        == original_var_data.hooks
+    )
 
 
 @pytest.mark.parametrize(
