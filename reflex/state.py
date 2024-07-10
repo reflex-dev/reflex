@@ -259,19 +259,23 @@ class EventHandlerSetVar(EventHandler):
         Args:
             var_name: The name of the variable to set.
             value: The value to set the variable to.
+
+        Raises:
+            AttributeError: If the given Var name does not exist on the state.
         """
         var_name_fracs = var_name.split(".")
         if len(var_name_fracs) > 1:
-            if isinstance(getattr(self, var_name_fracs[0]), Base):
-                obj = initial_obj = getattr(self, var_name_fracs[0])
+            var_name_on_state = var_name_fracs[0]
+            if isinstance(getattr(self, var_name_on_state), Base):
+                obj = initial_obj = getattr(self, var_name_on_state)
                 for frac in var_name_fracs[1:-1]:
                     obj = getattr(obj, frac)
                 setattr(obj, var_name_fracs[-1], value)
-                getattr(self, constants.SETTER_PREFIX + var_name_fracs[0])(initial_obj)
+                getattr(self, constants.SETTER_PREFIX + var_name_on_state)(initial_obj)
                 return
             else:
                 raise AttributeError(
-                    f"Variable `{var_name}` of type {getattr(self, var_name_fracs[0])._var_type} cannot be set to `{value}`"
+                    f"Variable `{var_name}` of type {getattr(self, var_name_on_state)._var_type} cannot be set to `{value}`"
                 )
         getattr(self, constants.SETTER_PREFIX + var_name)(value)
 
