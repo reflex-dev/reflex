@@ -1974,7 +1974,7 @@ class ComponentState(State, mixin=True):
         """
         cls._per_component_state_instance_count += 1
         state_cls_name = f"{cls.__name__}_n{cls._per_component_state_instance_count}"
-        component_state = type(state_cls_name, (cls, State), {}, mixin=False)
+        component_state = type(state_cls_name, (cls,), {}, mixin=False)
         component = component_state.get_component(*children, **props)
         component.State = component_state
         return component
