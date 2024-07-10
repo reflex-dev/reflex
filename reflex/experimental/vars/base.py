@@ -9,7 +9,7 @@ from typing import Any, Optional, Type
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.utils import serializers, types
 from reflex.utils.exceptions import VarTypeError
-from reflex.vars import Var, VarData, _extract_var_data, _global_vars
+from reflex.vars import Var, VarData, _decode_var, _extract_var_data, _global_vars
 
 
 @dataclasses.dataclass(
@@ -55,6 +55,15 @@ class ImmutableVar(Var):
             False
         """
         return False
+
+    def __post_init__(self):
+        """Post-initialize the var."""
+        # Decode any inline Var markup and apply it to the instance
+        _var_data, _var_name = _decode_var(self._var_name)
+        if _var_data:
+            self.__init__(
+                _var_name, self._var_type, VarData.merge(self._var_data, _var_data)
+            )
 
     def _replace(self, merge_var_data=None, **kwargs: Any):
         """Make a copy of this Var with updated fields.
