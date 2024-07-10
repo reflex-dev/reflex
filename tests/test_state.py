@@ -2988,12 +2988,20 @@ async def test_setvar(mock_app: rx.App, token: str):
 
     # Set Var in same state (with Var type casting)
     for event in rx.event.fix_events(
-        [TestState.setvar("num1", 42), TestState.setvar("num2", "4.2")], token
+        [
+            TestState.setvar("num1", 42),
+            TestState.setvar("num2", "4.2"),
+            TestState.setvar(TestState.obj.prop1, 21),
+            TestState.setvar("obj.prop2", "world"),
+        ],
+        token,
     ):
         async for update in state._process(event):
             print(update)
     assert state.num1 == 42
     assert state.num2 == 4.2
+    assert state.obj.prop1 == 21
+    assert state.obj.prop2 == "world"
 
     # Set Var in parent state
     for event in rx.event.fix_events([GrandchildState.setvar("array", [43])], token):

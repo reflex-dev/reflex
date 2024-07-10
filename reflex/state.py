@@ -260,6 +260,19 @@ class EventHandlerSetVar(EventHandler):
             var_name: The name of the variable to set.
             value: The value to set the variable to.
         """
+        var_name_fracs = var_name.split(".")
+        if len(var_name_fracs) > 1:
+            if isinstance(getattr(self, var_name_fracs[0]), Base):
+                obj = initial_obj = getattr(self, var_name_fracs[0])
+                for frac in var_name_fracs[1:-1]:
+                    obj = getattr(obj, frac)
+                setattr(obj, var_name_fracs[-1], value)
+                getattr(self, constants.SETTER_PREFIX + var_name_fracs[0])(initial_obj)
+                return
+            else:
+                raise AttributeError(
+                    f"Variable `{var_name}` of type {getattr(self, var_name_fracs[0])._var_type} cannot be set to `{value}`"
+                )
         getattr(self, constants.SETTER_PREFIX + var_name)(value)
 
     def __call__(self, *args: Any) -> EventSpec:
@@ -278,15 +291,23 @@ class EventHandlerSetVar(EventHandler):
         from reflex.utils.exceptions import EventHandlerValueError
 
         if args:
-            if not isinstance(args[0], str):
+            var_name: Union[str, BaseVar] = args[0]
+            if not isinstance(args[0], str) and not isinstance(var_name, BaseVar):
                 raise EventHandlerValueError(
                     f"Var name must be passed as a string, got {args[0]!r}"
                 )
+            if isinstance(var_name, BaseVar):
+                var_name = var_name._var_name
+            fracs = var_name.split(".")
             # Check that the requested Var setter exists on the State at compile time.
-            if getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None) is None:
+            if (
+                getattr(self.state_cls, constants.SETTER_PREFIX + fracs[0], None)
+                is None
+            ):
                 raise AttributeError(
-                    f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
+                    f"Variable `{var_name}` cannot be set on `{self.state_cls.get_full_name()}`"
                 )
+            args = (var_name,) + args[1:]
         return super().__call__(*args)
 
 
