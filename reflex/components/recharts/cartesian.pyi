@@ -366,6 +366,7 @@ class YAxis(Axis):
             Union[Var[Literal["left", "right"]], Literal["left", "right"]]
         ] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        domain: Optional[Union[Var[List], List]] = None,
         data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], str, int]] = None,

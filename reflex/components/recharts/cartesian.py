@@ -152,6 +152,8 @@ class YAxis(Axis):
     # The id of y-axis which is corresponding to the data.
     y_axis_id: Var[Union[str, int]]
 
+    domain: Var[List]
+
 
 class ZAxis(Recharts):
     """A ZAxis component in Recharts."""
