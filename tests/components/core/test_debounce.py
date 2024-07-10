@@ -92,6 +92,29 @@ def test_render_with_ref():
     assert "foo_bar" in str(tag.props["inputRef"])
 
 
+def test_render_with_key():
+    tag = rx.debounce_input(
+        rx.input(
+            on_change=S.on_change,
+            key="foo_bar",
+        )
+    )._render()
+    assert isinstance(tag.props["key"], rx.Var)
+    assert "foo_bar" in str(tag.props["key"])
+
+
+def test_render_with_special_props():
+    special_prop = rx.Var.create_safe("{foo_bar}", _var_is_string=False)
+    tag = rx.debounce_input(
+        rx.input(
+            on_change=S.on_change,
+            special_props=[special_prop],
+        )
+    )._render()
+    assert len(tag.special_props) == 1
+    assert list(tag.special_props)[0].equals(special_prop)
+
+
 def test_event_triggers():
     debounced_input = rx.debounce_input(
         rx.input(
