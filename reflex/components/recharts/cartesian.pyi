@@ -494,6 +494,7 @@ class YAxis(Axis):
             *children: The children of the component.
             orientation: The orientation of axis 'left' | 'right'
             y_axis_id: The id of y-axis which is corresponding to the data.
+            domain: The range of the axis. Work best in conjuction with allow_data_overflow.
             data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
