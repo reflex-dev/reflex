@@ -158,19 +158,16 @@ class RadialBar(Recharts):
     # If false set, background sector will not be drawn.
     background: Var[Union[bool, Dict[str, Any]]]
 
-    # The source data which each element is an object.
-    data: Var[List[Dict[str, Any]]]
-
-    # If set false, animation of radial bars will be disabled.
+    # If set false, animation of radial bars will be disabled. By default true in CSR, and false in SSR
     is_animation_active: Var[bool]
 
-    # Specifies when the animation should begin, the unit of this option is ms.
+    # Specifies when the animation should begin, the unit of this option is ms. By default 0
     animation_begin: Var[int]
 
-    # Specifies the duration of animation, the unit of this option is ms.
+    # Specifies the duration of animation, the unit of this option is ms. By default 1500
     animation_duration: Var[int]
 
-    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
+    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. By default 'ease'
     animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
