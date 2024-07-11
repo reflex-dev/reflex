@@ -21,6 +21,8 @@ def TestApp():
     class TestAppConfig(rx.Config):
         """Config for the TestApp app."""
 
+        pass
+
     class TestAppState(rx.State):
         """State for the TestApp app."""
 
