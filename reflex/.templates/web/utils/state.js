@@ -117,7 +117,7 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some(event => event.name.startsWith("state"));
+  return event_queue.some(event => event.name.startsWith("reflex___state"));
 }
 
 /**
@@ -763,7 +763,7 @@ export const useEventLoop = (
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = Event(
-          `${state_name}.update_vars_internal_state.update_vars_internal`,
+          `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
           { vars: vars }
         );
         addEvents([event], e);
