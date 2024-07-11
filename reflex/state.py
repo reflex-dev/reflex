@@ -387,7 +387,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     router: RouterData = RouterData()
 
     # The session status
-    _session_status: SessionStatus = SessionStatus()
+    _session_status: SessionStatus = pydantic.PrivateAttr(default_factory=SessionStatus)
 
     # Whether the state has ever been touched since instantiation.
     _was_touched: bool = False
