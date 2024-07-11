@@ -48,7 +48,7 @@ def asset(
         The relative URL to the asset.
     """
     assets = constants.Dirs.APP_ASSETS
-    backend_only = os.environ.get(constants.ENV_BACKEND_ONLY)
+    backend_only = os.environ.get(constants.ENV_BACKEND_ONLY, "false").lower() == "true"
 
     # Local asset handling
     if not shared:
