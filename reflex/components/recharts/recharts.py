@@ -1,14 +1,29 @@
 """A component that wraps a recharts lib."""
 
-from typing import Literal
+from typing import Dict, Literal
 
 from reflex.components.component import Component, MemoizationLeaf, NoSSRComponent
+from reflex.utils import console
 
 
 class Recharts(Component):
     """A component that wraps a recharts lib."""
 
     library = "recharts@2.12.7"
+
+    def render(self) -> Dict:
+        """Render the tag.
+
+        Returns:
+            The rendered tag.
+        """
+        tag = super().render()
+        if any(p.startswith("css") for p in tag["props"]):
+            console.warn(
+                f"CSS props do not work for {self.__class__.__name__}. Consult docs to style it with its own prop."
+            )
+        tag["props"] = [p for p in tag["props"] if not p.startswith("css")]
+        return tag
 
 
 class RechartsCharts(NoSSRComponent, MemoizationLeaf):
