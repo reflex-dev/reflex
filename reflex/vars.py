@@ -262,6 +262,9 @@ _decode_var_pattern_re = (
 )
 _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
 
+# Defined global immutable vars.
+_global_vars: Dict[int, Var] = {}
+
 
 def _decode_var(value: str) -> tuple[VarData | None, str]:
     """Decode the state name from a formatted var.
@@ -294,17 +297,32 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
             start, end = m.span()
             value = value[:start] + value[end:]
 
-            # Read the JSON, pull out the string length, parse the rest as VarData.
-            data = json_loads(m.group(1))
-            string_length = data.pop("string_length", None)
-            var_data = VarData.parse_obj(data)
+            serialized_data = m.group(1)
 
-            # Use string length to compute positions of interpolations.
-            if string_length is not None:
-                realstart = start + offset
-                var_data.interpolations = [(realstart, realstart + string_length)]
+            if serialized_data[1:].isnumeric():
+                # This is a global immutable var.
+                var = _global_vars[int(serialized_data)]
+                var_data = var._var_data
 
-            var_datas.append(var_data)
+                if var_data is not None:
+                    realstart = start + offset
+                    var_data.interpolations = [
+                        (realstart, realstart + len(var._var_name))
+                    ]
+
+                    var_datas.append(var_data)
+            else:
+                # Read the JSON, pull out the string length, parse the rest as VarData.
+                data = json_loads(serialized_data)
+                string_length = data.pop("string_length", None)
+                var_data = VarData.parse_obj(data)
+
+                # Use string length to compute positions of interpolations.
+                if string_length is not None:
+                    realstart = start + offset
+                    var_data.interpolations = [(realstart, realstart + string_length)]
+
+                var_datas.append(var_data)
             offset += end - start
 
     return VarData.merge(*var_datas) if var_datas else None, value

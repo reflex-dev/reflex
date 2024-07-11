@@ -6,11 +6,15 @@ import pytest
 from pandas import DataFrame
 
 from reflex.base import Base
+from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex.experimental.vars.base import ImmutableVar
 from reflex.state import BaseState
+from reflex.utils.imports import ImportVar
 from reflex.vars import (
     BaseVar,
     ComputedVar,
     Var,
+    VarData,
     computed_var,
 )
 
@@ -847,6 +851,43 @@ def test_state_with_initial_computed_var(
     else:
         runtime_dict = state.dict()[state_name]
         assert runtime_dict[var_name] == expected_runtime
+
+
+def test_retrival():
+    var_without_data = ImmutableVar.create("test")
+    assert var_without_data is not None
+
+    original_var_data = VarData(
+        state="Test",
+        imports={"react": [ImportVar(tag="useRef")]},
+        hooks={"const state = useContext(StateContexts.state)": None},
+    )
+
+    var_with_data = var_without_data._replace(merge_var_data=original_var_data)
+
+    f_string = f"foo{var_with_data}bar"
+
+    assert REFLEX_VAR_OPENING_TAG in f_string
+    assert REFLEX_VAR_CLOSING_TAG in f_string
+
+    result_var_data = Var.create_safe(f_string)._var_data
+    result_immutable_var_data = ImmutableVar.create_safe(f_string)._var_data
+    assert result_var_data is not None and result_immutable_var_data is not None
+    assert (
+        result_var_data.state
+        == result_immutable_var_data.state
+        == original_var_data.state
+    )
+    assert (
+        result_var_data.imports
+        == result_immutable_var_data.imports
+        == original_var_data.imports
+    )
+    assert (
+        result_var_data.hooks
+        == result_immutable_var_data.hooks
+        == original_var_data.hooks
+    )
 
 
 @pytest.mark.parametrize(
