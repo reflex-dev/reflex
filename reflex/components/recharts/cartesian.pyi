@@ -24,9 +24,6 @@ class Axis(Recharts):
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], str, int]] = None,
         height: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        orientation: Optional[
-            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
-        ] = None,
         type_: Optional[
             Union[Var[Literal["number", "category"]], Literal["number", "category"]]
         ] = None,
@@ -148,11 +145,10 @@ class Axis(Recharts):
 
         Args:
             *children: The children of the component.
-            data_key: The key of a group of data which should be unique in an area chart.
+            data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
             height: The height of axis, which can be setted by user.
-            orientation: The orientation of axis 'top' | 'bottom'
             type_: The type of axis 'number' | 'category'
             allow_decimals: Allow the ticks of XAxis to be decimals or not.
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
@@ -191,15 +187,15 @@ class XAxis(Axis):
     def create(  # type: ignore
         cls,
         *children,
+        orientation: Optional[
+            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
+        ] = None,
         x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         include_hidden: Optional[Union[Var[bool], bool]] = None,
         data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], str, int]] = None,
         height: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        orientation: Optional[
-            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
-        ] = None,
         type_: Optional[
             Union[Var[Literal["number", "category"]], Literal["number", "category"]]
         ] = None,
@@ -321,13 +317,13 @@ class XAxis(Axis):
 
         Args:
             *children: The children of the component.
+            orientation: The orientation of axis 'top' | 'bottom'
             x_axis_id: The id of x-axis which is corresponding to the data.
             include_hidden: Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
-            data_key: The key of a group of data which should be unique in an area chart.
+            data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
             height: The height of axis, which can be setted by user.
-            orientation: The orientation of axis 'top' | 'bottom'
             type_: The type of axis 'number' | 'category'
             allow_decimals: Allow the ticks of XAxis to be decimals or not.
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
@@ -369,8 +365,9 @@ class YAxis(Axis):
         orientation: Optional[
             Union[Var[Literal["left", "right"]], Literal["left", "right"]]
         ] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        domain: Optional[Union[Var[List], List]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], str, int]] = None,
         height: Optional[Union[Var[Union[int, str]], str, int]] = None,
@@ -495,9 +492,10 @@ class YAxis(Axis):
 
         Args:
             *children: The children of the component.
-            orientation: The orientation of axis 'top' | 'bottom'
-            data_key: The key of a group of data which should be unique in an area chart.
+            orientation: The orientation of axis 'left' | 'right'
             y_axis_id: The id of y-axis which is corresponding to the data.
+            domain: The range of the axis. Work best in conjuction with allow_data_overflow.
+            data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
             height: The height of axis, which can be setted by user.
@@ -1093,10 +1091,10 @@ class Bar(Cartesian):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_animation_begin: Optional[
+        on_animation_end: Optional[
             Union[EventHandler, EventSpec, list, Callable, BaseVar]
         ] = None,
-        on_animation_end: Optional[
+        on_animation_start: Optional[
             Union[EventHandler, EventSpec, list, Callable, BaseVar]
         ] = None,
         on_blur: Optional[

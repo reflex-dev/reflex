@@ -11,6 +11,7 @@ import {
   initialState,
   onLoadInternalEvent,
   state_name,
+  exception_state_name,
 } from "utils/context.js";
 import debounce from "/utils/helpers/debounce";
 import throttle from "/utils/helpers/throttle";
@@ -116,7 +117,7 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some(event => event.name.startsWith("state"));
+  return event_queue.some(event => event.name.startsWith("reflex___state"));
 }
 
 /**
@@ -247,6 +248,9 @@ export const applyEvent = async (event, socket) => {
       }
     } catch (e) {
       console.log("_call_script", e);
+      if (window && window?.onerror) {
+        window.onerror(e.message, null, null, null, e)
+      }
     }
     return false;
   }
@@ -687,6 +691,31 @@ export const useEventLoop = (
     }
   }, [router.isReady]);
 
+    // Handle frontend errors and send them to the backend via websocket.
+    useEffect(() => {
+      
+      if (typeof window === 'undefined') {
+        return;
+      }
+  
+      window.onerror = function (msg, url, lineNo, columnNo, error) {
+        addEvents([Event(`${exception_state_name}.handle_frontend_exception`, {
+          stack: error.stack,
+        })])
+        return false;
+      }
+
+      //NOTE: Only works in Chrome v49+
+      //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
+      window.onunhandledrejection = function (event) {
+          addEvents([Event(`${exception_state_name}.handle_frontend_exception`, {
+            stack: event.reason.stack,
+          })])
+          return false;
+      }
+  
+    },[])
+
   // Main event loop.
   useEffect(() => {
     // Skip if the router is not ready.
@@ -734,7 +763,7 @@ export const useEventLoop = (
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = Event(
-          `${state_name}.update_vars_internal_state.update_vars_internal`,
+          `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
           { vars: vars }
         );
         addEvents([event], e);

@@ -231,7 +231,7 @@ def tmp_working_dir(tmp_path):
 
 
 @pytest.fixture
-def mutable_state():
+def mutable_state() -> MutableTestState:
     """Create a Test state containing mutable types.
 
     Returns:

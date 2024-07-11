@@ -229,7 +229,8 @@ async def test_client_side_state(
         local_storage: Local storage helper.
         session_storage: Session storage helper.
     """
-    assert client_side.app_instance is not None
+    app = client_side.app_instance
+    assert app is not None
     assert client_side.frontend_url is not None
 
     def poll_for_token():
@@ -333,29 +334,37 @@ async def test_client_side_state(
     set_sub_sub("l1s", "l1s value")
     set_sub_sub("s1s", "s1s value")
 
+    state_name = client_side.get_full_state_name(["_client_side_state"])
+    sub_state_name = client_side.get_full_state_name(
+        ["_client_side_state", "_client_side_sub_state"]
+    )
+    sub_sub_state_name = client_side.get_full_state_name(
+        ["_client_side_state", "_client_side_sub_state", "_client_side_sub_sub_state"]
+    )
+
     exp_cookies = {
-        "state.client_side_state.client_side_sub_state.c1": {
+        f"{sub_state_name}.c1": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "state.client_side_state.client_side_sub_state.c1",
+            "name": f"{sub_state_name}.c1",
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
             "value": "c1%20value",
         },
-        "state.client_side_state.client_side_sub_state.c2": {
+        f"{sub_state_name}.c2": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "state.client_side_state.client_side_sub_state.c2",
+            "name": f"{sub_state_name}.c2",
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
             "value": "c2%20value",
         },
-        "state.client_side_state.client_side_sub_state.c4": {
+        f"{sub_state_name}.c4": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "state.client_side_state.client_side_sub_state.c4",
+            "name": f"{sub_state_name}.c4",
             "path": "/",
             "sameSite": "Strict",
             "secure": False,
@@ -370,19 +379,19 @@ async def test_client_side_state(
             "secure": False,
             "value": "c6%20value",
         },
-        "state.client_side_state.client_side_sub_state.c7": {
+        f"{sub_state_name}.c7": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "state.client_side_state.client_side_sub_state.c7",
+            "name": f"{sub_state_name}.c7",
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
             "value": "c7%20value",
         },
-        "state.client_side_state.client_side_sub_state.client_side_sub_sub_state.c1s": {
+        f"{sub_sub_state_name}.c1s": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "state.client_side_state.client_side_sub_state.client_side_sub_sub_state.c1s",
+            "name": f"{sub_sub_state_name}.c1s",
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
@@ -400,18 +409,13 @@ async def test_client_side_state(
 
     # Test cookie with expiry by itself to avoid timing flakiness
     set_sub("c3", "c3 value")
-    AppHarness._poll_for(
-        lambda: "state.client_side_state.client_side_sub_state.c3"
-        in cookie_info_map(driver)
-    )
-    c3_cookie = cookie_info_map(driver)[
-        "state.client_side_state.client_side_sub_state.c3"
-    ]
+    AppHarness._poll_for(lambda: f"{sub_state_name}.c3" in cookie_info_map(driver))
+    c3_cookie = cookie_info_map(driver)[f"{sub_state_name}.c3"]
     assert c3_cookie.pop("expiry") is not None
     assert c3_cookie == {
         "domain": "localhost",
         "httpOnly": False,
-        "name": "state.client_side_state.client_side_sub_state.c3",
+        "name": f"{sub_state_name}.c3",
         "path": "/",
         "sameSite": "Lax",
         "secure": False,
@@ -420,52 +424,24 @@ async def test_client_side_state(
     time.sleep(2)  # wait for c3 to expire
     if not isinstance(driver, Firefox):
         # Note: Firefox does not remove expired cookies Bug 576347
-        assert (
-            "state.client_side_state.client_side_sub_state.c3"
-            not in cookie_info_map(driver)
-        )
+        assert f"{sub_state_name}.c3" not in cookie_info_map(driver)
 
     local_storage_items = local_storage.items()
     local_storage_items.pop("chakra-ui-color-mode", None)
     local_storage_items.pop("last_compiled_time", None)
-    assert (
-        local_storage_items.pop("state.client_side_state.client_side_sub_state.l1")
-        == "l1 value"
-    )
-    assert (
-        local_storage_items.pop("state.client_side_state.client_side_sub_state.l2")
-        == "l2 value"
-    )
+    assert local_storage_items.pop(f"{sub_state_name}.l1") == "l1 value"
+    assert local_storage_items.pop(f"{sub_state_name}.l2") == "l2 value"
     assert local_storage_items.pop("l3") == "l3 value"
-    assert (
-        local_storage_items.pop("state.client_side_state.client_side_sub_state.l4")
-        == "l4 value"
-    )
-    assert (
-        local_storage_items.pop(
-            "state.client_side_state.client_side_sub_state.client_side_sub_sub_state.l1s"
-        )
-        == "l1s value"
-    )
+    assert local_storage_items.pop(f"{sub_state_name}.l4") == "l4 value"
+    assert local_storage_items.pop(f"{sub_sub_state_name}.l1s") == "l1s value"
     assert not local_storage_items
 
     session_storage_items = session_storage.items()
     session_storage_items.pop("token", None)
-    assert (
-        session_storage_items.pop("state.client_side_state.client_side_sub_state.s1")
-        == "s1 value"
-    )
-    assert (
-        session_storage_items.pop("state.client_side_state.client_side_sub_state.s2")
-        == "s2 value"
-    )
+    assert session_storage_items.pop(f"{sub_state_name}.s1") == "s1 value"
+    assert session_storage_items.pop(f"{sub_state_name}.s2") == "s2 value"
     assert session_storage_items.pop("s3") == "s3 value"
-    assert (
-        session_storage_items.pop(
-            "state.client_side_state.client_side_sub_state.client_side_sub_sub_state.s1s"
-        )
-        == "s1s value"
-    )
+    assert session_storage_items.pop(f"{sub_sub_state_name}.s1s") == "s1s value"
     assert not session_storage_items
 
     assert c1.text == "c1 value"
@@ -528,7 +504,7 @@ async def test_client_side_state(
     assert s1s.text == "s1s value"
 
     # reset the backend state to force refresh from client storage
-    async with client_side.modify_state(f"{token}_state.client_side_state") as state:
+    async with client_side.modify_state(f"{token}_{state_name}") as state:
         state.reset()
     driver.refresh()
 
@@ -576,16 +552,11 @@ async def test_client_side_state(
     assert s1s.text == "s1s value"
 
     # make sure c5 cookie shows up on the `/foo` route
-    AppHarness._poll_for(
-        lambda: "state.client_side_state.client_side_sub_state.c5"
-        in cookie_info_map(driver)
-    )
-    assert cookie_info_map(driver)[
-        "state.client_side_state.client_side_sub_state.c5"
-    ] == {
+    AppHarness._poll_for(lambda: f"{sub_state_name}.c5" in cookie_info_map(driver))
+    assert cookie_info_map(driver)[f"{sub_state_name}.c5"] == {
         "domain": "localhost",
         "httpOnly": False,
-        "name": "state.client_side_state.client_side_sub_state.c5",
+        "name": f"{sub_state_name}.c5",
         "path": "/foo/",
         "sameSite": "Lax",
         "secure": False,

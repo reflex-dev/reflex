@@ -262,6 +262,9 @@ _decode_var_pattern_re = (
 )
 _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
 
+# Defined global immutable vars.
+_global_vars: Dict[int, Var] = {}
+
 
 def _decode_var(value: str) -> tuple[VarData | None, str]:
     """Decode the state name from a formatted var.
@@ -294,17 +297,32 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
             start, end = m.span()
             value = value[:start] + value[end:]
 
-            # Read the JSON, pull out the string length, parse the rest as VarData.
-            data = json_loads(m.group(1))
-            string_length = data.pop("string_length", None)
-            var_data = VarData.parse_obj(data)
+            serialized_data = m.group(1)
 
-            # Use string length to compute positions of interpolations.
-            if string_length is not None:
-                realstart = start + offset
-                var_data.interpolations = [(realstart, realstart + string_length)]
+            if serialized_data[1:].isnumeric():
+                # This is a global immutable var.
+                var = _global_vars[int(serialized_data)]
+                var_data = var._var_data
 
-            var_datas.append(var_data)
+                if var_data is not None:
+                    realstart = start + offset
+                    var_data.interpolations = [
+                        (realstart, realstart + len(var._var_name))
+                    ]
+
+                    var_datas.append(var_data)
+            else:
+                # Read the JSON, pull out the string length, parse the rest as VarData.
+                data = json_loads(serialized_data)
+                string_length = data.pop("string_length", None)
+                var_data = VarData.parse_obj(data)
+
+                # Use string length to compute positions of interpolations.
+                if string_length is not None:
+                    realstart = start + offset
+                    var_data.interpolations = [(realstart, realstart + string_length)]
+
+                var_datas.append(var_data)
             offset += end - start
 
     return VarData.merge(*var_datas) if var_datas else None, value
@@ -496,6 +514,9 @@ class Var:
 
         Returns:
             A new BaseVar with the updated fields overwriting the corresponding fields in this Var.
+
+        Raises:
+            TypeError: If kwargs contains keys that are not allowed.
         """
         field_values = dict(
             _var_name=kwargs.pop("_var_name", self._var_name),
@@ -507,9 +528,14 @@ class Var:
                 self._var_full_name_needs_state_prefix,
             ),
             _var_data=VarData.merge(
-                kwargs.get("_var_data", self._var_data), merge_var_data
+                kwargs.pop("_var_data", self._var_data), merge_var_data
             ),
         )
+
+        if kwargs:
+            unexpected_kwargs = ", ".join(kwargs.keys())
+            raise TypeError(f"Unexpected keyword arguments: {unexpected_kwargs}")
+
         return BaseVar(**field_values)
 
     def _decode(self) -> Any:
@@ -2024,25 +2050,34 @@ class ComputedVar(Var, property):
 
         Returns:
             The new ComputedVar instance.
+
+        Raises:
+            TypeError: If kwargs contains keys that are not allowed.
         """
-        return ComputedVar(
-            fget=kwargs.get("fget", self.fget),
-            initial_value=kwargs.get("initial_value", self._initial_value),
-            cache=kwargs.get("cache", self._cache),
-            deps=kwargs.get("deps", self._static_deps),
-            auto_deps=kwargs.get("auto_deps", self._auto_deps),
-            interval=kwargs.get("interval", self._update_interval),
-            backend=kwargs.get("backend", self._backend),
-            _var_name=kwargs.get("_var_name", self._var_name),
-            _var_type=kwargs.get("_var_type", self._var_type),
-            _var_is_local=kwargs.get("_var_is_local", self._var_is_local),
-            _var_is_string=kwargs.get("_var_is_string", self._var_is_string),
-            _var_full_name_needs_state_prefix=kwargs.get(
+        field_values = dict(
+            fget=kwargs.pop("fget", self.fget),
+            initial_value=kwargs.pop("initial_value", self._initial_value),
+            cache=kwargs.pop("cache", self._cache),
+            deps=kwargs.pop("deps", self._static_deps),
+            auto_deps=kwargs.pop("auto_deps", self._auto_deps),
+            interval=kwargs.pop("interval", self._update_interval),
+            backend=kwargs.pop("backend", self._backend),
+            _var_name=kwargs.pop("_var_name", self._var_name),
+            _var_type=kwargs.pop("_var_type", self._var_type),
+            _var_is_local=kwargs.pop("_var_is_local", self._var_is_local),
+            _var_is_string=kwargs.pop("_var_is_string", self._var_is_string),
+            _var_full_name_needs_state_prefix=kwargs.pop(
                 "_var_full_name_needs_state_prefix",
                 self._var_full_name_needs_state_prefix,
             ),
             _var_data=VarData.merge(self._var_data, merge_var_data),
         )
+
+        if kwargs:
+            unexpected_kwargs = ", ".join(kwargs.keys())
+            raise TypeError(f"Unexpected keyword arguments: {unexpected_kwargs}")
+
+        return ComputedVar(**field_values)
 
     @property
     def _cache_attr(self) -> str:
