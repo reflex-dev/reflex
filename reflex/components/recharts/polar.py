@@ -156,10 +156,25 @@ class RadialBar(Recharts):
     label: Var[Union[bool, Dict[str, Any]]]
 
     # If false set, background sector will not be drawn.
-    background: Var[bool]
+    background: Var[Union[bool, Dict[str, Any]]]
+
+    # The source data which each element is an object.
+    data: Var[List[Dict[str, Any]]]
+
+    # If set false, animation of radial bars will be disabled.
+    is_animation_active: Var[bool]
+
+    # Specifies when the animation should begin, the unit of this option is ms.
+    animation_begin: Var[int]
+
+    # Specifies the duration of animation, the unit of this option is ms.
+    animation_duration: Var[int]
+
+    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
+    animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
-    _valid_children: List[str] = ["LabelList"]
+    _valid_children: List[str] = ["Cell","LabelList"]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -174,6 +189,8 @@ class RadialBar(Recharts):
             EventTriggers.ON_MOUSE_OUT: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+            EventTriggers.ON_ANIMATION_START: lambda: [],
+            EventTriggers.ON_ANIMATION_END: lambda: [],
         }
 
 
