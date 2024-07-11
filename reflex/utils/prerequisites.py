@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import glob
 import importlib
+import importlib.metadata
 import inspect
 import json
 import os
@@ -23,7 +24,6 @@ from types import ModuleType
 from typing import Callable, List, Optional
 
 import httpx
-import pkg_resources
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
@@ -61,7 +61,7 @@ class CpuInfo(Base):
 def get_web_dir() -> Path:
     """Get the working directory for the next.js commands.
 
-    Can be overriden with REFLEX_WEB_WORKDIR.
+    Can be overridden with REFLEX_WEB_WORKDIR.
 
     Returns:
         The working directory.
@@ -78,7 +78,7 @@ def check_latest_package_version(package_name: str):
     """
     try:
         # Get the latest version from PyPI
-        current_version = pkg_resources.get_distribution(package_name).version
+        current_version = importlib.metadata.version(package_name)
         url = f"https://pypi.org/pypi/{package_name}/json"
         response = httpx.get(url)
         latest_version = response.json()["info"]["version"]
