@@ -1256,8 +1256,6 @@ async def process(
         )
         # Get the state for the session exclusively.
         async with app.state_manager.modify_state(event.substate_token) as state:
-            current_session_id = state.router.session.session_id
-
             # re-assign only when the value is different
             if state.router_data != router_data:
                 # assignment will recurse into substates and force recalculation of
@@ -1268,16 +1266,7 @@ async def process(
                 else:
                     state.router = RouterData(router_data)
 
-            # Update session status.
-            new_session_id = state.router.session.session_id
-            if (
-                current_session_id
-                and new_session_id
-                and current_session_id != new_session_id
-            ):
-                state._session_status.update(SessionStatusEnum.RECONNECTED)
-            else:
-                state._session_status.update(SessionStatusEnum.CONNECTED)
+            state._session_status.update(SessionStatusEnum.CONNECTED)
 
             # Preprocess the event.
             update = await app._preprocess(state, event)

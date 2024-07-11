@@ -130,7 +130,6 @@ class SessionStatusEnum(enum.Enum):
     INITIAL = "initial"
     CONNECTED = "connected"
     DISCONNECTED = "disconnected"
-    RECONNECTED = "reconnected"
 
 
 class SessionStatus(Base):
