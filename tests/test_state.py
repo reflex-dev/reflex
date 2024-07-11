@@ -8,7 +8,7 @@ import json
 import os
 import sys
 from textwrap import dedent
-from typing import Any, Dict, Generator, List, Optional, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -40,6 +40,7 @@ from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
 from reflex.vars import BaseVar, ComputedVar, mark_used
+from tests.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
 
@@ -262,7 +263,7 @@ def child_state(test_state) -> ChildState:
     Returns:
         A test child state.
     """
-    child_state = test_state.get_substate(["child_state"])
+    child_state = test_state.get_substate([ChildState.get_name()])
     assert child_state is not None
     return child_state
 
@@ -277,7 +278,7 @@ def child_state2(test_state) -> ChildState2:
     Returns:
         A second test child state.
     """
-    child_state2 = test_state.get_substate(["child_state2"])
+    child_state2 = test_state.get_substate([ChildState2.get_name()])
     assert child_state2 is not None
     return child_state2
 
@@ -292,7 +293,7 @@ def grandchild_state(child_state) -> GrandchildState:
     Returns:
         A test state.
     """
-    grandchild_state = child_state.get_substate(["grandchild_state"])
+    grandchild_state = child_state.get_substate([GrandchildState.get_name()])
     assert grandchild_state is not None
     return grandchild_state
 
@@ -427,20 +428,20 @@ def test_computed_vars(test_state):
     assert test_state.upper == "HELLO WORLD"
 
 
-def test_dict(test_state):
+def test_dict(test_state: TestState):
     """Test that the dict representation of a state is correct.
 
     Args:
         test_state: A state.
     """
     substates = {
-        "test_state",
-        "test_state.child_state",
-        "test_state.child_state.grandchild_state",
-        "test_state.child_state2",
-        "test_state.child_state2.grandchild_state2",
-        "test_state.child_state3",
-        "test_state.child_state3.grandchild_state3",
+        test_state.get_full_name(),
+        ChildState.get_full_name(),
+        GrandchildState.get_full_name(),
+        ChildState2.get_full_name(),
+        GrandchildState2.get_full_name(),
+        ChildState3.get_full_name(),
+        GrandchildState3.get_full_name(),
     }
     test_state_dict = test_state.dict()
     assert set(test_state_dict) == substates
@@ -471,22 +472,30 @@ def test_default_setters(test_state):
 def test_class_indexing_with_vars():
     """Test that we can index into a state var with another var."""
     prop = TestState.array[TestState.num1]
-    assert str(prop) == "{test_state.array.at(test_state.num1)}"
+    assert (
+        str(prop) == f"{{{TestState.get_name()}.array.at({TestState.get_name()}.num1)}}"
+    )
 
     prop = TestState.mapping["a"][TestState.num1]
-    assert str(prop) == '{test_state.mapping["a"].at(test_state.num1)}'
+    assert (
+        str(prop)
+        == f'{{{TestState.get_name()}.mapping["a"].at({TestState.get_name()}.num1)}}'
+    )
 
     prop = TestState.mapping[TestState.map_key]
-    assert str(prop) == "{test_state.mapping[test_state.map_key]}"
+    assert (
+        str(prop)
+        == f"{{{TestState.get_name()}.mapping[{TestState.get_name()}.map_key]}}"
+    )
 
 
 def test_class_attributes():
     """Test that we can get class attributes."""
     prop = TestState.obj.prop1
-    assert str(prop) == "{test_state.obj.prop1}"
+    assert str(prop) == f"{{{TestState.get_name()}.obj.prop1}}"
 
     prop = TestState.complex[1].prop1
-    assert str(prop) == "{test_state.complex[1].prop1}"
+    assert str(prop) == f"{{{TestState.get_name()}.complex[1].prop1}}"
 
 
 def test_get_parent_state():
@@ -508,27 +517,40 @@ def test_get_substates():
 
 def test_get_name():
     """Test getting the name of a state."""
-    assert TestState.get_name() == "test_state"
-    assert ChildState.get_name() == "child_state"
-    assert ChildState2.get_name() == "child_state2"
-    assert GrandchildState.get_name() == "grandchild_state"
+    assert TestState.get_name() == "tests___test_state____test_state"
+    assert ChildState.get_name() == "tests___test_state____child_state"
+    assert ChildState2.get_name() == "tests___test_state____child_state2"
+    assert GrandchildState.get_name() == "tests___test_state____grandchild_state"
 
 
 def test_get_full_name():
     """Test getting the full name."""
-    assert TestState.get_full_name() == "test_state"
-    assert ChildState.get_full_name() == "test_state.child_state"
-    assert ChildState2.get_full_name() == "test_state.child_state2"
-    assert GrandchildState.get_full_name() == "test_state.child_state.grandchild_state"
+    assert TestState.get_full_name() == "tests___test_state____test_state"
+    assert (
+        ChildState.get_full_name()
+        == "tests___test_state____test_state.tests___test_state____child_state"
+    )
+    assert (
+        ChildState2.get_full_name()
+        == "tests___test_state____test_state.tests___test_state____child_state2"
+    )
+    assert (
+        GrandchildState.get_full_name()
+        == "tests___test_state____test_state.tests___test_state____child_state.tests___test_state____grandchild_state"
+    )
 
 
 def test_get_class_substate():
     """Test getting the substate of a class."""
-    assert TestState.get_class_substate(("child_state",)) == ChildState
-    assert TestState.get_class_substate(("child_state2",)) == ChildState2
-    assert ChildState.get_class_substate(("grandchild_state",)) == GrandchildState
+    assert TestState.get_class_substate((ChildState.get_name(),)) == ChildState
+    assert TestState.get_class_substate((ChildState2.get_name(),)) == ChildState2
     assert (
-        TestState.get_class_substate(("child_state", "grandchild_state"))
+        ChildState.get_class_substate((GrandchildState.get_name(),)) == GrandchildState
+    )
+    assert (
+        TestState.get_class_substate(
+            (ChildState.get_name(), GrandchildState.get_name())
+        )
         == GrandchildState
     )
     with pytest.raises(ValueError):
@@ -536,7 +558,7 @@ def test_get_class_substate():
     with pytest.raises(ValueError):
         TestState.get_class_substate(
             (
-                "child_state",
+                ChildState.get_name(),
                 "invalid_child",
             )
         )
@@ -548,13 +570,15 @@ def test_get_class_var():
     assert TestState.get_class_var(("num2",)).equals(TestState.num2)
     assert ChildState.get_class_var(("value",)).equals(ChildState.value)
     assert GrandchildState.get_class_var(("value2",)).equals(GrandchildState.value2)
-    assert TestState.get_class_var(("child_state", "value")).equals(ChildState.value)
+    assert TestState.get_class_var((ChildState.get_name(), "value")).equals(
+        ChildState.value
+    )
     assert TestState.get_class_var(
-        ("child_state", "grandchild_state", "value2")
+        (ChildState.get_name(), GrandchildState.get_name(), "value2")
     ).equals(
         GrandchildState.value2,
     )
-    assert ChildState.get_class_var(("grandchild_state", "value2")).equals(
+    assert ChildState.get_class_var((GrandchildState.get_name(), "value2")).equals(
         GrandchildState.value2,
     )
     with pytest.raises(ValueError):
@@ -562,7 +586,7 @@ def test_get_class_var():
     with pytest.raises(ValueError):
         TestState.get_class_var(
             (
-                "child_state",
+                ChildState.get_name(),
                 "invalid_var",
             )
         )
@@ -590,11 +614,15 @@ def test_set_parent_and_substates(test_state, child_state, grandchild_state):
         grandchild_state: A grandchild state.
     """
     assert len(test_state.substates) == 3
-    assert set(test_state.substates) == {"child_state", "child_state2", "child_state3"}
+    assert set(test_state.substates) == {
+        ChildState.get_name(),
+        ChildState2.get_name(),
+        ChildState3.get_name(),
+    }
 
     assert child_state.parent_state == test_state
     assert len(child_state.substates) == 1
-    assert set(child_state.substates) == {"grandchild_state"}
+    assert set(child_state.substates) == {GrandchildState.get_name()}
 
     assert grandchild_state.parent_state == child_state
     assert len(grandchild_state.substates) == 0
@@ -661,18 +689,21 @@ def test_get_substate(test_state, child_state, child_state2, grandchild_state):
         child_state2: A child state.
         grandchild_state: A grandchild state.
     """
-    assert test_state.get_substate(("child_state",)) == child_state
-    assert test_state.get_substate(("child_state2",)) == child_state2
+    assert test_state.get_substate((ChildState.get_name(),)) == child_state
+    assert test_state.get_substate((ChildState2.get_name(),)) == child_state2
     assert (
-        test_state.get_substate(("child_state", "grandchild_state")) == grandchild_state
+        test_state.get_substate((ChildState.get_name(), GrandchildState.get_name()))
+        == grandchild_state
     )
-    assert child_state.get_substate(("grandchild_state",)) == grandchild_state
+    assert child_state.get_substate((GrandchildState.get_name(),)) == grandchild_state
     with pytest.raises(ValueError):
         test_state.get_substate(("invalid",))
     with pytest.raises(ValueError):
-        test_state.get_substate(("child_state", "invalid"))
+        test_state.get_substate((ChildState.get_name(), "invalid"))
     with pytest.raises(ValueError):
-        test_state.get_substate(("child_state", "grandchild_state", "invalid"))
+        test_state.get_substate(
+            (ChildState.get_name(), GrandchildState.get_name(), "invalid")
+        )
 
 
 def test_set_dirty_var(test_state):
@@ -715,7 +746,7 @@ def test_set_dirty_substate(test_state, child_state, child_state2, grandchild_st
     # Setting a var should mark it as dirty.
     child_state.value = "test"
     assert child_state.dirty_vars == {"value"}
-    assert test_state.dirty_substates == {"child_state"}
+    assert test_state.dirty_substates == {ChildState.get_name()}
     assert child_state.dirty_substates == set()
 
     # Cleaning the parent state should remove the dirty substate.
@@ -725,12 +756,12 @@ def test_set_dirty_substate(test_state, child_state, child_state2, grandchild_st
 
     # Setting a var on the grandchild should bubble up.
     grandchild_state.value2 = "test2"
-    assert child_state.dirty_substates == {"grandchild_state"}
-    assert test_state.dirty_substates == {"child_state"}
+    assert child_state.dirty_substates == {GrandchildState.get_name()}
+    assert test_state.dirty_substates == {ChildState.get_name()}
 
     # Cleaning the middle state should keep the parent state dirty.
     child_state._clean()
-    assert test_state.dirty_substates == {"child_state"}
+    assert test_state.dirty_substates == {ChildState.get_name()}
     assert child_state.dirty_substates == set()
     assert grandchild_state.dirty_vars == set()
 
@@ -776,7 +807,11 @@ def test_reset(test_state, child_state):
     assert child_state.dirty_vars == {"count", "value"}
 
     # The dirty substates should be reset.
-    assert test_state.dirty_substates == {"child_state", "child_state2", "child_state3"}
+    assert test_state.dirty_substates == {
+        ChildState.get_name(),
+        ChildState2.get_name(),
+        ChildState3.get_name(),
+    }
 
 
 @pytest.mark.asyncio
@@ -797,8 +832,8 @@ async def test_process_event_simple(test_state):
     # The delta should contain the changes, including computed vars.
     # assert update.delta == {"test_state": {"num1": 69, "sum": 72.14}}
     assert update.delta == {
-        "test_state": {"num1": 69, "sum": 72.14, "upper": ""},
-        "test_state.child_state3.grandchild_state3": {"computed": ""},
+        TestState.get_full_name(): {"num1": 69, "sum": 72.14, "upper": ""},
+        GrandchildState3.get_full_name(): {"computed": ""},
     }
     assert update.events == []
 
@@ -816,15 +851,17 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     assert child_state.value == ""
     assert child_state.count == 23
     event = Event(
-        token="t", name="child_state.change_both", payload={"value": "hi", "count": 12}
+        token="t",
+        name=f"{ChildState.get_name()}.change_both",
+        payload={"value": "hi", "count": 12},
     )
     update = await test_state._process(event).__anext__()
     assert child_state.value == "HI"
     assert child_state.count == 24
     assert update.delta == {
-        "test_state": {"sum": 3.14, "upper": ""},
-        "test_state.child_state": {"value": "HI", "count": 24},
-        "test_state.child_state3.grandchild_state3": {"computed": ""},
+        TestState.get_full_name(): {"sum": 3.14, "upper": ""},
+        ChildState.get_full_name(): {"value": "HI", "count": 24},
+        GrandchildState3.get_full_name(): {"computed": ""},
     }
     test_state._clean()
 
@@ -832,15 +869,15 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     assert grandchild_state.value2 == ""
     event = Event(
         token="t",
-        name="child_state.grandchild_state.set_value2",
+        name=f"{GrandchildState.get_full_name()}.set_value2",
         payload={"value": "new"},
     )
     update = await test_state._process(event).__anext__()
     assert grandchild_state.value2 == "new"
     assert update.delta == {
-        "test_state": {"sum": 3.14, "upper": ""},
-        "test_state.child_state.grandchild_state": {"value2": "new"},
-        "test_state.child_state3.grandchild_state3": {"computed": ""},
+        TestState.get_full_name(): {"sum": 3.14, "upper": ""},
+        GrandchildState.get_full_name(): {"value2": "new"},
+        GrandchildState3.get_full_name(): {"computed": ""},
     }
 
 
@@ -864,7 +901,7 @@ async def test_process_event_generator():
         else:
             assert gen_state.value == count
             assert update.delta == {
-                "gen_state": {"value": count},
+                GenState.get_full_name(): {"value": count},
             }
             assert not update.final
 
@@ -1499,7 +1536,7 @@ def test_backend_method():
     assert bms._be_method()
 
 
-def test_setattr_of_mutable_types(mutable_state):
+def test_setattr_of_mutable_types(mutable_state: MutableTestState):
     """Test that mutable types are converted to corresponding Reflex wrappers.
 
     Args:
@@ -1508,6 +1545,7 @@ def test_setattr_of_mutable_types(mutable_state):
     array = mutable_state.array
     hashmap = mutable_state.hashmap
     test_set = mutable_state.test_set
+    sqla_model = mutable_state.sqla_model
 
     assert isinstance(array, MutableProxy)
     assert isinstance(array, list)
@@ -1535,11 +1573,21 @@ def test_setattr_of_mutable_types(mutable_state):
     assert isinstance(mutable_state.custom.test_set, set)
     assert isinstance(mutable_state.custom.custom, MutableProxy)
 
+    assert isinstance(sqla_model, MutableProxy)
+    assert isinstance(sqla_model, MutableSQLAModel)
+    assert isinstance(sqla_model.strlist, MutableProxy)
+    assert isinstance(sqla_model.strlist, list)
+    assert isinstance(sqla_model.hashmap, MutableProxy)
+    assert isinstance(sqla_model.hashmap, dict)
+    assert isinstance(sqla_model.test_set, MutableProxy)
+    assert isinstance(sqla_model.test_set, set)
+
     mutable_state.reassign_mutables()
 
     array = mutable_state.array
     hashmap = mutable_state.hashmap
     test_set = mutable_state.test_set
+    sqla_model = mutable_state.sqla_model
 
     assert isinstance(array, MutableProxy)
     assert isinstance(array, list)
@@ -1558,6 +1606,15 @@ def test_setattr_of_mutable_types(mutable_state):
     assert isinstance(test_set, MutableProxy)
     assert isinstance(test_set, set)
 
+    assert isinstance(sqla_model, MutableProxy)
+    assert isinstance(sqla_model, MutableSQLAModel)
+    assert isinstance(sqla_model.strlist, MutableProxy)
+    assert isinstance(sqla_model.strlist, list)
+    assert isinstance(sqla_model.hashmap, MutableProxy)
+    assert isinstance(sqla_model.hashmap, dict)
+    assert isinstance(sqla_model.test_set, MutableProxy)
+    assert isinstance(sqla_model.test_set, set)
+
 
 def test_error_on_state_method_shadow():
     """Test that an error is thrown when an event handler shadows a state method."""
@@ -1574,11 +1631,13 @@ def test_error_on_state_method_shadow():
 
 
 @pytest.mark.asyncio
-async def test_state_with_invalid_yield(capsys):
+async def test_state_with_invalid_yield(capsys, mock_app):
     """Test that an error is thrown when a state yields an invalid value.
 
     Args:
         capsys: Pytest fixture for capture standard streams.
+        mock_app: Mock app fixture.
+
     """
 
     class StateWithInvalidYield(BaseState):
@@ -2042,7 +2101,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         mock_app,
         Event(
             token=token,
-            name=f"{BackgroundTaskState.get_name()}.background_task",
+            name=f"{BackgroundTaskState.get_full_name()}.background_task",
             router_data=router_data,
             payload={},
         ),
@@ -2062,7 +2121,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         mock_app,
         Event(
             token=token,
-            name=f"{BackgroundTaskState.get_name()}.other",
+            name=f"{BackgroundTaskState.get_full_name()}.other",
             router_data=router_data,
             payload={},
         ),
@@ -2073,7 +2132,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         # other task returns delta
         assert update == StateUpdate(
             delta={
-                BackgroundTaskState.get_name(): {
+                BackgroundTaskState.get_full_name(): {
                     "order": [
                         "background_task:start",
                         "other",
@@ -2109,10 +2168,13 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     emit_mock = mock_app.event_namespace.emit
 
     first_ws_message = json.loads(emit_mock.mock_calls[0].args[1])
-    assert first_ws_message["delta"]["background_task_state"].pop("router") is not None
+    assert (
+        first_ws_message["delta"][BackgroundTaskState.get_full_name()].pop("router")
+        is not None
+    )
     assert first_ws_message == {
         "delta": {
-            "background_task_state": {
+            BackgroundTaskState.get_full_name(): {
                 "order": ["background_task:start"],
                 "computed_order": ["background_task:start"],
             }
@@ -2123,14 +2185,16 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     for call in emit_mock.mock_calls[1:5]:
         assert json.loads(call.args[1]) == {
             "delta": {
-                "background_task_state": {"computed_order": ["background_task:start"]}
+                BackgroundTaskState.get_full_name(): {
+                    "computed_order": ["background_task:start"],
+                }
             },
             "events": [],
             "final": True,
         }
     assert json.loads(emit_mock.mock_calls[-2].args[1]) == {
         "delta": {
-            "background_task_state": {
+            BackgroundTaskState.get_full_name(): {
                 "order": exp_order,
                 "computed_order": exp_order,
                 "dict_list": {},
@@ -2141,7 +2205,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     }
     assert json.loads(emit_mock.mock_calls[-1].args[1]) == {
         "delta": {
-            "background_task_state": {
+            BackgroundTaskState.get_full_name(): {
                 "computed_order": exp_order,
             },
         },
@@ -2199,7 +2263,7 @@ async def test_background_task_no_chain():
         await bts.bad_chain2()
 
 
-def test_mutable_list(mutable_state):
+def test_mutable_list(mutable_state: MutableTestState):
     """Test that mutable lists are tracked correctly.
 
     Args:
@@ -2229,7 +2293,7 @@ def test_mutable_list(mutable_state):
     assert_array_dirty()
     mutable_state.array.reverse()
     assert_array_dirty()
-    mutable_state.array.sort()
+    mutable_state.array.sort()  # type: ignore[reportCallIssue,reportUnknownMemberType]
     assert_array_dirty()
     mutable_state.array[0] = 666
     assert_array_dirty()
@@ -2253,7 +2317,7 @@ def test_mutable_list(mutable_state):
         assert_array_dirty()
 
 
-def test_mutable_dict(mutable_state):
+def test_mutable_dict(mutable_state: MutableTestState):
     """Test that mutable dicts are tracked correctly.
 
     Args:
@@ -2267,40 +2331,40 @@ def test_mutable_dict(mutable_state):
         assert not mutable_state.dirty_vars
 
     # Test all dict operations
-    mutable_state.hashmap.update({"new_key": 43})
+    mutable_state.hashmap.update({"new_key": "43"})
     assert_hashmap_dirty()
-    assert mutable_state.hashmap.setdefault("another_key", 66) == "another_value"
+    assert mutable_state.hashmap.setdefault("another_key", "66") == "another_value"
     assert_hashmap_dirty()
-    assert mutable_state.hashmap.setdefault("setdefault_key", 67) == 67
+    assert mutable_state.hashmap.setdefault("setdefault_key", "67") == "67"
     assert_hashmap_dirty()
-    assert mutable_state.hashmap.setdefault("setdefault_key", 68) == 67
+    assert mutable_state.hashmap.setdefault("setdefault_key", "68") == "67"
     assert_hashmap_dirty()
-    assert mutable_state.hashmap.pop("new_key") == 43
+    assert mutable_state.hashmap.pop("new_key") == "43"
     assert_hashmap_dirty()
     mutable_state.hashmap.popitem()
     assert_hashmap_dirty()
     mutable_state.hashmap.clear()
     assert_hashmap_dirty()
-    mutable_state.hashmap["new_key"] = 42
+    mutable_state.hashmap["new_key"] = "42"
     assert_hashmap_dirty()
     del mutable_state.hashmap["new_key"]
     assert_hashmap_dirty()
     if sys.version_info >= (3, 9):
-        mutable_state.hashmap |= {"new_key": 44}
+        mutable_state.hashmap |= {"new_key": "44"}
         assert_hashmap_dirty()
 
     # Test nested dict operations
     mutable_state.hashmap["array"] = []
     assert_hashmap_dirty()
-    mutable_state.hashmap["array"].append(1)
+    mutable_state.hashmap["array"].append("1")
     assert_hashmap_dirty()
     mutable_state.hashmap["dict"] = {}
     assert_hashmap_dirty()
-    mutable_state.hashmap["dict"]["key"] = 42
+    mutable_state.hashmap["dict"]["key"] = "42"
     assert_hashmap_dirty()
     mutable_state.hashmap["dict"]["dict"] = {}
     assert_hashmap_dirty()
-    mutable_state.hashmap["dict"]["dict"]["key"] = 43
+    mutable_state.hashmap["dict"]["dict"]["key"] = "43"
     assert_hashmap_dirty()
 
     # Test proxy returned from `setdefault` and `get`
@@ -2322,14 +2386,14 @@ def test_mutable_dict(mutable_state):
     mutable_value_third_ref = mutable_state.hashmap.pop("setdefault_mutable_key")
     assert not isinstance(mutable_value_third_ref, MutableProxy)
     assert_hashmap_dirty()
-    mutable_value_third_ref.append("baz")
+    mutable_value_third_ref.append("baz")  # type: ignore[reportUnknownMemberType,reportAttributeAccessIssue,reportUnusedCallResult]
     assert not mutable_state.dirty_vars
     # Unfortunately previous refs still will mark the state dirty... nothing doing about that
     assert mutable_value.pop()
     assert_hashmap_dirty()
 
 
-def test_mutable_set(mutable_state):
+def test_mutable_set(mutable_state: MutableTestState):
     """Test that mutable sets are tracked correctly.
 
     Args:
@@ -2371,7 +2435,7 @@ def test_mutable_set(mutable_state):
     assert_set_dirty()
 
 
-def test_mutable_custom(mutable_state):
+def test_mutable_custom(mutable_state: MutableTestState):
     """Test that mutable custom types derived from Base are tracked correctly.
 
     Args:
@@ -2386,17 +2450,38 @@ def test_mutable_custom(mutable_state):
 
     mutable_state.custom.foo = "bar"
     assert_custom_dirty()
-    mutable_state.custom.array.append(42)
+    mutable_state.custom.array.append("42")
     assert_custom_dirty()
-    mutable_state.custom.hashmap["key"] = 68
+    mutable_state.custom.hashmap["key"] = "value"
     assert_custom_dirty()
-    mutable_state.custom.test_set.add(42)
+    mutable_state.custom.test_set.add("foo")
     assert_custom_dirty()
     mutable_state.custom.custom.bar = "baz"
     assert_custom_dirty()
 
 
-def test_mutable_backend(mutable_state):
+def test_mutable_sqla_model(mutable_state: MutableTestState):
+    """Test that mutable SQLA models are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
+    assert not mutable_state.dirty_vars
+
+    def assert_sqla_model_dirty():
+        assert mutable_state.dirty_vars == {"sqla_model"}
+        mutable_state._clean()
+        assert not mutable_state.dirty_vars
+
+    mutable_state.sqla_model.strlist.append("foo")
+    assert_sqla_model_dirty()
+    mutable_state.sqla_model.hashmap["key"] = "value"
+    assert_sqla_model_dirty()
+    mutable_state.sqla_model.test_set.add("bar")
+    assert_sqla_model_dirty()
+
+
+def test_mutable_backend(mutable_state: MutableTestState):
     """Test that mutable backend vars are tracked correctly.
 
     Args:
@@ -2411,11 +2496,11 @@ def test_mutable_backend(mutable_state):
 
     mutable_state._be_custom.foo = "bar"
     assert_custom_dirty()
-    mutable_state._be_custom.array.append(42)
+    mutable_state._be_custom.array.append("baz")
     assert_custom_dirty()
-    mutable_state._be_custom.hashmap["key"] = 68
+    mutable_state._be_custom.hashmap["key"] = "value"
     assert_custom_dirty()
-    mutable_state._be_custom.test_set.add(42)
+    mutable_state._be_custom.test_set.add("foo")
     assert_custom_dirty()
     mutable_state._be_custom.custom.bar = "baz"
     assert_custom_dirty()
@@ -2428,7 +2513,7 @@ def test_mutable_backend(mutable_state):
         (copy.deepcopy,),
     ],
 )
-def test_mutable_copy(mutable_state, copy_func):
+def test_mutable_copy(mutable_state: MutableTestState, copy_func: Callable):
     """Test that mutable types are copied correctly.
 
     Args:
@@ -2455,7 +2540,7 @@ def test_mutable_copy(mutable_state, copy_func):
         (copy.deepcopy,),
     ],
 )
-def test_mutable_copy_vars(mutable_state, copy_func):
+def test_mutable_copy_vars(mutable_state: MutableTestState, copy_func: Callable):
     """Test that mutable types are copied correctly.
 
     Args:
@@ -2772,7 +2857,7 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
         assert isinstance(update, StateUpdate)
         updates.append(update)
     assert len(updates) == 1
-    assert updates[0].delta["state"].pop("router") is not None
+    assert updates[0].delta[State.get_name()].pop("router") is not None
     assert updates[0].delta == exp_is_hydrated(state, False)
 
     events = updates[0].events
@@ -2816,7 +2901,7 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         assert isinstance(update, StateUpdate)
         updates.append(update)
     assert len(updates) == 1
-    assert updates[0].delta["state"].pop("router") is not None
+    assert updates[0].delta[State.get_name()].pop("router") is not None
     assert updates[0].delta == exp_is_hydrated(state, False)
 
     events = updates[0].events
@@ -2848,22 +2933,27 @@ async def test_get_state(mock_app: rx.App, token: str):
     if isinstance(mock_app.state_manager, StateManagerMemory):
         # All substates are available
         assert tuple(sorted(test_state.substates)) == (
-            "child_state",
-            "child_state2",
-            "child_state3",
+            ChildState.get_name(),
+            ChildState2.get_name(),
+            ChildState3.get_name(),
         )
     else:
         # Sibling states are only populated if they have computed vars
-        assert tuple(sorted(test_state.substates)) == ("child_state2", "child_state3")
+        assert tuple(sorted(test_state.substates)) == (
+            ChildState2.get_name(),
+            ChildState3.get_name(),
+        )
 
     # Because ChildState3 has a computed var, it is always dirty, and always populated.
     assert (
-        test_state.substates["child_state3"].substates["grandchild_state3"].computed
+        test_state.substates[ChildState3.get_name()]
+        .substates[GrandchildState3.get_name()]
+        .computed
         == ""
     )
 
     # Get the child_state2 directly.
-    child_state2_direct = test_state.get_substate(["child_state2"])
+    child_state2_direct = test_state.get_substate([ChildState2.get_name()])
     child_state2_get_state = await test_state.get_state(ChildState2)
     # These should be the same object.
     assert child_state2_direct is child_state2_get_state
@@ -2874,19 +2964,21 @@ async def test_get_state(mock_app: rx.App, token: str):
 
     # Now the original root should have all substates populated.
     assert tuple(sorted(test_state.substates)) == (
-        "child_state",
-        "child_state2",
-        "child_state3",
+        ChildState.get_name(),
+        ChildState2.get_name(),
+        ChildState3.get_name(),
     )
 
     # ChildState should be retrievable
-    child_state_direct = test_state.get_substate(["child_state"])
+    child_state_direct = test_state.get_substate([ChildState.get_name()])
     child_state_get_state = await test_state.get_state(ChildState)
     # These should be the same object.
     assert child_state_direct is child_state_get_state
 
     # GrandchildState instance should be the same as the one retrieved from the child_state2.
-    assert grandchild_state is child_state_direct.get_substate(["grandchild_state"])
+    assert grandchild_state is child_state_direct.get_substate(
+        [GrandchildState.get_name()]
+    )
     grandchild_state.value2 = "set_value"
 
     assert test_state.get_delta() == {
@@ -2913,21 +3005,21 @@ async def test_get_state(mock_app: rx.App, token: str):
         test_state._clean()
         # All substates are available
         assert tuple(sorted(new_test_state.substates)) == (
-            "child_state",
-            "child_state2",
-            "child_state3",
+            ChildState.get_name(),
+            ChildState2.get_name(),
+            ChildState3.get_name(),
         )
     else:
         # With redis, we get a whole new instance
         assert new_test_state is not test_state
         # Sibling states are only populated if they have computed vars
         assert tuple(sorted(new_test_state.substates)) == (
-            "child_state2",
-            "child_state3",
+            ChildState2.get_name(),
+            ChildState3.get_name(),
         )
 
     # Set a value on child_state2, should update cached var in grandchild_state2
-    child_state2 = new_test_state.get_substate(("child_state2",))
+    child_state2 = new_test_state.get_substate((ChildState2.get_name(),))
     child_state2.value = "set_c2_value"
 
     assert new_test_state.get_delta() == {
@@ -3018,8 +3110,8 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
 
     if isinstance(mock_app.state_manager, StateManagerRedis):
         # When redis is used, only states with computed vars are pre-fetched.
-        assert "child2" not in root.substates
-        assert "child3" in root.substates  # (due to @rx.var)
+        assert Child2.get_name() not in root.substates
+        assert Child3.get_name() in root.substates  # (due to @rx.var)
 
     # Get the unconnected sibling state, which will be used to `get_state` other instances.
     child = root.get_substate(Child.get_full_name().split("."))

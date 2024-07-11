@@ -6,9 +6,10 @@ import dataclasses
 import sys
 from typing import Any, Optional, Type
 
+from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.utils import serializers, types
 from reflex.utils.exceptions import VarTypeError
-from reflex.vars import Var, VarData, _extract_var_data
+from reflex.vars import Var, VarData, _decode_var, _extract_var_data, _global_vars
 
 
 @dataclasses.dataclass(
@@ -54,6 +55,15 @@ class ImmutableVar(Var):
             False
         """
         return False
+
+    def __post_init__(self):
+        """Post-initialize the var."""
+        # Decode any inline Var markup and apply it to the instance
+        _var_data, _var_name = _decode_var(self._var_name)
+        if _var_data:
+            self.__init__(
+                _var_name, self._var_type, VarData.merge(self._var_data, _var_data)
+            )
 
     def _replace(self, merge_var_data=None, **kwargs: Any):
         """Make a copy of this Var with updated fields.
@@ -156,3 +166,45 @@ class ImmutableVar(Var):
             _var_type=type_,
             _var_data=_var_data,
         )
+
+    @classmethod
+    def create_safe(
+        cls,
+        value: Any,
+        _var_is_local: bool | None = None,
+        _var_is_string: bool | None = None,
+        _var_data: VarData | None = None,
+    ) -> Var:
+        """Create a var from a value, asserting that it is not None.
+
+        Args:
+            value: The value to create the var from.
+            _var_is_local: Whether the var is local. Deprecated.
+            _var_is_string: Whether the var is a string literal. Deprecated.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        var = cls.create(
+            value,
+            _var_is_local=_var_is_local,
+            _var_is_string=_var_is_string,
+            _var_data=_var_data,
+        )
+        assert var is not None
+        return var
+
+    def __format__(self, format_spec: str) -> str:
+        """Format the var into a Javascript equivalent to an f-string.
+
+        Args:
+            format_spec: The format specifier (Ignored for now).
+
+        Returns:
+            The formatted var.
+        """
+        _global_vars[hash(self)] = self
+
+        # Encode the _var_data into the formatted output for tracking purposes.
+        return f"{REFLEX_VAR_OPENING_TAG}{hash(self)}{REFLEX_VAR_CLOSING_TAG}{self._var_name}"

@@ -8,7 +8,6 @@ import copy
 import functools
 import inspect
 import os
-import traceback
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -25,9 +24,12 @@ from typing import (
     Sequence,
     Set,
     Type,
+    Union,
+    cast,
 )
 
 import dill
+from sqlalchemy.orm import DeclarativeBase
 
 try:
     import pydantic.v1 as pydantic
@@ -47,7 +49,6 @@ from reflex.event import (
     EventHandler,
     EventSpec,
     fix_events,
-    window_alert,
 )
 from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
@@ -426,6 +427,21 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ]
 
     @classmethod
+    def _validate_module_name(cls) -> None:
+        """Check if the module name is valid.
+
+        Reflex uses ___ as state name module separator.
+
+        Raises:
+            NameError: If the module name is invalid.
+        """
+        if "___" in cls.__module__:
+            raise NameError(
+                "The module name of a State class cannot contain '___'. "
+                "Please rename the module."
+            )
+
+    @classmethod
     def __init_subclass__(cls, mixin: bool = False, **kwargs):
         """Do some magic for the subclass initialization.
 
@@ -444,8 +460,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if mixin:
             return
 
+        # Validate the module name.
+        cls._validate_module_name()
+
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
+
         # Computed vars should not shadow builtin state props.
         cls._check_overriden_basevars()
 
@@ -462,20 +482,22 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.inherited_backend_vars = parent_state.backend_vars
 
             # Check if another substate class with the same name has already been defined.
-            if cls.__name__ in set(c.__name__ for c in parent_state.class_subclasses):
+            if cls.get_name() in set(
+                c.get_name() for c in parent_state.class_subclasses
+            ):
                 if is_testing_env():
                     # Clear existing subclass with same name when app is reloaded via
                     # utils.prerequisites.get_app(reload=True)
                     parent_state.class_subclasses = set(
                         c
                         for c in parent_state.class_subclasses
-                        if c.__name__ != cls.__name__
+                        if c.get_name() != cls.get_name()
                     )
                 else:
                     # During normal operation, subclasses cannot have the same name, even if they are
                     # defined in different modules.
                     raise StateValueError(
-                        f"The substate class '{cls.__name__}' has been defined multiple times. "
+                        f"The substate class '{cls.get_name()}' has been defined multiple times. "
                         "Shadowing substate classes is not allowed."
                     )
             # Track this new subclass in the parent state's subclasses set.
@@ -758,7 +780,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The name of the state.
         """
-        return format.to_snake_case(cls.__name__)
+        module = cls.__module__.replace(".", "___")
+        return format.to_snake_case(f"{module}___{cls.__name__}")
 
     @classmethod
     @functools.lru_cache()
@@ -1430,15 +1453,39 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Convert valid EventHandler and EventSpec into Event
         fixed_events = fix_events(self._check_valid(handler, events), token)
 
-        # Get the delta after processing the event.
-        delta = state.get_delta()
-        state._clean()
+        try:
+            # Get the delta after processing the event.
+            delta = state.get_delta()
+            state._clean()
 
-        return StateUpdate(
-            delta=delta,
-            events=fixed_events,
-            final=final if not handler.is_background else True,
-        )
+            return StateUpdate(
+                delta=delta,
+                events=fixed_events,
+                final=final if not handler.is_background else True,
+            )
+        except Exception as ex:
+            state._clean()
+
+            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+
+            event_specs = app_instance.backend_exception_handler(ex)
+
+            if event_specs is None:
+                return StateUpdate()
+
+            event_specs_correct_type = cast(
+                Union[List[Union[EventSpec, EventHandler]], None],
+                [event_specs] if isinstance(event_specs, EventSpec) else event_specs,
+            )
+            fixed_events = fix_events(
+                event_specs_correct_type,
+                token,
+                router_data=state.router_data,
+            )
+            return StateUpdate(
+                events=fixed_events,
+                final=True,
+            )
 
     async def _process_event(
         self, handler: EventHandler, state: BaseState | StateProxy, payload: Dict
@@ -1491,12 +1538,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # If an error occurs, throw a window alert.
         except Exception as ex:
-            error = traceback.format_exc()
-            print(error)
             telemetry.send_error(ex, context="backend")
+
+            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+
+            event_specs = app_instance.backend_exception_handler(ex)
+
             yield state._as_state_update(
                 handler,
-                window_alert("An error occurred. See logs for details."),
+                event_specs,
                 final=True,
             )
 
@@ -1808,6 +1858,23 @@ class State(BaseState):
 
     # The hydrated bool.
     is_hydrated: bool = False
+
+
+class FrontendEventExceptionState(State):
+    """Substate for handling frontend exceptions."""
+
+    def handle_frontend_exception(self, stack: str) -> None:
+        """Handle frontend exceptions.
+
+        If a frontend exception handler is provided, it will be called.
+        Otherwise, the default frontend exception handler will be called.
+
+        Args:
+            stack: The stack trace of the exception.
+
+        """
+        app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        app_instance.frontend_exception_handler(Exception(stack))
 
 
 class UpdateVarsInternalState(State):
@@ -2931,7 +2998,7 @@ class MutableProxy(wrapt.ObjectProxy):
         pydantic.BaseModel.__dict__
     )
 
-    __mutable_types__ = (list, dict, set, Base)
+    __mutable_types__ = (list, dict, set, Base, DeclarativeBase)
 
     def __init__(self, wrapped: Any, state: BaseState, field_name: str):
         """Create a proxy for a mutable object that tracks changes.

@@ -265,10 +265,13 @@ async def test_submit(driver, form_submit: AppHarness):
     submit_input = driver.find_element(By.CLASS_NAME, "rt-Button")
     submit_input.click()
 
+    state_name = form_submit.get_state_name("_form_state")
+    full_state_name = form_submit.get_full_state_name(["_form_state"])
+
     async def get_form_data():
         return (
-            (await form_submit.get_state(f"{token}_state.form_state"))
-            .substates["form_state"]
+            (await form_submit.get_state(f"{token}_{full_state_name}"))
+            .substates[state_name]
             .form_data
         )
 
