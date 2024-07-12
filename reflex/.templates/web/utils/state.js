@@ -4,7 +4,7 @@ import io from "socket.io-client";
 import JSON5 from "json5";
 import env from "/env.json";
 import Cookies from "universal-cookie";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
 import {
   initialEvents,
