@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import dataclasses
+import json
+import re
 import sys
 from typing import Any, Optional, Type
 
+from reflex import constants
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.utils import serializers, types
 from reflex.utils.exceptions import VarTypeError
@@ -234,3 +237,119 @@ class ArrayVar(ImmutableVar):
 
 class FunctionVar(ImmutableVar):
     """Base class for immutable function vars."""
+
+
+class LiteralVar(ImmutableVar):
+    """Base class for immutable literal vars."""
+
+    def __post_init__(self):
+        """Post-initialize the var."""
+
+
+# Compile regex for finding reflex var tags.
+_decode_var_pattern_re = (
+    rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
+)
+_decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class LiteralStringVar(LiteralVar):
+    """Base class for immutable literal string vars."""
+
+    _var_value: Optional[str] = dataclasses.field(default=None)
+
+    @classmethod
+    def create(
+        cls,
+        value: str,
+        _var_data: VarData | None = None,
+    ) -> LiteralStringVar | ConcatVarOperation:
+        """Create a var from a string value.
+
+        Args:
+            value: The value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        if REFLEX_VAR_OPENING_TAG in value:
+            strings_and_vals: list[Var] = []
+            offset = 0
+
+            # Initialize some methods for reading json.
+            var_data_config = VarData().__config__
+
+            def json_loads(s):
+                try:
+                    return var_data_config.json_loads(s)
+                except json.decoder.JSONDecodeError:
+                    return var_data_config.json_loads(
+                        var_data_config.json_loads(f'"{s}"')
+                    )
+
+            # Find all tags.
+            while m := _decode_var_pattern.search(value):
+                start, end = m.span()
+                strings_and_vals.append(LiteralStringVar.create(value[:start]))
+
+                serialized_data = m.group(1)
+
+                if serialized_data[1:].isnumeric():
+                    # This is a global immutable var.
+                    var = _global_vars[int(serialized_data)]
+                    strings_and_vals.append(var)
+                    value = value[(end + len(var._var_name)) :]
+                else:
+                    data = json_loads(serialized_data)
+                    string_length = data.pop("string_length", None)
+                    var_data = VarData.parse_obj(data)
+
+                    # Use string length to compute positions of interpolations.
+                    if string_length is not None:
+                        realstart = start + offset
+                        var_data.interpolations = [
+                            (realstart, realstart + string_length)
+                        ]
+                        strings_and_vals.append(
+                            ImmutableVar.create(
+                                value[end : (end + string_length)], _var_data=var_data
+                            )
+                        )
+                        value = value[(end + string_length) :]
+
+                offset += end - start
+
+            strings_and_vals.append(LiteralStringVar.create(value))
+
+            var_name = "+".join([element._var_name for element in strings_and_vals])
+
+            return ConcatVarOperation(
+                _var_value=strings_and_vals,
+                _var_type=str,
+                _var_name=var_name,
+                _var_data=_var_data,
+            )
+
+        return cls(
+            _var_value=value,
+            _var_name=f'"{value}"',
+            _var_type=str,
+            _var_data=_var_data,
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ConcatVarOperation(StringVar):
+    """Representing a concatenation of literal string vars."""
+
+    _var_value: Optional[list[Var]] = dataclasses.field(default=None)
