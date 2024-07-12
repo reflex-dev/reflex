@@ -100,7 +100,7 @@ class ImmutableVar(Var):
                 kwargs.get("_var_data", self._var_data), merge_var_data
             ),
         )
-        return ImmutableVar(**field_values)
+        return type(self)(**field_values)
 
     @classmethod
     def create(
@@ -161,7 +161,7 @@ class ImmutableVar(Var):
             )
         name = name if isinstance(name, str) else format.json_dumps(name)
 
-        return ImmutableVar(
+        return cls(
             _var_name=name,
             _var_type=type_,
             _var_data=_var_data,
@@ -210,55 +210,25 @@ class ImmutableVar(Var):
         return f"{REFLEX_VAR_OPENING_TAG}{hash(self)}{REFLEX_VAR_CLOSING_TAG}{self._var_name}"
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
 class StringVar(ImmutableVar):
     """Base class for immutable string vars."""
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
 class NumberVar(ImmutableVar):
     """Base class for immutable number vars."""
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
 class BooleanVar(ImmutableVar):
     """Base class for immutable boolean vars."""
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
 class ObjectVar(ImmutableVar):
     """Base class for immutable object vars."""
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
 class ArrayVar(ImmutableVar):
     """Base class for immutable array vars."""
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
 class FunctionVar(ImmutableVar):
     """Base class for immutable function vars."""
