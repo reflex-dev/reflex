@@ -204,10 +204,12 @@ class ImmutableVar(Var):
         Returns:
             The formatted var.
         """
-        _global_vars[hash(self)] = self
+        hashed_var = hash(self)
+
+        _global_vars[hashed_var] = self
 
         # Encode the _var_data into the formatted output for tracking purposes.
-        return f"{REFLEX_VAR_OPENING_TAG}{hash(self)}{REFLEX_VAR_CLOSING_TAG}{self._var_name}"
+        return f"{REFLEX_VAR_OPENING_TAG}{hashed_var}{REFLEX_VAR_CLOSING_TAG}{self._var_name}"
 
 
 class StringVar(ImmutableVar):
