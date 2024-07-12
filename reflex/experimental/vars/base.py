@@ -317,7 +317,7 @@ class LiteralStringVar(LiteralVar):
                             (realstart, realstart + string_length)
                         ]
                         strings_and_vals.append(
-                            ImmutableVar.create(
+                            ImmutableVar.create_safe(
                                 value[end : (end + string_length)], _var_data=var_data
                             )
                         )
