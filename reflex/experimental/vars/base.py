@@ -215,7 +215,8 @@ class ImmutableVar(Var):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class StringVar(ImmutableVar): ...
+class StringVar(ImmutableVar):
+    """Base class for immutable string vars."""
 
 
 @dataclasses.dataclass(
@@ -223,7 +224,8 @@ class StringVar(ImmutableVar): ...
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class NumberVar(ImmutableVar): ...
+class NumberVar(ImmutableVar):
+    """Base class for immutable number vars."""
 
 
 @dataclasses.dataclass(
@@ -231,7 +233,8 @@ class NumberVar(ImmutableVar): ...
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class BooleanVar(ImmutableVar): ...
+class BooleanVar(ImmutableVar):
+    """Base class for immutable boolean vars."""
 
 
 @dataclasses.dataclass(
@@ -239,7 +242,8 @@ class BooleanVar(ImmutableVar): ...
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ObjectVar(ImmutableVar): ...
+class ObjectVar(ImmutableVar):
+    """Base class for immutable object vars."""
 
 
 @dataclasses.dataclass(
@@ -247,7 +251,8 @@ class ObjectVar(ImmutableVar): ...
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ArrayVar(ImmutableVar): ...
+class ArrayVar(ImmutableVar):
+    """Base class for immutable array vars."""
 
 
 @dataclasses.dataclass(
@@ -255,4 +260,5 @@ class ArrayVar(ImmutableVar): ...
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class FunctionVar(ImmutableVar): ...
+class FunctionVar(ImmutableVar):
+    """Base class for immutable function vars."""
