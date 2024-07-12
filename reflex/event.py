@@ -43,6 +43,9 @@ class Event(Base):
     # The event payload.
     payload: Dict[str, Any] = {}
 
+    # State key
+    state_key: str = ""
+
     @property
     def substate_token(self) -> str:
         """Get the substate token for the event.
@@ -135,11 +138,14 @@ class EventHandler(EventActionsMixin):
     """An event handler responds to an event to update the state."""
 
     # The function to call in response to the event.
-    fn: Any
+    fn: Callable[..., Any]
 
     # The full name of the state class this event handler is attached to.
     # Empty string means this event handler is a server side event.
     state_full_name: str = ""
+
+    # The key for parametrized states.
+    state_key: Optional[Union[Var[str], str]] = None
 
     class Config:
         """The Pydantic config."""
@@ -959,6 +965,7 @@ def fix_events(
     events: list[EventHandler | EventSpec] | None,
     token: str,
     router_data: dict[str, Any] | None = None,
+    state_key: str = "",
 ) -> list[Event]:
     """Fix a list of events returned by an event handler.
 
@@ -966,6 +973,7 @@ def fix_events(
         events: The events to fix.
         token: The user token.
         router_data: The optional router data to set in the event.
+        state_key: The key for parametrized states.
 
     Returns:
         The fixed events.
@@ -986,7 +994,7 @@ def fix_events(
             out.append(e)
             continue
         if not isinstance(e, (EventHandler, EventSpec)):
-            e = EventHandler(fn=e)
+            e = EventHandler(fn=e, state_key=state_key)
         # Otherwise, create an event from the event spec.
         if isinstance(e, EventHandler):
             e = e()
@@ -1007,6 +1015,7 @@ def fix_events(
                 name=name,
                 payload=payload,
                 router_data=event_router_data,
+                state_key=state_key,
             )
         )
 
