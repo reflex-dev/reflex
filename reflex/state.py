@@ -295,13 +295,11 @@ class EventHandlerSetVar(EventHandler):
         from reflex.utils.exceptions import EventHandlerValueError
 
         if args:
-            var_name: Union[str, BaseVar] = args[0]
-            if not isinstance(args[0], str) and not isinstance(var_name, BaseVar):
+            var_name: str = args[0]
+            if not isinstance(args[0], str):
                 raise EventHandlerValueError(
                     f"Var name must be passed as a string, got {args[0]!r}"
                 )
-            if isinstance(var_name, BaseVar):
-                var_name = var_name._var_name
             fracs = var_name.split(".")
             # Check that the requested Var setter exists on the State at compile time.
             if (
