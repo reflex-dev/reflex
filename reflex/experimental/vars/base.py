@@ -100,7 +100,7 @@ class ImmutableVar(Var):
                 kwargs.get("_var_data", self._var_data), merge_var_data
             ),
         )
-        return ImmutableVar(**field_values)
+        return type(self)(**field_values)
 
     @classmethod
     def create(
@@ -161,7 +161,7 @@ class ImmutableVar(Var):
             )
         name = name if isinstance(name, str) else format.json_dumps(name)
 
-        return ImmutableVar(
+        return cls(
             _var_name=name,
             _var_type=type_,
             _var_data=_var_data,
@@ -204,7 +204,33 @@ class ImmutableVar(Var):
         Returns:
             The formatted var.
         """
-        _global_vars[hash(self)] = self
+        hashed_var = hash(self)
+
+        _global_vars[hashed_var] = self
 
         # Encode the _var_data into the formatted output for tracking purposes.
-        return f"{REFLEX_VAR_OPENING_TAG}{hash(self)}{REFLEX_VAR_CLOSING_TAG}{self._var_name}"
+        return f"{REFLEX_VAR_OPENING_TAG}{hashed_var}{REFLEX_VAR_CLOSING_TAG}{self._var_name}"
+
+
+class StringVar(ImmutableVar):
+    """Base class for immutable string vars."""
+
+
+class NumberVar(ImmutableVar):
+    """Base class for immutable number vars."""
+
+
+class BooleanVar(ImmutableVar):
+    """Base class for immutable boolean vars."""
+
+
+class ObjectVar(ImmutableVar):
+    """Base class for immutable object vars."""
+
+
+class ArrayVar(ImmutableVar):
+    """Base class for immutable array vars."""
+
+
+class FunctionVar(ImmutableVar):
+    """Base class for immutable function vars."""
