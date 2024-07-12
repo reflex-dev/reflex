@@ -171,7 +171,7 @@ class RadialBar(Recharts):
     animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
-    _valid_children: List[str] = ["Cell","LabelList"]
+    _valid_children: List[str] = ["Cell", "LabelList"]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
