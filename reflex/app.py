@@ -1468,6 +1468,7 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
         """
         # Creating a task prevents the update from being blocked behind other coroutines.
+        print(f"emit_update: {constants.SocketEvent.EVENT=} {sid=} {update.json()=}")
         await asyncio.create_task(
             self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
         )
@@ -1479,6 +1480,8 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             data: The event data.
         """
+
+        print(f"on_event: {sid=} {data=}")
         # Get the event.
         event = Event.parse_raw(data)
 
