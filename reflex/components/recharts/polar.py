@@ -75,7 +75,7 @@ class Pie(Recharts):
     stroke: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
 
     # Fill color
-    fill: Var[str] = Var.create_safe(Color("accent", 3))
+    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 3))
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
