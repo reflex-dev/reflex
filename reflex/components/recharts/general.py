@@ -230,7 +230,6 @@ class LabelList(Recharts):
     # The stroke color of each label
     stroke: Var[Union[str, Color]] = "none"
 
-
 responsive_container = ResponsiveContainer.create
 legend = Legend.create
 graphing_tooltip = GraphingTooltip.create

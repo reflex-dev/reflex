@@ -8,12 +8,14 @@
 
 <hr>
 
-### **✨ 即時デプロイが可能な、Pure Pythonで作ったパフォーマンスと汎用性が高いWebアプリケーション✨**
+### **✨ 即時デプロイが可能な、Pure Python で作ったパフォーマンスと汎用性が高い Web アプリケーション ✨**
+
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentation](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
+
 </div>
 
 ---
@@ -24,18 +26,19 @@
 
 # Reflex
 
-ReflexはPythonのみでフルスタックWebアプリケーションを作成できるライブラリです。
+Reflex は Python のみでフルスタック Web アプリケーションを作成できるライブラリです。
 
 主な特徴:
-* **Pure Python** - WebアプリケーションのフロントエンドとバックエンドをPythonのみで実装できるため、Javascriptを学ぶ必要がありません。
-* **高い柔軟性** - Reflexは簡単に始められて、複雑なアプリケーションまで作成できます。
-* **即時デプロイ** - ビルド後、すぐにデプロイが可能です。[単純なCLIコマンド](https://reflex.dev/docs/hosting/deploy-quick-start/)を使ったアプリケーションのデプロイや、自身のサーバーへのホストができます。
 
-Reflexがどのように動作しているかを知るには、[アーキテクチャページ](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture)をご覧ください。
+- **Pure Python** - Web アプリケーションのフロントエンドとバックエンドを Python のみで実装できるため、Javascript を学ぶ必要がありません。
+- **高い柔軟性** - Reflex は簡単に始められて、複雑なアプリケーションまで作成できます。
+- **即時デプロイ** - ビルド後、すぐにデプロイが可能です。[単純な CLI コマンド](https://reflex.dev/docs/hosting/deploy-quick-start/)を使ったアプリケーションのデプロイや、自身のサーバーへのホストができます。
+
+Reflex がどのように動作しているかを知るには、[アーキテクチャページ](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture)をご覧ください。
 
 ## ⚙️ インストール
 
-ターミナルを開いて以下のコマンドを実行してください。（Python 3.8以上が必要です。）:
+ターミナルを開いて以下のコマンドを実行してください。（Python 3.8 以上が必要です。）:
 
 ```bash
 pip install reflex
@@ -43,7 +46,7 @@ pip install reflex
 
 ## 🥳 最初のアプリケーションを作ろう
 
-`reflex`をインストールすると、`reflex`のCLIツールが自動でインストールされます。
+`reflex`をインストールすると、`reflex`の CLI ツールが自動でインストールされます。
 
 新しいプロジェクトを作成して、インストールが成功しているかを確認しましょう。（`my_app_name`を自身のプロジェクト名に書き換えて実行ください。）:
 
@@ -63,11 +66,11 @@ reflex run
 
 http://localhost:3000 にアクセスしてアプリの動作を見ることができます。
 
-`my_app_name/my_app_name.py`のソースコードを編集してみましょう！Reflexはfast refreshなので、ソースを保存した直後に変更がWebページに反映されます。
+`my_app_name/my_app_name.py`のソースコードを編集してみましょう！Reflex は fast refresh なので、ソースを保存した直後に変更が Web ページに反映されます。
 
 ## 🫧 実装例
 
-実装例を見てみましょう: [DALL·E](https://platform.openai.com/docs/guides/images/image-generation?context=node)を中心とした画像生成UIを作成しました。説明を簡単にするためにここでは[OpenAI API](https://platform.openai.com/docs/api-reference/authentication)を呼んでいますが、ローカルで動作している機械学習モデルに置き換えることも可能です。
+実装例を見てみましょう: [DALL·E](https://platform.openai.com/docs/guides/images/image-generation?context=node)を中心とした画像生成 UI を作成しました。説明を簡単にするためにここでは[OpenAI API](https://platform.openai.com/docs/api-reference/authentication)を呼んでいますが、ローカルで動作している機械学習モデルに置き換えることも可能です。
 
 &nbsp;
 
@@ -77,7 +80,7 @@ http://localhost:3000 にアクセスしてアプリの動作を見ることが�
 
 &nbsp;
 
-画像生成UIのソースコードの全貌を見てみましょう。下記のように、単一のPythonファイルで作れます！
+画像生成 UI のソースコードの全貌を見てみましょう。下記のように、単一の Python ファイルで作れます！
 
 ```python
 import reflex as rx
@@ -117,14 +120,15 @@ def index():
                 on_blur=State.set_prompt,
                 width="25em",
             ),
-            rx.button("Generate Image", on_click=State.get_image, width="25em"),
+            rx.button(
+                "Generate Image",
+                on_click=State.get_image,
+                width="25em",
+                loading=State.processing
+            ),
             rx.cond(
-                State.processing,
-                rx.chakra.circular_progress(is_indeterminate=True),
-                rx.cond(
-                    State.complete,
-                    rx.image(src=State.image_url, width="20em"),
-                ),
+                State.complete,
+                rx.image(src=State.image_url, width="20em"),
             ),
             align="center",
         ),
@@ -137,17 +141,15 @@ app = rx.App()
 app.add_page(index, title="Reflex:DALL-E")
 ```
 
-
 ## それぞれの実装を見てみましょう
 
 <div align="center">
 <img src="../../docs/images/dalle_colored_code_example.png" alt="DALL-E appのフロントエンドとバックエンドのパーツの違いを説明しています。" width="900" />
 </div>
 
-
 ### **Reflex UI**
 
-UIから見てみましょう。
+UI から見てみましょう。
 
 ```python
 def index():
@@ -158,13 +160,13 @@ def index():
 
 `index`関数において、アプリのフロントエンドを定義しています。
 
-フロントエンドを実装するにあたり、`center`、`vstack`、`input`、`button`など異なるコンポーネントを使用しています。コンポーネントはお互いにネストが可能であり、複雑なレイアウトを作成できます。また、keyword argsを使うことで、CSSの機能をすべて使ったスタイルが可能です。
+フロントエンドを実装するにあたり、`center`、`vstack`、`input`、`button`など異なるコンポーネントを使用しています。コンポーネントはお互いにネストが可能であり、複雑なレイアウトを作成できます。また、keyword args を使うことで、CSS の機能をすべて使ったスタイルが可能です。
 
-Reflexは[60を超える内臓コンポーネント](https://reflex.dev/docs/library)があるため、すぐに始められます。私たちは、積極的にコンポーネントを追加していますが、簡単に[自身のコンポーネントを追加](https://reflex.dev/docs/wrapping-react/overview/)することも可能です。
+Reflex は[60 を超える内臓コンポーネント](https://reflex.dev/docs/library)があるため、すぐに始められます。私たちは、積極的にコンポーネントを追加していますが、簡単に[自身のコンポーネントを追加](https://reflex.dev/docs/wrapping-react/overview/)することも可能です。
 
 ### **ステート**
 
-Reflexはステートの関数を用いてUIを表示します。
+Reflex はステートの関数を用いて UI を表示します。
 
 ```python
 class State(rx.State):
@@ -176,9 +178,9 @@ class State(rx.State):
 
 ```
 
-ステートでは、アプリで変更が可能な全ての変数（varsと呼びます）と、varsの変更が可能な関数を定義します。
+ステートでは、アプリで変更が可能な全ての変数（vars と呼びます）と、vars の変更が可能な関数を定義します。
 
-この例では、ステートを`prompt`と`image_url`で構成しています。そして、ブール型の`processing`と`complete`を用いて、プログレスサークルと画像の表示を切り替えています。
+この例では、ステートを`prompt`と`image_url`で構成しています。そして、ブール型の`processing`と`complete`を用いて、ボタンを無効にするタイミング（画像生成中）や生成された画像を表示するタイミングを示しています。
 
 ### **イベントハンドラ**
 
@@ -197,9 +199,9 @@ def get_image(self):
     self.processing, self.complete = False, True
 ```
 
-ステートにおいて、ステートのvarsを変更できるイベントハンドラ関数を定義しています。イベントハンドラはReflexにおいて、ステートのvarsを変更する方法です。ボタンクリックやテキストボックスの入力など、ユーザのアクションに応じてイベントハンドラが呼ばれます。
+ステートにおいて、ステートの vars を変更できるイベントハンドラ関数を定義しています。イベントハンドラは Reflex において、ステートの vars を変更する方法です。ボタンクリックやテキストボックスの入力など、ユーザのアクションに応じてイベントハンドラが呼ばれます。
 
-DALL·E.アプリには、OpenAI APIからイメージを取得する`get_image`関数があります。イベントハンドラの最後でUIの更新がかかるため、関数の途中に`yield`を入れることで先にUIを更新しています。
+DALL·E.アプリには、OpenAI API からイメージを取得する`get_image`関数があります。イベントハンドラの最後で UI の更新がかかるため、関数の途中に`yield`を入れることで先に UI を更新しています。
 
 ### **ルーティング**
 
@@ -209,7 +211,7 @@ DALL·E.アプリには、OpenAI APIからイメージを取得する`get_image`
 app = rx.App()
 ```
 
-アプリにページを追加し、ドキュメントルートをindexコンポーネントにルーティングしています。更に、ページのプレビューやブラウザタブに表示されるタイトルを記載しています。
+アプリにページを追加し、ドキュメントルートを index コンポーネントにルーティングしています。更に、ページのプレビューやブラウザタブに表示されるタイトルを記載しています。
 
 ```python
 app.add_page(index, title="DALL-E")
@@ -221,35 +223,34 @@ app.add_page(index, title="DALL-E")
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start)  &nbsp;   
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; | &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
 
 </div>
 
-
 ## ✅ ステータス
 
-2022年12月に、ReflexはPyneconeという名前でローンチしました。
+2022 年 12 月に、Reflex は Pynecone という名前でローンチしました。
 
-2024年2月に、ホスティングサービスをアルファ版でリリースしました！アルファ版では、だれでもReflexアプリケーションを無料でデプロイできます。今後の予定は[ロードマップ](https://github.com/reflex-dev/reflex/issues/2727)において見れます。
+2024 年 2 月に、ホスティングサービスをアルファ版でリリースしました！アルファ版では、だれでも Reflex アプリケーションを無料でデプロイできます。今後の予定は[ロードマップ](https://github.com/reflex-dev/reflex/issues/2727)において見れます。
 
-Reflexは毎週、新しいリリースや機能追加を行っています！最新情報を逃さないために、 :star: Starや :eyes: Watchをお願いします。
+Reflex は毎週、新しいリリースや機能追加を行っています！最新情報を逃さないために、 :star: Star や :eyes: Watch をお願いします。
 
 ## コントリビュート
 
-様々なサイズのコントリビュートを歓迎しています！Reflexコミュニティに入るための方法を、いくつかリストアップします。
+様々なサイズのコントリビュートを歓迎しています！Reflex コミュニティに入るための方法を、いくつかリストアップします。
 
--   **Discordに参加**: [Discord](https://discord.gg/T5WSbC2YtQ)は、Reflexプロジェクトの相談や、コントリビュートについての話し合いをするための、最適な場所です。
--   **GitHub Discussions**: GitHub Discussionsでは、追加したい機能や、複雑で解明が必要な事柄についての議論に適している場所です。
--   **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues)はバグの報告に適している場所です。また、課題を解決したPRのサブミットにチャレンジしていただくことも、可能です。
+- **Discord に参加**: [Discord](https://discord.gg/T5WSbC2YtQ)は、Reflex プロジェクトの相談や、コントリビュートについての話し合いをするための、最適な場所です。
+- **GitHub Discussions**: GitHub Discussions では、追加したい機能や、複雑で解明が必要な事柄についての議論に適している場所です。
+- **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues)はバグの報告に適している場所です。また、課題を解決した PR のサブミットにチャレンジしていただくことも、可能です。
 
 スキルや経験に関わらず、私たちはコントリビュータを積極的に探しています。コントリビュートするために、[CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)をご覧ください。
 
-
 ## 私たちのコントリビュータに感謝！:
+
 <a href="https://github.com/reflex-dev/reflex/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=reflex-dev/reflex" />
 </a>
 
 ## ライセンス
 
-Reflexはオープンソースであり、[Apache License 2.0](LICENSE)に基づいてライセンス供与されます。
+Reflex はオープンソースであり、[Apache License 2.0](LICENSE)に基づいてライセンス供与されます。

@@ -11,6 +11,7 @@ from reflex.style import Style
 from reflex.vars import BaseVar, Var
 
 class Recharts(Component):
+    def render(self) -> Dict: ...
     @overload
     @classmethod
     def create(  # type: ignore

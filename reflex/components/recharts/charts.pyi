@@ -178,7 +178,7 @@ class CategoricalChartBase(ChartBase):
         Args:
             *children: The children of the chart component.
             data: The source data, in which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
             layout: The layout of area in the chart. 'horizontal' | 'vertical'
@@ -290,7 +290,7 @@ class AreaChart(CategoricalChartBase):
             *children: The children of the chart component.
             base_value: The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
             data: The source data, in which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
             layout: The layout of area in the chart. 'horizontal' | 'vertical'
@@ -405,7 +405,7 @@ class BarChart(CategoricalChartBase):
             stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             reverse_stack_order: If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
             data: The source data, in which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
             layout: The layout of area in the chart. 'horizontal' | 'vertical'
@@ -508,7 +508,7 @@ class LineChart(CategoricalChartBase):
         Args:
             *children: The children of the chart component.
             data: The source data, in which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
             layout: The layout of area in the chart. 'horizontal' | 'vertical'
@@ -628,7 +628,7 @@ class ComposedChart(CategoricalChartBase):
             bar_size: The width of all the bars in the chart. Number
             reverse_stack_order: If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
             data: The source data, in which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
             layout: The layout of area in the chart. 'horizontal' | 'vertical'
@@ -714,7 +714,7 @@ class PieChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             width: The width of chart container. String or Integer
             height: The height of chart container.
             style: The style of the component.
@@ -769,7 +769,7 @@ class RadarChart(ChartBase):
         Args:
             *children: The children of the chart component.
             data: The source data, in which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             cx: The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
             cy: The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage
             start_angle: The angle of first radial direction line.
@@ -868,7 +868,7 @@ class RadialBarChart(ChartBase):
         Args:
             *children: The children of the chart component.
             data: The source data which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             cx: The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
             cy: The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage
             start_angle: The angle of first radial direction line.
@@ -939,7 +939,7 @@ class ScatterChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             width: The width of chart container. String or Integer
             height: The height of chart container.
             style: The style of the component.

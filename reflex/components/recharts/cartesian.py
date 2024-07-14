@@ -31,7 +31,7 @@ from .recharts import (
 class Axis(Recharts):
     """A base class for axes in Recharts."""
 
-    # The key of a group of data which should be unique in an area chart.
+    # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
 
     # If set true, the axis do not display in the chart.
@@ -42,9 +42,6 @@ class Axis(Recharts):
 
     # The height of axis, which can be setted by user.
     height: Var[Union[str, int]]
-
-    # The orientation of axis 'top' | 'bottom'
-    orientation: Var[LiteralOrientationTopBottom]
 
     # The type of axis 'number' | 'category'
     type_: Var[LiteralPolarRadiusType]
@@ -66,6 +63,9 @@ class Axis(Recharts):
 
     # Reverse the ticks or not.
     reversed: Var[bool]
+
+    # The label of axis, which appears next to the axis.
+    label: Var[Union[str, int, Dict[str, Any]]]
 
     # If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
     scale: Var[LiteralScale]
@@ -96,6 +96,7 @@ class Axis(Recharts):
 
     # The stroke color of axis
     stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
+
 
     # The text anchor of axis
     text_anchor: Var[str]  # 'start', 'middle', 'end'
@@ -129,6 +130,9 @@ class XAxis(Axis):
 
     alias = "RechartsXAxis"
 
+    # The orientation of axis 'top' | 'bottom'
+    orientation: Var[LiteralOrientationTopBottom]
+
     # The id of x-axis which is corresponding to the data.
     x_axis_id: Var[Union[str, int]]
 
@@ -146,11 +150,11 @@ class YAxis(Axis):
     # The orientation of axis 'left' | 'right'
     orientation: Var[LiteralOrientationLeftRight]
 
-    # The key of data displayed in the axis.
-    data_key: Var[Union[str, int]]
-
     # The id of y-axis which is corresponding to the data.
     y_axis_id: Var[Union[str, int]]
+
+    # The range of the axis. Work best in conjuction with allow_data_overflow.
+    domain: Var[List]
 
 
 class ZAxis(Recharts):
@@ -218,6 +222,12 @@ class Brush(Recharts):
 
     # The default end index of brush. If the option is not set, the end index will be 1.
     end_index: Var[int]
+
+    # The fill color of brush
+    fill: Var[Union[str, Color]]
+
+    # The stroke color of brush
+    stroke: Var[Union[str, Color]]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -301,7 +311,7 @@ class Area(Cartesian):
         "fill": Var.create_safe(Color("accent", 10)),
     }
 
-    # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
+    # If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally.
     label: Var[bool]
 
     # The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
@@ -356,6 +366,9 @@ class Bar(Cartesian):
     # Max size of the bar
     max_bar_size: Var[int]
 
+    # The active bar is shown when a user enters a bar chart and this chart has tooltip. If set to false, no active bar will be drawn. If set to true, active bar will be drawn with the props calculated internally. If passed an object, active bar will be drawn, and the internally calculated props will be merged with the key value pairs of the passed object.
+    # active_bar: Var[Union[bool, Dict[str, Any]]]
+
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]
 
@@ -372,7 +385,7 @@ class Bar(Cartesian):
     animation_easing: Var[LiteralAnimationEasing]
 
     # The customized event handler of animation start
-    on_animation_begin: EventHandler[lambda: []]
+    on_animation_start: EventHandler[lambda: []]
 
     # The customized event handler of animation end
     on_animation_end: EventHandler[lambda: []]

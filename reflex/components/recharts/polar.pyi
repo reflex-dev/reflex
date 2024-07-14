@@ -243,13 +243,30 @@ class RadialBar(Recharts):
         label: Optional[
             Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        background: Optional[Union[Var[bool], bool]] = None,
+        background: Optional[
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+        ] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
+        animation_easing: Optional[
+            Union[
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[
+            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+        ] = None,
+        on_animation_start: Optional[
+            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+        ] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, Callable, BaseVar]
         ] = None,
@@ -279,6 +296,10 @@ class RadialBar(Recharts):
             legend_type: Type of legend
             label: If false set, labels will not be drawn.
             background: If false set, background sector will not be drawn.
+            is_animation_active: If set false, animation of radial bars will be disabled. By default true in CSR, and false in SSR
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. By default 0
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. By default 1500
+            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. By default 'ease'
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
