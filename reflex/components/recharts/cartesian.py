@@ -293,10 +293,10 @@ class Area(Cartesian):
     type_: Var[LiteralAreaType] = "monotone"
 
     # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
-    dot: Var[bool]
+    dot: Var[Union[bool, Dict[str, Any]]]
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    active_dot: Var[bool] = {
+    active_dot: Var[Union[bool, Dict[str, Any]]] = {
         "stroke": Var.create_safe(Color("accent", 2)),
         "fill": Var.create_safe(Color("accent", 10)),
     }
@@ -315,9 +315,6 @@ class Area(Cartesian):
 
     # Valid children components
     _valid_children: List[str] = ["LabelList"]
-
-    #
-    color_scheme: Var[str]
 
 
 class Bar(Cartesian):
@@ -398,13 +395,13 @@ class Line(Cartesian):
     stoke_width: Var[int]
 
     # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    dot: Var[Union[str, Color]] = {
+    dot: Var[Union[bool, Dict[str, Any]]] = {
         "stroke": Var.create_safe(Color("accent", 10)),
         "fill": Var.create_safe(Color("accent", 4)),
     }
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    active_dot: Var[bool] = {
+    active_dot: Var[Union[bool, Dict[str, Any]]] = {
         "stroke": Var.create_safe(Color("accent", 2)),
         "fill": Var.create_safe(Color("accent", 10)),
     }
