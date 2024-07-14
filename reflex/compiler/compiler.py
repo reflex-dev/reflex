@@ -87,6 +87,7 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
     return (
         templates.CONTEXT.render(
             initial_state=utils.compile_state(state),
+            initial_state_parametrized=utils.compile_state(state, parametrized=True),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),

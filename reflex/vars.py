@@ -1777,11 +1777,11 @@ class Var:
             )
         )
 
-    def _var_set_state(self, state: Type[BaseState] | str) -> Any:
+    def _var_set_state(self, state: Type[BaseState]) -> Any:
         """Set the state of the var.
 
         Args:
-            state: The state to set or the full name of the state.
+            state: The state to set.
 
         Returns:
             The var with the set state.

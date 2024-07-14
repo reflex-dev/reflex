@@ -1241,6 +1241,7 @@ async def process(
     """
     from reflex.utils import telemetry
 
+    print(f"process {event=} {sid=}")
     try:
         # Add request data to the state.
         router_data = event.router_data
@@ -1254,7 +1255,9 @@ async def process(
             }
         )
         # Get the state for the session exclusively.
-        async with app.state_manager.modify_state(event.substate_token) as state:
+        async with app.state_manager.modify_state(
+            event.substate_token, key=event.state_key
+        ) as state:
             # re-assign only when the value is different
             if state.router_data != router_data:
                 # assignment will recurse into substates and force recalculation of
@@ -1273,12 +1276,16 @@ async def process(
             else:
                 if app._process_background(state, event) is not None:
                     # `final=True` allows the frontend send more events immediately.
-                    yield StateUpdate(final=True)
+                    print(f"background task state update {state._global=}")
+                    yield StateUpdate(final=True, _global=state._global)
                     return
 
                 # Process the event synchronously.
                 async for update in state._process(event):
                     # Postprocess the event.
+                    print(
+                        f"creating state update {type(state).__name__=} {state._global=}"
+                    )
                     update = await app._postprocess(state, event, update)
 
                     # Yield the update.
@@ -1467,11 +1474,14 @@ class EventNamespace(AsyncNamespace):
             update: The state update to send.
             sid: The Socket.IO session id.
         """
-        # Creating a task prevents the update from being blocked behind other coroutines.
         print(f"emit_update: {constants.SocketEvent.EVENT=} {sid=} {update.json()=}")
-        await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
-        )
+
+        to = self.sid_to_token.keys() if update._global else [sid]
+        for s in to:
+            # Creating a task prevents the update from being blocked behind other coroutines.
+            await asyncio.create_task(
+                self.emit(str(constants.SocketEvent.EVENT), update.json(), to=s)
+            )
 
     async def on_event(self, sid, data):
         """Event for receiving front-end websocket events.
@@ -1480,10 +1490,9 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             data: The event data.
         """
-
-        print(f"on_event: {sid=} {data=}")
         # Get the event.
         event = Event.parse_raw(data)
+        print(f"on_event: {sid=} {event=}")
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token
