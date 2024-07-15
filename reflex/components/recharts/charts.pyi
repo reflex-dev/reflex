@@ -1024,7 +1024,7 @@ class FunnelChart(ChartBase):
         Args:
             *children: The children of the chart component.
             layout: The layout of bars in the chart. centeric
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             stroke: The stroke color of each bar. String | Object
             width: The width of chart container. String or Integer
             height: The height of chart container.

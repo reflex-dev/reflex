@@ -67,7 +67,7 @@ class Pie(Recharts):
         label: Optional[Union[Var[bool], bool]] = None,
         label_line: Optional[Union[Var[bool], bool]] = None,
         stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        fill: Optional[Union[Var[str], str]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

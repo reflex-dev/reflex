@@ -97,7 +97,6 @@ class Axis(Recharts):
     # The stroke color of axis
     stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
 
-
     # The text anchor of axis
     text_anchor: Var[str]  # 'start', 'middle', 'end'
 
