@@ -96,19 +96,6 @@ def send_benchmarking_data_to_posthog(
     pr_id: str,
     path: str,
 ):
-    """Send the benchmarking data to PostHog.
-
-    Args:
-        posthog_api_key: The API key for PostHog.
-        os_type_version: The OS type and version to send.
-        python_version: The Python version to send.
-        measurement_type: The type of metric to measure.
-        commit_sha: The commit SHA to send.
-        pr_title: The PR title to send.
-        branch_name: The name of the branch.
-        pr_id: The id of the PR.
-        path: The path to the dir or file to check size.
-    """
     if measurement_type == "reflex-package":
         size = get_package_size(path, os_type_version)
     else:
@@ -138,12 +125,15 @@ def send_benchmarking_data_to_posthog(
     with httpx.Client() as client:
         response = client.post("https://app.posthog.com/capture/", json=event_data)
 
+    print(f"PostHog API Response Status Code: {response.status_code}")
+    print(f"PostHog API Response Content: {response.text}")
+
     if response.status_code != 200:
-        print(
-            f"Error sending data to PostHog: {response.status_code} - {response.text}"
-        )
+        print(f"Error sending data to PostHog: {response.status_code} - {response.text}")
+        return False
     else:
         print("Successfully sent data to PostHog")
+        return True
 
 
 def main():
