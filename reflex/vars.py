@@ -1815,6 +1815,15 @@ class Var:
         return self._var_data.state if self._var_data else ""
 
     @property
+    def _get_all_var_data(self) -> VarData:
+        """Get all the var data.
+
+        Returns:
+            The var data.
+        """
+        return self._var_data
+
+    @property
     def _var_name_unwrapped(self) -> str:
         """Get the var str without wrapping in curly braces.
 

@@ -6,6 +6,7 @@ import dataclasses
 import json
 import re
 import sys
+from functools import cached_property
 from typing import Any, Optional, Type
 
 from reflex import constants
@@ -327,14 +328,7 @@ class LiteralStringVar(LiteralVar):
 
             strings_and_vals.append(LiteralStringVar.create(value))
 
-            var_name = "+".join([element._var_name for element in strings_and_vals])
-
-            return ConcatVarOperation(
-                _var_value=strings_and_vals,
-                _var_type=str,
-                _var_name=var_name,
-                _var_data=_var_data,
-            )
+            return ConcatVarOperation.create(strings_and_vals, _var_data=_var_data)
 
         return cls(
             _var_value=value,
@@ -353,3 +347,54 @@ class ConcatVarOperation(StringVar):
     """Representing a concatenation of literal string vars."""
 
     _var_value: Optional[list[Var]] = dataclasses.field(default=None)
+
+    def __init__(self, _var_value: list[Var], _var_data: VarData | None = None):
+        """Initialize the operation of concatenating literal string vars.
+
+        Args:
+            _var_value: The list of vars to concatenate.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(ConcatVarOperation, self).__init__(
+            _var_name="", _var_data=_var_data, _var_type=str
+        )
+        object.__setattr__(self, "_var_value", _var_value)
+        object.__setattr__(self, "_var_name", self._cached_var_name)
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        return "+".join([str(element) for element in self._var_value])
+
+    @cached_property
+    def _get_all_var_data(self) -> VarData:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData.
+        """
+        return VarData.merge(*[var._get_all_var_data for var in self._var_value])
+
+    def __post_init__(self):
+        """Post-initialize the var."""
+        pass
+
+    @classmethod
+    def create(
+        cls,
+        value: list[Var],
+        _var_data: VarData | None = None,
+    ) -> ConcatVarOperation:
+        """Create a var from a list of values.
+
+        Args:
+            value: The value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return ConcatVarOperation(
+            _var_value=value,
+            _var_data=_var_data,
+        )
