@@ -1814,8 +1814,7 @@ class Var:
         """
         return self._var_data.state if self._var_data else ""
 
-    @property
-    def _get_all_var_data(self) -> VarData:
+    def _get_all_var_data(self) -> VarData | None:
         """Get all the var data.
 
         Returns:

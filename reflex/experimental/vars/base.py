@@ -328,7 +328,9 @@ class LiteralStringVar(LiteralVar):
 
             strings_and_vals.append(LiteralStringVar.create(value))
 
-            return ConcatVarOperation.create(strings_and_vals, _var_data=_var_data)
+            return ConcatVarOperation.create(
+                tuple(strings_and_vals), _var_data=_var_data
+            )
 
         return cls(
             _var_value=value,
@@ -346,7 +348,7 @@ class LiteralStringVar(LiteralVar):
 class ConcatVarOperation(StringVar):
     """Representing a concatenation of literal string vars."""
 
-    _var_value: Optional[list[Var]] = dataclasses.field(default=None)
+    _var_value: tuple[Var] = dataclasses.field(default=list)
 
     def __init__(self, _var_value: list[Var], _var_data: VarData | None = None):
         """Initialize the operation of concatenating literal string vars.
@@ -367,13 +369,16 @@ class ConcatVarOperation(StringVar):
         return "+".join([str(element) for element in self._var_value])
 
     @cached_property
-    def _get_all_var_data(self) -> VarData:
+    def _cached_get_all_var_data(self) -> VarData | None:
         """Get all VarData associated with the Var.
 
         Returns:
             The VarData.
         """
-        return VarData.merge(*[var._get_all_var_data for var in self._var_value])
+        return VarData.merge(*[var._get_all_var_data() for var in self._var_value])
+
+    def _get_all_var_data(self) -> VarData:
+        return self._cached_get_all_var_data
 
     def __post_init__(self):
         """Post-initialize the var."""
@@ -382,10 +387,10 @@ class ConcatVarOperation(StringVar):
     @classmethod
     def create(
         cls,
-        value: list[Var],
+        value: tuple[Var],
         _var_data: VarData | None = None,
     ) -> ConcatVarOperation:
-        """Create a var from a list of values.
+        """Create a var from a tuple of values.
 
         Args:
             value: The value to create the var from.
