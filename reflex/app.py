@@ -1054,7 +1054,9 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             compiler_utils.write_page(output_path, code)
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
+    async def modify_state(
+        self, token: str, key: str | None = None
+    ) -> AsyncIterator[BaseState]:
         """Modify the state out of band.
 
         Args:
@@ -1070,7 +1072,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             raise RuntimeError("App has not been initialized yet.")
 
         # Get exclusive access to the state.
-        async with self.state_manager.modify_state(token) as state:
+        async with self.state_manager.modify_state(token, key=key) as state:
             # No other event handler can modify the state while in this context.
             yield state
             delta = state.get_delta()

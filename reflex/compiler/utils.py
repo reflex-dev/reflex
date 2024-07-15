@@ -137,25 +137,26 @@ def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) 
     }
 
 
-def compile_state(state: Type[BaseState], parametrized: bool = False) -> dict:
+def compile_state(state: Type[BaseState], only_parametrized: bool = False) -> dict:
     """Compile the state of the app.
 
     Args:
         state: The app state object.
+        only_parametrized: Whether to include only parametrized states.
 
     Returns:
         A dictionary of the compiled state.
     """
     try:
         initial_state = state(_reflex_internal_init=True).dict(
-            initial=True, parametrized=parametrized
+            initial=True, only_parametrized=only_parametrized
         )
     except Exception as e:
         console.warn(
             f"Failed to compile initial state with computed vars, excluding them: {e}"
         )
         initial_state = state(_reflex_internal_init=True).dict(
-            initial=True, parametrized=parametrized, include_computed=False
+            initial=True, only_parametrized=only_parametrized, include_computed=False
         )
     return format.format_state(initial_state)
 

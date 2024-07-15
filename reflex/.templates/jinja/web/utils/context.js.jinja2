@@ -1,3 +1,4 @@
+{% set all_state_names = initial_state.keys() | list + initial_state_parametrized.keys() | list %}
 import { createContext, useContext, useMemo, useReducer, useState } from "react"
 import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs, createDefaultDict } from "/utils/state.js"
 
@@ -9,7 +10,7 @@ export const ColorModeContext = createContext(null);
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const StateContexts = {
-  {% for state_name in initial_state.keys() | list + initial_state_parametrized.keys() | list %}
+  {% for state_name in all_state_names %}
   {{state_name|format_state_name}}: createContext(null),
   {% endfor %}
 }
@@ -102,20 +103,20 @@ export function StateProvider({ children }) {
   {% endfor %}
   const dispatchers = useMemo(() => {
     return {
-      {% for state_name in initial_state.keys() | list + initial_state_parametrized.keys() | list %}
+      {% for state_name in all_state_names %}
       "{{state_name}}": dispatch_{{state_name|format_state_name}},
       {% endfor %}
     }
   }, [])
 
   return (
-    {% for state_name in initial_state.keys() | list + initial_state_parametrized.keys() | list %}
+    {% for state_name in all_state_names %}
     <StateContexts.{{state_name|format_state_name}}.Provider value={ {{state_name|format_state_name}} }>
     {% endfor %}
       <DispatchContext.Provider value={dispatchers}>
         {children}
       </DispatchContext.Provider>
-    {% for state_name in (initial_state.keys() | list + initial_state_parametrized.keys() | list) | reverse %}
+    {% for state_name in all_state_names | reverse %}
     </StateContexts.{{state_name|format_state_name}}.Provider>
     {% endfor %}
   )
