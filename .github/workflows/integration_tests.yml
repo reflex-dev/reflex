@@ -118,6 +118,7 @@ jobs:
           poetry run python scripts/benchmarks/benchmark_imports.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --benchmark-json "./reflex-examples/counter/${{ env.OUTPUT_FILE }}"
+          --branch-name "${{ github.head_ref || github.ref_name }}"
           --event-type "${{ github.event_name }}" --actor "${{ github.actor }}" --pr-id "${{ github.event.pull_request.id }}"
 
 
