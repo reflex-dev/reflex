@@ -94,6 +94,15 @@ class Templates(SimpleNamespace):
     # The default template
     DEFAULT = "blank"
 
+    # The URL to redirect to reflex.build
+    REFLEX_BUILD_URL = "http://localhost:3004/?reflex_init_token={reflex_init_token}"
+
+    # The URL to poll waiting for the user to select a generation.
+    REFLEX_BUILD_POLL_URL = "http://localhost:8004/api/init/{reflex_init_token}"
+
+    # The URL to fetch the generation's reflex code
+    REFLEX_BUILD_CODE_URL = "http://localhost:8004/api/gen/{generation_hash}"
+
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""
 

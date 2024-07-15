@@ -16,7 +16,7 @@ from reflex_cli.utils import dependency
 from reflex import constants
 from reflex.config import get_config
 from reflex.custom_components.custom_components import custom_components_cli
-from reflex.utils import console, telemetry
+from reflex.utils import console, redir, telemetry
 
 # Disable typer+rich integration for help panels
 typer.core.rich = False  # type: ignore
@@ -65,6 +65,7 @@ def _init(
     name: str,
     template: str | None = None,
     loglevel: constants.LogLevel = config.loglevel,
+    ai: bool = False,
 ):
     """Initialize a new Reflex app in the given directory."""
     from reflex.utils import exec, prerequisites
@@ -91,8 +92,16 @@ def _init(
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
 
-    # Initialize the app.
-    prerequisites.initialize_app(app_name, template)
+    # Check if AI is requested and redirect the user to reflex.build.
+    if ai:
+        prerequisites.initialize_app(app_name, template=constants.Templates.DEFAULT)
+        generation_hash = redir.reflex_build_redirect()
+        prerequisites.initialize_main_module_index_from_generation(
+            app_name, generation_hash=generation_hash
+        )
+    else:
+        # Initialize the app.
+        prerequisites.initialize_app(app_name, template)
 
     # Migrate Pynecone projects to Reflex.
     prerequisites.migrate_to_reflex()
@@ -119,9 +128,13 @@ def init(
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
+    ai: bool = typer.Option(
+        False,
+        help="Use AI to create the initial template. Cannot be used with existing app or `--template` option.",
+    ),
 ):
     """Initialize a new Reflex app in the current directory."""
-    _init(name, template, loglevel)
+    _init(name, template, loglevel, ai)
 
 
 def _run(

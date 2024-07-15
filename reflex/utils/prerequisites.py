@@ -16,6 +16,7 @@ import shutil
 import stat
 import sys
 import tempfile
+import textwrap
 import zipfile
 from datetime import datetime
 from fileinput import FileInput
@@ -1473,6 +1474,27 @@ def initialize_app(app_name: str, template: str | None = None):
         )
 
     telemetry.send("init", template=template)
+
+
+def initialize_main_module_index_from_generation(app_name: str, generation_hash: str):
+    # Download the reflex code for the generation.
+    resp = httpx.get(
+        constants.Templates.REFLEX_BUILD_CODE_URL.format(
+            generation_hash=generation_hash
+        )
+    ).raise_for_status()
+    reflex_code = resp.text
+    main_module_path = Path(app_name, app_name + constants.Ext.PY)
+    main_module_code = main_module_path.read_text()
+    main_module_path.write_text(
+        re.sub(
+            r"def index\(\).*:\n([^\n]\s+.*\n+)+",
+            lambda _m: "def index() -> rx.Component:\n"
+            + textwrap.indent("return " + reflex_code, "    "),
+            main_module_code,
+            flags=re.MULTILINE,
+        )
+    )
 
 
 def format_address_width(address_width) -> int | None:
