@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import glob
 import importlib
+import importlib.metadata
 import inspect
 import json
 import os
@@ -23,7 +24,6 @@ from types import ModuleType
 from typing import Callable, List, Optional
 
 import httpx
-import pkg_resources
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
@@ -61,7 +61,7 @@ class CpuInfo(Base):
 def get_web_dir() -> Path:
     """Get the working directory for the next.js commands.
 
-    Can be overriden with REFLEX_WEB_WORKDIR.
+    Can be overridden with REFLEX_WEB_WORKDIR.
 
     Returns:
         The working directory.
@@ -78,7 +78,7 @@ def check_latest_package_version(package_name: str):
     """
     try:
         # Get the latest version from PyPI
-        current_version = pkg_resources.get_distribution(package_name).version
+        current_version = importlib.metadata.version(package_name)
         url = f"https://pypi.org/pypi/{package_name}/json"
         response = httpx.get(url)
         latest_version = response.json()["info"]["version"]
@@ -404,9 +404,15 @@ def initialize_gitignore(
         files_to_ignore: The files to add to the .gitignore file.
     """
     # Combine with the current ignored files.
+    current_ignore: set[str] = set()
     if os.path.exists(gitignore_file):
         with open(gitignore_file, "r") as f:
-            files_to_ignore |= set([line.strip() for line in f.readlines()])
+            current_ignore |= set([line.strip() for line in f.readlines()])
+
+    if files_to_ignore == current_ignore:
+        console.debug(f"{gitignore_file} already up to date.")
+        return
+    files_to_ignore |= current_ignore
 
     # Write files to the .gitignore file.
     with open(gitignore_file, "w", newline="\n") as f:
@@ -970,7 +976,7 @@ def is_latest_template() -> bool:
     json_file = get_web_dir() / constants.Reflex.JSON
     if not json_file.exists():
         return False
-    app_version = json.load(json_file.open()).get("version")
+    app_version = json.loads(json_file.read_text()).get("version")
     return app_version == constants.Reflex.VERSION
 
 

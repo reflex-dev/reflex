@@ -40,6 +40,7 @@ import reflex
 import reflex.reflex
 import reflex.utils.build
 import reflex.utils.exec
+import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.state import (
@@ -176,6 +177,33 @@ class AppHarness:
             app_path=root,
             app_module_path=root / app_name / f"{app_name}.py",
         )
+
+    def get_state_name(self, state_cls_name: str) -> str:
+        """Get the state name for the given state class name.
+
+        Args:
+            state_cls_name: The state class name
+
+        Returns:
+            The state name
+        """
+        return reflex.utils.format.to_snake_case(
+            f"{self.app_name}___{self.app_name}___" + state_cls_name
+        )
+
+    def get_full_state_name(self, path: List[str]) -> str:
+        """Get the full state name for the given state class name.
+
+        Args:
+            path: A list of state class names
+
+        Returns:
+            The full state name
+        """
+        # NOTE: using State.get_name() somehow causes trouble here
+        # path = [State.get_name()] + [self.get_state_name(p) for p in path]
+        path = ["reflex___state____state"] + [self.get_state_name(p) for p in path]
+        return ".".join(path)
 
     def _get_globals_from_signature(self, func: Any) -> dict[str, Any]:
         """Get the globals from a function or module object.

@@ -159,7 +159,10 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
             ]
         )
 
-        if value.__name__ not in type_hint_globals:
+        if (
+            value.__module__ not in ["builtins", "__builtins__"]
+            and value.__name__ not in type_hint_globals
+        ):
             raise TypeError(
                 f"{value.__module__ + '.' + value.__name__} is not a default import, "
                 "add it to DEFAULT_IMPORTS in pyi_generator.py"

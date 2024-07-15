@@ -24,9 +24,6 @@ class Axis(Recharts):
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], str, int]] = None,
         height: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        orientation: Optional[
-            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
-        ] = None,
         type_: Optional[
             Union[Var[Literal["number", "category"]], Literal["number", "category"]]
         ] = None,
@@ -36,6 +33,9 @@ class Axis(Recharts):
         axis_line: Optional[Union[Var[bool], bool]] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
+        label: Optional[
+            Union[Var[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]]
+        ] = None,
         scale: Optional[
             Union[
                 Var[
@@ -86,6 +86,8 @@ class Axis(Recharts):
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -143,11 +145,10 @@ class Axis(Recharts):
 
         Args:
             *children: The children of the component.
-            data_key: The key of a group of data which should be unique in an area chart.
+            data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
             height: The height of axis, which can be setted by user.
-            orientation: The orientation of axis 'top' | 'bottom'
             type_: The type of axis 'number' | 'category'
             allow_decimals: Allow the ticks of XAxis to be decimals or not.
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
@@ -155,6 +156,7 @@ class Axis(Recharts):
             axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
             reversed: Reverse the ticks or not.
+            label: The label of axis, which appears next to the axis.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
@@ -164,6 +166,8 @@ class Axis(Recharts):
             tick_line: If set false, no axis tick lines will be drawn.
             tick_size: The length of tick line.
             min_tick_gap: The minimum gap between two adjacent labels
+            stroke: The stroke color of axis
+            text_anchor: The text anchor of axis
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -183,15 +187,15 @@ class XAxis(Axis):
     def create(  # type: ignore
         cls,
         *children,
+        orientation: Optional[
+            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
+        ] = None,
         x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         include_hidden: Optional[Union[Var[bool], bool]] = None,
         data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], str, int]] = None,
         height: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        orientation: Optional[
-            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
-        ] = None,
         type_: Optional[
             Union[Var[Literal["number", "category"]], Literal["number", "category"]]
         ] = None,
@@ -201,6 +205,9 @@ class XAxis(Axis):
         axis_line: Optional[Union[Var[bool], bool]] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
+        label: Optional[
+            Union[Var[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]]
+        ] = None,
         scale: Optional[
             Union[
                 Var[
@@ -251,6 +258,8 @@ class XAxis(Axis):
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -308,13 +317,13 @@ class XAxis(Axis):
 
         Args:
             *children: The children of the component.
+            orientation: The orientation of axis 'top' | 'bottom'
             x_axis_id: The id of x-axis which is corresponding to the data.
             include_hidden: Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
-            data_key: The key of a group of data which should be unique in an area chart.
+            data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
             height: The height of axis, which can be setted by user.
-            orientation: The orientation of axis 'top' | 'bottom'
             type_: The type of axis 'number' | 'category'
             allow_decimals: Allow the ticks of XAxis to be decimals or not.
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
@@ -322,6 +331,7 @@ class XAxis(Axis):
             axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
             reversed: Reverse the ticks or not.
+            label: The label of axis, which appears next to the axis.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
@@ -331,6 +341,8 @@ class XAxis(Axis):
             tick_line: If set false, no axis tick lines will be drawn.
             tick_size: The length of tick line.
             min_tick_gap: The minimum gap between two adjacent labels
+            stroke: The stroke color of axis
+            text_anchor: The text anchor of axis
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -353,8 +365,9 @@ class YAxis(Axis):
         orientation: Optional[
             Union[Var[Literal["left", "right"]], Literal["left", "right"]]
         ] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        domain: Optional[Union[Var[List], List]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], str, int]] = None,
         height: Optional[Union[Var[Union[int, str]], str, int]] = None,
@@ -367,6 +380,9 @@ class YAxis(Axis):
         axis_line: Optional[Union[Var[bool], bool]] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
+        label: Optional[
+            Union[Var[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]]
+        ] = None,
         scale: Optional[
             Union[
                 Var[
@@ -417,6 +433,8 @@ class YAxis(Axis):
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -474,9 +492,10 @@ class YAxis(Axis):
 
         Args:
             *children: The children of the component.
-            orientation: The orientation of axis 'top' | 'bottom'
-            data_key: The key of a group of data which should be unique in an area chart.
+            orientation: The orientation of axis 'left' | 'right'
             y_axis_id: The id of y-axis which is corresponding to the data.
+            domain: The range of the axis. Work best in conjuction with allow_data_overflow.
+            data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
             height: The height of axis, which can be setted by user.
@@ -487,6 +506,7 @@ class YAxis(Axis):
             axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
             reversed: Reverse the ticks or not.
+            label: The label of axis, which appears next to the axis.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
@@ -496,6 +516,8 @@ class YAxis(Axis):
             tick_line: If set false, no axis tick lines will be drawn.
             tick_size: The length of tick line.
             min_tick_gap: The minimum gap between two adjacent labels
+            stroke: The stroke color of axis
+            text_anchor: The text anchor of axis
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -642,6 +664,7 @@ class Brush(Recharts):
         cls,
         *children,
         stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         x: Optional[Union[Var[int], int]] = None,
         y: Optional[Union[Var[int], int]] = None,
@@ -667,7 +690,8 @@ class Brush(Recharts):
 
         Args:
             *children: The children of the component.
-            stroke: Stroke color
+            stroke: The stroke color of brush
+            fill: The fill color of brush
             data_key: The key of data displayed in the axis.
             x: The x-coordinate of brush.
             y: The y-coordinate of brush.
@@ -862,8 +886,12 @@ class Area(Cartesian):
                 ],
             ]
         ] = None,
-        dot: Optional[Union[Var[bool], bool]] = None,
-        active_dot: Optional[Union[Var[bool], bool]] = None,
+        dot: Optional[
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+        ] = None,
+        active_dot: Optional[
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+        ] = None,
         label: Optional[Union[Var[bool], bool]] = None,
         stack_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
@@ -972,7 +1000,7 @@ class Area(Cartesian):
             type_: The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
             dot: If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
             active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-            label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
+            label: If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally.
             stack_id: The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
             unit: The unit of data. This option will be used in tooltip.
             name: The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
@@ -1067,10 +1095,10 @@ class Bar(Cartesian):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_animation_begin: Optional[
+        on_animation_end: Optional[
             Union[EventHandler, EventSpec, list, Callable, BaseVar]
         ] = None,
-        on_animation_end: Optional[
+        on_animation_start: Optional[
             Union[EventHandler, EventSpec, list, Callable, BaseVar]
         ] = None,
         on_blur: Optional[
@@ -1205,8 +1233,12 @@ class Line(Cartesian):
         ] = None,
         stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         stoke_width: Optional[Union[Var[int], int]] = None,
-        dot: Optional[Union[Var[bool], bool]] = None,
-        active_dot: Optional[Union[Var[bool], bool]] = None,
+        dot: Optional[
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+        ] = None,
+        active_dot: Optional[
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+        ] = None,
         label: Optional[Union[Var[bool], bool]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         connect_nulls: Optional[Union[Var[bool], bool]] = None,
@@ -1547,6 +1579,7 @@ class Funnel(Recharts):
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1618,6 +1651,7 @@ class Funnel(Recharts):
             animation_begin: Specifies when the animation should begin, the unit of this option is ms.
             animation_duration: Specifies the duration of animation, the unit of this option is ms.
             animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
+            stroke: stroke color
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2216,6 +2250,7 @@ class CartesianGrid(Grid):
         fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         fill_opacity: Optional[Union[Var[float], float]] = None,
         stroke_dasharray: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         x: Optional[Union[Var[int], int]] = None,
         y: Optional[Union[Var[int], int]] = None,
         width: Optional[Union[Var[int], int]] = None,
@@ -2284,6 +2319,7 @@ class CartesianGrid(Grid):
             fill: The background of grid.
             fill_opacity: The opacity of the background used to fill the space between grid lines
             stroke_dasharray: The pattern of dashes and gaps used to paint the lines of the grid
+            stroke: the stroke color of grid
             x: The x-coordinate of grid.
             y: The y-coordinate of grid.
             width: The width of grid.

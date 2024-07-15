@@ -84,11 +84,17 @@ In the example above, you will be able to do `rx.list`
 
 from __future__ import annotations
 
-from reflex.utils import lazy_loader
+from reflex.utils import (
+    compat,  # for side-effects
+    lazy_loader,
+)
 
 # import this here explicitly to avoid returning the page module since page attr has the
 # same name as page module(page.py)
 from .page import page as page
+
+# Remove the `compat` name from the namespace, it was imported for side-effects only.
+del compat
 
 RADIX_THEMES_MAPPING: dict = {
     "components.radix.themes.base": ["color_mode", "theme", "theme_panel"],
