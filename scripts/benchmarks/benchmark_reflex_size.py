@@ -96,10 +96,8 @@ def send_benchmarking_data_to_posthog(
     pr_id: str,
     path: str,
 ):
-    if measurement_type == "reflex-package":
-        size = get_package_size(path, os_type_version)
-    else:
-        size = get_directory_size(path)
+    package_size = get_package_size(path, os_type_version)
+    web_directory_size = get_directory_size(path)
 
     # Get the current timestamp
     current_timestamp = datetime.now().isoformat()
@@ -117,7 +115,8 @@ def send_benchmarking_data_to_posthog(
             "pr_title": pr_title,
             "branch_name": branch_name,
             "pr_id": pr_id,
-            "size_mb": round(size / (1024 * 1024), 3),  # size in mb rounded to 3 places
+            "package_size": round(package_size / (1024 * 1024), 3),  # size in mb rounded to 3 places
+            "web_directory_size": round(web_directory_size / (1024 * 1024), 3)
         },
     }
 

@@ -1,4 +1,4 @@
-"""Runs the benchmarks and sends the results to PostHog."""
+"""Benchmarks the import times for reflex."""
 
 from __future__ import annotations
 
