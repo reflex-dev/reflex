@@ -375,7 +375,9 @@ class ConcatVarOperation(StringVar):
         Returns:
             The VarData.
         """
-        return VarData.merge(*[var._get_all_var_data() for var in self._var_value])
+        return VarData.merge(
+            *[var._get_all_var_data() for var in self._var_value], self._var_data
+        )
 
     def _get_all_var_data(self) -> VarData:
         return self._cached_get_all_var_data
