@@ -348,9 +348,9 @@ class LiteralStringVar(LiteralVar):
 class ConcatVarOperation(StringVar):
     """Representing a concatenation of literal string vars."""
 
-    _var_value: tuple[Var] = dataclasses.field(default=list)
+    _var_value: tuple[Var, ...] = dataclasses.field(default=tuple)
 
-    def __init__(self, _var_value: list[Var], _var_data: VarData | None = None):
+    def __init__(self, _var_value: tuple[Var, ...], _var_data: VarData | None = None):
         """Initialize the operation of concatenating literal string vars.
 
         Args:
@@ -379,7 +379,7 @@ class ConcatVarOperation(StringVar):
             *[var._get_all_var_data() for var in self._var_value], self._var_data
         )
 
-    def _get_all_var_data(self) -> VarData:
+    def _get_all_var_data(self) -> VarData | None:
         return self._cached_get_all_var_data
 
     def __post_init__(self):
@@ -389,7 +389,7 @@ class ConcatVarOperation(StringVar):
     @classmethod
     def create(
         cls,
-        value: tuple[Var],
+        value: tuple[Var, ...],
         _var_data: VarData | None = None,
     ) -> ConcatVarOperation:
         """Create a var from a tuple of values.
