@@ -365,7 +365,11 @@ class ConcatVarOperation(StringVar):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         return "+".join([str(element) for element in self._var_value])
 
     @cached_property
@@ -373,13 +377,18 @@ class ConcatVarOperation(StringVar):
         """Get all VarData associated with the Var.
 
         Returns:
-            The VarData.
+            The VarData of the components and all of its children.
         """
         return VarData.merge(
             *[var._get_all_var_data() for var in self._var_value], self._var_data
         )
 
     def _get_all_var_data(self) -> VarData | None:
+        """Wrapper method for cached property.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
         return self._cached_get_all_var_data
 
     def __post_init__(self):
