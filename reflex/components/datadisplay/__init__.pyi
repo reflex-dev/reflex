@@ -4,11 +4,10 @@
 # ------------------------------------------------------
 
 from .code import CodeBlock as CodeBlock
-from .code import code_block as code_block
 from .code import LiteralCodeBlockTheme as LiteralCodeBlockTheme
 from .code import LiteralCodeLanguage as LiteralCodeLanguage
+from .code import code_block as code_block
+from .dataeditor import DataEditorTheme as DataEditorTheme
 from .dataeditor import data_editor as data_editor
 from .dataeditor import data_editor_theme as data_editor_theme
-from .dataeditor import DataEditorTheme as DataEditorTheme
 from .logo import logo as logo
-from reflex.utils import lazy_loader
