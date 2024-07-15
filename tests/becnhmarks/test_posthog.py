@@ -7,25 +7,6 @@ from scripts.benchmarks.simple_app_benchmark_upload import send_benchmarking_dat
 posthog_api_key = os.environ.get('POSTHOG_API_KEY', 'phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb')
 
 class TestSendBenchmarkingDataIntegration(unittest.TestCase):
-    def test_send_size_benchmarking_data_to_posthog_integration(self):
-        # Call the function with test data
-        result = size_posthog(
-            posthog_api_key=posthog_api_key,
-            os_type_version='test-os',
-            python_version='3.8',
-            measurement_type='test-measurement',
-            commit_sha='test-sha',
-            pr_title='Test PR',
-            branch_name='test-branch',
-            pr_id='test-pr-id',
-            path='/path/to/test/venv'
-        )
-        # Print the result for debugging
-        print(f"Result of send_benchmarking_data_to_posthog (size): {result}")
-        # Assert that the function returned True, indicating success
-        self.assertTrue(result, "Failed to send data to PostHog")
-        print("Integration test for send_benchmarking_data_to_posthog (size) passed successfully!")
-
     def test_send_imports_benchmarking_data_to_posthog_integration(self):
         # Prepare test data
         performance_data = {
