@@ -168,4 +168,5 @@ jobs:
           poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}"
+          --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "reflex-web-dot-web" --path ./reflex-web/.web
