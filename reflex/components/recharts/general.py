@@ -139,30 +139,36 @@ class GraphingTooltip(Recharts):
     filter_null: Var[bool]
 
     # If set false, no cursor will be drawn when tooltip is active.
-    cursor: Var[Union[Dict[str, Any], bool]] = {
-        "strokeWidth": 1,
-        "fill": Var.create_safe(Color("gray", 3)),
-    }
+    cursor: Var[Union[Dict[str, Any], bool]] = Var.create_safe(
+        {
+            "strokeWidth": 1,
+            "fill": Color("gray", 3),
+        }
+    )
 
     # The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
     view_box: Var[Dict[str, Any]]
 
     # The style of default tooltip content item which is a li element. DEFAULT: {}
-    item_style: Var[Dict[str, Any]] = {
-        "color": Var.create_safe(Color("gray", 12)),
-    }
+    item_style: Var[Dict[str, Any]] = Var.create_safe(
+        {
+            "color": Color("gray", 12),
+        }
+    )
 
     # The style of tooltip wrapper which is a dom element. DEFAULT: {}
     wrapper_style: Var[Dict[str, Any]]
     # The style of tooltip content which is a dom element. DEFAULT: {}
-    content_style: Var[Dict[str, Any]] = {
-        "background": Var.create_safe(Color("gray", 1)),
-        "borderColor": Var.create_safe(Color("gray", 4)),
-        "borderRadius": "8px",
-    }
+    content_style: Var[Dict[str, Any]] = Var.create_safe(
+        {
+            "background": Color("gray", 1),
+            "borderColor": Color("gray", 4),
+            "borderRadius": "8px",
+        }
+    )
 
     # The style of default tooltip label which is a p element. DEFAULT: {}
-    label_style: Var[Dict[str, Any]] = {"color": Var.create_safe(Color("gray", 11))}
+    label_style: Var[Dict[str, Any]] = Var.create_safe({"color": Color("gray", 11)})
 
     # This option allows the tooltip to extend beyond the viewBox of the chart itself. DEFAULT: { x: false, y: false }
     allow_escape_view_box: Var[Dict[str, bool]] = Var.create_safe(
@@ -228,7 +234,7 @@ class LabelList(Recharts):
     fill: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
 
     # The stroke color of each label
-    stroke: Var[Union[str, Color]] = "none"
+    stroke: Var[Union[str, Color]] = Var.create_safe("none")
 
 
 responsive_container = ResponsiveContainer.create

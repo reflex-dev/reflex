@@ -86,7 +86,7 @@ class Axis(Recharts):
     tick_count: Var[int]
 
     # If set false, no axis tick lines will be drawn.
-    tick_line: Var[bool] = False
+    tick_line: Var[bool] = Var.create_safe(False)
 
     # The length of tick line.
     tick_size: Var[int]
@@ -95,7 +95,7 @@ class Axis(Recharts):
     min_tick_gap: Var[int]
 
     # The stroke color of axis
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 9))
 
     # The text anchor of axis
     text_anchor: Var[str]  # 'start', 'middle', 'end'
@@ -293,22 +293,24 @@ class Area(Cartesian):
     stroke: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
 
     # The width of the line stroke.
-    stroke_width: Var[int] = 1
+    stroke_width: Var[int] = Var.create_safe(1)
 
     # The color of the area fill.
     fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 5))
 
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
-    type_: Var[LiteralAreaType] = "monotone"
+    type_: Var[LiteralAreaType] = Var.create_safe("monotone")
 
     # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
     dot: Var[Union[bool, Dict[str, Any]]]
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    active_dot: Var[Union[bool, Dict[str, Any]]] = {
-        "stroke": Var.create_safe(Color("accent", 2)),
-        "fill": Var.create_safe(Color("accent", 10)),
-    }
+    active_dot: Var[Union[bool, Dict[str, Any]]] = Var.create_safe(
+        {
+            "stroke": Color("accent", 2),
+            "fill": Color("accent", 10),
+        }
+    )
 
     # If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally.
     label: Var[bool]
@@ -407,16 +409,20 @@ class Line(Cartesian):
     stoke_width: Var[int]
 
     # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    dot: Var[Union[bool, Dict[str, Any]]] = {
-        "stroke": Var.create_safe(Color("accent", 10)),
-        "fill": Var.create_safe(Color("accent", 4)),
-    }
+    dot: Var[Union[bool, Dict[str, Any]]] = Var.create_safe(
+        {
+            "stroke": Color("accent", 10),
+            "fill": Color("accent", 4),
+        }
+    )
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    active_dot: Var[Union[bool, Dict[str, Any]]] = {
-        "stroke": Var.create_safe(Color("accent", 2)),
-        "fill": Var.create_safe(Color("accent", 10)),
-    }
+    active_dot: Var[Union[bool, Dict[str, Any]]] = Var.create_safe(
+        {
+            "stroke": Color("accent", 2),
+            "fill": Color("accent", 10),
+        }
+    )
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
     label: Var[bool]
@@ -545,11 +551,11 @@ class Funnel(Recharts):
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
     animation_easing: Var[LiteralAnimationEasing]
 
-    # Valid children components
-    _valid_children: List[str] = ["LabelList", "Cell"]
-
     # stroke color
     stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 3))
+
+    # Valid children components
+    _valid_children: List[str] = ["LabelList", "Cell"]
 
     # The customized event handler of animation start
     on_animation_start: EventHandler[lambda: []]

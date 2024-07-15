@@ -116,7 +116,7 @@ class Radar(Recharts):
     fill: Var[str] = Var.create_safe(Color("accent", 3))
 
     # opacity
-    fill_opacity: Var[float] = 0.6
+    fill_opacity: Var[float] = Var.create_safe(0.6)
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered.
     legend_type: Var[str]
@@ -218,7 +218,7 @@ class PolarAngleAxis(Recharts):
     axis_line_type: Var[str]
 
     # If false set, tick lines will not be drawn. If true set, tick lines will be drawn which have the props calculated internally. If object set, tick lines will be drawn which have the props mergered by the internal calculated props and the option.
-    tick_line: Var[Union[bool, Dict[str, Any]]] = False
+    tick_line: Var[Union[bool, Dict[str, Any]]] = Var.create_safe(False)
 
     # The width or height of tick.
     tick: Var[Union[int, str]]
@@ -342,7 +342,7 @@ class PolarRadiusAxis(Recharts):
     _valid_children: List[str] = ["Label"]
 
     # The domain of the polar radius axis, specifying the minimum and maximum values.
-    domain: List[int] = [0, 250]
+    domain: Var[List[int]] = Var.create_safe([0, 250])
 
     # The stroke color of axis
     stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
