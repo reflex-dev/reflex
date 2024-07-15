@@ -104,7 +104,7 @@ jobs:
         run:
           poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}"
+          --pr-id "${{ github.event.pull_request.id }}"
           --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "counter-app-dot-web" --path ./reflex-examples/counter/.web
       - name: Install hyperfine
