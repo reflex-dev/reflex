@@ -348,7 +348,7 @@ class LiteralStringVar(LiteralVar):
 class ConcatVarOperation(StringVar):
     """Representing a concatenation of literal string vars."""
 
-    _var_value: tuple[Var, ...] = dataclasses.field(default=tuple)
+    _var_value: tuple[Var, ...] = dataclasses.field(default_factory=tuple)
 
     def __init__(self, _var_value: tuple[Var, ...], _var_data: VarData | None = None):
         """Initialize the operation of concatenating literal string vars.
