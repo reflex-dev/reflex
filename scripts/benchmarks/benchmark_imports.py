@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 from datetime import datetime
+import httpx
 
 import psycopg2
 
@@ -59,34 +60,35 @@ def insert_benchmarking_data(
         actor: Username of the user that triggered the run.
         pr_id: Id of the PR.
     """
-    # Serialize the JSON data
-    simple_app_performance_json = json.dumps(performance_data)
     # Get the current timestamp
     current_timestamp = datetime.now()
 
-    # Connect to the database and insert the data
-    with psycopg2.connect(db_connection_url) as conn, conn.cursor() as cursor:
-        insert_query = """
-            INSERT INTO import_benchmarks (os, python_version, commit_sha, time, pr_title, branch_name, event_type, actor, performance, pr_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-            """
-        cursor.execute(
-            insert_query,
-            (
-                os_type_version,
-                python_version,
-                commit_sha,
-                current_timestamp,
-                pr_title,
-                branch_name,
-                event_type,
-                actor,
-                simple_app_performance_json,
-                pr_id,
-            ),
+    # Prepare the event data
+    event_data = {
+         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
+         "event": "import_benchmark",
+         "properties": {
+             "distinct_id": actor,
+             "os": os_type_version,
+             "python_version": python_version,
+             "commit_sha": commit_sha,
+             "timestamp": current_timestamp,
+             "pr_title": pr_title,
+             "branch_name": branch_name,
+             "event_type": event_type,
+             "pr_id": pr_id,
+             "performance": performance_data,
+         },
+     }
+
+     # Send the data to PostHog
+    with httpx.Client() as client:
+        response = client.post("https://app.posthog.com/capture/", json=event_data)
+
+    if response.status_code != 200:
+        print(
+             f"Error sending data to PostHog: {response.status_code} - {response.text}"
         )
-        # Commit the transaction
-        conn.commit()
 
 
 def main():

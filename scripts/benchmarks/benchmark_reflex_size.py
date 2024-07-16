@@ -4,6 +4,7 @@ import argparse
 import os
 import subprocess
 from datetime import datetime
+import httpx
 
 import psycopg2
 
@@ -95,11 +96,12 @@ def insert_benchmarking_data(
     branch_name: str,
     pr_id: str,
     path: str,
+    actor: str,
 ):
-    """Insert the benchmarking data into the database.
+    """Insert the benchmarking data into PostHog.
 
     Args:
-        db_connection_url: The URL to connect to the database.
+        posthog_api_key: The API key for PostHog.
         os_type_version: The OS type and version to insert.
         python_version: The Python version to insert.
         measurement_type: The type of metric to measure.
@@ -108,6 +110,7 @@ def insert_benchmarking_data(
         branch_name: The name of the branch.
         pr_id: The id of the PR.
         path: The path to the dir or file to check size.
+        actor: Username of the user that triggered the run.
     """
     if measurement_type == "reflex-package":
         size = get_package_size(path, os_type_version)
@@ -117,30 +120,32 @@ def insert_benchmarking_data(
     # Get the current timestamp
     current_timestamp = datetime.now()
 
-    # Connect to the database and insert the data
-    with psycopg2.connect(db_connection_url) as conn, conn.cursor() as cursor:
-        insert_query = """
-            INSERT INTO size_benchmarks (os, python_version, commit_sha, created_at, pr_title, branch_name, pr_id, measurement_type, size)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
-            """
-        cursor.execute(
-            insert_query,
-            (
-                os_type_version,
-                python_version,
-                commit_sha,
-                current_timestamp,
-                pr_title,
-                branch_name,
-                pr_id,
-                measurement_type,
-                round(
-                    size / (1024 * 1024), 3
-                ),  # save size in mb and round to 3 places.
-            ),
-        )
-        # Commit the transaction
-        conn.commit()
+    # Prepare the event data
+    event_data = {
+        "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
+        "event": "size_benchmark",
+        "properties": {
+            "distinct_id": actor,
+            "os": os_type_version,
+            "python_version": python_version,
+            "commit_sha": commit_sha,
+            "timestamp": current_timestamp.isoformat(),
+            "pr_title": pr_title,
+            "branch_name": branch_name,
+            "pr_id": pr_id,
+            "measurement_type": measurement_type,
+            "size_mb": round(size / (1024 * 1024), 3),  # save size in MB and round to 3 places
+        },
+    }
+
+    # Send the data to PostHog
+    with httpx.Client() as client:
+        response = client.post("https://app.posthog.com/capture/", json=event_data)
+
+    if response.status_code != 200:
+        print(f"Error sending data to PostHog: {response.status_code} - {response.text}")
+    else:
+        print("Successfully sent benchmarking data to PostHog")
 
 
 def main():
