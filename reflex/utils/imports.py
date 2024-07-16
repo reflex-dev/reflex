@@ -112,7 +112,14 @@ class ImportVar(Base):
             return self.tag or ""
 
     def __lt__(self, other: ImportVar) -> bool:
-        """Compare two ImportVar objects."""
+        """Compare two ImportVar objects.
+
+        Args:
+            other: The other ImportVar object to compare.
+
+        Returns:
+            Whether this ImportVar object is less than the other.
+        """
         return (
             self.tag,
             self.is_default,
@@ -130,7 +137,14 @@ class ImportVar(Base):
         )
 
     def __eq__(self, other: ImportVar) -> bool:
-        """Check if two ImportVar objects are equal."""
+        """Check if two ImportVar objects are equal.
+
+        Args:
+            other: The other ImportVar object to compare.
+
+        Returns:
+            Whether the two ImportVar objects are equal.
+        """
         return (
             self.tag,
             self.is_default,
@@ -148,7 +162,11 @@ class ImportVar(Base):
         )
 
     def __hash__(self) -> int:
-        """Hash the ImportVar object."""
+        """Hash the ImportVar object.
+
+        Returns:
+            The hash of the ImportVar object.
+        """
         return hash(
             (
                 self.tag,
