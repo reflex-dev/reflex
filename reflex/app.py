@@ -1460,16 +1460,19 @@ class EventNamespace(AsyncNamespace):
         if disconnect_token:
             self.token_to_sid.pop(disconnect_token, None)
 
-    async def emit_update(self, update: StateUpdate, sid: str) -> None:
+    async def emit_update(
+        self, update: StateUpdate, sid: str, room: str | None = None
+    ) -> None:
         """Emit an update to the client.
 
         Args:
             update: The state update to send.
             sid: The Socket.IO session id.
+            room: The room to send the update to.
         """
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+            self.emit(str(constants.SocketEvent.EVENT), update.json(), to=room or sid)
         )
 
     async def on_event(self, sid, data):

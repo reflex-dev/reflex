@@ -383,6 +383,8 @@ class Var:
     # Extra metadata associated with the Var
     _var_data: Optional[VarData]
 
+    _var_is_scope: bool = False
+
     @classmethod
     def create(
         cls,
@@ -390,6 +392,7 @@ class Var:
         _var_is_local: bool = True,
         _var_is_string: bool | None = None,
         _var_data: Optional[VarData] = None,
+        _var_is_scope: bool = False,
     ) -> Var | None:
         """Create a var from a value.
 
@@ -455,6 +458,7 @@ class Var:
             _var_is_local=_var_is_local,
             _var_is_string=_var_is_string if _var_is_string is not None else False,
             _var_data=_var_data,
+            _var_is_scope=_var_is_scope,
         )
 
     @classmethod
@@ -1865,6 +1869,8 @@ class BaseVar(Var):
 
     # Extra metadata associated with the Var
     _var_data: Optional[VarData] = dataclasses.field(default=None)
+
+    _var_is_scope: bool = dataclasses.field(default=False)
 
     def __hash__(self) -> int:
         """Define a hash function for a var.
