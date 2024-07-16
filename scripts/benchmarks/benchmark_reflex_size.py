@@ -2,8 +2,12 @@
 
 import argparse
 import os
+import sys
+import site
+from pathlib import Path
 import subprocess
 from datetime import datetime
+
 
 import httpx
 
@@ -50,39 +54,31 @@ def get_python_version(venv_path, os_name):
         return None
 
 
-def get_package_size(venv_path, os_name):
-    """Get the size of a specified package.
+def get_package_size():
+    # Determine the virtual environment path
+    if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+        if hasattr(site, 'getsitepackages'):
+            # For newer Python versions
+            venv_path = Path(site.getsitepackages()[0]).parent.parent
+        else:
+            # Fallback for older Python versions
+            venv_path = Path(sys.prefix)
+    else:
+        print("It seems you're not running this script from within a virtual environment.")
+        return None
 
-    Args:
-        venv_path: The path to the venv.
-        os_name: Name of os.
-
-    Returns:
-        The total size of the package in bytes.
-
-    Raises:
-        ValueError: when venv does not exist or python version is None.
-    """
-    python_version = get_python_version(venv_path, os_name)
-    if python_version is None:
-        raise ValueError("Error: Failed to determine Python version.")
-
-    is_windows = "windows" in os_name
-
-    full_path = (
-        ["lib", f"python{python_version}", "site-packages"]
-        if not is_windows
-        else ["Lib", "site-packages"]
-    )
-
-    package_dir = os.path.join(venv_path, *full_path)
-    if not os.path.exists(package_dir):
-        raise ValueError(
-            "Error: Virtual environment does not exist or is not activated."
-        )
-
-    total_size = get_directory_size(package_dir)
-    return total_size
+    total_size = 0
+    
+    # Walk through the directory tree
+    for dirpath, dirnames, filenames in os.walk(venv_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            # Skip if it's a symbolic link
+            if not os.path.islink(fp):
+                total_size += os.path.getsize(fp)
+    
+    # Convert total size to MB and round to 2 decimal places
+    return round(total_size / (1024 * 1024), 2)
 
 
 def send_benchmarking_data_to_posthog(
@@ -96,7 +92,7 @@ def send_benchmarking_data_to_posthog(
     pr_id: str,
     path: str,
 ):
-    package_size = get_package_size(path, os_type_version)
+    package_size = get_package_size()
     web_directory_size = get_directory_size(path)
 
     # Get the current timestamp
