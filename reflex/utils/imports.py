@@ -156,4 +156,4 @@ class ImportVar(Base):
 ImportTypes = Union[str, ImportVar, List[Union[str, ImportVar]], List[ImportVar]]
 ImportDict = Dict[str, ImportTypes]
 ParsedImportDict = Dict[str, List[ImportVar]]
-ImmutableParsedImportDict = Tuple[Tuple[str, Tuple[ImportVar]], ...]
+ImmutableParsedImportDict = Tuple[Tuple[str, Tuple[ImportVar, ...]], ...]
