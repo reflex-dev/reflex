@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from reflex.base import Base
 
 
-def merge_imports(*imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
+def merge_imports(
+    *imports: ImportDict | ParsedImportDict | ImmutableParsedImportDict,
+) -> ParsedImportDict:
     """Merge multiple import dicts together.
 
     Args:
@@ -19,7 +21,9 @@ def merge_imports(*imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
     """
     all_imports = defaultdict(list)
     for import_dict in imports:
-        for lib, fields in import_dict.items():
+        for lib, fields in (
+            import_dict if isinstance(import_dict, tuple) else import_dict.items()
+        ):
             all_imports[lib].extend(fields)
     return all_imports
 
@@ -48,7 +52,9 @@ def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
     }
 
 
-def collapse_imports(imports: ParsedImportDict) -> ParsedImportDict:
+def collapse_imports(
+    imports: ParsedImportDict | ImmutableParsedImportDict,
+) -> ParsedImportDict:
     """Remove all duplicate ImportVar within an ImportDict.
 
     Args:
@@ -59,7 +65,9 @@ def collapse_imports(imports: ParsedImportDict) -> ParsedImportDict:
     """
     return {
         lib: list(set(import_vars)) if isinstance(import_vars, list) else import_vars
-        for lib, import_vars in imports.items()
+        for lib, import_vars in (
+            imports if isinstance(imports, tuple) else imports.items()
+        )
     }
 
 
@@ -120,3 +128,4 @@ class ImportVar(Base):
 ImportTypes = Union[str, ImportVar, List[Union[str, ImportVar]], List[ImportVar]]
 ImportDict = Dict[str, ImportTypes]
 ParsedImportDict = Dict[str, List[ImportVar]]
+ImmutableParsedImportDict = Tuple[Tuple[str, Tuple[ImportVar]]]

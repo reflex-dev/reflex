@@ -13,7 +13,14 @@ from reflex import constants
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.utils import serializers, types
 from reflex.utils.exceptions import VarTypeError
-from reflex.vars import Var, VarData, _decode_var, _extract_var_data, _global_vars
+from reflex.vars import (
+    ImmutableVarData,
+    Var,
+    VarData,
+    _decode_var_immutable,
+    _extract_var_data,
+    _global_vars,
+)
 
 
 @dataclasses.dataclass(
@@ -31,7 +38,7 @@ class ImmutableVar(Var):
     _var_type: Type = dataclasses.field(default=Any)
 
     # Extra metadata associated with the Var
-    _var_data: Optional[VarData] = dataclasses.field(default=None)
+    _var_data: Optional[ImmutableVarData] = dataclasses.field(default=None)
 
     @property
     def _var_is_local(self) -> bool:
@@ -63,11 +70,24 @@ class ImmutableVar(Var):
     def __post_init__(self):
         """Post-initialize the var."""
         # Decode any inline Var markup and apply it to the instance
-        _var_data, _var_name = _decode_var(self._var_name)
+        _var_data, _var_name = _decode_var_immutable(self._var_name)
         if _var_data:
             self.__init__(
-                _var_name, self._var_type, VarData.merge(self._var_data, _var_data)
+                _var_name,
+                self._var_type,
+                ImmutableVarData.merge(self._var_data, _var_data),
             )
+
+    def __hash__(self) -> int:
+        """Define a hash function for the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self._var_name, self._var_type, self._var_data))
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._var_data
 
     def _replace(self, merge_var_data=None, **kwargs: Any):
         """Make a copy of this Var with updated fields.
@@ -100,7 +120,7 @@ class ImmutableVar(Var):
         field_values = dict(
             _var_name=kwargs.pop("_var_name", self._var_name),
             _var_type=kwargs.pop("_var_type", self._var_type),
-            _var_data=VarData.merge(
+            _var_data=ImmutableVarData.merge(
                 kwargs.get("_var_data", self._var_data), merge_var_data
             ),
         )
@@ -113,7 +133,7 @@ class ImmutableVar(Var):
         _var_is_local: bool | None = None,
         _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
-    ) -> Var | None:
+    ) -> ImmutableVar | Var | None:
         """Create a var from a value.
 
         Args:
@@ -168,7 +188,15 @@ class ImmutableVar(Var):
         return cls(
             _var_name=name,
             _var_type=type_,
-            _var_data=_var_data,
+            _var_data=(
+                ImmutableVarData(
+                    imports=_var_data.imports,
+                    hooks=_var_data.hooks,
+                    state=_var_data.state,
+                )
+                if _var_data
+                else None
+            ),
         )
 
     @classmethod
@@ -178,7 +206,7 @@ class ImmutableVar(Var):
         _var_is_local: bool | None = None,
         _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
-    ) -> Var:
+    ) -> Var | ImmutableVar:
         """Create a var from a value, asserting that it is not None.
 
         Args:
@@ -373,17 +401,17 @@ class ConcatVarOperation(StringVar):
         return "+".join([str(element) for element in self._var_value])
 
     @cached_property
-    def _cached_get_all_var_data(self) -> VarData | None:
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
         """Get all VarData associated with the Var.
 
         Returns:
             The VarData of the components and all of its children.
         """
-        return VarData.merge(
+        return ImmutableVarData.merge(
             *[var._get_all_var_data() for var in self._var_value], self._var_data
         )
 
-    def _get_all_var_data(self) -> VarData | None:
+    def _get_all_var_data(self) -> ImmutableVarData | None:
         """Wrapper method for cached property.
 
         Returns:

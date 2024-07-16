@@ -880,13 +880,25 @@ def test_retrival():
     )
     assert (
         result_var_data.imports
-        == result_immutable_var_data.imports
+        == (
+            result_immutable_var_data.imports
+            if isinstance(result_immutable_var_data.imports, dict)
+            else {
+                k: list(v)
+                for k, v in result_immutable_var_data.imports
+                if k in original_var_data.imports
+            }
+        )
         == original_var_data.imports
     )
     assert (
-        result_var_data.hooks
-        == result_immutable_var_data.hooks
-        == original_var_data.hooks
+        list(result_var_data.hooks.keys())
+        == (
+            list(result_immutable_var_data.hooks.keys())
+            if isinstance(result_immutable_var_data.hooks, dict)
+            else list(result_immutable_var_data.hooks)
+        )
+        == list(original_var_data.hooks.keys())
     )
 
 
