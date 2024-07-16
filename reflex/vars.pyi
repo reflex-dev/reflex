@@ -53,6 +53,12 @@ class ImmutableVarData:
     state: str = ""
     imports: ImmutableParsedImportDict = tuple()
     hooks: Tuple[str, ...] = tuple()
+    def __init__(
+        self,
+        state: str = "",
+        imports: ImportDict | ParsedImportDict | None = None,
+        hooks: dict[str, None] | None = None,
+    ) -> None: ...
     @classmethod
     def merge(
         cls, *others: ImmutableVarData | VarData | None

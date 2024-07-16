@@ -190,9 +190,9 @@ class ImmutableVar(Var):
             _var_type=type_,
             _var_data=(
                 ImmutableVarData(
+                    state=_var_data.state,
                     imports=_var_data.imports,
                     hooks=_var_data.hooks,
-                    state=_var_data.state,
                 )
                 if _var_data
                 else None
@@ -364,7 +364,7 @@ class LiteralStringVar(LiteralVar):
             _var_value=value,
             _var_name=f'"{value}"',
             _var_type=str,
-            _var_data=_var_data,
+            _var_data=ImmutableVarData.merge(_var_data),
         )
 
 
@@ -386,7 +386,7 @@ class ConcatVarOperation(StringVar):
             _var_data: Additional hooks and imports associated with the Var.
         """
         super(ConcatVarOperation, self).__init__(
-            _var_name="", _var_data=_var_data, _var_type=str
+            _var_name="", _var_data=ImmutableVarData.merge(_var_data), _var_type=str
         )
         object.__setattr__(self, "_var_value", _var_value)
         object.__setattr__(self, "_var_name", self._cached_var_name)

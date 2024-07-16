@@ -267,13 +267,13 @@ class ImmutableVarData:
             imports: Imports needed to render this var.
             hooks: Hooks that need to be present in the component to render this var.
         """
-        imports = tuple(
+        immutable_imports: ImmutableParsedImportDict = tuple(
             sorted(
                 ((k, tuple(sorted(v))) for k, v in parse_imports(imports or {}).items())
             )
         )
         object.__setattr__(self, "state", state)
-        object.__setattr__(self, "imports", imports)
+        object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
 
     @classmethod
@@ -335,7 +335,12 @@ class ImmutableVarData:
         # not part of the vardata itself.
         return (
             self.state == other.state
-            and self.hooks.keys() == other.hooks.keys()
+            and self.hooks
+            == (
+                other.hooks
+                if isinstance(other, ImmutableVarData)
+                else tuple(other.hooks.keys())
+            )
             and imports.collapse_imports(self.imports)
             == imports.collapse_imports(other.imports)
         )

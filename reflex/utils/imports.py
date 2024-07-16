@@ -64,7 +64,9 @@ def collapse_imports(
         The collapsed import dict.
     """
     return {
-        lib: list(set(import_vars)) if isinstance(import_vars, list) else import_vars
+        lib: list(set(import_vars))
+        if isinstance(import_vars, list)
+        else list(import_vars)
         for lib, import_vars in (
             imports if isinstance(imports, tuple) else imports.items()
         )
@@ -128,4 +130,4 @@ class ImportVar(Base):
 ImportTypes = Union[str, ImportVar, List[Union[str, ImportVar]], List[ImportVar]]
 ImportDict = Dict[str, ImportTypes]
 ParsedImportDict = Dict[str, List[ImportVar]]
-ImmutableParsedImportDict = Tuple[Tuple[str, Tuple[ImportVar]]]
+ImmutableParsedImportDict = Tuple[Tuple[str, Tuple[ImportVar]], ...]
