@@ -78,11 +78,6 @@ def collapse_imports(
 class ImportVar(Base):
     """An import var."""
 
-    class Config:
-        """Pydantic config."""
-
-        frozen = True
-
     # The name of the import tag.
     tag: Optional[str]
 
@@ -150,6 +145,19 @@ class ImportVar(Base):
             other.install,
             other.render,
             other.transpile,
+        )
+
+    def __hash__(self) -> int:
+        """Hash the ImportVar object."""
+        return hash(
+            (
+                self.tag,
+                self.is_default,
+                self.alias,
+                self.install,
+                self.render,
+                self.transpile,
+            )
         )
 
 
