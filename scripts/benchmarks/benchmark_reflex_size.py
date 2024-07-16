@@ -126,7 +126,7 @@ def insert_benchmarking_data(
         "properties": {
             "os": os_type_version,
             "python_version": python_version,
-            "commit_sha": commit_sha,
+            "distinct_id": commit_sha,
             "timestamp": current_timestamp.isoformat(),
             "pr_title": pr_title,
             "branch_name": branch_name,

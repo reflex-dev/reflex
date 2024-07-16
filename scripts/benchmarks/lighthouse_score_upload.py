@@ -32,8 +32,8 @@ def insert_benchmarking_data(
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
         "event": "lighthouse_benchmark",
         "properties": {
+            "distinct_id": commit_sha,
             "lighthouse_data": lighthouse_data,
-            "commit_sha": commit_sha,
             "pr_title": pr_title,
             "timestamp": current_timestamp,
         }
