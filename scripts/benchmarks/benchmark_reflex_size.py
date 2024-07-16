@@ -96,7 +96,6 @@ def insert_benchmarking_data(
     branch_name: str,
     pr_id: str,
     path: str,
-    actor: str,
 ):
     """Insert the benchmarking data into PostHog.
 
@@ -125,7 +124,6 @@ def insert_benchmarking_data(
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
         "event": "size_benchmark",
         "properties": {
-            "distinct_id": actor,
             "os": os_type_version,
             "python_version": python_version,
             "commit_sha": commit_sha,

@@ -59,7 +59,6 @@ def insert_benchmarking_data(
     pr_title: str,
     branch_name: str,
     event_type: str,
-    actor: str,
     pr_id: str,
 ):
     """Insert the benchmarking data into the database.
@@ -85,7 +84,6 @@ def insert_benchmarking_data(
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
         "event": "simple_app_benchmark",
         "properties": {
-            "distinct_id": actor,
             "os": os_type_version,
             "python_version": python_version,
             "commit_sha": commit_sha,
@@ -144,11 +142,6 @@ def main():
         required=True,
     )
     parser.add_argument(
-        "--actor",
-        help="Username of the user that triggered the run.",
-        required=True,
-    )
-    parser.add_argument(
         "--pr-id",
         help="ID of the PR.",
         required=True,
@@ -170,7 +163,6 @@ def main():
         pr_title=pr_title,
         branch_name=args.branch_name,
         event_type=args.event_type,
-        actor=args.actor,
         pr_id=args.pr_id,
     )
 
