@@ -6,7 +6,7 @@ import json
 import os
 import sys
 from datetime import datetime
-
+import httpx
 import psycopg2
 
 
@@ -24,29 +24,29 @@ def insert_benchmarking_data(
         commit_sha: The commit SHA to insert.
         pr_title: The PR title to insert.
     """
-    # Serialize the JSON data
-    lighthouse_json = json.dumps(lighthouse_data)
+        # Get the current timestamp
+    current_timestamp = datetime.now().isoformat()
 
-    # Get the current timestamp
-    current_timestamp = datetime.now()
+    # Prepare the event data
+    event_data = {
+        "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
+        "event": "lighthouse_benchmark",
+        "properties": {
+            "lighthouse_data": lighthouse_data,
+            "commit_sha": commit_sha,
+            "pr_title": pr_title,
+            "timestamp": current_timestamp,
+        }
+    }
 
-    # Connect to the database and insert the data
-    with psycopg2.connect(db_connection_url) as conn, conn.cursor() as cursor:
-        insert_query = """
-            INSERT INTO benchmarks (lighthouse, commit_sha, pr_title, time)
-            VALUES (%s, %s, %s, %s);
-            """
-        cursor.execute(
-            insert_query,
-            (
-                lighthouse_json,
-                commit_sha,
-                pr_title,
-                current_timestamp,
-            ),
-        )
-        # Commit the transaction
-        conn.commit()
+    # Send the data to PostHog
+    with httpx.Client() as client:
+        response = client.post("https://app.posthog.com/capture/", json=event_data)
+
+    if response.status_code != 200:
+        print(f"Error sending data to PostHog: {response.status_code} - {response.text}")
+    else:
+        print("Successfully sent benchmark data to PostHog")
 
 
 def get_lighthouse_scores(directory_path: str) -> dict:
