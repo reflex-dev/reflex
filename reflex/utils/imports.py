@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
 
+from pydantic import TypeAdapter
+
 from reflex.base import Base
 
 
@@ -64,9 +66,11 @@ def collapse_imports(
         The collapsed import dict.
     """
     return {
-        lib: list(set(import_vars))
-        if isinstance(import_vars, list)
-        else list(import_vars)
+        lib: (
+            list(set(import_vars))
+            if isinstance(import_vars, list)
+            else list(import_vars)
+        )
         for lib, import_vars in (
             imports if isinstance(imports, tuple) else imports.items()
         )
@@ -75,6 +79,11 @@ def collapse_imports(
 
 class ImportVar(Base):
     """An import var."""
+
+    class Config:
+        """Pydantic config."""
+
+        frozen = True
 
     # The name of the import tag.
     tag: Optional[str]
@@ -109,21 +118,38 @@ class ImportVar(Base):
         else:
             return self.tag or ""
 
-    def __hash__(self) -> int:
-        """Define a hash function for the import var.
+    def __lt__(self, other: ImportVar) -> bool:
+        return (
+            self.tag,
+            self.is_default,
+            self.alias,
+            self.install,
+            self.render,
+            self.transpile,
+        ) < (
+            other.tag,
+            other.is_default,
+            other.alias,
+            other.install,
+            other.render,
+            other.transpile,
+        )
 
-        Returns:
-            The hash of the var.
-        """
-        return hash(
-            (
-                self.tag,
-                self.is_default,
-                self.alias,
-                self.install,
-                self.render,
-                self.transpile,
-            )
+    def __eq__(self, other: ImportVar) -> bool:
+        return (
+            self.tag,
+            self.is_default,
+            self.alias,
+            self.install,
+            self.render,
+            self.transpile,
+        ) == (
+            other.tag,
+            other.is_default,
+            other.alias,
+            other.install,
+            other.render,
+            other.transpile,
         )
 
 
