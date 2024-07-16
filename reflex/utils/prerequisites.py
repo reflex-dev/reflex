@@ -46,7 +46,7 @@ class Template(Base):
 
     name: str
     description: str
-    code_url: str | None = None
+    code_url: Optional[str] = None
     demo_url: str
 
 
