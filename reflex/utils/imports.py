@@ -5,8 +5,6 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
 
-from pydantic import TypeAdapter
-
 from reflex.base import Base
 
 
@@ -119,6 +117,7 @@ class ImportVar(Base):
             return self.tag or ""
 
     def __lt__(self, other: ImportVar) -> bool:
+        """Compare two ImportVar objects."""
         return (
             self.tag,
             self.is_default,
@@ -136,6 +135,7 @@ class ImportVar(Base):
         )
 
     def __eq__(self, other: ImportVar) -> bool:
+        """Check if two ImportVar objects are equal."""
         return (
             self.tag,
             self.is_default,
