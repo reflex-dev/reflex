@@ -76,7 +76,7 @@ jobs:
           --branch-name "${{ github.head_ref || github.ref_name }}"
           --event-type "${{ github.event_name }}" --actor "${{ github.actor }}" --pr-id "${{ github.event.pull_request.id }}"
 
-reflex-plus-size-benchmarks:
+  reflex-plus-size-benchmarks:
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -114,7 +114,7 @@ reflex-plus-size-benchmarks:
           --pr-id "${{ github.event.pull_request.id }}"
           --branch-name "${{ github.head_ref || github.ref_name }}"
           --measurement-type "reflex-package" --path ./.venv
-          
+
   reflex-web:
     needs: [simple-apps-benchmarks, reflex-plus-size-benchmarks]
     strategy:
