@@ -1553,6 +1553,7 @@ async def test_state_with_invalid_yield(capsys, mock_app):
                         title="An error occurred.",
                         description="Contact the website administrator.",
                         level="error",
+                        id="backend_error",
                         position="top-center",
                         style={"width": "500px"},
                     )  # type: ignore
@@ -1560,11 +1561,14 @@ async def test_state_with_invalid_yield(capsys, mock_app):
                 token="",
             )
         else:
-            assert update.events == [
-                rx.window_alert(
-                    "An error occurred.\n Contact the website administrator."
-                )
-            ]
+            assert update.events == rx.event.fix_events(
+                [
+                    rx.window_alert(
+                        "An error occurred.\nContact the website administrator."
+                    )
+                ],
+                token="",
+            )
     captured = capsys.readouterr()
     assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
