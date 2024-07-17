@@ -39,8 +39,8 @@ def insert_benchmarking_data(
     pr_title: str,
     branch_name: str,
     measurement_type: str,
-    actor: str,
     pr_id: str,
+    app_name: str,
 ):
     """Insert the benchmarking data into the database.
 
@@ -51,21 +51,21 @@ def insert_benchmarking_data(
         commit_sha: The commit SHA to insert.
         pr_title: The PR title to insert.
         branch_name: The name of the branch.
-        measurement_type: Type of github event(push, pull request, etc)
-        actor: Username of the user that triggered the run.
+        measurement_type: Type of github event(push, pull request, etc).
         pr_id: Id of the PR.
+        app_name: The name of the app being measured.
     """
 
     properties = {
-        "distinct_id": actor,
         "os": os_type_version,
         "python_version": python_version,
-        "commit_sha": commit_sha,
+        "distinct_id": commit_sha,
         "pr_title": pr_title,
         "branch_name": branch_name,
         "measurement-type": measurement_type,
         "pr_id": pr_id,
         "performance": performance_data,
+        "app_name": app_name,
     }
 
     send_data_to_posthog("import_benchmark", properties)
@@ -104,8 +104,8 @@ def main():
         required=True,
     )
     parser.add_argument(
-        "--actor",
-        help="Username of the user that triggered the run.",
+        "--app-name",
+        help="The name of the app measured.",
         required=True,
     )
     parser.add_argument(
@@ -128,7 +128,7 @@ def main():
         pr_title=pr_title,
         branch_name=args.branch_name,
         measurement_type=args.measurement_type,
-        actor=args.actor,
+        app_name=args.app_name,
         pr_id=args.pr_id,
     )
 
