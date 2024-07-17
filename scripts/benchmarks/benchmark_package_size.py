@@ -22,33 +22,7 @@ def get_directory_size(directory):
             total_size += os.path.getsize(fp)
     return total_size
 
-
-def get_python_version(venv_path, os_name):
-    """Get the python version of python in a virtual env.
-
-    Args:
-        venv_path: Path to virtual environment.
-        os_name: Name of os.
-
-    Returns:
-        The python version.
-    """
-    python_executable = (
-        os.path.join(venv_path, "bin", "python")
-        if "windows" not in os_name
-        else os.path.join(venv_path, "Scripts", "python.exe")
-    )
-    try:
-        output = subprocess.check_output(
-            [python_executable, "--version"], stderr=subprocess.STDOUT
-        )
-        python_version = output.decode("utf-8").strip().split()[1]
-        return ".".join(python_version.split(".")[:-1])
-    except subprocess.CalledProcessError:
-        return None
-
-
-def get_package_size(venv_path, os_name):
+def get_package_size(venv_path, os_name, python_version):
     """Get the size of a specified package.
 
     Args:
@@ -61,7 +35,6 @@ def get_package_size(venv_path, os_name):
     Raises:
         ValueError: when venv does not exist or python version is None.
     """
-    python_version = get_python_version(venv_path, os_name)
     if python_version is None:
         raise ValueError("Error: Failed to determine Python version.")
 
@@ -86,7 +59,6 @@ def get_package_size(venv_path, os_name):
 def insert_benchmarking_data(
     os_type_version: str,
     python_version: str,
-    measurement_type: str,
     commit_sha: str,
     pr_title: str,
     branch_name: str,
@@ -96,7 +68,7 @@ def insert_benchmarking_data(
     """Insert the benchmarking data into PostHog.
 
     Args:
-        posthog_api_key: The API key for PostHog.
+        app_name: 
         os_type_version: The OS type and version to insert.
         python_version: The Python version to insert.
         measurement_type: The type of metric to measure.
@@ -107,23 +79,20 @@ def insert_benchmarking_data(
         path: The path to the dir or file to check size.
         actor: Username of the user that triggered the run.
     """
-    if measurement_type == "reflex-package":
-        size = get_package_size(path, os_type_version)
-    else:
-        size = get_directory_size(path)
+    size = get_package_size(path, os_type_version, python_version)
 
     # Prepare the event data
     event_data = {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
-        "event": "size_benchmark",
+        "event": "package_size",
         "properties": {
+            "path": path,
             "os": os_type_version,
             "python_version": python_version,
             "distinct_id": commit_sha,
             "pr_title": pr_title,
             "branch_name": branch_name,
             "pr_id": pr_id,
-            "measurement_type": measurement_type,
             "size_mb": round(size / (1024 * 1024), 3),  # save size in MB and round to 3 places
         },
     }
@@ -165,13 +134,8 @@ def main():
         required=True,
     )
     parser.add_argument(
-        "--measurement-type",
-        help="The type of metric to be checked.",
-        required=True,
-    )
-    parser.add_argument(
         "--path",
-        help="the current path to check size.",
+        help="The path to the vnenv.",
         required=True,
     )
     args = parser.parse_args()
@@ -183,7 +147,6 @@ def main():
     insert_benchmarking_data(
         os_type_version=args.os,
         python_version=args.python_version,
-        measurement_type=args.measurement_type,
         commit_sha=args.commit_sha,
         pr_title=pr_title,
         branch_name=args.branch_name,

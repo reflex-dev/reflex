@@ -146,10 +146,10 @@ jobs:
       - name: Upload benchmark results
         # Only run if the database creds are available in this context.
         run:
-          poetry run python scripts/benchmarks/benchmark_reflex_size.py --os ubuntu-latest
+          poetry run python scripts/benchmarks/benchmark_package_size.py --os ubuntu-latest
           --python-version 3.11.5 --commit-sha "${{ github.sha }}" --pr-id "${{ github.event.pull_request.id }}"
           --branch-name "${{ github.head_ref || github.ref_name }}"
-          --measurement-type "reflex-build" --path ./dist
+          --path ./dist
 
   reflex-plus-dependency-size:
     if: github.event.pull_request.merged == true
@@ -188,8 +188,8 @@ jobs:
 
       - name: calculate and upload size
         run:
-          poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
+          poetry run python scripts/benchmarks/benchmark_package_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}" 
           --branch-name "${{ github.head_ref || github.ref_name }}"
-          --measurement-type "reflex-package" --path ./.venv
+          --path ./.venv

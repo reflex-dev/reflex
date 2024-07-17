@@ -39,7 +39,7 @@ def insert_benchmarking_data(
     commit_sha: str,
     pr_title: str,
     branch_name: str,
-    event_type: str,
+    measurement_type: str,
     actor: str,
     pr_id: str,
 ):
@@ -52,7 +52,7 @@ def insert_benchmarking_data(
         commit_sha: The commit SHA to insert.
         pr_title: The PR title to insert.
         branch_name: The name of the branch.
-        event_type: Type of github event(push, pull request, etc)
+        measurement_type: Type of github event(push, pull request, etc)
         actor: Username of the user that triggered the run.
         pr_id: Id of the PR.
     """
@@ -68,7 +68,7 @@ def insert_benchmarking_data(
              "commit_sha": commit_sha,
              "pr_title": pr_title,
              "branch_name": branch_name,
-             "event_type": event_type,
+             "measurement-type": measurement_type,
              "pr_id": pr_id,
              "performance": performance_data,
          },
@@ -111,8 +111,8 @@ def main():
         required=True,
     )
     parser.add_argument(
-        "--event-type",
-        help="The github event type",
+        "--measurement-type",
+        help="What app its measuring.",
         required=True,
     )
     parser.add_argument(
@@ -139,7 +139,7 @@ def main():
         commit_sha=args.commit_sha,
         pr_title=pr_title,
         branch_name=args.branch_name,
-        event_type=args.event_type,
+        measurement_type=args.measurement_type,
         actor=args.actor,
         pr_id=args.pr_id,
     )
