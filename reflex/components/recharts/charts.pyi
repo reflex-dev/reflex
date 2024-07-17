@@ -5,6 +5,7 @@
 # ------------------------------------------------------
 from typing import Any, Callable, Dict, List, Literal, Optional, Union, overload
 
+from reflex.constants.colors import Color
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
 from reflex.vars import BaseVar, Var
@@ -962,6 +963,7 @@ class FunnelChart(ChartBase):
         *children,
         layout: Optional[Union[Var[str], str]] = None,
         margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         width: Optional[Union[Var[Union[int, str]], str, int]] = None,
         height: Optional[Union[Var[Union[int, str]], str, int]] = None,
         style: Optional[Style] = None,
@@ -1023,6 +1025,7 @@ class FunnelChart(ChartBase):
             *children: The children of the chart component.
             layout: The layout of bars in the chart. centeric
             margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
+            stroke: The stroke color of each bar. String | Object
             width: The width of chart container. String or Integer
             height: The height of chart container.
             style: The style of the component.
