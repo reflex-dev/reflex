@@ -129,6 +129,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
             title="An error occurred.",
             description="<br/>".join(error_message),
             position="top-center",
+            id="backend_error",
             style={"width": "500px"},
         )  # type: ignore
     else:
