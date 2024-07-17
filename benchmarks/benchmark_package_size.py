@@ -1,4 +1,4 @@
-"""Checks the size of a specific directory and uploads result."""
+"""Checks the size of a specific directory and uploads result to Posthog."""
 
 import argparse
 import os

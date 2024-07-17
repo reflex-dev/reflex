@@ -1,4 +1,4 @@
-"""Runs the benchmarks and inserts the results into the database."""
+"""Extract and upload benchmarking data to PostHog."""
 
 from __future__ import annotations
 

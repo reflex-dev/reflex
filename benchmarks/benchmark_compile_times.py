@@ -1,4 +1,4 @@
-"""Runs the benchmarks and inserts the results into the database."""
+"""Extracts the compile times from the JSON files in the specified directory and inserts them into the database."""
 
 from __future__ import annotations
 
