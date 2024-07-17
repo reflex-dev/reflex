@@ -100,7 +100,7 @@ jobs:
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev
       - name: Measure and upload .web size
         run:
-          poetry run python scripts/benchmarks/benchmark_web_size.py --os "${{ matrix.os }}"
+          poetry run python benchmarks/scripts/benchmark_web_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}"
           --branch-name "${{ github.head_ref || github.ref_name }}"
@@ -113,7 +113,7 @@ jobs:
         run: hyperfine --warmup 3 "export POETRY_VIRTUALENVS_PATH=../../.venv; poetry run python counter/counter.py" --show-output --export-json "${{ env.OUTPUT_FILE }}" --shell bash
       - name: Upload Benchmarks
         run:
-          poetry run python scripts/benchmarks/benchmark_imports.py --os "${{ matrix.os }}"
+          poetry run python benchmarks/scripts/benchmark_imports.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --benchmark-json "./reflex-examples/counter/${{ env.OUTPUT_FILE }}"
           --branch-name "${{ github.head_ref || github.ref_name }}" --pr-id "${{ github.event.pull_request.id }}"
@@ -162,7 +162,7 @@ jobs:
           poetry run bash scripts/integration.sh ./reflex-web prod
       - name: Measure and upload .web size
         run:
-          poetry run python scripts/benchmarks/benchmark_web_size.py --os "${{ matrix.os }}"
+          poetry run python benchmarks/scripts/benchmark_web_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}" --branch-name "${{ github.head_ref || github.ref_name }}"
           --app-name "reflex-web" --path ./reflex-web/.web

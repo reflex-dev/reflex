@@ -59,12 +59,12 @@ jobs:
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash scripts/benchmarks/benchmarks.sh ./reflex-web prod
+          poetry run bash benchmarks/benchmarks/scripts.sh ./reflex-web prod
         env:
           LHCI_GITHUB_APP_TOKEN: $
       - name: Run Benchmarks
         # Only run if the database creds are available in this context.
-        run: poetry run python scripts/benchmarks/lighthouse_score_upload.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
+        run: poetry run python benchmarks/scripts/lighthouse_score_upload.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
         env:
           GITHUB_SHA: ${{ github.sha }}
 
@@ -120,7 +120,7 @@ jobs:
       - name: Upload benchmark results
         # Only run if the database creds are available in this context.
         run:
-          poetry run python scripts/benchmarks/simple_app_benchmark_upload.py --os "${{ matrix.os }}"
+          poetry run python benchmarks/scripts/simple_app_benchmark_upload.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --benchmark-json "${{ env.OUTPUT_FILE }}" --branch-name "${{ github.head_ref || github.ref_name }}"
           --event-type "${{ github.event_name }}" --pr-id "${{ github.event.pull_request.id }}"
@@ -144,7 +144,7 @@ jobs:
       - name: Upload benchmark results
         # Only run if the database creds are available in this context.
         run:
-          poetry run python scripts/benchmarks/benchmark_package_size.py --os ubuntu-latest
+          poetry run python benchmarks/scripts/benchmark_package_size.py --os ubuntu-latest
           --python-version 3.11.5 --commit-sha "${{ github.sha }}" --pr-id "${{ github.event.pull_request.id }}"
           --branch-name "${{ github.head_ref || github.ref_name }}"
           --path ./dist
@@ -185,7 +185,7 @@ jobs:
 
       - name: calculate and upload size
         run:
-          poetry run python scripts/benchmarks/benchmark_package_size.py --os "${{ matrix.os }}"
+          poetry run python benchmarks/scripts/benchmark_package_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}" 
           --branch-name "${{ github.head_ref || github.ref_name }}"
