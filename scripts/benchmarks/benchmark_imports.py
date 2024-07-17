@@ -38,7 +38,6 @@ def insert_benchmarking_data(
     commit_sha: str,
     pr_title: str,
     branch_name: str,
-    measurement_type: str,
     pr_id: str,
     app_name: str,
 ):
@@ -51,7 +50,6 @@ def insert_benchmarking_data(
         commit_sha: The commit SHA to insert.
         pr_title: The PR title to insert.
         branch_name: The name of the branch.
-        measurement_type: Type of github event(push, pull request, etc).
         pr_id: Id of the PR.
         app_name: The name of the app being measured.
     """
@@ -62,7 +60,7 @@ def insert_benchmarking_data(
         "distinct_id": commit_sha,
         "pr_title": pr_title,
         "branch_name": branch_name,
-        "measurement-type": measurement_type,
+        "app-name": app_name,
         "pr_id": pr_id,
         "performance": performance_data,
         "app_name": app_name,
@@ -99,11 +97,6 @@ def main():
         required=True,
     )
     parser.add_argument(
-        "--measurement-type",
-        help="What app its measuring.",
-        required=True,
-    )
-    parser.add_argument(
         "--app-name",
         help="The name of the app measured.",
         required=True,
@@ -127,7 +120,6 @@ def main():
         commit_sha=args.commit_sha,
         pr_title=pr_title,
         branch_name=args.branch_name,
-        measurement_type=args.measurement_type,
         app_name=args.app_name,
         pr_id=args.pr_id,
     )
