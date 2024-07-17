@@ -68,7 +68,7 @@ jobs:
         env:
           GITHUB_SHA: ${{ github.sha }}
 
-  simple-apps-benchmarks:
+  simple-apps-benchmarks: # This app tests the compile times of various compoonents and pages
     env:
       OUTPUT_FILE: benchmarks.json
     timeout-minutes: 50
@@ -149,7 +149,7 @@ jobs:
           --branch-name "${{ github.head_ref || github.ref_name }}"
           --path ./dist
 
-  reflex-plus-dependency-size: # This job calculates the total size of Reflex and its dependencies
+  reflex-venv-size: # This job calculates the total size of Reflex and its dependencies
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
