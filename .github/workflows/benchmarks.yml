@@ -69,7 +69,6 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
 
   simple-apps-benchmarks:
-    if: github.event.pull_request.merged == true
     env:
       OUTPUT_FILE: benchmarks.json
     timeout-minutes: 50
@@ -127,7 +126,6 @@ jobs:
           --event-type "${{ github.event_name }}" --pr-id "${{ github.event.pull_request.id }}"
 
   reflex-build-size:
-    if: github.event.pull_request.merged == true
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
@@ -152,7 +150,6 @@ jobs:
           --path ./dist
 
   reflex-plus-dependency-size:
-    if: github.event.pull_request.merged == true
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
