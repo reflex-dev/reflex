@@ -60,7 +60,6 @@ def insert_benchmarking_data(
         "distinct_id": commit_sha,
         "pr_title": pr_title,
         "branch_name": branch_name,
-        "app-name": app_name,
         "pr_id": pr_id,
         "performance": performance_data,
         "app_name": app_name,
