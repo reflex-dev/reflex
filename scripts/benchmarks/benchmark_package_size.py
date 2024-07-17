@@ -60,6 +60,7 @@ def get_package_size(venv_path, os_name):
         ValueError: when venv does not exist or python version is None.
     """
     python_version=get_python_version(venv_path, os_name)
+    print("Python version:", python_version)
     if python_version is None:
         raise ValueError("Error: Failed to determine Python version.")
 
@@ -104,7 +105,7 @@ def insert_benchmarking_data(
         path: The path to the dir or file to check size.
         actor: Username of the user that triggered the run.
     """
-    size = get_package_size(path, os_type_version, python_version)
+    size = get_package_size(path, os_type_version)
 
     # Prepare the event data
     event_data = {
