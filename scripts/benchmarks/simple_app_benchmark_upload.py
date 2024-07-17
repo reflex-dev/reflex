@@ -5,9 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from datetime import datetime
 import httpx
-import psycopg2
 
 
 def extract_stats_from_json(json_file: str) -> list[dict]:
@@ -83,7 +81,6 @@ def insert_benchmarking_data(
             "os": os_type_version,
             "python_version": python_version,
             "distinct_id": commit_sha,
-            "timestamp": str(datetime.now().isoformat()),
             "pr_title": pr_title,
             "branch_name": branch_name,
             "event_type": event_type,

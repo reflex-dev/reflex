@@ -5,10 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from datetime import datetime
 import httpx
-import psycopg2
-
 
 def insert_benchmarking_data(
     db_connection_url: str,
@@ -33,7 +30,6 @@ def insert_benchmarking_data(
             "distinct_id": commit_sha,
             "lighthouse_data": lighthouse_data,
             "pr_title": pr_title,
-            "timestamp": str(datetime.now().isoformat()),
         }
     }
 
