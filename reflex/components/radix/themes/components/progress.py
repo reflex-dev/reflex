@@ -3,6 +3,7 @@
 from typing import Literal
 
 from reflex.components.component import Component
+from reflex.components.core.breakpoints import Responsive
 from reflex.vars import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -20,7 +21,7 @@ class Progress(RadixThemesComponent):
     max: Var[int]
 
     # The size of the progress bar: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # The variant of the progress bar: "classic" | "surface" | "soft"
     variant: Var[Literal["classic", "surface", "soft"]]

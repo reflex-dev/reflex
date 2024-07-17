@@ -97,6 +97,36 @@ def test_wrap(text: str, open: str, expected: str, check_first: bool, num: int):
 
 
 @pytest.mark.parametrize(
+    "string,expected_output",
+    [
+        ("This is a random string", "This is a random string"),
+        (
+            "This is a random string with `backticks`",
+            "This is a random string with \\`backticks\\`",
+        ),
+        (
+            "This is a random string with `backticks`",
+            "This is a random string with \\`backticks\\`",
+        ),
+        (
+            "This is a string with ${someValue[`string interpolation`]} unescaped",
+            "This is a string with ${someValue[`string interpolation`]} unescaped",
+        ),
+        (
+            "This is a string with `backticks` and ${someValue[`string interpolation`]} unescaped",
+            "This is a string with \\`backticks\\` and ${someValue[`string interpolation`]} unescaped",
+        ),
+        (
+            "This is a string with `backticks`, ${someValue[`the first string interpolation`]} and ${someValue[`the second`]}",
+            "This is a string with \\`backticks\\`, ${someValue[`the first string interpolation`]} and ${someValue[`the second`]}",
+        ),
+    ],
+)
+def test_escape_js_string(string, expected_output):
+    assert format._escape_js_string(string) == expected_output
+
+
+@pytest.mark.parametrize(
     "text,indent_level,expected",
     [
         ("", 2, ""),
@@ -402,8 +432,8 @@ def test_format_cond(
             ],
             Var.create("yellow", _var_is_string=True),
             "(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return (`red`);  break;case JSON.stringify(2): case JSON.stringify(3):  "
-            "return (`blue`);  break;case JSON.stringify(test_state.mapping):  return "
-            "(test_state.num1);  break;case JSON.stringify(`${test_state.map_key}-key`):  return (`return-key`);"
+            f"return (`blue`);  break;case JSON.stringify({TestState.get_full_name()}.mapping):  return "
+            f"({TestState.get_full_name()}.num1);  break;case JSON.stringify(`${{{TestState.get_full_name()}.map_key}}-key`):  return (`return-key`);"
             "  break;default:  return (`yellow`);  break;};})()",
         )
     ],
@@ -555,11 +585,14 @@ def test_get_handler_parts(input, output):
 @pytest.mark.parametrize(
     "input,output",
     [
-        (TestState.do_something, "test_state.do_something"),
-        (ChildState.change_both, "test_state.child_state.change_both"),
+        (TestState.do_something, f"{TestState.get_full_name()}.do_something"),
+        (
+            ChildState.change_both,
+            f"{ChildState.get_full_name()}.change_both",
+        ),
         (
             GrandchildState.do_nothing,
-            "test_state.child_state.grandchild_state.do_nothing",
+            f"{GrandchildState.get_full_name()}.do_nothing",
         ),
     ],
 )

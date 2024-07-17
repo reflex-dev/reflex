@@ -1,7 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from typing import List, Literal
 
 from reflex.components.component import ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.vars import Var
 
@@ -16,7 +18,7 @@ class TableRoot(elements.Table, RadixThemesComponent):
     tag = "Table.Root"
 
     # The size of the table: "1" | "2" | "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # The variant of the table
     variant: Var[Literal["surface", "ghost"]]

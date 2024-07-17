@@ -1,7 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from typing import Literal
 
 from reflex.components.component import ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.event import EventHandler
 from reflex.vars import Var
@@ -39,7 +41,7 @@ class PopoverContent(elements.Div, RadixThemesComponent):
     tag = "Popover.Content"
 
     # Size of the button: "1" | "2" | "3" | "4"
-    size: Var[Literal["1", "2", "3", "4"]]
+    size: Var[Responsive[Literal["1", "2", "3", "4"]]]
 
     # The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
     side: Var[Literal["top", "right", "bottom", "left"]]

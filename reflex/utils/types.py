@@ -6,10 +6,11 @@ import contextlib
 import inspect
 import sys
 import types
-from functools import wraps
+from functools import cached_property, wraps
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Dict,
     Iterable,
     List,
@@ -25,6 +26,9 @@ from typing import (
 )
 
 import sqlalchemy
+
+import reflex
+from reflex.components.core.breakpoints import Breakpoints
 
 try:
     from pydantic.v1.fields import ModelField
@@ -97,6 +101,12 @@ PrimitiveToAnnotation = {
     list: List,
     tuple: Tuple,
     dict: Dict,
+}
+
+RESERVED_BACKEND_VAR_NAMES = {
+    "_abc_impl",
+    "_backend_vars",
+    "_was_touched",
 }
 
 
@@ -235,36 +245,41 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             # check for list types
             column = insp.columns[name]
             column_type = column.type
-            type_ = insp.columns[name].type.python_type
-            if hasattr(column_type, "item_type") and (
-                item_type := column_type.item_type.python_type  # type: ignore
-            ):
-                if type_ in PrimitiveToAnnotation:
-                    type_ = PrimitiveToAnnotation[type_]  # type: ignore
-                type_ = type_[item_type]  # type: ignore
-            if column.nullable:
-                type_ = Optional[type_]
-            return type_
-        if name not in insp.all_orm_descriptors:
-            return None
-        descriptor = insp.all_orm_descriptors[name]
-        if hint := get_property_hint(descriptor):
-            return hint
-        if isinstance(descriptor, QueryableAttribute):
-            prop = descriptor.property
-            if not isinstance(prop, Relationship):
-                return None
-            type_ = prop.mapper.class_
-            # TODO: check for nullable?
-            type_ = List[type_] if prop.uselist else Optional[type_]
-            return type_
-        if isinstance(attr, AssociationProxyInstance):
-            return List[
-                get_attribute_access_type(
-                    attr.target_class,
-                    attr.remote_attr.key,  # type: ignore[attr-defined]
-                )
-            ]
+            try:
+                type_ = insp.columns[name].type.python_type
+            except NotImplementedError:
+                type_ = None
+            if type_ is not None:
+                if hasattr(column_type, "item_type"):
+                    try:
+                        item_type = column_type.item_type.python_type  # type: ignore
+                    except NotImplementedError:
+                        item_type = None
+                    if item_type is not None:
+                        if type_ in PrimitiveToAnnotation:
+                            type_ = PrimitiveToAnnotation[type_]  # type: ignore
+                        type_ = type_[item_type]  # type: ignore
+                if column.nullable:
+                    type_ = Optional[type_]
+                return type_
+        if name in insp.all_orm_descriptors:
+            descriptor = insp.all_orm_descriptors[name]
+            if hint := get_property_hint(descriptor):
+                return hint
+            if isinstance(descriptor, QueryableAttribute):
+                prop = descriptor.property
+                if isinstance(prop, Relationship):
+                    type_ = prop.mapper.class_
+                    # TODO: check for nullable?
+                    type_ = List[type_] if prop.uselist else Optional[type_]
+                    return type_
+            if isinstance(attr, AssociationProxyInstance):
+                return List[
+                    get_attribute_access_type(
+                        attr.target_class,
+                        attr.remote_attr.key,  # type: ignore[attr-defined]
+                    )
+                ]
     elif isinstance(cls, type) and not is_generic_alias(cls) and issubclass(cls, Model):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)
@@ -324,12 +339,44 @@ def get_base_class(cls: GenericType) -> Type:
     return get_base_class(cls.__origin__) if is_generic_alias(cls) else cls
 
 
-def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
+def _breakpoints_satisfies_typing(cls_check: GenericType, instance: Any) -> bool:
+    """Check if the breakpoints instance satisfies the typing.
+
+    Args:
+        cls_check: The class to check against.
+        instance: The instance to check.
+
+    Returns:
+        Whether the breakpoints instance satisfies the typing.
+    """
+    cls_check_base = get_base_class(cls_check)
+
+    if cls_check_base == Breakpoints:
+        _, expected_type = get_args(cls_check)
+        if is_literal(expected_type):
+            for value in instance.values():
+                if not isinstance(value, str) or value not in get_args(expected_type):
+                    return False
+        return True
+    elif isinstance(cls_check_base, tuple):
+        # union type, so check all types
+        return any(
+            _breakpoints_satisfies_typing(type_to_check, instance)
+            for type_to_check in get_args(cls_check)
+        )
+    elif cls_check_base == reflex.vars.Var and "__args__" in cls_check.__dict__:
+        return _breakpoints_satisfies_typing(get_args(cls_check)[0], instance)
+
+    return False
+
+
+def _issubclass(cls: GenericType, cls_check: GenericType, instance: Any = None) -> bool:
     """Check if a class is a subclass of another class.
 
     Args:
         cls: The class to check.
         cls_check: The class to check against.
+        instance: An instance of cls to aid in checking generics.
 
     Returns:
         Whether the class is a subclass of the other class.
@@ -350,6 +397,10 @@ def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
     # The class we're checking should not be a union.
     if isinstance(cls_base, tuple):
         return False
+
+    # Check that fields of breakpoints match the expected values.
+    if isinstance(instance, Breakpoints):
+        return _breakpoints_satisfies_typing(cls_check, instance)
 
     # Check if the types match.
     try:
@@ -403,7 +454,7 @@ def is_valid_var_type(type_: Type) -> bool:
     return _issubclass(type_, StateVar) or serializers.has_serializer(type_)
 
 
-def is_backend_variable(name: str, cls: Type | None = None) -> bool:
+def is_backend_base_variable(name: str, cls: Type) -> bool:
     """Check if this variable name correspond to a backend variable.
 
     Args:
@@ -413,9 +464,41 @@ def is_backend_variable(name: str, cls: Type | None = None) -> bool:
     Returns:
         bool: The result of the check
     """
-    if cls is not None and name.startswith(f"_{cls.__name__}__"):
+    if name in RESERVED_BACKEND_VAR_NAMES:
         return False
-    return name.startswith("_") and not name.startswith("__")
+
+    if not name.startswith("_"):
+        return False
+
+    if name.startswith("__"):
+        return False
+
+    if name.startswith(f"_{cls.__name__}__"):
+        return False
+
+    hints = get_type_hints(cls)
+    if name in hints:
+        hint = get_origin(hints[name])
+        if hint == ClassVar:
+            return False
+
+    if name in cls.inherited_backend_vars:
+        return False
+
+    if name in cls.__dict__:
+        value = cls.__dict__[name]
+        if type(value) == classmethod:
+            return False
+        if callable(value):
+            return False
+        from reflex.vars import ComputedVar
+
+        if isinstance(
+            value, (types.FunctionType, property, cached_property, ComputedVar)
+        ):
+            return False
+
+    return True
 
 
 def check_type_in_allowed_types(value_type: Type, allowed_types: Iterable) -> bool:

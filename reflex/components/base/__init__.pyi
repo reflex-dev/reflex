@@ -5,16 +5,17 @@
 
 from . import app_wrap as app_wrap
 from . import bare as bare
-
 from .body import Body as Body
 from .document import DocumentHead as DocumentHead
 from .document import Html as Html
 from .document import Main as Main
 from .document import NextScript as NextScript
+from .error_boundary import ErrorBoundary as ErrorBoundary
+from .error_boundary import error_boundary as error_boundary
 from .fragment import Fragment as Fragment
 from .fragment import fragment as fragment
-from .head import head as head
 from .head import Head as Head
+from .head import head as head
 from .link import RawLink as RawLink
 from .link import ScriptTag as ScriptTag
 from .meta import Description as Description
@@ -23,4 +24,3 @@ from .meta import Meta as Meta
 from .meta import Title as Title
 from .script import Script as Script
 from .script import script as script
-from reflex.utils import lazy_loader

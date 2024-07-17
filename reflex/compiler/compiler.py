@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Type, Union
 
@@ -20,6 +21,7 @@ from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
+from reflex.utils.prerequisites import get_web_dir
 from reflex.vars import Var
 
 
@@ -78,20 +80,24 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
         The compiled context file.
     """
     appearance = getattr(theme, "appearance", None)
-    if appearance is None:
+    if appearance is None or Var.create_safe(appearance)._var_name == "inherit":
         appearance = SYSTEM_COLOR_MODE
+
+    last_compiled_time = str(datetime.now())
     return (
         templates.CONTEXT.render(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
+            last_compiled_time=last_compiled_time,
             default_color_mode=appearance,
         )
         if state
         else templates.CONTEXT.render(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=appearance,
+            last_compiled_time=last_compiled_time,
         )
     )
 
@@ -469,7 +475,7 @@ def compile_tailwind(
         The compiled Tailwind config.
     """
     # Get the path for the output file.
-    output_path = constants.Tailwind.CONFIG
+    output_path = get_web_dir() / constants.Tailwind.CONFIG
 
     # Compile the config.
     code = _compile_tailwind(config)
@@ -483,7 +489,7 @@ def remove_tailwind_from_postcss() -> tuple[str, str]:
         The path and code of the compiled postcss.config.js.
     """
     # Get the path for the output file.
-    output_path = constants.Dirs.POSTCSS_JS
+    output_path = str(get_web_dir() / constants.Dirs.POSTCSS_JS)
 
     code = [
         line
@@ -502,7 +508,7 @@ def purge_web_pages_dir():
         return
 
     # Empty out the web pages directory.
-    utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+    utils.empty_dir(get_web_dir() / constants.Dirs.PAGES, keep_files=["_app.js"])
 
 
 class ExecutorSafeFunctions:

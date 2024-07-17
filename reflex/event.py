@@ -509,6 +509,15 @@ def console_log(message: str | Var[str]) -> EventSpec:
     return server_side("_console", get_fn_signature(console_log), message=message)
 
 
+def back() -> EventSpec:
+    """Do a history.back on the browser.
+
+    Returns:
+        An event to go back one page.
+    """
+    return call_script("window.history.back()")
+
+
 def window_alert(message: str | Var[str]) -> EventSpec:
     """Create a window alert on the browser.
 
@@ -613,6 +622,34 @@ def remove_local_storage(key: str) -> EventSpec:
     return server_side(
         "_remove_local_storage",
         get_fn_signature(remove_local_storage),
+        key=key,
+    )
+
+
+def clear_session_storage() -> EventSpec:
+    """Set a value in the session storage on the frontend.
+
+    Returns:
+        EventSpec: An event to clear the session storage.
+    """
+    return server_side(
+        "_clear_session_storage",
+        get_fn_signature(clear_session_storage),
+    )
+
+
+def remove_session_storage(key: str) -> EventSpec:
+    """Set a value in the session storage on the frontend.
+
+    Args:
+        key: The key identifying the variable in the session storage to remove.
+
+    Returns:
+        EventSpec: An event to remove an item based on the provided key in session storage.
+    """
+    return server_side(
+        "_remove_session_storage",
+        get_fn_signature(remove_session_storage),
         key=key,
     )
 
@@ -738,10 +775,12 @@ def call_script(
     callback_kwargs = {}
     if callback is not None:
         callback_kwargs = {
-            "callback": format.format_queue_events(
-                callback,
-                args_spec=lambda result: [result],
-            )
+            "callback": str(
+                format.format_queue_events(
+                    callback,
+                    args_spec=lambda result: [result],
+                ),
+            ),
         }
     return server_side(
         "_call_script",

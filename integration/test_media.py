@@ -1,4 +1,5 @@
 """Integration tests for media components."""
+
 from typing import Generator
 
 import pytest
@@ -21,31 +22,31 @@ def MediaApp():
                 img.format = format  # type: ignore
             return img
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def img_default(self) -> Image.Image:
             return self._blue()
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def img_bmp(self) -> Image.Image:
             return self._blue(format="BMP")
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def img_jpg(self) -> Image.Image:
             return self._blue(format="JPEG")
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def img_png(self) -> Image.Image:
             return self._blue(format="PNG")
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def img_gif(self) -> Image.Image:
             return self._blue(format="GIF")
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def img_webp(self) -> Image.Image:
             return self._blue(format="WEBP")
 
-        @rx.cached_var
+        @rx.var(cache=True)
         def img_from_url(self) -> Image.Image:
             img_url = "https://picsum.photos/id/1/200/300"
             img_resp = httpx.get(img_url, follow_redirects=True)

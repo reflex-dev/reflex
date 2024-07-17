@@ -1,4 +1,5 @@
 """A video component."""
+
 from reflex.components.react_player.react_player import ReactPlayer
 
 

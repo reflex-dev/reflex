@@ -17,6 +17,7 @@ import psutil
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, path_ops
+from reflex.utils.prerequisites import get_web_dir
 from reflex.utils.watch import AssetFolderWatch
 
 # For uvicorn windows bug fix (#2335)
@@ -82,8 +83,8 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
     """
     from reflex.utils import processes
 
-    json_file_path = os.path.join(constants.Dirs.WEB, "package.json")
-    last_hash = detect_package_change(json_file_path)
+    json_file_path = get_web_dir() / constants.PackageJson.PATH
+    last_hash = detect_package_change(str(json_file_path))
     process = None
     first_run = True
 
@@ -94,7 +95,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
             process = processes.new_process(
                 run_command,
-                cwd=constants.Dirs.WEB,
+                cwd=get_web_dir(),
                 shell=constants.IS_WINDOWS,
                 **kwargs,
             )
@@ -108,7 +109,14 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                         url = match.group(1)
                         if get_config().frontend_path != "":
                             url = urljoin(url, get_config().frontend_path)
-                        console.print(f"App running at: [bold green]{url}")
+
+                        console.print(
+                            f"App running at: [bold green]{url}[/bold green]{' (Frontend-only mode)' if not backend_present else ''}"
+                        )
+                        if backend_present:
+                            console.print(
+                                f"Backend running at: [bold green]http://0.0.0.0:{get_config().backend_port}[/bold green]"
+                            )
                         first_run = False
                     else:
                         console.print("New packages detected: Updating app...")
@@ -121,7 +129,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                             "`REFLEX_USE_NPM=1 reflex init`\n"
                             "`REFLEX_USE_NPM=1 reflex run`"
                         )
-                    new_hash = detect_package_change(json_file_path)
+                    new_hash = detect_package_change(str(json_file_path))
                     if new_hash != last_hash:
                         last_hash = new_hash
                         kill(process.pid)
@@ -194,10 +202,10 @@ def run_backend(
     config = get_config()
     app_module = f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
 
+    web_dir = get_web_dir()
     # Create a .nocompile file to skip compile for backend.
-    if os.path.exists(constants.Dirs.WEB):
-        with open(constants.NOCOMPILE_FILE, "w"):
-            pass
+    if web_dir.exists():
+        (web_dir / constants.NOCOMPILE_FILE).touch()
 
     # Run the backend in development mode.
     uvicorn.run(
@@ -207,7 +215,7 @@ def run_backend(
         log_level=loglevel.value,
         reload=True,
         reload_dirs=[config.app_name],
-        reload_excludes=[constants.Dirs.WEB],
+        reload_excludes=[str(web_dir)],
     )
 
 

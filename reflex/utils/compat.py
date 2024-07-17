@@ -4,6 +4,27 @@ import contextlib
 import sys
 
 
+async def windows_hot_reload_lifespan_hack():
+    """[REF-3164] A hack to fix hot reload on Windows.
+
+    Uvicorn has an issue stopping itself on Windows after detecting changes in
+    the filesystem.
+
+    This workaround repeatedly prints and flushes null characters to stderr,
+    which seems to allow the uvicorn server to exit when the CTRL-C signal is
+    sent from the reloader process.
+
+    Don't ask me why this works, I discovered it by accident - masenf.
+    """
+    import asyncio
+    import sys
+
+    while True:
+        sys.stderr.write("\0")
+        sys.stderr.flush()
+        await asyncio.sleep(0.5)
+
+
 @contextlib.contextmanager
 def pydantic_v1_patch():
     """A context manager that patches the Pydantic module to mimic v1 behaviour.
@@ -11,6 +32,13 @@ def pydantic_v1_patch():
     Yields:
         None when the Pydantic module is patched.
     """
+    import pydantic
+
+    if pydantic.__version__.startswith("1."):
+        # pydantic v1 is already installed
+        yield
+        return
+
     patched_modules = [
         "pydantic",
         "pydantic.fields",
@@ -20,11 +48,6 @@ def pydantic_v1_patch():
     originals = {module: sys.modules.get(module) for module in patched_modules}
     try:
         import pydantic.v1  # type: ignore
-
-        if pydantic.__version__.startswith("1."):
-            # pydantic v1 is already installed
-            yield
-            return
 
         sys.modules["pydantic.fields"] = pydantic.v1.fields  # type: ignore
         sys.modules["pydantic.main"] = pydantic.v1.main  # type: ignore

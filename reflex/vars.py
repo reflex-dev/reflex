@@ -36,7 +36,12 @@ from typing import (
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, imports, serializers, types
-from reflex.utils.exceptions import VarAttributeError, VarTypeError, VarValueError
+from reflex.utils.exceptions import (
+    VarAttributeError,
+    VarDependencyError,
+    VarTypeError,
+    VarValueError,
+)
 
 # This module used to export ImportVar itself, so we still import it for export here
 from reflex.utils.imports import (
@@ -257,6 +262,9 @@ _decode_var_pattern_re = (
 )
 _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
 
+# Defined global immutable vars.
+_global_vars: Dict[int, Var] = {}
+
 
 def _decode_var(value: str) -> tuple[VarData | None, str]:
     """Decode the state name from a formatted var.
@@ -289,17 +297,32 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
             start, end = m.span()
             value = value[:start] + value[end:]
 
-            # Read the JSON, pull out the string length, parse the rest as VarData.
-            data = json_loads(m.group(1))
-            string_length = data.pop("string_length", None)
-            var_data = VarData.parse_obj(data)
+            serialized_data = m.group(1)
 
-            # Use string length to compute positions of interpolations.
-            if string_length is not None:
-                realstart = start + offset
-                var_data.interpolations = [(realstart, realstart + string_length)]
+            if serialized_data[1:].isnumeric():
+                # This is a global immutable var.
+                var = _global_vars[int(serialized_data)]
+                var_data = var._var_data
 
-            var_datas.append(var_data)
+                if var_data is not None:
+                    realstart = start + offset
+                    var_data.interpolations = [
+                        (realstart, realstart + len(var._var_name))
+                    ]
+
+                    var_datas.append(var_data)
+            else:
+                # Read the JSON, pull out the string length, parse the rest as VarData.
+                data = json_loads(serialized_data)
+                string_length = data.pop("string_length", None)
+                var_data = VarData.parse_obj(data)
+
+                # Use string length to compute positions of interpolations.
+                if string_length is not None:
+                    realstart = start + offset
+                    var_data.interpolations = [(realstart, realstart + string_length)]
+
+                var_datas.append(var_data)
             offset += end - start
 
     return VarData.merge(*var_datas) if var_datas else None, value
@@ -416,7 +439,7 @@ class Var:
 
         if _var_is_string is None and type_ is str:
             console.deprecate(
-                feature_name="Creating a Var from a string without specifying _var_is_string",
+                feature_name=f"Creating a Var ({value}) from a string without specifying _var_is_string",
                 reason=(
                     "Specify _var_is_string=False to create a Var that is not a string literal. "
                     "In the future, creating a Var from a string will be treated as a string literal "
@@ -482,7 +505,7 @@ class Var:
             self._var_name = _var_name
             self._var_data = VarData.merge(self._var_data, _var_data)
 
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> Var:
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> BaseVar:
         """Make a copy of this Var with updated fields.
 
         Args:
@@ -491,6 +514,9 @@ class Var:
 
         Returns:
             A new BaseVar with the updated fields overwriting the corresponding fields in this Var.
+
+        Raises:
+            TypeError: If kwargs contains keys that are not allowed.
         """
         field_values = dict(
             _var_name=kwargs.pop("_var_name", self._var_name),
@@ -502,9 +528,14 @@ class Var:
                 self._var_full_name_needs_state_prefix,
             ),
             _var_data=VarData.merge(
-                kwargs.get("_var_data", self._var_data), merge_var_data
+                kwargs.pop("_var_data", self._var_data), merge_var_data
             ),
         )
+
+        if kwargs:
+            unexpected_kwargs = ", ".join(kwargs.keys())
+            raise TypeError(f"Unexpected keyword arguments: {unexpected_kwargs}")
+
         return BaseVar(**field_values)
 
     def _decode(self) -> Any:
@@ -894,19 +925,19 @@ class Var:
                 if invoke_fn:
                     # invoke the function on left operand.
                     operation_name = (
-                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"
-                    )  # type: ignore
+                        f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
+                    )
                 else:
                     # pass the operands as arguments to the function.
                     operation_name = (
-                        f"{left_operand_full_name} {op} {right_operand_full_name}"
-                    )  # type: ignore
+                        f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                    )
                     operation_name = f"{fn}({operation_name})"
             else:
                 # apply operator to operands (left operand <operator> right_operand)
                 operation_name = (
-                    f"{left_operand_full_name} {op} {right_operand_full_name}"
-                )  # type: ignore
+                    f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
+                )
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
@@ -1792,18 +1823,16 @@ class Var:
         """
         from reflex.style import Style
 
-        type_ = (
-            get_origin(self._var_type)
-            if types.is_generic_alias(self._var_type)
-            else self._var_type
-        )
+        generic_alias = types.is_generic_alias(self._var_type)
+
+        type_ = get_origin(self._var_type) if generic_alias else self._var_type
         wrapped_var = str(self)
 
         return (
             wrapped_var
             if not self._var_state
-            and types._issubclass(type_, dict)
-            or types._issubclass(type_, Style)
+            and not generic_alias
+            and (types._issubclass(type_, dict) or types._issubclass(type_, Style))
             else wrapped_var.strip("{}")
         )
 
@@ -1941,6 +1970,9 @@ class ComputedVar(Var, property):
     # Whether to track dependencies and cache computed values
     _cache: bool = dataclasses.field(default=False)
 
+    # Whether the computed var is a backend var
+    _backend: bool = dataclasses.field(default=False)
+
     # The initial value of the computed var
     _initial_value: Any | types.Unset = dataclasses.field(default=types.Unset())
 
@@ -1961,6 +1993,7 @@ class ComputedVar(Var, property):
         deps: Optional[List[Union[str, Var]]] = None,
         auto_deps: bool = True,
         interval: Optional[Union[int, datetime.timedelta]] = None,
+        backend: bool | None = None,
         **kwargs,
     ):
         """Initialize a ComputedVar.
@@ -1972,8 +2005,16 @@ class ComputedVar(Var, property):
             deps: Explicit var dependencies to track.
             auto_deps: Whether var dependencies should be auto-determined.
             interval: Interval at which the computed var should be updated.
+            backend: Whether the computed var is a backend var.
             **kwargs: additional attributes to set on the instance
+
+        Raises:
+            TypeError: If the computed var dependencies are not Var instances or var names.
         """
+        if backend is None:
+            backend = fget.__name__.startswith("_")
+        self._backend = backend
+
         self._initial_value = initial_value
         self._cache = cache
         if isinstance(interval, int):
@@ -1981,6 +2022,15 @@ class ComputedVar(Var, property):
         self._update_interval = interval
         if deps is None:
             deps = []
+        else:
+            for dep in deps:
+                if isinstance(dep, Var):
+                    continue
+                if isinstance(dep, str) and dep != "":
+                    continue
+                raise TypeError(
+                    "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
+                )
         self._static_deps = {
             dep._var_name if isinstance(dep, Var) else dep for dep in deps
         }
@@ -2000,24 +2050,34 @@ class ComputedVar(Var, property):
 
         Returns:
             The new ComputedVar instance.
+
+        Raises:
+            TypeError: If kwargs contains keys that are not allowed.
         """
-        return ComputedVar(
-            fget=kwargs.get("fget", self.fget),
-            initial_value=kwargs.get("initial_value", self._initial_value),
-            cache=kwargs.get("cache", self._cache),
-            deps=kwargs.get("deps", self._static_deps),
-            auto_deps=kwargs.get("auto_deps", self._auto_deps),
-            interval=kwargs.get("interval", self._update_interval),
-            _var_name=kwargs.get("_var_name", self._var_name),
-            _var_type=kwargs.get("_var_type", self._var_type),
-            _var_is_local=kwargs.get("_var_is_local", self._var_is_local),
-            _var_is_string=kwargs.get("_var_is_string", self._var_is_string),
-            _var_full_name_needs_state_prefix=kwargs.get(
+        field_values = dict(
+            fget=kwargs.pop("fget", self.fget),
+            initial_value=kwargs.pop("initial_value", self._initial_value),
+            cache=kwargs.pop("cache", self._cache),
+            deps=kwargs.pop("deps", self._static_deps),
+            auto_deps=kwargs.pop("auto_deps", self._auto_deps),
+            interval=kwargs.pop("interval", self._update_interval),
+            backend=kwargs.pop("backend", self._backend),
+            _var_name=kwargs.pop("_var_name", self._var_name),
+            _var_type=kwargs.pop("_var_type", self._var_type),
+            _var_is_local=kwargs.pop("_var_is_local", self._var_is_local),
+            _var_is_string=kwargs.pop("_var_is_string", self._var_is_string),
+            _var_full_name_needs_state_prefix=kwargs.pop(
                 "_var_full_name_needs_state_prefix",
                 self._var_full_name_needs_state_prefix,
             ),
             _var_data=VarData.merge(self._var_data, merge_var_data),
         )
+
+        if kwargs:
+            unexpected_kwargs = ", ".join(kwargs.keys())
+            raise TypeError(f"Unexpected keyword arguments: {unexpected_kwargs}")
+
+        return ComputedVar(**field_values)
 
     @property
     def _cache_attr(self) -> str:
@@ -2159,8 +2219,21 @@ class ComputedVar(Var, property):
                             obj=ref_obj,
                         )
                     )
-                else:
-                    # normal attribute access
+                # recurse into property fget functions
+                elif isinstance(ref_obj, property) and not isinstance(
+                    ref_obj, ComputedVar
+                ):
+                    d.update(
+                        self._deps(
+                            objclass=objclass,
+                            obj=ref_obj.fget,  # type: ignore
+                        )
+                    )
+                elif (
+                    instruction.argval in objclass.backend_vars
+                    or instruction.argval in objclass.vars
+                ):
+                    # var access
                     d.add(instruction.argval)
             elif instruction.opname == "LOAD_CONST" and isinstance(
                 instruction.argval, CodeType
@@ -2205,6 +2278,8 @@ def computed_var(
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
+    backend: bool | None = None,
+    _deprecated_cached_var: bool = False,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
     """A ComputedVar decorator with or without kwargs.
@@ -2216,6 +2291,8 @@ def computed_var(
         deps: Explicit var dependencies to track.
         auto_deps: Whether var dependencies should be auto-determined.
         interval: Interval at which the computed var should be updated.
+        backend: Whether the computed var is a backend var.
+        _deprecated_cached_var: Indicate usage of deprecated cached_var partial function.
         **kwargs: additional attributes to set on the instance
 
     Returns:
@@ -2223,9 +2300,21 @@ def computed_var(
 
     Raises:
         ValueError: If caching is disabled and an update interval is set.
+        VarDependencyError: If user supplies dependencies without caching.
     """
+    if _deprecated_cached_var:
+        console.deprecate(
+            feature_name="cached_var",
+            reason=("Use @rx.var(cache=True) instead of @rx.cached_var."),
+            deprecation_version="0.5.6",
+            removal_version="0.6.0",
+        )
+
     if cache is False and interval is not None:
         raise ValueError("Cannot set update interval without caching.")
+
+    if cache is False and (deps is not None or auto_deps is False):
+        raise VarDependencyError("Cannot track dependencies without caching.")
 
     if fget is not None:
         return ComputedVar(fget=fget, cache=cache)
@@ -2238,6 +2327,7 @@ def computed_var(
             deps=deps,
             auto_deps=auto_deps,
             interval=interval,
+            backend=backend,
             **kwargs,
         )
 
@@ -2245,7 +2335,7 @@ def computed_var(
 
 
 # Partial function of computed_var with cache=True
-cached_var = functools.partial(computed_var, cache=True)
+cached_var = functools.partial(computed_var, cache=True, _deprecated_cached_var=True)
 
 
 class CallableVar(BaseVar):

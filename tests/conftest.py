@@ -1,16 +1,18 @@
 """Test fixtures."""
+
 import contextlib
 import os
 import platform
 import uuid
 from pathlib import Path
-from typing import Dict, Generator
+from typing import Dict, Generator, Type
 from unittest import mock
 
 import pytest
 
 from reflex.app import App
 from reflex.event import EventSpec
+from reflex.model import ModelRegistry
 from reflex.utils import prerequisites
 
 from .states import (
@@ -229,7 +231,7 @@ def tmp_working_dir(tmp_path):
 
 
 @pytest.fixture
-def mutable_state():
+def mutable_state() -> MutableTestState:
     """Create a Test state containing mutable types.
 
     Returns:
@@ -246,3 +248,14 @@ def token() -> str:
         A fresh/unique token string.
     """
     return str(uuid.uuid4())
+
+
+@pytest.fixture
+def model_registry() -> Generator[Type[ModelRegistry], None, None]:
+    """Create a model registry.
+
+    Yields:
+        A fresh model registry.
+    """
+    yield ModelRegistry
+    ModelRegistry._metadata = None

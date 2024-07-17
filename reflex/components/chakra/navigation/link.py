@@ -1,6 +1,5 @@
 """A link component."""
 
-
 from reflex.components.chakra import ChakraComponent
 from reflex.components.component import Component
 from reflex.components.next.link import NextLink

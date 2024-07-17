@@ -1,4 +1,5 @@
 """A line to divide parts of the layout."""
+
 from typing import Literal
 
 from reflex.components.chakra import ChakraComponent, LiteralDividerVariant

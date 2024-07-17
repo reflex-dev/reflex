@@ -1,4 +1,5 @@
 """Event-related constants."""
+
 from enum import Enum
 from types import SimpleNamespace
 
@@ -9,6 +10,7 @@ class Endpoint(Enum):
     PING = "ping"
     EVENT = "_event"
     UPLOAD = "_upload"
+    AUTH_CODESPACE = "auth-codespace"
 
     def __str__(self) -> str:
         """Get the string representation of the endpoint.
@@ -93,3 +95,5 @@ class EventTriggers(SimpleNamespace):
     ON_CLEAR_SERVER_ERRORS = "on_clear_server_errors"
     ON_VALUE_COMMIT = "on_value_commit"
     ON_SELECT = "on_select"
+    ON_ANIMATION_START = "on_animation_start"
+    ON_ANIMATION_END = "on_animation_end"

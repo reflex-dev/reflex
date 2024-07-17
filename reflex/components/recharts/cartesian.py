@@ -1,4 +1,5 @@
 """Cartesian charts in Recharts."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Union
@@ -30,7 +31,7 @@ from .recharts import (
 class Axis(Recharts):
     """A base class for axes in Recharts."""
 
-    # The key of a group of data which should be unique in an area chart.
+    # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
 
     # If set true, the axis do not display in the chart.
@@ -41,9 +42,6 @@ class Axis(Recharts):
 
     # The height of axis, which can be setted by user.
     height: Var[Union[str, int]]
-
-    # The orientation of axis 'top' | 'bottom'
-    orientation: Var[LiteralOrientationTopBottom]
 
     # The type of axis 'number' | 'category'
     type_: Var[LiteralPolarRadiusType]
@@ -66,6 +64,9 @@ class Axis(Recharts):
     # Reverse the ticks or not.
     reversed: Var[bool]
 
+    # The label of axis, which appears next to the axis.
+    label: Var[Union[str, int, Dict[str, Any]]]
+
     # If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
     scale: Var[LiteralScale]
 
@@ -85,13 +86,19 @@ class Axis(Recharts):
     tick_count: Var[int]
 
     # If set false, no axis tick lines will be drawn.
-    tick_line: Var[bool]
+    tick_line: Var[bool] = Var.create_safe(False)
 
     # The length of tick line.
     tick_size: Var[int]
 
     # The minimum gap between two adjacent labels
     min_tick_gap: Var[int]
+
+    # The stroke color of axis
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 9))
+
+    # The text anchor of axis
+    text_anchor: Var[str]  # 'start', 'middle', 'end'
 
     # The customized event handler of click on the ticks of this axis
     on_click: EventHandler[lambda: []]
@@ -122,6 +129,9 @@ class XAxis(Axis):
 
     alias = "RechartsXAxis"
 
+    # The orientation of axis 'top' | 'bottom'
+    orientation: Var[LiteralOrientationTopBottom]
+
     # The id of x-axis which is corresponding to the data.
     x_axis_id: Var[Union[str, int]]
 
@@ -139,11 +149,11 @@ class YAxis(Axis):
     # The orientation of axis 'left' | 'right'
     orientation: Var[LiteralOrientationLeftRight]
 
-    # The key of data displayed in the axis.
-    data_key: Var[Union[str, int]]
-
     # The id of y-axis which is corresponding to the data.
     y_axis_id: Var[Union[str, int]]
+
+    # The range of the axis. Work best in conjuction with allow_data_overflow.
+    domain: Var[List]
 
 
 class ZAxis(Recharts):
@@ -177,7 +187,10 @@ class Brush(Recharts):
     alias = "RechartsBrush"
 
     # Stroke color
-    stroke: Var[Union[str, Color]]
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 9))
+
+    # The fill color of brush.
+    fill: Var[Union[str, Color]] = Var.create_safe(Color("gray", 2))
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
@@ -208,6 +221,12 @@ class Brush(Recharts):
 
     # The default end index of brush. If the option is not set, the end index will be 1.
     end_index: Var[int]
+
+    # The fill color of brush
+    fill: Var[Union[str, Color]]
+
+    # The stroke color of brush
+    stroke: Var[Union[str, Color]]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -271,24 +290,29 @@ class Area(Cartesian):
     alias = "RechartsArea"
 
     # The color of the line stroke.
-    stroke: Var[Union[str, Color]]
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
 
     # The width of the line stroke.
-    stroke_width: Var[int]
+    stroke_width: Var[int] = Var.create_safe(1)
 
     # The color of the area fill.
-    fill: Var[Union[str, Color]]
+    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 5))
 
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
-    type_: Var[LiteralAreaType]
+    type_: Var[LiteralAreaType] = Var.create_safe("monotone")
 
     # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
-    dot: Var[bool]
+    dot: Var[Union[bool, Dict[str, Any]]]
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    active_dot: Var[bool]
+    active_dot: Var[Union[bool, Dict[str, Any]]] = Var.create_safe(
+        {
+            "stroke": Color("accent", 2),
+            "fill": Color("accent", 10),
+        }
+    )
 
-    # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
+    # If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally.
     label: Var[bool]
 
     # The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
@@ -318,8 +342,7 @@ class Bar(Cartesian):
     stroke_width: Var[int]
 
     # The width of the line stroke.
-    fill: Var[Union[str, Color]]
-
+    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
     # If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
     background: Var[bool]
 
@@ -344,6 +367,9 @@ class Bar(Cartesian):
     # Max size of the bar
     max_bar_size: Var[int]
 
+    # The active bar is shown when a user enters a bar chart and this chart has tooltip. If set to false, no active bar will be drawn. If set to true, active bar will be drawn with the props calculated internally. If passed an object, active bar will be drawn, and the internally calculated props will be merged with the key value pairs of the passed object.
+    # active_bar: Var[Union[bool, Dict[str, Any]]]
+
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]
 
@@ -360,7 +386,7 @@ class Bar(Cartesian):
     animation_easing: Var[LiteralAnimationEasing]
 
     # The customized event handler of animation start
-    on_animation_begin: EventHandler[lambda: []]
+    on_animation_start: EventHandler[lambda: []]
 
     # The customized event handler of animation end
     on_animation_end: EventHandler[lambda: []]
@@ -377,16 +403,26 @@ class Line(Cartesian):
     type_: Var[LiteralAreaType]
 
     # The color of the line stroke.
-    stroke: Var[Union[str, Color]]
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
 
     # The width of the line stroke.
     stoke_width: Var[int]
 
     # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    dot: Var[bool]
+    dot: Var[Union[bool, Dict[str, Any]]] = Var.create_safe(
+        {
+            "stroke": Color("accent", 10),
+            "fill": Color("accent", 4),
+        }
+    )
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    active_dot: Var[bool]
+    active_dot: Var[Union[bool, Dict[str, Any]]] = Var.create_safe(
+        {
+            "stroke": Color("accent", 2),
+            "fill": Color("accent", 10),
+        }
+    )
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
     label: Var[bool]
@@ -439,7 +475,7 @@ class Scatter(Recharts):
     line_type: Var[LiteralLineType]
 
     # The fill
-    fill: Var[Union[str, Color]]
+    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
 
     # the name
     name: Var[Union[str, int]]
@@ -515,6 +551,9 @@ class Funnel(Recharts):
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
     animation_easing: Var[LiteralAnimationEasing]
 
+    # stroke color
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 3))
+
     # Valid children components
     _valid_children: List[str] = ["LabelList", "Cell"]
 
@@ -566,7 +605,7 @@ class ErrorBar(Recharts):
     width: Var[int]
 
     # The stroke color of error bar.
-    stroke: Var[Union[str, Color]]
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 8))
 
     # The stroke width of error bar.
     stroke_width: Var[int]
@@ -581,14 +620,11 @@ class Reference(Recharts):
     # The id of y-axis which is corresponding to the data.
     y_axis_id: Var[Union[str, int]]
 
-    # If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
-    x: Var[str]
-
-    # If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
-    y: Var[str]
-
     # Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
     if_overflow: Var[LiteralIfOverflow]
+
+    # If set a string or a number, default label will be drawn, and the option is content.
+    label: Var[Union[str, int]]
 
     # If set true, the line will be rendered in front of bars in BarChart, etc.
     is_front: Var[bool]
@@ -601,11 +637,23 @@ class ReferenceLine(Reference):
 
     alias = "RechartsReferenceLine"
 
+    # If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
+    x: Var[Union[str, int]]
+
+    # If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
+    y: Var[Union[str, int]]
+
+    # The color of the reference line.
+    stroke: Var[Union[str, Color]]
+
     # The width of the stroke.
-    stroke_width: Var[int]
+    stroke_width: Var[Union[str, int]]
 
     # Valid children components
     _valid_children: List[str] = ["Label"]
+
+    # Array of endpoints in { x, y } format. These endpoints would be used to draw the ReferenceLine.
+    segment: List[Any] = []
 
 
 class ReferenceDot(Reference):
@@ -614,6 +662,21 @@ class ReferenceDot(Reference):
     tag = "ReferenceDot"
 
     alias = "RechartsReferenceDot"
+
+    # If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
+    x: Var[Union[str, int]]
+
+    # If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
+    y: Var[Union[str, int]]
+
+    # The radius of dot.
+    r: Var[int]
+
+    # The color of the area fill.
+    fill: Var[Union[str, Color]]
+
+    # The color of the line stroke.
+    stroke: Var[Union[str, Color]]
 
     # Valid children components
     _valid_children: List[str] = ["Label"]
@@ -730,6 +793,9 @@ class CartesianGrid(Grid):
 
     # The pattern of dashes and gaps used to paint the lines of the grid
     stroke_dasharray: Var[str]
+
+    # the stroke color of grid
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 7))
 
 
 class CartesianAxis(Grid):

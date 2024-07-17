@@ -1,4 +1,5 @@
 """Test cases for the FastAPI lifespan integration."""
+
 from typing import Generator
 
 import pytest

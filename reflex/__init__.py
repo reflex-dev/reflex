@@ -84,11 +84,17 @@ In the example above, you will be able to do `rx.list`
 
 from __future__ import annotations
 
-from reflex.utils import lazy_loader
+from reflex.utils import (
+    compat,  # for side-effects
+    lazy_loader,
+)
 
 # import this here explicitly to avoid returning the page module since page attr has the
 # same name as page module(page.py)
 from .page import page as page
+
+# Remove the `compat` name from the namespace, it was imported for side-effects only.
+del compat
 
 RADIX_THEMES_MAPPING: dict = {
     "components.radix.themes.base": ["color_mode", "theme", "theme_panel"],
@@ -212,7 +218,9 @@ COMPONENTS_CORE_MAPPING: dict = {
     "components.core.debounce": ["debounce_input"],
     "components.core.html": ["html"],
     "components.core.match": ["match"],
+    "components.core.clipboard": ["clipboard"],
     "components.core.colors": ["color"],
+    "components.core.breakpoints": ["breakpoints"],
     "components.core.responsive": [
         "desktop_only",
         "mobile_and_tablet",
@@ -287,12 +295,14 @@ _MAPPING: dict = {
         "background",
         "call_script",
         "clear_local_storage",
+        "clear_session_storage",
         "console_log",
         "download",
         "prevent_default",
         "redirect",
         "remove_cookie",
         "remove_local_storage",
+        "remove_session_storage",
         "set_clipboard",
         "set_focus",
         "scroll_to",
@@ -307,6 +317,7 @@ _MAPPING: dict = {
         "var",
         "Cookie",
         "LocalStorage",
+        "SessionStorage",
         "ComponentState",
         "State",
     ],

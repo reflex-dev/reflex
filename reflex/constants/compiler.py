@@ -12,7 +12,7 @@ from reflex.utils.imports import ImportVar
 SETTER_PREFIX = "set_"
 
 # The file used to specify no compilation.
-NOCOMPILE_FILE = ".web/nocompile"
+NOCOMPILE_FILE = "nocompile"
 
 
 class Ext(SimpleNamespace):
@@ -62,9 +62,17 @@ class CompileVars(SimpleNamespace):
     # The name of the function for converting a dict to an event.
     TO_EVENT = "Event"
     # The name of the internal on_load event.
-    ON_LOAD_INTERNAL = "on_load_internal_state.on_load_internal"
+    ON_LOAD_INTERNAL = "reflex___state____on_load_internal_state.on_load_internal"
     # The name of the internal event to update generic state vars.
-    UPDATE_VARS_INTERNAL = "update_vars_internal_state.update_vars_internal"
+    UPDATE_VARS_INTERNAL = (
+        "reflex___state____update_vars_internal_state.update_vars_internal"
+    )
+    # The name of the frontend event exception state
+    FRONTEND_EXCEPTION_STATE = "reflex___state____frontend_event_exception_state"
+    # The full name of the frontend exception state
+    FRONTEND_EXCEPTION_STATE_FULL = (
+        f"reflex___state____state.{FRONTEND_EXCEPTION_STATE}"
+    )
 
 
 class PageNames(SimpleNamespace):
@@ -80,6 +88,8 @@ class PageNames(SimpleNamespace):
     DOCUMENT_ROOT = "_document"
     # The name of the theme page.
     THEME = "theme"
+    # The module containing components.
+    COMPONENTS = "components"
     # The module containing shared stateful components
     STATEFUL_COMPONENTS = "stateful_components"
 
@@ -121,6 +131,16 @@ class Hooks(SimpleNamespace):
                     focusRef.current.focus();
                   }
                 })"""
+
+    FRONTEND_ERRORS = f"""
+    const logFrontendError = (error, info) => {{
+        if (process.env.NODE_ENV === "production") {{
+            addEvents([Event("{CompileVars.FRONTEND_EXCEPTION_STATE_FULL}.handle_frontend_exception", {{
+                stack: error.stack,
+            }})])
+        }}
+    }}
+    """
 
 
 class MemoizationDisposition(enum.Enum):

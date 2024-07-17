@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Dict, Literal
 
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.vars import Var
 
@@ -26,28 +27,28 @@ class Grid(elements.Div, RadixThemesComponent):
     as_child: Var[bool]
 
     # Number of columns
-    columns: Var[str]
+    columns: Var[Responsive[str]]
 
     # Number of rows
-    rows: Var[str]
+    rows: Var[Responsive[str]]
 
     # How the grid items are layed out: "row" | "column" | "dense" | "row-dense" | "column-dense"
-    flow: Var[LiteralGridFlow]
+    flow: Var[Responsive[LiteralGridFlow]]
 
     # Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
-    align: Var[LiteralAlign]
+    align: Var[Responsive[LiteralAlign]]
 
     # Alignment of children along the cross axis: "start" | "center" | "end" | "between"
-    justify: Var[LiteralJustify]
+    justify: Var[Responsive[LiteralJustify]]
 
     # Gap between children: "0" - "9"
-    spacing: Var[LiteralSpacing]
+    spacing: Var[Responsive[LiteralSpacing]]
 
     # Gap between children horizontal: "0" - "9"
-    spacing_x: Var[LiteralSpacing]
+    spacing_x: Var[Responsive[LiteralSpacing]]
 
     # Gap between children vertical: "0" - "9"
-    spacing_y: Var[LiteralSpacing]
+    spacing_y: Var[Responsive[LiteralSpacing]]
 
     # Reflex maps the "spacing" prop to "gap" prop.
     _rename_props: Dict[str, str] = {

@@ -1,4 +1,3 @@
-import httpx
 import pytest
 from packaging.version import parse as parse_python_version
 
@@ -34,20 +33,23 @@ def test_disable():
 
 @pytest.mark.parametrize("event", ["init", "reinit", "run-dev", "run-prod", "export"])
 def test_send(mocker, event):
-    mocker.patch("httpx.post")
-    mocker.patch(
-        "builtins.open",
-        mocker.mock_open(
-            read_data='{"project_hash": "78285505863498957834586115958872998605"}'
-        ),
+    httpx_post_mock = mocker.patch("httpx.post")
+    # mocker.patch(
+    #     "builtins.open",
+    #     mocker.mock_open(
+    #         read_data='{"project_hash": "78285505863498957834586115958872998605"}'
+    #     ),
+    # )
+
+    # Mock the read_text method of Path
+    pathlib_path_read_text_mock = mocker.patch(
+        "pathlib.Path.read_text",
+        return_value='{"project_hash": "78285505863498957834586115958872998605"}',
     )
+
     mocker.patch("platform.platform", return_value="Mocked Platform")
 
     telemetry._send(event, telemetry_enabled=True)
-    httpx.post.assert_called_once()
-    if telemetry.get_os() == "Windows":
-        open.assert_called_with(".web\\reflex.json", "r")
-    elif telemetry.get_os() == "Linux":
-        open.assert_called_with("/proc/meminfo", "rb", buffering=32768)
-    else:
-        open.assert_called_with(".web/reflex.json", "r")
+    httpx_post_mock.assert_called_once()
+
+    pathlib_path_read_text_mock.assert_called_once()

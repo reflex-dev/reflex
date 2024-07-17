@@ -825,7 +825,7 @@ def test_component_event_trigger_arbitrary_args():
 
     assert comp.render()["props"][0] == (
         "onFoo={(__e,_alpha,_bravo,_charlie) => addEvents("
-        '[Event("c1_state.mock_handler", {_e:__e.target.value,_bravo:_bravo["nested"],_charlie:((_charlie.custom) + (42))})], '
+        f'[Event("{C1State.get_full_name()}.mock_handler", {{_e:__e.target.value,_bravo:_bravo["nested"],_charlie:((_charlie.custom) + (42))}})], '
         "(__e,_alpha,_bravo,_charlie), {})}"
     )
 
@@ -2037,14 +2037,14 @@ def test_add_style_embedded_vars(test_state: BaseState):
     page._add_style_recursive(Style())
 
     assert (
-        "const test_state = useContext(StateContexts.test_state)"
+        f"const {test_state.get_name()} = useContext(StateContexts.{test_state.get_name()})"
         in page._get_all_hooks_internal()
     )
     assert "useText" in page._get_all_hooks_internal()
     assert "useParent" in page._get_all_hooks_internal()
     assert (
         str(page).count(
-            'css={{"fakeParent": "parent", "color": "var(--plum-10)", "fake": "text", "margin": `${test_state.num}%`}}'
+            f'css={{{{"fakeParent": "parent", "color": "var(--plum-10)", "fake": "text", "margin": `${{{test_state.get_name()}.num}}%`}}}}'
         )
         == 1
     )
@@ -2069,3 +2069,76 @@ def test_add_style_foreach():
 
     # Expect only one instance of this CSS dict in the rendered page
     assert str(page).count('css={{"color": "red"}}') == 1
+
+
+class TriggerState(rx.State):
+    """Test state with event handlers."""
+
+    def do_something(self):
+        """Sample event handler."""
+        pass
+
+
+@pytest.mark.parametrize(
+    "component, output",
+    [
+        (rx.box(rx.text("random text")), False),
+        (
+            rx.box(rx.text("random text", on_click=rx.console_log("log"))),
+            False,
+        ),
+        (
+            rx.box(
+                rx.text("random text", on_click=TriggerState.do_something),
+                rx.text(
+                    "random text",
+                    on_click=BaseVar(_var_name="toggleColorMode", _var_type=EventChain),
+                ),
+            ),
+            True,
+        ),
+        (
+            rx.box(
+                rx.text("random text", on_click=rx.console_log("log")),
+                rx.text(
+                    "random text",
+                    on_click=BaseVar(_var_name="toggleColorMode", _var_type=EventChain),
+                ),
+            ),
+            False,
+        ),
+        (
+            rx.box(rx.text("random text", on_click=TriggerState.do_something)),
+            True,
+        ),
+        (
+            rx.box(
+                rx.text(
+                    "random text",
+                    on_click=[rx.console_log("log"), rx.window_alert("alert")],
+                ),
+            ),
+            False,
+        ),
+        (
+            rx.box(
+                rx.text(
+                    "random text",
+                    on_click=[rx.console_log("log"), TriggerState.do_something],
+                ),
+            ),
+            True,
+        ),
+        (
+            rx.box(
+                rx.text(
+                    "random text",
+                    on_blur=lambda: TriggerState.do_something,
+                ),
+            ),
+            True,
+        ),
+    ],
+)
+def test_has_state_event_triggers(component, output):
+    assert component._has_stateful_event_triggers() == output

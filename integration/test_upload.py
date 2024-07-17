@@ -1,4 +1,5 @@
 """Integration tests for file upload."""
+
 from __future__ import annotations
 
 import asyncio
@@ -173,7 +174,9 @@ async def test_upload_file(
     # wait for the backend connection to send the token
     token = upload_file.poll_for_value(token_input)
     assert token is not None
-    substate_token = f"{token}_state.upload_state"
+    full_state_name = upload_file.get_full_state_name(["_upload_state"])
+    state_name = upload_file.get_state_name("_upload_state")
+    substate_token = f"{token}_{full_state_name}"
 
     suffix = "_secondary" if secondary else ""
 
@@ -196,7 +199,7 @@ async def test_upload_file(
     async def get_file_data():
         return (
             (await upload_file.get_state(substate_token))
-            .substates["upload_state"]
+            .substates[state_name]
             ._file_data
         )
 
@@ -211,8 +214,8 @@ async def test_upload_file(
     state = await upload_file.get_state(substate_token)
     if secondary:
         # only the secondary form tracks progress and chain events
-        assert state.substates["upload_state"].event_order.count("upload_progress") == 1
-        assert state.substates["upload_state"].event_order.count("chain_event") == 1
+        assert state.substates[state_name].event_order.count("upload_progress") == 1
+        assert state.substates[state_name].event_order.count("chain_event") == 1
 
 
 @pytest.mark.asyncio
@@ -230,7 +233,9 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
     # wait for the backend connection to send the token
     token = upload_file.poll_for_value(token_input)
     assert token is not None
-    substate_token = f"{token}_state.upload_state"
+    full_state_name = upload_file.get_full_state_name(["_upload_state"])
+    state_name = upload_file.get_state_name("_upload_state")
+    substate_token = f"{token}_{full_state_name}"
 
     upload_box = driver.find_element(By.XPATH, "//input[@type='file']")
     assert upload_box
@@ -260,7 +265,7 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
     async def get_file_data():
         return (
             (await upload_file.get_state(substate_token))
-            .substates["upload_state"]
+            .substates[state_name]
             ._file_data
         )
 
@@ -342,7 +347,9 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     # wait for the backend connection to send the token
     token = upload_file.poll_for_value(token_input)
     assert token is not None
-    substate_token = f"{token}_state.upload_state"
+    state_name = upload_file.get_state_name("_upload_state")
+    state_full_name = upload_file.get_full_state_name(["_upload_state"])
+    substate_token = f"{token}_{state_full_name}"
 
     upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[1]
     upload_button = driver.find_element(By.ID, f"upload_button_secondary")
@@ -361,7 +368,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
 
     # look up the backend state and assert on progress
     state = await upload_file.get_state(substate_token)
-    assert state.substates["upload_state"].progress_dicts
-    assert exp_name not in state.substates["upload_state"]._file_data
+    assert state.substates[state_name].progress_dicts
+    assert exp_name not in state.substates[state_name]._file_data
 
     target_file.unlink()

@@ -13,6 +13,9 @@ import multiprocessing
 import os
 import platform
 import sys
+import traceback
+from datetime import datetime
+from pathlib import Path
 from typing import (
     Any,
     AsyncIterator,
@@ -39,11 +42,13 @@ from starlette_admin.contrib.sqla.view import ModelView
 
 from reflex import constants
 from reflex.admin import AdminDash
+from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.compiler.compiler import ExecutorSafeFunctions
 from reflex.components.base.app_wrap import AppWrap
+from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
     Component,
@@ -51,6 +56,7 @@ from reflex.components.component import (
     evaluate_style_namespaces,
 )
 from reflex.components.core.banner import connection_pulser, connection_toaster
+from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
@@ -58,8 +64,7 @@ from reflex.components.core.client_side_routing import (
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import get_config
-from reflex.event import Event, EventHandler, EventSpec
-from reflex.middleware import HydrateMiddleware, Middleware
+from reflex.event import Event, EventHandler, EventSpec, window_alert
 from reflex.model import Model
 from reflex.page import (
     DECORATED_PAGES,
@@ -78,13 +83,57 @@ from reflex.state import (
     _substate_key,
     code_uses_state_contexts,
 )
-from reflex.utils import console, exceptions, format, prerequisites, types
-from reflex.utils.exec import is_testing_env, should_skip_compile
+from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
+from reflex.utils.exec import is_prod_mode, is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
+
+
+def default_frontend_exception_handler(exception: Exception) -> None:
+    """Default frontend exception handler function.
+
+    Args:
+        exception: The exception.
+
+    """
+    console.error(f"[Reflex Frontend Exception]\n {exception}\n")
+
+
+def default_backend_exception_handler(exception: Exception) -> EventSpec:
+    """Default backend exception handler function.
+
+    Args:
+        exception: The exception.
+
+    Returns:
+        EventSpec: The window alert event.
+
+    """
+    from reflex.components.sonner.toast import Toaster, toast
+
+    error = traceback.format_exc()
+
+    console.error(f"[Reflex Backend Exception]\n {error}\n")
+
+    error_message = (
+        [f"{type(exception).__name__}: {exception}.", "See logs for details."]
+        if get_config().debug is True
+        else ["Contact the website administrator."]
+    )
+    if Toaster.is_used:
+        return toast(
+            level="error",
+            title="An error occurred.",
+            description="<br/>".join(error_message),
+            position="top-center",
+            style={"width": "500px"},
+        )  # type: ignore
+    else:
+        error_message.insert(0, "An error occurred.")
+        return window_alert("\n".join(error_message))
 
 
 def default_overlay_component() -> Component:
@@ -93,7 +142,24 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    return Fragment.create(connection_pulser(), connection_toaster())
+    return Fragment.create(
+        connection_pulser(),
+        connection_toaster(),
+        *codespaces.codespaces_auto_redirect(),
+    )
+
+
+def default_error_boundary(*children: Component) -> Component:
+    """Default error_boundary attribute for App.
+
+    Args:
+        *children: The children to render in the error boundary.
+
+    Returns:
+        The default error_boundary, which is an ErrorBoundary.
+
+    """
+    return ErrorBoundary.create(*children)
 
 
 class OverlayFragment(Fragment):
@@ -102,50 +168,7 @@ class OverlayFragment(Fragment):
     pass
 
 
-class LifespanMixin(Base):
-    """A Mixin that allow tasks to run during the whole app lifespan."""
-
-    # Lifespan tasks that are planned to run.
-    lifespan_tasks: Set[Union[asyncio.Task, Callable]] = set()
-
-    @contextlib.asynccontextmanager
-    async def _run_lifespan_tasks(self, app: FastAPI):
-        running_tasks = []
-        try:
-            async with contextlib.AsyncExitStack() as stack:
-                for task in self.lifespan_tasks:
-                    if isinstance(task, asyncio.Task):
-                        running_tasks.append(task)
-                    else:
-                        signature = inspect.signature(task)
-                        if "app" in signature.parameters:
-                            task = functools.partial(task, app=app)
-                        _t = task()
-                        if isinstance(_t, contextlib._AsyncGeneratorContextManager):
-                            await stack.enter_async_context(_t)
-                        elif isinstance(_t, Coroutine):
-                            running_tasks.append(asyncio.create_task(_t))
-                yield
-        finally:
-            cancel_kwargs = (
-                {"msg": "lifespan_cleanup"} if sys.version_info >= (3, 9) else {}
-            )
-            for task in running_tasks:
-                task.cancel(**cancel_kwargs)
-
-    def register_lifespan_task(self, task: Callable | asyncio.Task, **task_kwargs):
-        """Register a task to run during the lifespan of the app.
-
-        Args:
-            task: The task to register.
-            task_kwargs: The kwargs of the task.
-        """
-        if task_kwargs:
-            task = functools.partial(task, **task_kwargs)  # type: ignore
-        self.lifespan_tasks.add(task)  # type: ignore
-
-
-class App(LifespanMixin, Base):
+class App(MiddlewareMixin, LifespanMixin, Base):
     """The main Reflex app that encapsulates the backend and frontend.
 
     Every Reflex app needs an app defined in its main module.
@@ -176,9 +199,12 @@ class App(LifespanMixin, Base):
     stylesheets: List[str] = []
 
     # A component that is present on every page (defaults to the Connection Error banner).
-    overlay_component: Optional[
-        Union[Component, ComponentCallable]
-    ] = default_overlay_component
+    overlay_component: Optional[Union[Component, ComponentCallable]] = (
+        default_overlay_component
+    )
+
+    # Error boundary component to wrap the app with.
+    error_boundary: Optional[ComponentCallable] = default_error_boundary
 
     # Components to add to the head of every page.
     head_components: List[Component] = []
@@ -204,9 +230,6 @@ class App(LifespanMixin, Base):
     # Class to manage many client states.
     _state_manager: Optional[StateManager] = None
 
-    # Middleware to add to the app. Users should use `add_middleware`. PRIVATE.
-    middleware: List[Middleware] = []
-
     # Mapping from a route to event handlers to trigger when the page loads. PRIVATE.
     load_events: Dict[str, List[Union[EventHandler, EventSpec]]] = {}
 
@@ -218,6 +241,16 @@ class App(LifespanMixin, Base):
 
     # Background tasks that are currently running. PRIVATE.
     background_tasks: Set[asyncio.Task] = set()
+
+    # Frontend Error Handler Function
+    frontend_exception_handler: Callable[[Exception], None] = (
+        default_frontend_exception_handler
+    )
+
+    # Backend Error Handler Function
+    backend_exception_handler: Callable[
+        [Exception], Union[EventSpec, List[EventSpec], None]
+    ] = default_backend_exception_handler
 
     def __init__(self, **kwargs):
         """Initialize the app.
@@ -244,18 +277,30 @@ class App(LifespanMixin, Base):
                 "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
             )
 
-        # Add middleware.
-        self.middleware.append(HydrateMiddleware())
+        if "breakpoints" in self.style:
+            set_breakpoints(self.style.pop("breakpoints"))
 
         # Set up the API.
         self.api = FastAPI(lifespan=self._run_lifespan_tasks)
         self._add_cors()
         self._add_default_endpoints()
 
+        for clz in App.__mro__:
+            if clz == App:
+                continue
+            if issubclass(clz, AppMixin):
+                clz._init_mixin(self)
+
         self._setup_state()
 
         # Set up the admin dash.
         self._setup_admin_dash()
+
+        if sys.platform == "win32" and not is_prod_mode():
+            # Hack to fix Windows hot reload issue.
+            from reflex.utils.compat import windows_hot_reload_lifespan_hack
+
+            self.register_lifespan_task(windows_hot_reload_lifespan_hack)
 
     def _enable_state(self) -> None:
         """Enable state for the app."""
@@ -308,6 +353,9 @@ class App(LifespanMixin, Base):
         # Mount the socket app with the API.
         self.api.mount(str(constants.Endpoint.EVENT), socket_app)
 
+        # Check the exception handlers
+        self._validate_exception_handlers()
+
     def __repr__(self) -> str:
         """Get the string representation of the app.
 
@@ -341,6 +389,10 @@ class App(LifespanMixin, Base):
                 StaticFiles(directory=get_upload_dir()),
                 name="uploaded_files",
             )
+        if codespaces.is_running_in_codespaces():
+            self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(
+                codespaces.auth_codespace
+            )
 
     def _add_cors(self):
         """Add CORS middleware to the app."""
@@ -365,77 +417,6 @@ class App(LifespanMixin, Base):
         if self._state_manager is None:
             raise ValueError("The state manager has not been initialized.")
         return self._state_manager
-
-    async def _preprocess(self, state: BaseState, event: Event) -> StateUpdate | None:
-        """Preprocess the event.
-
-        This is where middleware can modify the event before it is processed.
-        Each middleware is called in the order it was added to the app.
-
-        If a middleware returns an update, the event is not processed and the
-        update is returned.
-
-        Args:
-            state: The state to preprocess.
-            event: The event to preprocess.
-
-        Returns:
-            An optional state to return.
-        """
-        for middleware in self.middleware:
-            if asyncio.iscoroutinefunction(middleware.preprocess):
-                out = await middleware.preprocess(app=self, state=state, event=event)  # type: ignore
-            else:
-                out = middleware.preprocess(app=self, state=state, event=event)  # type: ignore
-            if out is not None:
-                return out  # type: ignore
-
-    async def _postprocess(
-        self, state: BaseState, event: Event, update: StateUpdate
-    ) -> StateUpdate:
-        """Postprocess the event.
-
-        This is where middleware can modify the delta after it is processed.
-        Each middleware is called in the order it was added to the app.
-
-        Args:
-            state: The state to postprocess.
-            event: The event to postprocess.
-            update: The current state update.
-
-        Returns:
-            The state update to return.
-        """
-        for middleware in self.middleware:
-            if asyncio.iscoroutinefunction(middleware.postprocess):
-                out = await middleware.postprocess(
-                    app=self,  # type: ignore
-                    state=state,
-                    event=event,
-                    update=update,
-                )
-            else:
-                out = middleware.postprocess(
-                    app=self,  # type: ignore
-                    state=state,
-                    event=event,
-                    update=update,
-                )
-            if out is not None:
-                return out  # type: ignore
-        return update
-
-    def add_middleware(self, middleware: Middleware, index: int | None = None):
-        """Add middleware to the app.
-
-        Args:
-            middleware: The middleware to add.
-            index: The index to add the middleware at.
-        """
-        if index is None:
-            self.middleware.append(middleware)
-        else:
-            self.middleware.insert(index, middleware)
 
     @staticmethod
     def _generate_component(component: Component | ComponentCallable) -> Component:
@@ -541,7 +522,7 @@ class App(LifespanMixin, Base):
 
         # Ensure state is enabled if this page uses state.
         if self.state is None:
-            if on_load or component._has_event_triggers():
+            if on_load or component._has_stateful_event_triggers():
                 self._enable_state()
             else:
                 for var in component._get_vars(include_children=True):
@@ -751,10 +732,12 @@ class App(LifespanMixin, Base):
         if should_skip_compile():
             return False
 
+        nocompile = prerequisites.get_web_dir() / constants.NOCOMPILE_FILE
+
         # Check the nocompile file.
-        if os.path.exists(constants.NOCOMPILE_FILE):
+        if nocompile.exists():
             # Delete the nocompile file
-            os.remove(constants.NOCOMPILE_FILE)
+            nocompile.unlink()
             return False
 
         # By default, compile the app.
@@ -782,6 +765,25 @@ class App(LifespanMixin, Base):
         for k, component in self.pages.items():
             self.pages[k] = self._add_overlay_to_component(component)
 
+    def _add_error_boundary_to_component(self, component: Component) -> Component:
+        if self.error_boundary is None:
+            return component
+
+        component = self.error_boundary(*component.children)
+
+        return component
+
+    def _setup_error_boundary(self):
+        """If a State is not used and no error_boundary is specified, do not render the error boundary."""
+        if self.state is None and self.error_boundary is default_error_boundary:
+            self.error_boundary = None
+
+        for k, component in self.pages.items():
+            # Skip the 404 page
+            if k == constants.Page404.SLUG:
+                continue
+            self.pages[k] = self._add_error_boundary_to_component(component)
+
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app.
 
@@ -795,6 +797,36 @@ class App(LifespanMixin, Base):
         for render, kwargs in DECORATED_PAGES[get_config().app_name]:
             self.add_page(render, **kwargs)
 
+    def _validate_var_dependencies(
+        self, state: Optional[Type[BaseState]] = None
+    ) -> None:
+        """Validate the dependencies of the vars in the app.
+
+        Args:
+            state: The state to validate the dependencies for.
+
+        Raises:
+            VarDependencyError: When a computed var has an invalid dependency.
+        """
+        if not self.state:
+            return
+
+        if not state:
+            state = self.state
+
+        for var in state.computed_vars.values():
+            if not var._cache:
+                continue
+            deps = var._deps(objclass=state)
+            for dep in deps:
+                if dep not in state.vars and dep not in state.backend_vars:
+                    raise exceptions.VarDependencyError(
+                        f"ComputedVar {var._var_name} on state {state.__name__} has an invalid dependency {dep}"
+                    )
+
+        for substate in state.class_subclasses:
+            self._validate_var_dependencies(substate)
+
     def _compile(self, export: bool = False):
         """Compile the app and output it to the pages folder.
 
@@ -806,6 +838,9 @@ class App(LifespanMixin, Base):
         """
         from reflex.utils.exceptions import ReflexRuntimeError
 
+        def get_compilation_time() -> str:
+            return str(datetime.now().time()).split(".")[0]
+
         # Render a default 404 page if the user didn't supply one
         if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
@@ -816,7 +851,9 @@ class App(LifespanMixin, Base):
         if not self._should_compile():
             return
 
+        self._validate_var_dependencies()
         self._setup_overlay_component()
+        self._setup_error_boundary()
 
         # Create a progress bar.
         progress = Progress(
@@ -830,7 +867,7 @@ class App(LifespanMixin, Base):
         fixed_pages_within_executor = 5
         progress.start()
         task = progress.add_task(
-            "Compiling:",
+            f"[{get_compilation_time()}] Compiling:",
             total=len(self.pages)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
@@ -1000,9 +1037,6 @@ class App(LifespanMixin, Base):
 
         progress.advance(task)
 
-        # Empty the .web pages directory.
-        compiler.purge_web_pages_dir()
-
         progress.advance(task)
         progress.stop()
 
@@ -1019,6 +1053,19 @@ class App(LifespanMixin, Base):
             export=export,
             transpile_packages=transpile_packages,
         )
+
+        if is_prod_mode():
+            # Empty the .web pages directory.
+            compiler.purge_web_pages_dir()
+        else:
+            # In dev mode, delete removed pages and update existing pages.
+            keep_files = [Path(output_path) for output_path, _ in compile_results]
+            for p in Path(prerequisites.get_web_dir() / constants.Dirs.PAGES).rglob(
+                "*"
+            ):
+                if p.is_file() and p not in keep_files:
+                    # Remove pages that are no longer in the app.
+                    p.unlink()
 
         for output_path, code in compile_results:
             compiler_utils.write_page(output_path, code)
@@ -1096,6 +1143,100 @@ class App(LifespanMixin, Base):
         task.add_done_callback(self.background_tasks.discard)
         return task
 
+    def _validate_exception_handlers(self):
+        """Validate the custom event exception handlers for front- and backend.
+
+        Raises:
+            ValueError: If the custom exception handlers are invalid.
+
+        """
+        FRONTEND_ARG_SPEC = {
+            "exception": Exception,
+        }
+
+        BACKEND_ARG_SPEC = {
+            "exception": Exception,
+        }
+
+        for handler_domain, handler_fn, handler_spec in zip(
+            ["frontend", "backend"],
+            [self.frontend_exception_handler, self.backend_exception_handler],
+            [
+                FRONTEND_ARG_SPEC,
+                BACKEND_ARG_SPEC,
+            ],
+        ):
+            if hasattr(handler_fn, "__name__"):
+                _fn_name = handler_fn.__name__
+            else:
+                _fn_name = handler_fn.__class__.__name__
+
+            if isinstance(handler_fn, functools.partial):
+                raise ValueError(
+                    f"Provided custom {handler_domain} exception handler `{_fn_name}` is a partial function. Please provide a named function instead."
+                )
+
+            if not callable(handler_fn):
+                raise ValueError(
+                    f"Provided custom {handler_domain} exception handler `{_fn_name}` is not a function."
+                )
+
+            # Allow named functions only as lambda functions cannot be introspected
+            if _fn_name == "<lambda>":
+                raise ValueError(
+                    f"Provided custom {handler_domain} exception handler `{_fn_name}` is a lambda function. Please use a named function instead."
+                )
+
+            # Check if the function has the necessary annotations and types in the right order
+            argspec = inspect.getfullargspec(handler_fn)
+            arg_annotations = {
+                k: eval(v) if isinstance(v, str) else v
+                for k, v in argspec.annotations.items()
+                if k not in ["args", "kwargs", "return"]
+            }
+
+            for required_arg_index, required_arg in enumerate(handler_spec):
+                if required_arg not in arg_annotations:
+                    raise ValueError(
+                        f"Provided custom {handler_domain} exception handler `{_fn_name}` does not take the required argument `{required_arg}`"
+                    )
+                elif (
+                    not list(arg_annotations.keys())[required_arg_index] == required_arg
+                ):
+                    raise ValueError(
+                        f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong argument order."
+                        f"Expected `{required_arg}` as the {required_arg_index+1} argument but got `{list(arg_annotations.keys())[required_arg_index]}`"
+                    )
+
+                if not issubclass(arg_annotations[required_arg], Exception):
+                    raise ValueError(
+                        f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong type for {required_arg} argument."
+                        f"Expected to be `Exception` but got `{arg_annotations[required_arg]}`"
+                    )
+
+            # Check if the return type is valid for backend exception handler
+            if handler_domain == "backend":
+                sig = inspect.signature(self.backend_exception_handler)
+                return_type = (
+                    eval(sig.return_annotation)
+                    if isinstance(sig.return_annotation, str)
+                    else sig.return_annotation
+                )
+
+                valid = bool(
+                    return_type == EventSpec
+                    or return_type == Optional[EventSpec]
+                    or return_type == List[EventSpec]
+                    or return_type == inspect.Signature.empty
+                    or return_type is None
+                )
+
+                if not valid:
+                    raise ValueError(
+                        f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong return type."
+                        f"Expected `Union[EventSpec, List[EventSpec], None]` but got `{return_type}`"
+                    )
+
 
 async def process(
     app: App, event: Event, sid: str, headers: Dict, client_ip: str
@@ -1161,6 +1302,8 @@ async def process(
                     yield update
     except Exception as ex:
         telemetry.send_error(ex, context="backend")
+
+        app.backend_exception_handler(ex)
         raise
 
 

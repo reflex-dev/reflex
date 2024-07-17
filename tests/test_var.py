@@ -1,15 +1,20 @@
 import json
 import typing
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Union
 
 import pytest
 from pandas import DataFrame
 
 from reflex.base import Base
+from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex.experimental.vars.base import ImmutableVar
 from reflex.state import BaseState
+from reflex.utils.imports import ImportVar
 from reflex.vars import (
     BaseVar,
+    ComputedVar,
     Var,
+    VarData,
     computed_var,
 )
 
@@ -539,6 +544,29 @@ def test_var_indexing_str():
 
 
 @pytest.mark.parametrize(
+    "var",
+    [
+        (BaseVar(_var_name="foo", _var_type=int)),
+        (BaseVar(_var_name="bar", _var_type=float)),
+    ],
+)
+def test_var_replace_with_invalid_kwargs(var):
+    with pytest.raises(TypeError) as excinfo:
+        var._replace(_this_should_fail=True)
+    assert "Unexpected keyword arguments" in str(excinfo.value)
+
+
+def test_computed_var_replace_with_invalid_kwargs():
+    @computed_var(initial_value=1)
+    def test_var(state) -> int:
+        return 1
+
+    with pytest.raises(TypeError) as excinfo:
+        test_var._replace(_random_kwarg=True)
+    assert "Unexpected keyword arguments" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
     "var, index",
     [
         (BaseVar(_var_name="lst", _var_type=List[int]), [1, 2]),
@@ -715,64 +743,55 @@ def test_var_unsupported_indexing_dicts(var, index):
 
 
 @pytest.mark.parametrize(
-    "fixture,full_name",
+    "fixture",
     [
-        ("ParentState", "parent_state.var_without_annotation"),
-        ("ChildState", "parent_state__child_state.var_without_annotation"),
-        (
-            "GrandChildState",
-            "parent_state__child_state__grand_child_state.var_without_annotation",
-        ),
-        ("StateWithAnyVar", "state_with_any_var.var_without_annotation"),
+        "ParentState",
+        "ChildState",
+        "GrandChildState",
+        "StateWithAnyVar",
     ],
 )
-def test_computed_var_without_annotation_error(request, fixture, full_name):
+def test_computed_var_without_annotation_error(request, fixture):
     """Test that a type error is thrown when an attribute of a computed var is
     accessed without annotating the computed var.
 
     Args:
         request: Fixture Request.
         fixture: The state fixture.
-        full_name: The full name of the state var.
     """
     with pytest.raises(TypeError) as err:
         state = request.getfixturevalue(fixture)
         state.var_without_annotation.foo
-    assert (
-        err.value.args[0]
-        == f"You must provide an annotation for the state var `{full_name}`. Annotation cannot be `typing.Any`"
-    )
+        full_name = state.var_without_annotation._var_full_name
+        assert (
+            err.value.args[0]
+            == f"You must provide an annotation for the state var `{full_name}`. Annotation cannot be `typing.Any`"
+        )
 
 
 @pytest.mark.parametrize(
-    "fixture,full_name",
+    "fixture",
     [
-        (
-            "StateWithCorrectVarAnnotation",
-            "state_with_correct_var_annotation.var_with_annotation",
-        ),
-        (
-            "StateWithWrongVarAnnotation",
-            "state_with_wrong_var_annotation.var_with_annotation",
-        ),
+        "StateWithCorrectVarAnnotation",
+        "StateWithWrongVarAnnotation",
     ],
 )
-def test_computed_var_with_annotation_error(request, fixture, full_name):
+def test_computed_var_with_annotation_error(request, fixture):
     """Test that an Attribute error is thrown when a non-existent attribute of an annotated computed var is
     accessed or when the wrong annotation is provided to a computed var.
 
     Args:
         request: Fixture Request.
         fixture: The state fixture.
-        full_name: The full name of the state var.
     """
     with pytest.raises(AttributeError) as err:
         state = request.getfixturevalue(fixture)
         state.var_with_annotation.foo
-    assert (
-        err.value.args[0]
-        == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly."
-    )
+        full_name = state.var_with_annotation._var_full_name
+        assert (
+            err.value.args[0]
+            == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly."
+        )
 
 
 @pytest.mark.parametrize(
@@ -832,6 +851,43 @@ def test_state_with_initial_computed_var(
     else:
         runtime_dict = state.dict()[state_name]
         assert runtime_dict[var_name] == expected_runtime
+
+
+def test_retrival():
+    var_without_data = ImmutableVar.create("test")
+    assert var_without_data is not None
+
+    original_var_data = VarData(
+        state="Test",
+        imports={"react": [ImportVar(tag="useRef")]},
+        hooks={"const state = useContext(StateContexts.state)": None},
+    )
+
+    var_with_data = var_without_data._replace(merge_var_data=original_var_data)
+
+    f_string = f"foo{var_with_data}bar"
+
+    assert REFLEX_VAR_OPENING_TAG in f_string
+    assert REFLEX_VAR_CLOSING_TAG in f_string
+
+    result_var_data = Var.create_safe(f_string)._var_data
+    result_immutable_var_data = ImmutableVar.create_safe(f_string)._var_data
+    assert result_var_data is not None and result_immutable_var_data is not None
+    assert (
+        result_var_data.state
+        == result_immutable_var_data.state
+        == original_var_data.state
+    )
+    assert (
+        result_var_data.imports
+        == result_immutable_var_data.imports
+        == original_var_data.imports
+    )
+    assert (
+        result_var_data.hooks
+        == result_immutable_var_data.hooks
+        == original_var_data.hooks
+    )
 
 
 @pytest.mark.parametrize(
@@ -1378,13 +1434,58 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List
         (Var.create(1), "1"),
         (Var.create([1, 2, 3]), "[1, 2, 3]"),
         (Var.create({"foo": "bar"}), '{"foo": "bar"}'),
-        (Var.create(ATestState.value, _var_is_string=True), "a_test_state.value"),
+        (
+            Var.create(ATestState.value, _var_is_string=True),
+            f"{ATestState.get_full_name()}.value",
+        ),
         (
             Var.create(f"{ATestState.value} string", _var_is_string=True),
-            "`${a_test_state.value} string`",
+            f"`${{{ATestState.get_full_name()}.value}} string`",
         ),
-        (Var.create(ATestState.dict_val), "a_test_state.dict_val"),
+        (Var.create(ATestState.dict_val), f"{ATestState.get_full_name()}.dict_val"),
     ],
 )
 def test_var_name_unwrapped(var, expected):
     assert var._var_name_unwrapped == expected
+
+
+def cv_fget(state: BaseState) -> int:
+    return 1
+
+
+@pytest.mark.parametrize(
+    "deps,expected",
+    [
+        (["a"], {"a"}),
+        (["b"], {"b"}),
+        ([ComputedVar(fget=cv_fget)], {"cv_fget"}),
+    ],
+)
+def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
+    @computed_var(
+        deps=deps,
+        cache=True,
+    )
+    def test_var(state) -> int:
+        return 1
+
+    assert test_var._static_deps == expected
+
+
+@pytest.mark.parametrize(
+    "deps",
+    [
+        [""],
+        [1],
+        ["", "abc"],
+    ],
+)
+def test_invalid_computed_var_deps(deps: List):
+    with pytest.raises(TypeError):
+
+        @computed_var(
+            deps=deps,
+            cache=True,
+        )
+        def test_var(state) -> int:
+            return 1

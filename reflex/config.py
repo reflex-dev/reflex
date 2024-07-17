@@ -219,8 +219,14 @@ class Config(Base):
     # Number of gunicorn workers from user
     gunicorn_workers: Optional[int] = None
 
-    # Whether to
+    # If debug is true, more details will show when an error happens.
     debug: bool = False
+
+    # Maximum expiration lock time for redis state manager
+    redis_lock_expiration: int = constants.Expiration.LOCK
+
+    # Token expiration time for redis state manager
+    redis_token_expiration: int = constants.Expiration.TOKEN
 
     # Attributes that were explicitly set by the user.
     _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
@@ -274,7 +280,8 @@ class Config(Base):
             if env_var is not None:
                 if key.upper() != "DB_URL":
                     console.info(
-                        f"Overriding config value {key} with env var {key.upper()}={env_var}"
+                        f"Overriding config value {key} with env var {key.upper()}={env_var}",
+                        dedupe=True,
                     )
 
                 # Convert the env var to the expected type.
