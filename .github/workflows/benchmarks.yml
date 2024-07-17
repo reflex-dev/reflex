@@ -64,7 +64,7 @@ jobs:
           LHCI_GITHUB_APP_TOKEN: $
       - name: Run Benchmarks
         # Only run if the database creds are available in this context.
-        run: poetry run python benchmarks/lighthouse_score_upload.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
+        run: poetry run python benchmarks/bechmark_lighthouse.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
         env:
           GITHUB_SHA: ${{ github.sha }}
 
@@ -120,7 +120,7 @@ jobs:
       - name: Upload benchmark results
         # Only run if the database creds are available in this context.
         run:
-          poetry run python benchmarks/simple_app_benchmark_upload.py --os "${{ matrix.os }}"
+          poetry run python benchmarks/benchmark_compile_times.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --benchmark-json "${{ env.OUTPUT_FILE }}" --branch-name "${{ github.head_ref || github.ref_name }}"
           --event-type "${{ github.event_name }}" --pr-id "${{ github.event.pull_request.id }}"

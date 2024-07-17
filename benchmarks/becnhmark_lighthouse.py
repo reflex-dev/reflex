@@ -6,7 +6,7 @@ import json
 import os
 import sys
 
-from benchmark_utils import send_data_to_posthog
+from utils import send_data_to_posthog
 
 
 def insert_benchmarking_data(

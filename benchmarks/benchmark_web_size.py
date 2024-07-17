@@ -3,7 +3,7 @@
 import argparse
 import os
 
-from benchmark_utils import get_directory_size, send_data_to_posthog
+from utils import get_directory_size, send_data_to_posthog
 
 def insert_benchmarking_data(
     os_type_version: str,

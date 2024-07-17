@@ -3,7 +3,7 @@
 import argparse
 import os
 
-from benchmark_utils import get_python_version, get_directory_size, send_data_to_posthog
+from utils import get_python_version, get_directory_size, send_data_to_posthog
 
 def get_package_size(venv_path, os_name):
     """Get the size of a specified package.
