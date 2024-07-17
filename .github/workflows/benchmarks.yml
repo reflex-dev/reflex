@@ -64,7 +64,7 @@ jobs:
           LHCI_GITHUB_APP_TOKEN: $
       - name: Run Benchmarks
         # Only run if the database creds are available in this context.
-        run: poetry run python benchmarks/bechmark_lighthouse.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
+        run: poetry run python benchmarks/benchmark_lighthouse.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
         env:
           GITHUB_SHA: ${{ github.sha }}
 
