@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 import os
 import sys
-from .benchmark_utils import send_data_to_posthog
+
+from benchmark_utils import send_data_to_posthog
 
 
 def insert_benchmarking_data(

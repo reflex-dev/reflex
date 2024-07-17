@@ -6,7 +6,7 @@ import argparse
 import json
 import os
 
-from .benchmark_utils import send_data_to_posthog
+from benchmark_utils import send_data_to_posthog
 
 def extract_stats_from_json(json_file: str) -> dict:
     """Extracts the stats from the JSON data and returns them as dictionaries.
