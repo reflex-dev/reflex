@@ -15,7 +15,6 @@ def insert_benchmarking_data(
     """Insert the benchmarking data into the database.
 
     Args:
-        db_connection_url: The URL to connect to the database.
         lighthouse_data: The Lighthouse data to insert.
         commit_sha: The commit SHA to insert.
         pr_title: The PR title to insert.

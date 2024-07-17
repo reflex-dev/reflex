@@ -151,11 +151,6 @@ def main():
         "--commit-sha", help="The commit SHA to insert into the database."
     )
     parser.add_argument(
-        "--db-url",
-        help="The URL to connect to the database.",
-        required=True,
-    )
-    parser.add_argument(
         "--pr-title",
         help="The PR title to insert into the database.",
     )

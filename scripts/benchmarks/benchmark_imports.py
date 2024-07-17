@@ -46,7 +46,6 @@ def insert_benchmarking_data(
     """Insert the benchmarking data into the database.
 
     Args:
-        db_connection_url: The URL to connect to the database.
         os_type_version: The OS type and version to insert.
         python_version: The Python version to insert.
         performance_data: The imports performance data to insert.
@@ -101,11 +100,6 @@ def main():
     parser.add_argument(
         "--benchmark-json",
         help="The JSON file containing the benchmark results.",
-    )
-    parser.add_argument(
-        "--db-url",
-        help="The URL to connect to the database.",
-        required=True,
     )
     parser.add_argument(
         "--pr-title",
