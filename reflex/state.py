@@ -1430,14 +1430,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`)"
         )
 
-    def _get_token(self) -> str:
+    def _get_token(self, other=None) -> str:
         token = self.router.session.client_token
-        if self.__class__._scope is not None:
+        cls = other or self.__class__
+        if cls._scope is not None:
             scope = None
-            if isinstance(self.__class__._scope, str):
-                scope = self.__class__._scope
+            if isinstance(cls._scope, str):
+                scope = cls._scope
             else:
-                scope = getattr(self, self.__class__._scope._var_name)
+                scope = getattr(self, cls._scope._var_name)
 
             token = scope
 
@@ -2561,6 +2562,10 @@ class StateManagerRedis(StateManager):
                 "StateManagerRedis requires token to be specified in the form of {token}_{state_full_name}"
             )
 
+        if parent_state is None:
+            parent_state = await self._get_parent_state(token)
+            if parent_state is not None:
+                token = f"{parent_state._get_token(state_cls)}_{state_path}"
         # Fetch the serialized substate from redis.
         redis_state = await self.redis.get(token)
 
@@ -2657,6 +2662,8 @@ class StateManagerRedis(StateManager):
                 "or use `@rx.background` decorator for long-running tasks."
             )
         client_token, substate_name = _split_substate_key(token)
+        client_token = state._get_token()
+
         # If the substate name on the token doesn't match the instance name, it cannot have a parent.
         if state.parent_state is not None and state.get_full_name() != substate_name:
             raise RuntimeError(
