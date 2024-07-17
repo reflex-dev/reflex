@@ -1,7 +1,9 @@
 name: benchmarking
 
 on:
-  push:
+  pull_request:
+    types:
+      - closed
     paths-ignore:
       - '**/*.md'
 
@@ -69,6 +71,7 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
 
   simple-apps-benchmarks: # This app tests the compile times of various compoonents and pages
+    if: github.event.pull_request.merged == true
     env:
       OUTPUT_FILE: benchmarks.json
     timeout-minutes: 50
@@ -126,6 +129,7 @@ jobs:
           --event-type "${{ github.event_name }}" --pr-id "${{ github.event.pull_request.id }}"
 
   reflex-dist-size: # This job is used to calculate the size of the Reflex distribution (wheel file)
+    if: github.event.pull_request.merged == true  
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
@@ -150,6 +154,7 @@ jobs:
           --path ./dist
 
   reflex-venv-size: # This job calculates the total size of Reflex and its dependencies
+    if: github.event.pull_request.merged == true  
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
