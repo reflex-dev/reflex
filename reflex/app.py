@@ -1078,7 +1078,9 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 # When the state is modified reset dirty status and emit the delta to the frontend.
                 state._clean()
                 await self.event_namespace.emit_update(
-                    update=StateUpdate(delta=delta),
+                    update=StateUpdate(
+                        delta=delta, scopes=state.scopes_and_subscopes()
+                    ),
                     sid=state.router.session.session_id,
                 )
 
@@ -1273,7 +1275,7 @@ async def process(
             else:
                 if app._process_background(state, event) is not None:
                     # `final=True` allows the frontend send more events immediately.
-                    yield StateUpdate(final=True)
+                    yield StateUpdate(final=True, scopes=state.scopes_and_subscopes())
                     return
 
                 # Process the event synchronously.
@@ -1470,6 +1472,13 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             room: The room to send the update to.
         """
+        # TODO We don't know when to leave a room yet.
+        for receiver in update.scopes:
+            if self.sid_to_token[sid] != receiver:
+                room = receiver
+                if room not in self.rooms(sid):
+                    await self.enter_room(sid, room)
+
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
             self.emit(str(constants.SocketEvent.EVENT), update.json(), to=room or sid)

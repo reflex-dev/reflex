@@ -8,6 +8,7 @@ import copy
 import functools
 import inspect
 import os
+import traceback
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -66,6 +67,22 @@ var = computed_var
 
 # If the state is this large, it's considered a performance issue.
 TOO_LARGE_SERIALIZED_STATE = 100 * 1024  # 100kb
+
+
+def print_stack(depth: int = 3):
+    """Print the current stacktrace to the console.
+
+    Args:
+        depth: Depth of the stack-trace to print
+    """
+    stack = traceback.extract_stack()
+    stack.reverse()
+    print("stacktrace")
+    for idx in range(1, depth + 1):
+        stack_info = stack[idx]
+        print(
+            f"    {stack_info.name} {os.path.basename(stack_info.filename)}:{stack_info.lineno}"
+        )
 
 
 class HeaderData(Base):
@@ -1430,6 +1447,20 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`)"
         )
 
+    def scopes_and_subscopes(self) -> list[str]:
+        """Recursively gathers all scopes of self and substates.
+
+        Returns:
+            A unique list of the scopes/token
+        """
+        result = [self._get_token()]
+        for substate in self.substates.values():
+            subscopes = substate.scopes_and_subscopes()
+            for subscope in subscopes:
+                if subscope not in result:
+                    result.append(subscope)
+        return result
+
     def _get_token(self, other=None) -> str:
         token = self.router.session.client_token
         cls = other or self.__class__
@@ -1481,6 +1512,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 delta=delta,
                 events=fixed_events,
                 final=final if not handler.is_background else True,
+                scopes=state.scopes_and_subscopes(),
             )
         except Exception as ex:
             state._clean()
@@ -2254,6 +2286,8 @@ class StateUpdate(Base):
     # Whether this is the final state update for the event.
     final: bool = True
 
+    scopes: list[str] = []
+
 
 class StateManager(Base, ABC):
     """A class to manage many client states."""
@@ -2530,6 +2564,10 @@ class StateManagerRedis(StateManager):
 
         for substate_name, substate_task in tasks.items():
             state.substates[substate_name] = await substate_task
+
+    # async def print_all_keys(self):
+    #     for key in await self.redis.keys():
+    #         print(f"redis_key: {key}")
 
     async def get_state(
         self,
