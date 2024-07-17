@@ -1348,6 +1348,9 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     templates_data = httpx.get(templates_url, follow_redirects=True).json()["templates"]
 
     for template in templates_data:
+        if template["name"] == "blank":
+            template["code_url"] = ""
+            continue
         template["code_url"] = next(
             (
                 a["browser_download_url"]
