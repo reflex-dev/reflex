@@ -12,19 +12,16 @@ from utils import send_data_to_posthog
 def insert_benchmarking_data(
     lighthouse_data: dict,
     commit_sha: str,
-    pr_title: str,
 ):
     """Insert the benchmarking data into the database.
 
     Args:
         lighthouse_data: The Lighthouse data to insert.
         commit_sha: The commit SHA to insert.
-        pr_title: The PR title to insert.
     """
     properties = {
         "distinct_id": commit_sha,
         "lighthouse_data": lighthouse_data,
-        "pr_title": pr_title,
     }
 
     # Send the data to PostHog
@@ -71,14 +68,11 @@ def main():
     commit_sha = sys.argv[1]
     json_dir = sys.argv[2]
 
-    # Get the PR title and database URL from the environment variables
-    pr_title = os.environ.get("PR_TITLE")
-
     # Get the Lighthouse scores
     lighthouse_scores = get_lighthouse_scores(json_dir)
 
     # Insert the data into the database
-    insert_benchmarking_data(lighthouse_scores, commit_sha, pr_title)
+    insert_benchmarking_data(lighthouse_scores, commit_sha)
 
 
 if __name__ == "__main__":
