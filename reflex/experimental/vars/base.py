@@ -41,7 +41,11 @@ class ImmutableVar(Var):
     _var_data: Optional[ImmutableVarData] = dataclasses.field(default=None)
 
     def __str__(self) -> str:
-        """String representation of the var. Guaranteed to be a valid Javascript expression."""
+        """String representation of the var. Guaranteed to be a valid Javascript expression.
+        
+        Returns:
+            The name of the var.
+        """
         return self._var_name
 
     @property
