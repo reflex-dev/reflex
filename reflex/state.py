@@ -702,7 +702,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
         # Any substate containing a ComputedVar with cache=False always needs to be recomputed
-        if cls._always_dirty_computed_vars:
+        if cls._always_dirty_computed_vars:  # or cls._scope is not None:
             # Tell parent classes that this substate has always dirty computed vars
             state_name = cls.get_name()
             parent_state = cls.get_parent_state()
@@ -1461,7 +1461,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     result.append(subscope)
         return result
 
-    def _get_token(self, other=None) -> str:
+    def _get_token(self, other: type[BaseState] | None = None) -> str:
         token = self.router.session.client_token
         cls = other or self.__class__
         if cls._scope is not None:
@@ -1701,6 +1701,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
 
+        if self.__class__._scope is not None:
+            subdelta["_scope"] = self._get_token()
+
         # Recursively find the substate deltas.
         substates = self.substates
         for substate in self.dirty_substates.union(self._always_dirty_substates):
@@ -1836,7 +1839,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             }
         else:
             computed_vars = {}
-        variables = {**base_vars, **computed_vars}
+        variables = {"_scope": self._get_token(), **base_vars, **computed_vars}
         d = {
             self.get_full_name(): {k: variables[k] for k in sorted(variables)},
         }

@@ -1481,12 +1481,38 @@ class EventNamespace(AsyncNamespace):
             if self.sid_to_token[sid] != receiver:
                 room = receiver
                 if room not in self.rooms(sid):
+                    print(f"Entering room `{room}`")
                     await self.enter_room(sid, room)
 
+        # for room in self.rooms(sid):
+        #     if room not in update.scopes and room != sid:
+        #         print(f"Leaving room `{room}`")
+        #         await self.leave_room(sid, room)
+
+        # deltas = {delta._scope: {state: delta} for state, delta in update.delta.values.items()}
+
+        delta_by_scope = {}
+
+        for state, delta in update.delta.items():
+            key = delta.get("_scope", sid)
+            d = delta_by_scope.get(key, {})
+            d.update({state: delta})
+            delta_by_scope[key] = d
+
+        for scope, deltas in delta_by_scope.items():
+            single_update = StateUpdate(
+                delta=deltas, scopes=[scope], events=update.events, final=update.final
+            )
+
+            await asyncio.create_task(
+                self.emit(
+                    str(constants.SocketEvent.EVENT), single_update.json(), to=scope
+                )
+            )
+
+        update.scopes = []
+
         # Creating a task prevents the update from being blocked behind other coroutines.
-        await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update.json(), to=room or sid)
-        )
 
     async def on_event(self, sid, data):
         """Event for receiving front-end websocket events.
