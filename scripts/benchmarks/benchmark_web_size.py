@@ -4,8 +4,6 @@ import argparse
 import os
 import httpx
 
-from .benchmark_utils import get_directory_size
-
 def get_directory_size(directory):
     """Get the size of a directory in bytes.
 
