@@ -42,7 +42,7 @@ class ImmutableVar(Var):
 
     def __str__(self) -> str:
         """String representation of the var. Guaranteed to be a valid Javascript expression.
-        
+
         Returns:
             The name of the var.
         """
