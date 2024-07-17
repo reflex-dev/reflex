@@ -24,8 +24,6 @@ def insert_benchmarking_data(
         commit_sha: The commit SHA to insert.
         pr_title: The PR title to insert.
     """
-        # Get the current timestamp
-    current_timestamp = str(datetime.now().isoformat())
 
     # Prepare the event data
     event_data = {
@@ -35,7 +33,7 @@ def insert_benchmarking_data(
             "distinct_id": commit_sha,
             "lighthouse_data": lighthouse_data,
             "pr_title": pr_title,
-            "timestamp": current_timestamp,
+            "timestamp": str(datetime.now().isoformat()),
         }
     }
 

@@ -115,10 +115,7 @@ def insert_benchmarking_data(
         size = get_package_size(path, os_type_version)
     else:
         size = get_directory_size(path)
-
-    # Get the current timestamp
-    current_timestamp = str(datetime.now().isoformat())
-
+        
     # Prepare the event data
     event_data = {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
@@ -127,7 +124,7 @@ def insert_benchmarking_data(
             "os": os_type_version,
             "python_version": python_version,
             "distinct_id": commit_sha,
-            "timestamp": current_timestamp.isoformat(),
+            "timestamp": str(datetime.now().isoformat()),
             "pr_title": pr_title,
             "branch_name": branch_name,
             "pr_id": pr_id,

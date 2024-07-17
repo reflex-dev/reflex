@@ -75,10 +75,6 @@ def insert_benchmarking_data(
         actor: Username of the user that triggered the run.
         pr_id: Id of the PR.
     """
-
-    # Get the current timestamp
-    current_timestamp = str(datetime.now().isoformat())
-
     # Prepare the event data
     event_data = {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
@@ -87,7 +83,7 @@ def insert_benchmarking_data(
             "os": os_type_version,
             "python_version": python_version,
             "distinct_id": commit_sha,
-            "timestamp": current_timestamp.isoformat(),
+            "timestamp": str(datetime.now().isoformat()),
             "pr_title": pr_title,
             "branch_name": branch_name,
             "event_type": event_type,
