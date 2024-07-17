@@ -48,9 +48,9 @@ def get_directory_size(directory):
 
 def send_data_to_posthog(event, properties):
     event_data = {
+        "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
         "event": event,
         "properties": properties,
-        "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb"
     }
 
     with httpx.Client() as client:
