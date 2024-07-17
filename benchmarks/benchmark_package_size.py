@@ -54,16 +54,13 @@ def insert_benchmarking_data(
     """Insert the benchmarking data into PostHog.
 
     Args:
-        app_name:
         os_type_version: The OS type and version to insert.
         python_version: The Python version to insert.
-        measurement_type: The type of metric to measure.
         commit_sha: The commit SHA to insert.
         pr_title: The PR title to insert.
         branch_name: The name of the branch.
         pr_id: The id of the PR.
         path: The path to the dir or file to check size.
-        actor: Username of the user that triggered the run.
     """
     if "./dist" in path:
         size = get_directory_size(path)

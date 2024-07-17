@@ -68,7 +68,7 @@ def insert_benchmarking_data(
         commit_sha: The commit SHA to insert.
         pr_title: The PR title to insert.
         branch_name: The name of the branch.
-        event_type: Type of github event(push, pull request, etc)
+        event_type: Type of github event(push, pull request, etc).
         actor: Username of the user that triggered the run.
         pr_id: Id of the PR.
     """

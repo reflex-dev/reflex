@@ -27,7 +27,6 @@ def insert_benchmarking_data(
         branch_name: The name of the branch.
         pr_id: The id of the PR.
         path: The path to the dir or file to check size.
-        actor: Username of the user that triggered the run.
     """
     size = get_directory_size(path)
 

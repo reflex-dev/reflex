@@ -55,6 +55,9 @@ def send_data_to_posthog(event, properties):
     Args:
         event: The event to send.
         properties: The properties to send.
+
+    Raises:
+        HTTPError: When there is an error sending data to PostHog.
     """
     event_data = {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
@@ -68,5 +71,3 @@ def send_data_to_posthog(event, properties):
             raise HTTPError(
                 f"Error sending data to PostHog: {response.status_code} - {response.text}"
             )
-        print(event_data)
-        print(response.json())
