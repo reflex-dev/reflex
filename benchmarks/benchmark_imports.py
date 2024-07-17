@@ -8,6 +8,7 @@ import os
 
 from utils import send_data_to_posthog
 
+
 def extract_stats_from_json(json_file: str) -> dict:
     """Extracts the stats from the JSON data and returns them as dictionaries.
 
@@ -53,7 +54,6 @@ def insert_benchmarking_data(
         pr_id: Id of the PR.
         app_name: The name of the app being measured.
     """
-
     properties = {
         "os": os_type_version,
         "python_version": python_version,
@@ -66,7 +66,6 @@ def insert_benchmarking_data(
     }
 
     send_data_to_posthog("import_benchmark", properties)
-
 
 
 def main():

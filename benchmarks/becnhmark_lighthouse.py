@@ -21,8 +21,7 @@ def insert_benchmarking_data(
         commit_sha: The commit SHA to insert.
         pr_title: The PR title to insert.
     """
-
-    properties= {
+    properties = {
         "distinct_id": commit_sha,
         "lighthouse_data": lighthouse_data,
         "pr_title": pr_title,

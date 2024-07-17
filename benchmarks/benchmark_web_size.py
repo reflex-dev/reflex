@@ -5,6 +5,7 @@ import os
 
 from utils import get_directory_size, send_data_to_posthog
 
+
 def insert_benchmarking_data(
     os_type_version: str,
     python_version: str,
@@ -29,7 +30,7 @@ def insert_benchmarking_data(
         actor: Username of the user that triggered the run.
     """
     size = get_directory_size(path)
-       
+
     # Prepare the event data
     properties = {
         "app_name": app_name,
@@ -39,11 +40,12 @@ def insert_benchmarking_data(
         "pr_title": pr_title,
         "branch_name": branch_name,
         "pr_id": pr_id,
-        "size_mb": round(size / (1024 * 1024), 3),  # save size in MB and round to 3 places
+        "size_mb": round(
+            size / (1024 * 1024), 3
+        ),  # save size in MB and round to 3 places
     }
 
     send_data_to_posthog("web-size", properties)
-
 
 
 def main():

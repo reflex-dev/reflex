@@ -3,7 +3,8 @@
 import argparse
 import os
 
-from utils import get_python_version, get_directory_size, send_data_to_posthog
+from utils import get_directory_size, get_python_version, send_data_to_posthog
+
 
 def get_package_size(venv_path, os_name):
     """Get the size of a specified package.
@@ -18,7 +19,7 @@ def get_package_size(venv_path, os_name):
     Raises:
         ValueError: when venv does not exist or python version is None.
     """
-    python_version=get_python_version(venv_path, os_name)
+    python_version = get_python_version(venv_path, os_name)
     print("Python version:", python_version)
     if python_version is None:
         raise ValueError("Error: Failed to determine Python version.")
@@ -53,7 +54,7 @@ def insert_benchmarking_data(
     """Insert the benchmarking data into PostHog.
 
     Args:
-        app_name: 
+        app_name:
         os_type_version: The OS type and version to insert.
         python_version: The Python version to insert.
         measurement_type: The type of metric to measure.
@@ -65,12 +66,12 @@ def insert_benchmarking_data(
         actor: Username of the user that triggered the run.
     """
     if "./dist" in path:
-        size=get_directory_size(path)        
+        size = get_directory_size(path)
     else:
         size = get_package_size(path, os_type_version)
 
     # Prepare the event data
-    properties= {
+    properties = {
         "path": path,
         "os": os_type_version,
         "python_version": python_version,
@@ -78,10 +79,11 @@ def insert_benchmarking_data(
         "pr_title": pr_title,
         "branch_name": branch_name,
         "pr_id": pr_id,
-        "size_mb": round(size / (1024 * 1024), 3),  # save size in MB and round to 3 places
+        "size_mb": round(
+            size / (1024 * 1024), 3
+        ),  # save size in MB and round to 3 places
     }
 
-    
     send_data_to_posthog("package_size", properties)
 
 

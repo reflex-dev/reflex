@@ -2,8 +2,10 @@
 
 import os
 import subprocess
+
 import httpx
 from httpx import HTTPError
+
 
 def get_python_version(venv_path, os_name):
     """Get the python version of python in a virtual env.
@@ -46,7 +48,14 @@ def get_directory_size(directory):
             total_size += os.path.getsize(fp)
     return total_size
 
+
 def send_data_to_posthog(event, properties):
+    """Send data to PostHog.
+
+    Args:
+        event: The event to send.
+        properties: The properties to send.
+    """
     event_data = {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
         "event": event,
@@ -56,6 +65,8 @@ def send_data_to_posthog(event, properties):
     with httpx.Client() as client:
         response = client.post("https://app.posthog.com/capture/", json=event_data)
         if response.status_code != 200:
-            raise HTTPError(f"Error sending data to PostHog: {response.status_code} - {response.text}")
+            raise HTTPError(
+                f"Error sending data to PostHog: {response.status_code} - {response.text}"
+            )
         print(event_data)
         print(response.json())

@@ -8,6 +8,7 @@ import os
 
 from utils import send_data_to_posthog
 
+
 def extract_stats_from_json(json_file: str) -> list[dict]:
     """Extracts the stats from the JSON data and returns them as a list of dictionaries.
 
@@ -71,18 +72,17 @@ def insert_benchmarking_data(
         actor: Username of the user that triggered the run.
         pr_id: Id of the PR.
     """
-
     # Prepare the event data
     properties = {
-            "os": os_type_version,
-            "python_version": python_version,
-            "distinct_id": commit_sha,
-            "pr_title": pr_title,
-            "branch_name": branch_name,
-            "event_type": event_type,
-            "performance": performance_data,
-            "pr_id": pr_id
-        }
+        "os": os_type_version,
+        "python_version": python_version,
+        "distinct_id": commit_sha,
+        "pr_title": pr_title,
+        "branch_name": branch_name,
+        "event_type": event_type,
+        "performance": performance_data,
+        "pr_id": pr_id,
+    }
 
     send_data_to_posthog("simple_app_benchmark", properties)
 
