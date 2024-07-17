@@ -57,3 +57,5 @@ def send_data_to_posthog(event, properties):
         response = client.post("https://app.posthog.com/capture/", json=event_data)
         if response.status_code != 200:
             raise HTTPError(f"Error sending data to PostHog: {response.status_code} - {response.text}")
+        print(event_data)
+        print(response.json())
