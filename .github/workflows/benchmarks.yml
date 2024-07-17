@@ -59,7 +59,7 @@ jobs:
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash benchmarks/benchmarks.sh ./reflex-web prod
+          poetry run bash benchmarks/lighthouse.sh ./reflex-web prod
         env:
           LHCI_GITHUB_APP_TOKEN: $
       - name: Run Benchmarks
