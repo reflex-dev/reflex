@@ -96,7 +96,7 @@ class Templates(SimpleNamespace):
 
     # The reflex.build frontend host
     REFLEX_BUILD_FRONTEND = os.environ.get(
-        "REFLEX_BUILD_FRONTEND", "https://reflex.build"
+        "REFLEX_BUILD_FRONTEND", "https://flexgen.reflex.run"
     )
 
     # The reflex.build backend host
