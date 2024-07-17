@@ -60,7 +60,7 @@ def get_lighthouse_scores(directory_path: str) -> dict:
                 file_path = os.path.join(directory_path, filename)
                 with open(file_path, "r") as file:
                     data = json.load(file)
-                    print(data["categories"])
+                    print("DATA PRINT", data["categories"])
                     # Extract scores and add them to the dictionary with the filename as key
                     scores[data["finalUrl"].replace("http://localhost:3000/", "")] = {
                         "performance_score": data["categories"]["performance"]["score"],
@@ -71,7 +71,6 @@ def get_lighthouse_scores(directory_path: str) -> dict:
                             "score"
                         ],
                         "seo_score": data["categories"]["seo"]["score"],
-                        "pwa_score": data["categories"]["pwa"]["score"],
                     }
     except Exception as e:
         return {"error": e}
