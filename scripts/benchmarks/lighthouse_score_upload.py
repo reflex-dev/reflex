@@ -25,7 +25,7 @@ def insert_benchmarking_data(
         pr_title: The PR title to insert.
     """
         # Get the current timestamp
-    current_timestamp = datetime.now().isoformat()
+    current_timestamp = str(datetime.now().isoformat())
 
     # Prepare the event data
     event_data = {

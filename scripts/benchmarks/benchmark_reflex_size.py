@@ -117,7 +117,7 @@ def insert_benchmarking_data(
         size = get_directory_size(path)
 
     # Get the current timestamp
-    current_timestamp = datetime.now()
+    current_timestamp = str(datetime.now().isoformat())
 
     # Prepare the event data
     event_data = {

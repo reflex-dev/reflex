@@ -77,7 +77,7 @@ def insert_benchmarking_data(
     """
 
     # Get the current timestamp
-    current_timestamp = datetime.now()
+    current_timestamp = str(datetime.now().isoformat())
 
     # Prepare the event data
     event_data = {

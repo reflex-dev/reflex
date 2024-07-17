@@ -61,7 +61,7 @@ def insert_benchmarking_data(
         pr_id: Id of the PR.
     """
     # Get the current timestamp
-    current_timestamp = datetime.now()
+    current_timestamp = str(datetime.now().isoformat())
 
     # Prepare the event data
     event_data = {
