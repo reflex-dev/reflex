@@ -60,6 +60,7 @@ def get_lighthouse_scores(directory_path: str) -> dict:
                 file_path = os.path.join(directory_path, filename)
                 with open(file_path, "r") as file:
                     data = json.load(file)
+                    print(data)
                     # Extract scores and add them to the dictionary with the filename as key
                     scores[data["finalUrl"].replace("http://localhost:3000/", "")] = {
                         "performance_score": data["categories"]["performance"]["score"],
@@ -73,8 +74,7 @@ def get_lighthouse_scores(directory_path: str) -> dict:
                         "pwa_score": data["categories"]["pwa"]["score"],
                     }
     except Exception as e:
-        print(e)
-        return {"error": "Error parsing JSON files"}
+        return {"error": e}
 
     return scores
 
