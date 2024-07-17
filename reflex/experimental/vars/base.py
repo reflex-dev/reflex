@@ -40,6 +40,10 @@ class ImmutableVar(Var):
     # Extra metadata associated with the Var
     _var_data: Optional[ImmutableVarData] = dataclasses.field(default=None)
 
+    def __str__(self) -> str:
+        """String representation of the var. Guaranteed to be a valid Javascript expression."""
+        return self._var_name
+
     @property
     def _var_is_local(self) -> bool:
         """Whether this is a local javascript variable.
@@ -325,7 +329,8 @@ class LiteralStringVar(LiteralVar):
             # Find all tags.
             while m := _decode_var_pattern.search(value):
                 start, end = m.span()
-                strings_and_vals.append(LiteralStringVar.create(value[:start]))
+                if start > 0:
+                    strings_and_vals.append(LiteralStringVar.create(value[:start]))
 
                 serialized_data = m.group(1)
 
@@ -354,7 +359,8 @@ class LiteralStringVar(LiteralVar):
 
                 offset += end - start
 
-            strings_and_vals.append(LiteralStringVar.create(value))
+            if value:
+                strings_and_vals.append(LiteralStringVar.create(value))
 
             return ConcatVarOperation.create(
                 tuple(strings_and_vals), _var_data=_var_data

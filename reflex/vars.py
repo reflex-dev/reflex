@@ -345,21 +345,6 @@ class ImmutableVarData:
             == imports.collapse_imports(other.imports)
         )
 
-    def dict(self) -> dict:
-        """Convert the var data to a dictionary.
-
-        Returns:
-            The var data dictionary.
-        """
-        return {
-            "state": self.state,
-            "imports": {
-                lib: [import_var.dict() for import_var in import_vars]
-                for lib, import_vars in self.imports
-            },
-            "hooks": {k: None for k in self.hooks},
-        }
-
 
 def _decode_var_immutable(value: str) -> tuple[ImmutableVarData | None, str]:
     """Decode the state name from a formatted var.
