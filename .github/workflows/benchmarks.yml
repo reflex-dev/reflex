@@ -125,7 +125,7 @@ jobs:
           --benchmark-json "${{ env.OUTPUT_FILE }}" --branch-name "${{ github.head_ref || github.ref_name }}"
           --event-type "${{ github.event_name }}" --pr-id "${{ github.event.pull_request.id }}"
 
-  reflex-build-size:
+  reflex-dist-size: # This job is used to calculate the size of the Reflex distribution (wheel file)
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
@@ -149,7 +149,7 @@ jobs:
           --branch-name "${{ github.head_ref || github.ref_name }}"
           --path ./dist
 
-  reflex-plus-dependency-size:
+  reflex-plus-dependency-size: # This job calculates the total size of Reflex and its dependencies
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)

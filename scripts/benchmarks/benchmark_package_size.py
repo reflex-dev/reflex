@@ -105,7 +105,10 @@ def insert_benchmarking_data(
         path: The path to the dir or file to check size.
         actor: Username of the user that triggered the run.
     """
-    size = get_package_size(path, os_type_version)
+    if "./dist" in path:
+        size=get_directory_size(path)        
+    else:
+        size = get_package_size(path, os_type_version)
 
     # Prepare the event data
     event_data = {
