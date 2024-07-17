@@ -5,9 +5,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import httpx
 
-
+from .benchmark_utils import send_data_to_posthog
 
 def extract_stats_from_json(json_file: str) -> dict:
     """Extracts the stats from the JSON data and returns them as dictionaries.
@@ -57,31 +56,20 @@ def insert_benchmarking_data(
         pr_id: Id of the PR.
     """
 
-    # Prepare the event data
-    event_data = {
-         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
-         "event": "import_benchmark",
-         "properties": {
-             "distinct_id": actor,
-             "os": os_type_version,
-             "python_version": python_version,
-             "commit_sha": commit_sha,
-             "pr_title": pr_title,
-             "branch_name": branch_name,
-             "measurement-type": measurement_type,
-             "pr_id": pr_id,
-             "performance": performance_data,
-         },
-     }
+    properties = {
+        "distinct_id": actor,
+        "os": os_type_version,
+        "python_version": python_version,
+        "commit_sha": commit_sha,
+        "pr_title": pr_title,
+        "branch_name": branch_name,
+        "measurement-type": measurement_type,
+        "pr_id": pr_id,
+        "performance": performance_data,
+    }
 
-     # Send the data to PostHog
-    with httpx.Client() as client:
-        response = client.post("https://app.posthog.com/capture/", json=event_data)
+    send_data_to_posthog("import_benchmark", properties)
 
-    if response.status_code != 200:
-        print(
-             f"Error sending data to PostHog: {response.status_code} - {response.text}"
-        )
 
 
 def main():

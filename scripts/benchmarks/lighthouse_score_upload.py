@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 import os
 import sys
-import httpx
+from .benchmark_utils import send_data_to_posthog
+
 
 def insert_benchmarking_data(
     lighthouse_data: dict,
@@ -20,25 +21,14 @@ def insert_benchmarking_data(
         pr_title: The PR title to insert.
     """
 
-    # Prepare the event data
-    event_data = {
-        "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
-        "event": "lighthouse_benchmark",
-        "properties": {
-            "distinct_id": commit_sha,
-            "lighthouse_data": lighthouse_data,
-            "pr_title": pr_title,
-        }
+    properties= {
+        "distinct_id": commit_sha,
+        "lighthouse_data": lighthouse_data,
+        "pr_title": pr_title,
     }
 
     # Send the data to PostHog
-    with httpx.Client() as client:
-        response = client.post("https://app.posthog.com/capture/", json=event_data)
-
-    if response.status_code != 200:
-        print(f"Error sending data to PostHog: {response.status_code} - {response.text}")
-    else:
-        print("Successfully sent benchmark data to PostHog")
+    send_data_to_posthog("lighthouse_benchmark", properties)
 
 
 def get_lighthouse_scores(directory_path: str) -> dict:
