@@ -5,6 +5,30 @@ import os
 import subprocess
 import httpx
 
+def get_python_version(venv_path, os_name):
+    """Get the python version of python in a virtual env.
+
+    Args:
+        venv_path: Path to virtual environment.
+        os_name: Name of os.
+
+    Returns:
+        The python version.
+    """
+    python_executable = (
+        os.path.join(venv_path, "bin", "python")
+        if "windows" not in os_name
+        else os.path.join(venv_path, "Scripts", "python.exe")
+    )
+    try:
+        output = subprocess.check_output(
+            [python_executable, "--version"], stderr=subprocess.STDOUT
+        )
+        python_version = output.decode("utf-8").strip().split()[1]
+        return ".".join(python_version.split(".")[:-1])
+    except subprocess.CalledProcessError:
+        return None
+
 
 def get_directory_size(directory):
     """Get the size of a directory in bytes.
@@ -22,7 +46,7 @@ def get_directory_size(directory):
             total_size += os.path.getsize(fp)
     return total_size
 
-def get_package_size(venv_path, os_name, python_version):
+def get_package_size(venv_path, os_name):
     """Get the size of a specified package.
 
     Args:
@@ -35,6 +59,7 @@ def get_package_size(venv_path, os_name, python_version):
     Raises:
         ValueError: when venv does not exist or python version is None.
     """
+    python_version=get_python_version(venv_path, os_name)
     if python_version is None:
         raise ValueError("Error: Failed to determine Python version.")
 
