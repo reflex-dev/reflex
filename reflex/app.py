@@ -1244,17 +1244,21 @@ async def process(
     from reflex.utils import telemetry
 
     try:
-        # Add request data to the state.
-        router_data = event.router_data
-        router_data.update(
-            {
-                constants.RouteVar.QUERY: format.format_query_params(event.router_data),
-                constants.RouteVar.CLIENT_TOKEN: event.token,
-                constants.RouteVar.SESSION_ID: sid,
-                constants.RouteVar.HEADERS: headers,
-                constants.RouteVar.CLIENT_IP: client_ip,
-            }
-        )
+        router_data = {}
+        if event.router_data:
+            # Add request data to the state.
+            router_data = event.router_data
+            router_data.update(
+                {
+                    constants.RouteVar.QUERY: format.format_query_params(
+                        event.router_data
+                    ),
+                    constants.RouteVar.CLIENT_TOKEN: event.token,
+                    constants.RouteVar.SESSION_ID: sid,
+                    constants.RouteVar.HEADERS: headers,
+                    constants.RouteVar.CLIENT_IP: client_ip,
+                }
+            )
         # Get the state for the session exclusively.
         async with app.state_manager.modify_state(event.substate_token) as state:
             # re-assign only when the value is different

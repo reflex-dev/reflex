@@ -1467,9 +1467,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if cls._scope is not None:
             scope = None
             if isinstance(cls._scope, str):
-                scope = cls._scope
+                scope = f"static{cls._scope}"
             else:
-                scope = getattr(self, cls._scope._var_name)
+                scope = f"shared{getattr(self, cls._scope._var_name)}"
 
             token = scope
 
@@ -1689,6 +1689,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             .union(self._dirty_computed_vars(include_backend=False))
             .union(self._always_dirty_computed_vars)
         )
+
+        if len(self.scopes_and_subscopes()) > 1 and "router" in delta_vars:
+            delta_vars.remove("router")
 
         subdelta = {
             prop: getattr(self, prop)
