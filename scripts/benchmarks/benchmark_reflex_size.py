@@ -84,7 +84,6 @@ def get_package_size(venv_path, os_name):
 
 
 def insert_benchmarking_data(
-    db_connection_url: str,
     os_type_version: str,
     python_version: str,
     measurement_type: str,
@@ -187,7 +186,6 @@ def main():
 
     # Insert the data into the database
     insert_benchmarking_data(
-        db_connection_url=args.db_url,
         os_type_version=args.os,
         python_version=args.python_version,
         measurement_type=args.measurement_type,

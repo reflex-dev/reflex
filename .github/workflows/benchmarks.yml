@@ -114,8 +114,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-      - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg2-binary
       - name: Run benchmark tests
         env:
           APP_HARNESS_HEADLESS: 1
@@ -146,8 +144,6 @@ jobs:
           python-version: 3.11.5
           run-poetry-install: true
           create-venv-at-path: .venv
-      - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg2-binary
       - name: Build reflex
         run: |
           poetry build
@@ -194,9 +190,6 @@ jobs:
         shell: bash
         run: |
           poetry run pip install uv
-
-      - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg2-binary
 
       - if: ${{ env.DATABASE_URL }}
         name: calculate and upload size

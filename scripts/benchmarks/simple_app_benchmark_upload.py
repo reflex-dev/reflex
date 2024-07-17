@@ -49,7 +49,6 @@ def extract_stats_from_json(json_file: str) -> list[dict]:
 
 
 def insert_benchmarking_data(
-    db_connection_url: str,
     os_type_version: str,
     python_version: str,
     performance_data: list[dict],
@@ -148,7 +147,6 @@ def main():
     cleaned_benchmark_results = extract_stats_from_json(args.benchmark_json)
     # Insert the data into the database
     insert_benchmarking_data(
-        db_connection_url=args.db_url,
         os_type_version=args.os,
         python_version=args.python_version,
         performance_data=cleaned_benchmark_results,

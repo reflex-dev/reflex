@@ -8,7 +8,6 @@ import sys
 import httpx
 
 def insert_benchmarking_data(
-    db_connection_url: str,
     lighthouse_data: dict,
     commit_sha: str,
     pr_title: str,
@@ -85,16 +84,12 @@ def main():
 
     # Get the PR title and database URL from the environment variables
     pr_title = os.environ.get("PR_TITLE")
-    db_url = os.environ.get("DATABASE_URL")
-
-    if db_url is None or pr_title is None:
-        sys.exit("Missing environment variables")
 
     # Get the Lighthouse scores
     lighthouse_scores = get_lighthouse_scores(json_dir)
 
     # Insert the data into the database
-    insert_benchmarking_data(db_url, lighthouse_scores, commit_sha, pr_title)
+    insert_benchmarking_data(lighthouse_scores, commit_sha, pr_title)
 
 
 if __name__ == "__main__":
