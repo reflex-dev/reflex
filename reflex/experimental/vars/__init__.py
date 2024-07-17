@@ -2,6 +2,7 @@
 
 from .base import ArrayVar as ArrayVar
 from .base import BooleanVar as BooleanVar
+from .base import ConcatVarOperation as ConcatVarOperation
 from .base import FunctionVar as FunctionVar
 from .base import ImmutableVar as ImmutableVar
 from .base import LiteralStringVar as LiteralStringVar
