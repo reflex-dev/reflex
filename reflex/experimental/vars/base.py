@@ -551,10 +551,8 @@ class LiteralObjectVar(LiteralVar):
         """Initialize the object var.
 
         Args:
-            _var_name: The name of the var.
-            _var_data: Additional hooks and imports associated with the Var.
-            _var_type: The type of the var.
             _var_value: The value of the var.
+            _var_data: Additional hooks and imports associated with the Var.
         """
         super(LiteralObjectVar, self).__init__(
             _var_name="",
@@ -642,10 +640,8 @@ class LiteralArrayVar(LiteralVar):
         """Initialize the array var.
 
         Args:
-            _var_name: The name of the var.
-            _var_data: Additional hooks and imports associated with the Var.
-            _var_type: The type of the var.
             _var_value: The value of the var.
+            _var_data: Additional hooks and imports associated with the Var.
         """
         super(LiteralArrayVar, self).__init__(
             _var_name="",
