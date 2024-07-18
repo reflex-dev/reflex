@@ -7,12 +7,17 @@ from pandas import DataFrame
 
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
-from reflex.experimental.vars.base import ImmutableVar
+from reflex.experimental.vars.base import (
+    ConcatVarOperation,
+    ImmutableVar,
+    LiteralStringVar,
+)
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
 from reflex.vars import (
     BaseVar,
     ComputedVar,
+    ImmutableVarData,
     Var,
     VarData,
     computed_var,
@@ -880,13 +885,61 @@ def test_retrival():
     )
     assert (
         result_var_data.imports
-        == result_immutable_var_data.imports
+        == (
+            result_immutable_var_data.imports
+            if isinstance(result_immutable_var_data.imports, dict)
+            else {
+                k: list(v)
+                for k, v in result_immutable_var_data.imports
+                if k in original_var_data.imports
+            }
+        )
         == original_var_data.imports
     )
     assert (
-        result_var_data.hooks
-        == result_immutable_var_data.hooks
-        == original_var_data.hooks
+        list(result_var_data.hooks.keys())
+        == (
+            list(result_immutable_var_data.hooks.keys())
+            if isinstance(result_immutable_var_data.hooks, dict)
+            else list(result_immutable_var_data.hooks)
+        )
+        == list(original_var_data.hooks.keys())
+    )
+
+
+def test_fstring_concat():
+    original_var_with_data = Var.create_safe(
+        "imagination", _var_data=VarData(state="fear")
+    )
+
+    immutable_var_with_data = ImmutableVar.create_safe(
+        "consequences",
+        _var_data=VarData(
+            imports={
+                "react": [ImportVar(tag="useRef")],
+                "utils": [ImportVar(tag="useEffect")],
+            }
+        ),
+    )
+
+    f_string = f"foo{original_var_with_data}bar{immutable_var_with_data}baz"
+
+    string_concat = LiteralStringVar.create(
+        f_string,
+        _var_data=VarData(
+            hooks={"const state = useContext(StateContexts.state)": None}
+        ),
+    )
+
+    assert str(string_concat) == '"foo"+imagination+"bar"+consequences+"baz"'
+    assert isinstance(string_concat, ConcatVarOperation)
+    assert string_concat._get_all_var_data() == ImmutableVarData(
+        state="fear",
+        imports={
+            "react": [ImportVar(tag="useRef")],
+            "utils": [ImportVar(tag="useEffect")],
+        },
+        hooks={"const state = useContext(StateContexts.state)": None},
     )
 
 
