@@ -931,7 +931,7 @@ def test_fstring_concat():
         ),
     )
 
-    assert str(string_concat) == '"foo"+imagination+"bar"+consequences+"baz"'
+    assert str(string_concat) == '("foo"+imagination+"bar"+consequences+"baz")'
     assert isinstance(string_concat, ConcatVarOperation)
     assert string_concat._get_all_var_data() == ImmutableVarData(
         state="fear",
