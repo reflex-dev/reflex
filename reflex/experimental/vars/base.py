@@ -412,7 +412,7 @@ class ConcatVarOperation(StringVar):
         """
         if name == "_var_name":
             return self._cached_var_name
-        return super(LiteralVar, self).__getattr__(name)
+        return getattr(super(), name)
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -575,7 +575,7 @@ class LiteralObjectVar(LiteralVar):
         """
         if name == "_var_name":
             return self._cached_var_name
-        return super(LiteralVar, self).__getattr__(name)
+        return getattr(super(), name)
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -666,7 +666,7 @@ class LiteralArrayVar(LiteralVar):
         """
         if name == "_var_name":
             return self._cached_var_name
-        return super(LiteralVar, self).__getattr__(name)
+        return getattr(super(), name)
 
     @cached_property
     def _cached_var_name(self) -> str:
