@@ -2,7 +2,8 @@
 
 from typing import Any, Union
 
-from reflex import Component
+from reflex import Component, ComponentNamespace
+from reflex.components.el.element import Element
 from reflex.constants.colors import Color
 from reflex.vars import Var as Var
 
@@ -309,6 +310,54 @@ class Svg(BaseHTML):
     """Display the svg element."""
 
     tag = "svg"
+    # The width of the svg
+    width: Var[Union[str, int]]
+    # The height of the svg.
+    height: Var[Union[str, int]]
+
+
+class Circle(Element):
+    """The SVG circle component."""
+
+    tag = "circle"
+    # The x-axis coordinate of the center of the circle
+    cx: Var[Union[str, int]]
+    # The y-axis coordinate of the center of the circle
+    cy: Var[Union[str, int]]
+    # The radius of the circle
+    r: Var[Union[str, int]]
+    # The total length for the circle's circumference, in user units
+    path_length: Var[int]
+
+
+class Rect(Element):
+    """The SVG rect component."""
+
+    tag = "rect"
+    # The x coordinate of the rect
+    x: Var[Union[str, int]]
+    # The y coordinate of the rect
+    y: Var[Union[str, int]]
+    # The width of the rect
+    width: Var[Union[str, int]]
+    # The height of the rect.
+    height: Var[Union[str, int]]
+    # The horizontal corner radius of the rect. Defaults to ry if it is specified
+    rx: Var[Union[str, int]]
+    # The vertical corner radius of the rect. Defaults to rx if it is specified.
+    ry: Var[Union[str, int]]
+    # The total length of the rectangle's perimeter, in user units.
+    path_length: Var[int]
+
+
+class Polygon(Element):
+    """The SVG polygon component."""
+
+    tag = "polygon"
+    # defines the list of points (pairs of x,y absolute coordinates) required to draw the polygon
+    points: Var[str]
+    # This prop lets specify the total length for the path, in user units
+    path_length: Var[int]
 
 
 class Defs(BaseHTML):
@@ -317,7 +366,7 @@ class Defs(BaseHTML):
     tag = "defs"
 
 
-class Lineargradient(BaseHTML):
+class LinearGradient(BaseHTML):
     """Display the linearGradient element."""
 
     tag = "linearGradient"
@@ -368,6 +417,19 @@ class Path(BaseHTML):
     d: Var[Union[str, int, bool]]
 
 
+class SVG(ComponentNamespace):
+    """SVG component namespace."""
+
+    circle = staticmethod(Circle.create)
+    rect = staticmethod(Rect.create)
+    polygon = staticmethod(Polygon.create)
+    path = staticmethod(Path.create)
+    stop = staticmethod(Stop.create)
+    linear_gradient = staticmethod(LinearGradient.create)
+    defs = staticmethod(Defs.create)
+    __call__ = staticmethod(Svg.create)
+
+
 area = Area.create
 audio = Audio.create
 image = img = Img.create
@@ -380,8 +442,8 @@ object = Object.create
 picture = Picture.create
 portal = Portal.create
 source = Source.create
-svg = Svg.create
+svg = SVG()
 defs = Defs.create
-lineargradient = Lineargradient.create
+lineargradient = LinearGradient.create
 stop = Stop.create
 path = Path.create
