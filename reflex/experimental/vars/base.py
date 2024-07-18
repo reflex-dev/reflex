@@ -7,7 +7,7 @@ import json
 import re
 import sys
 from functools import cached_property
-from typing import Any, Optional, Type
+from typing import Any, Optional, Tuple, Type
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
@@ -399,7 +399,20 @@ class ConcatVarOperation(StringVar):
             _var_name="", _var_data=ImmutableVarData.merge(_var_data), _var_type=str
         )
         object.__setattr__(self, "_var_value", _var_value)
-        object.__setattr__(self, "_var_name", self._cached_var_name)
+        object.__delattr__(self, "_var_name")
+
+    def __getattr__(self, name):
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute of the var.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        return super().__getattr__(name)
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -408,7 +421,7 @@ class ConcatVarOperation(StringVar):
         Returns:
             The name of the var.
         """
-        return "+".join([str(element) for element in self._var_value])
+        return "(" + "+".join([str(element) for element in self._var_value]) + ")"
 
     @cached_property
     def _cached_get_all_var_data(self) -> ImmutableVarData | None:
@@ -451,4 +464,246 @@ class ConcatVarOperation(StringVar):
         return ConcatVarOperation(
             _var_value=value,
             _var_data=_var_data,
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class LiteralBooleanVar(LiteralVar):
+    """Base class for immutable literal boolean vars."""
+
+    _var_value: bool = dataclasses.field(default=False)
+
+    @classmethod
+    def create(
+        cls,
+        value: bool,
+        _var_data: VarData | None = None,
+    ) -> LiteralBooleanVar:
+        """Create a var from a boolean value.
+
+        Args:
+            value: The value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return LiteralBooleanVar(
+            _var_name="true" if value else "false",
+            _var_data=ImmutableVarData.merge(_var_data),
+            _var_type=bool,
+            _var_value=value,
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class LiteralNumberVar(LiteralVar):
+    """Base class for immutable literal number vars."""
+
+    _var_value: float | int = dataclasses.field(default=0)
+
+    @classmethod
+    def create(
+        cls,
+        value: float | int,
+        _var_data: VarData | None = None,
+    ) -> LiteralNumberVar:
+        """Create a var from a number value.
+
+        Args:
+            value: The value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return LiteralNumberVar(
+            _var_name=str(value),
+            _var_data=ImmutableVarData.merge(_var_data),
+            _var_type=float | int,
+            _var_value=value,
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class LiteralObjectVar(LiteralVar):
+    """Base class for immutable literal object vars."""
+
+    _var_value: Tuple[Tuple[str, Var], ...] = dataclasses.field(default_factory=tuple)
+
+    def __init__(
+        self,
+        _var_value: dict[str, Var] = None,
+        _var_data: VarData | None = None,
+    ):
+        """Initialize the object var.
+
+        Args:
+            _var_name: The name of the var.
+            _var_data: Additional hooks and imports associated with the Var.
+            _var_type: The type of the var.
+            _var_value: The value of the var.
+        """
+        super(LiteralObjectVar, self).__init__(
+            _var_name="",
+            _var_type=dict,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(self, "_var_value", tuple(_var_value.items()))
+        object.__delattr__(self, "_var_name")
+
+    def __getattr__(self, name):
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute of the var.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        return super().__getattr__(name)
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return (
+            "{ "
+            + ", ".join(
+                [str(key) + ": " + str(value) for key, value in self._var_value]
+            )
+            + " }"
+        )
+
+    @cached_property
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            *[var._get_all_var_data() for key, var in self._var_value], self._var_data
+        )
+
+    @classmethod
+    def create(
+        cls,
+        value: dict[str, Var],
+        _var_data: VarData | None = None,
+    ) -> LiteralObjectVar:
+        """Create a var from an object value.
+
+        Args:
+            value: The value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return LiteralObjectVar(
+            _var_data=ImmutableVarData.merge(_var_data),
+            _var_value=value,
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class LiteralArrayVar(LiteralVar):
+    """Base class for immutable literal array vars."""
+
+    _var_value: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
+
+    def __init__(
+        self,
+        _var_value: list[Var] = None,
+        _var_data: VarData | None = None,
+    ):
+        """Initialize the array var.
+
+        Args:
+            _var_name: The name of the var.
+            _var_data: Additional hooks and imports associated with the Var.
+            _var_type: The type of the var.
+            _var_value: The value of the var.
+        """
+        super(LiteralArrayVar, self).__init__(
+            _var_name="",
+            _var_data=ImmutableVarData.merge(_var_data),
+            _var_type=list,
+        )
+        object.__setattr__(self, "_var_value", tuple(_var_value))
+        object.__delattr__(self, "_var_name")
+
+    def __getattr__(self, name):
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute of the var.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        return super().__getattr__(name)
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return "[" + ", ".join([str(element) for element in self._var_value]) + "]"
+
+    @cached_property
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            *[var._get_all_var_data() for var in self._var_value], self._var_data
+        )
+
+    @classmethod
+    def create(
+        cls,
+        value: list[Var],
+        _var_data: VarData | None = None,
+    ) -> LiteralArrayVar:
+        """Create a var from an array value.
+
+        Args:
+            value: The value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return LiteralArrayVar(
+            _var_data=ImmutableVarData.merge(_var_data),
+            _var_value=value,
         )
