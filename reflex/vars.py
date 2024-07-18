@@ -45,6 +45,7 @@ from reflex.utils.exceptions import (
 
 # This module used to export ImportVar itself, so we still import it for export here
 from reflex.utils.imports import (
+    ImmutableParsedImportDict,
     ImportDict,
     ImportVar,
     ParsedImportDict,
@@ -154,7 +155,7 @@ class VarData(Base):
         super().__init__(**kwargs)
 
     @classmethod
-    def merge(cls, *others: VarData | None) -> VarData | None:
+    def merge(cls, *others: ImmutableVarData | VarData | None) -> VarData | None:
         """Merge multiple var data objects.
 
         Args:
@@ -172,8 +173,14 @@ class VarData(Base):
                 continue
             state = state or var_data.state
             _imports = imports.merge_imports(_imports, var_data.imports)
-            hooks.update(var_data.hooks)
-            interpolations += var_data.interpolations
+            hooks.update(
+                var_data.hooks
+                if isinstance(var_data.hooks, dict)
+                else {k: None for k in var_data.hooks}
+            )
+            interpolations += (
+                var_data.interpolations if isinstance(var_data, VarData) else []
+            )
 
         return (
             cls(
@@ -229,6 +236,173 @@ class VarData(Base):
             },
             "hooks": self.hooks,
         }
+
+
+@dataclasses.dataclass(
+    eq=True,
+    frozen=True,
+)
+class ImmutableVarData:
+    """Metadata associated with a Var."""
+
+    # The name of the enclosing state.
+    state: str = dataclasses.field(default="")
+
+    # Imports needed to render this var
+    imports: ImmutableParsedImportDict = dataclasses.field(default_factory=tuple)
+
+    # Hooks that need to be present in the component to render this var
+    hooks: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
+
+    def __init__(
+        self,
+        state: str = "",
+        imports: ImportDict | ParsedImportDict | None = None,
+        hooks: dict[str, None] | None = None,
+    ):
+        """Initialize the var data.
+
+        Args:
+            state: The name of the enclosing state.
+            imports: Imports needed to render this var.
+            hooks: Hooks that need to be present in the component to render this var.
+        """
+        immutable_imports: ImmutableParsedImportDict = tuple(
+            sorted(
+                ((k, tuple(sorted(v))) for k, v in parse_imports(imports or {}).items())
+            )
+        )
+        object.__setattr__(self, "state", state)
+        object.__setattr__(self, "imports", immutable_imports)
+        object.__setattr__(self, "hooks", tuple(hooks or {}))
+
+    @classmethod
+    def merge(
+        cls, *others: ImmutableVarData | VarData | None
+    ) -> ImmutableVarData | None:
+        """Merge multiple var data objects.
+
+        Args:
+            *others: The var data objects to merge.
+
+        Returns:
+            The merged var data object.
+        """
+        state = ""
+        _imports = {}
+        hooks = {}
+        for var_data in others:
+            if var_data is None:
+                continue
+            state = state or var_data.state
+            _imports = imports.merge_imports(_imports, var_data.imports)
+            hooks.update(
+                var_data.hooks
+                if isinstance(var_data.hooks, dict)
+                else {k: None for k in var_data.hooks}
+            )
+
+        return (
+            ImmutableVarData(
+                state=state,
+                imports=_imports,
+                hooks=hooks,
+            )
+            or None
+        )
+
+    def __bool__(self) -> bool:
+        """Check if the var data is non-empty.
+
+        Returns:
+            True if any field is set to a non-default value.
+        """
+        return bool(self.state or self.imports or self.hooks)
+
+    def __eq__(self, other: Any) -> bool:
+        """Check if two var data objects are equal.
+
+        Args:
+            other: The other var data object to compare.
+
+        Returns:
+            True if all fields are equal and collapsed imports are equal.
+        """
+        if not isinstance(other, (ImmutableVarData, VarData)):
+            return False
+
+        # Don't compare interpolations - that's added in by the decoder, and
+        # not part of the vardata itself.
+        return (
+            self.state == other.state
+            and self.hooks
+            == (
+                other.hooks
+                if isinstance(other, ImmutableVarData)
+                else tuple(other.hooks.keys())
+            )
+            and imports.collapse_imports(self.imports)
+            == imports.collapse_imports(other.imports)
+        )
+
+
+def _decode_var_immutable(value: str) -> tuple[ImmutableVarData | None, str]:
+    """Decode the state name from a formatted var.
+
+    Args:
+        value: The value to extract the state name from.
+
+    Returns:
+        The extracted state name and the value without the state name.
+    """
+    var_datas = []
+    if isinstance(value, str):
+        # fast path if there is no encoded VarData
+        if constants.REFLEX_VAR_OPENING_TAG not in value:
+            return None, value
+
+        offset = 0
+
+        # Initialize some methods for reading json.
+        var_data_config = VarData().__config__
+
+        def json_loads(s):
+            try:
+                return var_data_config.json_loads(s)
+            except json.decoder.JSONDecodeError:
+                return var_data_config.json_loads(var_data_config.json_loads(f'"{s}"'))
+
+        # Find all tags.
+        while m := _decode_var_pattern.search(value):
+            start, end = m.span()
+            value = value[:start] + value[end:]
+
+            serialized_data = m.group(1)
+
+            if serialized_data[1:].isnumeric():
+                # This is a global immutable var.
+                var = _global_vars[int(serialized_data)]
+                var_data = var._var_data
+
+                if var_data is not None:
+                    realstart = start + offset
+
+                    var_datas.append(var_data)
+            else:
+                # Read the JSON, pull out the string length, parse the rest as VarData.
+                data = json_loads(serialized_data)
+                string_length = data.pop("string_length", None)
+                var_data = VarData.parse_obj(data)
+
+                # Use string length to compute positions of interpolations.
+                if string_length is not None:
+                    realstart = start + offset
+                    var_data.interpolations = [(realstart, realstart + string_length)]
+
+                var_datas.append(var_data)
+            offset += end - start
+
+    return ImmutableVarData.merge(*var_datas) if var_datas else None, value
 
 
 def _encode_var(value: Var) -> str:
@@ -306,9 +480,6 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
 
                 if var_data is not None:
                     realstart = start + offset
-                    var_data.interpolations = [
-                        (realstart, realstart + len(var._var_name))
-                    ]
 
                     var_datas.append(var_data)
             else:
@@ -1817,6 +1988,14 @@ class Var:
             The state name associated with the var.
         """
         return self._var_data.state if self._var_data else ""
+
+    def _get_all_var_data(self) -> VarData | None:
+        """Get all the var data.
+
+        Returns:
+            The var data.
+        """
+        return self._var_data
 
     @property
     def _var_name_unwrapped(self) -> str:

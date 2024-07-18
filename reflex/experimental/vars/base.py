@@ -3,13 +3,24 @@
 from __future__ import annotations
 
 import dataclasses
+import json
+import re
 import sys
+from functools import cached_property
 from typing import Any, Optional, Type
 
+from reflex import constants
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.utils import serializers, types
 from reflex.utils.exceptions import VarTypeError
-from reflex.vars import Var, VarData, _decode_var, _extract_var_data, _global_vars
+from reflex.vars import (
+    ImmutableVarData,
+    Var,
+    VarData,
+    _decode_var_immutable,
+    _extract_var_data,
+    _global_vars,
+)
 
 
 @dataclasses.dataclass(
@@ -27,7 +38,15 @@ class ImmutableVar(Var):
     _var_type: Type = dataclasses.field(default=Any)
 
     # Extra metadata associated with the Var
-    _var_data: Optional[VarData] = dataclasses.field(default=None)
+    _var_data: Optional[ImmutableVarData] = dataclasses.field(default=None)
+
+    def __str__(self) -> str:
+        """String representation of the var. Guaranteed to be a valid Javascript expression.
+
+        Returns:
+            The name of the var.
+        """
+        return self._var_name
 
     @property
     def _var_is_local(self) -> bool:
@@ -59,11 +78,24 @@ class ImmutableVar(Var):
     def __post_init__(self):
         """Post-initialize the var."""
         # Decode any inline Var markup and apply it to the instance
-        _var_data, _var_name = _decode_var(self._var_name)
+        _var_data, _var_name = _decode_var_immutable(self._var_name)
         if _var_data:
             self.__init__(
-                _var_name, self._var_type, VarData.merge(self._var_data, _var_data)
+                _var_name,
+                self._var_type,
+                ImmutableVarData.merge(self._var_data, _var_data),
             )
+
+    def __hash__(self) -> int:
+        """Define a hash function for the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self._var_name, self._var_type, self._var_data))
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._var_data
 
     def _replace(self, merge_var_data=None, **kwargs: Any):
         """Make a copy of this Var with updated fields.
@@ -96,7 +128,7 @@ class ImmutableVar(Var):
         field_values = dict(
             _var_name=kwargs.pop("_var_name", self._var_name),
             _var_type=kwargs.pop("_var_type", self._var_type),
-            _var_data=VarData.merge(
+            _var_data=ImmutableVarData.merge(
                 kwargs.get("_var_data", self._var_data), merge_var_data
             ),
         )
@@ -109,7 +141,7 @@ class ImmutableVar(Var):
         _var_is_local: bool | None = None,
         _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
-    ) -> Var | None:
+    ) -> ImmutableVar | Var | None:
         """Create a var from a value.
 
         Args:
@@ -164,7 +196,15 @@ class ImmutableVar(Var):
         return cls(
             _var_name=name,
             _var_type=type_,
-            _var_data=_var_data,
+            _var_data=(
+                ImmutableVarData(
+                    state=_var_data.state,
+                    imports=_var_data.imports,
+                    hooks=_var_data.hooks,
+                )
+                if _var_data
+                else None
+            ),
         )
 
     @classmethod
@@ -174,7 +214,7 @@ class ImmutableVar(Var):
         _var_is_local: bool | None = None,
         _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
-    ) -> Var:
+    ) -> Var | ImmutableVar:
         """Create a var from a value, asserting that it is not None.
 
         Args:
@@ -234,3 +274,181 @@ class ArrayVar(ImmutableVar):
 
 class FunctionVar(ImmutableVar):
     """Base class for immutable function vars."""
+
+
+class LiteralVar(ImmutableVar):
+    """Base class for immutable literal vars."""
+
+    def __post_init__(self):
+        """Post-initialize the var."""
+
+
+# Compile regex for finding reflex var tags.
+_decode_var_pattern_re = (
+    rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
+)
+_decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class LiteralStringVar(LiteralVar):
+    """Base class for immutable literal string vars."""
+
+    _var_value: Optional[str] = dataclasses.field(default=None)
+
+    @classmethod
+    def create(
+        cls,
+        value: str,
+        _var_data: VarData | None = None,
+    ) -> LiteralStringVar | ConcatVarOperation:
+        """Create a var from a string value.
+
+        Args:
+            value: The value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        if REFLEX_VAR_OPENING_TAG in value:
+            strings_and_vals: list[Var] = []
+            offset = 0
+
+            # Initialize some methods for reading json.
+            var_data_config = VarData().__config__
+
+            def json_loads(s):
+                try:
+                    return var_data_config.json_loads(s)
+                except json.decoder.JSONDecodeError:
+                    return var_data_config.json_loads(
+                        var_data_config.json_loads(f'"{s}"')
+                    )
+
+            # Find all tags.
+            while m := _decode_var_pattern.search(value):
+                start, end = m.span()
+                if start > 0:
+                    strings_and_vals.append(LiteralStringVar.create(value[:start]))
+
+                serialized_data = m.group(1)
+
+                if serialized_data[1:].isnumeric():
+                    # This is a global immutable var.
+                    var = _global_vars[int(serialized_data)]
+                    strings_and_vals.append(var)
+                    value = value[(end + len(var._var_name)) :]
+                else:
+                    data = json_loads(serialized_data)
+                    string_length = data.pop("string_length", None)
+                    var_data = VarData.parse_obj(data)
+
+                    # Use string length to compute positions of interpolations.
+                    if string_length is not None:
+                        realstart = start + offset
+                        var_data.interpolations = [
+                            (realstart, realstart + string_length)
+                        ]
+                        strings_and_vals.append(
+                            ImmutableVar.create_safe(
+                                value[end : (end + string_length)], _var_data=var_data
+                            )
+                        )
+                        value = value[(end + string_length) :]
+
+                offset += end - start
+
+            if value:
+                strings_and_vals.append(LiteralStringVar.create(value))
+
+            return ConcatVarOperation.create(
+                tuple(strings_and_vals), _var_data=_var_data
+            )
+
+        return cls(
+            _var_value=value,
+            _var_name=f'"{value}"',
+            _var_type=str,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ConcatVarOperation(StringVar):
+    """Representing a concatenation of literal string vars."""
+
+    _var_value: tuple[Var, ...] = dataclasses.field(default_factory=tuple)
+
+    def __init__(self, _var_value: tuple[Var, ...], _var_data: VarData | None = None):
+        """Initialize the operation of concatenating literal string vars.
+
+        Args:
+            _var_value: The list of vars to concatenate.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(ConcatVarOperation, self).__init__(
+            _var_name="", _var_data=ImmutableVarData.merge(_var_data), _var_type=str
+        )
+        object.__setattr__(self, "_var_value", _var_value)
+        object.__setattr__(self, "_var_name", self._cached_var_name)
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return "+".join([str(element) for element in self._var_value])
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            *[var._get_all_var_data() for var in self._var_value], self._var_data
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Wrapper method for cached property.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return self._cached_get_all_var_data
+
+    def __post_init__(self):
+        """Post-initialize the var."""
+        pass
+
+    @classmethod
+    def create(
+        cls,
+        value: tuple[Var, ...],
+        _var_data: VarData | None = None,
+    ) -> ConcatVarOperation:
+        """Create a var from a tuple of values.
+
+        Args:
+            value: The value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return ConcatVarOperation(
+            _var_value=value,
+            _var_data=_var_data,
+        )
