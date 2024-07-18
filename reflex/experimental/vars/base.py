@@ -412,7 +412,7 @@ class ConcatVarOperation(StringVar):
         """
         if name == "_var_name":
             return self._cached_var_name
-        return super().__getattr__(name)
+        return super(LiteralVar, self).__getattr__(name)
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -545,7 +545,7 @@ class LiteralObjectVar(LiteralVar):
 
     def __init__(
         self,
-        _var_value: dict[str, Var] = None,
+        _var_value: dict[str, Var],
         _var_data: VarData | None = None,
     ):
         """Initialize the object var.
@@ -575,7 +575,7 @@ class LiteralObjectVar(LiteralVar):
         """
         if name == "_var_name":
             return self._cached_var_name
-        return super().__getattr__(name)
+        return super(LiteralVar, self).__getattr__(name)
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -619,8 +619,8 @@ class LiteralObjectVar(LiteralVar):
             The var.
         """
         return LiteralObjectVar(
-            _var_data=ImmutableVarData.merge(_var_data),
             _var_value=value,
+            _var_data=_var_data,
         )
 
 
@@ -636,7 +636,7 @@ class LiteralArrayVar(LiteralVar):
 
     def __init__(
         self,
-        _var_value: list[Var] = None,
+        _var_value: list[Var],
         _var_data: VarData | None = None,
     ):
         """Initialize the array var.
@@ -666,7 +666,7 @@ class LiteralArrayVar(LiteralVar):
         """
         if name == "_var_name":
             return self._cached_var_name
-        return super().__getattr__(name)
+        return super(LiteralVar, self).__getattr__(name)
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -704,6 +704,6 @@ class LiteralArrayVar(LiteralVar):
             The var.
         """
         return LiteralArrayVar(
-            _var_data=ImmutableVarData.merge(_var_data),
             _var_value=value,
+            _var_data=_var_data,
         )
