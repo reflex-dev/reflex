@@ -11,7 +11,7 @@ from . import console
 
 
 def open_browser_and_wait(
-    target_url: str, poll_url: str, interval: int = 1
+    target_url: str, poll_url: str, interval: int = 2
 ) -> httpx.Response:
     """Open a browser window to target_url and request poll_url until it returns successfully.
 
@@ -27,10 +27,14 @@ def open_browser_and_wait(
         console.warn(
             f"Unable to automatically open the browser. Please navigate to {target_url} in your browser."
         )
-    console.info("Complete the workflow in the browser to continue.")
-    while response := httpx.get(poll_url, follow_redirects=True):
-        if response.is_success:
-            break
+    console.info("[b]Complete the workflow in the browser to continue.[/b]")
+    while True:
+        try:
+            response = httpx.get(poll_url, follow_redirects=True)
+            if response.is_success:
+                break
+        except httpx.RequestError as err:
+            console.info(f"Will retry after error occurred while polling: {err}.")
         time.sleep(interval)
     return response
 
