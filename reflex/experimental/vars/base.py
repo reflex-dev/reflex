@@ -562,7 +562,7 @@ class LiteralNumberVar(LiteralVar):
         return LiteralNumberVar(
             _var_name=str(value),
             _var_data=ImmutableVarData.merge(_var_data),
-            _var_type=float | int,
+            _var_type=type(value),
             _var_value=value,
         )
 
