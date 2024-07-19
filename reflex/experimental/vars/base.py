@@ -285,9 +285,9 @@ class FunctionVar(ImmutableVar):
         Returns:
             The function call operation.
         """
-        return ArgsFunctionOperation.create(
+        return ArgsFunctionOperation(
             ("...args",),
-            VarOperationCall.create(self, *args, ImmutableVar.create_safe("...args")),
+            VarOperationCall(self, *args, ImmutableVar.create_safe("...args")),
         )
 
     def call(self, *args: Var) -> VarOperationCall:
@@ -299,7 +299,7 @@ class FunctionVar(ImmutableVar):
         Returns:
             The function call operation.
         """
-        return VarOperationCall.create(self, *args)
+        return VarOperationCall(self, *args)
 
 
 class FunctionStringVar(FunctionVar):
@@ -315,26 +315,6 @@ class FunctionStringVar(FunctionVar):
             _var_name=func,
             _var_type=Callable,
             _var_data=ImmutableVarData.merge(_var_data),
-        )
-
-    @classmethod
-    def create(
-        cls,
-        func: str,
-        _var_data: VarData | None = None,
-    ) -> FunctionStringVar:
-        """Create a var from a function string.
-
-        Args:
-            func: The function to call.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return FunctionStringVar(
-            func,
-            _var_data=_var_data,
         )
 
 
@@ -416,29 +396,6 @@ class VarOperationCall(ImmutableVar):
         """Post-initialize the var."""
         pass
 
-    @classmethod
-    def create(
-        cls,
-        func: FunctionVar,
-        *args: Var | Any,
-        _var_data: VarData | None = None,
-    ) -> VarOperationCall:
-        """Create a var from a function and arguments.
-
-        Args:
-            func: The function to call.
-            *args: The arguments to call the function with.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return VarOperationCall(
-            func,
-            *args,
-            _var_data=_var_data,
-        )
-
 
 @dataclasses.dataclass(
     eq=False,
@@ -517,29 +474,6 @@ class ArgsFunctionOperation(FunctionVar):
     def __post_init__(self):
         """Post-initialize the var."""
 
-    @classmethod
-    def create(
-        cls,
-        args_names: Tuple[str, ...],
-        return_expr: Var | Any,
-        _var_data: VarData | None = None,
-    ) -> ArgsFunctionOperation:
-        """Create a var from a function with arguments.
-
-        Args:
-            args_names: The names of the arguments.
-            return_expr: The return expression of the function.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return ArgsFunctionOperation(
-            args_names,
-            return_expr,
-            _var_data=_var_data,
-        )
-
 
 class LiteralVar(ImmutableVar):
     """Base class for immutable literal vars."""
@@ -580,7 +514,7 @@ class LiteralVar(ImmutableVar):
         if constructor is None:
             raise TypeError(f"Unsupported type {type(value)} for LiteralVar.")
 
-        return constructor.create(value, _var_data=_var_data)
+        return constructor(value, _var_data=_var_data)
 
     def __post_init__(self):
         """Post-initialize the var."""
@@ -637,7 +571,7 @@ class LiteralStringVar(LiteralVar):
             The var.
         """
         if REFLEX_VAR_OPENING_TAG in value:
-            strings_and_vals: list[Var] = []
+            strings_and_vals: list[Var | str] = []
             offset = 0
 
             # Initialize some methods for reading json.
@@ -655,7 +589,7 @@ class LiteralStringVar(LiteralVar):
             while m := _decode_var_pattern.search(value):
                 start, end = m.span()
                 if start > 0:
-                    strings_and_vals.append(LiteralStringVar.create(value[:start]))
+                    strings_and_vals.append(value[:start])
 
                 serialized_data = m.group(1)
 
@@ -685,11 +619,9 @@ class LiteralStringVar(LiteralVar):
                 offset += end - start
 
             if value:
-                strings_and_vals.append(LiteralStringVar.create(value))
+                strings_and_vals.append(value)
 
-            return ConcatVarOperation.create(
-                tuple(strings_and_vals), _var_data=_var_data
-            )
+            return ConcatVarOperation(*strings_and_vals, _var_data=_var_data)
 
         return LiteralStringVar(
             value,
@@ -707,19 +639,17 @@ class ConcatVarOperation(StringVar):
 
     _var_value: Tuple[Union[Var, str], ...] = dataclasses.field(default_factory=tuple)
 
-    def __init__(
-        self, _var_value: tuple[Var | str, ...], _var_data: VarData | None = None
-    ):
+    def __init__(self, *value: Var | str, _var_data: VarData | None = None):
         """Initialize the operation of concatenating literal string vars.
 
         Args:
-            _var_value: The list of vars to concatenate.
+            value: The values to concatenate.
             _var_data: Additional hooks and imports associated with the Var.
         """
         super(ConcatVarOperation, self).__init__(
             _var_name="", _var_data=ImmutableVarData.merge(_var_data), _var_type=str
         )
-        object.__setattr__(self, "_var_value", _var_value)
+        object.__setattr__(self, "_var_value", value)
         object.__delattr__(self, "_var_name")
 
     def __getattr__(self, name):
@@ -781,26 +711,6 @@ class ConcatVarOperation(StringVar):
         """Post-initialize the var."""
         pass
 
-    @classmethod
-    def create(
-        cls,
-        value: tuple[Var | str, ...],
-        _var_data: VarData | None = None,
-    ) -> ConcatVarOperation:
-        """Create a var from a tuple of values.
-
-        Args:
-            value: The value to create the var from.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return ConcatVarOperation(
-            _var_value=value,
-            _var_data=_var_data,
-        )
-
 
 @dataclasses.dataclass(
     eq=False,
@@ -830,26 +740,6 @@ class LiteralBooleanVar(LiteralVar):
         )
         object.__setattr__(self, "_var_value", _var_value)
 
-    @classmethod
-    def create(
-        cls,
-        value: bool,
-        _var_data: VarData | None = None,
-    ) -> LiteralBooleanVar:
-        """Create a var from a boolean value.
-
-        Args:
-            value: The value to create the var from.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return LiteralBooleanVar(
-            _var_value=value,
-            _var_data=_var_data,
-        )
-
 
 @dataclasses.dataclass(
     eq=False,
@@ -878,26 +768,6 @@ class LiteralNumberVar(LiteralVar):
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(self, "_var_value", _var_value)
-
-    @classmethod
-    def create(
-        cls,
-        value: float | int,
-        _var_data: VarData | None = None,
-    ) -> LiteralNumberVar:
-        """Create a var from a number value.
-
-        Args:
-            value: The value to create the var from.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return LiteralNumberVar(
-            _var_value=value,
-            _var_data=_var_data,
-        )
 
 
 @dataclasses.dataclass(
@@ -988,28 +858,6 @@ class LiteralObjectVar(LiteralVar):
             self._var_data,
         )
 
-    @classmethod
-    def create(
-        cls,
-        value: dict[Var | Any, Var | Any],
-        _var_type: Type = dict,
-        _var_data: VarData | None = None,
-    ) -> LiteralObjectVar:
-        """Create a var from an object value.
-
-        Args:
-            value: The value to create the var from.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return LiteralObjectVar(
-            _var_value=value,
-            _var_type=_var_type,
-            _var_data=_var_data,
-        )
-
 
 @dataclasses.dataclass(
     eq=False,
@@ -1084,26 +932,6 @@ class LiteralArrayVar(LiteralVar):
                 if isinstance(var, Var)
             ],
             self._var_data,
-        )
-
-    @classmethod
-    def create(
-        cls,
-        value: list[Var | Any] | tuple[Var | Any] | set[Var | Any],
-        _var_data: VarData | None = None,
-    ) -> LiteralArrayVar:
-        """Create a var from an array value.
-
-        Args:
-            value: The value to create the var from.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return LiteralArrayVar(
-            _var_value=value,
-            _var_data=_var_data,
         )
 
 
