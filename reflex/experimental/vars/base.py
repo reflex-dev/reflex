@@ -689,7 +689,9 @@ class LiteralArrayVar(LiteralVar):
             _var_data=ImmutableVarData.merge(_var_data),
             _var_type=list,
         )
-        object.__setattr__(self, "_var_value", tuple(map(LiteralVar, _var_value)))
+        object.__setattr__(
+            self, "_var_value", tuple(map(LiteralVar.create, _var_value))
+        )
         object.__delattr__(self, "_var_name")
 
     def __getattr__(self, name):
