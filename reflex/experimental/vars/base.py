@@ -302,7 +302,7 @@ class LiteralVar(ImmutableVar):
             return value._replace(merge_var_data=_var_data)
 
         if isinstance(value, None):
-            return ImmutableVar.create("null", _var_data=_var_data)
+            return ImmutableVar.create_safe("null", _var_data=_var_data)
 
         if isinstance(value, Base):
             return LiteralObjectVar(
