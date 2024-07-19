@@ -201,7 +201,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
     # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Optional[Union[Component, ComponentCallable]] = (
-        default_overlay_component
+        default_overlay_component()
     )
 
     # Error boundary component to wrap the app with.
