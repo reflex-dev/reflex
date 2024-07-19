@@ -1484,23 +1484,25 @@ def initialize_app(app_name: str, template: str | None = None):
         # Fetch App templates from the backend server.
         console.debug(f"Available templates: {templates}")
 
-    # If user selects a template, it needs to exist.
-    if template in templates:
-        template_url = templates[template].code_url
-    else:
-        # Check if the template is a github repo.
-        if template.startswith("https://github.com"):
-            template_url = f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+        # If user selects a template, it needs to exist.
+        if template in templates:
+            template_url = templates[template].code_url
         else:
-            console.error(f"Template `{template}` not found.")
-            raise typer.Exit(1)
+            # Check if the template is a github repo.
+            if template.startswith("https://github.com"):
+                template_url = (
+                    f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+                )
+            else:
+                console.error(f"Template `{template}` not found.")
+                raise typer.Exit(1)
 
-    if template_url is None:
-        return
+        if template_url is None:
+            return
 
-    create_config_init_app_from_remote_template(
-        app_name=app_name, template_url=template_url
-    )
+        create_config_init_app_from_remote_template(
+            app_name=app_name, template_url=template_url
+        )
 
     telemetry.send("init", template=template)
 
