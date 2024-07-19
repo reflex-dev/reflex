@@ -1232,7 +1232,7 @@ class Line(Cartesian):
             ]
         ] = None,
         stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        stoke_width: Optional[Union[Var[int], int]] = None,
+        stroke_width: Optional[Union[Var[int], int]] = None,
         dot: Optional[
             Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
@@ -1344,7 +1344,7 @@ class Line(Cartesian):
             *children: The children of the component.
             type_: The interpolation type of line. And customized interpolation function can be set to type. It's the same as type in Area.
             stroke: The color of the line stroke.
-            stoke_width: The width of the line stroke.
+            stroke_width: The width of the line stroke.
             dot: The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
             active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
             label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
