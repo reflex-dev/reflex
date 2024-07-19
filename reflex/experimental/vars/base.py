@@ -399,7 +399,7 @@ class VarOperationCall(ImmutableVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self._func._get_all_var_data(),
+            self._func._get_all_var_data() if self._func is not None else None,
             *[var._get_all_var_data() for var in self._args],
             self._var_data,
         )
@@ -761,7 +761,12 @@ class ConcatVarOperation(StringVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            *[var._get_all_var_data() for var in self._var_value], self._var_data
+            *[
+                var._get_all_var_data()
+                for var in self._var_value
+                if isinstance(var, Var)
+            ],
+            self._var_data,
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
