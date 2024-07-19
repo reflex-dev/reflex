@@ -1598,3 +1598,15 @@ def is_windows_bun_supported() -> bool:
         and cpu_info.model_name is not None
         and "ARM" not in cpu_info.model_name
     )
+
+
+def is_generation_hash(template: str) -> bool:
+    """Check if the template looks like a generation hash.
+
+    Args:
+        template: The template name.
+
+    Returns:
+        True if the template is composed of 32 or more hex characters.
+    """
+    return re.match(r"^[0-9a-f]{32,}$", template) is not None
