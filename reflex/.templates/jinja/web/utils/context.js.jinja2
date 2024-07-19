@@ -1,19 +1,17 @@
+{% set all_state_names = initial_state.keys() | list + initial_state_parametrized.keys() | list %}
 import { createContext, useContext, useMemo, useReducer, useState } from "react"
-import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "/utils/state.js"
+import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs, createDefaultDict } from "/utils/state.js"
 
-{% if initial_state %}
 export const initialState = {{ initial_state|json_dumps }}
-{% else %}
-export const initialState = {}
-{% endif %}
+export const initialStateParametrized = {% raw %}{{% endraw %}{% for state_name, state in initial_state_parametrized.items() %}"{{state_name}}": createDefaultDict(() => ({{state|json_dumps}})){% if not loop.last %},{% endif %}{% endfor %}}
 
 export const defaultColorMode = "{{ default_color_mode }}"
 export const ColorModeContext = createContext(null);
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const StateContexts = {
-  {% for state_name in initial_state %}
-  {{state_name|var_name}}: createContext(null),
+  {% for state_name in all_state_names %}
+  {{state_name|format_state_name}}: createContext(null),
   {% endfor %}
 }
 export const EventLoopContext = createContext(null);
@@ -98,25 +96,28 @@ export function EventLoopProvider({ children }) {
 
 export function StateProvider({ children }) {
   {% for state_name in initial_state %}
-  const [{{state_name|var_name}}, dispatch_{{state_name|var_name}}] = useReducer(applyDelta, initialState["{{state_name}}"])
+  const [{{state_name|format_state_name}}, dispatch_{{state_name|format_state_name}}] = useReducer(applyDelta, initialState["{{state_name}}"])
+  {% endfor %}
+  {% for state_name in initial_state_parametrized %}
+  const [{{state_name|format_state_name}}, dispatch_{{state_name|format_state_name}}] = useReducer(applyDelta, initialStateParametrized["{{state_name}}"])
   {% endfor %}
   const dispatchers = useMemo(() => {
     return {
-      {% for state_name in initial_state %}
-      "{{state_name}}": dispatch_{{state_name|var_name}},
+      {% for state_name in all_state_names %}
+      "{{state_name}}": dispatch_{{state_name|format_state_name}},
       {% endfor %}
     }
   }, [])
 
   return (
-    {% for state_name in initial_state %}
-    <StateContexts.{{state_name|var_name}}.Provider value={ {{state_name|var_name}} }>
+    {% for state_name in all_state_names %}
+    <StateContexts.{{state_name|format_state_name}}.Provider value={ {{state_name|format_state_name}} }>
     {% endfor %}
       <DispatchContext.Provider value={dispatchers}>
         {children}
       </DispatchContext.Provider>
-    {% for state_name in initial_state|reverse %}
-    </StateContexts.{{state_name|var_name}}.Provider>
+    {% for state_name in all_state_names | reverse %}
+    </StateContexts.{{state_name|format_state_name}}.Provider>
     {% endfor %}
   )
 }
