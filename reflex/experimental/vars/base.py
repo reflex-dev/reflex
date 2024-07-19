@@ -576,7 +576,7 @@ class LiteralObjectVar(LiteralVar):
 
     def __init__(
         self,
-        _var_value: dict[str, Var | Any],
+        _var_value: dict[Var | Any, Var | Any],
         _var_type: Type = dict,
         _var_data: VarData | None = None,
     ):
