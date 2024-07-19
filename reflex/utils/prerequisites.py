@@ -1334,13 +1334,13 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
 
     release = get_release_by_tag(version)
     if release is None:
-        print(f"No templates known for version {version}")
+        console.warn(f"No templates known for version {version}")
         return {}
 
     assets = release.get("assets", [])
     asset = next((a for a in assets if a["name"] == "templates.json"), None)
     if asset is None:
-        print(f"Templates metadata not found for version {version}")
+        console.warn(f"Templates metadata not found for version {version}")
         return {}
     else:
         templates_url = asset["browser_download_url"]
@@ -1460,15 +1460,20 @@ def initialize_app(app_name: str, template: str | None = None):
         telemetry.send("reinit")
         return
 
-    # Get the available templates
-    templates: dict[str, Template] = fetch_app_templates(constants.Reflex.VERSION)
+    templates: dict[str, Template] = {}
 
-    # Prompt for a template if not provided.
-    if template is None and len(templates) > 0:
-        template = prompt_for_template(list(templates.values()))
-    elif template is None:
-        template = constants.Templates.DEFAULT
-    assert template is not None
+    # Don't fetch app templates if the user directly asked for DEFAULT.
+    if template is None or (template != constants.Templates.DEFAULT):
+        try:
+            # Get the available templates
+            templates = fetch_app_templates(constants.Reflex.VERSION)
+            if template is None and len(templates) > 0:
+                template = prompt_for_template(list(templates.values()))
+        except Exception as e:
+            console.warn("Failed to fetch templates. Falling back to default template.")
+            console.debug(f"Error while fetching templates: {e}")
+        finally:
+            template = template or constants.Templates.DEFAULT
 
     # If the blank template is selected, create a blank app.
     if template == constants.Templates.DEFAULT:
@@ -1479,25 +1484,23 @@ def initialize_app(app_name: str, template: str | None = None):
         # Fetch App templates from the backend server.
         console.debug(f"Available templates: {templates}")
 
-        # If user selects a template, it needs to exist.
-        if template in templates:
-            template_url = templates[template].code_url
+    # If user selects a template, it needs to exist.
+    if template in templates:
+        template_url = templates[template].code_url
+    else:
+        # Check if the template is a github repo.
+        if template.startswith("https://github.com"):
+            template_url = f"{template.strip('/').replace('.git', '')}/archive/main.zip"
         else:
-            # Check if the template is a github repo.
-            if template.startswith("https://github.com"):
-                template_url = (
-                    f"{template.strip('/').replace('.git', '')}/archive/main.zip"
-                )
-            else:
-                console.error(f"Template `{template}` not found.")
-                raise typer.Exit(1)
+            console.error(f"Template `{template}` not found.")
+            raise typer.Exit(1)
 
-        if template_url is None:
-            return
+    if template_url is None:
+        return
 
-        create_config_init_app_from_remote_template(
-            app_name=app_name, template_url=template_url
-        )
+    create_config_init_app_from_remote_template(
+        app_name=app_name, template_url=template_url
+    )
 
     telemetry.send("init", template=template)
 
