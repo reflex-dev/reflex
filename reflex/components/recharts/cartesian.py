@@ -406,7 +406,7 @@ class Line(Cartesian):
     stroke: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
 
     # The width of the line stroke.
-    stoke_width: Var[int]
+    stroke_width: Var[int]
 
     # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
     dot: Var[Union[bool, Dict[str, Any]]] = Var.create_safe(
