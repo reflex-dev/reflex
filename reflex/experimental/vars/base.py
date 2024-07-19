@@ -594,7 +594,10 @@ class LiteralObjectVar(LiteralVar):
         object.__setattr__(
             self,
             "_var_value",
-            tuple((key, LiteralVar.create(value)) for key, value in _var_value.items()),
+            tuple(
+                (LiteralVar.create(key), LiteralVar.create(value))
+                for key, value in _var_value.items()
+            ),
         )
         object.__delattr__(self, "_var_name")
 
@@ -621,7 +624,7 @@ class LiteralObjectVar(LiteralVar):
         return (
             "{ "
             + ", ".join(
-                [str(key) + ": " + str(value) for key, value in self._var_value]
+                ["[" + str(key) + "] : " + str(value) for key, value in self._var_value]
             )
             + " }"
         )
@@ -640,7 +643,7 @@ class LiteralObjectVar(LiteralVar):
     @classmethod
     def create(
         cls,
-        value: dict[str, Var | Any],
+        value: dict[Var | Any, Var | Any],
         _var_type: Type = dict,
         _var_data: VarData | None = None,
     ) -> LiteralObjectVar:
