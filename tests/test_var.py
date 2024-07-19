@@ -11,6 +11,7 @@ from reflex.experimental.vars.base import (
     ConcatVarOperation,
     ImmutableVar,
     LiteralStringVar,
+    LiteralVar,
 )
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
@@ -856,6 +857,24 @@ def test_state_with_initial_computed_var(
     else:
         runtime_dict = state.dict()[state_name]
         assert runtime_dict[var_name] == expected_runtime
+
+
+def test_literal_var():
+    complicated_var = LiteralVar.create(
+        [
+            {"a": 1, "b": 2, "c": {"d": 3, "e": 4}},
+            [1, 2, 3, 4],
+            9,
+            "string",
+            True,
+            False,
+            set([1, 2, 3]),
+        ]
+    )
+    assert (
+        str(complicated_var)
+        == '[{ ["a"] : 1, ["b"] : 2, ["c"] : { ["d"] : 3, ["e"] : 4 } }, [1, 2, 3, 4], 9, "string", true, false, [1, 2, 3]]'
+    )
 
 
 def test_retrival():
