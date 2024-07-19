@@ -219,9 +219,6 @@ class Config(Base):
     # Number of gunicorn workers from user
     gunicorn_workers: Optional[int] = None
 
-    # If debug is true, more details will show when an error happens.
-    debug: bool = False
-
     # Maximum expiration lock time for redis state manager
     redis_lock_expiration: int = constants.Expiration.LOCK
 

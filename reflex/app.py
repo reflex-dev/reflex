@@ -119,9 +119,9 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
     console.error(f"[Reflex Backend Exception]\n {error}\n")
 
     error_message = (
-        [f"{type(exception).__name__}: {exception}.", "See logs for details."]
-        if get_config().debug is True
-        else ["Contact the website administrator."]
+        ["Contact the website administrator."]
+        if is_prod_mode()
+        else [f"{type(exception).__name__}: {exception}.", "See logs for details."]
     )
     if Toaster.is_used:
         return toast(
