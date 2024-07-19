@@ -3,10 +3,9 @@
 from typing import Any, Union
 
 from reflex import Component, ComponentNamespace
-from reflex.components.el.element import Element
 from reflex.constants.colors import Color
 from reflex.vars import Var as Var
-
+from reflex.utils import console
 from .base import BaseHTML
 
 
@@ -314,9 +313,11 @@ class Svg(BaseHTML):
     width: Var[Union[str, int]]
     # The height of the svg.
     height: Var[Union[str, int]]
+    # The XML namespace declaration.
+    xmlns: Var[str]
 
 
-class Circle(Element):
+class Circle(BaseHTML):
     """The SVG circle component."""
 
     tag = "circle"
@@ -330,7 +331,7 @@ class Circle(Element):
     path_length: Var[int]
 
 
-class Rect(Element):
+class Rect(BaseHTML):
     """The SVG rect component."""
 
     tag = "rect"
@@ -350,7 +351,7 @@ class Rect(Element):
     path_length: Var[int]
 
 
-class Polygon(Element):
+class Polygon(BaseHTML):
     """The SVG polygon component."""
 
     tag = "polygon"
@@ -443,7 +444,19 @@ picture = Picture.create
 portal = Portal.create
 source = Source.create
 svg = SVG()
-defs = Defs.create
-lineargradient = LinearGradient.create
-stop = Stop.create
-path = Path.create
+
+
+def __getattr__(name: str):
+    if name in ("defs", "lineargradient", "stop", "path"):
+        console.deprecate(
+            f"`rx.el.{name}`",
+            reason=f"use `rx.el.svg.{name}`",
+            deprecation_version="0.5.8",
+            removal_version="0.6.0",
+        )
+        return LinearGradient.create if name == "lineargradient" else globals()[name.capitalize()].create
+
+    try:
+        return globals()[name]
+    except KeyError:
+        raise AttributeError(f"module '{__name__} has no attribute '{name}'") from None
