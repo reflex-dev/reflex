@@ -294,6 +294,9 @@ class LiteralVar(ImmutableVar):
 
         Returns:
             The var.
+
+        Raises:
+            TypeError: If the value is not a supported type for LiteralVar.
         """
         if isinstance(value, LiteralVar):
             return value
