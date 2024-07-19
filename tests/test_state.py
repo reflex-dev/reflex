@@ -1551,7 +1551,7 @@ async def test_state_with_invalid_yield(capsys, mock_app):
                 [
                     rx.toast(
                         title="An error occurred.",
-                        description="Contact the website administrator.",
+                        description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`).<br/>See logs for details.",
                         level="error",
                         id="backend_error",
                         position="top-center",
