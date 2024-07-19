@@ -310,7 +310,7 @@ class Svg(BaseHTML):
     """Display the svg element."""
 
     tag = "svg"
-    # The width of the svg
+    # The width of the svg.
     width: Var[Union[str, int]]
     # The height of the svg.
     height: Var[Union[str, int]]
@@ -322,13 +322,13 @@ class Circle(BaseHTML):
     """The SVG circle component."""
 
     tag = "circle"
-    # The x-axis coordinate of the center of the circle
+    # The x-axis coordinate of the center of the circle.
     cx: Var[Union[str, int]]
-    # The y-axis coordinate of the center of the circle
+    # The y-axis coordinate of the center of the circle.
     cy: Var[Union[str, int]]
-    # The radius of the circle
+    # The radius of the circle.
     r: Var[Union[str, int]]
-    # The total length for the circle's circumference, in user units
+    # The total length for the circle's circumference, in user units.
     path_length: Var[int]
 
 
@@ -336,15 +336,15 @@ class Rect(BaseHTML):
     """The SVG rect component."""
 
     tag = "rect"
-    # The x coordinate of the rect
+    # The x coordinate of the rect.
     x: Var[Union[str, int]]
-    # The y coordinate of the rect
+    # The y coordinate of the rect.
     y: Var[Union[str, int]]
     # The width of the rect
     width: Var[Union[str, int]]
     # The height of the rect.
     height: Var[Union[str, int]]
-    # The horizontal corner radius of the rect. Defaults to ry if it is specified
+    # The horizontal corner radius of the rect. Defaults to ry if it is specified.
     rx: Var[Union[str, int]]
     # The vertical corner radius of the rect. Defaults to rx if it is specified.
     ry: Var[Union[str, int]]
@@ -356,9 +356,9 @@ class Polygon(BaseHTML):
     """The SVG polygon component."""
 
     tag = "polygon"
-    # defines the list of points (pairs of x,y absolute coordinates) required to draw the polygon
+    # defines the list of points (pairs of x,y absolute coordinates) required to draw the polygon.
     points: Var[str]
-    # This prop lets specify the total length for the path, in user units
+    # This prop lets specify the total length for the path, in user units.
     path_length: Var[int]
 
 
@@ -373,25 +373,25 @@ class LinearGradient(BaseHTML):
 
     tag = "linearGradient"
 
-    # Units for the gradient
+    # Units for the gradient.
     gradient_units: Var[Union[str, bool]]
 
-    # Transform applied to the gradient
+    # Transform applied to the gradient.
     gradient_transform: Var[Union[str, bool]]
 
-    # Method used to spread the gradient
+    # Method used to spread the gradient.
     spread_method: Var[Union[str, bool]]
 
-    # X coordinate of the starting point of the gradient
+    # X coordinate of the starting point of the gradient.
     x1: Var[Union[str, int, bool]]
 
-    # X coordinate of the ending point of the gradient
+    # X coordinate of the ending point of the gradient.
     x2: Var[Union[str, int, bool]]
 
-    # Y coordinate of the starting point of the gradient
+    # Y coordinate of the starting point of the gradient.
     y1: Var[Union[str, int, bool]]
 
-    # Y coordinate of the ending point of the gradient
+    # Y coordinate of the ending point of the gradient.
     y2: Var[Union[str, int, bool]]
 
 
@@ -400,13 +400,13 @@ class Stop(BaseHTML):
 
     tag = "stop"
 
-    # Offset of the gradient stop
+    # Offset of the gradient stop.
     offset: Var[Union[str, float, int]]
 
-    # Color of the gradient stop
+    # Color of the gradient stop.
     stop_color: Var[Union[str, Color, bool]]
 
-    # Opacity of the gradient stop
+    # Opacity of the gradient stop.
     stop_opacity: Var[Union[str, float, int, bool]]
 
 
@@ -415,7 +415,7 @@ class Path(BaseHTML):
 
     tag = "path"
 
-    # Defines the shape of the path
+    # Defines the shape of the path.
     d: Var[Union[str, int, bool]]
 
 
