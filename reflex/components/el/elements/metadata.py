@@ -1,6 +1,6 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
 
-from typing import Union
+from typing import Set, Union
 
 from reflex.components.el.element import Element
 from reflex.vars import Var as Var
@@ -63,6 +63,10 @@ class StyleEl(Element):  # noqa: E742
     tag = "style"
 
     media: Var[Union[str, int, bool]]
+
+    special_props: Set[Var] = {
+        Var.create_safe("suppressHydrationWarning", _var_is_string=False)
+    }
 
 
 base = Base.create
