@@ -285,7 +285,7 @@ class LiteralVar(ImmutableVar):
         cls,
         value: Any,
         _var_data: VarData | None = None,
-    ) -> LiteralVar:
+    ) -> Var:
         """Create a var from a value.
 
         Args:
@@ -298,8 +298,11 @@ class LiteralVar(ImmutableVar):
         Raises:
             TypeError: If the value is not a supported type for LiteralVar.
         """
-        if isinstance(value, LiteralVar):
-            return value
+        if isinstance(value, Var):
+            return value._replace(merge_var_data=_var_data)
+
+        if isinstance(value, None):
+            return ImmutableVar.create("null", _var_data=_var_data)
 
         if isinstance(value, Base):
             return LiteralObjectVar(
