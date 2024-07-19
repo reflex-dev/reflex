@@ -279,6 +279,38 @@ class FunctionVar(ImmutableVar):
 class LiteralVar(ImmutableVar):
     """Base class for immutable literal vars."""
 
+    @classmethod
+    def create(
+        cls,
+        value: Any,
+        _var_data: VarData | None = None,
+    ) -> Var | None:
+        """Create a var from a value.
+
+        Args:
+            value: The value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        if value is None:
+            return None
+
+        if isinstance(value, Var):
+            return value
+
+        type_mapping = {
+            str: LiteralStringVar,
+            int: LiteralNumberVar,
+            float: LiteralNumberVar,
+            bool: LiteralBooleanVar,
+            dict: LiteralObjectVar,
+            list: LiteralArrayVar,
+        }
+
+        return type_mapping[type(value)].create(value, _var_data=_var_data)
+
     def __post_init__(self):
         """Post-initialize the var."""
 
@@ -545,7 +577,7 @@ class LiteralObjectVar(LiteralVar):
 
     def __init__(
         self,
-        _var_value: dict[str, Var],
+        _var_value: dict[str, Var | Any],
         _var_data: VarData | None = None,
     ):
         """Initialize the object var.
@@ -559,7 +591,11 @@ class LiteralObjectVar(LiteralVar):
             _var_type=dict,
             _var_data=ImmutableVarData.merge(_var_data),
         )
-        object.__setattr__(self, "_var_value", tuple(_var_value.items()))
+        object.__setattr__(
+            self,
+            "_var_value",
+            tuple((key, LiteralVar.create(value)) for key, value in _var_value.items()),
+        )
         object.__delattr__(self, "_var_name")
 
     def __getattr__(self, name):
@@ -604,7 +640,7 @@ class LiteralObjectVar(LiteralVar):
     @classmethod
     def create(
         cls,
-        value: dict[str, Var],
+        value: dict[str, Var | Any],
         _var_data: VarData | None = None,
     ) -> LiteralObjectVar:
         """Create a var from an object value.
@@ -634,7 +670,7 @@ class LiteralArrayVar(LiteralVar):
 
     def __init__(
         self,
-        _var_value: list[Var],
+        _var_value: list[Var | Any],
         _var_data: VarData | None = None,
     ):
         """Initialize the array var.
@@ -648,7 +684,7 @@ class LiteralArrayVar(LiteralVar):
             _var_data=ImmutableVarData.merge(_var_data),
             _var_type=list,
         )
-        object.__setattr__(self, "_var_value", tuple(_var_value))
+        object.__setattr__(self, "_var_value", tuple(map(LiteralVar, _var_value)))
         object.__delattr__(self, "_var_name")
 
     def __getattr__(self, name):
@@ -687,7 +723,7 @@ class LiteralArrayVar(LiteralVar):
     @classmethod
     def create(
         cls,
-        value: list[Var],
+        value: list[Var | Any],
         _var_data: VarData | None = None,
     ) -> LiteralArrayVar:
         """Create a var from an array value.
