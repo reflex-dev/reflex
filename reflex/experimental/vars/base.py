@@ -10,6 +10,7 @@ from functools import cached_property
 from typing import Any, Optional, Tuple, Type
 
 from reflex import constants
+from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.utils import serializers, types
 from reflex.utils.exceptions import VarTypeError
@@ -284,7 +285,7 @@ class LiteralVar(ImmutableVar):
         cls,
         value: Any,
         _var_data: VarData | None = None,
-    ) -> Var | None:
+    ) -> LiteralVar:
         """Create a var from a value.
 
         Args:
@@ -294,22 +295,20 @@ class LiteralVar(ImmutableVar):
         Returns:
             The var.
         """
-        if value is None:
-            return None
-
-        if isinstance(value, Var):
+        if isinstance(value, LiteralVar):
             return value
 
-        type_mapping = {
-            str: LiteralStringVar,
-            int: LiteralNumberVar,
-            float: LiteralNumberVar,
-            bool: LiteralBooleanVar,
-            dict: LiteralObjectVar,
-            list: LiteralArrayVar,
-        }
+        if isinstance(value, Base):
+            return LiteralObjectVar(
+                value.dict(), _var_type=type(value), _var_data=_var_data
+            )
 
-        return type_mapping[type(value)].create(value, _var_data=_var_data)
+        constructor = type_mapping.get(type(value))
+
+        if constructor is None:
+            raise TypeError(f"Unsupported type {type(value)} for LiteralVar.")
+
+        return constructor.create(value, _var_data=_var_data)
 
     def __post_init__(self):
         """Post-initialize the var."""
@@ -444,7 +443,7 @@ class ConcatVarOperation(StringVar):
         """
         if name == "_var_name":
             return self._cached_var_name
-        return getattr(super(), name)
+        return super(type(self), self).__getattr__(name)
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -578,6 +577,7 @@ class LiteralObjectVar(LiteralVar):
     def __init__(
         self,
         _var_value: dict[str, Var | Any],
+        _var_type: Type = dict,
         _var_data: VarData | None = None,
     ):
         """Initialize the object var.
@@ -588,7 +588,7 @@ class LiteralObjectVar(LiteralVar):
         """
         super(LiteralObjectVar, self).__init__(
             _var_name="",
-            _var_type=dict,
+            _var_type=_var_type,
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(
@@ -609,7 +609,7 @@ class LiteralObjectVar(LiteralVar):
         """
         if name == "_var_name":
             return self._cached_var_name
-        return getattr(super(), name)
+        return super(type(self), self).__getattr__(name)
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -641,6 +641,7 @@ class LiteralObjectVar(LiteralVar):
     def create(
         cls,
         value: dict[str, Var | Any],
+        _var_type: Type = dict,
         _var_data: VarData | None = None,
     ) -> LiteralObjectVar:
         """Create a var from an object value.
@@ -654,6 +655,7 @@ class LiteralObjectVar(LiteralVar):
         """
         return LiteralObjectVar(
             _var_value=value,
+            _var_type=_var_type,
             _var_data=_var_data,
         )
 
@@ -698,7 +700,7 @@ class LiteralArrayVar(LiteralVar):
         """
         if name == "_var_name":
             return self._cached_var_name
-        return getattr(super(), name)
+        return super(type(self), self).__getattr__(name)
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -739,3 +741,15 @@ class LiteralArrayVar(LiteralVar):
             _var_value=value,
             _var_data=_var_data,
         )
+
+
+type_mapping = {
+    str: LiteralStringVar,
+    int: LiteralNumberVar,
+    float: LiteralNumberVar,
+    bool: LiteralBooleanVar,
+    dict: LiteralObjectVar,
+    list: LiteralArrayVar,
+    tuple: LiteralArrayVar,
+    set: LiteralArrayVar,
+}
