@@ -567,7 +567,15 @@ def format_event(event_spec: EventSpec) -> str:
     event_args.append(wrap(args, "{"))
 
     if event_spec.client_handler_name:
-        event_args.append(wrap(event_spec.client_handler_name, '"'))
+        client_handler_name = wrap(event_spec.client_handler_name, '"')
+        event_args.append(client_handler_name)
+
+    if event_spec.handler.state_key is not None:
+        if not event_spec.client_handler_name:
+            event_args.append("null")
+        state_key = event_spec.handler.state_key._var_full_name
+        event_args.append(state_key)
+
     return f"Event({', '.join(event_args)})"
 
 
@@ -721,7 +729,7 @@ def format_state(value: Any, key: Optional[str] = None) -> Any:
     if isinstance(value, dict):
         return {k: format_state(v, k) for k, v in value.items()}
 
-    # Handle lists, sets, typles.
+    # Handle lists, sets, tuples.
     if isinstance(value, types.StateIterBases):
         return [format_state(v) for v in value]
 

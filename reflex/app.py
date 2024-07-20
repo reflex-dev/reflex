@@ -1054,11 +1054,14 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             compiler_utils.write_page(output_path, code)
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
+    async def modify_state(
+        self, token: str, key: str | None = None
+    ) -> AsyncIterator[BaseState]:
         """Modify the state out of band.
 
         Args:
             token: The token to modify the state for.
+            key: The key for parameterized states.
 
         Yields:
             The state to modify.
@@ -1070,7 +1073,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             raise RuntimeError("App has not been initialized yet.")
 
         # Get exclusive access to the state.
-        async with self.state_manager.modify_state(token) as state:
+        async with self.state_manager.modify_state(token, key=key) as state:
             # No other event handler can modify the state while in this context.
             yield state
             delta = state.get_delta()
@@ -1241,6 +1244,7 @@ async def process(
     """
     from reflex.utils import telemetry
 
+    print(f"process {event=} {sid=}")
     try:
         # Add request data to the state.
         router_data = event.router_data
@@ -1254,7 +1258,9 @@ async def process(
             }
         )
         # Get the state for the session exclusively.
-        async with app.state_manager.modify_state(event.substate_token) as state:
+        async with app.state_manager.modify_state(
+            event.substate_token, key=event.state_key
+        ) as state:
             # re-assign only when the value is different
             if state.router_data != router_data:
                 # assignment will recurse into substates and force recalculation of
@@ -1279,6 +1285,9 @@ async def process(
                 # Process the event synchronously.
                 async for update in state._process(event):
                     # Postprocess the event.
+                    print(
+                        f"creating state update {type(state).__name__=} {update.events=}"
+                    )
                     update = await app._postprocess(state, event, update)
 
                     # Yield the update.
@@ -1472,7 +1481,7 @@ class EventNamespace(AsyncNamespace):
             self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
         )
 
-    async def on_event(self, sid, data):
+    async def on_event(self, sid: str, data: str):
         """Event for receiving front-end websocket events.
 
         Args:
@@ -1481,6 +1490,7 @@ class EventNamespace(AsyncNamespace):
         """
         # Get the event.
         event = Event.parse_raw(data)
+        print(f"on_event: {sid=} {event=}")
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token
@@ -1491,7 +1501,7 @@ class EventNamespace(AsyncNamespace):
         assert environ is not None
 
         # Get the client headers.
-        headers = {
+        headers: dict[str, str] = {
             k.decode("utf-8"): v.decode("utf-8")
             for (k, v) in environ["asgi.scope"]["headers"]
         }
@@ -1507,7 +1517,7 @@ class EventNamespace(AsyncNamespace):
             # Emit the update from processing the event.
             await self.emit_update(update=update, sid=sid)
 
-    async def on_ping(self, sid):
+    async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
 
         Args:
