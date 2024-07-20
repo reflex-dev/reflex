@@ -145,6 +145,8 @@ class Next(SimpleNamespace):
     PACKAGE_LOCK = "package-lock.json"
     # Regex to check for message displayed when frontend comes up
     FRONTEND_LISTENING_REGEX = "Local:[\\s]+(.*)"
+    # Place holder domain name
+    PLACEHOLDER_DOMAIN = "http://example.com"
 
 
 # Color mode variables
