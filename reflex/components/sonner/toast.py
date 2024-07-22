@@ -254,7 +254,7 @@ class Toaster(Component):
             )
         toast_command = f"{toast_ref}.{level}" if level is not None else toast_ref
         if message == "" and ("title" not in props or "description" not in props):
-            raise ValueError("Toast message or title or descrition must be provided.")
+            raise ValueError("Toast message or title or description must be provided.")
         if props:
             args = serialize(ToastProps(**props))  # type: ignore
             toast = f"{toast_command}(`{message}`, {args})"
