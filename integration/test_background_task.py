@@ -12,7 +12,10 @@ def BackgroundTask():
     """Test that background tasks work as expected."""
     import asyncio
 
+    import pytest
+
     import reflex as rx
+    from reflex.state import ImmutableStateError
 
     class State(rx.State):
         counter: int = 0
@@ -71,6 +74,14 @@ def BackgroundTask():
                 self.racy_task(), self.racy_task(), self.racy_task(), self.racy_task()
             )
 
+        @rx.background
+        async def nested_async_with_self(self):
+            async with self:
+                self.counter += 1
+                with pytest.raises(ImmutableStateError):
+                    async with self:
+                        self.counter += 1
+
     def index() -> rx.Component:
         return rx.vstack(
             rx.chakra.input(
@@ -108,6 +119,11 @@ def BackgroundTask():
                 "Racy Increment (x4)",
                 on_click=State.handle_racy_event,
                 id="racy-increment",
+            ),
+            rx.button(
+                "Nested Async with Self",
+                on_click=State.nested_async_with_self,
+                id="nested-async-with-self",
             ),
             rx.button("Reset", on_click=State.reset_counter, id="reset"),
         )
@@ -230,3 +246,32 @@ def test_background_task(
     assert background_task._poll_for(
         lambda: not background_task.app_instance.background_tasks  # type: ignore
     )
+
+
+def test_nested_async_with_self(
+    background_task: AppHarness,
+    driver: WebDriver,
+    token: str,
+):
+    """Test that nested async with self in the same coroutine raises Exception.
+
+    Args:
+        background_task: harness for BackgroundTask app.
+        driver: WebDriver instance.
+        token: The token for the connected client.
+    """
+    assert background_task.app_instance is not None
+
+    # get a reference to all buttons
+    nested_async_with_self_button = driver.find_element(By.ID, "nested-async-with-self")
+    increment_button = driver.find_element(By.ID, "increment")
+
+    # get a reference to the counter
+    counter = driver.find_element(By.ID, "counter")
+    assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
+
+    nested_async_with_self_button.click()
+    assert background_task._poll_for(lambda: counter.text == "1", timeout=5)
+
+    increment_button.click()
+    assert background_task._poll_for(lambda: counter.text == "2", timeout=5)

@@ -2041,6 +2041,7 @@ class StateProxy(wrapt.ObjectProxy):
         self._self_actx = None
         self._self_mutable = False
         self._self_actx_lock = asyncio.Lock()
+        self._self_actx_lock_holder = None
 
     async def __aenter__(self) -> StateProxy:
         """Enter the async context manager protocol.
@@ -2053,8 +2054,20 @@ class StateProxy(wrapt.ObjectProxy):
 
         Returns:
             This StateProxy instance in mutable mode.
+
+        Raises:
+            ImmutableStateError: If the state is already mutable.
         """
+        current_task = asyncio.current_task()
+        if (
+            self._self_actx_lock.locked()
+            and current_task == self._self_actx_lock_holder
+        ):
+            raise ImmutableStateError(
+                "The state is already mutable. Do not nest `async with self` blocks."
+            )
         await self._self_actx_lock.acquire()
+        self._self_actx_lock_holder = current_task
         self._self_actx = self._self_app.modify_state(
             token=_substate_key(
                 self.__wrapped__.router.session.client_token,
@@ -2082,6 +2095,7 @@ class StateProxy(wrapt.ObjectProxy):
         try:
             await self._self_actx.__aexit__(*exc_info)
         finally:
+            self._self_actx_lock_holder = None
             self._self_actx_lock.release()
         self._self_actx = None
 
