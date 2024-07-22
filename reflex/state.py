@@ -2028,11 +2028,18 @@ class StateProxy(wrapt.ObjectProxy):
                     self.counter += 1
     """
 
-    def __init__(self, state_instance):
+    def __init__(
+        self, state_instance, parent_state_proxy: Optional["StateProxy"] = None
+    ):
         """Create a proxy for a state instance.
+
+        If `get_state` is used on a StateProxy, the resulting state will be
+        linked to the given state via parent_state_proxy. The first state in the
+        chain is the state that initiated the background task.
 
         Args:
             state_instance: The state instance to proxy.
+            parent_state_proxy: The parent state proxy, for linked mutability and context tracking.
         """
         super().__init__(state_instance)
         # compile is not relevant to backend logic
@@ -2042,6 +2049,17 @@ class StateProxy(wrapt.ObjectProxy):
         self._self_mutable = False
         self._self_actx_lock = asyncio.Lock()
         self._self_actx_lock_holder = None
+        self._self_parent_state_proxy = parent_state_proxy
+
+    def _is_mutable(self) -> bool:
+        """Check if the state is mutable.
+
+        Returns:
+            Whether the state is mutable.
+        """
+        if self._self_parent_state_proxy is not None:
+            return self._self_parent_state_proxy._is_mutable()
+        return self._self_mutable
 
     async def __aenter__(self) -> StateProxy:
         """Enter the async context manager protocol.
@@ -2058,6 +2076,8 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is already mutable.
         """
+        if self._self_parent_state_proxy is not None:
+            return await self._self_parent_state_proxy.__aenter__()
         current_task = asyncio.current_task()
         if (
             self._self_actx_lock.locked()
@@ -2089,6 +2109,9 @@ class StateProxy(wrapt.ObjectProxy):
         Args:
             exc_info: The exception info tuple.
         """
+        if self._self_parent_state_proxy is not None:
+            await self._self_parent_state_proxy.__aexit__(*exc_info)
+            return
         if self._self_actx is None:
             return
         self._self_mutable = False
@@ -2130,7 +2153,7 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
-        if name in ["substates", "parent_state"] and not self._self_mutable:
+        if name in ["substates", "parent_state"] and not self._is_mutable():
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
@@ -2170,7 +2193,7 @@ class StateProxy(wrapt.ObjectProxy):
         """
         if (
             name.startswith("_self_")  # wrapper attribute
-            or self._self_mutable  # lock held
+            or self._is_mutable()  # lock held
             # non-persisted state attribute
             or name in self.__wrapped__.get_skip_vars()
         ):
@@ -2194,7 +2217,7 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
-        if not self._self_mutable:
+        if not self._is_mutable():
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
@@ -2213,12 +2236,14 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
-        if not self._self_mutable:
+        if not self._is_mutable():
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
-        return await self.__wrapped__.get_state(state_cls)
+        return type(self)(
+            await self.__wrapped__.get_state(state_cls), parent_state_proxy=self
+        )
 
     def _as_state_update(self, *args, **kwargs) -> StateUpdate:
         """Temporarily allow mutability to access parent_state.

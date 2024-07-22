@@ -82,6 +82,30 @@ def BackgroundTask():
                     async with self:
                         self.counter += 1
 
+        async def triple_count(self):
+            third_state = await self.get_state(ThirdState)
+            await third_state._triple_count()
+
+    class OtherState(rx.State):
+        @rx.background
+        async def get_other_state(self):
+            async with self:
+                state = await self.get_state(State)
+                state.counter += 1
+                await state.triple_count()
+            with pytest.raises(ImmutableStateError):
+                await state.triple_count()
+            with pytest.raises(ImmutableStateError):
+                state.counter += 1
+            async with state:
+                state.counter += 1
+                await state.triple_count()
+
+    class ThirdState(rx.State):
+        async def _triple_count(self):
+            state = await self.get_state(State)
+            state.counter *= 3
+
     def index() -> rx.Component:
         return rx.vstack(
             rx.chakra.input(
@@ -124,6 +148,11 @@ def BackgroundTask():
                 "Nested Async with Self",
                 on_click=State.nested_async_with_self,
                 id="nested-async-with-self",
+            ),
+            rx.button(
+                "Increment from OtherState",
+                on_click=OtherState.get_other_state,
+                id="increment-from-other-state",
             ),
             rx.button("Reset", on_click=State.reset_counter, id="reset"),
         )
@@ -275,3 +304,32 @@ def test_nested_async_with_self(
 
     increment_button.click()
     assert background_task._poll_for(lambda: counter.text == "2", timeout=5)
+
+
+def test_get_state(
+    background_task: AppHarness,
+    driver: WebDriver,
+    token: str,
+):
+    """Test that get_state returns a state bound to the correct StateProxy.
+
+    Args:
+        background_task: harness for BackgroundTask app.
+        driver: WebDriver instance.
+        token: The token for the connected client.
+    """
+    assert background_task.app_instance is not None
+
+    # get a reference to all buttons
+    other_state_button = driver.find_element(By.ID, "increment-from-other-state")
+    increment_button = driver.find_element(By.ID, "increment")
+
+    # get a reference to the counter
+    counter = driver.find_element(By.ID, "counter")
+    assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
+
+    other_state_button.click()
+    assert background_task._poll_for(lambda: counter.text == "12", timeout=5)
+
+    increment_button.click()
+    assert background_task._poll_for(lambda: counter.text == "13", timeout=5)
