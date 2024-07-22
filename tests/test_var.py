@@ -8,9 +8,12 @@ from pandas import DataFrame
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.experimental.vars.base import (
+    ArgsFunctionOperation,
     ConcatVarOperation,
+    FunctionStringVar,
     ImmutableVar,
     LiteralStringVar,
+    LiteralVar,
 )
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
@@ -858,6 +861,58 @@ def test_state_with_initial_computed_var(
         assert runtime_dict[var_name] == expected_runtime
 
 
+def test_literal_var():
+    complicated_var = LiteralVar.create(
+        [
+            {"a": 1, "b": 2, "c": {"d": 3, "e": 4}},
+            [1, 2, 3, 4],
+            9,
+            "string",
+            True,
+            False,
+            None,
+            set([1, 2, 3]),
+        ]
+    )
+    assert (
+        str(complicated_var)
+        == '[{ ["a"] : 1, ["b"] : 2, ["c"] : { ["d"] : 3, ["e"] : 4 } }, [1, 2, 3, 4], 9, "string", true, false, null, [1, 2, 3]]'
+    )
+
+
+def test_function_var():
+    addition_func = FunctionStringVar("((a, b) => a + b)")
+    assert str(addition_func.call(1, 2)) == "(((a, b) => a + b)(1, 2))"
+
+    manual_addition_func = ArgsFunctionOperation(
+        ("a", "b"),
+        {
+            "args": [ImmutableVar.create_safe("a"), ImmutableVar.create_safe("b")],
+            "result": ImmutableVar.create_safe("a + b"),
+        },
+    )
+    assert (
+        str(manual_addition_func.call(1, 2))
+        == '(((a, b) => ({ ["args"] : [a, b], ["result"] : a + b }))(1, 2))'
+    )
+
+    increment_func = addition_func(1)
+    assert (
+        str(increment_func.call(2))
+        == "(((...args) => ((((a, b) => a + b)(1, ...args))))(2))"
+    )
+
+    create_hello_statement = ArgsFunctionOperation(
+        ("name",), f"Hello, {ImmutableVar.create_safe('name')}!"
+    )
+    first_name = LiteralStringVar("Steven")
+    last_name = LiteralStringVar("Universe")
+    assert (
+        str(create_hello_statement.call(f"{first_name} {last_name}"))
+        == '(((name) => (("Hello, "+name+"!")))(("Steven"+" "+"Universe")))'
+    )
+
+
 def test_retrival():
     var_without_data = ImmutableVar.create("test")
     assert var_without_data is not None
@@ -931,7 +986,7 @@ def test_fstring_concat():
         ),
     )
 
-    assert str(string_concat) == '"foo"+imagination+"bar"+consequences+"baz"'
+    assert str(string_concat) == '("foo"+imagination+"bar"+consequences+"baz")'
     assert isinstance(string_concat, ConcatVarOperation)
     assert string_concat._get_all_var_data() == ImmutableVarData(
         state="fear",
