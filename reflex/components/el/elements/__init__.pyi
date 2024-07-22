@@ -351,3 +351,4 @@ _MAPPING = {
 EXCLUDE = ["del_", "Del", "image", "lineargradient", "LinearGradient"]
 for _, v in _MAPPING.items():
     v.extend([mod.capitalize() for mod in v if mod not in EXCLUDE])
+_PYRIGHT_IGNORE_IMPORTS = ["stop", "lineargradient", "path", "defs"]
