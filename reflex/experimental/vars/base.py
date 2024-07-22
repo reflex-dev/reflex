@@ -96,6 +96,11 @@ class ImmutableVar(Var):
         return hash((self._var_name, self._var_type, self._var_data))
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
         return self._var_data
 
     def _replace(self, merge_var_data=None, **kwargs: Any):
@@ -305,11 +310,12 @@ class FunctionVar(ImmutableVar):
 class FunctionStringVar(FunctionVar):
     """Base class for immutable function vars from a string."""
 
-    def __init__(self, func: str, _var_data: VarData | None) -> None:
+    def __init__(self, func: str, _var_data: VarData | None = None) -> None:
         """Initialize the function var.
 
         Args:
             func: The function to call.
+            _var_data: Additional hooks and imports associated with the Var.
         """
         super(FunctionVar, self).__init__(
             _var_name=func,
@@ -358,7 +364,6 @@ class VarOperationCall(ImmutableVar):
             The attribute of the var.
         """
         if name == "_var_name":
-            print(self._args, self._func)
             return self._cached_var_name
         return super(type(self), self).__getattr__(name)
 
@@ -369,7 +374,7 @@ class VarOperationCall(ImmutableVar):
         Returns:
             The name of the var.
         """
-        return f"({str(self._func)}({','.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
+        return f"({str(self._func)}({', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
 
     @cached_property
     def _cached_get_all_var_data(self) -> ImmutableVarData | None:
@@ -419,6 +424,7 @@ class ArgsFunctionOperation(FunctionVar):
         Args:
             args_names: The names of the arguments.
             return_expr: The return expression of the function.
+            _var_data: Additional hooks and imports associated with the Var.
         """
         super(ArgsFunctionOperation, self).__init__(
             _var_name=f"",
@@ -449,7 +455,7 @@ class ArgsFunctionOperation(FunctionVar):
         Returns:
             The name of the var.
         """
-        return f"(({','.join(self._args_names)}) => ({str(LiteralVar.create(self._return_expr))}))"
+        return f"(({', '.join(self._args_names)}) => ({str(LiteralVar.create(self._return_expr))}))"
 
     @cached_property
     def _cached_get_all_var_data(self) -> ImmutableVarData | None:
