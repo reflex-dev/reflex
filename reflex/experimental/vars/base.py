@@ -281,7 +281,7 @@ class ArrayVar(ImmutableVar):
 class FunctionVar(ImmutableVar):
     """Base class for immutable function vars."""
 
-    def __call__(self, *args: Var) -> ArgsFunctionOperation:
+    def __call__(self, *args: Var | Any) -> ArgsFunctionOperation:
         """Call the function with the given arguments.
 
         Args:
@@ -295,7 +295,7 @@ class FunctionVar(ImmutableVar):
             VarOperationCall(self, *args, ImmutableVar.create_safe("...args")),
         )
 
-    def call(self, *args: Var) -> VarOperationCall:
+    def call(self, *args: Var | Any) -> VarOperationCall:
         """Call the function with the given arguments.
 
         Args:
