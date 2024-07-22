@@ -70,7 +70,6 @@ class BaseList(Component):
                 children = [Foreach.create(items, ListItem.create)]
             else:
                 children = [ListItem.create(item) for item in items]  # type: ignore
-        props["list_style_position"] = "outside"
         props["direction"] = "column"
         style = props.setdefault("style", {})
         style["list_style_type"] = list_style_type
@@ -86,7 +85,6 @@ class BaseList(Component):
         """
         return {
             "direction": "column",
-            "list_style_position": "inside",
         }
 
 
