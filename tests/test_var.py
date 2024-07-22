@@ -902,6 +902,16 @@ def test_function_var():
         == "(((...args) => ((((a, b) => a + b)(1, ...args))))(2))"
     )
 
+    create_hello_statement = ArgsFunctionOperation(
+        ("name",), f"Hello, {ImmutableVar.create_safe('name')}!"
+    )
+    first_name = LiteralStringVar("Steven")
+    last_name = LiteralStringVar("Universe")
+    assert (
+        str(create_hello_statement.call(f"{first_name} {last_name}"))
+        == '(((name) => (("Hello, "+name+"!")))(("Steven"+" "+"Universe")))'
+    )
+
 
 def test_retrival():
     var_without_data = ImmutableVar.create("test")

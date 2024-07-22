@@ -515,6 +515,9 @@ class LiteralVar(ImmutableVar):
                 value.dict(), _var_type=type(value), _var_data=_var_data
             )
 
+        if isinstance(value, str):
+            return LiteralStringVar.create(value, _var_data=_var_data)
+
         constructor = type_mapping.get(type(value))
 
         if constructor is None:
@@ -942,7 +945,6 @@ class LiteralArrayVar(LiteralVar):
 
 
 type_mapping = {
-    str: LiteralStringVar,
     int: LiteralNumberVar,
     float: LiteralNumberVar,
     bool: LiteralBooleanVar,
