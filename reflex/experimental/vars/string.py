@@ -454,7 +454,7 @@ class StringSliceOperation(StringVar):
 
         Returns:
             The name of the var.
-        
+
         Raises:
             ValueError: If the slice step is zero.
         """
