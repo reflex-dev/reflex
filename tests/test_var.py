@@ -916,12 +916,12 @@ def test_function_var():
     )
 
 
-int_types = NumberVar | LiteralNumberVar | int | float
+number_types = Union[NumberVar, LiteralNumberVar, int, float]
 
 
 def test_var_operation():
     @var_operation(output=NumberVar)
-    def add(a: int_types, b: int_types) -> str:
+    def add(a: number_types, b: number_types) -> str:
         if isinstance(b, int | float) and b == 0:
             return str(a)
         if isinstance(a, int | float) and a == 0:
