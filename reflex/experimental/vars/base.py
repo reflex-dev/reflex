@@ -1023,7 +1023,7 @@ T = TypeVar("T", bound=ImmutableVar)
 
 
 def var_operation[T, **P](
-    *, output: type[T]
+    *, output: Type[T]
 ) -> Callable[[Callable[P, str]], Callable[P, T]]:
     """Decorator for creating a var operation.
 
