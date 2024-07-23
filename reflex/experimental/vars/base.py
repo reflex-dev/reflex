@@ -755,7 +755,11 @@ class NumberAddOperation(BinaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
         return f"({str(first_value)} + {str(second_value)})"
@@ -766,7 +770,11 @@ class NumberSubtractOperation(BinaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
         return f"({str(first_value)} - {str(second_value)})"
@@ -777,7 +785,11 @@ class NumberAbsoluteOperation(UnaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         return f"Math.abs({str(value)})"
 
@@ -787,7 +799,11 @@ class NumberMultiplyOperation(BinaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
         return f"({str(first_value)} * {str(second_value)})"
@@ -798,7 +814,11 @@ class NumberNegateOperation(UnaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         return f"-({str(value)})"
 
@@ -808,7 +828,11 @@ class NumberTrueDivision(BinaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
         return f"({str(first_value)} / {str(second_value)})"
@@ -819,7 +843,11 @@ class NumberFloorDivision(BinaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
         return f"Math.floor({str(first_value)} / {str(second_value)})"
@@ -830,7 +858,11 @@ class NumberModuloOperation(BinaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
         return f"({str(first_value)} % {str(second_value)})"
@@ -841,7 +873,11 @@ class NumberExponentOperation(BinaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
         return f"({str(first_value)} ** {str(second_value)})"
@@ -852,7 +888,11 @@ class NumberBitwiseAndOperation(BinaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
         return f"({str(first_value)} & {str(second_value)})"
@@ -863,7 +903,11 @@ class NumberBitwiseOrOperation(BinaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
         return f"({str(first_value)} | {str(second_value)})"
@@ -874,7 +918,11 @@ class NumberBitwiseXorOperation(BinaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
         return f"({str(first_value)} ^ {str(second_value)})"
@@ -885,7 +933,11 @@ class NumberBitwiseLeftShiftOperation(BinaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
         return f"({str(first_value)} << {str(second_value)})"
@@ -896,7 +948,11 @@ class NumberBitwiseRightShiftOperation(BinaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
         return f"({str(first_value)} >> {str(second_value)})"
@@ -907,7 +963,11 @@ class NumberBitwiseNotOperation(UnaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         return f"~({str(value)})"
 
@@ -917,7 +977,11 @@ class NumberRoundOperation(UnaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         return f"Math.round({str(value)})"
 
@@ -927,7 +991,11 @@ class NumberCeilOperation(UnaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         return f"Math.ceil({str(value)})"
 
@@ -937,7 +1005,11 @@ class NumberFloorOperation(UnaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         return f"Math.floor({str(value)})"
 
@@ -947,7 +1019,11 @@ class NumberTruncOperation(UnaryNumberOperation):
 
     @cached_property
     def _cached_var_name(self) -> str:
-        """The name of the var."""
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
         value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         return f"Math.trunc({str(value)})"
 

@@ -1,4 +1,5 @@
 import json
+import math
 import typing
 from typing import Dict, List, Set, Tuple, Union
 
@@ -938,6 +939,26 @@ def test_var_operation():
     seven = add(2, five)
 
     assert isinstance(seven, NumberVar)
+
+
+def test_all_number_operations():
+    starting_number = LiteralNumberVar(-5.4)
+
+    complicated_number = (((-(starting_number + 1)) * 2 / 3) // 2 % 3) ** 2
+
+    assert (
+        str(complicated_number)
+        == "((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)"
+    )
+
+    even_more_complicated_number = (
+        ~(abs(math.floor(complicated_number)) | 2 & 3 & round(complicated_number)) >> 1
+    ) << 2
+
+    assert (
+        str(even_more_complicated_number)
+        == "((~((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) | (2 & Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))) >> 1) << 2)"
+    )
 
 
 def test_retrival():
