@@ -530,7 +530,7 @@ def var_operation(*, output: Type[T]) -> Callable[[Callable[P, str]], Callable[P
     Example:
     ```python
     @var_operation(output=NumberVar)
-    def add(a: NumberVar | int | float, b: NumberVar | int | float):
+    def add(a: NumberVar, b: NumberVar):
         return f"({a} + {b})"
     ```
 
@@ -544,8 +544,16 @@ def var_operation(*, output: Type[T]) -> Callable[[Callable[P, str]], Callable[P
     def decorator(func: Callable[P, str], output=output):
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            args_vars = [
+                LiteralVar.create(arg) if not isinstance(arg, Var) else arg
+                for arg in args
+            ]
+            kwargs_vars = {
+                key: LiteralVar.create(value) if not isinstance(value, Var) else value
+                for key, value in kwargs.items()
+            }
             return output(
-                _var_name=func(*args, **kwargs),
+                _var_name=func(*args_vars, **kwargs_vars),  # type: ignore
                 _var_data=VarData.merge(
                     *[arg._get_all_var_data() for arg in args if isinstance(arg, Var)],
                     *[

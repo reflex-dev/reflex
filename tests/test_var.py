@@ -918,23 +918,13 @@ def test_function_var():
     )
 
 
-number_types = Union[NumberVar, LiteralNumberVar, int, float]
-
-
 def test_var_operation():
     @var_operation(output=NumberVar)
-    def add(a: number_types, b: number_types) -> str:
-        if isinstance(b, (int, float)) and b == 0:
-            return str(a)
-        if isinstance(a, (int, float)) and a == 0:
-            return str(b)
+    def add(a: NumberVar, b: NumberVar) -> str:
         return f"({a} + {b})"
 
     assert str(add(1, 2)) == "(1 + 2)"
-    assert str(add(1, 0)) == "1"
-    assert str(add(0, 2)) == "2"
-    assert str(add(0, 0)) == "0"
-    assert str(add(4, -9)) == "(4 + -9)"
+    assert str(add(a=4, b=-9)) == "(4 + -9)"
 
     five = LiteralNumberVar(5)
     seven = add(2, five)
