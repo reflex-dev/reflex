@@ -1,9 +1,10 @@
 """Immutable number vars."""
 
 from __future__ import annotations
+
 import dataclasses
-from functools import cached_property
 import sys
+from functools import cached_property
 from typing import Any, Union
 
 from reflex.experimental.vars.base import (
