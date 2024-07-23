@@ -9,10 +9,7 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     Optional,
-    Set,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -273,10 +270,6 @@ class ObjectVar(ImmutableVar):
     """Base class for immutable object vars."""
 
 
-class ArrayVar(ImmutableVar):
-    """Base class for immutable array vars."""
-
-
 class LiteralVar(ImmutableVar):
     """Base class for immutable literal vars."""
 
@@ -311,12 +304,11 @@ class LiteralVar(ImmutableVar):
                 value.dict(), _var_type=type(value), _var_data=_var_data
             )
 
-        if isinstance(value, str):
-            from .string import LiteralStringVar
-
-            return LiteralStringVar.create(value, _var_data=_var_data)
-
         from .number import LiteralBooleanVar, LiteralNumberVar
+        from .sequence import LiteralArrayVar, LiteralStringVar
+
+        if isinstance(value, str):
+            return LiteralStringVar.create(value, _var_data=_var_data)
 
         type_mapping = {
             int: LiteralNumberVar,
@@ -423,90 +415,6 @@ class LiteralObjectVar(LiteralVar):
                 key._get_all_var_data()
                 for key, value in self._var_value
                 if isinstance(key, Var)
-            ],
-            self._var_data,
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        """Wrapper method for cached property.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return self._cached_get_all_var_data
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class LiteralArrayVar(LiteralVar):
-    """Base class for immutable literal array vars."""
-
-    _var_value: Union[
-        List[Union[Var, Any]], Set[Union[Var, Any]], Tuple[Union[Var, Any], ...]
-    ] = dataclasses.field(default_factory=list)
-
-    def __init__(
-        self,
-        _var_value: list[Var | Any] | tuple[Var | Any] | set[Var | Any],
-        _var_data: VarData | None = None,
-    ):
-        """Initialize the array var.
-
-        Args:
-            _var_value: The value of the var.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(LiteralArrayVar, self).__init__(
-            _var_name="",
-            _var_data=ImmutableVarData.merge(_var_data),
-            _var_type=list,
-        )
-        object.__setattr__(self, "_var_value", _var_value)
-        object.__delattr__(self, "_var_name")
-
-    def __getattr__(self, name):
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute of the var.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        return super(type(self), self).__getattr__(name)
-
-    @functools.cached_property
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return (
-            "["
-            + ", ".join(
-                [str(LiteralVar.create(element)) for element in self._var_value]
-            )
-            + "]"
-        )
-
-    @functools.cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            *[
-                var._get_all_var_data()
-                for var in self._var_value
-                if isinstance(var, Var)
             ],
             self._var_data,
         )

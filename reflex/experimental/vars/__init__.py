@@ -1,8 +1,6 @@
 """Experimental Immutable-Based Var System."""
 
-from .base import ArrayVar as ArrayVar
 from .base import ImmutableVar as ImmutableVar
-from .base import LiteralArrayVar as LiteralArrayVar
 from .base import LiteralObjectVar as LiteralObjectVar
 from .base import LiteralVar as LiteralVar
 from .base import ObjectVar as ObjectVar
@@ -14,6 +12,9 @@ from .number import BooleanVar as BooleanVar
 from .number import LiteralBooleanVar as LiteralBooleanVar
 from .number import LiteralNumberVar as LiteralNumberVar
 from .number import NumberVar as NumberVar
-from .string import ConcatVarOperation as ConcatVarOperation
-from .string import LiteralStringVar as LiteralStringVar
-from .string import StringVar as StringVar
+from .sequence import ArrayJoinOperation as ArrayJoinOperation
+from .sequence import ArrayVar as ArrayVar
+from .sequence import ConcatVarOperation as ConcatVarOperation
+from .sequence import LiteralArrayVar as LiteralArrayVar
+from .sequence import LiteralStringVar as LiteralStringVar
+from .sequence import StringVar as StringVar

@@ -19,7 +19,7 @@ from reflex.experimental.vars.number import (
     LiteralNumberVar,
     NumberVar,
 )
-from reflex.experimental.vars.string import ConcatVarOperation, LiteralStringVar
+from reflex.experimental.vars.sequence import ConcatVarOperation, LiteralStringVar
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
 from reflex.vars import (
@@ -930,6 +930,19 @@ def test_var_operation():
     seven = add(2, five)
 
     assert isinstance(seven, NumberVar)
+
+
+def test_string_operations():
+    basic_string = LiteralStringVar.create("Hello, World!")
+
+    assert str(basic_string.length()) == '"Hello, World!".length'
+    assert str(basic_string.lower()) == '"Hello, World!".toLowerCase()'
+    assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
+    assert str(basic_string.strip()) == '"Hello, World!".trim()'
+    assert str(basic_string.contains("World")) == '"Hello, World!".includes("World")'
+    assert (
+        str(basic_string.split(" ").join(",")) == '"Hello, World!".split(" ").join(",")'
+    )
 
 
 def test_all_number_operations():

@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import dataclasses
+import functools
 import json
 import re
 import sys
 from functools import cached_property
-from typing import Any, Tuple, Union
+from typing import Any, List, Set, Tuple, Union
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
@@ -79,7 +80,7 @@ class StringVar(ImmutableVar):
             return StringSliceOperation(self, i)
         return StringItemOperation(self, i)
 
-    def len(self) -> StringLengthOperation:
+    def length(self) -> StringLengthOperation:
         """Get the length of the string.
 
         Returns:
@@ -137,6 +138,17 @@ class StringVar(ImmutableVar):
             The string contains operation.
         """
         return StringContainsOperation(self, other)
+
+    def split(self, separator: StringVar | str = "") -> StringSplitOperation:
+        """Split the string.
+
+        Args:
+            separator: The separator.
+
+        Returns:
+            The string split operation.
+        """
+        return StringSplitOperation(self, separator)
 
 
 @dataclasses.dataclass(
@@ -587,6 +599,74 @@ class StringItemOperation(StringVar):
         return self._cached_get_all_var_data
 
 
+class ArrayJoinOperation(StringVar):
+    """Base class for immutable string vars that are the result of an array join operation."""
+
+    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar.create([]))
+    b: StringVar = dataclasses.field(
+        default_factory=lambda: LiteralStringVar.create("")
+    )
+
+    def __init__(
+        self, a: ArrayVar | list, b: StringVar | str, _var_data: VarData | None = None
+    ):
+        """Initialize the array join operation var.
+
+        Args:
+            a: The array.
+            b: The separator.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(ArrayJoinOperation, self).__init__(
+            _var_name="",
+            _var_type=str,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(
+            self, "a", a if isinstance(a, Var) else LiteralArrayVar.create(a)
+        )
+        object.__setattr__(
+            self, "b", b if isinstance(b, Var) else LiteralStringVar.create(b)
+        )
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return f"{str(self.a)}.join({str(self.b)})"
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(ArrayJoinOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            self.a._get_all_var_data(), self.b._get_all_var_data(), self._var_data
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data
+
+
 # Compile regex for finding reflex var tags.
 _decode_var_pattern_re = (
     rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
@@ -779,3 +859,181 @@ class ConcatVarOperation(StringVar):
     def __post_init__(self):
         """Post-initialize the var."""
         pass
+
+
+class ArrayVar(ImmutableVar):
+    """Base class for immutable array vars."""
+
+    from reflex.experimental.vars.sequence import StringVar
+
+    def join(self, sep: StringVar | str = "") -> str:
+        """Join the elements of the array.
+
+        Args:
+            sep: The separator between elements.
+
+        Returns:
+            The joined elements.
+        """
+        from reflex.experimental.vars.sequence import ArrayJoinOperation
+
+        return ArrayJoinOperation(self, sep)
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class LiteralArrayVar(LiteralVar, ArrayVar):
+    """Base class for immutable literal array vars."""
+
+    _var_value: Union[
+        List[Union[Var, Any]], Set[Union[Var, Any]], Tuple[Union[Var, Any], ...]
+    ] = dataclasses.field(default_factory=list)
+
+    def __init__(
+        self,
+        _var_value: list[Var | Any] | tuple[Var | Any] | set[Var | Any],
+        _var_data: VarData | None = None,
+    ):
+        """Initialize the array var.
+
+        Args:
+            _var_value: The value of the var.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(LiteralArrayVar, self).__init__(
+            _var_name="",
+            _var_data=ImmutableVarData.merge(_var_data),
+            _var_type=list,
+        )
+        object.__setattr__(self, "_var_value", _var_value)
+        object.__delattr__(self, "_var_name")
+
+    def __getattr__(self, name):
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute of the var.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        return super(type(self), self).__getattr__(name)
+
+    @functools.cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return (
+            "["
+            + ", ".join(
+                [str(LiteralVar.create(element)) for element in self._var_value]
+            )
+            + "]"
+        )
+
+    @functools.cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            *[
+                var._get_all_var_data()
+                for var in self._var_value
+                if isinstance(var, Var)
+            ],
+            self._var_data,
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Wrapper method for cached property.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return self._cached_get_all_var_data
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class StringSplitOperation(ArrayVar):
+    """Base class for immutable array vars that are the result of a string split operation."""
+
+    a: StringVar = dataclasses.field(
+        default_factory=lambda: LiteralStringVar.create("")
+    )
+    b: StringVar = dataclasses.field(
+        default_factory=lambda: LiteralStringVar.create("")
+    )
+
+    def __init__(
+        self, a: StringVar | str, b: StringVar | str, _var_data: VarData | None = None
+    ):
+        """Initialize the string split operation var.
+
+        Args:
+            a: The string.
+            b: The separator.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(StringSplitOperation, self).__init__(
+            _var_name="",
+            _var_type=list,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(
+            self, "a", a if isinstance(a, Var) else LiteralStringVar.create(a)
+        )
+        object.__setattr__(
+            self, "b", b if isinstance(b, Var) else LiteralStringVar.create(b)
+        )
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return f"{str(self.a)}.split({str(self.b)})"
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(StringSplitOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            self.a._get_all_var_data(), self.b._get_all_var_data(), self._var_data
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data
