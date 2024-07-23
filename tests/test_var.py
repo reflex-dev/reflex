@@ -13,6 +13,7 @@ from reflex.experimental.vars.base import (
     ConcatVarOperation,
     FunctionStringVar,
     ImmutableVar,
+    LiteralBooleanVar,
     LiteralNumberVar,
     LiteralStringVar,
     LiteralVar,
@@ -951,13 +952,20 @@ def test_all_number_operations():
         == "((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)"
     )
 
-    even_more_complicated_number = (
-        ~(abs(math.floor(complicated_number)) | 2 & 3 & round(complicated_number)) >> 1
-    ) << 2
+    even_more_complicated_number = ~(
+        abs(math.floor(complicated_number)) | 2 & 3 & round(complicated_number)
+    )
 
     assert (
         str(even_more_complicated_number)
-        == "((~((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) | (2 & Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))) >> 1) << 2)"
+        == "!(((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) != 0) || (true && (Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)) != 0))))"
+    )
+
+    assert str(LiteralNumberVar(5) > False) == "(5 > 0)"
+    assert str(LiteralBooleanVar(False) < 5) == "((false ? 1 : 0) < 5)"
+    assert (
+        str(LiteralBooleanVar(False) < LiteralBooleanVar(True))
+        == "((false ? 1 : 0) < (true ? 1 : 0))"
     )
 
 

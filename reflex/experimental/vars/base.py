@@ -459,7 +459,8 @@ class NumberVar(ImmutableVar):
         Returns:
             The boolean AND operation.
         """
-        return BooleanAndOperation(bool(self), bool(other))
+        boolified_other = other.bool() if isinstance(other, Var) else bool(other)
+        return BooleanAndOperation(self.bool(), boolified_other)
 
     def __rand__(self, other: number_types | boolean_types) -> BooleanAndOperation:
         """Boolean AND two numbers.
@@ -470,7 +471,8 @@ class NumberVar(ImmutableVar):
         Returns:
             The boolean AND operation.
         """
-        return BooleanAndOperation(bool(other), bool(self))
+        boolified_other = other.bool() if isinstance(other, Var) else bool(other)
+        return BooleanAndOperation(boolified_other, self.bool())
 
     def __or__(self, other: number_types | boolean_types) -> BooleanOrOperation:
         """Boolean OR two numbers.
@@ -481,7 +483,8 @@ class NumberVar(ImmutableVar):
         Returns:
             The boolean OR operation.
         """
-        return BooleanOrOperation(bool(self), bool(other))
+        boolified_other = other.bool() if isinstance(other, Var) else bool(other)
+        return BooleanOrOperation(self.bool(), boolified_other)
 
     def __ror__(self, other: number_types | boolean_types) -> BooleanOrOperation:
         """Boolean OR two numbers.
@@ -492,7 +495,8 @@ class NumberVar(ImmutableVar):
         Returns:
             The boolean OR operation.
         """
-        return BooleanOrOperation(bool(other), bool(self))
+        boolified_other = other.bool() if isinstance(other, Var) else bool(other)
+        return BooleanOrOperation(boolified_other, self.bool())
 
     def __invert__(self) -> BooleanNotOperation:
         """Boolean NOT the number.
@@ -500,7 +504,7 @@ class NumberVar(ImmutableVar):
         Returns:
             The boolean NOT operation.
         """
-        return BooleanNotOperation(bool(self))
+        return BooleanNotOperation(self.bool())
 
     def __pos__(self) -> NumberVar:
         """Positive the number.
@@ -610,7 +614,7 @@ class NumberVar(ImmutableVar):
         """
         return GreaterThanOrEqualOperation(self, +other)
 
-    def __bool__(self) -> NotEqualOperation:
+    def bool(self) -> NotEqualOperation:
         """Boolean conversion.
 
         Returns:
@@ -1022,7 +1026,7 @@ class BooleanVar(ImmutableVar):
         """
         return BooleanToIntOperation(self)
 
-    def __bool__(self) -> BooleanVar:
+    def bool(self) -> BooleanVar:
         """Boolean conversion.
 
         Returns:
@@ -1808,7 +1812,7 @@ class LiteralStringVar(LiteralVar):
                         var_data_config.json_loads(f'"{s}"')
                     )
 
-            # Find all tags.
+            # Find all tags
             while m := _decode_var_pattern.search(value):
                 start, end = m.span()
                 if start > 0:
@@ -1816,7 +1820,9 @@ class LiteralStringVar(LiteralVar):
 
                 serialized_data = m.group(1)
 
-                if serialized_data[1:].isnumeric():
+                if serialized_data.isnumeric() or (
+                    serialized_data[0] == "-" and serialized_data[1:].isnumeric()
+                ):
                     # This is a global immutable var.
                     var = _global_vars[int(serialized_data)]
                     strings_and_vals.append(var)
@@ -1991,6 +1997,14 @@ class LiteralNumberVar(LiteralVar, NumberVar):
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(self, "_var_value", _var_value)
+
+    def __hash__(self) -> int:
+        """Hash the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash(self._var_value)
 
 
 @dataclasses.dataclass(

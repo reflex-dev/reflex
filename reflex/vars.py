@@ -379,7 +379,9 @@ def _decode_var_immutable(value: str) -> tuple[ImmutableVarData | None, str]:
 
             serialized_data = m.group(1)
 
-            if serialized_data[1:].isnumeric():
+            if serialized_data.isnumeric() or (
+                serialized_data[0] == "-" and serialized_data[1:].isnumeric()
+            ):
                 # This is a global immutable var.
                 var = _global_vars[int(serialized_data)]
                 var_data = var._var_data
@@ -473,7 +475,9 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
 
             serialized_data = m.group(1)
 
-            if serialized_data[1:].isnumeric():
+            if serialized_data.isnumeric() or (
+                serialized_data[0] == "-" and serialized_data[1:].isnumeric()
+            ):
                 # This is a global immutable var.
                 var = _global_vars[int(serialized_data)]
                 var_data = var._var_data
