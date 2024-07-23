@@ -280,7 +280,7 @@ class StringVar(ImmutableVar):
 class NumberVar(ImmutableVar):
     """Base class for immutable number vars."""
 
-    def __add__(self, other: number_types) -> NumberAddOperation:
+    def __add__(self, other: number_types | boolean_types) -> NumberAddOperation:
         """Add two numbers.
 
         Args:
@@ -289,9 +289,9 @@ class NumberVar(ImmutableVar):
         Returns:
             The number addition operation.
         """
-        return NumberAddOperation(self, other)
+        return NumberAddOperation(self, +other)
 
-    def __radd__(self, other: number_types) -> NumberAddOperation:
+    def __radd__(self, other: number_types | boolean_types) -> NumberAddOperation:
         """Add two numbers.
 
         Args:
@@ -300,9 +300,9 @@ class NumberVar(ImmutableVar):
         Returns:
             The number addition operation.
         """
-        return NumberAddOperation(other, self)
+        return NumberAddOperation(+other, self)
 
-    def __sub__(self, other: number_types) -> NumberSubtractOperation:
+    def __sub__(self, other: number_types | boolean_types) -> NumberSubtractOperation:
         """Subtract two numbers.
 
         Args:
@@ -311,9 +311,9 @@ class NumberVar(ImmutableVar):
         Returns:
             The number subtraction operation.
         """
-        return NumberSubtractOperation(self, other)
+        return NumberSubtractOperation(self, +other)
 
-    def __rsub__(self, other: number_types) -> NumberSubtractOperation:
+    def __rsub__(self, other: number_types | boolean_types) -> NumberSubtractOperation:
         """Subtract two numbers.
 
         Args:
@@ -322,7 +322,7 @@ class NumberVar(ImmutableVar):
         Returns:
             The number subtraction operation.
         """
-        return NumberSubtractOperation(other, self)
+        return NumberSubtractOperation(+other, self)
 
     def __abs__(self) -> NumberAbsoluteOperation:
         """Get the absolute value of the number.
@@ -332,7 +332,7 @@ class NumberVar(ImmutableVar):
         """
         return NumberAbsoluteOperation(self)
 
-    def __mul__(self, other: number_types) -> NumberMultiplyOperation:
+    def __mul__(self, other: number_types | boolean_types) -> NumberMultiplyOperation:
         """Multiply two numbers.
 
         Args:
@@ -341,9 +341,9 @@ class NumberVar(ImmutableVar):
         Returns:
             The number multiplication operation.
         """
-        return NumberMultiplyOperation(self, other)
+        return NumberMultiplyOperation(self, +other)
 
-    def __rmul__(self, other: number_types) -> NumberMultiplyOperation:
+    def __rmul__(self, other: number_types | boolean_types) -> NumberMultiplyOperation:
         """Multiply two numbers.
 
         Args:
@@ -352,9 +352,9 @@ class NumberVar(ImmutableVar):
         Returns:
             The number multiplication operation.
         """
-        return NumberMultiplyOperation(other, self)
+        return NumberMultiplyOperation(+other, self)
 
-    def __truediv__(self, other: number_types) -> NumberTrueDivision:
+    def __truediv__(self, other: number_types | boolean_types) -> NumberTrueDivision:
         """Divide two numbers.
 
         Args:
@@ -363,9 +363,9 @@ class NumberVar(ImmutableVar):
         Returns:
             The number true division operation.
         """
-        return NumberTrueDivision(self, other)
+        return NumberTrueDivision(self, +other)
 
-    def __rtruediv__(self, other: number_types) -> NumberTrueDivision:
+    def __rtruediv__(self, other: number_types | boolean_types) -> NumberTrueDivision:
         """Divide two numbers.
 
         Args:
@@ -374,9 +374,9 @@ class NumberVar(ImmutableVar):
         Returns:
             The number true division operation.
         """
-        return NumberTrueDivision(other, self)
+        return NumberTrueDivision(+other, self)
 
-    def __floordiv__(self, other: number_types) -> NumberFloorDivision:
+    def __floordiv__(self, other: number_types | boolean_types) -> NumberFloorDivision:
         """Floor divide two numbers.
 
         Args:
@@ -385,9 +385,9 @@ class NumberVar(ImmutableVar):
         Returns:
             The number floor division operation.
         """
-        return NumberFloorDivision(self, other)
+        return NumberFloorDivision(self, +other)
 
-    def __rfloordiv__(self, other: number_types) -> NumberFloorDivision:
+    def __rfloordiv__(self, other: number_types | boolean_types) -> NumberFloorDivision:
         """Floor divide two numbers.
 
         Args:
@@ -396,9 +396,9 @@ class NumberVar(ImmutableVar):
         Returns:
             The number floor division operation.
         """
-        return NumberFloorDivision(other, self)
+        return NumberFloorDivision(+other, self)
 
-    def __mod__(self, other: number_types) -> NumberModuloOperation:
+    def __mod__(self, other: number_types | boolean_types) -> NumberModuloOperation:
         """Modulo two numbers.
 
         Args:
@@ -407,9 +407,9 @@ class NumberVar(ImmutableVar):
         Returns:
             The number modulo operation.
         """
-        return NumberModuloOperation(self, other)
+        return NumberModuloOperation(self, +other)
 
-    def __rmod__(self, other: number_types) -> NumberModuloOperation:
+    def __rmod__(self, other: number_types | boolean_types) -> NumberModuloOperation:
         """Modulo two numbers.
 
         Args:
@@ -418,9 +418,9 @@ class NumberVar(ImmutableVar):
         Returns:
             The number modulo operation.
         """
-        return NumberModuloOperation(other, self)
+        return NumberModuloOperation(+other, self)
 
-    def __pow__(self, other: number_types) -> NumberExponentOperation:
+    def __pow__(self, other: number_types | boolean_types) -> NumberExponentOperation:
         """Exponentiate two numbers.
 
         Args:
@@ -429,9 +429,9 @@ class NumberVar(ImmutableVar):
         Returns:
             The number exponent operation.
         """
-        return NumberExponentOperation(self, other)
+        return NumberExponentOperation(self, +other)
 
-    def __rpow__(self, other: number_types) -> NumberExponentOperation:
+    def __rpow__(self, other: number_types | boolean_types) -> NumberExponentOperation:
         """Exponentiate two numbers.
 
         Args:
@@ -440,7 +440,7 @@ class NumberVar(ImmutableVar):
         Returns:
             The number exponent operation.
         """
-        return NumberExponentOperation(other, self)
+        return NumberExponentOperation(+other, self)
 
     def __neg__(self) -> NumberNegateOperation:
         """Negate the number.
@@ -450,123 +450,57 @@ class NumberVar(ImmutableVar):
         """
         return NumberNegateOperation(self)
 
-    def __and__(self, other: number_types) -> NumberBitwiseAndOperation:
-        """Bitwise AND two numbers.
+    def __and__(self, other: number_types | boolean_types) -> BooleanAndOperation:
+        """Boolean AND two numbers.
 
         Args:
             other: The other number.
 
         Returns:
-            The number bitwise AND operation.
+            The boolean AND operation.
         """
-        return NumberBitwiseAndOperation(self, other)
+        return BooleanAndOperation(bool(self), bool(other))
 
-    def __rand__(self, other: number_types) -> NumberBitwiseAndOperation:
-        """Bitwise AND two numbers.
+    def __rand__(self, other: number_types | boolean_types) -> BooleanAndOperation:
+        """Boolean AND two numbers.
 
         Args:
             other: The other number.
 
         Returns:
-            The number bitwise AND operation.
+            The boolean AND operation.
         """
-        return NumberBitwiseAndOperation(other, self)
+        return BooleanAndOperation(bool(other), bool(self))
 
-    def __or__(self, other: number_types) -> NumberBitwiseOrOperation:
-        """Bitwise OR two numbers.
+    def __or__(self, other: number_types | boolean_types) -> BooleanOrOperation:
+        """Boolean OR two numbers.
 
         Args:
             other: The other number.
 
         Returns:
-            The number bitwise OR operation.
+            The boolean OR operation.
         """
-        return NumberBitwiseOrOperation(self, other)
+        return BooleanOrOperation(bool(self), bool(other))
 
-    def __ror__(self, other: number_types) -> NumberBitwiseOrOperation:
-        """Bitwise OR two numbers.
+    def __ror__(self, other: number_types | boolean_types) -> BooleanOrOperation:
+        """Boolean OR two numbers.
 
         Args:
             other: The other number.
 
         Returns:
-            The number bitwise OR operation.
+            The boolean OR operation.
         """
-        return NumberBitwiseOrOperation(other, self)
+        return BooleanOrOperation(bool(other), bool(self))
 
-    def __xor__(self, other: number_types) -> NumberBitwiseXorOperation:
-        """Bitwise XOR two numbers.
-
-        Args:
-            other: The other number.
+    def __invert__(self) -> BooleanNotOperation:
+        """Boolean NOT the number.
 
         Returns:
-            The number bitwise XOR operation.
+            The boolean NOT operation.
         """
-        return NumberBitwiseXorOperation(self, other)
-
-    def __rxor__(self, other: number_types) -> NumberBitwiseXorOperation:
-        """Bitwise XOR two numbers.
-
-        Args:
-            other: The other number.
-
-        Returns:
-            The number bitwise XOR operation.
-        """
-        return NumberBitwiseXorOperation(other, self)
-
-    def __lshift__(self, other: number_types) -> NumberBitwiseLeftShiftOperation:
-        """Bitwise left shift two numbers.
-
-        Args:
-            other: The other number.
-
-        Returns:
-            The number bitwise left shift operation.
-        """
-        return NumberBitwiseLeftShiftOperation(self, other)
-
-    def __rlshift__(self, other: number_types) -> NumberBitwiseLeftShiftOperation:
-        """Bitwise left shift two numbers.
-
-        Args:
-            other: The other number.
-
-        Returns:
-            The number bitwise left shift operation.
-        """
-        return NumberBitwiseLeftShiftOperation(other, self)
-
-    def __rshift__(self, other: number_types) -> NumberBitwiseRightShiftOperation:
-        """Bitwise right shift two numbers.
-
-        Args:
-            other: The other number.
-
-        Returns:
-            The number bitwise right shift operation.
-        """
-        return NumberBitwiseRightShiftOperation(self, other)
-
-    def __rrshift__(self, other: number_types) -> NumberBitwiseRightShiftOperation:
-        """Bitwise right shift two numbers.
-
-        Args:
-            other: The other number.
-
-        Returns:
-            The number bitwise right shift operation.
-        """
-        return NumberBitwiseRightShiftOperation(other, self)
-
-    def __invert__(self) -> NumberBitwiseNotOperation:
-        """Bitwise NOT the number.
-
-        Returns:
-            The number bitwise NOT operation.
-        """
-        return NumberBitwiseNotOperation(self)
+        return BooleanNotOperation(bool(self))
 
     def __pos__(self) -> NumberVar:
         """Positive the number.
@@ -607,6 +541,82 @@ class NumberVar(ImmutableVar):
             The number trunc operation.
         """
         return NumberTruncOperation(self)
+
+    def __lt__(self, other: number_types | boolean_types) -> LessThanOperation:
+        """Less than comparison.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The result of the comparison.
+        """
+        return LessThanOperation(self, +other)
+
+    def __le__(self, other: number_types | boolean_types) -> LessThanOrEqualOperation:
+        """Less than or equal comparison.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The result of the comparison.
+        """
+        return LessThanOrEqualOperation(self, +other)
+
+    def __eq__(self, other: number_types | boolean_types) -> EqualOperation:
+        """Equal comparison.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The result of the comparison.
+        """
+        return EqualOperation(self, +other)
+
+    def __ne__(self, other: number_types | boolean_types) -> NotEqualOperation:
+        """Not equal comparison.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The result of the comparison.
+        """
+        return NotEqualOperation(self, +other)
+
+    def __gt__(self, other: number_types | boolean_types) -> GreaterThanOperation:
+        """Greater than comparison.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The result of the comparison.
+        """
+        return GreaterThanOperation(self, +other)
+
+    def __ge__(
+        self, other: number_types | boolean_types
+    ) -> GreaterThanOrEqualOperation:
+        """Greater than or equal comparison.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The result of the comparison.
+        """
+        return GreaterThanOrEqualOperation(self, +other)
+
+    def __bool__(self) -> NotEqualOperation:
+        """Boolean conversion.
+
+        Returns:
+            The boolean value of the number.
+        """
+        return NotEqualOperation(self, 0)
 
 
 @dataclasses.dataclass(
@@ -676,7 +686,9 @@ class BinaryNumberOperation(NumberVar):
         first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
         second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
         return ImmutableVarData.merge(
-            first_value._get_all_var_data(), second_value._get_all_var_data()
+            first_value._get_all_var_data(),
+            second_value._get_all_var_data(),
+            self._var_data,
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
@@ -744,7 +756,7 @@ class UnaryNumberOperation(NumberVar):
             The VarData of the components and all of its children.
         """
         value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
-        return value._get_all_var_data()
+        return ImmutableVarData.merge(value._get_all_var_data(), self._var_data)
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
@@ -883,95 +895,6 @@ class NumberExponentOperation(BinaryNumberOperation):
         return f"({str(first_value)} ** {str(second_value)})"
 
 
-class NumberBitwiseAndOperation(BinaryNumberOperation):
-    """Base class for immutable number vars that are the result of a bitwise AND operation."""
-
-    @cached_property
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
-        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
-        return f"({str(first_value)} & {str(second_value)})"
-
-
-class NumberBitwiseOrOperation(BinaryNumberOperation):
-    """Base class for immutable number vars that are the result of a bitwise OR operation."""
-
-    @cached_property
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
-        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
-        return f"({str(first_value)} | {str(second_value)})"
-
-
-class NumberBitwiseXorOperation(BinaryNumberOperation):
-    """Base class for immutable number vars that are the result of a bitwise XOR operation."""
-
-    @cached_property
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
-        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
-        return f"({str(first_value)} ^ {str(second_value)})"
-
-
-class NumberBitwiseLeftShiftOperation(BinaryNumberOperation):
-    """Base class for immutable number vars that are the result of a bitwise left shift operation."""
-
-    @cached_property
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
-        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
-        return f"({str(first_value)} << {str(second_value)})"
-
-
-class NumberBitwiseRightShiftOperation(BinaryNumberOperation):
-    """Base class for immutable number vars that are the result of a bitwise right shift operation."""
-
-    @cached_property
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
-        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
-        return f"({str(first_value)} >> {str(second_value)})"
-
-
-class NumberBitwiseNotOperation(UnaryNumberOperation):
-    """Base class for immutable number vars that are the result of a bitwise NOT operation."""
-
-    @cached_property
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
-        return f"~({str(value)})"
-
-
 class NumberRoundOperation(UnaryNumberOperation):
     """Base class for immutable number vars that are the result of a round operation."""
 
@@ -1030,6 +953,535 @@ class NumberTruncOperation(UnaryNumberOperation):
 
 class BooleanVar(ImmutableVar):
     """Base class for immutable boolean vars."""
+
+    def __and__(self, other: bool) -> BooleanAndOperation:
+        """AND two booleans.
+
+        Args:
+            other: The other boolean.
+
+        Returns:
+            The boolean AND operation.
+        """
+        return BooleanAndOperation(self, other)
+
+    def __rand__(self, other: bool) -> BooleanAndOperation:
+        """AND two booleans.
+
+        Args:
+            other: The other boolean.
+
+        Returns:
+            The boolean AND operation.
+        """
+        return BooleanAndOperation(other, self)
+
+    def __or__(self, other: bool) -> BooleanOrOperation:
+        """OR two booleans.
+
+        Args:
+            other: The other boolean.
+
+        Returns:
+            The boolean OR operation.
+        """
+        return BooleanOrOperation(self, other)
+
+    def __ror__(self, other: bool) -> BooleanOrOperation:
+        """OR two booleans.
+
+        Args:
+            other: The other boolean.
+
+        Returns:
+            The boolean OR operation.
+        """
+        return BooleanOrOperation(other, self)
+
+    def __invert__(self) -> BooleanNotOperation:
+        """NOT the boolean.
+
+        Returns:
+            The boolean NOT operation.
+        """
+        return BooleanNotOperation(self)
+
+    def __int__(self) -> BooleanToIntOperation:
+        """Convert the boolean to an int.
+
+        Returns:
+            The boolean to int operation.
+        """
+        return BooleanToIntOperation(self)
+
+    def __pos__(self) -> BooleanToIntOperation:
+        """Convert the boolean to an int.
+
+        Returns:
+            The boolean to int operation.
+        """
+        return BooleanToIntOperation(self)
+
+    def __bool__(self) -> BooleanVar:
+        """Boolean conversion.
+
+        Returns:
+            The boolean value of the boolean.
+        """
+        return self
+
+    def __lt__(self, other: boolean_types | number_types) -> LessThanOperation:
+        """Less than comparison.
+
+        Args:
+            other: The other boolean.
+
+        Returns:
+            The result of the comparison.
+        """
+        return LessThanOperation(+self, +other)
+
+    def __le__(self, other: boolean_types | number_types) -> LessThanOrEqualOperation:
+        """Less than or equal comparison.
+
+        Args:
+            other: The other boolean.
+
+        Returns:
+            The result of the comparison.
+        """
+        return LessThanOrEqualOperation(+self, +other)
+
+    def __eq__(self, other: boolean_types | number_types) -> EqualOperation:
+        """Equal comparison.
+
+        Args:
+            other: The other boolean.
+
+        Returns:
+            The result of the comparison.
+        """
+        return EqualOperation(+self, +other)
+
+    def __ne__(self, other: boolean_types | number_types) -> NotEqualOperation:
+        """Not equal comparison.
+
+        Args:
+            other: The other boolean.
+
+        Returns:
+            The result of the comparison.
+        """
+        return NotEqualOperation(+self, +other)
+
+    def __gt__(self, other: boolean_types | number_types) -> GreaterThanOperation:
+        """Greater than comparison.
+
+        Args:
+            other: The other boolean.
+
+        Returns:
+            The result of the comparison.
+        """
+        return GreaterThanOperation(+self, +other)
+
+    def __ge__(
+        self, other: boolean_types | number_types
+    ) -> GreaterThanOrEqualOperation:
+        """Greater than or equal comparison.
+
+        Args:
+            other: The other boolean.
+
+        Returns:
+            The result of the comparison.
+        """
+        return GreaterThanOrEqualOperation(+self, +other)
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class BooleanToIntOperation(NumberVar):
+    """Base class for immutable number vars that are the result of a boolean to int operation."""
+
+    a: boolean_types = dataclasses.field(default=False)
+
+    def __init__(
+        self,
+        a: boolean_types,
+        _var_data: VarData | None = None,
+    ):
+        """Initialize the boolean to int operation var.
+
+        Args:
+            a: The boolean.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(BooleanToIntOperation, self).__init__(
+            _var_name="",
+            _var_type=int,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(self, "a", a)
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return f"({str(self.a)} ? 1 : 0)"
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(BooleanToIntOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            self.a._get_all_var_data() if isinstance(self.a, Var) else None,
+            self._var_data,
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class NumberComparisonOperation(BooleanVar):
+    """Base class for immutable boolean vars that are the result of a comparison operation."""
+
+    a: number_types = dataclasses.field(default=0)
+    b: number_types = dataclasses.field(default=0)
+
+    def __init__(
+        self,
+        a: number_types,
+        b: number_types,
+        _var_data: VarData | None = None,
+    ):
+        """Initialize the comparison operation var.
+
+        Args:
+            a: The first value.
+            b: The second value.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(NumberComparisonOperation, self).__init__(
+            _var_name="",
+            _var_type=bool,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(self, "a", a)
+        object.__setattr__(self, "b", b)
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
+        """
+        raise NotImplementedError("ComparisonOperation must implement _cached_var_name")
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(NumberComparisonOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        first_value = self.a if isinstance(self.a, Var) else LiteralVar.create(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralVar.create(self.b)
+        return ImmutableVarData.merge(
+            first_value._get_all_var_data(), second_value._get_all_var_data()
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data
+
+
+class GreaterThanOperation(NumberComparisonOperation):
+    """Base class for immutable boolean vars that are the result of a greater than operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        first_value = self.a if isinstance(self.a, Var) else LiteralVar.create(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralVar.create(self.b)
+        return f"({str(first_value)} > {str(second_value)})"
+
+
+class GreaterThanOrEqualOperation(NumberComparisonOperation):
+    """Base class for immutable boolean vars that are the result of a greater than or equal operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        first_value = self.a if isinstance(self.a, Var) else LiteralVar.create(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralVar.create(self.b)
+        return f"({str(first_value)} >= {str(second_value)})"
+
+
+class LessThanOperation(NumberComparisonOperation):
+    """Base class for immutable boolean vars that are the result of a less than operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        first_value = self.a if isinstance(self.a, Var) else LiteralVar.create(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralVar.create(self.b)
+        return f"({str(first_value)} < {str(second_value)})"
+
+
+class LessThanOrEqualOperation(NumberComparisonOperation):
+    """Base class for immutable boolean vars that are the result of a less than or equal operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        first_value = self.a if isinstance(self.a, Var) else LiteralVar.create(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralVar.create(self.b)
+        return f"({str(first_value)} <= {str(second_value)})"
+
+
+class EqualOperation(NumberComparisonOperation):
+    """Base class for immutable boolean vars that are the result of an equal operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        first_value = self.a if isinstance(self.a, Var) else LiteralVar.create(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralVar.create(self.b)
+        return f"({str(first_value)} == {str(second_value)})"
+
+
+class NotEqualOperation(NumberComparisonOperation):
+    """Base class for immutable boolean vars that are the result of a not equal operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        first_value = self.a if isinstance(self.a, Var) else LiteralVar.create(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralVar.create(self.b)
+        return f"({str(first_value)} != {str(second_value)})"
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class LogicalOperation(BooleanVar):
+    """Base class for immutable boolean vars that are the result of a logical operation."""
+
+    a: boolean_types = dataclasses.field(default=False)
+    b: boolean_types = dataclasses.field(default=False)
+
+    def __init__(
+        self, a: boolean_types, b: boolean_types, _var_data: VarData | None = None
+    ):
+        """Initialize the logical operation var.
+
+        Args:
+            a: The first value.
+            b: The second value.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(LogicalOperation, self).__init__(
+            _var_name="",
+            _var_type=bool,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(self, "a", a)
+        object.__setattr__(self, "b", b)
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
+        """
+        raise NotImplementedError("LogicalOperation must implement _cached_var_name")
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(LogicalOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        first_value = self.a if isinstance(self.a, Var) else LiteralVar.create(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralVar.create(self.b)
+        return ImmutableVarData.merge(
+            first_value._get_all_var_data(), second_value._get_all_var_data()
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data
+
+
+class BooleanAndOperation(LogicalOperation):
+    """Base class for immutable boolean vars that are the result of a logical AND operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        first_value = self.a if isinstance(self.a, Var) else LiteralVar.create(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralVar.create(self.b)
+        return f"({str(first_value)} && {str(second_value)})"
+
+
+class BooleanOrOperation(LogicalOperation):
+    """Base class for immutable boolean vars that are the result of a logical OR operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        first_value = self.a if isinstance(self.a, Var) else LiteralVar.create(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralVar.create(self.b)
+        return f"({str(first_value)} || {str(second_value)})"
+
+
+class BooleanNotOperation(BooleanVar):
+    """Base class for immutable boolean vars that are the result of a logical NOT operation."""
+
+    a: boolean_types = dataclasses.field()
+
+    def __init__(self, a: boolean_types, _var_data: VarData | None = None):
+        """Initialize the logical NOT operation var.
+
+        Args:
+            a: The value.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(BooleanNotOperation, self).__init__(
+            _var_name="",
+            _var_type=bool,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(self, "a", a)
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        value = self.a if isinstance(self.a, Var) else LiteralVar.create(self.a)
+        return f"!({str(value)})"
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(BooleanNotOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        value = self.a if isinstance(self.a, Var) else LiteralVar.create(self.a)
+        return ImmutableVarData.merge(value._get_all_var_data())
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data
 
 
 class ObjectVar(ImmutableVar):
@@ -1488,7 +1940,7 @@ class ConcatVarOperation(StringVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LiteralBooleanVar(LiteralVar):
+class LiteralBooleanVar(LiteralVar, BooleanVar):
     """Base class for immutable literal boolean vars."""
 
     _var_value: bool = dataclasses.field(default=False)
@@ -1774,3 +2226,4 @@ type_mapping = {
 }
 
 number_types = Union[NumberVar, LiteralNumberVar, int, float]
+boolean_types = Union[BooleanVar, LiteralBooleanVar, bool]
