@@ -425,7 +425,7 @@ class StringSliceOperation(StringVar):
     a: StringVar = dataclasses.field(
         default_factory=lambda: LiteralStringVar.create("")
     )
-    _slice: slice = dataclasses.field(default=slice(None, None, None))
+    _slice: slice = dataclasses.field(default_factory=lambda: slice(None, None, None))
 
     def __init__(
         self, a: StringVar | str, _slice: slice, _var_data: VarData | None = None
