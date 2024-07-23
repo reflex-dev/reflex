@@ -14,13 +14,15 @@ from typing import (
     Dict,
     List,
     Optional,
-    ParamSpec,
     Set,
     Tuple,
     Type,
     TypeVar,
     Union,
+    cast,
 )
+
+from typing_extensions import ParamSpec
 
 from reflex import constants
 from reflex.base import Base
@@ -1022,9 +1024,7 @@ P = ParamSpec("P")
 T = TypeVar("T", bound=ImmutableVar)
 
 
-def var_operation[T, **P](
-    *, output: Type[T]
-) -> Callable[[Callable[P, str]], Callable[P, T]]:
+def var_operation(*, output: Type[T]) -> Callable[[Callable[P, str]], Callable[P, T]]:
     """Decorator for creating a var operation.
 
     Example:
@@ -1067,15 +1067,22 @@ def var_operation[T, **P](
                         _var_name=_var_name, _var_type=_var_type, _var_data=_var_data
                     )
 
-            return VarOperation(
-                func(*args, **kwargs),
-                _var_data=ImmutableVarData.merge(
-                    *[arg._get_all_var_data() for arg in args if isinstance(arg, Var)],
-                    *[
-                        arg._get_all_var_data()
-                        for arg in kwargs.values()
-                        if isinstance(arg, Var)
-                    ],
+            return cast(
+                T,
+                VarOperation(
+                    func(*args, **kwargs),
+                    _var_data=ImmutableVarData.merge(
+                        *[
+                            arg._get_all_var_data()
+                            for arg in args
+                            if isinstance(arg, Var)
+                        ],
+                        *[
+                            arg._get_all_var_data()
+                            for arg in kwargs.values()
+                            if isinstance(arg, Var)
+                        ],
+                    ),
                 ),
             )
 
