@@ -112,11 +112,29 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         EventSpec: The window alert event.
 
     """
+    from reflex.components.sonner.toast import Toaster, toast
+
     error = traceback.format_exc()
 
     console.error(f"[Reflex Backend Exception]\n {error}\n")
 
-    return window_alert("An error occurred. See logs for details.")
+    error_message = (
+        ["Contact the website administrator."]
+        if is_prod_mode()
+        else [f"{type(exception).__name__}: {exception}.", "See logs for details."]
+    )
+    if Toaster.is_used:
+        return toast(
+            level="error",
+            title="An error occurred.",
+            description="<br/>".join(error_message),
+            position="top-center",
+            id="backend_error",
+            style={"width": "500px"},
+        )  # type: ignore
+    else:
+        error_message.insert(0, "An error occurred.")
+        return window_alert("\n".join(error_message))
 
 
 def default_overlay_component() -> Component:
@@ -183,7 +201,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
     # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Optional[Union[Component, ComponentCallable]] = (
-        default_overlay_component
+        default_overlay_component()
     )
 
     # Error boundary component to wrap the app with.

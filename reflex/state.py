@@ -31,6 +31,8 @@ from typing import (
 import dill
 from sqlalchemy.orm import DeclarativeBase
 
+from reflex.config import get_config
+
 try:
     import pydantic.v1 as pydantic
 except ModuleNotFoundError:
@@ -42,7 +44,6 @@ from redis.exceptions import ResponseError
 
 from reflex import constants
 from reflex.base import Base
-from reflex.config import get_config
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,

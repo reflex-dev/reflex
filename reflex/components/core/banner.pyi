@@ -187,7 +187,7 @@ class ConnectionToaster(Toaster):
         ] = None,
         **props,
     ) -> "ConnectionToaster":
-        """Create the component.
+        """Create a connection toaster component.
 
         Args:
             *children: The children of the component.
@@ -211,10 +211,10 @@ class ConnectionToaster(Toaster):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the component.
 
         Returns:
-            The component.
+            The connection toaster component.
         """
         ...
 

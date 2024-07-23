@@ -19,6 +19,7 @@ import reflex.config
 from reflex import constants
 from reflex.app import App
 from reflex.base import Base
+from reflex.components.sonner.toast import Toaster
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
 from reflex.state import (
@@ -1527,7 +1528,6 @@ async def test_state_with_invalid_yield(capsys, mock_app):
     Args:
         capsys: Pytest fixture for capture standard streams.
         mock_app: Mock app fixture.
-
     """
 
     class StateWithInvalidYield(BaseState):
@@ -1546,10 +1546,29 @@ async def test_state_with_invalid_yield(capsys, mock_app):
         rx.event.Event(token="fake_token", name="invalid_handler")
     ):
         assert not update.delta
-        assert update.events == rx.event.fix_events(
-            [rx.window_alert("An error occurred. See logs for details.")],
-            token="",
-        )
+        if Toaster.is_used:
+            assert update.events == rx.event.fix_events(
+                [
+                    rx.toast(
+                        title="An error occurred.",
+                        description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`).<br/>See logs for details.",
+                        level="error",
+                        id="backend_error",
+                        position="top-center",
+                        style={"width": "500px"},
+                    )  # type: ignore
+                ],
+                token="",
+            )
+        else:
+            assert update.events == rx.event.fix_events(
+                [
+                    rx.window_alert(
+                        "An error occurred.\nContact the website administrator."
+                    )
+                ],
+                token="",
+            )
     captured = capsys.readouterr()
     assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
