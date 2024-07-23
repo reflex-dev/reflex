@@ -280,7 +280,7 @@ class StringVar(ImmutableVar):
 class NumberVar(ImmutableVar):
     """Base class for immutable number vars."""
 
-    def __add__(self, other: NumberVar | int | float) -> NumberAddOperation:
+    def __add__(self, other: number_types) -> NumberAddOperation:
         """Add two numbers.
 
         Args:
@@ -291,7 +291,7 @@ class NumberVar(ImmutableVar):
         """
         return NumberAddOperation(self, other)
 
-    def __radd__(self, other: NumberVar | int | float) -> NumberAddOperation:
+    def __radd__(self, other: number_types) -> NumberAddOperation:
         """Add two numbers.
 
         Args:
@@ -302,27 +302,654 @@ class NumberVar(ImmutableVar):
         """
         return NumberAddOperation(other, self)
 
+    def __sub__(self, other: number_types) -> NumberSubtractOperation:
+        """Subtract two numbers.
 
-class NumberAddOperation(NumberVar):
-    """Base class for immutable number vars that are the result of an addition operation."""
+        Args:
+            other: The other number.
+
+        Returns:
+            The number subtraction operation.
+        """
+        return NumberSubtractOperation(self, other)
+
+    def __rsub__(self, other: number_types) -> NumberSubtractOperation:
+        """Subtract two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number subtraction operation.
+        """
+        return NumberSubtractOperation(other, self)
+
+    def __abs__(self) -> NumberAbsoluteOperation:
+        """Get the absolute value of the number.
+
+        Returns:
+            The number absolute operation.
+        """
+        return NumberAbsoluteOperation(self)
+
+    def __mul__(self, other: number_types) -> NumberMultiplyOperation:
+        """Multiply two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number multiplication operation.
+        """
+        return NumberMultiplyOperation(self, other)
+
+    def __rmul__(self, other: number_types) -> NumberMultiplyOperation:
+        """Multiply two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number multiplication operation.
+        """
+        return NumberMultiplyOperation(other, self)
+
+    def __truediv__(self, other: number_types) -> NumberTrueDivision:
+        """Divide two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number true division operation.
+        """
+        return NumberTrueDivision(self, other)
+
+    def __rtruediv__(self, other: number_types) -> NumberTrueDivision:
+        """Divide two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number true division operation.
+        """
+        return NumberTrueDivision(other, self)
+
+    def __floordiv__(self, other: number_types) -> NumberFloorDivision:
+        """Floor divide two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number floor division operation.
+        """
+        return NumberFloorDivision(self, other)
+
+    def __rfloordiv__(self, other: number_types) -> NumberFloorDivision:
+        """Floor divide two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number floor division operation.
+        """
+        return NumberFloorDivision(other, self)
+
+    def __mod__(self, other: number_types) -> NumberModuloOperation:
+        """Modulo two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number modulo operation.
+        """
+        return NumberModuloOperation(self, other)
+
+    def __rmod__(self, other: number_types) -> NumberModuloOperation:
+        """Modulo two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number modulo operation.
+        """
+        return NumberModuloOperation(other, self)
+
+    def __pow__(self, other: number_types) -> NumberExponentOperation:
+        """Exponentiate two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number exponent operation.
+        """
+        return NumberExponentOperation(self, other)
+
+    def __rpow__(self, other: number_types) -> NumberExponentOperation:
+        """Exponentiate two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number exponent operation.
+        """
+        return NumberExponentOperation(other, self)
+
+    def __neg__(self) -> NumberNegateOperation:
+        """Negate the number.
+
+        Returns:
+            The number negation operation.
+        """
+        return NumberNegateOperation(self)
+
+    def __and__(self, other: number_types) -> NumberBitwiseAndOperation:
+        """Bitwise AND two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number bitwise AND operation.
+        """
+        return NumberBitwiseAndOperation(self, other)
+
+    def __rand__(self, other: number_types) -> NumberBitwiseAndOperation:
+        """Bitwise AND two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number bitwise AND operation.
+        """
+        return NumberBitwiseAndOperation(other, self)
+
+    def __or__(self, other: number_types) -> NumberBitwiseOrOperation:
+        """Bitwise OR two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number bitwise OR operation.
+        """
+        return NumberBitwiseOrOperation(self, other)
+
+    def __ror__(self, other: number_types) -> NumberBitwiseOrOperation:
+        """Bitwise OR two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number bitwise OR operation.
+        """
+        return NumberBitwiseOrOperation(other, self)
+
+    def __xor__(self, other: number_types) -> NumberBitwiseXorOperation:
+        """Bitwise XOR two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number bitwise XOR operation.
+        """
+        return NumberBitwiseXorOperation(self, other)
+
+    def __rxor__(self, other: number_types) -> NumberBitwiseXorOperation:
+        """Bitwise XOR two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number bitwise XOR operation.
+        """
+        return NumberBitwiseXorOperation(other, self)
+
+    def __lshift__(self, other: number_types) -> NumberBitwiseLeftShiftOperation:
+        """Bitwise left shift two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number bitwise left shift operation.
+        """
+        return NumberBitwiseLeftShiftOperation(self, other)
+
+    def __rlshift__(self, other: number_types) -> NumberBitwiseLeftShiftOperation:
+        """Bitwise left shift two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number bitwise left shift operation.
+        """
+        return NumberBitwiseLeftShiftOperation(other, self)
+
+    def __rshift__(self, other: number_types) -> NumberBitwiseRightShiftOperation:
+        """Bitwise right shift two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number bitwise right shift operation.
+        """
+        return NumberBitwiseRightShiftOperation(self, other)
+
+    def __rrshift__(self, other: number_types) -> NumberBitwiseRightShiftOperation:
+        """Bitwise right shift two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number bitwise right shift operation.
+        """
+        return NumberBitwiseRightShiftOperation(other, self)
+
+    def __invert__(self) -> NumberBitwiseNotOperation:
+        """Bitwise NOT the number.
+
+        Returns:
+            The number bitwise NOT operation.
+        """
+        return NumberBitwiseNotOperation(self)
+
+    def __pos__(self) -> NumberVar:
+        """Positive the number.
+
+        Returns:
+            The number.
+        """
+        return self
+
+    def __round__(self) -> NumberRoundOperation:
+        """Round the number.
+
+        Returns:
+            The number round operation.
+        """
+        return NumberRoundOperation(self)
+
+    def __ceil__(self) -> NumberCeilOperation:
+        """Ceil the number.
+
+        Returns:
+            The number ceil operation.
+        """
+        return NumberCeilOperation(self)
+
+    def __floor__(self) -> NumberFloorOperation:
+        """Floor the number.
+
+        Returns:
+            The number floor operation.
+        """
+        return NumberFloorOperation(self)
+
+    def __trunc__(self) -> NumberTruncOperation:
+        """Trunc the number.
+
+        Returns:
+            The number trunc operation.
+        """
+        return NumberTruncOperation(self)
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class BinaryNumberOperation(NumberVar):
+    """Base class for immutable number vars that are the result of a binary operation."""
+
+    a: number_types = dataclasses.field(default=0)
+    b: number_types = dataclasses.field(default=0)
 
     def __init__(
         self,
-        a: NumberVar | int | float,
-        b: NumberVar | int | float,
+        a: number_types,
+        b: number_types,
         _var_data: VarData | None = None,
     ):
-        """Initialize the number addition operation var.
+        """Initialize the binary number operation var.
 
         Args:
             a: The first number.
             b: The second number.
             _var_data: Additional hooks and imports associated with the Var.
         """
-        super(NumberAddOperation, self).__init__(
-            _var_name=f"({str(a if isinstance(a, Var) else LiteralNumberVar(a))} + {str(b if isinstance(b, Var) else LiteralNumberVar(b))})",
+        super(BinaryNumberOperation, self).__init__(
+            _var_name="",
+            _var_type=float,
             _var_data=ImmutableVarData.merge(_var_data),
         )
+        object.__setattr__(self, "a", a)
+        object.__setattr__(self, "b", b)
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Raises:
+            NotImplementedError: Must be implemented by subclasses
+        """
+        raise NotImplementedError(
+            "BinaryNumberOperation must implement _cached_var_name"
+        )
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(BinaryNumberOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
+        return ImmutableVarData.merge(
+            first_value._get_all_var_data(), second_value._get_all_var_data()
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class UnaryNumberOperation(NumberVar):
+    """Base class for immutable number vars that are the result of a unary operation."""
+
+    a: number_types = dataclasses.field(default=0)
+
+    def __init__(
+        self,
+        a: number_types,
+        _var_data: VarData | None = None,
+    ):
+        """Initialize the unary number operation var.
+
+        Args:
+            a: The number.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(UnaryNumberOperation, self).__init__(
+            _var_name="",
+            _var_type=float,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(self, "a", a)
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
+        """
+        raise NotImplementedError(
+            "UnaryNumberOperation must implement _cached_var_name"
+        )
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(UnaryNumberOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        return value._get_all_var_data()
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data
+
+
+class NumberAddOperation(BinaryNumberOperation):
+    """Base class for immutable number vars that are the result of an addition operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
+        return f"({str(first_value)} + {str(second_value)})"
+
+
+class NumberSubtractOperation(BinaryNumberOperation):
+    """Base class for immutable number vars that are the result of a subtraction operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
+        return f"({str(first_value)} - {str(second_value)})"
+
+
+class NumberAbsoluteOperation(UnaryNumberOperation):
+    """Base class for immutable number vars that are the result of an absolute operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        return f"Math.abs({str(value)})"
+
+
+class NumberMultiplyOperation(BinaryNumberOperation):
+    """Base class for immutable number vars that are the result of a multiplication operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
+        return f"({str(first_value)} * {str(second_value)})"
+
+
+class NumberNegateOperation(UnaryNumberOperation):
+    """Base class for immutable number vars that are the result of a negation operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        return f"-({str(value)})"
+
+
+class NumberTrueDivision(BinaryNumberOperation):
+    """Base class for immutable number vars that are the result of a true division operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
+        return f"({str(first_value)} / {str(second_value)})"
+
+
+class NumberFloorDivision(BinaryNumberOperation):
+    """Base class for immutable number vars that are the result of a floor division operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
+        return f"Math.floor({str(first_value)} / {str(second_value)})"
+
+
+class NumberModuloOperation(BinaryNumberOperation):
+    """Base class for immutable number vars that are the result of a modulo operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
+        return f"({str(first_value)} % {str(second_value)})"
+
+
+class NumberExponentOperation(BinaryNumberOperation):
+    """Base class for immutable number vars that are the result of an exponent operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
+        return f"({str(first_value)} ** {str(second_value)})"
+
+
+class NumberBitwiseAndOperation(BinaryNumberOperation):
+    """Base class for immutable number vars that are the result of a bitwise AND operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
+        return f"({str(first_value)} & {str(second_value)})"
+
+
+class NumberBitwiseOrOperation(BinaryNumberOperation):
+    """Base class for immutable number vars that are the result of a bitwise OR operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
+        return f"({str(first_value)} | {str(second_value)})"
+
+
+class NumberBitwiseXorOperation(BinaryNumberOperation):
+    """Base class for immutable number vars that are the result of a bitwise XOR operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
+        return f"({str(first_value)} ^ {str(second_value)})"
+
+
+class NumberBitwiseLeftShiftOperation(BinaryNumberOperation):
+    """Base class for immutable number vars that are the result of a bitwise left shift operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
+        return f"({str(first_value)} << {str(second_value)})"
+
+
+class NumberBitwiseRightShiftOperation(BinaryNumberOperation):
+    """Base class for immutable number vars that are the result of a bitwise right shift operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        first_value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        second_value = self.b if isinstance(self.b, Var) else LiteralNumberVar(self.b)
+        return f"({str(first_value)} >> {str(second_value)})"
+
+
+class NumberBitwiseNotOperation(UnaryNumberOperation):
+    """Base class for immutable number vars that are the result of a bitwise NOT operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        return f"~({str(value)})"
+
+
+class NumberRoundOperation(UnaryNumberOperation):
+    """Base class for immutable number vars that are the result of a round operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        return f"Math.round({str(value)})"
+
+
+class NumberCeilOperation(UnaryNumberOperation):
+    """Base class for immutable number vars that are the result of a ceil operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        return f"Math.ceil({str(value)})"
+
+
+class NumberFloorOperation(UnaryNumberOperation):
+    """Base class for immutable number vars that are the result of a floor operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        return f"Math.floor({str(value)})"
+
+
+class NumberTruncOperation(UnaryNumberOperation):
+    """Base class for immutable number vars that are the result of a trunc operation."""
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var."""
+        value = self.a if isinstance(self.a, Var) else LiteralNumberVar(self.a)
+        return f"Math.trunc({str(value)})"
 
 
 class BooleanVar(ImmutableVar):
@@ -814,7 +1441,7 @@ class LiteralBooleanVar(LiteralVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LiteralNumberVar(LiteralVar):
+class LiteralNumberVar(LiteralVar, NumberVar):
     """Base class for immutable literal number vars."""
 
     _var_value: float | int = dataclasses.field(default=0)
@@ -1069,3 +1696,5 @@ type_mapping = {
     tuple: LiteralArrayVar,
     set: LiteralArrayVar,
 }
+
+number_types = Union[NumberVar, LiteralNumberVar, int, float]
