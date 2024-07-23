@@ -118,7 +118,7 @@ class StringVar(ImmutableVar):
         Returns:
             The boolean value of the string.
         """
-        return NotEqualOperation(self.len(), 0)
+        return NotEqualOperation(self.length(), 0)
 
     def reversed(self) -> StringReverseOperation:
         """Reverse the string.
@@ -474,7 +474,7 @@ class StringSliceOperation(StringVar):
 
         if step is not None and step < 0:
             actual_start = end + 1 if end is not None else 0
-            actual_end = start + 1 if start is not None else self.a.len()
+            actual_end = start + 1 if start is not None else self.a.length()
             return str(
                 StringSliceOperation(
                     StringReverseOperation(
@@ -602,7 +602,7 @@ class StringItemOperation(StringVar):
 class ArrayJoinOperation(StringVar):
     """Base class for immutable string vars that are the result of an array join operation."""
 
-    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar.create([]))
+    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
     b: StringVar = dataclasses.field(
         default_factory=lambda: LiteralStringVar.create("")
     )
@@ -866,7 +866,7 @@ class ArrayVar(ImmutableVar):
 
     from reflex.experimental.vars.sequence import StringVar
 
-    def join(self, sep: StringVar | str = "") -> str:
+    def join(self, sep: StringVar | str = "") -> ArrayJoinOperation:
         """Join the elements of the array.
 
         Args:
