@@ -434,8 +434,7 @@ class StringSliceOperation(StringVar):
 
         Args:
             a: The string.
-            start: The start index.
-            end: The end index.
+            _slice: The slice.
             _var_data: Additional hooks and imports associated with the Var.
         """
         super(StringSliceOperation, self).__init__(
@@ -453,11 +452,11 @@ class StringSliceOperation(StringVar):
     def _cached_var_name(self) -> str:
         """The name of the var.
 
-        Raises:
-           ValueError: If the slice step is zero.
-
         Returns:
             The name of the var.
+        
+        Raises:
+            ValueError: If the slice step is zero.
         """
         start, end, step = self._slice.start, self._slice.stop, self._slice.step
 
