@@ -9,17 +9,17 @@ from pandas import DataFrame
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.experimental.vars.base import (
-    ArgsFunctionOperation,
-    ConcatVarOperation,
-    FunctionStringVar,
     ImmutableVar,
-    LiteralBooleanVar,
-    LiteralNumberVar,
-    LiteralStringVar,
     LiteralVar,
-    NumberVar,
     var_operation,
 )
+from reflex.experimental.vars.function import ArgsFunctionOperation, FunctionStringVar
+from reflex.experimental.vars.number import (
+    LiteralBooleanVar,
+    LiteralNumberVar,
+    NumberVar,
+)
+from reflex.experimental.vars.string import ConcatVarOperation, LiteralStringVar
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
 from reflex.vars import (
