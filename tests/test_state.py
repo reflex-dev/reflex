@@ -1806,7 +1806,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
 
     sp = StateProxy(grandchild_state)
     assert sp.__wrapped__ == grandchild_state
-    assert sp._self_substate_path == grandchild_state.get_full_name().split(".")
+    assert sp._self_substate_path == tuple(grandchild_state.get_full_name().split("."))
     assert sp._self_app is mock_app
     assert not sp._self_mutable
     assert sp._self_actx is None
