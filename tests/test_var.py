@@ -12,8 +12,11 @@ from reflex.experimental.vars.base import (
     ConcatVarOperation,
     FunctionStringVar,
     ImmutableVar,
+    LiteralNumberVar,
     LiteralStringVar,
     LiteralVar,
+    NumberVar,
+    var_operation,
 )
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
@@ -911,6 +914,30 @@ def test_function_var():
         str(create_hello_statement.call(f"{first_name} {last_name}"))
         == '(((name) => (("Hello, "+name+"!")))(("Steven"+" "+"Universe")))'
     )
+
+
+int_types = NumberVar | LiteralNumberVar | int | float
+
+
+def test_var_operation():
+    @var_operation(output=NumberVar)
+    def add(a: int_types, b: int_types) -> str:
+        if isinstance(b, int | float) and b == 0:
+            return str(a)
+        if isinstance(a, int | float) and a == 0:
+            return str(b)
+        return f"({a} + {b})"
+
+    assert str(add(1, 2)) == "(1 + 2)"
+    assert str(add(1, 0)) == "1"
+    assert str(add(0, 2)) == "2"
+    assert str(add(0, 0)) == "0"
+    assert str(add(4, -9)) == "(4 + -9)"
+
+    five = LiteralNumberVar(5)
+    seven = add(2, five)
+
+    assert isinstance(seven, NumberVar)
 
 
 def test_retrival():

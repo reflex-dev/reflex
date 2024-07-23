@@ -16,3 +16,4 @@ from .base import NumberVar as NumberVar
 from .base import ObjectVar as ObjectVar
 from .base import StringVar as StringVar
 from .base import VarOperationCall as VarOperationCall
+from .base import var_operation as var_operation
