@@ -201,7 +201,7 @@ def _no_chain_background_task(
 
 def _substate_key(
     token: str,
-    state_cls_or_name: BaseState | Type[BaseState] | str | list[str],
+    state_cls_or_name: BaseState | Type[BaseState] | str | Sequence[str],
 ) -> str:
     """Get the substate key.
 
@@ -2044,7 +2044,7 @@ class StateProxy(wrapt.ObjectProxy):
         super().__init__(state_instance)
         # compile is not relevant to backend logic
         self._self_app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        self._self_substate_path = state_instance.get_full_name().split(".")
+        self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_actx = None
         self._self_mutable = False
         self._self_actx_lock = asyncio.Lock()
@@ -2077,7 +2077,16 @@ class StateProxy(wrapt.ObjectProxy):
             ImmutableStateError: If the state is already mutable.
         """
         if self._self_parent_state_proxy is not None:
-            return await self._self_parent_state_proxy.__aenter__()
+            parent_state = (
+                await self._self_parent_state_proxy.__aenter__()
+            ).__wrapped__
+            super().__setattr__(
+                "__wrapped__",
+                await parent_state.get_state(
+                    State.get_class_substate(self._self_substate_path)
+                ),
+            )
+            return self
         current_task = asyncio.current_task()
         if (
             self._self_actx_lock.locked()
