@@ -3,11 +3,24 @@
 from __future__ import annotations
 
 import dataclasses
+import functools
 import json
 import re
 import sys
 from functools import cached_property
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    ParamSpec,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from reflex import constants
 from reflex.base import Base
@@ -80,11 +93,12 @@ class ImmutableVar(Var):
         """Post-initialize the var."""
         # Decode any inline Var markup and apply it to the instance
         _var_data, _var_name = _decode_var_immutable(self._var_name)
-        if _var_data:
+
+        if _var_data or _var_name != self._var_name:
             self.__init__(
-                _var_name,
-                self._var_type,
-                ImmutableVarData.merge(self._var_data, _var_data),
+                _var_name=_var_name,
+                _var_type=self._var_type,
+                _var_data=ImmutableVarData.merge(self._var_data, _var_data),
             )
 
     def __hash__(self) -> int:
@@ -265,6 +279,50 @@ class StringVar(ImmutableVar):
 class NumberVar(ImmutableVar):
     """Base class for immutable number vars."""
 
+    def __add__(self, other: NumberVar | int | float) -> NumberAddOperation:
+        """Add two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number addition operation.
+        """
+        return NumberAddOperation(self, other)
+
+    def __radd__(self, other: NumberVar | int | float) -> NumberAddOperation:
+        """Add two numbers.
+
+        Args:
+            other: The other number.
+
+        Returns:
+            The number addition operation.
+        """
+        return NumberAddOperation(other, self)
+
+
+class NumberAddOperation(NumberVar):
+    """Base class for immutable number vars that are the result of an addition operation."""
+
+    def __init__(
+        self,
+        a: NumberVar | int | float,
+        b: NumberVar | int | float,
+        _var_data: VarData | None = None,
+    ):
+        """Initialize the number addition operation var.
+
+        Args:
+            a: The first number.
+            b: The second number.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(NumberAddOperation, self).__init__(
+            _var_name=f"({str(a if isinstance(a, Var) else LiteralNumberVar(a))} + {str(b if isinstance(b, Var) else LiteralNumberVar(b))})",
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+
 
 class BooleanVar(ImmutableVar):
     """Base class for immutable boolean vars."""
@@ -347,7 +405,7 @@ class VarOperationCall(ImmutableVar):
         """
         super(VarOperationCall, self).__init__(
             _var_name="",
-            _var_type=Callable,
+            _var_type=Any,
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(self, "_func", func)
@@ -847,7 +905,7 @@ class LiteralObjectVar(LiteralVar):
         )
 
     @cached_property
-    def _get_all_var_data(self) -> ImmutableVarData | None:
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
         """Get all VarData associated with the Var.
 
         Returns:
@@ -866,6 +924,14 @@ class LiteralObjectVar(LiteralVar):
             ],
             self._var_data,
         )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Wrapper method for cached property.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return self._cached_get_all_var_data
 
 
 @dataclasses.dataclass(
@@ -928,7 +994,7 @@ class LiteralArrayVar(LiteralVar):
         )
 
     @cached_property
-    def _get_all_var_data(self) -> ImmutableVarData | None:
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
         """Get all VarData associated with the Var.
 
         Returns:
@@ -942,6 +1008,80 @@ class LiteralArrayVar(LiteralVar):
             ],
             self._var_data,
         )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Wrapper method for cached property.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return self._cached_get_all_var_data
+
+
+P = ParamSpec("P")
+T = TypeVar("T", bound=ImmutableVar)
+
+
+def var_operation[T, **P](
+    *, output: type[T]
+) -> Callable[[Callable[P, str]], Callable[P, T]]:
+    """Decorator for creating a var operation.
+
+    Example:
+    ```python
+    @var_operation(output=NumberVar)
+    def add(a: NumberVar | int | float, b: NumberVar | int | float):
+        return f"({a} + {b})"
+    ```
+
+    Args:
+        output: The output type of the operation.
+
+    Returns:
+        The decorator.
+    """
+
+    def decorator(func: Callable[P, str], output=output):
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            @dataclasses.dataclass(
+                eq=False,
+                frozen=True,
+                **{"slots": True} if sys.version_info >= (3, 10) else {},
+            )
+            class VarOperation(output):
+                def __init__(
+                    self,
+                    _var_name: str,
+                    _var_type: Type = output,
+                    _var_data: ImmutableVarData | None = None,
+                ):
+                    """Initialize the operation var.
+
+                    Args:
+                        _var_name: The name of the var.
+                        _var_type: The type of the var.
+                        _var_data: Additional hooks and imports associated with the Var.
+                    """
+                    super(VarOperation, self).__init__(
+                        _var_name=_var_name, _var_type=_var_type, _var_data=_var_data
+                    )
+
+            return VarOperation(
+                func(*args, **kwargs),
+                _var_data=ImmutableVarData.merge(
+                    *[arg._get_all_var_data() for arg in args if isinstance(arg, Var)],
+                    *[
+                        arg._get_all_var_data()
+                        for arg in kwargs.values()
+                        if isinstance(arg, Var)
+                    ],
+                ),
+            )
+
+        return wrapper
+
+    return decorator
 
 
 type_mapping = {
