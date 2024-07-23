@@ -920,7 +920,7 @@ def test_function_var():
 
 def test_var_operation():
     @var_operation(output=NumberVar)
-    def add(a: NumberVar | int, b: NumberVar | int) -> str:
+    def add(a: Union[NumberVar, int], b: Union[NumberVar, int]) -> str:
         return f"({a} + {b})"
 
     assert str(add(1, 2)) == "(1 + 2)"
