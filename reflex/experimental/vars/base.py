@@ -19,7 +19,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
 )
 
 from typing_extensions import ParamSpec
@@ -1044,45 +1043,15 @@ def var_operation(*, output: Type[T]) -> Callable[[Callable[P, str]], Callable[P
     def decorator(func: Callable[P, str], output=output):
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-            @dataclasses.dataclass(
-                eq=False,
-                frozen=True,
-                **{"slots": True} if sys.version_info >= (3, 10) else {},
-            )
-            class VarOperation(output):
-                def __init__(
-                    self,
-                    _var_name: str,
-                    _var_type: Type = output,
-                    _var_data: ImmutableVarData | None = None,
-                ):
-                    """Initialize the operation var.
-
-                    Args:
-                        _var_name: The name of the var.
-                        _var_type: The type of the var.
-                        _var_data: Additional hooks and imports associated with the Var.
-                    """
-                    super(VarOperation, self).__init__(
-                        _var_name=_var_name, _var_type=_var_type, _var_data=_var_data
-                    )
-
-            return cast(
-                T,
-                VarOperation(
-                    func(*args, **kwargs),
-                    _var_data=ImmutableVarData.merge(
-                        *[
-                            arg._get_all_var_data()
-                            for arg in args
-                            if isinstance(arg, Var)
-                        ],
-                        *[
-                            arg._get_all_var_data()
-                            for arg in kwargs.values()
-                            if isinstance(arg, Var)
-                        ],
-                    ),
+            return output(
+                _var_name=func(*args, **kwargs),
+                _var_data=VarData.merge(
+                    *[arg._get_all_var_data() for arg in args if isinstance(arg, Var)],
+                    *[
+                        arg._get_all_var_data()
+                        for arg in kwargs.values()
+                        if isinstance(arg, Var)
+                    ],
                 ),
             )
 
