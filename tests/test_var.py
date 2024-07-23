@@ -922,9 +922,9 @@ number_types = Union[NumberVar, LiteralNumberVar, int, float]
 def test_var_operation():
     @var_operation(output=NumberVar)
     def add(a: number_types, b: number_types) -> str:
-        if isinstance(b, int | float) and b == 0:
+        if isinstance(b, (int, float)) and b == 0:
             return str(a)
-        if isinstance(a, int | float) and a == 0:
+        if isinstance(a, (int, float)) and a == 0:
             return str(b)
         return f"({a} + {b})"
 
