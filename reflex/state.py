@@ -1924,7 +1924,9 @@ class State(BaseState):
 class FrontendEventExceptionState(State):
     """Substate for handling frontend exceptions."""
 
-    _state_name: Optional[str] = constants.CompileVars.FRONTEND_EXCEPTION_STATE
+    _state_name: ClassVar[Optional[str]] = (
+        constants.CompileVars.FRONTEND_EXCEPTION_STATE
+    )
 
     def handle_frontend_exception(self, stack: str) -> None:
         """Handle frontend exceptions.
@@ -1943,7 +1945,7 @@ class FrontendEventExceptionState(State):
 class UpdateVarsInternalState(State):
     """Substate for handling internal state var updates."""
 
-    _state_name: Optional[str] = constants.CompileVars.UPDATE_VARS_INTERNAL
+    _state_name: ClassVar[Optional[str]] = constants.CompileVars.UPDATE_VARS_INTERNAL
 
     async def update_vars_internal(self, vars: dict[str, Any]) -> None:
         """Apply updates to fully qualified state vars.
@@ -1970,7 +1972,7 @@ class OnLoadInternalState(State):
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
 
-    _state_name: Optional[str] = constants.CompileVars.ON_LOAD_INTERNAL
+    _state_name: ClassVar[Optional[str]] = constants.CompileVars.ON_LOAD_INTERNAL
 
     def on_load_internal(self) -> list[Event | EventSpec] | None:
         """Queue on_load handlers for the current page.
