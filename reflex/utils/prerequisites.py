@@ -25,7 +25,6 @@ from types import ModuleType
 from typing import Callable, List, Optional
 
 import httpx
-from reflex.utils.china import _is_in_china
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
@@ -38,6 +37,7 @@ from reflex.base import Base
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
+from reflex.utils.china import _is_in_china
 from reflex.utils.format import format_library_name
 
 CURRENTLY_INSTALLING_NODE = False
