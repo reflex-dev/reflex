@@ -25,6 +25,7 @@ from types import ModuleType
 from typing import Callable, List, Optional
 
 import httpx
+from reflex.utils.china import _is_in_china
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
@@ -576,6 +577,15 @@ def initialize_package_json():
     output_path = get_web_dir() / constants.PackageJson.PATH
     code = _compile_package_json()
     output_path.write_text(code)
+
+    if _is_in_china() or True:
+        bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
+        bun_config_path.write_text(
+            """
+[install]
+registry = "https://r.cnpmjs.org"
+"""
+        )
 
 
 def init_reflex_json(project_hash: int | None):
