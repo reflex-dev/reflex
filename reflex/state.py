@@ -341,8 +341,9 @@ def generate_state_name() -> str:
         ValueError: If no more minified state names are available
     """
     while name := next_minified_state_name():
-        if name not in constants.CompileVars.INTERNAL_STATE_NAMES:
-            return name
+        if name in constants.CompileVars.INTERNAL_STATE_NAMES:
+            continue
+        return name
     raise ValueError("No more minified state names available")
 
 
