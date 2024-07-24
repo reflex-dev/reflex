@@ -578,7 +578,7 @@ def initialize_package_json():
     code = _compile_package_json()
     output_path.write_text(code)
 
-    if _is_in_china() or True:
+    if _is_in_china():
         bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
         bun_config_path.write_text(
             """
