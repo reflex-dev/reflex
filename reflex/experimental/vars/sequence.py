@@ -737,37 +737,17 @@ class ArrayVar(ImmutableVar):
 
     @overload
     @classmethod
-    def range(cls, stop: int | NumberVar, /) -> RangeOperation:  # noqa: D418
-        """Create a range of numbers.
-
-        Args:
-            stop: The end of the range.
-
-        Returns:
-            The range of numbers.
-        """
-        ...
+    def range(cls, stop: int | NumberVar, /) -> RangeOperation: ...
 
     @overload
     @classmethod
-    def range(  # noqa: D418
+    def range(
         cls,
         start: int | NumberVar,
         end: int | NumberVar,
         step: int | NumberVar = 1,
         /,
-    ) -> RangeOperation:
-        """Create a range of numbers.
-
-        Args:
-            start: The start of the range.
-            end: The end of the range.
-            step: The step of the range.
-
-        Returns:
-            The range of numbers.
-        """
-        ...
+    ) -> RangeOperation: ...
 
     @classmethod
     def range(
