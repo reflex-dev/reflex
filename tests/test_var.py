@@ -19,7 +19,11 @@ from reflex.experimental.vars.number import (
     LiteralNumberVar,
     NumberVar,
 )
-from reflex.experimental.vars.sequence import ConcatVarOperation, LiteralStringVar
+from reflex.experimental.vars.sequence import (
+    ConcatVarOperation,
+    LiteralArrayVar,
+    LiteralStringVar,
+)
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
 from reflex.vars import (
@@ -935,7 +939,7 @@ def test_var_operation():
 def test_string_operations():
     basic_string = LiteralStringVar.create("Hello, World!")
 
-    assert str(basic_string.length()) == '"Hello, World!".length'
+    assert str(basic_string.length()) == '"Hello, World!".split("").length'
     assert str(basic_string.lower()) == '"Hello, World!".toLowerCase()'
     assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
     assert str(basic_string.strip()) == '"Hello, World!".trim()'
@@ -970,6 +974,22 @@ def test_all_number_operations():
         str(LiteralBooleanVar(False) < LiteralBooleanVar(True))
         == "((false ? 1 : 0) < (true ? 1 : 0))"
     )
+
+
+def test_index_operation():
+    array_var = LiteralArrayVar([1, 2, 3, 4, 5])
+    assert str(array_var[0]) == "[1, 2, 3, 4, 5].at(0)"
+    assert str(array_var[1:2]) == "[1, 2, 3, 4, 5].slice(1, 2)"
+    assert (
+        str(array_var[1:4:2])
+        == "[1, 2, 3, 4, 5].slice(1, 4).filter((_, i) => i % 2 === 0)"
+    )
+    assert (
+        str(array_var[::-1])
+        == "[1, 2, 3, 4, 5].slice(0, [1, 2, 3, 4, 5].length).reverse().slice(undefined, undefined).filter((_, i) => i % 1 === 0)"
+    )
+    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].reverse()"
+    assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5].at(0) + 9)"
 
 
 def test_retrival():
