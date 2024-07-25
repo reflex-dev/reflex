@@ -999,8 +999,14 @@ def test_array_operations():
     assert str(array_var.length()) == "[1, 2, 3, 4, 5].length"
     assert str(array_var.contains(3)) == "[1, 2, 3, 4, 5].includes(3)"
     assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].reverse()"
-    assert str(ArrayVar.range(10)) == "Array.from({ length: (10 - 0) / 1 }, (_, i) => 0 + i * 1)"
-    assert str(ArrayVar.range(1, 10)) == "Array.from({ length: (10 - 1) / 1 }, (_, i) => 1 + i * 1)"
+    assert (
+        str(ArrayVar.range(10))
+        == "Array.from({ length: (10 - 0) / 1 }, (_, i) => 0 + i * 1)"
+    )
+    assert (
+        str(ArrayVar.range(1, 10))
+        == "Array.from({ length: (10 - 1) / 1 }, (_, i) => 1 + i * 1)"
+    )
     assert (
         str(ArrayVar.range(1, 10, 2))
         == "Array.from({ length: (10 - 1) / 2 }, (_, i) => 1 + i * 2)"
