@@ -773,7 +773,7 @@ class ArrayVar(ImmutableVar):
     def range(
         cls,
         first_endpoint: int | NumberVar,
-        second_endpoint: int | NumberVar = None,
+        second_endpoint: int | NumberVar | None = None,
         step: int | NumberVar | None = None,
     ) -> RangeOperation:
         """Create a range of numbers.
