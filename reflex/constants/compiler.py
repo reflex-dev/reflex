@@ -6,7 +6,7 @@ from enum import Enum
 from types import SimpleNamespace
 
 from reflex.base import Base
-from reflex.constants import Dirs
+from reflex.constants import ENV_MODE_ENV_VAR, Dirs, Env
 from reflex.utils.imports import ImportVar
 
 # The prefix used to create setters for state vars.
@@ -14,6 +14,9 @@ SETTER_PREFIX = "set_"
 
 # The file used to specify no compilation.
 NOCOMPILE_FILE = "nocompile"
+
+# The env var to toggle minification of states.
+ENV_MINIFY_STATES = "REFLEX_MINIFY_STATES"
 
 
 class Ext(SimpleNamespace):
@@ -29,6 +32,20 @@ class Ext(SimpleNamespace):
     ZIP = ".zip"
     # The extension for executable files on Windows.
     EXE = ".exe"
+
+
+def minify_states() -> bool:
+    """Whether to minify states.
+
+    Returns:
+        True if states should be minified.
+    """
+    env = os.environ.get(ENV_MINIFY_STATES, None)
+    if env is not None:
+        return env.lower() == "true"
+
+    # minify states in prod by default
+    return os.environ.get(ENV_MODE_ENV_VAR, "") == Env.PROD.value
 
 
 class CompileVars(SimpleNamespace):
@@ -62,10 +79,10 @@ class CompileVars(SimpleNamespace):
     CONNECT_ERROR = "connectErrors"
     # The name of the function for converting a dict to an event.
     TO_EVENT = "Event"
-    # The env var to toggle minification of states.
-    ENV_MINIFY_STATES = "REFLEX_MINIFY_STATES"
+
     # Whether to minify states.
-    MINIFY_STATES = os.environ.get(ENV_MINIFY_STATES, False)
+    MINIFY_STATES = minify_states()
+
     # The name of the OnLoadInternal state.
     ON_LOAD_INTERNAL_STATE = (
         "l" if MINIFY_STATES else "reflex___state____on_load_internal_state"
