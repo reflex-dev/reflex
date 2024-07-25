@@ -2,6 +2,8 @@
 
 import httpx
 
+from reflex.utils import console
+
 
 def latency(registry: str) -> int:
     """Get the latency of a registry.
@@ -15,6 +17,7 @@ def latency(registry: str) -> int:
     try:
         return httpx.get(registry).elapsed.microseconds
     except httpx.HTTPError:
+        console.info(f"Failed to connect to {registry}.")
         return 10_000_000
 
 
