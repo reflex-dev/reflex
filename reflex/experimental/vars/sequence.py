@@ -358,7 +358,7 @@ class StringItemOperation(StringVar):
     a: StringVar = dataclasses.field(
         default_factory=lambda: LiteralStringVar.create("")
     )
-    i: NumberVar = dataclasses.field(default=0)
+    i: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar(0))
 
     def __init__(
         self, a: StringVar | str, i: int | NumberVar, _var_data: VarData | None = None
