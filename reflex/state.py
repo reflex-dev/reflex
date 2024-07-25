@@ -521,7 +521,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return
 
         # Generate a minified state name by converting state count to string
-        if not cls._state_name:
+        if not cls._state_name or cls._state_name in all_state_names:
             cls._state_name = generate_state_name()
 
         # Validate the module name.
