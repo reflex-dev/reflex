@@ -1,4 +1,5 @@
 import json
+import math
 import typing
 from typing import Dict, List, Set, Tuple, Union
 
@@ -8,13 +9,17 @@ from pandas import DataFrame
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.experimental.vars.base import (
-    ArgsFunctionOperation,
-    ConcatVarOperation,
-    FunctionStringVar,
     ImmutableVar,
-    LiteralStringVar,
     LiteralVar,
+    var_operation,
 )
+from reflex.experimental.vars.function import ArgsFunctionOperation, FunctionStringVar
+from reflex.experimental.vars.number import (
+    LiteralBooleanVar,
+    LiteralNumberVar,
+    NumberVar,
+)
+from reflex.experimental.vars.sequence import ConcatVarOperation, LiteralStringVar
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
 from reflex.vars import (
@@ -910,6 +915,60 @@ def test_function_var():
     assert (
         str(create_hello_statement.call(f"{first_name} {last_name}"))
         == '(((name) => (("Hello, "+name+"!")))(("Steven"+" "+"Universe")))'
+    )
+
+
+def test_var_operation():
+    @var_operation(output=NumberVar)
+    def add(a: Union[NumberVar, int], b: Union[NumberVar, int]) -> str:
+        return f"({a} + {b})"
+
+    assert str(add(1, 2)) == "(1 + 2)"
+    assert str(add(a=4, b=-9)) == "(4 + -9)"
+
+    five = LiteralNumberVar(5)
+    seven = add(2, five)
+
+    assert isinstance(seven, NumberVar)
+
+
+def test_string_operations():
+    basic_string = LiteralStringVar.create("Hello, World!")
+
+    assert str(basic_string.length()) == '"Hello, World!".length'
+    assert str(basic_string.lower()) == '"Hello, World!".toLowerCase()'
+    assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
+    assert str(basic_string.strip()) == '"Hello, World!".trim()'
+    assert str(basic_string.contains("World")) == '"Hello, World!".includes("World")'
+    assert (
+        str(basic_string.split(" ").join(",")) == '"Hello, World!".split(" ").join(",")'
+    )
+
+
+def test_all_number_operations():
+    starting_number = LiteralNumberVar(-5.4)
+
+    complicated_number = (((-(starting_number + 1)) * 2 / 3) // 2 % 3) ** 2
+
+    assert (
+        str(complicated_number)
+        == "((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)"
+    )
+
+    even_more_complicated_number = ~(
+        abs(math.floor(complicated_number)) | 2 & 3 & round(complicated_number)
+    )
+
+    assert (
+        str(even_more_complicated_number)
+        == "!(((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) != 0) || (true && (Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)) != 0))))"
+    )
+
+    assert str(LiteralNumberVar(5) > False) == "(5 > 0)"
+    assert str(LiteralBooleanVar(False) < 5) == "((false ? 1 : 0) < 5)"
+    assert (
+        str(LiteralBooleanVar(False) < LiteralBooleanVar(True))
+        == "((false ? 1 : 0) < (true ? 1 : 0))"
     )
 
 
