@@ -8,7 +8,7 @@ import json
 import re
 import sys
 from functools import cached_property
-from typing import Any, List, Set, Tuple, Union
+from typing import Any, List, Set, Tuple, Union, overload
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
@@ -72,7 +72,15 @@ class StringVar(ImmutableVar):
         """
         return ConcatVarOperation(*[self for _ in range(other)])
 
-    def __getitem__(self, i: slice | int) -> ArraySliceOperation | StringItemOperation:
+    @overload
+    def __getitem__(self, i: slice) -> ArrayJoinOperation: ...
+
+    @overload
+    def __getitem__(self, i: int | NumberVar) -> StringItemOperation: ...
+
+    def __getitem__(
+        self, i: slice | int | NumberVar
+    ) -> ArrayJoinOperation | StringItemOperation:
         """Get a slice of the string.
 
         Args:
@@ -692,10 +700,17 @@ class ArrayVar(ImmutableVar):
         Returns:
             The reversed array.
         """
-
         return ArrayReverseOperation(self)
 
-    def __getitem__(self, i: slice | int) -> ArraySliceOperation | ArrayItemOperation:
+    @overload
+    def __getitem__(self, i: slice) -> ArraySliceOperation: ...
+
+    @overload
+    def __getitem__(self, i: int | NumberVar) -> ArrayItemOperation: ...
+
+    def __getitem__(
+        self, i: slice | int | NumberVar
+    ) -> ArraySliceOperation | ArrayItemOperation:
         """Get a slice of the array.
 
         Args:

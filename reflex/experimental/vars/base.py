@@ -265,6 +265,24 @@ class ImmutableVar(Var):
         # Encode the _var_data into the formatted output for tracking purposes.
         return f"{constants.REFLEX_VAR_OPENING_TAG}{hashed_var}{constants.REFLEX_VAR_CLOSING_TAG}{self._var_name}"
 
+    def to(self, output: Type[OUTPUT]) -> OUTPUT:
+        """Convert the var to a different type.
+
+        Args:
+            output: The output type.
+
+        Returns:
+            The converted var.
+        """
+        return output(
+            _var_name=self._var_name,
+            _var_type=self._var_type,
+            _var_data=self._var_data,
+        )
+
+
+OUTPUT = TypeVar("OUTPUT", bound=ImmutableVar)
+
 
 class ObjectVar(ImmutableVar):
     """Base class for immutable object vars."""
