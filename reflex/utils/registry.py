@@ -1,3 +1,5 @@
+"""Utilities for working with registries."""
+
 import httpx
 
 
@@ -10,7 +12,10 @@ def latency(registry: str) -> int:
     Returns:
         int: The latency of the registry in microseconds.
     """
-    return httpx.get(registry).elapsed.microseconds
+    try:
+        return httpx.get(registry).elapsed.microseconds
+    except httpx.HTTPError:
+        return 10_000_000
 
 
 def average_latency(registry, attempts: int = 3) -> int:
