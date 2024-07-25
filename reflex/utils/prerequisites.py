@@ -37,8 +37,8 @@ from reflex.base import Base
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
-from reflex.utils.china import _is_in_china
 from reflex.utils.format import format_library_name
+from reflex.utils.registry import _get_best_registry
 
 CURRENTLY_INSTALLING_NODE = False
 
@@ -578,14 +578,14 @@ def initialize_package_json():
     code = _compile_package_json()
     output_path.write_text(code)
 
-    if _is_in_china():
-        bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
-        bun_config_path.write_text(
-            """
+    best_registry = _get_best_registry()
+    bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
+    bun_config_path.write_text(
+        f"""
 [install]
-registry = "https://r.cnpmjs.org"
+registry = "{best_registry}"
 """
-        )
+    )
 
 
 def init_reflex_json(project_hash: int | None):
