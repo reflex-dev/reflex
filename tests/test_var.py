@@ -20,6 +20,7 @@ from reflex.experimental.vars.number import (
     NumberVar,
 )
 from reflex.experimental.vars.sequence import (
+    ArrayVar,
     ConcatVarOperation,
     LiteralArrayVar,
     LiteralStringVar,
@@ -990,6 +991,24 @@ def test_index_operation():
     )
     assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].reverse()"
     assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5].at(0) + 9)"
+
+
+def test_array_operations():
+    array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
+
+    assert str(array_var.length()) == "[1, 2, 3, 4, 5].length"
+    assert str(array_var.contains(3)) == "[1, 2, 3, 4, 5].includes(3)"
+    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].reverse()"
+    assert str(ArrayVar.range(10)) == "Array.from({ length: (10 - 0) / 1 }, (_, i) => 0 + i * 1)"
+    assert str(ArrayVar.range(1, 10)) == "Array.from({ length: (10 - 1) / 1 }, (_, i) => 1 + i * 1)"
+    assert (
+        str(ArrayVar.range(1, 10, 2))
+        == "Array.from({ length: (10 - 1) / 2 }, (_, i) => 1 + i * 2)"
+    )
+    assert (
+        str(ArrayVar.range(1, 10, -1))
+        == "Array.from({ length: (10 - 1) / -1 }, (_, i) => 1 + i * -1)"
+    )
 
 
 def test_retrival():
