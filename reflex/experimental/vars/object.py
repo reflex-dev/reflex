@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import dataclasses
-from functools import cached_property
 import sys
+from functools import cached_property
 from typing import Any, Dict, Type, Union
+
 from reflex.experimental.vars.base import ImmutableVar, LiteralVar
 from reflex.experimental.vars.sequence import ArrayVar
 from reflex.vars import ImmutableVarData, Var, VarData
@@ -302,7 +303,8 @@ class ObjectMergeOperation(ObjectVar):
         """Initialize the object merge operation.
 
         Args:
-            _var_value: The value of the operation.
+            left: The left object to merge.
+            right: The right object to merge.
             _var_data: Additional hooks and imports associated with the operation.
         """
         super(ObjectMergeOperation, self).__init__(
