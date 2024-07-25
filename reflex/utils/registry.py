@@ -26,7 +26,7 @@ def average_latency(registry, attempts: int = 3) -> int:
 
     Args:
         registry (str): The URL of the registry.
-        attempts (int, optional): The number of attempts to make. Defaults to 10.
+        attempts (int): The number of attempts to make. Defaults to 10.
 
     Returns:
         int: The average latency of the registry in microseconds.
