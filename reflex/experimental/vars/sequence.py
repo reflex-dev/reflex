@@ -358,9 +358,11 @@ class StringItemOperation(StringVar):
     a: StringVar = dataclasses.field(
         default_factory=lambda: LiteralStringVar.create("")
     )
-    i: int = dataclasses.field(default=0)
+    i: NumberVar = dataclasses.field(default=0)
 
-    def __init__(self, a: StringVar | str, i: int, _var_data: VarData | None = None):
+    def __init__(
+        self, a: StringVar | str, i: int | NumberVar, _var_data: VarData | None = None
+    ):
         """Initialize the string item operation var.
 
         Args:
@@ -376,7 +378,7 @@ class StringItemOperation(StringVar):
         object.__setattr__(
             self, "a", a if isinstance(a, Var) else LiteralStringVar.create(a)
         )
-        object.__setattr__(self, "i", i)
+        object.__setattr__(self, "i", i if isinstance(i, Var) else LiteralNumberVar(i))
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -408,7 +410,9 @@ class StringItemOperation(StringVar):
         Returns:
             The VarData of the components and all of its children.
         """
-        return ImmutableVarData.merge(self.a._get_all_var_data(), self._var_data)
+        return ImmutableVarData.merge(
+            self.a._get_all_var_data(), self.i._get_all_var_data(), self._var_data
+        )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
@@ -938,7 +942,7 @@ class ArrayToArrayOperation(ArrayVar):
         """
         if name == "_var_name":
             return self._cached_var_name
-        getattr(super(StringToStringOperation, self), name)
+        getattr(super(ArrayToArrayOperation, self), name)
 
     @cached_property
     def _cached_get_all_var_data(self) -> ImmutableVarData | None:
@@ -964,7 +968,7 @@ class ArrayToArrayOperation(ArrayVar):
 class ArraySliceOperation(ArrayVar):
     """Base class for immutable string vars that are the result of a string slice operation."""
 
-    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralStringVar.create(""))
+    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
     _slice: slice = dataclasses.field(default_factory=lambda: slice(None, None, None))
 
     def __init__(
