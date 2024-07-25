@@ -8,11 +8,9 @@ import sys
 from typing import (
     Any,
     Callable,
-    Dict,
     Optional,
     Type,
     TypeVar,
-    Union,
 )
 
 from typing_extensions import ParamSpec
@@ -284,10 +282,6 @@ class ImmutableVar(Var):
 OUTPUT = TypeVar("OUTPUT", bound=ImmutableVar)
 
 
-class ObjectVar(ImmutableVar):
-    """Base class for immutable object vars."""
-
-
 class LiteralVar(ImmutableVar):
     """Base class for immutable literal vars."""
 
@@ -316,6 +310,8 @@ class LiteralVar(ImmutableVar):
 
         if value is None:
             return ImmutableVar.create_safe("null", _var_data=_var_data)
+
+        from .object import LiteralObjectVar
 
         if isinstance(value, Base):
             return LiteralObjectVar(
@@ -347,103 +343,6 @@ class LiteralVar(ImmutableVar):
 
     def __post_init__(self):
         """Post-initialize the var."""
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class LiteralObjectVar(LiteralVar):
-    """Base class for immutable literal object vars."""
-
-    _var_value: Dict[Union[Var, Any], Union[Var, Any]] = dataclasses.field(
-        default_factory=dict
-    )
-
-    def __init__(
-        self,
-        _var_value: dict[Var | Any, Var | Any],
-        _var_type: Type = dict,
-        _var_data: VarData | None = None,
-    ):
-        """Initialize the object var.
-
-        Args:
-            _var_value: The value of the var.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(LiteralObjectVar, self).__init__(
-            _var_name="",
-            _var_type=_var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(
-            self,
-            "_var_value",
-            _var_value,
-        )
-        object.__delattr__(self, "_var_name")
-
-    def __getattr__(self, name):
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute of the var.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        return super(type(self), self).__getattr__(name)
-
-    @functools.cached_property
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return (
-            "{ "
-            + ", ".join(
-                [
-                    f"[{str(LiteralVar.create(key))}] : {str(LiteralVar.create(value))}"
-                    for key, value in self._var_value.items()
-                ]
-            )
-            + " }"
-        )
-
-    @functools.cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            *[
-                value._get_all_var_data()
-                for key, value in self._var_value
-                if isinstance(value, Var)
-            ],
-            *[
-                key._get_all_var_data()
-                for key, value in self._var_value
-                if isinstance(key, Var)
-            ],
-            self._var_data,
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        """Wrapper method for cached property.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return self._cached_get_all_var_data
 
 
 P = ParamSpec("P")

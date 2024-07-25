@@ -19,6 +19,7 @@ from reflex.experimental.vars.number import (
     LiteralNumberVar,
     NumberVar,
 )
+from reflex.experimental.vars.object import LiteralObjectVar
 from reflex.experimental.vars.sequence import (
     ArrayVar,
     ConcatVarOperation,
@@ -886,7 +887,7 @@ def test_literal_var():
     )
     assert (
         str(complicated_var)
-        == '[{ ["a"] : 1, ["b"] : 2, ["c"] : { ["d"] : 3, ["e"] : 4 } }, [1, 2, 3, 4], 9, "string", true, false, null, [1, 2, 3]]'
+        == '[({ ["a"] : 1, ["b"] : 2, ["c"] : ({ ["d"] : 3, ["e"] : 4 }) }), [1, 2, 3, 4], 9, "string", true, false, null, [1, 2, 3]]'
     )
 
 
@@ -903,7 +904,7 @@ def test_function_var():
     )
     assert (
         str(manual_addition_func.call(1, 2))
-        == '(((a, b) => ({ ["args"] : [a, b], ["result"] : a + b }))(1, 2))'
+        == '(((a, b) => (({ ["args"] : [a, b], ["result"] : a + b })))(1, 2))'
     )
 
     increment_func = addition_func(1)
@@ -1015,6 +1016,24 @@ def test_array_operations():
         str(ArrayVar.range(1, 10, -1))
         == "Array.from({ length: (10 - 1) / -1 }, (_, i) => 1 + i * -1)"
     )
+
+
+def test_object_operations():
+    object_var = LiteralObjectVar.create({"a": 1, "b": 2, "c": 3})
+
+    assert (
+        str(object_var.keys()) == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+    )
+    assert (
+        str(object_var.values())
+        == 'Object.values(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+    )
+    assert (
+        str(object_var.entries())
+        == 'Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+    )
+    assert str(object_var.a) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
+    assert str(object_var["a"]) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
 
 
 def test_retrival():
