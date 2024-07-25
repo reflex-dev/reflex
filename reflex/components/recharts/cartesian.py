@@ -299,7 +299,7 @@ class Area(Cartesian):
     fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 5))
 
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
-    type_: Var[LiteralAreaType] = Var.create_safe("monotone")
+    type_: Var[LiteralAreaType] = Var.create_safe("monotone", _var_is_string=True)
 
     # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
     dot: Var[Union[bool, Dict[str, Any]]]
