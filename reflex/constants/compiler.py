@@ -66,18 +66,18 @@ class CompileVars(SimpleNamespace):
     ENV_MINIFY_STATES = "REFLEX_MINIFY_STATES"
     # Whether to minify states.
     MINIFY_STATES = os.environ.get(ENV_MINIFY_STATES, False)
+    # The name of the OnLoadInternal state.
+    ON_LOAD_INTERNAL_STATE = (
+        "l" if MINIFY_STATES else "reflex___state____on_load_internal_state"
+    )
     # The name of the internal on_load event.
-    ON_LOAD_INTERNAL = (
-        "l"
-        if MINIFY_STATES
-        else "reflex___state____on_load_internal_state.on_load_internal"
+    ON_LOAD_INTERNAL = f"{ON_LOAD_INTERNAL_STATE}.on_load_internal"
+    # The name of the UpdateVarsInternal state.
+    UPDATE_VARS_INTERNAL_STATE = (
+        "u" if MINIFY_STATES else "reflex___state____update_vars_internal_state"
     )
     # The name of the internal event to update generic state vars.
-    UPDATE_VARS_INTERNAL = (
-        "u"
-        if MINIFY_STATES
-        else ("reflex___state____update_vars_internal_state.update_vars_internal")
-    )
+    UPDATE_VARS_INTERNAL = f"{UPDATE_VARS_INTERNAL_STATE}.update_vars_internal"
     # The name of the frontend event exception state
     FRONTEND_EXCEPTION_STATE = (
         "e" if MINIFY_STATES else "reflex___state____frontend_event_exception_state"
@@ -87,9 +87,9 @@ class CompileVars(SimpleNamespace):
         f"reflex___state____state.{FRONTEND_EXCEPTION_STATE}"
     )
     INTERNAL_STATE_NAMES = {
-        ON_LOAD_INTERNAL,
-        UPDATE_VARS_INTERNAL,
-        FRONTEND_EXCEPTION_STATE_FULL,
+        ON_LOAD_INTERNAL_STATE,
+        UPDATE_VARS_INTERNAL_STATE,
+        FRONTEND_EXCEPTION_STATE,
     }
 
 
