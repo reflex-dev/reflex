@@ -286,7 +286,7 @@ def get_var_for_field(cls: Type[BaseState], f: ModelField):
 
 
 # Keep track of all state instances to calculate minified state names
-state_count = 0
+state_count: int = 0
 
 all_state_names: Set[str] = set()
 
