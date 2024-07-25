@@ -1311,39 +1311,63 @@ def migrate_to_reflex():
                 print(line, end="")
 
 
-def fetch_app_templates() -> dict[str, Template]:
-    """Fetch the list of app templates from the Reflex backend server.
+RELEASES_URL = f"https://api.github.com/repos/reflex-dev/templates/releases"
+
+
+def fetch_app_templates(version: str) -> dict[str, Template]:
+    """Fetch a dict of templates from the templates repo using github API.
+
+    Args:
+        version: The version of the templates to fetch.
 
     Returns:
-        The name and download URL as a dictionary.
+        The dict of templates.
     """
-    config = get_config()
-    if not config.cp_backend_url:
-        console.info(
-            "Skip fetching App templates. No backend URL is specified in the config."
-        )
-        return {}
-    try:
-        response = httpx.get(
-            f"{config.cp_backend_url}{constants.Templates.APP_TEMPLATES_ROUTE}"
-        )
+
+    def get_release_by_tag(tag: str) -> dict | None:
+        response = httpx.get(RELEASES_URL)
         response.raise_for_status()
-        return {
-            template["name"]: Template.parse_obj(template)
-            for template in response.json()
-        }
-    except httpx.HTTPError as ex:
-        console.info(f"Failed to fetch app templates: {ex}")
-        return {}
-    except (TypeError, KeyError, json.JSONDecodeError) as tkje:
-        console.info(f"Unable to process server response for app templates: {tkje}")
+        releases = response.json()
+        for release in releases:
+            if release["tag_name"] == f"v{tag}":
+                return release
+        return None
+
+    release = get_release_by_tag(version)
+    if release is None:
+        console.warn(f"No templates known for version {version}")
         return {}
 
+    assets = release.get("assets", [])
+    asset = next((a for a in assets if a["name"] == "templates.json"), None)
+    if asset is None:
+        console.warn(f"Templates metadata not found for version {version}")
+        return {}
+    else:
+        templates_url = asset["browser_download_url"]
 
-def create_config_init_app_from_remote_template(
-    app_name: str,
-    template_url: str,
-):
+    templates_data = httpx.get(templates_url, follow_redirects=True).json()["templates"]
+
+    for template in templates_data:
+        if template["name"] == "blank":
+            template["code_url"] = ""
+            continue
+        template["code_url"] = next(
+            (
+                a["browser_download_url"]
+                for a in assets
+                if a["name"] == f"{template['name']}.zip"
+            ),
+            None,
+        )
+    return {
+        tp["name"]: Template.parse_obj(tp)
+        for tp in templates_data
+        if not tp["hidden"] and tp["code_url"] is not None
+    }
+
+
+def create_config_init_app_from_remote_template(app_name: str, template_url: str):
     """Create new rxconfig and initialize app using a remote template.
 
     Args:
@@ -1437,15 +1461,20 @@ def initialize_app(app_name: str, template: str | None = None):
         telemetry.send("reinit")
         return
 
-    # Get the available templates
-    templates: dict[str, Template] = fetch_app_templates()
+    templates: dict[str, Template] = {}
 
-    # Prompt for a template if not provided.
-    if template is None and len(templates) > 0:
-        template = prompt_for_template(list(templates.values()))
-    elif template is None:
-        template = constants.Templates.DEFAULT
-    assert template is not None
+    # Don't fetch app templates if the user directly asked for DEFAULT.
+    if template is None or (template != constants.Templates.DEFAULT):
+        try:
+            # Get the available templates
+            templates = fetch_app_templates(constants.Reflex.VERSION)
+            if template is None and len(templates) > 0:
+                template = prompt_for_template(list(templates.values()))
+        except Exception as e:
+            console.warn("Failed to fetch templates. Falling back to default template.")
+            console.debug(f"Error while fetching templates: {e}")
+        finally:
+            template = template or constants.Templates.DEFAULT
 
     # If the blank template is selected, create a blank app.
     if template == constants.Templates.DEFAULT:
@@ -1468,9 +1497,12 @@ def initialize_app(app_name: str, template: str | None = None):
             else:
                 console.error(f"Template `{template}` not found.")
                 raise typer.Exit(1)
+
+        if template_url is None:
+            return
+
         create_config_init_app_from_remote_template(
-            app_name=app_name,
-            template_url=template_url,
+            app_name=app_name, template_url=template_url
         )
 
     telemetry.send("init", template=template)
