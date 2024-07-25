@@ -438,15 +438,16 @@ def format_prop(
             sig = inspect.signature(prop.args_spec)  # type: ignore
             if sig.parameters:
                 arg_def = ",".join(f"_{p}" for p in sig.parameters)
-                arg_def = f"({arg_def})"
+                arg_def_expr = f"[{arg_def}]"
             else:
                 # add a default argument for addEvents if none were specified in prop.args_spec
                 # used to trigger the preventDefault() on the event.
-                arg_def = "(_e)"
+                arg_def = "...args"
+                arg_def_expr = "args"
 
             chain = ",".join([format_event(event) for event in prop.events])
-            event = f"addEvents([{chain}], {arg_def}, {json_dumps(prop.event_actions)})"
-            prop = f"{arg_def} => {event}"
+            event = f"addEvents([{chain}], {arg_def_expr}, {json_dumps(prop.event_actions)})"
+            prop = f"({arg_def}) => {event}"
 
         # Handle other types.
         elif isinstance(prop, str):
