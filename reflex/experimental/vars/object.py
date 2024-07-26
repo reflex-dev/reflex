@@ -178,7 +178,7 @@ class LiteralObjectVar(LiteralVar, ObjectVar):
 class ObjectToArrayOperation(ArrayVar):
     """Base class for object to array operations."""
 
-    value: ObjectVar = dataclasses.field(default_factory=lambda: ObjectVar({}))
+    value: ObjectVar = dataclasses.field(default_factory=lambda: LiteralObjectVar({}))
 
     def __init__(
         self,
@@ -194,7 +194,7 @@ class ObjectToArrayOperation(ArrayVar):
         super(ObjectToArrayOperation, self).__init__(
             _var_name="",
             _var_type=_var_value._var_type,
-            _var_data=_var_data,
+            _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(self, "value", _var_value)
         object.__delattr__(self, "_var_name")
@@ -291,8 +291,8 @@ class ObjectEntriesOperation(ObjectToArrayOperation):
 class ObjectMergeOperation(ObjectVar):
     """Operation to merge two objects."""
 
-    left: ObjectVar = dataclasses.field(default_factory=lambda: ObjectVar({}))
-    right: ObjectVar = dataclasses.field(default_factory=lambda: ObjectVar({}))
+    left: ObjectVar = dataclasses.field(default_factory=lambda: LiteralObjectVar({}))
+    right: ObjectVar = dataclasses.field(default_factory=lambda: LiteralObjectVar({}))
 
     def __init__(
         self,
@@ -310,7 +310,7 @@ class ObjectMergeOperation(ObjectVar):
         super(ObjectMergeOperation, self).__init__(
             _var_name="",
             _var_type=left._var_type,
-            _var_data=_var_data,
+            _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(self, "left", left)
         object.__setattr__(self, "right", right)
@@ -368,8 +368,8 @@ class ObjectMergeOperation(ObjectVar):
 class ObjectItemOperation(ImmutableVar):
     """Operation to get an item from an object."""
 
-    value: ObjectVar = dataclasses.field(default_factory=lambda: ObjectVar({}))
-    key: Var | Any = dataclasses.field(default_factory=lambda: LiteralVar(None))
+    value: ObjectVar = dataclasses.field(default_factory=lambda: LiteralObjectVar({}))
+    key: Var | Any = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
 
     def __init__(
         self,
@@ -387,7 +387,7 @@ class ObjectItemOperation(ImmutableVar):
         super(ObjectItemOperation, self).__init__(
             _var_name="",
             _var_type=value._var_type,
-            _var_data=_var_data,
+            _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(self, "value", value)
         object.__setattr__(

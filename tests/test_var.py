@@ -1019,7 +1019,7 @@ def test_array_operations():
 
 
 def test_object_operations():
-    object_var = LiteralObjectVar.create({"a": 1, "b": 2, "c": 3})
+    object_var = LiteralObjectVar({"a": 1, "b": 2, "c": 3})
 
     assert (
         str(object_var.keys()) == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
