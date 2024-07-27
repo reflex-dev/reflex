@@ -402,7 +402,7 @@ class ObjectItemOperation(ImmutableVar):
         Returns:
             The name of the operation.
         """
-        return f"{self.value._var_name}[{self.key._var_name}]"
+        return f"{str(self.value)}[{str(self.key)}]"
 
     def __getattr__(self, name):
         """Get an attribute of the operation.
