@@ -1946,7 +1946,7 @@ class UpdateVarsInternalState(State):
     """Substate for handling internal state var updates."""
 
     _state_name: ClassVar[Optional[str]] = (
-        constants.CompileVars.UPDATE_VARS_INTERNAl_STATE
+        constants.CompileVars.UPDATE_VARS_INTERNAL_STATE
     )
 
     async def update_vars_internal(self, vars: dict[str, Any]) -> None:
