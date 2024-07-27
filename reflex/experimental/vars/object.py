@@ -193,7 +193,7 @@ class ObjectToArrayOperation(ArrayVar):
         """
         super(ObjectToArrayOperation, self).__init__(
             _var_name="",
-            _var_type=_var_value._var_type,
+            _var_type=list,
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(self, "value", _var_value)
