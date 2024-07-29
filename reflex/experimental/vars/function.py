@@ -222,7 +222,9 @@ class ArgsFunctionOperation(FunctionVar):
 class ToFunctionOperation(FunctionVar):
     """Base class of converting a var to a function."""
 
-    _original_var: Var = dataclasses.field(default_factory=LiteralVar.create(None))
+    _original_var: Var = dataclasses.field(
+        default_factory=lambda: LiteralVar.create(None)
+    )
 
     def __init__(
         self,

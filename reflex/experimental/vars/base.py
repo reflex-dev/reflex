@@ -304,12 +304,18 @@ class ImmutableVar(Var):
         self, output: Type[FunctionVar], var_type: Type[Callable] = Callable
     ) -> ToFunctionOperation: ...
 
-    def to(self, output: Type[OUTPUT], var_type: Type | None = None) -> OUTPUT:
+    @overload
+    def to(self, output: Type[OUTPUT], var_type: Type | None = None) -> OUTPUT: ...
+
+    def to(self, output: Type[OUTPUT], var_type: Type | None = None) -> Var:
         """Convert the var to a different type.
 
         Args:
             output: The output type.
             var_type: The type of the var.
+
+        Raises:
+            TypeError: If the var_type is not a supported type for the output.
 
         Returns:
             The converted var.
@@ -322,6 +328,10 @@ class ImmutableVar(Var):
         )
 
         if issubclass(output, NumberVar):
+            if var_type is not None and not issubclass(var_type, (int, float)):
+                raise TypeError(
+                    f"Unsupported type {var_type} for NumberVar. Must be int or float."
+                )
             return ToNumberVarOperation(self, var_type or float)
         if issubclass(output, BooleanVar):
             return ToBooleanVarOperation(self)
@@ -329,7 +339,11 @@ class ImmutableVar(Var):
         from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
 
         if issubclass(output, ArrayVar):
-            return ToArrayOperation(self, var_type)
+            if var_type is not None and not issubclass(var_type, (list, tuple, set)):
+                raise TypeError(
+                    f"Unsupported type {var_type} for ArrayVar. Must be list, tuple, or set."
+                )
+            return ToArrayOperation(self, var_type or list)
         if issubclass(output, StringVar):
             return ToStringOperation(self)
 
@@ -341,6 +355,10 @@ class ImmutableVar(Var):
         from .function import FunctionVar, ToFunctionOperation
 
         if issubclass(output, FunctionVar):
+            if var_type is not None and not issubclass(var_type, Callable):
+                raise TypeError(
+                    f"Unsupported type {var_type} for FunctionVar. Must be Callable."
+                )
             return ToFunctionOperation(self, var_type or Callable)
 
         return output(
