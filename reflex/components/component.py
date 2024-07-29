@@ -24,6 +24,7 @@ from typing import (
 import reflex.state
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
+from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.tags import Tag
 from reflex.constants import (
     Dirs,
@@ -465,6 +466,11 @@ class Component(BaseComponent, ABC):
         if isinstance(style, List):
             # Merge styles, the later ones overriding keys in the earlier ones.
             style = {k: v for style_dict in style for k, v in style_dict.items()}
+
+        if isinstance(style, Breakpoints):
+            style = {
+                "&": style,
+            }
 
         kwargs["style"] = Style(
             {
