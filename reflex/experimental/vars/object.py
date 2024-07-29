@@ -437,3 +437,77 @@ class ObjectItemOperation(ImmutableVar):
             The VarData of the components and all of its children.
         """
         return self._cached_get_all_var_data
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ToObjectOperation(ObjectVar):
+    """Operation to convert a var to an object."""
+
+    _original_var: Var = dataclasses.field(default_factory=lambda: LiteralObjectVar({}))
+
+    def __init__(
+        self,
+        _original_var: Var,
+        _var_type: Type = dict,
+        _var_data: VarData | None = None,
+    ):
+        """Initialize the to object operation.
+
+        Args:
+            _original_var: The original var to convert.
+            _var_type: The type of the var.
+            _var_data: Additional hooks and imports associated with the operation.
+        """
+        super(ToObjectOperation, self).__init__(
+            _var_name="",
+            _var_type=_var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(self, "_original_var", _original_var)
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the operation.
+
+        Returns:
+            The name of the operation.
+        """
+        return str(self._original_var)
+
+    def __getattr__(self, name):
+        """Get an attribute of the operation.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute of the operation.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        return super(type(self), self).__getattr__(name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the operation.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            self._original_var._get_all_var_data(),
+            self._var_data,
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Wrapper method for cached property.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return self._cached_get_all_var_data

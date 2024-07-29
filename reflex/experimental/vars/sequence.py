@@ -1444,3 +1444,143 @@ class ArrayContainsOperation(BooleanVar):
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ToStringOperation(StringVar):
+    """Base class for immutable string vars that are the result of a to string operation."""
+
+    original_var: Var = dataclasses.field(
+        default_factory=lambda: LiteralStringVar.create("")
+    )
+
+    def __init__(self, original_var: Var, _var_data: VarData | None = None):
+        """Initialize the to string operation var.
+
+        Args:
+            original_var: The original var.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(ToStringOperation, self).__init__(
+            _var_name="",
+            _var_type=str,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(
+            self,
+            "original_var",
+            original_var,
+        )
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return str(self.original_var)
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(ToStringOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            self.original_var._get_all_var_data(), self._var_data
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ToArrayOperation(ArrayVar):
+    """Base class for immutable array vars that are the result of a to array operation."""
+
+    original_var: Var = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
+
+    def __init__(
+        self,
+        original_var: Var,
+        _var_type: type[list] | type[set] | type[tuple] = list,
+        _var_data: VarData | None = None,
+    ):
+        """Initialize the to array operation var.
+
+        Args:
+            original_var: The original var.
+            _var_type: The type of the array.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(ToArrayOperation, self).__init__(
+            _var_name="",
+            _var_type=_var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(
+            self,
+            "original_var",
+            original_var,
+        )
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return str(self.original_var)
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(ToArrayOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            self.original_var._get_all_var_data(), self._var_data
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data

@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import sys
 from functools import cached_property
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, Type, Union
 
 from reflex.experimental.vars.base import ImmutableVar, LiteralVar
 from reflex.vars import ImmutableVarData, Var, VarData
@@ -212,3 +212,77 @@ class ArgsFunctionOperation(FunctionVar):
 
     def __post_init__(self):
         """Post-initialize the var."""
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ToFunctionOperation(FunctionVar):
+    """Base class of converting a var to a function."""
+
+    _original_var: Var = dataclasses.field(default_factory=LiteralVar.create(None))
+
+    def __init__(
+        self,
+        original_var: Var,
+        _var_type: Type[Callable] = Callable,
+        _var_data: VarData | None = None,
+    ) -> None:
+        """Initialize the function with arguments var.
+
+        Args:
+            original_var: The original var to convert to a function.
+            _var_type: The type of the function.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(ToFunctionOperation, self).__init__(
+            _var_name=f"",
+            _var_type=_var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(self, "_original_var", original_var)
+        object.__delattr__(self, "_var_name")
+
+    def __getattr__(self, name):
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute of the var.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        return super(type(self), self).__getattr__(name)
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return str(self._original_var)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            self._original_var._get_all_var_data(),
+            self._var_data,
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Wrapper method for cached property.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return self._cached_get_all_var_data

@@ -6,11 +6,13 @@ import dataclasses
 import functools
 import sys
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Optional,
     Type,
     TypeVar,
+    overload,
 )
 
 from typing_extensions import ParamSpec
@@ -27,6 +29,17 @@ from reflex.vars import (
     _extract_var_data,
     _global_vars,
 )
+
+if TYPE_CHECKING:
+    from .function import FunctionVar, ToFunctionOperation
+    from .number import (
+        BooleanVar,
+        NumberVar,
+        ToBooleanVarOperation,
+        ToNumberVarOperation,
+    )
+    from .object import ObjectVar, ToObjectOperation
+    from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
 
 
 @dataclasses.dataclass(
@@ -263,18 +276,76 @@ class ImmutableVar(Var):
         # Encode the _var_data into the formatted output for tracking purposes.
         return f"{constants.REFLEX_VAR_OPENING_TAG}{hashed_var}{constants.REFLEX_VAR_CLOSING_TAG}{self._var_name}"
 
-    def to(self, output: Type[OUTPUT]) -> OUTPUT:
+    @overload
+    def to(
+        self, output: Type[NumberVar], var_type: type[int] | type[float] = float
+    ) -> ToNumberVarOperation: ...
+
+    @overload
+    def to(self, output: Type[BooleanVar]) -> ToBooleanVarOperation: ...
+
+    @overload
+    def to(
+        self,
+        output: Type[ArrayVar],
+        var_type: type[list] | type[tuple] | type[set] = list,
+    ) -> ToArrayOperation: ...
+
+    @overload
+    def to(self, output: Type[StringVar]) -> ToStringOperation: ...
+
+    @overload
+    def to(
+        self, output: Type[ObjectVar], var_type: Type = dict
+    ) -> ToObjectOperation: ...
+
+    @overload
+    def to(
+        self, output: Type[FunctionVar], var_type: Type[Callable] = Callable
+    ) -> ToFunctionOperation: ...
+
+    def to(self, output: Type[OUTPUT], var_type: Type | None = None) -> OUTPUT:
         """Convert the var to a different type.
 
         Args:
             output: The output type.
+            var_type: The type of the var.
 
         Returns:
             The converted var.
         """
+        from .number import (
+            BooleanVar,
+            NumberVar,
+            ToBooleanVarOperation,
+            ToNumberVarOperation,
+        )
+
+        if issubclass(output, NumberVar):
+            return ToNumberVarOperation(self, var_type or float)
+        if issubclass(output, BooleanVar):
+            return ToBooleanVarOperation(self)
+
+        from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
+
+        if issubclass(output, ArrayVar):
+            return ToArrayOperation(self, var_type)
+        if issubclass(output, StringVar):
+            return ToStringOperation(self)
+
+        from .object import ObjectVar, ToObjectOperation
+
+        if issubclass(output, ObjectVar):
+            return ToObjectOperation(self, var_type or dict)
+
+        from .function import FunctionVar, ToFunctionOperation
+
+        if issubclass(output, FunctionVar):
+            return ToFunctionOperation(self, var_type or Callable)
+
         return output(
             _var_name=self._var_name,
-            _var_type=self._var_type,
+            _var_type=self._var_type if var_type is None else var_type,
             _var_data=self._var_data,
         )
 
