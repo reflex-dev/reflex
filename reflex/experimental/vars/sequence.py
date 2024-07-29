@@ -427,7 +427,7 @@ class ArrayJoinOperation(StringVar):
     )
 
     def __init__(
-        self, a: ArrayVar | list, b: StringVar | str, _var_data: VarData | None = None
+        self, a: ArrayVar, b: StringVar | str, _var_data: VarData | None = None
     ):
         """Initialize the array join operation var.
 
@@ -441,9 +441,7 @@ class ArrayJoinOperation(StringVar):
             _var_type=str,
             _var_data=ImmutableVarData.merge(_var_data),
         )
-        object.__setattr__(
-            self, "a", a if isinstance(a, Var) else LiteralArrayVar.create(a)
-        )
+        object.__setattr__(self, "a", a)
         object.__setattr__(
             self, "b", b if isinstance(b, Var) else LiteralStringVar.create(b)
         )
@@ -801,19 +799,21 @@ class LiteralArrayVar(LiteralVar, ArrayVar):
 
     def __init__(
         self,
-        _var_value: list[Var | Any] | tuple[Var | Any] | set[Var | Any],
+        _var_value: list[Var | Any] | tuple[Var | Any, ...] | set[Var | Any],
+        _var_type: type[list] | type[tuple] | type[set] | None = None,
         _var_data: VarData | None = None,
     ):
         """Initialize the array var.
 
         Args:
             _var_value: The value of the var.
+            _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
         """
         super(LiteralArrayVar, self).__init__(
             _var_name="",
             _var_data=ImmutableVarData.merge(_var_data),
-            _var_type=list,
+            _var_type=type(_var_value) if _var_type is None else _var_type,
         )
         object.__setattr__(self, "_var_value", _var_value)
         object.__delattr__(self, "_var_name")
@@ -898,7 +898,7 @@ class StringSplitOperation(ArrayVar):
         """
         super(StringSplitOperation, self).__init__(
             _var_name="",
-            _var_type=list,
+            _var_type=list[str],
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(
@@ -956,7 +956,7 @@ class ArrayToArrayOperation(ArrayVar):
 
     a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
 
-    def __init__(self, a: ArrayVar | list[Any], _var_data: VarData | None = None):
+    def __init__(self, a: ArrayVar, _var_data: VarData | None = None):
         """Initialize the array to array operation var.
 
         Args:
@@ -965,10 +965,10 @@ class ArrayToArrayOperation(ArrayVar):
         """
         super(ArrayToArrayOperation, self).__init__(
             _var_name="",
-            _var_type=list,
+            _var_type=a._var_type,
             _var_data=ImmutableVarData.merge(_var_data),
         )
-        object.__setattr__(self, "a", a if isinstance(a, Var) else LiteralArrayVar(a))
+        object.__setattr__(self, "a", a)
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -1022,9 +1022,7 @@ class ArraySliceOperation(ArrayVar):
     a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
     _slice: slice = dataclasses.field(default_factory=lambda: slice(None, None, None))
 
-    def __init__(
-        self, a: ArrayVar | list[Any], _slice: slice, _var_data: VarData | None = None
-    ):
+    def __init__(self, a: ArrayVar, _slice: slice, _var_data: VarData | None = None):
         """Initialize the string slice operation var.
 
         Args:
@@ -1034,10 +1032,10 @@ class ArraySliceOperation(ArrayVar):
         """
         super(ArraySliceOperation, self).__init__(
             _var_name="",
-            _var_type=str,
+            _var_type=a._var_type,
             _var_data=ImmutableVarData.merge(_var_data),
         )
-        object.__setattr__(self, "a", a if isinstance(a, Var) else LiteralArrayVar(a))
+        object.__setattr__(self, "a", a)
         object.__setattr__(self, "_slice", _slice)
         object.__delattr__(self, "_var_name")
 
@@ -1151,7 +1149,7 @@ class ArrayToNumberOperation(NumberVar):
         default_factory=lambda: LiteralArrayVar([]),
     )
 
-    def __init__(self, a: ArrayVar | list[Any], _var_data: VarData | None = None):
+    def __init__(self, a: ArrayVar, _var_data: VarData | None = None):
         """Initialize the string to number operation var.
 
         Args:
@@ -1229,7 +1227,7 @@ class ArrayItemOperation(ImmutableVar):
 
     def __init__(
         self,
-        a: ArrayVar | list[Any],
+        a: ArrayVar,
         i: NumberVar | int,
         _var_data: VarData | None = None,
     ):
@@ -1242,7 +1240,9 @@ class ArrayItemOperation(ImmutableVar):
         """
         super(ArrayItemOperation, self).__init__(
             _var_name="",
-            _var_type=Any,
+            _var_type=(
+                a._var_type.__args__[0] if hasattr(a._var_type, "__args__") else Any
+            ),
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(self, "a", a if isinstance(a, Var) else LiteralArrayVar(a))
@@ -1391,9 +1391,7 @@ class ArrayContainsOperation(BooleanVar):
     a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
     b: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
 
-    def __init__(
-        self, a: ArrayVar | list[Any], b: Any | Var, _var_data: VarData | None = None
-    ):
+    def __init__(self, a: ArrayVar, b: Any | Var, _var_data: VarData | None = None):
         """Initialize the array contains operation var.
 
         Args:
@@ -1403,9 +1401,10 @@ class ArrayContainsOperation(BooleanVar):
         """
         super(ArrayContainsOperation, self).__init__(
             _var_name="",
+            _var_type=bool,
             _var_data=ImmutableVarData.merge(_var_data),
         )
-        object.__setattr__(self, "a", a if isinstance(a, Var) else LiteralArrayVar(a))
+        object.__setattr__(self, "a", a)
         object.__setattr__(self, "b", b if isinstance(b, Var) else LiteralVar.create(b))
         object.__delattr__(self, "_var_name")
 
