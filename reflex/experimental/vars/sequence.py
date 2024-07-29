@@ -898,7 +898,7 @@ class StringSplitOperation(ArrayVar):
         """
         super(StringSplitOperation, self).__init__(
             _var_name="",
-            _var_type=list[str],
+            _var_type=List[str],
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(
