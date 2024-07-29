@@ -469,6 +469,7 @@ class Component(BaseComponent, ABC):
 
         if isinstance(style, Breakpoints):
             style = {
+                # Assign the Breakpoints to the self-referential selector to avoid squashing down to a regular dict.
                 "&": style,
             }
 
