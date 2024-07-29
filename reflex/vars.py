@@ -2168,6 +2168,24 @@ class ComputedVar(Var, property):
     # Interval at which the computed var should be updated
     _update_interval: Optional[datetime.timedelta] = dataclasses.field(default=None)
 
+    # The name of the var.
+    _var_name: str = dataclasses.field()
+
+    # The type of the var.
+    _var_type: Type = dataclasses.field(default=Any)
+
+    # Whether this is a local javascript variable.
+    _var_is_local: bool = dataclasses.field(default=False)
+
+    # Whether the var is a string literal.
+    _var_is_string: bool = dataclasses.field(default=False)
+
+    # _var_full_name should be prefixed with _var_state
+    _var_full_name_needs_state_prefix: bool = dataclasses.field(default=False)
+
+    # Extra metadata associated with the Var
+    _var_data: Optional[VarData] = dataclasses.field(default=None)
+
     def __init__(
         self,
         fget: Callable[[BaseState], Any],
