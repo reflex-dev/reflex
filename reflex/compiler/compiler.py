@@ -34,7 +34,7 @@ def _compile_document_root(root: Component) -> str:
     Returns:
         The compiled document root.
     """
-    return templates.DOCUMENT_ROOT.render(
+    return templates.document_root().render(
         imports=utils.compile_imports(root._get_all_imports()),
         document=root.render(),
     )
@@ -72,7 +72,7 @@ def _compile_app(app_root: Component) -> str:
         ("utils_state", f"$/{constants.Dirs.UTILS}/state"),
     ]
 
-    return templates.APP_ROOT.render(
+    return templates.app_root().render(
         imports=utils.compile_imports(app_root._get_all_imports()),
         custom_codes=app_root._get_all_custom_code(),
         hooks={**app_root._get_all_hooks_internal(), **app_root._get_all_hooks()},
@@ -90,7 +90,7 @@ def _compile_theme(theme: str) -> str:
     Returns:
         The compiled theme.
     """
-    return templates.THEME.render(theme=theme)
+    return templates.theme().render(theme=theme)
 
 
 def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None) -> str:
@@ -109,7 +109,7 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
 
     last_compiled_time = str(datetime.now())
     return (
-        templates.CONTEXT.render(
+        templates.context().render(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
@@ -118,7 +118,7 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
             default_color_mode=appearance,
         )
         if state
-        else templates.CONTEXT.render(
+        else templates.context().render(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=appearance,
             last_compiled_time=last_compiled_time,
@@ -145,7 +145,7 @@ def _compile_page(
     # Compile the code to render the component.
     kwargs = {"state_name": state.get_name()} if state is not None else {}
 
-    return templates.PAGE.render(
+    return templates.page().render(
         imports=imports,
         dynamic_imports=component._get_all_dynamic_imports(),
         custom_codes=component._get_all_custom_code(),
@@ -201,7 +201,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
                 )
             stylesheet = f"../{constants.Dirs.PUBLIC}/{stylesheet.strip('/')}"
         sheets.append(stylesheet) if stylesheet not in sheets else None
-    return templates.STYLE.render(stylesheets=sheets)
+    return templates.style().render(stylesheets=sheets)
 
 
 def _compile_component(component: Component | StatefulComponent) -> str:
@@ -213,7 +213,7 @@ def _compile_component(component: Component | StatefulComponent) -> str:
     Returns:
         The compiled component.
     """
-    return templates.COMPONENT.render(component=component)
+    return templates.component().render(component=component)
 
 
 def _compile_components(
@@ -241,7 +241,7 @@ def _compile_components(
 
     # Compile the components page.
     return (
-        templates.COMPONENTS.render(
+        templates.components().render(
             imports=utils.compile_imports(imports),
             components=component_renders,
         ),
@@ -319,7 +319,7 @@ def _compile_stateful_components(
         f"$/{constants.Dirs.UTILS}/{constants.PageNames.STATEFUL_COMPONENTS}", None
     )
 
-    return templates.STATEFUL_COMPONENTS.render(
+    return templates.stateful_components().render(
         imports=utils.compile_imports(all_imports),
         memoized_code="\n".join(rendered_components),
     )
@@ -336,7 +336,7 @@ def _compile_tailwind(
     Returns:
         The compiled Tailwind config.
     """
-    return templates.TAILWIND_CONFIG.render(
+    return templates.tailwind_config().render(
         **config,
     )
 

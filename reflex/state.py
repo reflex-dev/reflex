@@ -288,7 +288,7 @@ def get_var_for_field(cls: Type[BaseState], f: ModelField):
 # Keep track of all state instances to calculate minified state names
 state_count: int = 0
 
-all_state_names: Set[str] = set()
+minified_state_names: Dict[str, str] = {}
 
 
 def next_minified_state_name() -> str:
@@ -296,12 +296,8 @@ def next_minified_state_name() -> str:
 
     Returns:
         The next minified state name.
-
-    Raises:
-        RuntimeError: If the minified state name already exists.
     """
     global state_count
-    global all_state_names
     num = state_count
 
     # All possible chars for minified state name
@@ -318,15 +314,14 @@ def next_minified_state_name() -> str:
 
     state_count += 1
 
-    if state_name in all_state_names:
-        raise RuntimeError(f"Minified state name {state_name} already exists")
-    all_state_names.add(state_name)
-
     return state_name
 
 
-def generate_state_name() -> str:
+def get_minified_state_name(state_name: str) -> str:
     """Generate a minified state name.
+
+    Args:
+        state_name: The state name to minify.
 
     Returns:
         The minified state name.
@@ -334,9 +329,13 @@ def generate_state_name() -> str:
     Raises:
         ValueError: If no more minified state names are available
     """
+    if state_name in minified_state_names:
+        return minified_state_names[state_name]
+
     while name := next_minified_state_name():
-        if name in constants.CompileVars.INTERNAL_STATE_NAMES:
+        if name in minified_state_names.values():
             continue
+        minified_state_names[state_name] = name
         return name
     raise ValueError("No more minified state names available")
 
@@ -409,9 +408,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
     # A special event handler for setting base vars.
     setvar: ClassVar[EventHandler]
-
-    # Minified state name
-    _state_name: ClassVar[Optional[str]] = None
 
     def __init__(
         self,
@@ -517,10 +513,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Handle locally-defined states for pickling.
         if "<locals>" in cls.__qualname__:
             cls._handle_local_def()
-
-        # Generate a minified state name by converting state count to string
-        if not cls._state_name or cls._state_name in all_state_names:
-            cls._state_name = generate_state_name()
 
         # Validate the module name.
         cls._validate_module_name()
@@ -937,18 +929,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Returns:
             The name of the state.
-
-        Raises:
-            RuntimeError: If the state name is not set.
         """
-        if constants.CompileVars.MINIFY_STATES:
-            if not cls._state_name:
-                raise RuntimeError(
-                    "State name minification is enabled, but state name is not set."
-                )
-            return cls._state_name
         module = cls.__module__.replace(".", "___")
-        return format.to_snake_case(f"{module}___{cls.__name__}")
+        state_name = format.to_snake_case(f"{module}___{cls.__name__}")
+        if constants.compiler.CompileVars.MINIFY_STATES():
+            return get_minified_state_name(state_name)
+        return state_name
 
     @classmethod
     @functools.lru_cache()
@@ -2290,10 +2276,6 @@ def dynamic(func: Callable[[T], Component]):
 class FrontendEventExceptionState(State):
     """Substate for handling frontend exceptions."""
 
-    _state_name: ClassVar[Optional[str]] = (
-        constants.CompileVars.FRONTEND_EXCEPTION_STATE
-    )
-
     @event
     def handle_frontend_exception(self, stack: str, component_stack: str) -> None:
         """Handle frontend exceptions.
@@ -2312,10 +2294,6 @@ class FrontendEventExceptionState(State):
 
 class UpdateVarsInternalState(State):
     """Substate for handling internal state var updates."""
-
-    _state_name: ClassVar[Optional[str]] = (
-        constants.CompileVars.UPDATE_VARS_INTERNAL_STATE
-    )
 
     async def update_vars_internal(self, vars: dict[str, Any]) -> None:
         """Apply updates to fully qualified state vars.
@@ -2341,8 +2319,6 @@ class OnLoadInternalState(State):
 
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
-
-    _state_name: ClassVar[Optional[str]] = constants.CompileVars.ON_LOAD_INTERNAL_STATE
 
     def on_load_internal(self) -> list[Event | EventSpec] | None:
         """Queue on_load handlers for the current page.

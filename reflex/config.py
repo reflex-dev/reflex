@@ -545,6 +545,9 @@ class EnvironmentVariables:
     # Where to save screenshots when tests fail.
     SCREENSHOT_DIR: EnvVar[Optional[Path]] = env_var(None)
 
+    # Whether to minify state names.
+    REFLEX_MINIFY_STATES: EnvVar[Optional[bool]] = env_var(False)
+
 
 environment = EnvironmentVariables()
 

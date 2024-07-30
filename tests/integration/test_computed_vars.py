@@ -106,7 +106,6 @@ def ComputedVars():
             ),
         )
 
-    # raise Exception(State.count3._deps(objclass=State))
     app = rx.App()
     app.add_page(index)
 
