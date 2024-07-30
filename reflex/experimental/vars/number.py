@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import json
 import sys
 from functools import cached_property
 from typing import Any, Union
@@ -1253,6 +1254,22 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
         )
         object.__setattr__(self, "_var_value", _var_value)
 
+    def __hash__(self) -> int:
+        """Hash the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self._var_value))
+
+    def json(self) -> str:
+        """Get the JSON representation of the var.
+
+        Returns:
+            The JSON representation of the var.
+        """
+        return "true" if self._var_value else "false"
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1288,7 +1305,15 @@ class LiteralNumberVar(LiteralVar, NumberVar):
         Returns:
             The hash of the var.
         """
-        return hash(self._var_value)
+        return hash((self.__class__.__name__, self._var_value))
+
+    def json(self) -> str:
+        """Get the JSON representation of the var.
+
+        Returns:
+            The JSON representation of the var.
+        """
+        return json.dumps(self._var_value)
 
 
 number_types = Union[NumberVar, LiteralNumberVar, int, float]

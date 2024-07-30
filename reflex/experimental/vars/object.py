@@ -67,7 +67,7 @@ class ObjectVar(ImmutableVar):
         """
         return ObjectMergeOperation(self, other)
 
-    def __getitem__(self, key: Var | Any) -> ObjectItemOperation:
+    def __getitem__(self, key: Var | Any) -> ImmutableVar:
         """Get an item from the object.
 
         Args:
@@ -76,7 +76,7 @@ class ObjectVar(ImmutableVar):
         Returns:
             The item from the object.
         """
-        return ObjectItemOperation(self, key)
+        return ObjectItemOperation(self, key).guess_type()
 
     def __getattr__(self, name) -> ObjectItemOperation:
         """Get an attribute of the var.
@@ -211,6 +211,31 @@ class LiteralObjectVar(LiteralVar, ObjectVar):
             The VarData of the components and all of its children.
         """
         return self._cached_get_all_var_data
+
+    def json(self) -> str:
+        """Get the JSON representation of the object.
+
+        Returns:
+            The JSON representation of the object.
+        """
+        return (
+            "{"
+            + ", ".join(
+                [
+                    f"{LiteralVar.create(key).json()}:{LiteralVar.create(value).json()}"
+                    for key, value in self._var_value.items()
+                ]
+            )
+            + "}"
+        )
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name, self._var_name))
 
 
 @dataclasses.dataclass(

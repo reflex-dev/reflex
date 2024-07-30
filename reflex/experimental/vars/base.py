@@ -367,6 +367,28 @@ class ImmutableVar(Var):
             _var_data=self._var_data,
         )
 
+    def guess_type(self) -> ImmutableVar:
+        """Guess the type of the var.
+
+        Returns:
+            The guessed type.
+        """
+        from .number import NumberVar
+        from .object import ObjectVar
+        from .sequence import ArrayVar, StringVar
+
+        var_type = self._var_type
+
+        if issubclass(var_type, (int, float)):
+            return self.to(NumberVar, var_type)
+        if issubclass(var_type, dict):
+            return self.to(ObjectVar, var_type)
+        if issubclass(var_type, (list, tuple, set)):
+            return self.to(ArrayVar, var_type)
+        if issubclass(var_type, str):
+            return self.to(StringVar)
+        return self
+
 
 OUTPUT = TypeVar("OUTPUT", bound=ImmutableVar)
 

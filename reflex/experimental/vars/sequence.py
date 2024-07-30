@@ -595,6 +595,22 @@ class LiteralStringVar(LiteralVar, StringVar):
             _var_data=_var_data,
         )
 
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self._var_value))
+
+    def json(self) -> str:
+        """Get the JSON representation of the var.
+
+        Returns:
+            The JSON representation of the var.
+        """
+        return json.dumps(self._var_value)
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -709,11 +725,11 @@ class ArrayVar(ImmutableVar):
     def __getitem__(self, i: slice) -> ArraySliceOperation: ...
 
     @overload
-    def __getitem__(self, i: int | NumberVar) -> ArrayItemOperation: ...
+    def __getitem__(self, i: int | NumberVar) -> ImmutableVar: ...
 
     def __getitem__(
         self, i: slice | int | NumberVar
-    ) -> ArraySliceOperation | ArrayItemOperation:
+    ) -> ArraySliceOperation | ImmutableVar:
         """Get a slice of the array.
 
         Args:
@@ -724,7 +740,7 @@ class ArrayVar(ImmutableVar):
         """
         if isinstance(i, slice):
             return ArraySliceOperation(self, i)
-        return ArrayItemOperation(self, i)
+        return ArrayItemOperation(self, i).guess_type()
 
     def length(self) -> NumberVar:
         """Get the length of the array.
@@ -870,6 +886,28 @@ class LiteralArrayVar(LiteralVar, ArrayVar):
             The VarData of the components and all of its children.
         """
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self._var_name))
+
+    def json(self) -> str:
+        """Get the JSON representation of the var.
+
+        Returns:
+            The JSON representation of the var.
+        """
+        return (
+            "["
+            + ", ".join(
+                [LiteralVar.create(element).json() for element in self._var_value]
+            )
+            + "]"
+        )
 
 
 @dataclasses.dataclass(
