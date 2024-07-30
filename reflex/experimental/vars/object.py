@@ -135,7 +135,7 @@ class LiteralObjectVar(LiteralVar, ObjectVar):
         super(LiteralObjectVar, self).__init__(
             _var_name="",
             _var_type=(
-                dict[
+                Dict[
                     unionize(*map(type, _var_value.keys())),
                     unionize(*map(type, _var_value.values())),
                 ]

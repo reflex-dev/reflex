@@ -1319,7 +1319,7 @@ class RangeOperation(ArrayVar):
         """
         super(RangeOperation, self).__init__(
             _var_name="",
-            _var_type=list[int],
+            _var_type=List[int],
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(
