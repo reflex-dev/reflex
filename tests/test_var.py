@@ -1048,15 +1048,15 @@ def test_type_chains():
         List[int],
     )
     assert (
-        str(object_var.keys()[0].upper())
+        str(object_var.keys()[0].upper())  # type: ignore
         == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(0).toUpperCase()'
     )
     assert (
-        str(object_var.entries()[1][1] - 1)
+        str(object_var.entries()[1][1] - 1)  # type: ignore
         == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(1).at(1) - 1)'
     )
     assert (
-        str(object_var["c"] + object_var["b"])
+        str(object_var["c"] + object_var["b"])  # type: ignore
         == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"])'
     )
 

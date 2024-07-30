@@ -339,7 +339,7 @@ class ImmutableVar(Var):
         )
 
         if issubclass(output, NumberVar):
-            if var_type is not None and not issubclass(fixed_type, (int, float)):
+            if fixed_type is not None and not issubclass(fixed_type, (int, float)):
                 raise TypeError(
                     f"Unsupported type {var_type} for NumberVar. Must be int or float."
                 )
@@ -350,7 +350,9 @@ class ImmutableVar(Var):
         from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
 
         if issubclass(output, ArrayVar):
-            if var_type is not None and not issubclass(fixed_type, (list, tuple, set)):
+            if fixed_type is not None and not issubclass(
+                fixed_type, (list, tuple, set)
+            ):
                 raise TypeError(
                     f"Unsupported type {var_type} for ArrayVar. Must be list, tuple, or set."
                 )
@@ -366,7 +368,7 @@ class ImmutableVar(Var):
         from .function import FunctionVar, ToFunctionOperation
 
         if issubclass(output, FunctionVar):
-            if var_type is not None and not issubclass(fixed_type, Callable):
+            if fixed_type is not None and not issubclass(fixed_type, Callable):
                 raise TypeError(
                     f"Unsupported type {var_type} for FunctionVar. Must be Callable."
                 )
