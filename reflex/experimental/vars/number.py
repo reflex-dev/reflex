@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import json
 import sys
 from functools import cached_property
 from typing import Any, Union
@@ -1253,6 +1254,22 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
         )
         object.__setattr__(self, "_var_value", _var_value)
 
+    def __hash__(self) -> int:
+        """Hash the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self._var_value))
+
+    def json(self) -> str:
+        """Get the JSON representation of the var.
+
+        Returns:
+            The JSON representation of the var.
+        """
+        return "true" if self._var_value else "false"
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1288,8 +1305,154 @@ class LiteralNumberVar(LiteralVar, NumberVar):
         Returns:
             The hash of the var.
         """
-        return hash(self._var_value)
+        return hash((self.__class__.__name__, self._var_value))
+
+    def json(self) -> str:
+        """Get the JSON representation of the var.
+
+        Returns:
+            The JSON representation of the var.
+        """
+        return json.dumps(self._var_value)
 
 
 number_types = Union[NumberVar, LiteralNumberVar, int, float]
 boolean_types = Union[BooleanVar, LiteralBooleanVar, bool]
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ToNumberVarOperation(NumberVar):
+    """Base class for immutable number vars that are the result of a number operation."""
+
+    _original_value: Var = dataclasses.field(
+        default_factory=lambda: LiteralNumberVar(0)
+    )
+
+    def __init__(
+        self,
+        _original_value: Var,
+        _var_type: type[int] | type[float] = float,
+        _var_data: VarData | None = None,
+    ):
+        """Initialize the number var.
+
+        Args:
+            _original_value: The original value.
+            _var_type: The type of the Var.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(ToNumberVarOperation, self).__init__(
+            _var_name="",
+            _var_type=_var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(self, "_original_value", _original_value)
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return str(self._original_value)
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(ToNumberVarOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            self._original_value._get_all_var_data(), self._var_data
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ToBooleanVarOperation(BooleanVar):
+    """Base class for immutable boolean vars that are the result of a boolean operation."""
+
+    _original_value: Var = dataclasses.field(
+        default_factory=lambda: LiteralBooleanVar(False)
+    )
+
+    def __init__(
+        self,
+        _original_value: Var,
+        _var_data: VarData | None = None,
+    ):
+        """Initialize the boolean var.
+
+        Args:
+            _original_value: The original value.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(ToBooleanVarOperation, self).__init__(
+            _var_name="",
+            _var_type=bool,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(self, "_original_value", _original_value)
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return str(self._original_value)
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(ToBooleanVarOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            self._original_value._get_all_var_data(), self._var_data
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data

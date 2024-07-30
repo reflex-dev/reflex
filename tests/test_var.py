@@ -19,7 +19,13 @@ from reflex.experimental.vars.number import (
     LiteralNumberVar,
     NumberVar,
 )
-from reflex.experimental.vars.sequence import ConcatVarOperation, LiteralStringVar
+from reflex.experimental.vars.object import LiteralObjectVar
+from reflex.experimental.vars.sequence import (
+    ArrayVar,
+    ConcatVarOperation,
+    LiteralArrayVar,
+    LiteralStringVar,
+)
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
 from reflex.vars import (
@@ -881,7 +887,7 @@ def test_literal_var():
     )
     assert (
         str(complicated_var)
-        == '[{ ["a"] : 1, ["b"] : 2, ["c"] : { ["d"] : 3, ["e"] : 4 } }, [1, 2, 3, 4], 9, "string", true, false, null, [1, 2, 3]]'
+        == '[({ ["a"] : 1, ["b"] : 2, ["c"] : ({ ["d"] : 3, ["e"] : 4 }) }), [1, 2, 3, 4], 9, "string", true, false, null, [1, 2, 3]]'
     )
 
 
@@ -898,7 +904,7 @@ def test_function_var():
     )
     assert (
         str(manual_addition_func.call(1, 2))
-        == '(((a, b) => ({ ["args"] : [a, b], ["result"] : a + b }))(1, 2))'
+        == '(((a, b) => (({ ["args"] : [a, b], ["result"] : a + b })))(1, 2))'
     )
 
     increment_func = addition_func(1)
@@ -935,7 +941,7 @@ def test_var_operation():
 def test_string_operations():
     basic_string = LiteralStringVar.create("Hello, World!")
 
-    assert str(basic_string.length()) == '"Hello, World!".length'
+    assert str(basic_string.length()) == '"Hello, World!".split("").length'
     assert str(basic_string.lower()) == '"Hello, World!".toLowerCase()'
     assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
     assert str(basic_string.strip()) == '"Hello, World!".trim()'
@@ -969,6 +975,89 @@ def test_all_number_operations():
     assert (
         str(LiteralBooleanVar(False) < LiteralBooleanVar(True))
         == "((false ? 1 : 0) < (true ? 1 : 0))"
+    )
+
+
+def test_index_operation():
+    array_var = LiteralArrayVar([1, 2, 3, 4, 5])
+    assert str(array_var[0]) == "[1, 2, 3, 4, 5].at(0)"
+    assert str(array_var[1:2]) == "[1, 2, 3, 4, 5].slice(1, 2)"
+    assert (
+        str(array_var[1:4:2])
+        == "[1, 2, 3, 4, 5].slice(1, 4).filter((_, i) => i % 2 === 0)"
+    )
+    assert (
+        str(array_var[::-1])
+        == "[1, 2, 3, 4, 5].slice(0, [1, 2, 3, 4, 5].length).reverse().slice(undefined, undefined).filter((_, i) => i % 1 === 0)"
+    )
+    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].reverse()"
+    assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5].at(0) + 9)"
+
+
+def test_array_operations():
+    array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
+
+    assert str(array_var.length()) == "[1, 2, 3, 4, 5].length"
+    assert str(array_var.contains(3)) == "[1, 2, 3, 4, 5].includes(3)"
+    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].reverse()"
+    assert (
+        str(ArrayVar.range(10))
+        == "Array.from({ length: (10 - 0) / 1 }, (_, i) => 0 + i * 1)"
+    )
+    assert (
+        str(ArrayVar.range(1, 10))
+        == "Array.from({ length: (10 - 1) / 1 }, (_, i) => 1 + i * 1)"
+    )
+    assert (
+        str(ArrayVar.range(1, 10, 2))
+        == "Array.from({ length: (10 - 1) / 2 }, (_, i) => 1 + i * 2)"
+    )
+    assert (
+        str(ArrayVar.range(1, 10, -1))
+        == "Array.from({ length: (10 - 1) / -1 }, (_, i) => 1 + i * -1)"
+    )
+
+
+def test_object_operations():
+    object_var = LiteralObjectVar({"a": 1, "b": 2, "c": 3})
+
+    assert (
+        str(object_var.keys()) == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+    )
+    assert (
+        str(object_var.values())
+        == 'Object.values(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+    )
+    assert (
+        str(object_var.entries())
+        == 'Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+    )
+    assert str(object_var.a) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
+    assert str(object_var["a"]) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
+    assert (
+        str(object_var.merge(LiteralObjectVar({"c": 4, "d": 5})))
+        == 'Object.assign(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }), ({ ["c"] : 4, ["d"] : 5 }))'
+    )
+
+
+def test_type_chains():
+    object_var = LiteralObjectVar({"a": 1, "b": 2, "c": 3})
+    assert object_var._var_type is Dict[str, int]
+    assert (object_var.keys()._var_type, object_var.values()._var_type) == (
+        List[str],
+        List[int],
+    )
+    assert (
+        str(object_var.keys()[0].upper())  # type: ignore
+        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(0).toUpperCase()'
+    )
+    assert (
+        str(object_var.entries()[1][1] - 1)  # type: ignore
+        == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(1).at(1) - 1)'
+    )
+    assert (
+        str(object_var["c"] + object_var["b"])  # type: ignore
+        == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"])'
     )
 
 
