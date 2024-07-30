@@ -390,6 +390,9 @@ class ImmutableVar(Var):
         from .object import ObjectVar
         from .sequence import ArrayVar, StringVar
 
+        if self._var_type is Any:
+            return self
+
         var_type = self._var_type
 
         fixed_type = var_type if inspect.isclass(var_type) else get_origin(var_type)

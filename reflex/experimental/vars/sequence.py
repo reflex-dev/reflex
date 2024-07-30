@@ -834,7 +834,11 @@ class LiteralArrayVar(LiteralVar, ArrayVar):
         super(LiteralArrayVar, self).__init__(
             _var_name="",
             _var_data=ImmutableVarData.merge(_var_data),
-            _var_type=type(_var_value) if _var_type is None else _var_type,
+            _var_type=(
+                List[unionize(*map(type, _var_value))]
+                if _var_type is None
+                else _var_type
+            ),
         )
         object.__setattr__(self, "_var_value", _var_value)
         object.__delattr__(self, "_var_name")
