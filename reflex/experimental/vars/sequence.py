@@ -9,7 +9,7 @@ import re
 import sys
 import typing
 from functools import cached_property
-from typing import Any, List, Set, Tuple, Union, overload
+from typing import Any, List, Set, Tuple, Type, Union, overload
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
@@ -1215,6 +1215,23 @@ class ArrayLengthOperation(ArrayToNumberOperation):
         return f"{str(self.a)}.length"
 
 
+def unionize(*args: Type) -> Type:
+    """Unionize the types.
+
+    Args:
+        args: The types to unionize.
+
+    Returns:
+        The unionized types.
+    """
+    if not args:
+        return Any
+    first, *rest = args
+    if not rest:
+        return first
+    return Union[first, unionize(*rest)]
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
@@ -1239,10 +1256,14 @@ class ArrayItemOperation(ImmutableVar):
             i: The index.
             _var_data: Additional hooks and imports associated with the Var.
         """
-        element_type = typing.get_args(a._var_type)
+        args = typing.get_args(a._var_type)
+        if args and isinstance(i, int) and issubclass(a._var_type, tuple):
+            element_type = args[i % len(args)]
+        else:
+            element_type = unionize(*args)
         super(ArrayItemOperation, self).__init__(
             _var_name="",
-            _var_type=element_type[0] if element_type else Any,
+            _var_type=element_type,
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(self, "a", a if isinstance(a, Var) else LiteralArrayVar(a))

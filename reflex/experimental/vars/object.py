@@ -9,7 +9,7 @@ from functools import cached_property
 from typing import Any, Dict, Tuple, Type, Union
 
 from reflex.experimental.vars.base import ImmutableVar, LiteralVar
-from reflex.experimental.vars.sequence import ArrayVar
+from reflex.experimental.vars.sequence import ArrayVar, unionize
 from reflex.vars import ImmutableVarData, Var, VarData
 
 
@@ -88,23 +88,6 @@ class ObjectVar(ImmutableVar):
             The attribute of the var.
         """
         return ObjectItemOperation(self, name)
-
-
-def unionize(*args: Type) -> Type:
-    """Unionize the types.
-
-    Args:
-        args: The types to unionize.
-
-    Returns:
-        The unionized types.
-    """
-    if not args:
-        return Any
-    first, *rest = args
-    if not rest:
-        return first
-    return Union[first, unionize(*rest)]
 
 
 @dataclasses.dataclass(
