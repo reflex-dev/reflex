@@ -1997,6 +1997,14 @@ class Var:
         """
         return self._var_data
 
+    def json(self) -> str:
+        """Serialize the var to a JSON string.
+
+        Raises:
+            NotImplementedError: If the method is not implemented.
+        """
+        raise NotImplementedError("Var subclasses must implement the json method.")
+
     @property
     def _var_name_unwrapped(self) -> str:
         """Get the var str without wrapping in curly braces.

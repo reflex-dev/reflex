@@ -455,6 +455,16 @@ class LiteralVar(ImmutableVar):
     def __post_init__(self):
         """Post-initialize the var."""
 
+    def json(self) -> str:
+        """Serialize the var to a JSON string.
+
+        Raises:
+            NotImplementedError: If the method is not implemented.
+        """
+        raise NotImplementedError(
+            "LiteralVar subclasses must implement the json method."
+        )
+
 
 P = ParamSpec("P")
 T = TypeVar("T", bound=ImmutableVar)

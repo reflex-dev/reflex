@@ -235,7 +235,7 @@ class LiteralObjectVar(LiteralVar, ObjectVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name, self._var_name))
+        return hash((self.__class__.__name__, self._var_name))
 
 
 @dataclasses.dataclass(
