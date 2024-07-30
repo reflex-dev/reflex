@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import functools
+import inspect
 import sys
 from typing import (
     TYPE_CHECKING,
@@ -15,7 +16,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import ParamSpec
+from typing_extensions import ParamSpec, get_origin
 
 from reflex import constants
 from reflex.base import Base
@@ -54,7 +55,7 @@ class ImmutableVar(Var):
     _var_name: str = dataclasses.field()
 
     # The type of the var.
-    _var_type: Type = dataclasses.field(default=Any)
+    _var_type: types.GenericType = dataclasses.field(default=Any)
 
     # Extra metadata associated with the Var
     _var_data: Optional[ImmutableVarData] = dataclasses.field(default=None)
@@ -296,7 +297,7 @@ class ImmutableVar(Var):
 
     @overload
     def to(
-        self, output: Type[ObjectVar], var_type: Type = dict
+        self, output: Type[ObjectVar], var_type: types.GenericType = dict
     ) -> ToObjectOperation: ...
 
     @overload
@@ -305,9 +306,13 @@ class ImmutableVar(Var):
     ) -> ToFunctionOperation: ...
 
     @overload
-    def to(self, output: Type[OUTPUT], var_type: Type | None = None) -> OUTPUT: ...
+    def to(
+        self, output: Type[OUTPUT], var_type: types.GenericType | None = None
+    ) -> OUTPUT: ...
 
-    def to(self, output: Type[OUTPUT], var_type: Type | None = None) -> Var:
+    def to(
+        self, output: Type[OUTPUT], var_type: types.GenericType | None = None
+    ) -> Var:
         """Convert the var to a different type.
 
         Args:
@@ -327,8 +332,14 @@ class ImmutableVar(Var):
             ToNumberVarOperation,
         )
 
+        fixed_type = (
+            var_type
+            if var_type is None or inspect.isclass(var_type)
+            else get_origin(var_type)
+        )
+
         if issubclass(output, NumberVar):
-            if var_type is not None and not issubclass(var_type, (int, float)):
+            if var_type is not None and not issubclass(fixed_type, (int, float)):
                 raise TypeError(
                     f"Unsupported type {var_type} for NumberVar. Must be int or float."
                 )
@@ -339,7 +350,7 @@ class ImmutableVar(Var):
         from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
 
         if issubclass(output, ArrayVar):
-            if var_type is not None and not issubclass(var_type, (list, tuple, set)):
+            if var_type is not None and not issubclass(fixed_type, (list, tuple, set)):
                 raise TypeError(
                     f"Unsupported type {var_type} for ArrayVar. Must be list, tuple, or set."
                 )
@@ -355,7 +366,7 @@ class ImmutableVar(Var):
         from .function import FunctionVar, ToFunctionOperation
 
         if issubclass(output, FunctionVar):
-            if var_type is not None and not issubclass(var_type, Callable):
+            if var_type is not None and not issubclass(fixed_type, Callable):
                 raise TypeError(
                     f"Unsupported type {var_type} for FunctionVar. Must be Callable."
                 )
@@ -379,13 +390,15 @@ class ImmutableVar(Var):
 
         var_type = self._var_type
 
-        if issubclass(var_type, (int, float)):
+        fixed_type = var_type if inspect.isclass(var_type) else get_origin(var_type)
+
+        if issubclass(fixed_type, (int, float)):
             return self.to(NumberVar, var_type)
-        if issubclass(var_type, dict):
+        if issubclass(fixed_type, dict):
             return self.to(ObjectVar, var_type)
-        if issubclass(var_type, (list, tuple, set)):
+        if issubclass(fixed_type, (list, tuple, set)):
             return self.to(ArrayVar, var_type)
-        if issubclass(var_type, str):
+        if issubclass(fixed_type, str):
             return self.to(StringVar)
         return self
 

@@ -1040,6 +1040,27 @@ def test_object_operations():
     )
 
 
+def test_type_chains():
+    object_var = LiteralObjectVar({"a": 1, "b": 2, "c": 3})
+    assert object_var._var_type is Dict[str, int]
+    assert (object_var.keys()._var_type, object_var.values()._var_type) == (
+        List[str],
+        List[int],
+    )
+    assert (
+        str(object_var.keys()[0].upper())
+        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(0).toUpperCase()'
+    )
+    assert (
+        str(object_var.entries()[1][1] - 1)
+        == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(1).at(1) - 1)'
+    )
+    assert (
+        str(object_var["c"] + object_var["b"])
+        == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"])'
+    )
+
+
 def test_retrival():
     var_without_data = ImmutableVar.create("test")
     assert var_without_data is not None

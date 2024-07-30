@@ -6,7 +6,7 @@ import dataclasses
 import sys
 import typing
 from functools import cached_property
-from typing import Any, Dict, Tuple, Type, Union
+from typing import Any, Dict, List, Tuple, Type, Union
 
 from reflex.experimental.vars.base import ImmutableVar, LiteralVar
 from reflex.experimental.vars.sequence import ArrayVar, unionize
@@ -327,7 +327,9 @@ class ObjectKeysOperation(ObjectToArrayOperation):
             value: The value of the operation.
             _var_data: Additional hooks and imports associated with the operation.
         """
-        super(ObjectKeysOperation, self).__init__(value, value._key_type(), _var_data)
+        super(ObjectKeysOperation, self).__init__(
+            value, List[value._key_type()], _var_data
+        )
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -354,7 +356,7 @@ class ObjectValuesOperation(ObjectToArrayOperation):
             _var_data: Additional hooks and imports associated with the operation.
         """
         super(ObjectValuesOperation, self).__init__(
-            value, value._value_type(), _var_data
+            value, List[value._value_type()], _var_data
         )
 
     @cached_property
@@ -382,7 +384,7 @@ class ObjectEntriesOperation(ObjectToArrayOperation):
             _var_data: Additional hooks and imports associated with the operation.
         """
         super(ObjectEntriesOperation, self).__init__(
-            value, Tuple[value._key_type(), value._value_type()], _var_data
+            value, List[Tuple[value._key_type(), value._value_type()]], _var_data
         )
 
     @cached_property

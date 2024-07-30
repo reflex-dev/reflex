@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import dataclasses
 import functools
+import inspect
 import json
 import re
 import sys
 import typing
 from functools import cached_property
 from typing import Any, List, Set, Tuple, Type, Union, overload
+
+from typing_extensions import get_origin
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
@@ -23,6 +26,7 @@ from reflex.experimental.vars.number import (
     NotEqualOperation,
     NumberVar,
 )
+from reflex.utils.types import GenericType
 from reflex.vars import ImmutableVarData, Var, VarData, _global_vars
 
 
@@ -1270,6 +1274,20 @@ def unionize(*args: Type) -> Type:
     return Union[first, unionize(*rest)]
 
 
+def is_tuple_type(t: GenericType) -> bool:
+    """Check if a type is a tuple type.
+
+    Args:
+        t: The type to check.
+
+    Returns:
+        Whether the type is a tuple type.
+    """
+    if inspect.isclass(t):
+        return issubclass(t, tuple)
+    return get_origin(t) is tuple
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
@@ -1295,7 +1313,7 @@ class ArrayItemOperation(ImmutableVar):
             _var_data: Additional hooks and imports associated with the Var.
         """
         args = typing.get_args(a._var_type)
-        if args and isinstance(i, int) and issubclass(a._var_type, tuple):
+        if args and isinstance(i, int) and is_tuple_type(a._var_type):
             element_type = args[i % len(args)]
         else:
             element_type = unionize(*args)
