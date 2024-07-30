@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
+import typing
 from functools import cached_property
 from typing import Any, Dict, Tuple, Type, Union
 
@@ -89,6 +90,23 @@ class ObjectVar(ImmutableVar):
         return ObjectItemOperation(self, name)
 
 
+def unionize(*args: Type) -> Type:
+    """Unionize the types.
+
+    Args:
+        args: The types to unionize.
+
+    Returns:
+        The unionized types.
+    """
+    if not args:
+        return Any
+    first, *rest = args
+    if not rest:
+        return first
+    return Union[first, unionize(*rest)]
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
@@ -116,7 +134,14 @@ class LiteralObjectVar(LiteralVar, ObjectVar):
         """
         super(LiteralObjectVar, self).__init__(
             _var_name="",
-            _var_type=type(_var_value) if _var_type is None else _var_type,
+            _var_type=(
+                dict[
+                    unionize(*map(type, _var_value.keys())),
+                    unionize(*map(type, _var_value.values())),
+                ]
+                if _var_type is None
+                else _var_type
+            ),
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(
@@ -132,10 +157,8 @@ class LiteralObjectVar(LiteralVar, ObjectVar):
         Returns:
             The type of the keys of the object.
         """
-        print(self._var_type)
-        return (
-            self._var_type.__args__[0] if hasattr(self._var_type, "__args__") else Any
-        )
+        args_list = typing.get_args(self._var_type)
+        return args_list[0] if args_list else Any
 
     def _value_type(self) -> Type:
         """Get the type of the values of the object.
@@ -143,9 +166,8 @@ class LiteralObjectVar(LiteralVar, ObjectVar):
         Returns:
             The type of the values of the object.
         """
-        return (
-            self._var_type.__args__[1] if hasattr(self._var_type, "__args__") else Any
-        )
+        args_list = typing.get_args(self._var_type)
+        return args_list[1] if args_list else Any
 
     def __getattr__(self, name):
         """Get an attribute of the var.

@@ -7,6 +7,7 @@ import functools
 import json
 import re
 import sys
+import typing
 from functools import cached_property
 from typing import Any, List, Set, Tuple, Union, overload
 
@@ -1238,11 +1239,10 @@ class ArrayItemOperation(ImmutableVar):
             i: The index.
             _var_data: Additional hooks and imports associated with the Var.
         """
+        element_type = typing.get_args(a._var_type)
         super(ArrayItemOperation, self).__init__(
             _var_name="",
-            _var_type=(
-                a._var_type.__args__[0] if hasattr(a._var_type, "__args__") else Any
-            ),
+            _var_type=element_type[0] if element_type else Any,
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(self, "a", a if isinstance(a, Var) else LiteralArrayVar(a))
@@ -1319,7 +1319,7 @@ class RangeOperation(ArrayVar):
         """
         super(RangeOperation, self).__init__(
             _var_name="",
-            _var_type=list,
+            _var_type=list[int],
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(
