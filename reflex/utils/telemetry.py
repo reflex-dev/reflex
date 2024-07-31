@@ -126,7 +126,7 @@ def compile_callback(f, start_time):
         # Force background compile errors to print eagerly
         f.result()
     finally:
-        send("test-compile", duration=time.perf_counter() - start_time)
+        send("compile", duration=time.perf_counter() - start_time)
 
 
 def _prepare_event(event: str, **kwargs) -> dict:
