@@ -6,15 +6,51 @@ import dataclasses
 import sys
 import typing
 from functools import cached_property
-from typing import Any, Dict, List, Tuple, Type, Union
+from inspect import isclass
+from typing import (
+    Any,
+    Dict,
+    List,
+    NoReturn,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    get_args,
+    overload,
+)
 
-from reflex.experimental.vars.base import ImmutableVar, LiteralVar
-from reflex.experimental.vars.sequence import ArrayVar, unionize
+from typing_extensions import get_origin
+
+from reflex.experimental.vars.base import (
+    ImmutableVar,
+    LiteralVar,
+    figure_out_type,
+)
+from reflex.experimental.vars.number import NumberVar
+from reflex.experimental.vars.sequence import ArrayVar, StringVar
+from reflex.utils.exceptions import VarAttributeError
+from reflex.utils.types import GenericType, get_attribute_access_type
 from reflex.vars import ImmutableVarData, Var, VarData
 
+OBJECT_TYPE = TypeVar("OBJECT_TYPE")
 
-class ObjectVar(ImmutableVar):
+KEY_TYPE = TypeVar("KEY_TYPE")
+VALUE_TYPE = TypeVar("VALUE_TYPE")
+
+ARRAY_INNER_TYPE = TypeVar("ARRAY_INNER_TYPE")
+
+OTHER_KEY_TYPE = TypeVar("OTHER_KEY_TYPE")
+
+
+class ObjectVar(ImmutableVar[OBJECT_TYPE]):
     """Base class for immutable object vars."""
+
+    @overload
+    def _key_type(self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]]) -> KEY_TYPE: ...
+
+    @overload
+    def _key_type(self) -> Type: ...
 
     def _key_type(self) -> Type:
         """Get the type of the keys of the object.
@@ -22,7 +58,17 @@ class ObjectVar(ImmutableVar):
         Returns:
             The type of the keys of the object.
         """
-        return ImmutableVar
+        fixed_type = (
+            self._var_type if isclass(self._var_type) else get_origin(self._var_type)
+        )
+        args = get_args(self._var_type) if issubclass(fixed_type, dict) else ()
+        return args[0] if args else Any
+
+    @overload
+    def _value_type(self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]]) -> VALUE_TYPE: ...
+
+    @overload
+    def _value_type(self) -> Type: ...
 
     def _value_type(self) -> Type:
         """Get the type of the values of the object.
@@ -30,9 +76,21 @@ class ObjectVar(ImmutableVar):
         Returns:
             The type of the values of the object.
         """
-        return ImmutableVar
+        fixed_type = (
+            self._var_type if isclass(self._var_type) else get_origin(self._var_type)
+        )
+        args = get_args(self._var_type) if issubclass(fixed_type, dict) else ()
+        return args[1] if args else Any
 
-    def keys(self) -> ObjectKeysOperation:
+    @overload
+    def keys(
+        self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]],
+    ) -> ArrayVar[List[KEY_TYPE]]: ...
+
+    @overload
+    def keys(self) -> ArrayVar: ...
+
+    def keys(self) -> ArrayVar:
         """Get the keys of the object.
 
         Returns:
@@ -40,7 +98,15 @@ class ObjectVar(ImmutableVar):
         """
         return ObjectKeysOperation(self)
 
-    def values(self) -> ObjectValuesOperation:
+    @overload
+    def values(
+        self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]],
+    ) -> ArrayVar[List[VALUE_TYPE]]: ...
+
+    @overload
+    def values(self) -> ArrayVar: ...
+
+    def values(self) -> ArrayVar:
         """Get the values of the object.
 
         Returns:
@@ -48,7 +114,15 @@ class ObjectVar(ImmutableVar):
         """
         return ObjectValuesOperation(self)
 
-    def entries(self) -> ObjectEntriesOperation:
+    @overload
+    def entries(
+        self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]],
+    ) -> ArrayVar[List[Tuple[KEY_TYPE, VALUE_TYPE]]]: ...
+
+    @overload
+    def entries(self) -> ArrayVar: ...
+
+    def entries(self) -> ArrayVar:
         """Get the entries of the object.
 
         Returns:
@@ -67,6 +141,53 @@ class ObjectVar(ImmutableVar):
         """
         return ObjectMergeOperation(self, other)
 
+    # NoReturn is used here to catch when key value is Any
+    @overload
+    def __getitem__(
+        self: ObjectVar[Dict[KEY_TYPE, NoReturn]],
+        key: Var | Any,
+    ) -> ImmutableVar: ...
+
+    @overload
+    def __getitem__(
+        self: (
+            ObjectVar[Dict[KEY_TYPE, int]]
+            | ObjectVar[Dict[KEY_TYPE, float]]
+            | ObjectVar[Dict[KEY_TYPE, int | float]]
+        ),
+        key: Var | Any,
+    ) -> NumberVar: ...
+
+    @overload
+    def __getitem__(
+        self: ObjectVar[Dict[KEY_TYPE, str]],
+        key: Var | Any,
+    ) -> StringVar: ...
+
+    @overload
+    def __getitem__(
+        self: ObjectVar[Dict[KEY_TYPE, list[ARRAY_INNER_TYPE]]],
+        key: Var | Any,
+    ) -> ArrayVar[list[ARRAY_INNER_TYPE]]: ...
+
+    @overload
+    def __getitem__(
+        self: ObjectVar[Dict[KEY_TYPE, set[ARRAY_INNER_TYPE]]],
+        key: Var | Any,
+    ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
+
+    @overload
+    def __getitem__(
+        self: ObjectVar[Dict[KEY_TYPE, tuple[ARRAY_INNER_TYPE, ...]]],
+        key: Var | Any,
+    ) -> ArrayVar[tuple[ARRAY_INNER_TYPE, ...]]: ...
+
+    @overload
+    def __getitem__(
+        self: ObjectVar[Dict[KEY_TYPE, dict[OTHER_KEY_TYPE, VALUE_TYPE]]],
+        key: Var | Any,
+    ) -> ObjectVar[dict[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
+
     def __getitem__(self, key: Var | Any) -> ImmutableVar:
         """Get an item from the object.
 
@@ -78,7 +199,54 @@ class ObjectVar(ImmutableVar):
         """
         return ObjectItemOperation(self, key).guess_type()
 
-    def __getattr__(self, name) -> ObjectItemOperation:
+    # NoReturn is used here to catch when key value is Any
+    @overload
+    def __getattr__(
+        self: ObjectVar[Dict[KEY_TYPE, NoReturn]],
+        name: str,
+    ) -> ImmutableVar: ...
+
+    @overload
+    def __getattr__(
+        self: (
+            ObjectVar[Dict[KEY_TYPE, int]]
+            | ObjectVar[Dict[KEY_TYPE, float]]
+            | ObjectVar[Dict[KEY_TYPE, int | float]]
+        ),
+        name: str,
+    ) -> NumberVar: ...
+
+    @overload
+    def __getattr__(
+        self: ObjectVar[Dict[KEY_TYPE, str]],
+        name: str,
+    ) -> StringVar: ...
+
+    @overload
+    def __getattr__(
+        self: ObjectVar[Dict[KEY_TYPE, list[ARRAY_INNER_TYPE]]],
+        name: str,
+    ) -> ArrayVar[list[ARRAY_INNER_TYPE]]: ...
+
+    @overload
+    def __getattr__(
+        self: ObjectVar[Dict[KEY_TYPE, set[ARRAY_INNER_TYPE]]],
+        name: str,
+    ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
+
+    @overload
+    def __getattr__(
+        self: ObjectVar[Dict[KEY_TYPE, tuple[ARRAY_INNER_TYPE, ...]]],
+        name: str,
+    ) -> ArrayVar[tuple[ARRAY_INNER_TYPE, ...]]: ...
+
+    @overload
+    def __getattr__(
+        self: ObjectVar[Dict[KEY_TYPE, dict[OTHER_KEY_TYPE, VALUE_TYPE]]],
+        name: str,
+    ) -> ObjectVar[dict[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
+
+    def __getattr__(self, name) -> ImmutableVar:
         """Get an attribute of the var.
 
         Args:
@@ -87,7 +255,19 @@ class ObjectVar(ImmutableVar):
         Returns:
             The attribute of the var.
         """
-        return ObjectItemOperation(self, name)
+        fixed_type = (
+            self._var_type if isclass(self._var_type) else get_origin(self._var_type)
+        )
+        if not issubclass(fixed_type, dict):
+            attribute_type = get_attribute_access_type(self._var_type, name)
+            if attribute_type is None:
+                raise VarAttributeError(
+                    f"The State var `{self._var_name}` has no attribute '{name}' or may have been annotated "
+                    f"wrongly."
+                )
+            return ObjectItemOperation(self, name, attribute_type).guess_type()
+        else:
+            return ObjectItemOperation(self, name).guess_type()
 
 
 @dataclasses.dataclass(
@@ -95,7 +275,7 @@ class ObjectVar(ImmutableVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LiteralObjectVar(LiteralVar, ObjectVar):
+class LiteralObjectVar(LiteralVar, ObjectVar[OBJECT_TYPE]):
     """Base class for immutable literal object vars."""
 
     _var_value: Dict[Union[Var, Any], Union[Var, Any]] = dataclasses.field(
@@ -103,9 +283,9 @@ class LiteralObjectVar(LiteralVar, ObjectVar):
     )
 
     def __init__(
-        self,
-        _var_value: dict[Var | Any, Var | Any],
-        _var_type: Type | None = None,
+        self: LiteralObjectVar[OBJECT_TYPE],
+        _var_value: OBJECT_TYPE,
+        _var_type: Type[OBJECT_TYPE] | None = None,
         _var_data: VarData | None = None,
     ):
         """Initialize the object var.
@@ -117,14 +297,7 @@ class LiteralObjectVar(LiteralVar, ObjectVar):
         """
         super(LiteralObjectVar, self).__init__(
             _var_name="",
-            _var_type=(
-                Dict[
-                    unionize(*map(type, _var_value.keys())),
-                    unionize(*map(type, _var_value.values())),
-                ]
-                if _var_type is None
-                else _var_type
-            ),
+            _var_type=(figure_out_type(_var_value) if _var_type is None else _var_type),
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(
@@ -489,6 +662,7 @@ class ObjectItemOperation(ImmutableVar):
         self,
         value: ObjectVar,
         key: Var | Any,
+        _var_type: GenericType | None = None,
         _var_data: VarData | None = None,
     ):
         """Initialize the object item operation.
@@ -500,7 +674,7 @@ class ObjectItemOperation(ImmutableVar):
         """
         super(ObjectItemOperation, self).__init__(
             _var_name="",
-            _var_type=value._value_type(),
+            _var_type=value._value_type() if _var_type is None else _var_type,
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(self, "value", value)

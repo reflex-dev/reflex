@@ -11,7 +11,7 @@ from reflex.experimental.vars.base import ImmutableVar, LiteralVar
 from reflex.vars import ImmutableVarData, Var, VarData
 
 
-class FunctionVar(ImmutableVar):
+class FunctionVar(ImmutableVar[Callable]):
     """Base class for immutable function vars."""
 
     def __call__(self, *args: Var | Any) -> ArgsFunctionOperation:

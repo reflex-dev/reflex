@@ -15,7 +15,7 @@ from reflex.experimental.vars.base import (
 from reflex.vars import ImmutableVarData, Var, VarData
 
 
-class NumberVar(ImmutableVar):
+class NumberVar(ImmutableVar[Union[int, float]]):
     """Base class for immutable number vars."""
 
     def __add__(self, other: number_types | boolean_types) -> NumberAddOperation:
@@ -693,7 +693,7 @@ class NumberTruncOperation(UnaryNumberOperation):
         return f"Math.trunc({str(value)})"
 
 
-class BooleanVar(ImmutableVar):
+class BooleanVar(ImmutableVar[bool]):
     """Base class for immutable boolean vars."""
 
     def __and__(self, other: bool) -> BooleanAndOperation:

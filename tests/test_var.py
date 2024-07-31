@@ -1042,7 +1042,7 @@ def test_object_operations():
 
 def test_type_chains():
     object_var = LiteralObjectVar({"a": 1, "b": 2, "c": 3})
-    assert object_var._var_type is Dict[str, int]
+    assert (object_var._key_type(), object_var._value_type()) == (str, int)
     assert (object_var.keys()._var_type, object_var.values()._var_type) == (
         List[str],
         List[int],
@@ -1058,6 +1058,31 @@ def test_type_chains():
     assert (
         str(object_var["c"] + object_var["b"])  # type: ignore
         == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"])'
+    )
+
+
+def test_nested_dict():
+    arr = LiteralArrayVar([{"bar": ["foo", "bar"]}], List[Dict[str, list[str]]])
+
+    assert (
+        str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'
+    )
+
+
+def nested_base():
+    class Boo(Base):
+        foo: str
+        bar: int
+
+    class Foo(Base):
+        bar: Boo
+        baz: int
+
+    parent_obj = LiteralVar.create(Foo(bar=Boo(foo="bar", bar=5), baz=5))
+
+    assert (
+        str(parent_obj.bar.foo)
+        == '({ ["bar"] : ({ ["foo"] : "bar", ["bar"] : 5 }), ["baz"] : 5 })["bar"]["foo"]'
     )
 
 
