@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import atexit
 import os
+import time
 import webbrowser
 from pathlib import Path
 from typing import List, Optional
 
-import time
 import typer
 import typer.core
 from reflex_cli.deployments import deployments_cli
@@ -110,10 +110,10 @@ def _init(
         template = constants.Templates.DEFAULT
 
     start_time = time.perf_counter()
-    
+
     # Check if the app is already initialized.
     reinit = os.path.exists(constants.Config.FILE)
-    
+
     # Initialize the app.
     prerequisites.initialize_app(app_name, template, reinit=reinit)
 
@@ -138,7 +138,8 @@ def _init(
     # Post telemetry event
     event_type = "reinit" if reinit else "init"
     telemetry.send(event_type, duration=time.perf_counter() - start_time)
-    
+
+
 @cli.command()
 def init(
     name: str = typer.Option(

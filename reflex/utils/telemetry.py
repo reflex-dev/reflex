@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import multiprocessing
+import os
 import platform
+import time
 import warnings
-import os 
+
 try:
     from datetime import UTC, datetime
 except ImportError:
@@ -69,7 +71,7 @@ def get_cpu_count() -> int:
     """
     return multiprocessing.cpu_count()
 
- 
+
 def get_memory() -> int:
     """Get the total memory in MB.
 
@@ -80,7 +82,8 @@ def get_memory() -> int:
         return psutil.virtual_memory().total >> 20
     except ValueError:  # needed to pass ubuntu test
         return 0
-    
+
+
 def get_folder_size(folder: str) -> int:
     """Get the total size of a folder in bytes, ignoring 'node_modules' folder.
 
@@ -91,10 +94,9 @@ def get_folder_size(folder: str) -> int:
         The total size of the folder in bytes.
     """
     total_files = 0
-    for dirpath, dirnames, filenames in os.walk(folder):
+    for _, _, filenames in os.walk(folder):
         total_files += len(filenames)
     return total_files
-
 
 
 def _raise_on_missing_project_hash() -> bool:
@@ -111,6 +113,20 @@ def _raise_on_missing_project_hash() -> bool:
     if should_skip_compile():
         return False
     return True
+
+
+def compile_callback(f, start_time):
+    """Callback to send telemetry after compiling the app.
+
+    Args:
+        f: The future object.
+        start_time: The start time of the compilation.
+    """
+    try:
+        # Force background compile errors to print eagerly
+        f.result()
+    finally:
+        send("test-compile", duration=time.perf_counter() - start_time)
 
 
 def _prepare_event(event: str, **kwargs) -> dict:
@@ -160,7 +176,9 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
             "cpu_info": dict(cpuinfo) if cpuinfo else {},
-            "pages_count": get_folder_size(".web/pages") if event == "test-compile" or event == "run-dev" else None,
+            "pages_count": get_folder_size(".web/pages")
+            if event == "test-compile" or event == "run-dev"
+            else None,
             **additional_fields,
         },
         "timestamp": stamp,

@@ -2,11 +2,11 @@
 Only the app attribute is explicitly exposed.
 """
 
+import time
 from concurrent.futures import ThreadPoolExecutor
 
-import time
 from reflex import constants
-
+from reflex.utils import telemetry
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.prerequisites import get_app
 
@@ -20,17 +20,9 @@ app = getattr(app_module, constants.CompileVars.APP)
 app._apply_decorated_pages()
 start_time = time.perf_counter()
 
-def compile_callback(f):
-    from reflex.utils import telemetry
-    try:
-        # Force background compile errors to print eagerly
-        f.result()
-    finally:
-        telemetry.send("test-compile", duration=time.perf_counter()- start_time)
-        del telemetry
 
 compile_future = ThreadPoolExecutor(max_workers=1).submit(app._compile)
-compile_future.add_done_callback(compile_callback)
+compile_future.add_done_callback(lambda f: telemetry.compile_callback(f, start_time))
 
 # Wait for the compile to finish in prod mode to ensure all optional endpoints are mounted.
 if is_prod_mode():
@@ -41,6 +33,5 @@ del app_module
 del compile_future
 del get_app
 del is_prod_mode
-
 del constants
 del ThreadPoolExecutor

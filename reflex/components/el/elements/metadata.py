@@ -44,7 +44,7 @@ class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
     """Display the meta element."""
 
     tag = "meta"
-    
+
     char_set: Var[Union[str, int, bool]]
     content: Var[Union[str, int, bool]]
     http_equiv: Var[Union[str, int, bool]]
