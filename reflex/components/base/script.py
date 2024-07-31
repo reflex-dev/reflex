@@ -5,11 +5,23 @@ https://nextjs.org/docs/app/api-reference/components/script
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Union
 
 from reflex.components.component import Component
 from reflex.event import EventHandler
 from reflex.vars import Var
+
+REFERRAL_POLICY_LITERAL = Literal[
+    "",
+    "no-referrer",
+    "no-referrer-when-downgrade",
+    "origin",
+    "origin-when-cross-origin",
+    "same-origin",
+    "strict-origin",
+    "strict-origin-when-cross-origin",
+    "unsafe-url",
+]
 
 
 class Script(Component):
@@ -33,7 +45,33 @@ class Script(Component):
     strategy: Var[Literal["afterInteractive", "beforeInteractive", "lazyOnload"]] = (
         Var.create_safe("afterInteractive", _var_is_string=True)
     )
+    # Indicates the type of script represented
+    type: Var[str]
 
+    # Specifies if the script(and dependencies for module scripts) will be fetched in parallel to parsing and evaluated as soon as available
+    async_: Var[bool]
+
+    # Indicate to a browser that the script is meant to be executed after the document has been parsed, but before firing DOMContentLoaded event
+    defer: Var[bool]
+    # Contains inline metadata that a user agent can use to verify that a fetched resource has been delivered without unexpected manipulation
+    integrity: Var[str]
+
+    # Sets the mode of the request to an HTTP CORS Request.
+    crossorigin: Var[str]
+
+    # Provides a hint of the relative priority to use when fetching an external script.
+    fetchpriority: Var[Literal["high", "low", "auto"]]
+    #  indicate that the script should not be executed in browsers that support ES modules.
+    nomodule: Var[bool]
+
+    # Indicates which referrer to send when fetching the script, or resources fetched by the script
+    referrerpolicy: Var[REFERRAL_POLICY_LITERAL]
+
+    # Specifies that you want the browser to send an Attribution-Reporting-Eligible header along with the script resource request.
+    attributionsrc: Var[Union[str, bool]]
+
+    # Explicitly indicates that certain operations should be blocked on the fetching of the script
+    blocking: Var[str]
     # Triggered when the script is loading
     on_load: EventHandler[lambda: []]
 
