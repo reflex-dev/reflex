@@ -84,7 +84,7 @@ def get_memory() -> int:
         return 0
 
 
-def get_folder_size(folder: str) -> int:
+def get_page_count(folder: str) -> int:
     """Get the total number of files in a folder.
 
     Args:
@@ -176,7 +176,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
             "cpu_info": dict(cpuinfo) if cpuinfo else {},
-            "pages_count": get_folder_size(".web/pages")
+            "pages_count": get_page_count(".web/pages")
             if event == "compile" or event == "run-dev"
             else None,
             **additional_fields,
