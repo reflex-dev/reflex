@@ -1012,6 +1012,21 @@ def interdependent_state() -> BaseState:
     return s
 
 
+def test_interdependent_state_initial_dict() -> None:
+    s = InterdependentState()
+    state_name = s.get_name()
+    d = s.dict(initial=True)[state_name]
+    d.pop("router")
+    assert d == {
+        "x": 0,
+        "v1": 0,
+        "v1x2": 0,
+        "v2x2": 2,
+        "v1x2x2": 0,
+        "v3x2": 2,
+    }
+
+
 def test_not_dirty_computed_var_from_var(
     interdependent_state: InterdependentState,
 ) -> None:
