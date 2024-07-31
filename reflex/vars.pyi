@@ -190,7 +190,7 @@ class ComputedVar(Var):
 @overload
 def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
-    initial_value: Any | None = None,
+    initial_value: Any | types.Unset = types.Unset(),
     cache: bool = False,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
@@ -202,7 +202,7 @@ def computed_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
 @overload
 def cached_var(
     fget: Callable[[BaseState], Any] | None = None,
-    initial_value: Any | None = None,
+    initial_value: Any | types.Unset = types.Unset(),
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
