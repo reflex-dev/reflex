@@ -6,7 +6,7 @@ import asyncio
 import multiprocessing
 import platform
 import warnings
-
+import os 
 try:
     from datetime import UTC, datetime
 except ImportError:
@@ -69,7 +69,7 @@ def get_cpu_count() -> int:
     """
     return multiprocessing.cpu_count()
 
-
+ 
 def get_memory() -> int:
     """Get the total memory in MB.
 
@@ -80,6 +80,21 @@ def get_memory() -> int:
         return psutil.virtual_memory().total >> 20
     except ValueError:  # needed to pass ubuntu test
         return 0
+    
+def get_folder_size(folder: str) -> int:
+    """Get the total size of a folder in bytes, ignoring 'node_modules' folder.
+
+    Args:
+        folder: The path to the folder.
+
+    Returns:
+        The total size of the folder in bytes.
+    """
+    total_files = 0
+    for dirpath, dirnames, filenames in os.walk(folder):
+        total_files += len(filenames)
+    return total_files
+
 
 
 def _raise_on_missing_project_hash() -> bool:
@@ -128,7 +143,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
 
     cpuinfo = get_cpu_info()
 
-    additional_keys = ["template", "context", "detail"]
+    additional_keys = ["template", "context", "detail", "duration"]
     additional_fields = {
         key: value for key in additional_keys if (value := kwargs.get(key)) is not None
     }
@@ -145,6 +160,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
             "cpu_info": dict(cpuinfo) if cpuinfo else {},
+            "pages_count": get_folder_size(".web/pages") if event == "test-compile" or event == "run-dev" else None,
             **additional_fields,
         },
         "timestamp": stamp,
