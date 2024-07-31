@@ -85,13 +85,13 @@ def get_memory() -> int:
 
 
 def get_folder_size(folder: str) -> int:
-    """Get the total size of a folder in bytes, ignoring 'node_modules' folder.
+    """Get the total number of files in a folder.
 
     Args:
         folder: The path to the folder.
 
     Returns:
-        The total size of the folder in bytes.
+        The total number of files in the folder.
     """
     total_files = 0
     for _, _, filenames in os.walk(folder):
