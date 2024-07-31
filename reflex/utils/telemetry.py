@@ -177,7 +177,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "memory": get_memory(),
             "cpu_info": dict(cpuinfo) if cpuinfo else {},
             "pages_count": get_folder_size(".web/pages")
-            if event == "test-compile" or event == "run-dev"
+            if event == "compile" or event == "run-dev"
             else None,
             **additional_fields,
         },
