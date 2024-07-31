@@ -10,9 +10,15 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
+    Generic,
+    List,
     Optional,
+    Set,
+    Tuple,
     Type,
     TypeVar,
+    Union,
     overload,
 )
 
@@ -42,13 +48,15 @@ if TYPE_CHECKING:
     from .object import ObjectVar, ToObjectOperation
     from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
 
+VAR_TYPE = TypeVar("VAR_TYPE")
+
 
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ImmutableVar(Var):
+class ImmutableVar(Var, Generic[VAR_TYPE]):
     """Base class for immutable vars."""
 
     # The name of the var.
@@ -405,6 +413,8 @@ class ImmutableVar(Var):
             return self.to(ArrayVar, var_type)
         if issubclass(fixed_type, str):
             return self.to(StringVar)
+        if issubclass(fixed_type, Base):
+            return self.to(ObjectVar, var_type)
         return self
 
 
@@ -531,3 +541,43 @@ def var_operation(*, output: Type[T]) -> Callable[[Callable[P, str]], Callable[P
         return wrapper
 
     return decorator
+
+
+def unionize(*args: Type) -> Type:
+    """Unionize the types.
+
+    Args:
+        args: The types to unionize.
+
+    Returns:
+        The unionized types.
+    """
+    if not args:
+        return Any
+    first, *rest = args
+    if not rest:
+        return first
+    return Union[first, unionize(*rest)]
+
+
+def figure_out_type(value: Any) -> Type:
+    """Figure out the type of the value.
+
+    Args:
+        value: The value to figure out the type of.
+
+    Returns:
+        The type of the value.
+    """
+    if isinstance(value, list):
+        return List[unionize(*(figure_out_type(v) for v in value))]
+    if isinstance(value, set):
+        return Set[unionize(*(figure_out_type(v) for v in value))]
+    if isinstance(value, tuple):
+        return Tuple[unionize(*(figure_out_type(v) for v in value)), ...]
+    if isinstance(value, dict):
+        return Dict[
+            unionize(*(figure_out_type(k) for k in value)),
+            unionize(*(figure_out_type(v) for v in value.values())),
+        ]
+    return type(value)

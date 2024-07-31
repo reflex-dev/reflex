@@ -10,7 +10,18 @@ import re
 import sys
 import typing
 from functools import cached_property
-from typing import Any, List, Set, Tuple, Type, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from typing_extensions import get_origin
 
@@ -19,6 +30,8 @@ from reflex.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex.experimental.vars.base import (
     ImmutableVar,
     LiteralVar,
+    figure_out_type,
+    unionize,
 )
 from reflex.experimental.vars.number import (
     BooleanVar,
@@ -29,8 +42,11 @@ from reflex.experimental.vars.number import (
 from reflex.utils.types import GenericType
 from reflex.vars import ImmutableVarData, Var, VarData, _global_vars
 
+if TYPE_CHECKING:
+    from .object import ObjectVar
 
-class StringVar(ImmutableVar):
+
+class StringVar(ImmutableVar[str]):
     """Base class for immutable string vars."""
 
     def __add__(self, other: StringVar | str) -> ConcatVarOperation:
@@ -699,7 +715,17 @@ class ConcatVarOperation(StringVar):
         pass
 
 
-class ArrayVar(ImmutableVar):
+ARRAY_VAR_TYPE = TypeVar("ARRAY_VAR_TYPE", bound=Union[List, Tuple, Set])
+
+OTHER_TUPLE = TypeVar("OTHER_TUPLE")
+
+INNER_ARRAY_VAR = TypeVar("INNER_ARRAY_VAR")
+
+KEY_TYPE = TypeVar("KEY_TYPE")
+VALUE_TYPE = TypeVar("VALUE_TYPE")
+
+
+class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
     """Base class for immutable array vars."""
 
     from reflex.experimental.vars.sequence import StringVar
@@ -717,7 +743,7 @@ class ArrayVar(ImmutableVar):
 
         return ArrayJoinOperation(self, sep)
 
-    def reverse(self) -> ArrayReverseOperation:
+    def reverse(self) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Reverse the array.
 
         Returns:
@@ -726,14 +752,98 @@ class ArrayVar(ImmutableVar):
         return ArrayReverseOperation(self)
 
     @overload
-    def __getitem__(self, i: slice) -> ArraySliceOperation: ...
+    def __getitem__(self, i: slice) -> ArrayVar[ARRAY_VAR_TYPE]: ...
+
+    @overload
+    def __getitem__(
+        self: (
+            ArrayVar[Tuple[int, OTHER_TUPLE]]
+            | ArrayVar[Tuple[float, OTHER_TUPLE]]
+            | ArrayVar[Tuple[int | float, OTHER_TUPLE]]
+        ),
+        i: Literal[0, -2],
+    ) -> NumberVar: ...
+
+    @overload
+    def __getitem__(
+        self: (
+            ArrayVar[Tuple[OTHER_TUPLE, int]]
+            | ArrayVar[Tuple[OTHER_TUPLE, float]]
+            | ArrayVar[Tuple[OTHER_TUPLE, int | float]]
+        ),
+        i: Literal[1, -1],
+    ) -> NumberVar: ...
+
+    @overload
+    def __getitem__(
+        self: ArrayVar[Tuple[str, OTHER_TUPLE]], i: Literal[0, -2]
+    ) -> StringVar: ...
+
+    @overload
+    def __getitem__(
+        self: ArrayVar[Tuple[OTHER_TUPLE, str]], i: Literal[1, -1]
+    ) -> StringVar: ...
+
+    @overload
+    def __getitem__(
+        self: ArrayVar[Tuple[bool, OTHER_TUPLE]], i: Literal[0, -2]
+    ) -> BooleanVar: ...
+
+    @overload
+    def __getitem__(
+        self: ArrayVar[Tuple[OTHER_TUPLE, bool]], i: Literal[1, -1]
+    ) -> BooleanVar: ...
+
+    @overload
+    def __getitem__(
+        self: (
+            ARRAY_VAR_OF_LIST_ELEMENT[int]
+            | ARRAY_VAR_OF_LIST_ELEMENT[float]
+            | ARRAY_VAR_OF_LIST_ELEMENT[int | float]
+        ),
+        i: int | NumberVar,
+    ) -> NumberVar: ...
+
+    @overload
+    def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[str], i: int | NumberVar
+    ) -> StringVar: ...
+
+    @overload
+    def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[bool], i: int | NumberVar
+    ) -> BooleanVar: ...
+
+    @overload
+    def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[List[INNER_ARRAY_VAR]],
+        i: int | NumberVar,
+    ) -> ArrayVar[List[INNER_ARRAY_VAR]]: ...
+
+    @overload
+    def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[Set[INNER_ARRAY_VAR]],
+        i: int | NumberVar,
+    ) -> ArrayVar[Set[INNER_ARRAY_VAR]]: ...
+
+    @overload
+    def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[Tuple[INNER_ARRAY_VAR, ...]],
+        i: int | NumberVar,
+    ) -> ArrayVar[Tuple[INNER_ARRAY_VAR, ...]]: ...
+
+    @overload
+    def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[Dict[KEY_TYPE, VALUE_TYPE]],
+        i: int | NumberVar,
+    ) -> ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]]: ...
 
     @overload
     def __getitem__(self, i: int | NumberVar) -> ImmutableVar: ...
 
     def __getitem__(
         self, i: slice | int | NumberVar
-    ) -> ArraySliceOperation | ImmutableVar:
+    ) -> ArrayVar[ARRAY_VAR_TYPE] | ImmutableVar:
         """Get a slice of the array.
 
         Args:
@@ -756,7 +866,7 @@ class ArrayVar(ImmutableVar):
 
     @overload
     @classmethod
-    def range(cls, stop: int | NumberVar, /) -> RangeOperation: ...
+    def range(cls, stop: int | NumberVar, /) -> ArrayVar[List[int]]: ...
 
     @overload
     @classmethod
@@ -766,7 +876,7 @@ class ArrayVar(ImmutableVar):
         end: int | NumberVar,
         step: int | NumberVar = 1,
         /,
-    ) -> RangeOperation: ...
+    ) -> ArrayVar[List[int]]: ...
 
     @classmethod
     def range(
@@ -774,7 +884,7 @@ class ArrayVar(ImmutableVar):
         first_endpoint: int | NumberVar,
         second_endpoint: int | NumberVar | None = None,
         step: int | NumberVar | None = None,
-    ) -> RangeOperation:
+    ) -> ArrayVar[List[int]]:
         """Create a range of numbers.
 
         Args:
@@ -794,7 +904,7 @@ class ArrayVar(ImmutableVar):
 
         return RangeOperation(start, end, step or 1)
 
-    def contains(self, other: Any) -> ArrayContainsOperation:
+    def contains(self, other: Any) -> BooleanVar:
         """Check if the array contains an element.
 
         Args:
@@ -806,12 +916,21 @@ class ArrayVar(ImmutableVar):
         return ArrayContainsOperation(self, other)
 
 
+LIST_ELEMENT = TypeVar("LIST_ELEMENT")
+
+ARRAY_VAR_OF_LIST_ELEMENT = Union[
+    ArrayVar[List[LIST_ELEMENT]],
+    ArrayVar[Set[LIST_ELEMENT]],
+    ArrayVar[Tuple[LIST_ELEMENT, ...]],
+]
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LiteralArrayVar(LiteralVar, ArrayVar):
+class LiteralArrayVar(LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
     """Base class for immutable literal array vars."""
 
     _var_value: Union[
@@ -819,9 +938,9 @@ class LiteralArrayVar(LiteralVar, ArrayVar):
     ] = dataclasses.field(default_factory=list)
 
     def __init__(
-        self,
-        _var_value: list[Var | Any] | tuple[Var | Any, ...] | set[Var | Any],
-        _var_type: type[list] | type[tuple] | type[set] | None = None,
+        self: LiteralArrayVar[ARRAY_VAR_TYPE],
+        _var_value: ARRAY_VAR_TYPE,
+        _var_type: type[ARRAY_VAR_TYPE] | None = None,
         _var_data: VarData | None = None,
     ):
         """Initialize the array var.
@@ -834,11 +953,7 @@ class LiteralArrayVar(LiteralVar, ArrayVar):
         super(LiteralArrayVar, self).__init__(
             _var_name="",
             _var_data=ImmutableVarData.merge(_var_data),
-            _var_type=(
-                List[unionize(*map(type, _var_value))]
-                if _var_type is None
-                else _var_type
-            ),
+            _var_type=(figure_out_type(_var_value) if _var_type is None else _var_type),
         )
         object.__setattr__(self, "_var_value", _var_value)
         object.__delattr__(self, "_var_name")
@@ -1259,23 +1374,6 @@ class ArrayLengthOperation(ArrayToNumberOperation):
             The name of the var.
         """
         return f"{str(self.a)}.length"
-
-
-def unionize(*args: Type) -> Type:
-    """Unionize the types.
-
-    Args:
-        args: The types to unionize.
-
-    Returns:
-        The unionized types.
-    """
-    if not args:
-        return Any
-    first, *rest = args
-    if not rest:
-        return first
-    return Union[first, unionize(*rest)]
 
 
 def is_tuple_type(t: GenericType) -> bool:
