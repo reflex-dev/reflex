@@ -2482,7 +2482,7 @@ class ComputedVar(Var, property):
 
 def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
-    initial_value: Any | None = None,
+    initial_value: Any | types.Unset = types.Unset(),
     cache: bool = False,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
