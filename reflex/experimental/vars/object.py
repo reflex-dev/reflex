@@ -252,6 +252,9 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         Args:
             name: The name of the attribute.
 
+        Raises:
+            VarAttributeError: The State var has no such attribute or may have been annotated wrongly.
+
         Returns:
             The attribute of the var.
         """

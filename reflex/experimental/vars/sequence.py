@@ -918,11 +918,11 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
 
 LIST_ELEMENT = TypeVar("LIST_ELEMENT")
 
-ARRAY_VAR_OF_LIST_ELEMENT = (
-    ArrayVar[List[LIST_ELEMENT]]
-    | ArrayVar[Set[LIST_ELEMENT]]
-    | ArrayVar[Tuple[LIST_ELEMENT, ...]]
-)
+ARRAY_VAR_OF_LIST_ELEMENT = Union[
+    ArrayVar[List[LIST_ELEMENT]],
+    ArrayVar[Set[LIST_ELEMENT]],
+    ArrayVar[Tuple[LIST_ELEMENT, ...]],
+]
 
 
 @dataclasses.dataclass(
