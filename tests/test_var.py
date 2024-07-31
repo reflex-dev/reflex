@@ -1062,7 +1062,7 @@ def test_type_chains():
 
 
 def test_nested_dict():
-    arr = LiteralArrayVar([{"bar": ["foo", "bar"]}], List[Dict[str, list[str]]])
+    arr = LiteralArrayVar([{"bar": ["foo", "bar"]}], List[Dict[str, List[str]]])
 
     assert (
         str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'
