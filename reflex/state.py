@@ -530,7 +530,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for var_name, computed_var in cls.computed_vars.items():
             if var_name.startswith("comp_"):
                 cls.computed_vars[var_name] = computed_var._replace(
-                    _var_name=f"(typeof {computed_var._var_full_name} === 'function' ? {computed_var._var_full_name}() : '')",
+                    _var_name=f"(typeof {computed_var._var_full_name} === 'function' ? <{computed_var._var_full_name}/> : '')",
                     _var_full_name_needs_state_prefix=False,
                 )
                 setattr(cls, var_name, cls.computed_vars[var_name])
