@@ -346,6 +346,15 @@ class Link(BaseHTML):
 
         Args:
             *children: The children of the component.
+            cross_origin: Specifies the CORS settings for the linked resource
+            href: Specifies the URL of the linked document/resource
+            href_lang: Specifies the language of the text in the linked document
+            integrity: Allows a browser to check the fetched link for integrity
+            media: Specifies on what device the linked document will be displayed
+            referrer_policy: Specifies the referrer policy of the linked document
+            rel: Specifies the relationship between the current document and the linked one
+            sizes: Specifies the sizes of icons for visual media
+            type: Specifies the MIME type of the linked document
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -466,6 +475,10 @@ class Meta(BaseHTML):
 
         Args:
             *children: The children of the component.
+            char_set: Specifies the character encoding for the HTML document
+            content: Defines the content of the metadata
+            http_equiv: Provides an HTTP header for the information/value of the content attribute
+            name: Specifies a name for the metadata
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
