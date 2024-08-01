@@ -527,6 +527,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if f.name not in cls.get_skip_vars()
         }
         cls.computed_vars = {v._var_name: v._var_set_state(cls) for v in computed_vars}
+        for var_name, computed_var in cls.computed_vars.items():
+            if var_name.startswith("comp_"):
+                cls.computed_vars[var_name] = computed_var._replace(
+                    _var_name=f"(typeof {computed_var._var_full_name} === 'function' ? {computed_var._var_full_name}() : '')",
+                    _var_full_name_needs_state_prefix=False,
+                )
+                setattr(cls, var_name, cls.computed_vars[var_name])
         cls.vars = {
             **cls.inherited_vars,
             **cls.base_vars,
