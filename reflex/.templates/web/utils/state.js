@@ -15,6 +15,7 @@ import {
 } from "utils/context.js";
 import debounce from "/utils/helpers/debounce";
 import throttle from "/utils/helpers/throttle";
+import * as Babel from "@babel/standalone";
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
