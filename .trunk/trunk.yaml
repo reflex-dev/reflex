@@ -42,6 +42,14 @@ lint:
     - trivy@0.54.1
     - trufflehog@3.81.7
     - yamllint@1.35.1
+  ignore:
+    - linters: [ALL]
+      paths:
+        - "**/*.pyi"
+    - linters: [bandit]
+      paths:
+        - integration/**
+        - tests/**
 actions:
   enabled:
     - trunk-announce
