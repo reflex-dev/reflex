@@ -1,0 +1,3 @@
+[submodule ".trunk/config"]
+	path = .trunk/config
+	url = git@github.com:reflex-dev/oss-trunk-linter-config.git
