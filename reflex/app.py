@@ -481,11 +481,19 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         """
         # If the route is not set, get it from the callable.
         if route is None:
-            assert isinstance(
-                component, Callable
-            ), "Route must be set if component is not a callable."
-            # Format the route.
-            route = format.format_route(component.__name__)
+            match component:
+                case Callable():
+                    # Format the route.
+                    route = format.format_route(
+                        route=component.__name__,
+                    )
+
+                case _:
+                    error_msg: str = "Route must be set if component is not a callable."
+                    raise TypeError(
+                        error_msg,
+                    )
+
         else:
             route = format.format_route(route, format_case=False)
 
