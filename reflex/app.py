@@ -14,11 +14,11 @@ import os
 import platform
 import sys
 import traceback
+from collections.abc import AsyncIterator
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from typing import AsyncIterator
-from typing import Callable
 from typing import Coroutine
 from typing import Dict
 from typing import List
