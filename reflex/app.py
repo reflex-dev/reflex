@@ -16,33 +16,40 @@ import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import (
-    Any,
-    AsyncIterator,
-    Callable,
-    Coroutine,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Type,
-    Union,
-    get_args,
-    get_type_hints,
-)
+from typing import Any
+from typing import AsyncIterator
+from typing import Callable
+from typing import Coroutine
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Set
+from typing import Type
+from typing import Union
+from typing import get_args
+from typing import get_type_hints
 
-from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi import Request
+from fastapi import UploadFile
 from fastapi.middleware import cors
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
-from socketio import ASGIApp, AsyncNamespace, AsyncServer
+from rich.progress import MofNCompleteColumn
+from rich.progress import Progress
+from rich.progress import TimeElapsedColumn
+from socketio import ASGIApp
+from socketio import AsyncNamespace
+from socketio import AsyncServer
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
 
 from reflex import constants
 from reflex.admin import AdminDash
-from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
+from reflex.app_mixins import AppMixin
+from reflex.app_mixins import LifespanMixin
+from reflex.app_mixins import MiddlewareMixin
 from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
@@ -50,41 +57,43 @@ from reflex.compiler.compiler import ExecutorSafeFunctions
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
-from reflex.components.component import (
-    Component,
-    ComponentStyle,
-    evaluate_style_namespaces,
-)
-from reflex.components.core.banner import connection_pulser, connection_toaster
+from reflex.components.component import Component
+from reflex.components.component import ComponentStyle
+from reflex.components.component import evaluate_style_namespaces
+from reflex.components.core.banner import connection_pulser
+from reflex.components.core.banner import connection_toaster
 from reflex.components.core.breakpoints import set_breakpoints
-from reflex.components.core.client_side_routing import (
-    Default404Page,
-    wait_for_client_redirect,
-)
-from reflex.components.core.upload import Upload, get_upload_dir
+from reflex.components.core.client_side_routing import Default404Page
+from reflex.components.core.client_side_routing import wait_for_client_redirect
+from reflex.components.core.upload import Upload
+from reflex.components.core.upload import get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import get_config
-from reflex.event import Event, EventHandler, EventSpec, window_alert
+from reflex.event import Event
+from reflex.event import EventHandler
+from reflex.event import EventSpec
+from reflex.event import window_alert
 from reflex.model import Model
-from reflex.page import (
-    DECORATED_PAGES,
-)
-from reflex.route import (
-    get_route_args,
-    replace_brackets_with_keywords,
-    verify_route_validity,
-)
-from reflex.state import (
-    BaseState,
-    RouterData,
-    State,
-    StateManager,
-    StateUpdate,
-    _substate_key,
-    code_uses_state_contexts,
-)
-from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
-from reflex.utils.exec import is_prod_mode, is_testing_env, should_skip_compile
+from reflex.page import DECORATED_PAGES
+from reflex.route import get_route_args
+from reflex.route import replace_brackets_with_keywords
+from reflex.route import verify_route_validity
+from reflex.state import BaseState
+from reflex.state import RouterData
+from reflex.state import State
+from reflex.state import StateManager
+from reflex.state import StateUpdate
+from reflex.state import _substate_key
+from reflex.state import code_uses_state_contexts
+from reflex.utils import codespaces
+from reflex.utils import console
+from reflex.utils import exceptions
+from reflex.utils import format
+from reflex.utils import prerequisites
+from reflex.utils import types
+from reflex.utils.exec import is_prod_mode
+from reflex.utils.exec import is_testing_env
+from reflex.utils.exec import should_skip_compile
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
@@ -112,7 +121,8 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         EventSpec: The window alert event.
 
     """
-    from reflex.components.sonner.toast import Toaster, toast
+    from reflex.components.sonner.toast import Toaster
+    from reflex.components.sonner.toast import toast
 
     error = traceback.format_exc()
 
@@ -1343,7 +1353,8 @@ def upload(app: App):
             UploadTypeError: if a background task is used as the handler.
             HTTPException: when the request does not include token / handler headers.
         """
-        from reflex.utils.exceptions import UploadTypeError, UploadValueError
+        from reflex.utils.exceptions import UploadTypeError
+        from reflex.utils.exceptions import UploadValueError
 
         token = request.headers.get("reflex-client-token")
         handler = request.headers.get("reflex-event-handler")
