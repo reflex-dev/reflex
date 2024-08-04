@@ -1,7 +1,6 @@
 """Compiler variables."""
 
 import enum
-import os
 from enum import Enum
 from types import SimpleNamespace
 

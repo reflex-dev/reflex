@@ -35,6 +35,8 @@ class Dirs(SimpleNamespace):
     COMPONENTS_PATH = "/".join([UTILS, "components"])
     # The name of the contexts file.
     CONTEXTS_PATH = "/".join([UTILS, "context"])
+    # The name of the states file.
+    STATES_PATH = "/".join([UTILS, "state"])
     # The name of the output static directory.
     STATIC = "_static"
     # The name of the public html directory served at "/"

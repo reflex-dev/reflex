@@ -14,6 +14,7 @@ class ReflexJinjaEnvironment(Environment):
         from reflex.state import (
             FrontendEventExceptionState,
             OnLoadInternalState,
+            State,
             UpdateVarsInternalState,
         )
 
@@ -48,6 +49,7 @@ class ReflexJinjaEnvironment(Environment):
             "set_color_mode": constants.ColorMode.SET,
             "use_color_mode": constants.ColorMode.USE,
             "hydrate": constants.CompileVars.HYDRATE,
+            "state_name": State.get_name(),
             "on_load_internal": f"{OnLoadInternalState.get_name()}.on_load_internal",
             "update_vars_internal": f"{UpdateVarsInternalState.get_name()}.update_vars_internal",
             "frontend_exception_state": FrontendEventExceptionState.get_full_name(),
@@ -109,6 +111,15 @@ def context():
         Template: The template for the context file.
     """
     return get_template("web/utils/context.js.jinja2")
+
+
+def state():
+    """Template for the state file.
+
+    Returns:
+        Template: The template for the state file.
+    """
+    return get_template("web/utils/state.js.jinja2")
 
 
 def tailwind_config():
