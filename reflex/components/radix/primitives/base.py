@@ -26,7 +26,7 @@ class RadixPrimitiveComponentWithClassName(RadixPrimitiveComponent):
             ._render()
             .add_props(
                 **{
-                    "class_name": format.to_title_case(self.tag or ""),
+                    "class_name": f"{format.to_title_case(self.tag or '')} {self.class_name or ''}",
                 }
             )
         )

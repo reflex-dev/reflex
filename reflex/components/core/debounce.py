@@ -101,6 +101,9 @@ class DebounceInput(Component):
         props.setdefault("style", {}).update(child.style)
         if child.class_name is not None:
             props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
+        for field in ("key", "special_props"):
+            if getattr(child, field) is not None:
+                props[field] = getattr(child, field)
         child_ref = child.get_ref()
         if props.get("input_ref") is None and child_ref:
             props["input_ref"] = Var.create_safe(

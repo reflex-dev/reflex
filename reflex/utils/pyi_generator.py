@@ -882,6 +882,7 @@ class PyiGenerator:
         # retrieve the _SUBMODULES and _SUBMOD_ATTRS from an init file if present.
         sub_mods = getattr(mod, "_SUBMODULES", None)
         sub_mod_attrs = getattr(mod, "_SUBMOD_ATTRS", None)
+        pyright_ignore_imports = getattr(mod, "_PYRIGHT_IGNORE_IMPORTS", [])
 
         if not sub_mods and not sub_mod_attrs:
             return
@@ -901,6 +902,7 @@ class PyiGenerator:
             # construct the import statement and handle special cases for aliases
             sub_mod_attrs_imports = [
                 f"from .{path} import {mod if not isinstance(mod, tuple) else mod[0]} as {mod if not isinstance(mod, tuple) else mod[1]}"
+                + ("  # type: ignore" if mod in pyright_ignore_imports else "")
                 for mod, path in sub_mod_attrs.items()
             ]
             sub_mod_attrs_imports.append("")

@@ -31,6 +31,8 @@ from typing import (
 import dill
 from sqlalchemy.orm import DeclarativeBase
 
+from reflex.config import get_config
+
 try:
     import pydantic.v1 as pydantic
 except ModuleNotFoundError:
@@ -42,7 +44,6 @@ from redis.exceptions import ResponseError
 
 from reflex import constants
 from reflex.base import Base
-from reflex.config import get_config
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -201,7 +202,7 @@ def _no_chain_background_task(
 
 def _substate_key(
     token: str,
-    state_cls_or_name: BaseState | Type[BaseState] | str | list[str],
+    state_cls_or_name: BaseState | Type[BaseState] | str | Sequence[str],
 ) -> str:
     """Get the substate key.
 
@@ -2040,19 +2041,38 @@ class StateProxy(wrapt.ObjectProxy):
                     self.counter += 1
     """
 
-    def __init__(self, state_instance):
+    def __init__(
+        self, state_instance, parent_state_proxy: Optional["StateProxy"] = None
+    ):
         """Create a proxy for a state instance.
+
+        If `get_state` is used on a StateProxy, the resulting state will be
+        linked to the given state via parent_state_proxy. The first state in the
+        chain is the state that initiated the background task.
 
         Args:
             state_instance: The state instance to proxy.
+            parent_state_proxy: The parent state proxy, for linked mutability and context tracking.
         """
         super().__init__(state_instance)
         # compile is not relevant to backend logic
         self._self_app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        self._self_substate_path = state_instance.get_full_name().split(".")
+        self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_actx = None
         self._self_mutable = False
         self._self_actx_lock = asyncio.Lock()
+        self._self_actx_lock_holder = None
+        self._self_parent_state_proxy = parent_state_proxy
+
+    def _is_mutable(self) -> bool:
+        """Check if the state is mutable.
+
+        Returns:
+            Whether the state is mutable.
+        """
+        if self._self_parent_state_proxy is not None:
+            return self._self_parent_state_proxy._is_mutable()
+        return self._self_mutable
 
     async def __aenter__(self) -> StateProxy:
         """Enter the async context manager protocol.
@@ -2065,8 +2085,31 @@ class StateProxy(wrapt.ObjectProxy):
 
         Returns:
             This StateProxy instance in mutable mode.
+
+        Raises:
+            ImmutableStateError: If the state is already mutable.
         """
+        if self._self_parent_state_proxy is not None:
+            parent_state = (
+                await self._self_parent_state_proxy.__aenter__()
+            ).__wrapped__
+            super().__setattr__(
+                "__wrapped__",
+                await parent_state.get_state(
+                    State.get_class_substate(self._self_substate_path)
+                ),
+            )
+            return self
+        current_task = asyncio.current_task()
+        if (
+            self._self_actx_lock.locked()
+            and current_task == self._self_actx_lock_holder
+        ):
+            raise ImmutableStateError(
+                "The state is already mutable. Do not nest `async with self` blocks."
+            )
         await self._self_actx_lock.acquire()
+        self._self_actx_lock_holder = current_task
         self._self_actx = self._self_app.modify_state(
             token=_substate_key(
                 self.__wrapped__.router.session.client_token,
@@ -2088,12 +2131,16 @@ class StateProxy(wrapt.ObjectProxy):
         Args:
             exc_info: The exception info tuple.
         """
+        if self._self_parent_state_proxy is not None:
+            await self._self_parent_state_proxy.__aexit__(*exc_info)
+            return
         if self._self_actx is None:
             return
         self._self_mutable = False
         try:
             await self._self_actx.__aexit__(*exc_info)
         finally:
+            self._self_actx_lock_holder = None
             self._self_actx_lock.release()
         self._self_actx = None
 
@@ -2128,7 +2175,7 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
-        if name in ["substates", "parent_state"] and not self._self_mutable:
+        if name in ["substates", "parent_state"] and not self._is_mutable():
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
@@ -2168,7 +2215,7 @@ class StateProxy(wrapt.ObjectProxy):
         """
         if (
             name.startswith("_self_")  # wrapper attribute
-            or self._self_mutable  # lock held
+            or self._is_mutable()  # lock held
             # non-persisted state attribute
             or name in self.__wrapped__.get_skip_vars()
         ):
@@ -2192,7 +2239,7 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
-        if not self._self_mutable:
+        if not self._is_mutable():
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
@@ -2211,12 +2258,14 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
-        if not self._self_mutable:
+        if not self._is_mutable():
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
-        return await self.__wrapped__.get_state(state_cls)
+        return type(self)(
+            await self.__wrapped__.get_state(state_cls), parent_state_proxy=self
+        )
 
     def _as_state_update(self, *args, **kwargs) -> StateUpdate:
         """Temporarily allow mutability to access parent_state.

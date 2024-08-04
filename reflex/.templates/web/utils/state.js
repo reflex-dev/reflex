@@ -4,7 +4,7 @@ import io from "socket.io-client";
 import JSON5 from "json5";
 import env from "/env.json";
 import Cookies from "universal-cookie";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
 import {
   initialEvents,
@@ -647,7 +647,12 @@ export const useEventLoop = (
   const [connectErrors, setConnectErrors] = useState([]);
 
   // Function to add new events to the event queue.
-  const addEvents = (events, _e, event_actions) => {
+  const addEvents = (events, args, event_actions) => {
+    if (!(args instanceof Array)) {
+      args = [args];
+    }
+    const _e = args.filter((o) => o?.preventDefault !== undefined)[0]
+
     if (event_actions?.preventDefault && _e?.preventDefault) {
       _e.preventDefault();
     }
