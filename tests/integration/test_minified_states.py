@@ -93,7 +93,7 @@ def test_app(
     with app_harness_env.create(
         root=tmp_path_factory.mktemp(name),
         app_name=name,
-        app_source=partial(TestApp, minify=minify_state_env),  # pyright: ignore[reportArgumentType]
+        app_source=partial(TestApp, minify=minify_state_env),  # type: ignore
     ) as harness:
         yield harness
 
