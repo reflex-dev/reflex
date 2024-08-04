@@ -1079,6 +1079,16 @@ class InterdependentState(BaseState):
         return self._v3 * 2
 
 
+mark_used(
+    InterdependentState.x,
+    InterdependentState.v1,
+    InterdependentState.v1x2,
+    InterdependentState.v2x2,
+    InterdependentState.v1x2x2,
+    InterdependentState.v3x2,
+)
+
+
 @pytest.fixture
 def interdependent_state() -> BaseState:
     """A state with varying dependency between vars.
