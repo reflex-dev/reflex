@@ -6,6 +6,7 @@ import dataclasses
 import functools
 import inspect
 import sys
+import traceback
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,12 +14,14 @@ from typing import (
     Dict,
     Generic,
     List,
+    Literal,
     Optional,
     Set,
     Tuple,
     Type,
     TypeVar,
     Union,
+    get_args,
     overload,
 )
 
@@ -26,7 +29,7 @@ from typing_extensions import ParamSpec, get_origin
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import serializers, types
+from reflex.utils import console, imports, serializers, types
 from reflex.utils.exceptions import VarTypeError
 from reflex.vars import (
     ImmutableVarData,
@@ -44,9 +47,16 @@ if TYPE_CHECKING:
         NumberVar,
         ToBooleanVarOperation,
         ToNumberVarOperation,
+        EqualOperation,
+        GreaterThanOperation,
+        GreaterThanOrEqualOperation,
+        LessThanOperation,
+        LessThanOrEqualOperation,
     )
     from .object import ObjectVar, ToObjectOperation
     from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
+    from reflex.state import BaseState
+
 
 VAR_TYPE = TypeVar("VAR_TYPE")
 
@@ -376,10 +386,10 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         from .function import FunctionVar, ToFunctionOperation
 
         if issubclass(output, FunctionVar):
-            if fixed_type is not None and not issubclass(fixed_type, Callable):
-                raise TypeError(
-                    f"Unsupported type {var_type} for FunctionVar. Must be Callable."
-                )
+            # if fixed_type is not None and not issubclass(fixed_type, Callable):
+            #     raise TypeError(
+            #         f"Unsupported type {var_type} for FunctionVar. Must be Callable."
+            #     )
             return ToFunctionOperation(self, var_type or Callable)
 
         return output(
@@ -405,6 +415,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
 
         fixed_type = var_type if inspect.isclass(var_type) else get_origin(var_type)
 
+        if fixed_type is Union:
+            return self
+
         if issubclass(fixed_type, (int, float)):
             return self.to(NumberVar, var_type)
         if issubclass(fixed_type, dict):
@@ -416,6 +429,276 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         if issubclass(fixed_type, Base):
             return self.to(ObjectVar, var_type)
         return self
+
+    def get_default_value(self) -> Any:
+        """Get the default value of the var.
+
+        Returns:
+            The default value of the var.
+
+        Raises:
+            ImportError: If the var is a dataframe and pandas is not installed.
+        """
+        if types.is_optional(self._var_type):
+            return None
+
+        type_ = (
+            get_origin(self._var_type)
+            if types.is_generic_alias(self._var_type)
+            else self._var_type
+        )
+        if type_ is Literal:
+            args = get_args(self._var_type)
+            return args[0] if args else None
+        if issubclass(type_, str):
+            return ""
+        if issubclass(type_, types.get_args(Union[int, float])):
+            return 0
+        if issubclass(type_, bool):
+            return False
+        if issubclass(type_, list):
+            return []
+        if issubclass(type_, dict):
+            return {}
+        if issubclass(type_, tuple):
+            return ()
+        if types.is_dataframe(type_):
+            try:
+                import pandas as pd
+
+                return pd.DataFrame()
+            except ImportError as e:
+                raise ImportError(
+                    "Please install pandas to use dataframes in your app."
+                ) from e
+        return set() if issubclass(type_, set) else None
+
+    def get_setter_name(self, include_state: bool = True) -> str:
+        """Get the name of the var's generated setter function.
+
+        Args:
+            include_state: Whether to include the state name in the setter name.
+
+        Returns:
+            The name of the setter function.
+        """
+        setter = constants.SETTER_PREFIX + self._var_name
+        if self._var_data is None:
+            return setter
+        if not include_state or self._var_data.state == "":
+            return setter
+        print("get_setter_name", self._var_data.state, setter)
+        return ".".join((self._var_data.state, setter))
+
+    def get_setter(self) -> Callable[[BaseState, Any], None]:
+        """Get the var's setter function.
+
+        Returns:
+            A function that that creates a setter for the var.
+        """
+
+        def setter(state: BaseState, value: Any):
+            """Get the setter for the var.
+
+            Args:
+                state: The state within which we add the setter function.
+                value: The value to set.
+            """
+            if self._var_type in [int, float]:
+                try:
+                    value = self._var_type(value)
+                    setattr(state, self._var_name, value)
+                except ValueError:
+                    console.debug(
+                        f"{type(state).__name__}.{self._var_name}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
+                    )
+            else:
+                setattr(state, self._var_name, value)
+
+        setter.__qualname__ = self.get_setter_name()
+
+        return setter
+
+    def __eq__(self, other: Var | Any) -> BooleanVar:
+        """
+        Check if the current variable is equal to the given variable.
+
+        Args:
+            other (Var | Any): The variable to compare with.
+
+        Returns:
+            BooleanVar: A BooleanVar object representing the result of the equality check.
+        """
+        from .number import EqualOperation
+
+        return EqualOperation(self, other)
+
+    def __ne__(self, other: Var | Any) -> BooleanVar:
+        """
+        Check if the current object is not equal to the given object.
+
+        Parameters:
+            other (Var | Any): The object to compare with.
+
+        Returns:
+            BooleanVar: A BooleanVar object representing the result of the comparison.
+        """
+        from .number import EqualOperation
+
+        return ~EqualOperation(self, other)
+
+    def __gt__(self, other: Var | Any) -> BooleanVar:
+        """
+        Compare the current instance with another variable and return a BooleanVar representing the result of the greater than operation.
+
+        Args:
+            other (Var | Any): The variable to compare with.
+
+        Returns:
+            BooleanVar: A BooleanVar representing the result of the greater than operation.
+        """
+        from .number import GreaterThanOperation
+
+        return GreaterThanOperation(self, other)
+
+    def __ge__(self, other: Var | Any) -> BooleanVar:
+        """
+        Check if the value of this variable is greater than or equal to the value of another variable or object.
+
+        Args:
+            other (Var | Any): The variable or object to compare with.
+
+        Returns:
+            BooleanVar: A BooleanVar object representing the result of the comparison.
+        """
+        from .number import GreaterThanOrEqualOperation
+
+        return GreaterThanOrEqualOperation(self, other)
+
+    def __lt__(self, other: Var | Any) -> BooleanVar:
+        """
+        Compare the current instance with another variable using the less than (<) operator.
+
+        Args:
+            other: The variable to compare with.
+
+        Returns:
+            A `BooleanVar` object representing the result of the comparison.
+        """
+        from .number import LessThanOperation
+
+        return LessThanOperation(self, other)
+
+    def __le__(self, other: Var | Any) -> BooleanVar:
+        """
+        Compare if the current instance is less than or equal to the given value.
+
+        Args:
+            other: The value to compare with.
+
+        Returns:
+            A BooleanVar object representing the result of the comparison.
+        """
+        from .number import LessThanOrEqualOperation
+
+        return LessThanOrEqualOperation(self, other)
+
+    def bool(self) -> BooleanVar:
+        """Convert the var to a boolean.
+
+        Returns:
+            The boolean var.
+        """
+        from .number import ToBooleanVarOperation
+
+        return ToBooleanVarOperation(self)
+
+    def __and__(self, other: Var | Any) -> ImmutableVar:
+        """Perform a logical AND operation on the current instance and another variable.
+
+        Args:
+            other: The variable to perform the logical AND operation with.
+
+        Returns:
+            A `BooleanVar` object representing the result of the logical AND operation.
+        """
+
+        return AndOperation(self, other)
+
+    def __rand__(self, other: Var | Any) -> ImmutableVar:
+        """Perform a logical AND operation on the current instance and another variable.
+
+        Args:
+            other: The variable to perform the logical AND operation with.
+
+        Returns:
+            A `BooleanVar` object representing the result of the logical AND operation.
+        """
+
+        return AndOperation(other, self)
+
+    def __or__(self, other: Var | Any) -> ImmutableVar:
+        """Perform a logical OR operation on the current instance and another variable.
+
+        Args:
+            other: The variable to perform the logical OR operation with.
+
+        Returns:
+            A `BooleanVar` object representing the result of the logical OR operation.
+        """
+
+        return OrOperation(self, other)
+
+    def __ror__(self, other: Var | Any) -> ImmutableVar:
+        """Perform a logical OR operation on the current instance and another variable.
+
+        Args:
+            other: The variable to perform the logical OR operation with.
+
+        Returns:
+            A `BooleanVar` object representing the result of the logical OR operation.
+        """
+
+        return OrOperation(other, self)
+
+    def __invert__(self) -> BooleanVar:
+        """Perform a logical NOT operation on the current instance.
+
+        Returns:
+            A `BooleanVar` object representing the result of the logical NOT operation.
+        """
+        from .number import BooleanNotOperation
+
+        return BooleanNotOperation(self.bool())
+
+    def to_string(self) -> ImmutableVar:
+        """Convert the var to a string.
+
+        Returns:
+            The string var.
+        """
+        from .function import JSON_STRINGIFY
+
+        return JSON_STRINGIFY.call(self)
+
+    def as_ref(self) -> ImmutableVar:
+        """Get a reference to the var.
+
+        Returns:
+            The reference to the var.
+        """
+
+        from .object import ObjectVar
+
+        refs = ImmutableVar(
+            _var_name="refs",
+            _var_data=ImmutableVarData(
+                imports={
+                    f"/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
+                }
+            ),
+        ).to(ObjectVar)
+        return refs[self]
 
 
 OUTPUT = TypeVar("OUTPUT", bound=ImmutableVar)
@@ -457,6 +740,9 @@ class LiteralVar(ImmutableVar):
                 value.dict(), _var_type=type(value), _var_data=_var_data
             )
 
+        if isinstance(value, dict):
+            return LiteralObjectVar(value, _var_data=_var_data)
+
         from .number import LiteralBooleanVar, LiteralNumberVar
         from .sequence import LiteralArrayVar, LiteralStringVar
 
@@ -467,7 +753,6 @@ class LiteralVar(ImmutableVar):
             int: LiteralNumberVar,
             float: LiteralNumberVar,
             bool: LiteralBooleanVar,
-            dict: LiteralObjectVar,
             list: LiteralArrayVar,
             tuple: LiteralArrayVar,
             set: LiteralArrayVar,
@@ -581,3 +866,165 @@ def figure_out_type(value: Any) -> Type:
             unionize(*(figure_out_type(v) for v in value.values())),
         ]
     return type(value)
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class AndOperation(ImmutableVar):
+    """Class for the logical AND operation."""
+
+    # The first var.
+    _var1: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+
+    # The second var.
+    _var2: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+
+    def __init__(
+        self, var1: Var | Any, var2: Var | Any, _var_data: VarData | None = None
+    ):
+        """Initialize the AndOperation.
+
+        Args:
+            var1: The first var.
+            var2: The second var.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(type(self), self).__init__(
+            _var_name="",
+            _var_type=Union[var1._var_type, var2._var_type],
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(
+            self, "_var1", var1 if isinstance(var1, Var) else LiteralVar.create(var1)
+        )
+        object.__setattr__(
+            self, "_var2", var2 if isinstance(var2, Var) else LiteralVar.create(var2)
+        )
+        object.__delattr__(self, "_var_name")
+
+    @functools.cached_property
+    def _cached_var_name(self) -> str:
+        """Get the cached var name.
+
+        Returns:
+            The cached var name.
+        """
+        return f"({str(self._var1)} && {str(self._var2)})"
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        return getattr(super(type(self), self), name)
+
+    @functools.cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get the cached VarData.
+
+        Returns:
+            The cached VarData.
+        """
+        return ImmutableVarData.merge(
+            self._var1._get_all_var_data(),
+            self._var2._get_all_var_data(),
+            self._var_data,
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return self._cached_get_all_var_data
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class OrOperation(ImmutableVar):
+    """Class for the logical OR operation."""
+
+    # The first var.
+    _var1: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+
+    # The second var.
+    _var2: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+
+    def __init__(
+        self, var1: Var | Any, var2: Var | Any, _var_data: VarData | None = None
+    ):
+        """Initialize the OrOperation.
+
+        Args:
+            var1: The first var.
+            var2: The second var.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(type(self), self).__init__(
+            _var_name="",
+            _var_type=Union[var1._var_type, var2._var_type],
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(
+            self, "_var1", var1 if isinstance(var1, Var) else LiteralVar.create(var1)
+        )
+        object.__setattr__(
+            self, "_var2", var2 if isinstance(var2, Var) else LiteralVar.create(var2)
+        )
+        object.__delattr__(self, "_var_name")
+
+    @functools.cached_property
+    def _cached_var_name(self) -> str:
+        """Get the cached var name.
+
+        Returns:
+            The cached var name.
+        """
+        return f"({str(self._var1)} || {str(self._var2)})"
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        return getattr(super(type(self), self), name)
+
+    @functools.cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get the cached VarData.
+
+        Returns:
+            The cached VarData.
+        """
+        return ImmutableVarData.merge(
+            self._var1._get_all_var_data(),
+            self._var2._get_all_var_data(),
+            self._var_data,
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return self._cached_get_all_var_data

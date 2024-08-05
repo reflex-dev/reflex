@@ -8,6 +8,7 @@ from reflex.components.chakra import (
     LiteralTagSize,
 )
 from reflex.event import EventHandler
+from reflex.ivars.base import LiteralVar
 from reflex.vars import Var
 
 
@@ -50,7 +51,7 @@ class Checkbox(ChakraComponent):
     name: Var[str]
 
     # The value of the input field when checked (use is_checked prop for a bool)
-    value: Var[str] = Var.create("true", _var_is_string=True)  # type: ignore
+    value: Var[str] = LiteralVar.create("true")
 
     # The spacing between the checkbox and its label text (0.5rem)
     spacing: Var[str]

@@ -12,6 +12,7 @@ from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.imports import ImportDict, ImportVar
@@ -484,7 +485,7 @@ class CodeBlock(Component):
         if children:
             props["code"] = children[0]
             if not isinstance(props["code"], Var):
-                props["code"] = Var.create(props["code"], _var_is_string=True)
+                props["code"] = LiteralVar.create(props["code"])
 
         # Create the component.
         code_block = super().create(
@@ -505,10 +506,8 @@ class CodeBlock(Component):
         out = super()._render()
         predicate, qmark, value = self.theme._var_name.partition("?")
         out.add_props(
-            style=Var.create(
+            style=ImmutableVar.create(
                 format.to_camel_case(f"{predicate}{qmark}{value.replace('`', '')}"),
-                _var_is_local=False,
-                _var_is_string=False,
             )
         ).remove_props("theme", "code")
         if self.code is not None:

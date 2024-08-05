@@ -17,7 +17,6 @@ rx.text(
 
 from __future__ import annotations
 
-import dataclasses
 from typing import Literal, get_args
 
 from reflex.components.component import BaseComponent
@@ -25,6 +24,7 @@ from reflex.components.core.cond import Cond, color_mode_cond, cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.dropdown_menu import dropdown_menu
 from reflex.components.radix.themes.components.switch import Switch
+from reflex.ivars.base import ImmutableVar
 from reflex.style import (
     LIGHT_COLOR_MODE,
     color_mode,
@@ -33,7 +33,7 @@ from reflex.style import (
     toggle_color_mode,
 )
 from reflex.utils import console
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var
 
 from .components.icon_button import IconButton
 
@@ -195,7 +195,7 @@ class ColorModeSwitch(Switch):
         )
 
 
-class ColorModeNamespace(BaseVar):
+class ColorModeNamespace(ImmutableVar):
     """Namespace for color mode components."""
 
     icon = staticmethod(ColorModeIcon.create)
@@ -204,5 +204,7 @@ class ColorModeNamespace(BaseVar):
 
 
 color_mode = color_mode_var_and_namespace = ColorModeNamespace(
-    **dataclasses.asdict(color_mode)
+    _var_name=color_mode._var_name,
+    _var_type=color_mode._var_type,
+    _var_data=color_mode._var_data,
 )

@@ -7,13 +7,14 @@ from typing import Any, Iterator
 from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.components.tags.tagless import Tagless
+from reflex.ivars.base import ImmutableVar
 from reflex.vars import Var
 
 
 class Bare(Component):
     """A component with no tag."""
 
-    contents: Var[str]
+    contents: Var[Any]
 
     @classmethod
     def create(cls, contents: Any) -> Component:
@@ -25,6 +26,8 @@ class Bare(Component):
         Returns:
             The component.
         """
+        if isinstance(contents, ImmutableVar):
+            return cls(contents=contents)
         if isinstance(contents, Var) and contents._var_data:
             contents = contents.to(str)
         else:
@@ -32,6 +35,8 @@ class Bare(Component):
         return cls(contents=contents)  # type: ignore
 
     def _render(self) -> Tag:
+        if isinstance(self.contents, ImmutableVar):
+            return Tagless(contents=f"{{{str(self.contents)}}}")
         return Tagless(contents=str(self.contents))
 
     def _get_vars(self, include_children: bool = False) -> Iterator[Var]:

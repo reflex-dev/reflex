@@ -6,6 +6,7 @@ from functools import lru_cache
 from typing import List, Literal
 
 from reflex.components.component import Component
+from reflex.ivars.base import ImmutableVar
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
 
@@ -66,9 +67,7 @@ class ChakraProvider(ChakraComponent):
             A new ChakraProvider component.
         """
         return super().create(
-            theme=Var.create(
-                "extendTheme(theme)", _var_is_local=False, _var_is_string=False
-            ),
+            theme=ImmutableVar.create("extendTheme(theme)"),
         )
 
     def add_imports(self) -> ImportDict:

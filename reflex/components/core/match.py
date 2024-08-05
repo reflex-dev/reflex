@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
-from reflex.components.core.colors import Color
 from reflex.components.tags import MatchTag, Tag
+from reflex.ivars.base import LiteralVar
 from reflex.style import Style
 from reflex.utils import format, types
 from reflex.utils.exceptions import MatchTypeError
@@ -68,7 +68,7 @@ class Match(MemoizationLeaf):
         Raises:
             ValueError: If the condition is not provided.
         """
-        match_cond_var = Var.create(cond, _var_is_string=isinstance(cond, str))
+        match_cond_var = LiteralVar.create(cond)
 
         if match_cond_var is None:
             raise ValueError("The condition must be set")
@@ -118,12 +118,11 @@ class Match(MemoizationLeaf):
             The case element Var.
         """
         _var_data = case_element._var_data if isinstance(case_element, Style) else None  # type: ignore
-        case_element = Var.create(
-            case_element,
-            _var_is_string=isinstance(case_element, (str, Color)),
-        )
+        case_element = LiteralVar.create(case_element)
         if _var_data is not None:
-            case_element._var_data = VarData.merge(case_element._var_data, _var_data)  # type: ignore
+            case_element._var_data = VarData.merge(
+                case_element._get_all_var_data(), _var_data
+            )  # type: ignore
         return case_element
 
     @classmethod

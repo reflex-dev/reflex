@@ -22,13 +22,15 @@ from typing import (
 
 from typing_extensions import get_origin
 
-from reflex.experimental.vars.base import (
+from reflex.utils import console
+
+from .base import (
     ImmutableVar,
     LiteralVar,
     figure_out_type,
 )
-from reflex.experimental.vars.number import NumberVar
-from reflex.experimental.vars.sequence import ArrayVar, StringVar
+from .number import BooleanVar, NumberVar
+from .sequence import ArrayVar, StringVar
 from reflex.utils.exceptions import VarAttributeError
 from reflex.utils.types import GenericType, get_attribute_access_type
 from reflex.vars import ImmutableVarData, Var, VarData
@@ -46,23 +48,13 @@ OTHER_KEY_TYPE = TypeVar("OTHER_KEY_TYPE")
 class ObjectVar(ImmutableVar[OBJECT_TYPE]):
     """Base class for immutable object vars."""
 
-    @overload
-    def _key_type(self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]]) -> KEY_TYPE: ...
-
-    @overload
-    def _key_type(self) -> Type: ...
-
     def _key_type(self) -> Type:
         """Get the type of the keys of the object.
 
         Returns:
             The type of the keys of the object.
         """
-        fixed_type = (
-            self._var_type if isclass(self._var_type) else get_origin(self._var_type)
-        )
-        args = get_args(self._var_type) if issubclass(fixed_type, dict) else ()
-        return args[0] if args else Any
+        return str
 
     @overload
     def _value_type(self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]]) -> VALUE_TYPE: ...
@@ -82,15 +74,7 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         args = get_args(self._var_type) if issubclass(fixed_type, dict) else ()
         return args[1] if args else Any
 
-    @overload
-    def keys(
-        self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]],
-    ) -> ArrayVar[List[KEY_TYPE]]: ...
-
-    @overload
-    def keys(self) -> ArrayVar: ...
-
-    def keys(self) -> ArrayVar:
+    def keys(self) -> ArrayVar[List[str]]:
         """Get the keys of the object.
 
         Returns:
@@ -117,7 +101,7 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
     @overload
     def entries(
         self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]],
-    ) -> ArrayVar[List[Tuple[KEY_TYPE, VALUE_TYPE]]]: ...
+    ) -> ArrayVar[List[Tuple[str, VALUE_TYPE]]]: ...
 
     @overload
     def entries(self) -> ArrayVar: ...
@@ -258,6 +242,8 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         Returns:
             The attribute of the var.
         """
+        if name.startswith("__") and name.endswith("__"):
+            return getattr(super(type(self), self), name)
         fixed_type = (
             self._var_type if isclass(self._var_type) else get_origin(self._var_type)
         )
@@ -271,6 +257,17 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
             return ObjectItemOperation(self, name, attribute_type).guess_type()
         else:
             return ObjectItemOperation(self, name).guess_type()
+
+    def contains(self, key: Var | Any) -> BooleanVar:
+        """Check if the object contains a key.
+
+        Args:
+            key: The key to check.
+
+        Returns:
+            The result of the check.
+        """
+        return ObjectHasOwnProperty(self, key)
 
 
 @dataclasses.dataclass(
@@ -369,12 +366,12 @@ class LiteralObjectVar(LiteralVar, ObjectVar[OBJECT_TYPE]):
         return ImmutableVarData.merge(
             *[
                 value._get_all_var_data()
-                for key, value in self._var_value
+                for value in self._var_value.values()
                 if isinstance(value, Var)
             ],
             *[
                 key._get_all_var_data()
-                for key, value in self._var_value
+                for key in self._var_value.keys()
                 if isinstance(key, Var)
             ],
             self._var_data,
@@ -792,6 +789,84 @@ class ToObjectOperation(ObjectVar):
         """
         return ImmutableVarData.merge(
             self._original_var._get_all_var_data(),
+            self._var_data,
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Wrapper method for cached property.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return self._cached_get_all_var_data
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ObjectHasOwnProperty(BooleanVar):
+    """Operation to check if an object has a property."""
+
+    value: ObjectVar = dataclasses.field(default_factory=lambda: LiteralObjectVar({}))
+    key: Var | Any = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+
+    def __init__(
+        self,
+        value: ObjectVar,
+        key: Var | Any,
+        _var_data: VarData | None = None,
+    ):
+        """Initialize the object has own property operation.
+
+        Args:
+            value: The value of the operation.
+            key: The key to check.
+            _var_data: Additional hooks and imports associated with the operation.
+        """
+        super(ObjectHasOwnProperty, self).__init__(
+            _var_name="",
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(self, "value", value)
+        object.__setattr__(
+            self, "key", key if isinstance(key, Var) else LiteralVar.create(key)
+        )
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the operation.
+
+        Returns:
+            The name of the operation.
+        """
+        return f"{str(self.value)}.hasOwnProperty({str(self.key)})"
+
+    def __getattr__(self, name):
+        """Get an attribute of the operation.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute of the operation.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        return super(type(self), self).__getattr__(name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the operation.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            self.value._get_all_var_data(),
+            self.key._get_all_var_data(),
             self._var_data,
         )
 

@@ -9,6 +9,8 @@ import re
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from reflex import constants
+from reflex.ivars.base import ImmutableVar
+from reflex.ivars.function import FunctionVar
 from reflex.utils import exceptions, types
 from reflex.vars import BaseVar, Var
 
@@ -483,8 +485,14 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         The formatted props list.
     """
     # Format all the props.
+    from reflex.ivars.base import ImmutableVar
+
     return [
-        f"{name}={format_prop(prop)}"
+        (
+            f"{name}={{{format_prop(prop)}}}"
+            if isinstance(prop, ImmutableVar)
+            else f"{name}={format_prop(prop)}"
+        )
         for name, prop in sorted(key_value_props.items())
         if prop is not None
     ] + [str(prop) for prop in single_props]
@@ -613,11 +621,13 @@ def format_event_chain(
 
 
 def format_queue_events(
-    events: EventSpec
-    | EventHandler
-    | Callable
-    | List[EventSpec | EventHandler | Callable]
-    | None = None,
+    events: (
+        EventSpec
+        | EventHandler
+        | Callable
+        | List[EventSpec | EventHandler | Callable]
+        | None
+    ) = None,
     args_spec: Optional[ArgsSpec] = None,
 ) -> Var[EventChain]:
     """Format a list of event handler / event spec as a javascript callback.
@@ -647,9 +657,7 @@ def format_queue_events(
     )
 
     if not events:
-        return Var.create_safe(
-            "() => null", _var_is_string=False, _var_is_local=False
-        ).to(EventChain)
+        return ImmutableVar("(() => null)").to(FunctionVar, EventChain)
 
     # If no spec is provided, the function will take no arguments.
     def _default_args_spec():
@@ -682,12 +690,10 @@ def format_queue_events(
 
     # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
     # Typically this snippet will _only_ run from within an rx.call_script eval context.
-    return Var.create_safe(
+    return ImmutableVar(
         f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}); "
         f"processEvent({constants.CompileVars.SOCKET})}}",
-        _var_is_string=False,
-        _var_is_local=False,
-    ).to(EventChain)
+    ).to(FunctionVar, EventChain)
 
 
 def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
@@ -939,6 +945,6 @@ def format_data_editor_cell(cell: Any):
         The formatted cell.
     """
     return {
-        "kind": Var.create(value="GridCellKind.Text", _var_is_string=False),
+        "kind": ImmutableVar.create("GridCellKind.Text"),
         "data": cell,
     }

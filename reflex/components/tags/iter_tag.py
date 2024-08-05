@@ -6,7 +6,8 @@ import inspect
 from typing import TYPE_CHECKING, Any, Callable, List, Tuple, Type, Union, get_args
 
 from reflex.components.tags.tag import Tag
-from reflex.vars import BaseVar, Var
+from reflex.ivars.base import ImmutableVar
+from reflex.vars import Var
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
@@ -53,10 +54,10 @@ class IterTag(Tag):
         Returns:
             The index var.
         """
-        return BaseVar(
+        return ImmutableVar(
             _var_name=self.index_var_name,
             _var_type=int,
-        )
+        ).guess_type()
 
     def get_arg_var(self) -> Var:
         """Get the arg var for the tag (with curly braces).
@@ -66,10 +67,10 @@ class IterTag(Tag):
         Returns:
             The arg var.
         """
-        return BaseVar(
+        return ImmutableVar(
             _var_name=self.arg_var_name,
             _var_type=self.get_iterable_var_type(),
-        )
+        ).guess_type()
 
     def get_index_var_arg(self) -> Var:
         """Get the index var for the tag (without curly braces).
@@ -79,11 +80,10 @@ class IterTag(Tag):
         Returns:
             The index var.
         """
-        return BaseVar(
+        return ImmutableVar(
             _var_name=self.index_var_name,
             _var_type=int,
-            _var_is_local=True,
-        )
+        ).guess_type()
 
     def get_arg_var_arg(self) -> Var:
         """Get the arg var for the tag (without curly braces).
@@ -93,11 +93,10 @@ class IterTag(Tag):
         Returns:
             The arg var.
         """
-        return BaseVar(
+        return ImmutableVar(
             _var_name=self.arg_var_name,
             _var_type=self.get_iterable_var_type(),
-            _var_is_local=True,
-        )
+        ).guess_type()
 
     def render_component(self) -> Component:
         """Render the component.

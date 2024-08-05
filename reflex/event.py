@@ -18,9 +18,12 @@ from typing import (
 
 from reflex import constants
 from reflex.base import Base
+from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.function import FunctionStringVar, FunctionVar
+from reflex.ivars.object import ObjectVar
 from reflex.utils import format
 from reflex.utils.types import ArgsSpec
-from reflex.vars import BaseVar, Var
+from reflex.vars import ImmutableVarData, Var
 
 try:
     from typing import Annotated
@@ -186,7 +189,7 @@ class EventHandler(EventActionsMixin):
 
         # Get the function args.
         fn_args = inspect.getfullargspec(self.fn).args[1:]
-        fn_args = (Var.create_safe(arg, _var_is_string=False) for arg in fn_args)
+        fn_args = (ImmutableVar.create_safe(arg) for arg in fn_args)
 
         # Construct the payload.
         values = []
@@ -197,7 +200,7 @@ class EventHandler(EventActionsMixin):
 
             # Otherwise, convert to JSON.
             try:
-                values.append(Var.create(arg, _var_is_string=isinstance(arg, str)))
+                values.append(LiteralVar.create(arg))
             except TypeError as e:
                 raise EventHandlerTypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
@@ -264,13 +267,13 @@ class EventSpec(EventActionsMixin):
 
         # Get the remaining unfilled function args.
         fn_args = inspect.getfullargspec(self.handler.fn).args[1 + len(self.args) :]
-        fn_args = (Var.create_safe(arg, _var_is_string=False) for arg in fn_args)
+        fn_args = (ImmutableVar.create_safe(arg) for arg in fn_args)
 
         # Construct the payload.
         values = []
         for arg in args:
             try:
-                values.append(Var.create(arg, _var_is_string=isinstance(arg, str)))
+                values.append(LiteralVar.create(arg))
             except TypeError as e:
                 raise EventHandlerTypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
@@ -388,15 +391,16 @@ class FileUpload(Base):
         upload_id = self.upload_id or DEFAULT_UPLOAD_ID
         spec_args = [
             (
-                Var.create_safe("files", _var_is_string=False),
-                Var.create_safe(
-                    f"filesById[{Var.create_safe(upload_id, _var_is_string=True)._var_name_unwrapped}]",
-                    _var_is_string=False,
-                )._replace(_var_data=upload_files_context_var_data),
+                ImmutableVar.create_safe("files"),
+                ImmutableVar(
+                    _var_name="filesById",
+                    _var_type=dict[str, Any],
+                    _var_data=ImmutableVarData.merge(upload_files_context_var_data),
+                ).to(ObjectVar)[LiteralVar.create_safe(upload_id)],
             ),
             (
-                Var.create_safe("upload_id", _var_is_string=False),
-                Var.create_safe(upload_id, _var_is_string=True),
+                ImmutableVar.create_safe("upload_id"),
+                LiteralVar.create_safe(upload_id),
             ),
         ]
         if self.on_upload_progress is not None:
@@ -424,11 +428,10 @@ class FileUpload(Base):
             formatted_chain = str(format.format_prop(on_upload_progress_chain))
             spec_args.append(
                 (
-                    Var.create_safe("on_upload_progress", _var_is_string=False),
-                    BaseVar(
-                        _var_name=formatted_chain.strip("{}"),
-                        _var_type=EventChain,
-                    ),
+                    ImmutableVar.create_safe("on_upload_progress"),
+                    FunctionStringVar(
+                        formatted_chain.strip("{}"),
+                    ).to(FunctionVar, EventChain),
                 ),
             )
         return EventSpec(
@@ -465,8 +468,8 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
         handler=EventHandler(fn=fn),
         args=tuple(
             (
-                Var.create_safe(k, _var_is_string=False),
-                Var.create_safe(v, _var_is_string=isinstance(v, str)),
+                ImmutableVar.create_safe(k),
+                LiteralVar.create(v),
             )
             for k, v in kwargs.items()
         ),
@@ -542,7 +545,7 @@ def set_focus(ref: str) -> EventSpec:
     return server_side(
         "_set_focus",
         get_fn_signature(set_focus),
-        ref=Var.create_safe(format.format_ref(ref), _var_is_string=True),
+        ref=ImmutableVar.create_safe(format.format_ref(ref)),
     )
 
 
@@ -573,7 +576,7 @@ def set_value(ref: str, value: Any) -> EventSpec:
     return server_side(
         "_set_value",
         get_fn_signature(set_value),
-        ref=Var.create_safe(format.format_ref(ref), _var_is_string=True),
+        ref=ImmutableVar.create_safe(format.format_ref(ref)),
         value=value,
     )
 
@@ -757,11 +760,13 @@ def _callback_arg_spec(eval_result):
 
 def call_script(
     javascript_code: str | Var[str],
-    callback: EventSpec
-    | EventHandler
-    | Callable
-    | List[EventSpec | EventHandler | Callable]
-    | None = None,
+    callback: (
+        EventSpec
+        | EventHandler
+        | Callable
+        | List[EventSpec | EventHandler | Callable]
+        | None
+    ) = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -865,10 +870,8 @@ def parse_args_spec(arg_spec: ArgsSpec):
     annotations = get_type_hints(arg_spec)
     return arg_spec(
         *[
-            BaseVar(
-                _var_name=f"_{l_arg}",
-                _var_type=annotations.get(l_arg, FrontendEvent),
-                _var_is_local=True,
+            ImmutableVar(f"_{l_arg}").to(
+                ObjectVar, annotations.get(l_arg, FrontendEvent)
             )
             for l_arg in spec.args
         ]

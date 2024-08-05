@@ -10,6 +10,8 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler
+from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.function import JSON_STRINGIFY
 from reflex.vars import Var
 
 from ..base import (
@@ -147,28 +149,24 @@ class HighLevelRadioGroup(RadixThemesComponent):
         color_scheme = props.pop("color_scheme", None)
         default_value = props.pop("default_value", "")
 
-        default_value = Var.create(default_value, _var_is_string=True)
+        default_value = LiteralVar.create(default_value)
 
         # convert only non-strings to json(JSON.stringify) so quotes are not rendered
         # for string literal types.
         if isinstance(default_value, str) or (
             isinstance(default_value, Var) and default_value._var_type is str
         ):
-            default_value = Var.create(default_value, _var_is_string=True)  # type: ignore
+            default_value = LiteralVar.create(default_value)  # type: ignore
         else:
-            default_value = (
-                Var.create(default_value, _var_is_string=False)
-                .to_string()  # type: ignore
-                ._replace(_var_is_local=False)
-            )
+            default_value = JSON_STRINGIFY.call(ImmutableVar.create(default_value))
 
         def radio_group_item(value: str | Var) -> Component:
             item_value = Var.create(value, _var_is_string=False)  # type: ignore
             item_value = rx.cond(
                 item_value._type() == str,  # type: ignore
                 item_value,
-                item_value.to_string()._replace(_var_is_local=False),  # type: ignore
-            )._replace(_var_type=str)
+                JSON_STRINGIFY.call(item_value),  # type: ignore
+            )
 
             return Text.create(
                 Flex.create(

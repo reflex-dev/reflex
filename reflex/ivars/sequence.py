@@ -27,13 +27,13 @@ from typing_extensions import get_origin
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
-from reflex.experimental.vars.base import (
+from .base import (
     ImmutableVar,
     LiteralVar,
     figure_out_type,
     unionize,
 )
-from reflex.experimental.vars.number import (
+from .number import (
     BooleanVar,
     LiteralNumberVar,
     NotEqualOperation,
@@ -71,27 +71,29 @@ class StringVar(ImmutableVar[str]):
         """
         return ConcatVarOperation(other, self)
 
-    def __mul__(self, other: int) -> ConcatVarOperation:
-        """Concatenate two strings.
+    def __mul__(self, other: NumberVar | int) -> StringVar:
+        """
+        Multiply the sequence by a number or an integer.
 
         Args:
-            other: The other string.
+            other (NumberVar | int): The number or integer to multiply the sequence by.
 
         Returns:
-            The string concatenation operation.
+            StringVar: The resulting sequence after multiplication.
         """
-        return ConcatVarOperation(*[self for _ in range(other)])
+        return (self.split() * other).join()
 
-    def __rmul__(self, other: int) -> ConcatVarOperation:
-        """Concatenate two strings.
+    def __rmul__(self, other: NumberVar | int) -> StringVar:
+        """
+        Multiply the sequence by a number or an integer.
 
         Args:
-            other: The other string.
+            other (NumberVar | int): The number or integer to multiply the sequence by.
 
         Returns:
-            The string concatenation operation.
+            StringVar: The resulting sequence after multiplication.
         """
-        return ConcatVarOperation(*[self for _ in range(other)])
+        return (self.split() * other).join()
 
     @overload
     def __getitem__(self, i: slice) -> ArrayJoinOperation: ...
@@ -596,10 +598,17 @@ class LiteralStringVar(LiteralVar, StringVar):
                         var_data.interpolations = [
                             (realstart, realstart + string_length)
                         ]
+                        var_content = value[end : (end + string_length)]
+                        if (
+                            var_content[0] == "{"
+                            and var_content[-1] == "}"
+                            and strings_and_vals
+                            and strings_and_vals[-1][-1] == "$"
+                        ):
+                            strings_and_vals[-1] = strings_and_vals[-1][:-1]
+                            var_content = "(" + var_content[1:-1] + ")"
                         strings_and_vals.append(
-                            ImmutableVar.create_safe(
-                                value[end : (end + string_length)], _var_data=var_data
-                            )
+                            ImmutableVar.create_safe(var_content, _var_data=var_data)
                         )
                         value = value[(end + string_length) :]
 
@@ -728,8 +737,6 @@ VALUE_TYPE = TypeVar("VALUE_TYPE")
 class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
     """Base class for immutable array vars."""
 
-    from reflex.experimental.vars.sequence import StringVar
-
     def join(self, sep: StringVar | str = "") -> ArrayJoinOperation:
         """Join the elements of the array.
 
@@ -739,7 +746,6 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             The joined elements.
         """
-        from reflex.experimental.vars.sequence import ArrayJoinOperation
 
         return ArrayJoinOperation(self, sep)
 
@@ -750,6 +756,18 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
             The reversed array.
         """
         return ArrayReverseOperation(self)
+
+    def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayConcatOperation:
+        """
+        Concatenate two arrays.
+
+        Parameters:
+            other (ArrayVar[ARRAY_VAR_TYPE]): The other array to concatenate.
+
+        Returns:
+            ArrayConcatOperation: The concatenation of the two arrays.
+        """
+        return ArrayConcatOperation(self, other)
 
     @overload
     def __getitem__(self, i: slice) -> ArrayVar[ARRAY_VAR_TYPE]: ...
@@ -914,6 +932,30 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
             The array contains operation.
         """
         return ArrayContainsOperation(self, other)
+
+    def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
+        """
+        Multiply the sequence by a number or integer.
+
+        Parameters:
+            other (NumberVar | int): The number or integer to multiply the sequence by.
+
+        Returns:
+            ArrayVar[ARRAY_VAR_TYPE]: The result of multiplying the sequence by the given number or integer.
+        """
+        return ArrayRepeatOperation(self, other)
+
+    def __rmul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
+        """
+        Multiply the sequence by a number or integer.
+
+        Parameters:
+            other (NumberVar | int): The number or integer to multiply the sequence by.
+
+        Returns:
+            ArrayVar[ARRAY_VAR_TYPE]: The result of multiplying the sequence by the given number or integer.
+        """
+        return ArrayRepeatOperation(self, other)
 
 
 LIST_ELEMENT = TypeVar("LIST_ELEMENT")
@@ -1296,7 +1338,7 @@ class ArrayReverseOperation(ArrayToArrayOperation):
         Returns:
             The name of the var.
         """
-        return f"{str(self.a)}.reverse()"
+        return f"{str(self.a)}.slice().reverse()"
 
 
 @dataclasses.dataclass(
@@ -1758,6 +1800,143 @@ class ToArrayOperation(ArrayVar):
         """
         return ImmutableVarData.merge(
             self.original_var._get_all_var_data(), self._var_data
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ArrayRepeatOperation(ArrayVar):
+    """Base class for immutable array vars that are the result of an array repeat operation."""
+
+    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
+    n: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar(0))
+
+    def __init__(
+        self, a: ArrayVar, n: NumberVar | int, _var_data: VarData | None = None
+    ):
+        """Initialize the array repeat operation var.
+
+        Args:
+            a: The array.
+            n: The number of times to repeat the array.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        super(ArrayRepeatOperation, self).__init__(
+            _var_name="",
+            _var_type=a._var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(self, "a", a)
+        object.__setattr__(
+            self,
+            "n",
+            n if isinstance(n, Var) else LiteralNumberVar(n),
+        )
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return f"Array.from({{ length: {str(self.n)} }}).flatMap(() => {str(self.a)})"
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(ArrayRepeatOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            self.a._get_all_var_data(), self.n._get_all_var_data(), self._var_data
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ArrayConcatOperation(ArrayVar):
+    """Base class for immutable array vars that are the result of an array concat operation."""
+
+    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
+    b: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
+
+    def __init__(self, a: ArrayVar, b: ArrayVar, _var_data: VarData | None = None):
+        """Initialize the array concat operation var.
+
+        Args:
+            a: The first array.
+            b: The second array.
+            _var_data: Additional hooks and imports associated with the Var.
+        """
+        # TODO: Figure out how to merge the types of a and b
+        super(ArrayConcatOperation, self).__init__(
+            _var_name="",
+            _var_type=List[ARRAY_VAR_TYPE],
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+        object.__setattr__(self, "a", a)
+        object.__setattr__(self, "b", b)
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return f"[...{str(self.a)}, ...{str(self.b)}]"
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(ArrayConcatOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            self.a._get_all_var_data(), self.b._get_all_var_data(), self._var_data
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:

@@ -11,6 +11,7 @@ from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
 from reflex.event import EventHandler
+from reflex.ivars.base import LiteralVar
 from reflex.style import Style
 from reflex.vars import Var, get_uuid_string_var
 
@@ -464,14 +465,12 @@ to {
         Returns:
             The style of the component.
         """
-        slideDown = Var.create(
+        slideDown = LiteralVar.create(
             f"${{slideDown}} var(--animation-duration) var(--animation-easing)",
-            _var_is_string=True,
         )
 
-        slideUp = Var.create(
+        slideUp = LiteralVar.create(
             f"${{slideUp}} var(--animation-duration) var(--animation-easing)",
-            _var_is_string=True,
         )
 
         return {

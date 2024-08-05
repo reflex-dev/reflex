@@ -7,7 +7,7 @@ import sys
 from functools import cached_property
 from typing import Any, Callable, Optional, Tuple, Type, Union
 
-from reflex.experimental.vars.base import ImmutableVar, LiteralVar
+from .base import ImmutableVar, LiteralVar
 from reflex.vars import ImmutableVarData, Var, VarData
 
 
@@ -288,3 +288,6 @@ class ToFunctionOperation(FunctionVar):
             The VarData of the components and all of its children.
         """
         return self._cached_get_all_var_data
+
+
+JSON_STRINGIFY = FunctionStringVar("JSON.stringify")

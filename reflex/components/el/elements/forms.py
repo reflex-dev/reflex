@@ -11,13 +11,14 @@ from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain, EventHandler
+from reflex.ivars.base import ImmutableVar
 from reflex.utils.format import format_event_chain
 from reflex.utils.imports import ImportDict
 from reflex.vars import BaseVar, Var
 
 from .base import BaseHTML
 
-FORM_DATA = Var.create("form_data", _var_is_string=False)
+FORM_DATA = ImmutableVar.create("form_data")
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     """
     const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {

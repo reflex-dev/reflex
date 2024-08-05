@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Union, overload
+from typing import Any, Dict, Optional, overload
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
-from reflex.constants.colors import Color
+from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.number import TernaryOperator
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
-from reflex.utils import format
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import Var, VarData
 
 _IS_TRUE_IMPORT: ImportDict = {
     f"/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
@@ -118,10 +118,10 @@ def cond(condition: Any, c1: Component) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Any, c2: Any) -> BaseVar: ...
+def cond(condition: Any, c1: Any, c2: Any) -> ImmutableVar: ...
 
 
-def cond(condition: Any, c1: Any, c2: Any = None):
+def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
     """Create a conditional component or Prop.
 
     Args:
@@ -135,14 +135,8 @@ def cond(condition: Any, c1: Any, c2: Any = None):
     Raises:
         ValueError: If the arguments are invalid.
     """
-    var_datas: list[VarData | None] = [
-        VarData(  # type: ignore
-            imports=_IS_TRUE_IMPORT,
-        ),
-    ]
-
     # Convert the condition to a Var.
-    cond_var = Var.create(condition)
+    cond_var = LiteralVar.create(condition)
     assert cond_var is not None, "The condition must be set."
 
     # If the first component is a component, create a Cond component.
@@ -151,8 +145,6 @@ def cond(condition: Any, c1: Any, c2: Any = None):
             c2, BaseComponent
         ), "Both arguments must be components."
         return Cond.create(cond_var, c1, c2)
-    if isinstance(c1, Var):
-        var_datas.append(c1._var_data)
 
     # Otherwise, create a conditional Var.
     # Check that the second argument is valid.
@@ -160,37 +152,20 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         raise ValueError("Both arguments must be props.")
     if c2 is None:
         raise ValueError("For conditional vars, the second argument must be set.")
-    if isinstance(c2, Var):
-        var_datas.append(c2._var_data)
 
     def create_var(cond_part):
-        return Var.create_safe(
-            cond_part,
-            _var_is_string=isinstance(cond_part, (str, Color)),
-        )
+        return LiteralVar.create_safe(cond_part)
 
     # convert the truth and false cond parts into vars so the _var_data can be obtained.
     c1 = create_var(c1)
     c2 = create_var(c2)
-    var_datas.extend([c1._var_data, c2._var_data])
-
-    c1_type = c1._var_type if isinstance(c1, Var) else type(c1)
-    c2_type = c2._var_type if isinstance(c2, Var) else type(c2)
-
-    var_type = c1_type if c1_type == c2_type else Union[c1_type, c2_type]
 
     # Create the conditional var.
-    return cond_var._replace(
-        _var_name=format.format_cond(
-            cond=cond_var._var_full_name,
-            true_value=c1,
-            false_value=c2,
-            is_prop=True,
-        ),
-        _var_type=var_type,
-        _var_is_local=False,
-        _var_full_name_needs_state_prefix=False,
-        merge_var_data=VarData.merge(*var_datas),
+    return TernaryOperator(
+        condition=cond_var,
+        if_true=c1,
+        if_false=c2,
+        _var_data=VarData(imports=_IS_TRUE_IMPORT),
     )
 
 
@@ -205,7 +180,7 @@ def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
         The conditional component or prop.
     """
     return cond(
-        resolved_color_mode == Var.create(LIGHT_COLOR_MODE, _var_is_string=True),
+        resolved_color_mode == LiteralVar.create(LIGHT_COLOR_MODE),
         light,
         dark,
     )

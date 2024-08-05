@@ -345,6 +345,33 @@ class ImmutableVarData:
             == imports.collapse_imports(other.imports)
         )
 
+    @classmethod
+    def from_state(cls, state: Type[BaseState] | str) -> ImmutableVarData:
+        """Set the state of the var.
+
+        Args:
+            state: The state to set or the full name of the state.
+
+        Returns:
+            The var with the set state.
+        """
+        from reflex.utils import format
+
+        state_name = state if isinstance(state, str) else state.get_full_name()
+        new_var_data = ImmutableVarData(
+            state=state_name,
+            hooks={
+                "const {0} = useContext(StateContexts.{0})".format(
+                    format.format_state_name(state_name)
+                ): None
+            },
+            imports={
+                f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
+                "react": [ImportVar(tag="useContext")],
+            },
+        )
+        return new_var_data
+
 
 def _decode_var_immutable(value: str) -> tuple[ImmutableVarData | None, str]:
     """Decode the state name from a formatted var.
@@ -800,11 +827,19 @@ class Var:
         """
         from reflex.utils import format
 
-        out = (
-            self._var_full_name
-            if self._var_is_local
-            else format.wrap(self._var_full_name, "{")
-        )
+        if self._var_is_local:
+            console.deprecate(
+                feature_name="Local Vars",
+                reason=(
+                    "Setting _var_is_local to True does not have any effect anymore. "
+                    "Use the new ImmutableVar instead."
+                ),
+                deprecation_version="0.5.9",
+                removal_version="0.6.0",
+            )
+            out = self._var_full_name
+        else:
+            out = format.wrap(self._var_full_name, "{")
         if self._var_is_string:
             out = format.format_string(out)
         return out

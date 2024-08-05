@@ -527,9 +527,10 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 self._enable_state()
             else:
                 for var in component._get_vars(include_children=True):
-                    if not var._var_data:
+                    var_data = var._get_all_var_data()
+                    if not var_data:
                         continue
-                    if not var._var_data.state:
+                    if not var_data.state:
                         continue
                     self._enable_state()
                     break
