@@ -810,7 +810,7 @@ export const useEventLoop = (
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = Event(
-          `${state_name}.{{ const.update_vars_internal }}`,
+          `${state_name}.{{ update_vars_internal }}`,
           { vars: vars }
         );
         addEvents([event], e);
@@ -824,7 +824,7 @@ export const useEventLoop = (
   // Route after the initial page hydration.
   useEffect(() => {
     const change_start = () => {
-      const main_state_dispatch = dispatch["{{ const.state_name }}"];
+      const main_state_dispatch = dispatch["state"];
       if (main_state_dispatch !== undefined) {
         main_state_dispatch({ is_hydrated: false });
       }

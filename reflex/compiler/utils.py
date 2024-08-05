@@ -399,15 +399,6 @@ def get_context_path() -> str:
     return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JS))
 
 
-def get_state_path() -> str:
-    """Get the path of the state file.
-
-    Returns:
-        The path of the state module.
-    """
-    return str(get_web_dir() / (constants.Dirs.STATES_PATH + constants.Ext.JS))
-
-
 def get_components_path() -> str:
     """Get the path of the compiled components.
 

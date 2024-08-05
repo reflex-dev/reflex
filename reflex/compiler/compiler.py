@@ -126,15 +126,6 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
     )
 
 
-def _compile_state() -> str:
-    """Compile the state.
-
-    Returns:
-        The compiled state.
-    """
-    return templates.state().render()
-
-
 def _compile_page(
     component: BaseComponent,
     state: Type[BaseState] | None,
@@ -431,18 +422,6 @@ def compile_contexts(
     output_path = utils.get_context_path()
 
     return output_path, _compile_contexts(state, theme)
-
-
-def compile_state() -> tuple[str, str]:
-    """Compile the state.
-
-    Returns:
-        The path and code of the compiled state.
-    """
-    output_path = utils.get_state_path()
-
-    code = _compile_state()
-    return output_path, code
 
 
 def compile_page(
