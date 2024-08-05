@@ -12,6 +12,7 @@ from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.ivars.function import JSON_STRINGIFY
+from reflex.ivars.sequence import StringVar
 from reflex.vars import Var
 
 from ..base import (
@@ -160,19 +161,18 @@ class HighLevelRadioGroup(RadixThemesComponent):
         else:
             default_value = JSON_STRINGIFY.call(ImmutableVar.create(default_value))
 
-        def radio_group_item(value: str | Var) -> Component:
-            item_value = Var.create(value, _var_is_string=False)  # type: ignore
+        def radio_group_item(value: Var) -> Component:
             item_value = rx.cond(
-                item_value._type() == str,  # type: ignore
-                item_value,
-                JSON_STRINGIFY.call(item_value),  # type: ignore
-            )
+                value._type() == "string",
+                value,
+                JSON_STRINGIFY.call(value),
+            ).to(StringVar)
 
             return Text.create(
                 Flex.create(
                     RadioGroupItem.create(
                         value=item_value,
-                        disabled=props.get("disabled", Var.create(False)),
+                        disabled=props.get("disabled", LiteralVar.create(False)),
                     ),
                     item_value,
                     spacing="2",
@@ -181,8 +181,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
                 as_="label",
             )
 
-        items = Var.create(items)  # type: ignore
-        children = [rx.foreach(items, radio_group_item)]
+        children = [rx.foreach(LiteralVar.create(items), radio_group_item)]
 
         return RadioGroupRoot.create(
             Flex.create(

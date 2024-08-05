@@ -154,7 +154,7 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
         raise ValueError("For conditional vars, the second argument must be set.")
 
     def create_var(cond_part):
-        return LiteralVar.create_safe(cond_part)
+        return LiteralVar.create(cond_part)
 
     # convert the truth and false cond parts into vars so the _var_data can be obtained.
     c1 = create_var(c1)

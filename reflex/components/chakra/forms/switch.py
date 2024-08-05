@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from reflex.components.chakra import ChakraComponent, LiteralColorScheme
 from reflex.event import EventHandler
+from reflex.ivars.base import LiteralVar
 from reflex.vars import Var
 
 
@@ -34,7 +35,7 @@ class Switch(ChakraComponent):
     name: Var[str]
 
     # The value of the input field when checked (use is_checked prop for a bool)
-    value: Var[str] = Var.create(True)  # type: ignore
+    value: Var[str] = LiteralVar.create("true")
 
     # The spacing between the switch and its label text (0.5rem)
     spacing: Var[str]

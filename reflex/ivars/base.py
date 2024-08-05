@@ -684,6 +684,21 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         ).to(ObjectVar)
         return refs[self]
 
+    def _type(self) -> StringVar:
+        """Returns the type of the object.
+
+        This method uses the `typeof` function from the `FunctionStringVar` class
+        to determine the type of the object.
+
+        Returns:
+            StringVar: A string variable representing the type of the object.
+        """
+        from .function import FunctionStringVar
+        from .sequence import StringVar
+
+        type_of = FunctionStringVar("typeof")
+        return type_of.call(self).to(StringVar)
+
 
 OUTPUT = TypeVar("OUTPUT", bound=ImmutableVar)
 
