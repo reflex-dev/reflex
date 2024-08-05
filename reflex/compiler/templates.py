@@ -14,6 +14,7 @@ class ReflexJinjaEnvironment(Environment):
         from reflex.state import (
             FrontendEventExceptionState,
             OnLoadInternalState,
+            State,
             UpdateVarsInternalState,
         )
 
@@ -48,6 +49,7 @@ class ReflexJinjaEnvironment(Environment):
             "set_color_mode": constants.ColorMode.SET,
             "use_color_mode": constants.ColorMode.USE,
             "hydrate": constants.CompileVars.HYDRATE,
+            "main_state_name": State.get_name(),
             "on_load_internal": f"{OnLoadInternalState.get_name()}.on_load_internal",
             "update_vars_internal": f"{UpdateVarsInternalState.get_name()}.update_vars_internal",
             "frontend_exception_state": FrontendEventExceptionState.get_full_name(),
