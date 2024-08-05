@@ -23,7 +23,12 @@ export const useClientSideRouting = () => {
       router.replace({
           pathname: window.location.pathname,
           query: window.location.search.slice(1),
-      })
+      }).then(()=>{
+          // Check if the current route is /404
+        if (router.pathname === '/404') {
+          setRouteNotFound(true); // Mark as an actual 404
+        }
+    })
       .catch((e) => {
         setRouteNotFound(true)  // navigation failed, so this is a real 404
       })
