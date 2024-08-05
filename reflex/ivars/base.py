@@ -876,7 +876,7 @@ class AndOperation(ImmutableVar):
             var2: The second var.
             _var_data: Additional hooks and imports associated with the Var.
         """
-        super(type(self), self).__init__(
+        super(AndOperation, self).__init__(
             _var_name="",
             _var_type=Union[var1._var_type, var2._var_type],
             _var_data=ImmutableVarData.merge(_var_data),
@@ -957,7 +957,7 @@ class OrOperation(ImmutableVar):
             var2: The second var.
             _var_data: Additional hooks and imports associated with the Var.
         """
-        super(type(self), self).__init__(
+        super(OrOperation, self).__init__(
             _var_name="",
             _var_type=Union[var1._var_type, var2._var_type],
             _var_data=ImmutableVarData.merge(_var_data),

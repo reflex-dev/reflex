@@ -1894,7 +1894,7 @@ class ArrayConcatOperation(ArrayVar):
         # TODO: Figure out how to merge the types of a and b
         super(ArrayConcatOperation, self).__init__(
             _var_name="",
-            _var_type=List[ARRAY_VAR_TYPE],
+            _var_type=Union[a._var_type, b._var_type],
             _var_data=ImmutableVarData.merge(_var_data),
         )
         object.__setattr__(self, "a", a)
