@@ -1027,3 +1027,50 @@ class OrOperation(ImmutableVar):
             The VarData of the components and all of its children.
         """
         return self._cached_get_all_var_data
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ImmutableCallableVar(ImmutableVar):
+    """Decorate a Var-returning function to act as both a Var and a function.
+
+    This is used as a compatibility shim for replacing Var objects in the
+    API with functions that return a family of Var.
+    """
+
+    fn: Callable[..., ImmutableVar] = dataclasses.field(
+        default_factory=lambda: lambda: LiteralVar.create(None)
+    )
+    original_var: ImmutableVar = dataclasses.field(
+        default_factory=lambda: LiteralVar.create(None)
+    )
+
+    def __init__(self, fn: Callable[..., ImmutableVar]):
+        """Initialize a CallableVar.
+
+        Args:
+            fn: The function to decorate (must return Var)
+        """
+        original_var = fn()
+        super(ImmutableCallableVar, self).__init__(
+            _var_name=original_var._var_name,
+            _var_type=original_var._var_type,
+            _var_data=original_var._var_data,
+        )
+        object.__setattr__(self, "fn", fn)
+        object.__setattr__(self, "original_var", original_var)
+
+    def __call__(self, *args, **kwargs) -> ImmutableVar:
+        """Call the decorated function.
+
+        Args:
+            *args: The args to pass to the function.
+            **kwargs: The kwargs to pass to the function.
+
+        Returns:
+            The Var returned from calling the function.
+        """
+        return self.fn(*args, **kwargs)

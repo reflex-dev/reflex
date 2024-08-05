@@ -19,8 +19,10 @@ from reflex.event import (
     call_script,
     parse_args_spec,
 )
+from reflex.ivars.base import ImmutableCallableVar, ImmutableVar
+from reflex.ivars.sequence import LiteralStringVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import BaseVar, CallableVar, Var, VarData
+from reflex.vars import Var, VarData
 
 DEFAULT_UPLOAD_ID: str = "default"
 
@@ -35,8 +37,8 @@ upload_files_context_var_data: VarData = VarData(
 )
 
 
-@CallableVar
-def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
+@ImmutableCallableVar
+def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar:
     """Get the file upload drop trigger.
 
     This var is passed to the dropzone component to update the file list when a
@@ -48,23 +50,25 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     Returns:
         A var referencing the file upload drop trigger.
     """
-    id_var = Var.create_safe(id_, _var_is_string=True)
+    id_var = LiteralStringVar.create(id_)
     var_name = f"""e => setFilesById(filesById => {{
     const updatedFilesById = Object.assign({{}}, filesById);
-    updatedFilesById[{id_var._var_name_unwrapped}] = e;
+    updatedFilesById[{str(id_var)}] = e;
     return updatedFilesById;
   }})
     """
 
-    return BaseVar(
+    return ImmutableVar(
         _var_name=var_name,
         _var_type=EventChain,
-        _var_data=VarData.merge(upload_files_context_var_data, id_var._var_data),
+        _var_data=VarData.merge(
+            upload_files_context_var_data, id_var._get_all_var_data()
+        ),
     )
 
 
-@CallableVar
-def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
+@ImmutableCallableVar
+def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar:
     """Get the list of selected files.
 
     Args:
@@ -73,12 +77,14 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     Returns:
         A var referencing the list of selected file paths.
     """
-    id_var = Var.create_safe(id_, _var_is_string=True)
-    return BaseVar(
-        _var_name=f"(filesById[{id_var._var_name_unwrapped}] ? filesById[{id_var._var_name_unwrapped}].map((f) => (f.path || f.name)) : [])",
+    id_var = LiteralStringVar.create(id_)
+    return ImmutableVar(
+        _var_name=f"(filesById[{str(id_var)}] ? filesById[{str(id_var)}].map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
-        _var_data=VarData.merge(upload_files_context_var_data, id_var._var_data),
-    )
+        _var_data=VarData.merge(
+            upload_files_context_var_data, id_var._get_all_var_data()
+        ),
+    ).guess_type()
 
 
 @CallableEventSpec
@@ -245,7 +251,7 @@ class Upload(MemoizationLeaf):
         # The file input to use.
         upload = Input.create(type="file")
         upload.special_props = {
-            BaseVar(_var_name="{...getInputProps()}", _var_type=None)
+            ImmutableVar(_var_name="{...getInputProps()}", _var_type=None)
         }
 
         # The dropzone to use.
@@ -254,7 +260,9 @@ class Upload(MemoizationLeaf):
             *children,
             **{k: v for k, v in props.items() if k not in supported_props},
         )
-        zone.special_props = {BaseVar(_var_name="{...getRootProps()}", _var_type=None)}
+        zone.special_props = {
+            ImmutableVar(_var_name="{...getRootProps()}", _var_type=None)
+        }
 
         # Create the component.
         upload_props["id"] = props.get("id", DEFAULT_UPLOAD_ID)

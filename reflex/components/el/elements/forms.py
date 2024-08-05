@@ -14,7 +14,7 @@ from reflex.event import EventChain, EventHandler
 from reflex.ivars.base import ImmutableVar
 from reflex.utils.format import format_event_chain
 from reflex.utils.imports import ImportDict
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var
 
 from .base import BaseHTML
 
@@ -198,7 +198,7 @@ class Form(BaseHTML):
         if EventTriggers.ON_SUBMIT in self.event_triggers:
             render_tag.add_props(
                 **{
-                    EventTriggers.ON_SUBMIT: BaseVar(
+                    EventTriggers.ON_SUBMIT: ImmutableVar(
                         _var_name=f"handleSubmit_{self.handle_submit_unique_name}",
                         _var_type=EventChain,
                     )

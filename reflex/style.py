@@ -7,7 +7,7 @@ from typing import Any, Literal, Tuple, Type
 from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
 from reflex.event import EventChain
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import ImmutableCallableVar, ImmutableVar, LiteralVar
 from reflex.ivars.function import FunctionVar
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
@@ -47,7 +47,7 @@ def _color_mode_var(_var_name: str, _var_type: Type = str) -> ImmutableVar:
     ).guess_type()
 
 
-# @CallableVar
+@ImmutableCallableVar
 def set_color_mode(
     new_color_mode: LiteralColorMode | Var[LiteralColorMode] | None = None,
 ) -> Var[EventChain]:
