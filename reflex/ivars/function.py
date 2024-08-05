@@ -7,8 +7,9 @@ import sys
 from functools import cached_property
 from typing import Any, Callable, Optional, Tuple, Type, Union
 
-from .base import ImmutableVar, LiteralVar
 from reflex.vars import ImmutableVarData, Var, VarData
+
+from .base import ImmutableVar, LiteralVar
 
 
 class FunctionVar(ImmutableVar[Callable]):

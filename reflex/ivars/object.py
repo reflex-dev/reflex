@@ -22,7 +22,9 @@ from typing import (
 
 from typing_extensions import get_origin
 
-from reflex.utils import console
+from reflex.utils.exceptions import VarAttributeError
+from reflex.utils.types import GenericType, get_attribute_access_type
+from reflex.vars import ImmutableVarData, Var, VarData
 
 from .base import (
     ImmutableVar,
@@ -31,9 +33,6 @@ from .base import (
 )
 from .number import BooleanVar, NumberVar
 from .sequence import ArrayVar, StringVar
-from reflex.utils.exceptions import VarAttributeError
-from reflex.utils.types import GenericType, get_attribute_access_type
-from reflex.vars import ImmutableVarData, Var, VarData
 
 OBJECT_TYPE = TypeVar("OBJECT_TYPE")
 
@@ -371,7 +370,7 @@ class LiteralObjectVar(LiteralVar, ObjectVar[OBJECT_TYPE]):
             ],
             *[
                 key._get_all_var_data()
-                for key in self._var_value.keys()
+                for key in self._var_value
                 if isinstance(key, Var)
             ],
             self._var_data,

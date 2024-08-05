@@ -6,7 +6,6 @@ import dataclasses
 import functools
 import inspect
 import sys
-import traceback
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -41,21 +40,17 @@ from reflex.vars import (
 )
 
 if TYPE_CHECKING:
+    from reflex.state import BaseState
+
     from .function import FunctionVar, ToFunctionOperation
     from .number import (
         BooleanVar,
         NumberVar,
         ToBooleanVarOperation,
         ToNumberVarOperation,
-        EqualOperation,
-        GreaterThanOperation,
-        GreaterThanOrEqualOperation,
-        LessThanOperation,
-        LessThanOrEqualOperation,
     )
     from .object import ObjectVar, ToObjectOperation
     from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
-    from reflex.state import BaseState
 
 
 VAR_TYPE = TypeVar("VAR_TYPE")
@@ -520,8 +515,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         return setter
 
     def __eq__(self, other: Var | Any) -> BooleanVar:
-        """
-        Check if the current variable is equal to the given variable.
+        """Check if the current variable is equal to the given variable.
 
         Args:
             other (Var | Any): The variable to compare with.
@@ -534,8 +528,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         return EqualOperation(self, other)
 
     def __ne__(self, other: Var | Any) -> BooleanVar:
-        """
-        Check if the current object is not equal to the given object.
+        """Check if the current object is not equal to the given object.
 
         Parameters:
             other (Var | Any): The object to compare with.
@@ -548,8 +541,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         return ~EqualOperation(self, other)
 
     def __gt__(self, other: Var | Any) -> BooleanVar:
-        """
-        Compare the current instance with another variable and return a BooleanVar representing the result of the greater than operation.
+        """Compare the current instance with another variable and return a BooleanVar representing the result of the greater than operation.
 
         Args:
             other (Var | Any): The variable to compare with.
@@ -562,8 +554,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         return GreaterThanOperation(self, other)
 
     def __ge__(self, other: Var | Any) -> BooleanVar:
-        """
-        Check if the value of this variable is greater than or equal to the value of another variable or object.
+        """Check if the value of this variable is greater than or equal to the value of another variable or object.
 
         Args:
             other (Var | Any): The variable or object to compare with.
@@ -576,8 +567,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         return GreaterThanOrEqualOperation(self, other)
 
     def __lt__(self, other: Var | Any) -> BooleanVar:
-        """
-        Compare the current instance with another variable using the less than (<) operator.
+        """Compare the current instance with another variable using the less than (<) operator.
 
         Args:
             other: The variable to compare with.
@@ -590,8 +580,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         return LessThanOperation(self, other)
 
     def __le__(self, other: Var | Any) -> BooleanVar:
-        """
-        Compare if the current instance is less than or equal to the given value.
+        """Compare if the current instance is less than or equal to the given value.
 
         Args:
             other: The value to compare with.
@@ -622,7 +611,6 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical AND operation.
         """
-
         return AndOperation(self, other)
 
     def __rand__(self, other: Var | Any) -> ImmutableVar:
@@ -634,7 +622,6 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical AND operation.
         """
-
         return AndOperation(other, self)
 
     def __or__(self, other: Var | Any) -> ImmutableVar:
@@ -646,7 +633,6 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical OR operation.
         """
-
         return OrOperation(self, other)
 
     def __ror__(self, other: Var | Any) -> ImmutableVar:
@@ -658,7 +644,6 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical OR operation.
         """
-
         return OrOperation(other, self)
 
     def __invert__(self) -> BooleanVar:
@@ -687,7 +672,6 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             The reference to the var.
         """
-
         from .object import ObjectVar
 
         refs = ImmutableVar(

@@ -27,6 +27,9 @@ from typing_extensions import get_origin
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
+from reflex.utils.types import GenericType
+from reflex.vars import ImmutableVarData, Var, VarData, _global_vars
+
 from .base import (
     ImmutableVar,
     LiteralVar,
@@ -39,8 +42,6 @@ from .number import (
     NotEqualOperation,
     NumberVar,
 )
-from reflex.utils.types import GenericType
-from reflex.vars import ImmutableVarData, Var, VarData, _global_vars
 
 if TYPE_CHECKING:
     from .object import ObjectVar
@@ -72,8 +73,7 @@ class StringVar(ImmutableVar[str]):
         return ConcatVarOperation(other, self)
 
     def __mul__(self, other: NumberVar | int) -> StringVar:
-        """
-        Multiply the sequence by a number or an integer.
+        """Multiply the sequence by a number or an integer.
 
         Args:
             other (NumberVar | int): The number or integer to multiply the sequence by.
@@ -84,8 +84,7 @@ class StringVar(ImmutableVar[str]):
         return (self.split() * other).join()
 
     def __rmul__(self, other: NumberVar | int) -> StringVar:
-        """
-        Multiply the sequence by a number or an integer.
+        """Multiply the sequence by a number or an integer.
 
         Args:
             other (NumberVar | int): The number or integer to multiply the sequence by.
@@ -746,7 +745,6 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             The joined elements.
         """
-
         return ArrayJoinOperation(self, sep)
 
     def reverse(self) -> ArrayVar[ARRAY_VAR_TYPE]:
@@ -758,8 +756,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         return ArrayReverseOperation(self)
 
     def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayConcatOperation:
-        """
-        Concatenate two arrays.
+        """Concatenate two arrays.
 
         Parameters:
             other (ArrayVar[ARRAY_VAR_TYPE]): The other array to concatenate.
@@ -934,8 +931,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         return ArrayContainsOperation(self, other)
 
     def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
-        """
-        Multiply the sequence by a number or integer.
+        """Multiply the sequence by a number or integer.
 
         Parameters:
             other (NumberVar | int): The number or integer to multiply the sequence by.
@@ -946,8 +942,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         return ArrayRepeatOperation(self, other)
 
     def __rmul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
-        """
-        Multiply the sequence by a number or integer.
+        """Multiply the sequence by a number or integer.
 
         Parameters:
             other (NumberVar | int): The number or integer to multiply the sequence by.

@@ -9,12 +9,12 @@ from functools import cached_property
 from typing import Any, Union
 
 from reflex.utils.types import GenericType
+from reflex.vars import ImmutableVarData, Var, VarData
 
 from .base import (
     ImmutableVar,
     LiteralVar,
 )
-from reflex.vars import ImmutableVarData, Var, VarData
 
 
 class NumberVar(ImmutableVar[Union[int, float]]):
