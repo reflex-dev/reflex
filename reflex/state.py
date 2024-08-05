@@ -2059,7 +2059,7 @@ class StateProxy(wrapt.ObjectProxy):
             Whether the state is mutable.
         """
         if self._self_parent_state_proxy is not None:
-            return self._self_parent_state_proxy._is_mutable()
+            return self._self_parent_state_proxy._is_mutable() or self._self_mutable
         return self._self_mutable
 
     async def __aenter__(self) -> StateProxy:
@@ -3302,7 +3302,7 @@ class ImmutableMutableProxy(MutableProxy):
         Raises:
             ImmutableStateError: if the StateProxy is not mutable.
         """
-        if not self._self_state._self_mutable:
+        if not self._self_state._is_mutable():
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
