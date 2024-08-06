@@ -135,6 +135,14 @@ class VarOperationCall(ImmutableVar):
         """Post-initialize the var."""
         pass
 
+    def __hash__(self):
+        """Hash the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self._func, self._args))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -214,6 +222,14 @@ class ArgsFunctionOperation(FunctionVar):
     def __post_init__(self):
         """Post-initialize the var."""
 
+    def __hash__(self):
+        """Hash the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self._args_names, self._return_expr))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -289,6 +305,14 @@ class ToFunctionOperation(FunctionVar):
             The VarData of the components and all of its children.
         """
         return self._cached_get_all_var_data
+
+    def __hash__(self):
+        """Hash the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self._original_var))
 
 
 JSON_STRINGIFY = FunctionStringVar("JSON.stringify")

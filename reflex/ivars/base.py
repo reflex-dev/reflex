@@ -947,6 +947,14 @@ class AndOperation(ImmutableVar):
         """
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Calculates the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self._var1, self._var2))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1028,6 +1036,14 @@ class OrOperation(ImmutableVar):
         """
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Calculates the hash value for the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self._var1, self._var2))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1074,3 +1090,11 @@ class ImmutableCallableVar(ImmutableVar):
             The Var returned from calling the function.
         """
         return self.fn(*args, **kwargs)
+
+    def __hash__(self) -> int:
+        """Calculate the hash of the object.
+
+        Returns:
+            The hash of the object.
+        """
+        return hash((self.__class__.__name__, self.original_var))

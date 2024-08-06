@@ -254,6 +254,14 @@ class StringToStringOperation(StringVar):
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self.a))
+
 
 class StringLowerOperation(StringToStringOperation):
     """Base class for immutable string vars that are the result of a string lower operation."""
@@ -368,6 +376,14 @@ class StringContainsOperation(BooleanVar):
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self.a, self.b))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -439,6 +455,14 @@ class StringItemOperation(StringVar):
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self.a, self.i))
+
 
 class ArrayJoinOperation(StringVar):
     """Base class for immutable string vars that are the result of an array join operation."""
@@ -504,6 +528,14 @@ class ArrayJoinOperation(StringVar):
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self.a, self.b))
 
 
 # Compile regex for finding reflex var tags.
@@ -721,6 +753,14 @@ class ConcatVarOperation(StringVar):
     def __post_init__(self):
         """Post-initialize the var."""
         pass
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, *self._var_value))
 
 
 ARRAY_VAR_TYPE = TypeVar("ARRAY_VAR_TYPE", bound=Union[List, Tuple, Set])
@@ -1144,6 +1184,14 @@ class StringSplitOperation(ArrayVar):
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self.a, self.b))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1208,6 +1256,14 @@ class ArrayToArrayOperation(ArrayVar):
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self.a))
 
 
 @dataclasses.dataclass(
@@ -1322,6 +1378,14 @@ class ArraySliceOperation(ArrayVar):
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self.a, self._slice))
+
 
 class ArrayReverseOperation(ArrayToArrayOperation):
     """Base class for immutable string vars that are the result of a string reverse operation."""
@@ -1398,6 +1462,14 @@ class ArrayToNumberOperation(NumberVar):
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self.a))
 
 
 class ArrayLengthOperation(ArrayToNumberOperation):
@@ -1505,6 +1577,14 @@ class ArrayItemOperation(ImmutableVar):
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self.a, self.i))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1595,6 +1675,14 @@ class RangeOperation(ArrayVar):
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self.start, self.end, self.step))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1659,6 +1747,14 @@ class ArrayContainsOperation(BooleanVar):
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self.a, self.b))
 
 
 @dataclasses.dataclass(
@@ -1727,6 +1823,14 @@ class ToStringOperation(StringVar):
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self.original_var))
 
 
 @dataclasses.dataclass(
@@ -1800,6 +1904,14 @@ class ToArrayOperation(ArrayVar):
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self.original_var))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1871,6 +1983,14 @@ class ArrayRepeatOperation(ArrayVar):
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self.a, self.n))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1936,3 +2056,11 @@ class ArrayConcatOperation(ArrayVar):
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self.a, self.b))

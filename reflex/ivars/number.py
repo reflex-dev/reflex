@@ -400,6 +400,14 @@ class BinaryNumberOperation(NumberVar):
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self.a, self.b))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -466,6 +474,14 @@ class UnaryNumberOperation(NumberVar):
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self.a))
 
 
 class NumberAddOperation(BinaryNumberOperation):
@@ -827,6 +843,14 @@ class BooleanToIntOperation(NumberVar):
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self.a))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -898,6 +922,14 @@ class ComparisonOperation(BooleanVar):
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self.a, self.b))
 
 
 class GreaterThanOperation(ComparisonOperation):
@@ -1058,6 +1090,14 @@ class LogicalOperation(BooleanVar):
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self.a, self.b))
+
 
 class BooleanNotOperation(BooleanVar):
     """Base class for immutable boolean vars that are the result of a logical NOT operation."""
@@ -1114,6 +1154,14 @@ class BooleanNotOperation(BooleanVar):
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self.a))
 
 
 @dataclasses.dataclass(
@@ -1279,6 +1327,14 @@ class ToNumberVarOperation(NumberVar):
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self._original_value))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1346,6 +1402,14 @@ class ToBooleanVarOperation(BooleanVar):
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self._original_value))
 
 
 class TernaryOperator(ImmutableVar):
@@ -1427,3 +1491,13 @@ class TernaryOperator(ImmutableVar):
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash(
+            (self.__class__.__name__, self.condition, self.if_true, self.if_false)
+        )

@@ -484,6 +484,14 @@ class ObjectToArrayOperation(ArrayVar):
         """
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Get the hash of the operation.
+
+        Returns:
+            The hash of the operation.
+        """
+        return hash((self.__class__.__name__, self.value))
+
 
 class ObjectKeysOperation(ObjectToArrayOperation):
     """Operation to get the keys of an object."""
@@ -645,6 +653,14 @@ class ObjectMergeOperation(ObjectVar):
         """
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Get the hash of the operation.
+
+        Returns:
+            The hash of the operation.
+        """
+        return hash((self.__class__.__name__, self.left, self.right))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -725,6 +741,14 @@ class ObjectItemOperation(ImmutableVar):
         """
         return self._cached_get_all_var_data
 
+    def __hash__(self) -> int:
+        """Get the hash of the operation.
+
+        Returns:
+            The hash of the operation.
+        """
+        return hash((self.__class__.__name__, self.value, self.key))
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -798,6 +822,14 @@ class ToObjectOperation(ObjectVar):
             The VarData of the components and all of its children.
         """
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Get the hash of the operation.
+
+        Returns:
+            The hash of the operation.
+        """
+        return hash((self.__class__.__name__, self._original_var))
 
 
 @dataclasses.dataclass(
@@ -876,3 +908,11 @@ class ObjectHasOwnProperty(BooleanVar):
             The VarData of the components and all of its children.
         """
         return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Get the hash of the operation.
+
+        Returns:
+            The hash of the operation.
+        """
+        return hash((self.__class__.__name__, self.value, self.key))
