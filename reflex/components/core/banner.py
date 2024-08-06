@@ -141,7 +141,7 @@ useEffect(() => {{
             _var_is_string=False,
         )
         imports: ImportDict = {
-            "react": ["useEffect", "useState"],
+            "react": ["useEffect", ImportVar(tag="useState", install=False)],
             **target_url._get_imports(),  # type: ignore
         }
         hook._var_data = VarData.merge(
