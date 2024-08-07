@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import copy
+import datetime
+import enum
 import functools
 import inspect
 import os
@@ -123,6 +125,31 @@ class PageData(Base):
             self.params = router_data.get(constants.RouteVar.QUERY, {})
 
 
+class SessionStatusEnum(enum.Enum):
+    """The status of the session."""
+
+    INITIAL = "initial"
+    CONNECTED = "connected"
+    DISCONNECTED = "disconnected"
+
+
+class SessionStatus(Base):
+    """An object containing the session status."""
+
+    status: SessionStatusEnum = SessionStatusEnum.INITIAL
+    # also represents disconnected_at if status is DISCONNECTED
+    last_event: datetime.datetime = datetime.datetime.now()
+
+    def update(self, status: SessionStatusEnum):
+        """Update the session status.
+
+        Args:
+            status: the new status.
+        """
+        self.last_event = datetime.datetime.now()
+        self.status = status
+
+
 class SessionData(Base):
     """An object containing session data."""
 
@@ -130,17 +157,17 @@ class SessionData(Base):
     client_ip: str = ""
     session_id: str = ""
 
-    def __init__(self, router_data: Optional[dict] = None):
-        """Initalize the SessionData object based on router_data.
+    def update(self, router_data: Optional[dict] = None):
+        """Update the session data based on the router_data.
 
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
-        if router_data:
-            self.client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
-            self.client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
-            self.session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
+        if not router_data:
+            return
+        self.client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
+        self.client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
+        self.session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
 
 
 class RouterData(Base):
@@ -157,7 +184,15 @@ class RouterData(Base):
             router_data: the router_data dict.
         """
         super().__init__()
-        self.session = SessionData(router_data)
+        self.update(router_data)
+
+    def update(self, router_data: Optional[dict] = None):
+        """Update the router data based on the router_data.
+
+        Args:
+            router_data: the router_data dict.
+        """
+        self.session.update(router_data)
         self.headers = HeaderData(router_data)
         self.page = PageData(router_data)
 
@@ -350,6 +385,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
     # The router data for the current page
     router: RouterData = RouterData()
+
+    # The session status
+    _session_status: SessionStatus = pydantic.PrivateAttr(default_factory=SessionStatus)
 
     # Whether the state has ever been touched since instantiation.
     _was_touched: bool = False

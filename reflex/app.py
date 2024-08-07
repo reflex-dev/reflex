@@ -77,6 +77,7 @@ from reflex.route import (
 from reflex.state import (
     BaseState,
     RouterData,
+    SessionStatusEnum,
     State,
     StateManager,
     StateUpdate,
@@ -1278,7 +1279,12 @@ async def process(
                 # assignment will recurse into substates and force recalculation of
                 # dependent ComputedVar (dynamic route variables)
                 state.router_data = router_data
-                state.router = RouterData(router_data)
+                if state.router:
+                    state.router.update(router_data)
+                else:
+                    state.router = RouterData(router_data)
+
+            state._session_status.update(SessionStatusEnum.CONNECTED)
 
             # Preprocess the event.
             update = await app._preprocess(state, event)
@@ -1468,7 +1474,7 @@ class EventNamespace(AsyncNamespace):
         """
         pass
 
-    def on_disconnect(self, sid):
+    async def on_disconnect(self, sid):
         """Event for when the websocket disconnects.
 
         Args:
@@ -1477,6 +1483,11 @@ class EventNamespace(AsyncNamespace):
         disconnect_token = self.sid_to_token.pop(sid, None)
         if disconnect_token:
             self.token_to_sid.pop(disconnect_token, None)
+        else:
+            return
+
+        async with self.app.state_manager.modify_state(disconnect_token) as state:
+            state._session_status.status = SessionStatusEnum.DISCONNECTED
 
     async def emit_update(self, update: StateUpdate, sid: str) -> None:
         """Emit an update to the client.
