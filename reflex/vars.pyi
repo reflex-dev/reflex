@@ -33,6 +33,7 @@ from reflex.utils.imports import ImmutableParsedImportDict, ImportDict, ParsedIm
 
 USED_VARIABLES: Incomplete
 
+def mark_used(*vars) -> None: ...
 def get_unique_variable_name() -> str: ...
 def _encode_var(value: Var) -> str: ...
 
@@ -71,6 +72,8 @@ class Var:
     _var_type: Type
     _var_is_local: bool = False
     _var_is_string: bool = False
+    _var_is_used: bool = False
+    _var_used_attributes: Set[str]
     _var_full_name_needs_state_prefix: bool = False
     _var_data: VarData | None = None
     @classmethod
@@ -80,6 +83,7 @@ class Var:
         _var_is_local: bool = True,
         _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
+        _var_is_used: bool = False,
     ) -> Optional[Var]: ...
     @classmethod
     def create_safe(
@@ -88,6 +92,7 @@ class Var:
         _var_is_local: bool = True,
         _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
+        _var_is_used: bool = False,
     ) -> Var: ...
     @classmethod
     def __class_getitem__(cls, type_: Type) -> _GenericAlias: ...
@@ -159,6 +164,8 @@ class BaseVar(Var):
     _var_type: Any
     _var_is_local: bool = False
     _var_is_string: bool = False
+    _var_is_used: bool = False
+    _var_used_attributes: Set[str] = set()
     _var_full_name_needs_state_prefix: bool = False
     _var_data: VarData | None = None
     def __hash__(self) -> int: ...
