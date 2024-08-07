@@ -46,7 +46,7 @@ def generate_sitemap_config(deploy_url: str, export=False):
     from reflex.compiler import templates
 
     config = {
-        "siteUrl": deploy_url,
+        "siteUrl": constants.Next.PLACEHOLDER_DOMAIN,
         "generateRobotsTxt": True,
     }
 
