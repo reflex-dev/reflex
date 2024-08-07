@@ -46,8 +46,11 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
         )
     # Print the SQL queries if the log level is INFO or lower.
     echo_db_query = os.environ.get("SQLALCHEMY_ECHO") == "True"
+    # Get the connection arguments from the config.
+    connect_args = conf.db_config.options if conf.db_config and conf.db_config.options else {}
     # Needed for the admin dash on sqlite.
-    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
+    if url.startswith("sqlite"):
+        connect_args.update({"check_same_thread": False})
     return sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)
 
 

@@ -29,6 +29,7 @@ class DBConfig(Base):
     host: Optional[str] = ""
     port: Optional[int] = None
     database: str
+    options: Optional[Dict[str, Any]] = None
 
     @classmethod
     def postgresql(
@@ -38,6 +39,7 @@ class DBConfig(Base):
         password: str | None = None,
         host: str | None = None,
         port: int | None = 5432,
+        options: Optional[Dict[str, Any]] = None,
     ) -> DBConfig:
         """Create an instance with postgresql engine.
 
@@ -47,6 +49,7 @@ class DBConfig(Base):
             password: Database password.
             host: Database host.
             port: Database port.
+            options: Additional connection options.
 
         Returns:
             DBConfig instance.
@@ -58,6 +61,7 @@ class DBConfig(Base):
             host=host,
             port=port,
             database=database,
+            options=options,
         )
 
     @classmethod
@@ -68,6 +72,7 @@ class DBConfig(Base):
         password: str | None = None,
         host: str | None = None,
         port: int | None = 5432,
+        options: Optional[Dict[str, Any]] = None,
     ) -> DBConfig:
         """Create an instance with postgresql+psycopg2 engine.
 
@@ -77,6 +82,7 @@ class DBConfig(Base):
             password: Database password.
             host: Database host.
             port: Database port.
+            options: Additional connection options.
 
         Returns:
             DBConfig instance.
@@ -88,17 +94,20 @@ class DBConfig(Base):
             host=host,
             port=port,
             database=database,
+            options=options,
         )
 
     @classmethod
     def sqlite(
         cls,
         database: str,
+        options: Optional[Dict[str, Any]] = None,
     ) -> DBConfig:
         """Create an instance with sqlite engine.
 
         Args:
             database: Database name.
+            options: Additional connection options.
 
         Returns:
             DBConfig instance.
@@ -106,6 +115,7 @@ class DBConfig(Base):
         return cls(
             engine="sqlite",
             database=database,
+            options=options,
         )
 
     def get_url(self) -> str:
@@ -125,7 +135,11 @@ class DBConfig(Base):
         else:
             path = f"{host}"
 
-        return f"{self.engine}://{path}/{self.database}"
+        options = (
+            f"?{urllib.parse.urlencode(self.options)}" if self.options else ""
+        )
+
+        return f"{self.engine}://{path}/{self.database}{options}"
 
 
 class Config(Base):
@@ -361,7 +375,7 @@ def get_config(reload: bool = False) -> Config:
         reload: Re-import the rxconfig module from disk
 
     Returns:
-        The app config.
+            The app config.
     """
     sys.path.insert(0, os.getcwd())
     # only import the module if it exists. If a module spec exists then

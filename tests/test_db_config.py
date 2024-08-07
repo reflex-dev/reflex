@@ -202,3 +202,105 @@ def test_constructor_postgresql_psycopg2(
     assert db_config.port == port
     assert db_config.database == database
     assert db_config.get_url() == expected_url
+
+
+@pytest.mark.parametrize(
+    "engine,username,password,host,port,database,options,expected_url",
+    [
+        (
+            "postgresql",
+            "user",
+            "pass",
+            "localhost",
+            5432,
+            "db",
+            {"connect_timeout": 10},
+            "postgresql://user:pass@localhost:5432/db?connect_timeout=10",
+        ),
+        (
+            "postgresql",
+            "user",
+            "pass",
+            "localhost",
+            None,
+            "db",
+            {"connect_timeout": 10},
+            "postgresql://user:pass@localhost/db?connect_timeout=10",
+        ),
+        (
+            "postgresql",
+            "user",
+            None,
+            "localhost",
+            None,
+            "db",
+            {"connect_timeout": 10},
+            "postgresql://user@localhost/db?connect_timeout=10",
+        ),
+        (
+            "postgresql",
+            "user",
+            None,
+            None,
+            None,
+            "db",
+            {"connect_timeout": 10},
+            "postgresql://user@/db?connect_timeout=10",
+        ),
+        (
+            "postgresql",
+            "user",
+            None,
+            None,
+            5432,
+            "db",
+            {"connect_timeout": 10},
+            "postgresql://user@/db?connect_timeout=10",
+        ),
+        (
+            "postgresql",
+            None,
+            None,
+            "localhost",
+            5432,
+            "db",
+            {"connect_timeout": 10},
+            "postgresql://localhost:5432/db?connect_timeout=10",
+        ),
+        (
+            "sqlite",
+            None,
+            None,
+            None,
+            None,
+            "db.sqlite",
+            {"timeout": 10},
+            "sqlite:///db.sqlite?timeout=10",
+        ),
+    ],
+)
+def test_get_url_with_options(
+    engine, username, password, host, port, database, options, expected_url
+):
+    """Test generation of URL with options.
+
+    Args:
+        engine: Database engine.
+        username: Database username.
+        password: Database password.
+        host: Database host.
+        port: Database port.
+        database: Database name.
+        options: Additional connection options.
+        expected_url: Expected database URL generated.
+    """
+    db_config = DBConfig(
+        engine=engine,
+        username=username,
+        password=password,
+        host=host,
+        port=port,
+        database=database,
+        options=options,
+    )
+    assert db_config.get_url() == expected_url
