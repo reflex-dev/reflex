@@ -15,6 +15,7 @@ import {
 } from "utils/context.js";
 import debounce from "/utils/helpers/debounce";
 import throttle from "/utils/helpers/throttle";
+import * as Babel from "@babel/standalone";
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
@@ -128,6 +129,16 @@ export const isStateful = () => {
 export const applyDelta = (state, delta) => {
   return { ...state, ...delta };
 };
+
+export const evalReactComponent = async (component) => {
+  console.log("Detected dynamic component in delta: ", component)
+  const output = Babel.transform(component, { presets: ["react"] }).code
+  const encodedJs = encodeURIComponent(output);
+  const dataUri = 'data:text/javascript;charset=utf-8,'
+    + encodedJs;
+  const module = await eval(`import(dataUri)`)
+  return module.default;
+}
 
 /**
  * Only Queue and process events when websocket connection exists.
@@ -416,9 +427,14 @@ export const connect = async (
   });
 
   // On each received message, queue the updates and events.
-  socket.current.on("event", (message) => {
+  socket.current.on("event", async (message) => {
     const update = JSON5.parse(message);
     for (const substate in update.delta) {
+      for (const var_name in update.delta[substate]) {
+        if (var_name.slice(0, 5) === "comp_") {
+          update.delta[substate][var_name] = await evalReactComponent(update.delta[substate][var_name])
+        }
+      }
       dispatch[substate](update.delta[substate]);
     }
     applyClientStorageDelta(client_storage, update.delta);
