@@ -194,7 +194,7 @@ class Config(Base):
     cors_allowed_origins: List[str] = ["*"]
 
     # Tailwind config.
-    tailwind: Optional[Dict[str, Any]] = {}
+    tailwind: Optional[Dict[str, Any]] = {"plugins": ["@tailwindcss/typography"]}
 
     # Timeout when launching the gunicorn server. TODO(rename this to backend_timeout?)
     timeout: int = 120
