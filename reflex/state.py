@@ -291,6 +291,61 @@ class EventHandlerSetVar(EventHandler):
         return super().__call__(*args)
 
 
+# Keep track of all state instances to calculate minified state names
+state_count: int = 0
+
+minified_state_names: Dict[str, str] = {}
+
+
+def next_minified_state_name() -> str:
+    """Get the next minified state name.
+
+    Returns:
+        The next minified state name.
+    """
+    global state_count
+    num = state_count
+
+    # All possible chars for minified state name
+    chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
+    base = len(chars)
+    state_name = ""
+
+    if num == 0:
+        state_name = chars[0]
+
+    while num > 0:
+        state_name = chars[num % base] + state_name
+        num = num // base
+
+    state_count += 1
+
+    return state_name
+
+
+def get_minified_state_name(state_name: str) -> str:
+    """Generate a minified state name.
+
+    Args:
+        state_name: The state name to minify.
+
+    Returns:
+        The minified state name.
+
+    Raises:
+        ValueError: If no more minified state names are available
+    """
+    if state_name in minified_state_names:
+        return minified_state_names[state_name]
+
+    while name := next_minified_state_name():
+        if name in minified_state_names.values():
+            continue
+        minified_state_names[state_name] = name
+        return name
+    raise ValueError("No more minified state names available")
+
+
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -782,7 +837,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The name of the state.
         """
         module = cls.__module__.replace(".", "___")
-        return format.to_snake_case(f"{module}___{cls.__name__}")
+        state_name = format.to_snake_case(f"{module}___{cls.__name__}")
+        if constants.compiler.CompileVars.MINIFY_STATES():
+            return get_minified_state_name(state_name)
+        return state_name
 
     @classmethod
     @functools.lru_cache()

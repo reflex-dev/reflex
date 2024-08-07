@@ -391,7 +391,7 @@ def create_config(app_name: str):
     config_name = f"{re.sub(r'[^a-zA-Z]', '', app_name).capitalize()}Config"
     with open(constants.Config.FILE, "w") as f:
         console.debug(f"Creating {constants.Config.FILE}")
-        f.write(templates.RXCONFIG.render(app_name=app_name, config_name=config_name))
+        f.write(templates.rxconfig().render(app_name=app_name, config_name=config_name))
 
 
 def initialize_gitignore(
@@ -559,7 +559,7 @@ def initialize_web_directory():
 
 
 def _compile_package_json():
-    return templates.PACKAGE_JSON.render(
+    return templates.package_json().render(
         scripts={
             "dev": constants.PackageJson.Commands.DEV,
             "export": constants.PackageJson.Commands.EXPORT,

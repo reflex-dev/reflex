@@ -43,7 +43,20 @@ class ErrorBoundary(Component):
         Returns:
             The hooks to add.
         """
-        return [Hooks.EVENTS, Hooks.FRONTEND_ERRORS]
+        from reflex.state import FrontendEventExceptionState
+
+        return [
+            Hooks.EVENTS,
+            f"""
+    const logFrontendError = (error, info) => {{
+        if (process.env.NODE_ENV === "production") {{
+            addEvents([Event("{FrontendEventExceptionState.get_full_name()}.handle_frontend_exception", {{
+                stack: error.stack,
+            }})])
+        }}
+    }}
+    """,
+        ]
 
     def add_custom_code(self) -> List[str]:
         """Add custom Javascript code into the page that contains this component.

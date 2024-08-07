@@ -49,6 +49,7 @@ CI = bool(os.environ.get("CI", False))
 LOCK_EXPIRATION = 2000 if CI else 300
 LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.4
 
+ON_LOAD_INTERNAL = f"{OnLoadInternalState.get_name()}.on_load_internal"
 
 formatted_router = {
     "session": {"client_token": "", "client_ip": "", "session_id": ""},
@@ -2748,7 +2749,7 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
         app=app,
         event=Event(
             token=token,
-            name=f"{state.get_name()}.{CompileVars.ON_LOAD_INTERNAL}",
+            name=f"{state.get_name()}.{ON_LOAD_INTERNAL}",
             router_data={RouteVar.PATH: "/", RouteVar.ORIGIN: "/", RouteVar.QUERY: {}},
         ),
         sid="sid",
@@ -2792,7 +2793,7 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         app=app,
         event=Event(
             token=token,
-            name=f"{state.get_full_name()}.{CompileVars.ON_LOAD_INTERNAL}",
+            name=f"{state.get_full_name()}.{ON_LOAD_INTERNAL}",
             router_data={RouteVar.PATH: "/", RouteVar.ORIGIN: "/", RouteVar.QUERY: {}},
         ),
         sid="sid",

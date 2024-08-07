@@ -23,7 +23,7 @@ from typing import (
 
 import reflex.state
 from reflex.base import Base
-from reflex.compiler.templates import STATEFUL_COMPONENT
+from reflex.compiler.templates import stateful_component
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.tags import Tag
 from reflex.constants import (
@@ -2116,7 +2116,7 @@ class StatefulComponent(BaseComponent):
                 component.event_triggers[event_trigger] = memo_trigger
 
         # Render the code for this component and hooks.
-        return STATEFUL_COMPONENT.render(
+        return stateful_component().render(
             tag_name=tag_name,
             memo_trigger_hooks=memo_trigger_hooks,
             component=component,
