@@ -60,7 +60,7 @@ def send_data_to_posthog(event, properties):
         HTTPError: When there is an error sending data to PostHog.
     """
     event_data = {
-        "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
+        "api_key": os.getenv('POSTHOG_SECRET'),
         "event": event,
         "properties": properties,
     }

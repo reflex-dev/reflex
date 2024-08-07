@@ -16,6 +16,7 @@ except ImportError:
 
 import httpx
 import psutil
+import os
 
 from reflex import constants
 from reflex.utils import console
@@ -23,7 +24,7 @@ from reflex.utils.exec import should_skip_compile
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
-
+POSTHOG_SECRET:str = os.getenv('POSTHOG_SECRET')
 
 def get_os() -> str:
     """Get the operating system.
