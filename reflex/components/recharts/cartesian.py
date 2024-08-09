@@ -155,8 +155,8 @@ class YAxis(Axis):
     # The id of y-axis which is corresponding to the data.
     y_axis_id: Var[Union[str, int]]
 
-    # # The range of the axis. Work best in conjuction with allow_data_overflow.
-    # domain: Var[List]
+    # The range of the axis. Work best in conjuction with allow_data_overflow.
+    domain: Var[List]
 
 
 class ZAxis(Recharts):
