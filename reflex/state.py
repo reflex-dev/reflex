@@ -900,7 +900,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # create the variable based on name and type
         var = ImmutableVar(
-            _var_name=name, _var_type=type_, _var_data=ImmutableVarData.from_state(cls)
+            _var_name=format.format_state_name(cls.get_full_name()) + "." + name,
+            _var_type=type_,
+            _var_data=ImmutableVarData.from_state(cls),
         ).guess_type()
 
         # add the pydantic field dynamically (must be done before _init_var)

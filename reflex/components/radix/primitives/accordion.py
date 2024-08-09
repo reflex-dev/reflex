@@ -103,10 +103,10 @@ class AccordionRoot(AccordionComponent):
     radius: Var[LiteralRadius]
 
     # The time in milliseconds to animate open and close
-    duration: Var[int] = Var.create_safe(DEFAULT_ANIMATION_DURATION)
+    duration: Var[int] = LiteralVar.create(DEFAULT_ANIMATION_DURATION)
 
     # The easing function to use for the animation.
-    easing: Var[str] = Var.create_safe(DEFAULT_ANIMATION_EASING, _var_is_string=True)
+    easing: Var[str] = LiteralVar.create(DEFAULT_ANIMATION_EASING)
 
     # Whether to show divider lines between items.
     show_dividers: Var[bool]

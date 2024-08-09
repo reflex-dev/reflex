@@ -390,9 +390,23 @@ class CodeBlock(Component):
             The import dict.
         """
         imports_: ImportDict = {}
-        themes = re.findall(r'"(.*?)"', self.theme._var_name)
+
+        themeString = str(self.theme)
+
+        themes = re.findall(r'"(.*?)"', themeString)
         if not themes:
-            themes = [self.theme._var_name]
+            themes = [themeString]
+
+        if "oneLight" in themeString:
+            themes.append("light")
+        if "oneDark" in themeString:
+            themes.append("dark")
+        if "one-light" in themeString:
+            themes.append("light")
+        if "one-dark" in themeString:
+            themes.append("dark")
+
+        themes = sorted(set(themes))
 
         imports_.update(
             {
@@ -454,7 +468,10 @@ class CodeBlock(Component):
 
         if "theme" not in props:
             # Default color scheme responds to global color mode.
-            props["theme"] = color_mode_cond(light="one-light", dark="one-dark")
+            props["theme"] = color_mode_cond(
+                light=ImmutableVar.create_safe("oneLight"),
+                dark=ImmutableVar.create_safe("oneDark"),
+            )
 
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.

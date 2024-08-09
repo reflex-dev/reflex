@@ -528,7 +528,9 @@ class StringItemOperation(StringVar):
     _string: StringVar = dataclasses.field(
         default_factory=lambda: LiteralStringVar.create("")
     )
-    _index: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar.create(0))
+    _index: NumberVar = dataclasses.field(
+        default_factory=lambda: LiteralNumberVar.create(0)
+    )
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -608,6 +610,7 @@ class StringItemOperation(StringVar):
                 index if isinstance(index, Var) else LiteralNumberVar.create(index)
             ),
         )
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1712,7 +1715,9 @@ class ArrayItemOperation(ImmutableVar):
     _array: ArrayVar = dataclasses.field(
         default_factory=lambda: LiteralArrayVar.create([])
     )
-    _index: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar.create(0))
+    _index: NumberVar = dataclasses.field(
+        default_factory=lambda: LiteralNumberVar.create(0)
+    )
 
     def __post_init__(self):
         """Post-initialize the var."""
@@ -1805,9 +1810,15 @@ class ArrayItemOperation(ImmutableVar):
 class RangeOperation(ArrayVar):
     """Base class for immutable array vars that are the result of a range operation."""
 
-    _start: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar.create(0))
-    _stop: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar.create(0))
-    _step: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar.create(1))
+    _start: NumberVar = dataclasses.field(
+        default_factory=lambda: LiteralNumberVar.create(0)
+    )
+    _stop: NumberVar = dataclasses.field(
+        default_factory=lambda: LiteralNumberVar.create(0)
+    )
+    _step: NumberVar = dataclasses.field(
+        default_factory=lambda: LiteralNumberVar.create(1)
+    )
 
     def __post_init__(self):
         """Post-initialize the var."""
@@ -2157,7 +2168,9 @@ class ArrayRepeatOperation(ArrayVar):
     _array: ArrayVar = dataclasses.field(
         default_factory=lambda: LiteralArrayVar.create([])
     )
-    _count: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar.create(0))
+    _count: NumberVar = dataclasses.field(
+        default_factory=lambda: LiteralNumberVar.create(0)
+    )
 
     def __post_init__(self):
         """Post-initialize the var."""

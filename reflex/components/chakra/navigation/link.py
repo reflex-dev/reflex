@@ -25,7 +25,7 @@ class Link(ChakraComponent):
     text: Var[str]
 
     # What the link renders to.
-    as_: Var[str] = ImmutableVar(_var_name="{NextLink}", _var_type=str)
+    as_: Var[str] = ImmutableVar.create_safe("NextLink").to(str)
 
     # If true, the link will open in new tab.
     is_external: Var[bool]

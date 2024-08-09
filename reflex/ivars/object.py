@@ -769,7 +769,7 @@ class ObjectItemOperation(ImmutableVar):
             The hash of the operation.
         """
         return hash((self.__class__.__name__, self._object, self._key))
-    
+
     def __post_init__(self):
         """Post initialization."""
         object.__delattr__(self, "_var_name")

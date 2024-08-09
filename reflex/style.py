@@ -130,10 +130,11 @@ def convert_item(
         return str(style_item), style_item._get_all_var_data()
 
     # Otherwise, convert to Var to collapse VarData encoded in f-string.
-    new_var = ImmutableVar.create(style_item)
-    if new_var is not None and new_var._var_data:
+    new_var = LiteralVar.create(style_item)
+    var_data = new_var._get_all_var_data() if new_var is not None else None
+    if var_data:
         # The wrapped backtick is used to identify the Var for interpolation.
-        return f"`{str(new_var)}`", new_var._get_all_var_data()
+        return f"{str(new_var)}", var_data
 
     return style_item, None
 
@@ -263,10 +264,10 @@ class Style(dict):
             value: The value to set.
         """
         # Create a Var to collapse VarData encoded in f-string.
-        _var = ImmutableVar.create(value)
+        _var = LiteralVar.create(value)
         if _var is not None:
             # Carry the imports/hooks when setting a Var as a value.
-            self._var_data = VarData.merge(self._var_data, _var._var_data)
+            self._var_data = VarData.merge(self._var_data, _var._get_all_var_data())
         super().__setitem__(key, value)
 
 

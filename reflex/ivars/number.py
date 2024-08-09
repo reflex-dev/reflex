@@ -1456,6 +1456,7 @@ class ToBooleanVarOperation(BooleanVar):
             _original_value=value,
         )
 
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,

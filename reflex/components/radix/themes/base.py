@@ -114,6 +114,11 @@ class RadixThemesComponent(Component):
         component.alias = "RadixThemes" + (
             component.tag or component.__class__.__name__
         )
+        # value = props.get("value")
+        # if value is not None and component.alias == "RadixThemesSelect.Root":
+        #     lv = LiteralVar.create(value)
+        #     print(repr(lv))
+        #     print(f"Warning: Value {value} is not used in {component.alias}.")
         return component
 
     @staticmethod
