@@ -22,7 +22,7 @@ from reflex.event import (
 from reflex.ivars.base import ImmutableCallableVar, ImmutableVar
 from reflex.ivars.sequence import LiteralStringVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import ImmutableVarData, Var, VarData
 
 DEFAULT_UPLOAD_ID: str = "default"
 
@@ -61,7 +61,7 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar:
     return ImmutableVar(
         _var_name=var_name,
         _var_type=EventChain,
-        _var_data=VarData.merge(
+        _var_data=ImmutableVarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
         ),
     )
@@ -81,7 +81,7 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar:
     return ImmutableVar(
         _var_name=f"(filesById[{str(id_var)}] ? filesById[{str(id_var)}].map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
-        _var_data=VarData.merge(
+        _var_data=ImmutableVarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
         ),
     ).guess_type()

@@ -206,5 +206,5 @@ class ColorModeNamespace(ImmutableVar):
 color_mode = color_mode_var_and_namespace = ColorModeNamespace(
     _var_name=color_mode._var_name,
     _var_type=color_mode._var_type,
-    _var_data=color_mode._var_data,
+    _var_data=color_mode.get_default_value(),
 )

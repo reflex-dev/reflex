@@ -7,6 +7,7 @@ import sys
 from functools import cached_property
 from typing import Any, Callable, Optional, Tuple, Type, Union
 
+from reflex.utils.types import GenericType
 from reflex.vars import ImmutableVarData, Var, VarData
 
 from .base import ImmutableVar, LiteralVar
@@ -24,9 +25,9 @@ class FunctionVar(ImmutableVar[Callable]):
         Returns:
             The function call operation.
         """
-        return ArgsFunctionOperation(
+        return ArgsFunctionOperation.create(
             ("...args",),
-            VarOperationCall(self, *args, ImmutableVar.create_safe("...args")),
+            VarOperationCall.create(self, *args, ImmutableVar.create_safe("...args")),
         )
 
     def call(self, *args: Var | Any) -> VarOperationCall:
@@ -38,22 +39,31 @@ class FunctionVar(ImmutableVar[Callable]):
         Returns:
             The function call operation.
         """
-        return VarOperationCall(self, *args)
+        return VarOperationCall.create(self, *args)
 
 
 class FunctionStringVar(FunctionVar):
     """Base class for immutable function vars from a string."""
 
-    def __init__(self, func: str, _var_data: VarData | None = None) -> None:
-        """Initialize the function var.
+    @classmethod
+    def create(
+        cls,
+        func: str,
+        _var_type: Type[Callable] = Callable,
+        _var_data: VarData | None = None,
+    ) -> FunctionStringVar:
+        """Create a new function var from a string.
 
         Args:
             func: The function to call.
             _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The function var.
         """
-        super(FunctionVar, self).__init__(
+        return cls(
             _var_name=func,
-            _var_type=Callable,
+            _var_type=_var_type,
             _var_data=ImmutableVarData.merge(_var_data),
         )
 
@@ -68,25 +78,6 @@ class VarOperationCall(ImmutableVar):
 
     _func: Optional[FunctionVar] = dataclasses.field(default=None)
     _args: Tuple[Union[Var, Any], ...] = dataclasses.field(default_factory=tuple)
-
-    def __init__(
-        self, func: FunctionVar, *args: Var | Any, _var_data: VarData | None = None
-    ):
-        """Initialize the function call var.
-
-        Args:
-            func: The function to call.
-            *args: The arguments to call the function with.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(VarOperationCall, self).__init__(
-            _var_name="",
-            _var_type=Any,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(self, "_func", func)
-        object.__setattr__(self, "_args", args)
-        object.__delattr__(self, "_var_name")
 
     def __getattr__(self, name):
         """Get an attribute of the var.
@@ -133,7 +124,7 @@ class VarOperationCall(ImmutableVar):
 
     def __post_init__(self):
         """Post-initialize the var."""
-        pass
+        object.__delattr__(self, "_var_name")
 
     def __hash__(self):
         """Hash the var.
@@ -142,6 +133,32 @@ class VarOperationCall(ImmutableVar):
             The hash of the var.
         """
         return hash((self.__class__.__name__, self._func, self._args))
+
+    @classmethod
+    def create(
+        cls,
+        func: FunctionVar,
+        *args: Var | Any,
+        _var_type: GenericType = Any,
+        _var_data: VarData | None = None,
+    ) -> VarOperationCall:
+        """Create a new function call var.
+
+        Args:
+            func: The function to call.
+            *args: The arguments to call the function with.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The function call var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=_var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _func=func,
+            _args=args,
+        )
 
 
 @dataclasses.dataclass(
@@ -154,28 +171,6 @@ class ArgsFunctionOperation(FunctionVar):
 
     _args_names: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
     _return_expr: Union[Var, Any] = dataclasses.field(default=None)
-
-    def __init__(
-        self,
-        args_names: Tuple[str, ...],
-        return_expr: Var | Any,
-        _var_data: VarData | None = None,
-    ) -> None:
-        """Initialize the function with arguments var.
-
-        Args:
-            args_names: The names of the arguments.
-            return_expr: The return expression of the function.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(ArgsFunctionOperation, self).__init__(
-            _var_name=f"",
-            _var_type=Callable,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(self, "_args_names", args_names)
-        object.__setattr__(self, "_return_expr", return_expr)
-        object.__delattr__(self, "_var_name")
 
     def __getattr__(self, name):
         """Get an attribute of the var.
@@ -221,6 +216,7 @@ class ArgsFunctionOperation(FunctionVar):
 
     def __post_init__(self):
         """Post-initialize the var."""
+        object.__delattr__(self, "_var_name")
 
     def __hash__(self):
         """Hash the var.
@@ -229,6 +225,32 @@ class ArgsFunctionOperation(FunctionVar):
             The hash of the var.
         """
         return hash((self.__class__.__name__, self._args_names, self._return_expr))
+
+    @classmethod
+    def create(
+        cls,
+        args_names: Tuple[str, ...],
+        return_expr: Var | Any,
+        _var_type: GenericType = Callable,
+        _var_data: VarData | None = None,
+    ) -> ArgsFunctionOperation:
+        """Create a new function var.
+
+        Args:
+            args_names: The names of the arguments.
+            return_expr: The return expression of the function.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The function var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=_var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _args_names=args_names,
+            _return_expr=return_expr,
+        )
 
 
 @dataclasses.dataclass(
@@ -243,25 +265,8 @@ class ToFunctionOperation(FunctionVar):
         default_factory=lambda: LiteralVar.create(None)
     )
 
-    def __init__(
-        self,
-        original_var: Var,
-        _var_type: Type[Callable] = Callable,
-        _var_data: VarData | None = None,
-    ) -> None:
-        """Initialize the function with arguments var.
-
-        Args:
-            original_var: The original var to convert to a function.
-            _var_type: The type of the function.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(ToFunctionOperation, self).__init__(
-            _var_name=f"",
-            _var_type=_var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(self, "_original_var", original_var)
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     def __getattr__(self, name):
@@ -314,5 +319,29 @@ class ToFunctionOperation(FunctionVar):
         """
         return hash((self.__class__.__name__, self._original_var))
 
+    @classmethod
+    def create(
+        cls,
+        original_var: Var,
+        _var_type: GenericType = Callable,
+        _var_data: VarData | None = None,
+    ) -> ToFunctionOperation:
+        """Create a new function var.
 
-JSON_STRINGIFY = FunctionStringVar("JSON.stringify")
+        Args:
+            original_var: The original var to convert to a function.
+            _var_type: The type of the function.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The function var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=_var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _original_var=original_var,
+        )
+
+
+JSON_STRINGIFY = FunctionStringVar.create("JSON.stringify")

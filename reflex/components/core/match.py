@@ -11,7 +11,7 @@ from reflex.style import Style
 from reflex.utils import format, types
 from reflex.utils.exceptions import MatchTypeError
 from reflex.utils.imports import ImportDict
-from reflex.vars import ImmutableVarData, Var
+from reflex.vars import ImmutableVarData, Var, VarData
 
 
 class Match(MemoizationLeaf):
@@ -264,7 +264,7 @@ class Match(MemoizationLeaf):
         Returns:
             The import dict.
         """
-        return getattr(self.cond._var_data, "imports", {})
+        return getattr(VarData.merge(self.cond._get_all_var_data()), "imports", {})
 
 
 match = Match.create

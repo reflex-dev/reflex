@@ -9,13 +9,14 @@ from jinja2 import Environment
 
 from reflex.components.el.element import Element
 from reflex.event import EventHandler, EventSpec
+from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars import BaseVar, Var
 
 from .base import BaseHTML
 
-FORM_DATA = Var.create("form_data", _var_is_string=False)
+FORM_DATA = ImmutableVar.create("form_data")
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     "\n    const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {\n        const $form = ev.target\n        ev.preventDefault()\n        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}\n\n        {{ on_submit_event_chain }}\n\n        if ({{ reset_on_submit }}) {\n            $form.reset()\n        }\n    })\n    "
 )

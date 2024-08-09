@@ -153,7 +153,7 @@ class ConnectionToaster(Toaster):
 }}
 """
                 ),
-                LiteralArrayVar([connect_errors]),
+                LiteralArrayVar.create([connect_errors]),
             ),
         ]
 

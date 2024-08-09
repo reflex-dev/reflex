@@ -390,7 +390,7 @@ class CodeBlock(Component):
             The import dict.
         """
         imports_: ImportDict = {}
-        themes = re.findall(r"`(.*?)`", self.theme._var_name)
+        themes = re.findall(r'"(.*?)"', self.theme._var_name)
         if not themes:
             themes = [self.theme._var_name]
 
@@ -509,11 +509,8 @@ class CodeBlock(Component):
             style=ImmutableVar.create(
                 format.to_camel_case(f"{predicate}{qmark}{value.replace('`', '')}"),
             )
-        ).remove_props("theme", "code")
-        if self.code is not None:
-            out.special_props.add(
-                Var.create_safe(f"children={str(self.code)}", _var_is_string=False)
-            )
+        ).remove_props("theme", "code").add_props(children=self.code)
+
         return out
 
     @staticmethod

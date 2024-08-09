@@ -892,6 +892,7 @@ class Var:
         Raises:
             VarTypeError: If the var is not indexable.
         """
+        print(repr(self))
         from reflex.utils import format
 
         # Indexing is only supported for strings, lists, tuples, dicts, and dataframes.

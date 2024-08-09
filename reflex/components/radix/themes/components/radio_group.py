@@ -11,7 +11,6 @@ from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler
 from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.ivars.function import JSON_STRINGIFY
 from reflex.ivars.sequence import StringVar
 from reflex.vars import Var
 
@@ -30,14 +29,10 @@ class RadioGroupRoot(RadixThemesComponent):
     tag = "RadioGroup.Root"
 
     # The size of the radio group: "1" | "2" | "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]] = Var.create_safe(
-        "2", _var_is_string=True
-    )
+    size: Var[Responsive[Literal["1", "2", "3"]]] = LiteralVar.create("2")
 
     # The variant of the radio group
-    variant: Var[Literal["classic", "surface", "soft"]] = Var.create_safe(
-        "classic", _var_is_string=True
-    )
+    variant: Var[Literal["classic", "surface", "soft"]] = LiteralVar.create("classic")
 
     # The color of the radio group
     color_scheme: Var[LiteralAccentColor]
@@ -89,20 +84,16 @@ class HighLevelRadioGroup(RadixThemesComponent):
     items: Var[List[str]]
 
     # The direction of the radio group.
-    direction: Var[LiteralFlexDirection] = Var.create_safe(
-        "column", _var_is_string=True
-    )
+    direction: Var[LiteralFlexDirection] = LiteralVar.create("column")
 
     # The gap between the items of the radio group.
-    spacing: Var[LiteralSpacing] = Var.create_safe("2", _var_is_string=True)
+    spacing: Var[LiteralSpacing] = LiteralVar.create("2")
 
     # The size of the radio group.
-    size: Var[Literal["1", "2", "3"]] = Var.create_safe("2", _var_is_string=True)
+    size: Var[Literal["1", "2", "3"]] = LiteralVar.create("2")
 
     # The variant of the radio group
-    variant: Var[Literal["classic", "surface", "soft"]] = Var.create_safe(
-        "classic", _var_is_string=True
-    )
+    variant: Var[Literal["classic", "surface", "soft"]] = LiteralVar.create("classic")
 
     # The color of the radio group
     color_scheme: Var[LiteralAccentColor]
@@ -159,13 +150,13 @@ class HighLevelRadioGroup(RadixThemesComponent):
         ):
             default_value = LiteralVar.create(default_value)  # type: ignore
         else:
-            default_value = JSON_STRINGIFY.call(ImmutableVar.create(default_value))
+            default_value = ImmutableVar.create_safe(default_value).to_string()
 
         def radio_group_item(value: Var) -> Component:
             item_value = rx.cond(
                 value._type() == "string",
                 value,
-                JSON_STRINGIFY.call(value),
+                value.to_string(),
             ).to(StringVar)
 
             return Text.create(

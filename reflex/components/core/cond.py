@@ -104,7 +104,7 @@ class Cond(MemoizationLeaf):
             The import dict for the component.
         """
         cond_imports: dict[str, str | ImportVar | list[str | ImportVar]] = getattr(
-            self.cond._var_data, "imports", {}
+            VarData.merge(self.cond._get_all_var_data()), "imports", {}
         )
         return {**cond_imports, **_IS_TRUE_IMPORT}
 
@@ -135,6 +135,8 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
     Raises:
         ValueError: If the arguments are invalid.
     """
+    if isinstance(condition, Var) and not isinstance(condition, ImmutableVar):
+        condition._var_is_local = True
     # Convert the condition to a Var.
     cond_var = LiteralVar.create(condition)
     assert cond_var is not None, "The condition must be set."
@@ -161,8 +163,8 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
     c2 = create_var(c2)
 
     # Create the conditional var.
-    return TernaryOperator(
-        condition=cond_var,
+    return TernaryOperator.create(
+        condition=cond_var.to(bool),
         if_true=c1,
         if_false=c2,
         _var_data=VarData(imports=_IS_TRUE_IMPORT),

@@ -714,15 +714,11 @@ def download(
             url = "data:text/plain," + urllib.parse.quote(data)
         elif isinstance(data, Var):
             # Need to check on the frontend if the Var already looks like a data: URI.
-            is_data_url = data._replace(
-                _var_name=(
-                    f"typeof {data._var_full_name} == 'string' && "
-                    f"{data._var_full_name}.startsWith('data:')"
-                ),
-                _var_type=bool,
-                _var_is_string=False,
-                _var_full_name_needs_state_prefix=False,
+
+            is_data_url = (data._type() == "string") & (
+                data.to(str).startswith("data:")
             )
+
             # If it's a data: URI, use it as is, otherwise convert the Var to JSON in a data: URI.
             url = cond(  # type: ignore
                 is_data_url,

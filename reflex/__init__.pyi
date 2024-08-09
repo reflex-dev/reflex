@@ -175,6 +175,7 @@ from .event import stop_propagation as stop_propagation
 from .event import upload_files as upload_files
 from .event import window_alert as window_alert
 from .experimental import _x as _x
+from .ivars.base import cached_var as cached_var
 from .middleware import Middleware as Middleware
 from .middleware import middleware as middleware
 from .model import Model as Model
@@ -191,7 +192,6 @@ from .style import toggle_color_mode as toggle_color_mode
 from .utils.imports import ImportVar as ImportVar
 from .utils.serializers import serializer as serializer
 from .vars import Var as Var
-from .vars import cached_var as cached_var
 
 del compat
 RADIX_THEMES_MAPPING: dict

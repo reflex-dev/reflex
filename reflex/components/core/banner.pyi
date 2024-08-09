@@ -29,7 +29,7 @@ class WebsocketTargetURL(Bare):
     def create(  # type: ignore
         cls,
         *children,
-        contents: Optional[Union[Var[str], str]] = None,
+        contents: Optional[Union[Var[Any], Any]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -1121,7 +1121,8 @@ class Component(BaseComponent, ABC):
             for child in self.children:
                 if not isinstance(child, Component):
                     continue
-                vars.extend(child._get_vars(include_children=include_children))
+                child_vars = child._get_vars(include_children=include_children)
+                vars.extend(child_vars)
 
         return vars
 
@@ -1326,13 +1327,13 @@ class Component(BaseComponent, ABC):
 
         other_imports = []
         user_hooks = self._get_hooks()
-        if (
-            user_hooks is not None
-            and isinstance(user_hooks, Var)
-            and user_hooks._var_data is not None
-            and user_hooks._var_data.imports
-        ):
-            other_imports.append(user_hooks._var_data.imports)
+        user_hooks_data = (
+            VarData.merge(user_hooks._get_all_var_data())
+            if user_hooks is not None and isinstance(user_hooks, Var)
+            else None
+        )
+        if user_hooks_data is not None:
+            other_imports.append(user_hooks_data.imports)
         other_imports.extend(
             hook_imports for hook_imports in self._get_added_hooks().values()
         )
@@ -1830,9 +1831,11 @@ class CustomComponent(Component):
         Returns:
             Each var referenced by the component (props, styles, event handlers).
         """
-        return super()._get_vars(include_children=include_children) + [
-            prop for prop in self.props.values() if isinstance(prop, Var)
-        ]
+        return (
+            super()._get_vars(include_children=include_children)
+            + [prop for prop in self.props.values() if isinstance(prop, Var)]
+            + self.get_component(self)._get_vars(include_children=include_children)
+        )
 
     @lru_cache(maxsize=None)  # noqa
     def get_component(self) -> Component:

@@ -18,6 +18,7 @@ from typing import (
     Literal,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
     overload,
@@ -59,7 +60,7 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string concatenation operation.
         """
-        return ConcatVarOperation(self, other)
+        return ConcatVarOperation.create(self, other)
 
     def __radd__(self, other: StringVar | str) -> ConcatVarOperation:
         """Concatenate two strings.
@@ -70,7 +71,7 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string concatenation operation.
         """
-        return ConcatVarOperation(other, self)
+        return ConcatVarOperation.create(other, self)
 
     def __mul__(self, other: NumberVar | int) -> StringVar:
         """Multiply the sequence by a number or an integer.
@@ -113,7 +114,7 @@ class StringVar(ImmutableVar[str]):
         """
         if isinstance(i, slice):
             return self.split()[i].join()
-        return StringItemOperation(self, i)
+        return StringItemOperation.create(self, i)
 
     def length(self) -> NumberVar:
         """Get the length of the string.
@@ -123,29 +124,29 @@ class StringVar(ImmutableVar[str]):
         """
         return self.split().length()
 
-    def lower(self) -> StringLowerOperation:
+    def lower(self) -> StringVar:
         """Convert the string to lowercase.
 
         Returns:
             The string lower operation.
         """
-        return StringLowerOperation(self)
+        return StringLowerOperation.create(self)
 
-    def upper(self) -> StringUpperOperation:
+    def upper(self) -> StringVar:
         """Convert the string to uppercase.
 
         Returns:
             The string upper operation.
         """
-        return StringUpperOperation(self)
+        return StringUpperOperation.create(self)
 
-    def strip(self) -> StringStripOperation:
+    def strip(self) -> StringVar:
         """Strip the string.
 
         Returns:
             The string strip operation.
         """
-        return StringStripOperation(self)
+        return StringStripOperation.create(self)
 
     def bool(self) -> NotEqualOperation:
         """Boolean conversion.
@@ -153,7 +154,7 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The boolean value of the string.
         """
-        return NotEqualOperation(self.length(), 0)
+        return NotEqualOperation.create(self.length(), 0)
 
     def reversed(self) -> ArrayJoinOperation:
         """Reverse the string.
@@ -172,7 +173,7 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string contains operation.
         """
-        return StringContainsOperation(self, other)
+        return StringContainsOperation.create(self, other)
 
     def split(self, separator: StringVar | str = "") -> StringSplitOperation:
         """Split the string.
@@ -183,7 +184,18 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string split operation.
         """
-        return StringSplitOperation(self, separator)
+        return StringSplitOperation.create(self, separator)
+
+    def startswith(self, prefix: StringVar | str) -> StringStartsWithOperation:
+        """Check if the string starts with a prefix.
+
+        Args:
+            prefix: The prefix.
+
+        Returns:
+            The string starts with operation.
+        """
+        return StringStartsWithOperation.create(self, prefix)
 
 
 @dataclasses.dataclass(
@@ -194,25 +206,12 @@ class StringVar(ImmutableVar[str]):
 class StringToStringOperation(StringVar):
     """Base class for immutable string vars that are the result of a string to string operation."""
 
-    a: StringVar = dataclasses.field(
+    _value: StringVar = dataclasses.field(
         default_factory=lambda: LiteralStringVar.create("")
     )
 
-    def __init__(self, a: StringVar | str, _var_data: VarData | None = None):
-        """Initialize the string to string operation var.
-
-        Args:
-            a: The string.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(StringToStringOperation, self).__init__(
-            _var_name="",
-            _var_type=str,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(
-            self, "a", a if isinstance(a, Var) else LiteralStringVar.create(a)
-        )
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -247,7 +246,7 @@ class StringToStringOperation(StringVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.a._get_all_var_data() if isinstance(self.a, Var) else None,
+            self._value._get_all_var_data() if isinstance(self._value, Var) else None,
             self._var_data,
         )
 
@@ -260,7 +259,29 @@ class StringToStringOperation(StringVar):
         Returns:
             int: The hash value of the object.
         """
-        return hash((self.__class__.__name__, self.a))
+        return hash((self.__class__.__name__, self._value))
+
+    @classmethod
+    def create(
+        cls,
+        value: StringVar,
+        _var_data: VarData | None = None,
+    ) -> StringVar:
+        """Create a var from a string value.
+
+        Args:
+            value: The value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=str,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _value=value,
+        )
 
 
 class StringLowerOperation(StringToStringOperation):
@@ -273,7 +294,7 @@ class StringLowerOperation(StringToStringOperation):
         Returns:
             The name of the var.
         """
-        return f"{str(self.a)}.toLowerCase()"
+        return f"{str(self._value)}.toLowerCase()"
 
 
 class StringUpperOperation(StringToStringOperation):
@@ -286,7 +307,7 @@ class StringUpperOperation(StringToStringOperation):
         Returns:
             The name of the var.
         """
-        return f"{str(self.a)}.toUpperCase()"
+        return f"{str(self._value)}.toUpperCase()"
 
 
 class StringStripOperation(StringToStringOperation):
@@ -299,7 +320,7 @@ class StringStripOperation(StringToStringOperation):
         Returns:
             The name of the var.
         """
-        return f"{str(self.a)}.trim()"
+        return f"{str(self._value)}.trim()"
 
 
 @dataclasses.dataclass(
@@ -310,34 +331,15 @@ class StringStripOperation(StringToStringOperation):
 class StringContainsOperation(BooleanVar):
     """Base class for immutable boolean vars that are the result of a string contains operation."""
 
-    a: StringVar = dataclasses.field(
+    _haystack: StringVar = dataclasses.field(
         default_factory=lambda: LiteralStringVar.create("")
     )
-    b: StringVar = dataclasses.field(
+    _needle: StringVar = dataclasses.field(
         default_factory=lambda: LiteralStringVar.create("")
     )
 
-    def __init__(
-        self, a: StringVar | str, b: StringVar | str, _var_data: VarData | None = None
-    ):
-        """Initialize the string contains operation var.
-
-        Args:
-            a: The first string.
-            b: The second string.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(StringContainsOperation, self).__init__(
-            _var_name="",
-            _var_type=bool,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(
-            self, "a", a if isinstance(a, Var) else LiteralStringVar.create(a)
-        )
-        object.__setattr__(
-            self, "b", b if isinstance(b, Var) else LiteralStringVar.create(b)
-        )
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -347,7 +349,7 @@ class StringContainsOperation(BooleanVar):
         Returns:
             The name of the var.
         """
-        return f"{str(self.a)}.includes({str(self.b)})"
+        return f"{str(self._haystack)}.includes({str(self._needle)})"
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -370,7 +372,9 @@ class StringContainsOperation(BooleanVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.a._get_all_var_data(), self.b._get_all_var_data(), self._var_data
+            self._haystack._get_all_var_data(),
+            self._needle._get_all_var_data(),
+            self._var_data,
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
@@ -382,7 +386,135 @@ class StringContainsOperation(BooleanVar):
         Returns:
             int: The hash value of the object.
         """
-        return hash((self.__class__.__name__, self.a, self.b))
+        return hash((self.__class__.__name__, self._haystack, self._needle))
+
+    @classmethod
+    def create(
+        cls,
+        haystack: StringVar | str,
+        needle: StringVar | str,
+        _var_data: VarData | None = None,
+    ) -> StringContainsOperation:
+        """Create a var from a string value.
+
+        Args:
+            haystack: The haystack.
+            needle: The needle.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=bool,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _haystack=(
+                haystack
+                if isinstance(haystack, Var)
+                else LiteralStringVar.create(haystack)
+            ),
+            _needle=(
+                needle if isinstance(needle, Var) else LiteralStringVar.create(needle)
+            ),
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class StringStartsWithOperation(BooleanVar):
+    """Base class for immutable boolean vars that are the result of a string starts with operation."""
+
+    _full_string: StringVar = dataclasses.field(
+        default_factory=lambda: LiteralStringVar.create("")
+    )
+    _prefix: StringVar = dataclasses.field(
+        default_factory=lambda: LiteralStringVar.create("")
+    )
+
+    def __post_init__(self):
+        """Post-initialize the var."""
+        object.__delattr__(self, "_var_name")
+
+    @cached_property
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return f"{str(self._full_string)}.startsWith({str(self._prefix)})"
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+        getattr(super(StringStartsWithOperation, self), name)
+
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
+        return ImmutableVarData.merge(
+            self._full_string._get_all_var_data(),
+            self._prefix._get_all_var_data(),
+            self._var_data,
+        )
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return self._cached_get_all_var_data
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self._full_string, self._prefix))
+
+    @classmethod
+    def create(
+        cls,
+        full_string: StringVar | str,
+        prefix: StringVar | str,
+        _var_data: VarData | None = None,
+    ) -> StringStartsWithOperation:
+        """Create a var from a string value.
+
+        Args:
+            full_string: The full string.
+            prefix: The prefix.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=bool,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _full_string=(
+                full_string
+                if isinstance(full_string, Var)
+                else LiteralStringVar.create(full_string)
+            ),
+            _prefix=(
+                prefix if isinstance(prefix, Var) else LiteralStringVar.create(prefix)
+            ),
+        )
 
 
 @dataclasses.dataclass(
@@ -393,31 +525,10 @@ class StringContainsOperation(BooleanVar):
 class StringItemOperation(StringVar):
     """Base class for immutable string vars that are the result of a string item operation."""
 
-    a: StringVar = dataclasses.field(
+    _string: StringVar = dataclasses.field(
         default_factory=lambda: LiteralStringVar.create("")
     )
-    i: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar(0))
-
-    def __init__(
-        self, a: StringVar | str, i: int | NumberVar, _var_data: VarData | None = None
-    ):
-        """Initialize the string item operation var.
-
-        Args:
-            a: The string.
-            i: The index.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(StringItemOperation, self).__init__(
-            _var_name="",
-            _var_type=str,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(
-            self, "a", a if isinstance(a, Var) else LiteralStringVar.create(a)
-        )
-        object.__setattr__(self, "i", i if isinstance(i, Var) else LiteralNumberVar(i))
-        object.__delattr__(self, "_var_name")
+    _index: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar.create(0))
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -426,7 +537,7 @@ class StringItemOperation(StringVar):
         Returns:
             The name of the var.
         """
-        return f"{str(self.a)}.at({str(self.i)})"
+        return f"{str(self._string)}.at({str(self._index)})"
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -449,7 +560,9 @@ class StringItemOperation(StringVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.a._get_all_var_data(), self.i._get_all_var_data(), self._var_data
+            self._string._get_all_var_data(),
+            self._index._get_all_var_data(),
+            self._var_data,
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
@@ -461,36 +574,58 @@ class StringItemOperation(StringVar):
         Returns:
             int: The hash value of the object.
         """
-        return hash((self.__class__.__name__, self.a, self.i))
+        return hash((self.__class__.__name__, self._string, self._index))
 
+    def __post_init__(self):
+        """Post-initialize the var."""
+        object.__delattr__(self, "_var_name")
 
-class ArrayJoinOperation(StringVar):
-    """Base class for immutable string vars that are the result of an array join operation."""
-
-    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
-    b: StringVar = dataclasses.field(
-        default_factory=lambda: LiteralStringVar.create("")
-    )
-
-    def __init__(
-        self, a: ArrayVar, b: StringVar | str, _var_data: VarData | None = None
-    ):
-        """Initialize the array join operation var.
+    @classmethod
+    def create(
+        cls,
+        string: StringVar | str,
+        index: NumberVar | int,
+        _var_data: VarData | None = None,
+    ) -> StringItemOperation:
+        """Create a var from a string value.
 
         Args:
-            a: The array.
-            b: The separator.
+            string: The string.
+            index: The index.
             _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
         """
-        super(ArrayJoinOperation, self).__init__(
+        return cls(
             _var_name="",
             _var_type=str,
             _var_data=ImmutableVarData.merge(_var_data),
+            _string=(
+                string if isinstance(string, Var) else LiteralStringVar.create(string)
+            ),
+            _index=(
+                index if isinstance(index, Var) else LiteralNumberVar.create(index)
+            ),
         )
-        object.__setattr__(self, "a", a)
-        object.__setattr__(
-            self, "b", b if isinstance(b, Var) else LiteralStringVar.create(b)
-        )
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ArrayJoinOperation(StringVar):
+    """Base class for immutable string vars that are the result of an array join operation."""
+
+    _array: ArrayVar = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([])
+    )
+    _sep: StringVar = dataclasses.field(
+        default_factory=lambda: LiteralStringVar.create("")
+    )
+
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -500,7 +635,7 @@ class ArrayJoinOperation(StringVar):
         Returns:
             The name of the var.
         """
-        return f"{str(self.a)}.join({str(self.b)})"
+        return f"{str(self._array)}.join({str(self._sep)})"
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -523,7 +658,9 @@ class ArrayJoinOperation(StringVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.a._get_all_var_data(), self.b._get_all_var_data(), self._var_data
+            self._array._get_all_var_data(),
+            self._sep._get_all_var_data(),
+            self._var_data,
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
@@ -535,7 +672,32 @@ class ArrayJoinOperation(StringVar):
         Returns:
             int: The hash value of the object.
         """
-        return hash((self.__class__.__name__, self.a, self.b))
+        return hash((self.__class__.__name__, self._array, self._sep))
+
+    @classmethod
+    def create(
+        cls,
+        array: ArrayVar,
+        sep: StringVar | str = "",
+        _var_data: VarData | None = None,
+    ) -> ArrayJoinOperation:
+        """Create a var from a string value.
+
+        Args:
+            array: The array.
+            sep: The separator.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=str,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _array=array,
+            _sep=sep if isinstance(sep, Var) else LiteralStringVar.create(sep),
+        )
 
 
 # Compile regex for finding reflex var tags.
@@ -554,24 +716,6 @@ class LiteralStringVar(LiteralVar, StringVar):
     """Base class for immutable literal string vars."""
 
     _var_value: str = dataclasses.field(default="")
-
-    def __init__(
-        self,
-        _var_value: str,
-        _var_data: VarData | None = None,
-    ):
-        """Initialize the string var.
-
-        Args:
-            _var_value: The value of the var.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(LiteralStringVar, self).__init__(
-            _var_name=f'"{_var_value}"',
-            _var_type=str,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(self, "_var_value", _var_value)
 
     @classmethod
     def create(
@@ -606,8 +750,8 @@ class LiteralStringVar(LiteralVar, StringVar):
             # Find all tags
             while m := _decode_var_pattern.search(value):
                 start, end = m.span()
-                if start > 0:
-                    strings_and_vals.append(value[:start])
+
+                strings_and_vals.append(value[:start])
 
                 serialized_data = m.group(1)
 
@@ -645,14 +789,18 @@ class LiteralStringVar(LiteralVar, StringVar):
 
                 offset += end - start
 
-            if value:
-                strings_and_vals.append(value)
+            strings_and_vals.append(value)
 
-            return ConcatVarOperation(*strings_and_vals, _var_data=_var_data)
+            return ConcatVarOperation.create(
+                *filter(lambda s: isinstance(s, Var) or s, strings_and_vals),
+                _var_data=_var_data,
+            )
 
         return LiteralStringVar(
-            value,
-            _var_data=_var_data,
+            _var_name=json.dumps(value),
+            _var_type=str,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _var_value=value,
         )
 
     def __hash__(self) -> int:
@@ -680,20 +828,7 @@ class LiteralStringVar(LiteralVar, StringVar):
 class ConcatVarOperation(StringVar):
     """Representing a concatenation of literal string vars."""
 
-    _var_value: Tuple[Union[Var, str], ...] = dataclasses.field(default_factory=tuple)
-
-    def __init__(self, *value: Var | str, _var_data: VarData | None = None):
-        """Initialize the operation of concatenating literal string vars.
-
-        Args:
-            value: The values to concatenate.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(ConcatVarOperation, self).__init__(
-            _var_name="", _var_data=ImmutableVarData.merge(_var_data), _var_type=str
-        )
-        object.__setattr__(self, "_var_value", value)
-        object.__delattr__(self, "_var_name")
+    _var_value: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
 
     def __getattr__(self, name):
         """Get an attribute of the var.
@@ -715,16 +850,7 @@ class ConcatVarOperation(StringVar):
         Returns:
             The name of the var.
         """
-        return (
-            "("
-            + "+".join(
-                [
-                    str(element) if isinstance(element, Var) else f'"{element}"'
-                    for element in self._var_value
-                ]
-            )
-            + ")"
-        )
+        return "(" + "+".join([str(element) for element in self._var_value]) + ")"
 
     @cached_property
     def _cached_get_all_var_data(self) -> ImmutableVarData | None:
@@ -752,7 +878,7 @@ class ConcatVarOperation(StringVar):
 
     def __post_init__(self):
         """Post-initialize the var."""
-        pass
+        object.__delattr__(self, "_var_name")
 
     def __hash__(self) -> int:
         """Get the hash of the var.
@@ -761,6 +887,28 @@ class ConcatVarOperation(StringVar):
             The hash of the var.
         """
         return hash((self.__class__.__name__, *self._var_value))
+
+    @classmethod
+    def create(
+        cls,
+        *value: Var | str,
+        _var_data: VarData | None = None,
+    ) -> ConcatVarOperation:
+        """Create a var from a string value.
+
+        Args:
+            value: The values to concatenate.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=str,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _var_value=tuple(map(LiteralVar.create, value)),
+        )
 
 
 ARRAY_VAR_TYPE = TypeVar("ARRAY_VAR_TYPE", bound=Union[List, Tuple, Set])
@@ -785,7 +933,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             The joined elements.
         """
-        return ArrayJoinOperation(self, sep)
+        return ArrayJoinOperation.create(self, sep)
 
     def reverse(self) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Reverse the array.
@@ -793,7 +941,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             The reversed array.
         """
-        return ArrayReverseOperation(self)
+        return ArrayReverseOperation.create(self)
 
     def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayConcatOperation:
         """Concatenate two arrays.
@@ -804,7 +952,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             ArrayConcatOperation: The concatenation of the two arrays.
         """
-        return ArrayConcatOperation(self, other)
+        return ArrayConcatOperation.create(self, other)
 
     @overload
     def __getitem__(self, i: slice) -> ArrayVar[ARRAY_VAR_TYPE]: ...
@@ -908,8 +1056,8 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
             The array slice operation.
         """
         if isinstance(i, slice):
-            return ArraySliceOperation(self, i)
-        return ArrayItemOperation(self, i).guess_type()
+            return ArraySliceOperation.create(self, i)
+        return ArrayItemOperation.create(self, i).guess_type()
 
     def length(self) -> NumberVar:
         """Get the length of the array.
@@ -917,7 +1065,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             The length of the array.
         """
-        return ArrayLengthOperation(self)
+        return ArrayLengthOperation.create(self)
 
     @overload
     @classmethod
@@ -957,7 +1105,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
             start = first_endpoint
             end = second_endpoint
 
-        return RangeOperation(start, end, step or 1)
+        return RangeOperation.create(start, end, step or 1)
 
     def contains(self, other: Any) -> BooleanVar:
         """Check if the array contains an element.
@@ -968,7 +1116,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             The array contains operation.
         """
-        return ArrayContainsOperation(self, other)
+        return ArrayContainsOperation.create(self, other)
 
     def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Multiply the sequence by a number or integer.
@@ -979,7 +1127,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             ArrayVar[ARRAY_VAR_TYPE]: The result of multiplying the sequence by the given number or integer.
         """
-        return ArrayRepeatOperation(self, other)
+        return ArrayRepeatOperation.create(self, other)
 
     def __rmul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Multiply the sequence by a number or integer.
@@ -990,7 +1138,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             ArrayVar[ARRAY_VAR_TYPE]: The result of multiplying the sequence by the given number or integer.
         """
-        return ArrayRepeatOperation(self, other)
+        return ArrayRepeatOperation.create(self, other)
 
 
 LIST_ELEMENT = TypeVar("LIST_ELEMENT")
@@ -1013,27 +1161,6 @@ class LiteralArrayVar(LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
     _var_value: Union[
         List[Union[Var, Any]], Set[Union[Var, Any]], Tuple[Union[Var, Any], ...]
     ] = dataclasses.field(default_factory=list)
-
-    def __init__(
-        self: LiteralArrayVar[ARRAY_VAR_TYPE],
-        _var_value: ARRAY_VAR_TYPE,
-        _var_type: type[ARRAY_VAR_TYPE] | None = None,
-        _var_data: VarData | None = None,
-    ):
-        """Initialize the array var.
-
-        Args:
-            _var_value: The value of the var.
-            _var_type: The type of the var.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(LiteralArrayVar, self).__init__(
-            _var_name="",
-            _var_data=ImmutableVarData.merge(_var_data),
-            _var_type=(figure_out_type(_var_value) if _var_type is None else _var_type),
-        )
-        object.__setattr__(self, "_var_value", _var_value)
-        object.__delattr__(self, "_var_name")
 
     def __getattr__(self, name):
         """Get an attribute of the var.
@@ -1109,6 +1236,33 @@ class LiteralArrayVar(LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
             + "]"
         )
 
+    def __post_init__(self):
+        """Post-initialize the var."""
+        object.__delattr__(self, "_var_name")
+
+    @classmethod
+    def create(
+        cls,
+        value: ARRAY_VAR_TYPE,
+        _var_type: Type[ARRAY_VAR_TYPE] | None = None,
+        _var_data: VarData | None = None,
+    ) -> LiteralArrayVar[ARRAY_VAR_TYPE]:
+        """Create a var from a string value.
+
+        Args:
+            value: The value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=figure_out_type(value) if _var_type is None else _var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _var_value=value,
+        )
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1118,34 +1272,15 @@ class LiteralArrayVar(LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
 class StringSplitOperation(ArrayVar):
     """Base class for immutable array vars that are the result of a string split operation."""
 
-    a: StringVar = dataclasses.field(
+    _string: StringVar = dataclasses.field(
         default_factory=lambda: LiteralStringVar.create("")
     )
-    b: StringVar = dataclasses.field(
+    _sep: StringVar = dataclasses.field(
         default_factory=lambda: LiteralStringVar.create("")
     )
 
-    def __init__(
-        self, a: StringVar | str, b: StringVar | str, _var_data: VarData | None = None
-    ):
-        """Initialize the string split operation var.
-
-        Args:
-            a: The string.
-            b: The separator.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(StringSplitOperation, self).__init__(
-            _var_name="",
-            _var_type=List[str],
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(
-            self, "a", a if isinstance(a, Var) else LiteralStringVar.create(a)
-        )
-        object.__setattr__(
-            self, "b", b if isinstance(b, Var) else LiteralStringVar.create(b)
-        )
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -1155,7 +1290,7 @@ class StringSplitOperation(ArrayVar):
         Returns:
             The name of the var.
         """
-        return f"{str(self.a)}.split({str(self.b)})"
+        return f"{str(self._string)}.split({str(self._sep)})"
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -1178,7 +1313,9 @@ class StringSplitOperation(ArrayVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.a._get_all_var_data(), self.b._get_all_var_data(), self._var_data
+            self._string._get_all_var_data(),
+            self._sep._get_all_var_data(),
+            self._var_data,
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
@@ -1190,7 +1327,34 @@ class StringSplitOperation(ArrayVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self.a, self.b))
+        return hash((self.__class__.__name__, self._string, self._sep))
+
+    @classmethod
+    def create(
+        cls,
+        string: StringVar | str,
+        sep: StringVar | str,
+        _var_data: VarData | None = None,
+    ) -> StringSplitOperation:
+        """Create a var from a string value.
+
+        Args:
+            string: The string.
+            sep: The separator.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=List[str],
+            _var_data=ImmutableVarData.merge(_var_data),
+            _string=(
+                string if isinstance(string, Var) else LiteralStringVar.create(string)
+            ),
+            _sep=(sep if isinstance(sep, Var) else LiteralStringVar.create(sep)),
+        )
 
 
 @dataclasses.dataclass(
@@ -1201,21 +1365,12 @@ class StringSplitOperation(ArrayVar):
 class ArrayToArrayOperation(ArrayVar):
     """Base class for immutable array vars that are the result of an array to array operation."""
 
-    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
+    _value: ArrayVar = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([])
+    )
 
-    def __init__(self, a: ArrayVar, _var_data: VarData | None = None):
-        """Initialize the array to array operation var.
-
-        Args:
-            a: The string.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(ArrayToArrayOperation, self).__init__(
-            _var_name="",
-            _var_type=a._var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(self, "a", a)
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -1250,7 +1405,7 @@ class ArrayToArrayOperation(ArrayVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.a._get_all_var_data() if isinstance(self.a, Var) else None,
+            self._value._get_all_var_data() if isinstance(self._value, Var) else None,
             self._var_data,
         )
 
@@ -1263,7 +1418,29 @@ class ArrayToArrayOperation(ArrayVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self.a))
+        return hash((self.__class__.__name__, self._value))
+
+    @classmethod
+    def create(
+        cls,
+        value: ArrayVar,
+        _var_data: VarData | None = None,
+    ) -> ArrayToArrayOperation:
+        """Create a var from a string value.
+
+        Args:
+            value: The value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=value._var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _value=value,
+        )
 
 
 @dataclasses.dataclass(
@@ -1274,24 +1451,13 @@ class ArrayToArrayOperation(ArrayVar):
 class ArraySliceOperation(ArrayVar):
     """Base class for immutable string vars that are the result of a string slice operation."""
 
-    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
+    _array: ArrayVar = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([])
+    )
     _slice: slice = dataclasses.field(default_factory=lambda: slice(None, None, None))
 
-    def __init__(self, a: ArrayVar, _slice: slice, _var_data: VarData | None = None):
-        """Initialize the string slice operation var.
-
-        Args:
-            a: The string.
-            _slice: The slice.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(ArraySliceOperation, self).__init__(
-            _var_name="",
-            _var_type=a._var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(self, "a", a)
-        object.__setattr__(self, "_slice", _slice)
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -1317,29 +1483,29 @@ class ArraySliceOperation(ArrayVar):
             else ImmutableVar.create_safe("undefined")
         )
         if step is None:
-            return (
-                f"{str(self.a)}.slice({str(normalized_start)}, {str(normalized_end)})"
-            )
+            return f"{str(self._array)}.slice({str(normalized_start)}, {str(normalized_end)})"
         if not isinstance(step, Var):
             if step < 0:
                 actual_start = end + 1 if end is not None else 0
-                actual_end = start + 1 if start is not None else self.a.length()
+                actual_end = start + 1 if start is not None else self._array.length()
                 return str(
-                    ArraySliceOperation(
-                        ArrayReverseOperation(
-                            ArraySliceOperation(self.a, slice(actual_start, actual_end))
+                    ArraySliceOperation.create(
+                        ArrayReverseOperation.create(
+                            ArraySliceOperation.create(
+                                self._array, slice(actual_start, actual_end)
+                            )
                         ),
                         slice(None, None, -step),
                     )
                 )
             if step == 0:
                 raise ValueError("slice step cannot be zero")
-            return f"{str(self.a)}.slice({str(normalized_start)}, {str(normalized_end)}).filter((_, i) => i % {str(step)} === 0)"
+            return f"{str(self._array)}.slice({str(normalized_start)}, {str(normalized_end)}).filter((_, i) => i % {str(step)} === 0)"
 
         actual_start_reverse = end + 1 if end is not None else 0
-        actual_end_reverse = start + 1 if start is not None else self.a.length()
+        actual_end_reverse = start + 1 if start is not None else self._array.length()
 
-        return f"{str(self.step)} > 0 ? {str(self.a)}.slice({str(normalized_start)}, {str(normalized_end)}).filter((_, i) => i % {str(step)} === 0) : {str(self.a)}.slice({str(actual_start_reverse)}, {str(actual_end_reverse)}).reverse().filter((_, i) => i % {str(-step)} === 0)"
+        return f"{str(self.step)} > 0 ? {str(self._array)}.slice({str(normalized_start)}, {str(normalized_end)}).filter((_, i) => i % {str(step)} === 0) : {str(self._array)}.slice({str(actual_start_reverse)}, {str(actual_end_reverse)}).reverse().filter((_, i) => i % {str(-step)} === 0)"
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -1362,7 +1528,7 @@ class ArraySliceOperation(ArrayVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.a._get_all_var_data(),
+            self._array._get_all_var_data(),
             *[
                 slice_value._get_all_var_data()
                 for slice_value in (
@@ -1384,7 +1550,32 @@ class ArraySliceOperation(ArrayVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self.a, self._slice))
+        return hash((self.__class__.__name__, self._array, self._slice))
+
+    @classmethod
+    def create(
+        cls,
+        array: ArrayVar,
+        slice: slice,
+        _var_data: VarData | None = None,
+    ) -> ArraySliceOperation:
+        """Create a var from a string value.
+
+        Args:
+            array: The array.
+            slice: The slice.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=array._var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _array=array,
+            _slice=slice,
+        )
 
 
 class ArrayReverseOperation(ArrayToArrayOperation):
@@ -1397,7 +1588,7 @@ class ArrayReverseOperation(ArrayToArrayOperation):
         Returns:
             The name of the var.
         """
-        return f"{str(self.a)}.slice().reverse()"
+        return f"{str(self._value)}.slice().reverse()"
 
 
 @dataclasses.dataclass(
@@ -1408,23 +1599,12 @@ class ArrayReverseOperation(ArrayToArrayOperation):
 class ArrayToNumberOperation(NumberVar):
     """Base class for immutable number vars that are the result of an array to number operation."""
 
-    a: ArrayVar = dataclasses.field(
-        default_factory=lambda: LiteralArrayVar([]),
+    _array: ArrayVar = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([]),
     )
 
-    def __init__(self, a: ArrayVar, _var_data: VarData | None = None):
-        """Initialize the string to number operation var.
-
-        Args:
-            a: The array.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(ArrayToNumberOperation, self).__init__(
-            _var_name="",
-            _var_type=int,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(self, "a", a if isinstance(a, Var) else LiteralArrayVar(a))
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -1458,7 +1638,7 @@ class ArrayToNumberOperation(NumberVar):
         Returns:
             The VarData of the components and all of its children.
         """
-        return ImmutableVarData.merge(self.a._get_all_var_data(), self._var_data)
+        return ImmutableVarData.merge(self._array._get_all_var_data(), self._var_data)
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         return self._cached_get_all_var_data
@@ -1469,7 +1649,29 @@ class ArrayToNumberOperation(NumberVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self.a))
+        return hash((self.__class__.__name__, self._array))
+
+    @classmethod
+    def create(
+        cls,
+        array: ArrayVar,
+        _var_data: VarData | None = None,
+    ) -> ArrayToNumberOperation:
+        """Create a var from a string value.
+
+        Args:
+            array: The array.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=int,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _array=array,
+        )
 
 
 class ArrayLengthOperation(ArrayToNumberOperation):
@@ -1482,7 +1684,7 @@ class ArrayLengthOperation(ArrayToNumberOperation):
         Returns:
             The name of the var.
         """
-        return f"{str(self.a)}.length"
+        return f"{str(self._array)}.length"
 
 
 def is_tuple_type(t: GenericType) -> bool:
@@ -1507,38 +1709,13 @@ def is_tuple_type(t: GenericType) -> bool:
 class ArrayItemOperation(ImmutableVar):
     """Base class for immutable array vars that are the result of an array item operation."""
 
-    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
-    i: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar(0))
+    _array: ArrayVar = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([])
+    )
+    _index: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar.create(0))
 
-    def __init__(
-        self,
-        a: ArrayVar,
-        i: NumberVar | int,
-        _var_data: VarData | None = None,
-    ):
-        """Initialize the array item operation var.
-
-        Args:
-            a: The array.
-            i: The index.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        args = typing.get_args(a._var_type)
-        if args and isinstance(i, int) and is_tuple_type(a._var_type):
-            element_type = args[i % len(args)]
-        else:
-            element_type = unionize(*args)
-        super(ArrayItemOperation, self).__init__(
-            _var_name="",
-            _var_type=element_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(self, "a", a if isinstance(a, Var) else LiteralArrayVar(a))
-        object.__setattr__(
-            self,
-            "i",
-            i if isinstance(i, Var) else LiteralNumberVar(i),
-        )
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -1548,7 +1725,7 @@ class ArrayItemOperation(ImmutableVar):
         Returns:
             The name of the var.
         """
-        return f"{str(self.a)}.at({str(self.i)})"
+        return f"{str(self._array)}.at({str(self._index)})"
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -1571,7 +1748,9 @@ class ArrayItemOperation(ImmutableVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.a._get_all_var_data(), self.i._get_all_var_data(), self._var_data
+            self._array._get_all_var_data(),
+            self._index._get_all_var_data(),
+            self._var_data,
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
@@ -1583,7 +1762,39 @@ class ArrayItemOperation(ImmutableVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self.a, self.i))
+        return hash((self.__class__.__name__, self._array, self._index))
+
+    @classmethod
+    def create(
+        cls,
+        array: ArrayVar,
+        index: NumberVar | int,
+        _var_type: GenericType | None = None,
+        _var_data: VarData | None = None,
+    ) -> ArrayItemOperation:
+        """Create a var from a string value.
+
+        Args:
+            array: The array.
+            index: The index.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        args = typing.get_args(array._var_type)
+        if args and isinstance(index, int) and is_tuple_type(array._var_type):
+            element_type = args[index % len(args)]
+        else:
+            element_type = unionize(*args)
+
+        return cls(
+            _var_name="",
+            _var_type=element_type if _var_type is None else _var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _array=array,
+            _index=index if isinstance(index, Var) else LiteralNumberVar.create(index),
+        )
 
 
 @dataclasses.dataclass(
@@ -1594,45 +1805,12 @@ class ArrayItemOperation(ImmutableVar):
 class RangeOperation(ArrayVar):
     """Base class for immutable array vars that are the result of a range operation."""
 
-    start: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar(0))
-    end: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar(0))
-    step: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar(1))
+    _start: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar.create(0))
+    _stop: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar.create(0))
+    _step: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar.create(1))
 
-    def __init__(
-        self,
-        start: NumberVar | int,
-        end: NumberVar | int,
-        step: NumberVar | int,
-        _var_data: VarData | None = None,
-    ):
-        """Initialize the range operation var.
-
-        Args:
-            start: The start of the range.
-            end: The end of the range.
-            step: The step of the range.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(RangeOperation, self).__init__(
-            _var_name="",
-            _var_type=List[int],
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(
-            self,
-            "start",
-            start if isinstance(start, Var) else LiteralNumberVar(start),
-        )
-        object.__setattr__(
-            self,
-            "end",
-            end if isinstance(end, Var) else LiteralNumberVar(end),
-        )
-        object.__setattr__(
-            self,
-            "step",
-            step if isinstance(step, Var) else LiteralNumberVar(step),
-        )
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -1642,7 +1820,7 @@ class RangeOperation(ArrayVar):
         Returns:
             The name of the var.
         """
-        start, end, step = self.start, self.end, self.step
+        start, end, step = self._start, self._stop, self._step
         return f"Array.from({{ length: ({str(end)} - {str(start)}) / {str(step)} }}, (_, i) => {str(start)} + i * {str(step)})"
 
     def __getattr__(self, name: str) -> Any:
@@ -1666,9 +1844,9 @@ class RangeOperation(ArrayVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.start._get_all_var_data(),
-            self.end._get_all_var_data(),
-            self.step._get_all_var_data(),
+            self._start._get_all_var_data(),
+            self._stop._get_all_var_data(),
+            self._step._get_all_var_data(),
             self._var_data,
         )
 
@@ -1681,7 +1859,35 @@ class RangeOperation(ArrayVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self.start, self.end, self.step))
+        return hash((self.__class__.__name__, self._start, self._stop, self._step))
+
+    @classmethod
+    def create(
+        cls,
+        start: NumberVar | int,
+        stop: NumberVar | int,
+        step: NumberVar | int,
+        _var_data: VarData | None = None,
+    ) -> RangeOperation:
+        """Create a var from a string value.
+
+        Args:
+            start: The start of the range.
+            stop: The end of the range.
+            step: The step of the range.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=List[int],
+            _var_data=ImmutableVarData.merge(_var_data),
+            _start=start if isinstance(start, Var) else LiteralNumberVar.create(start),
+            _stop=stop if isinstance(stop, Var) else LiteralNumberVar.create(stop),
+            _step=step if isinstance(step, Var) else LiteralNumberVar.create(step),
+        )
 
 
 @dataclasses.dataclass(
@@ -1692,24 +1898,13 @@ class RangeOperation(ArrayVar):
 class ArrayContainsOperation(BooleanVar):
     """Base class for immutable boolean vars that are the result of an array contains operation."""
 
-    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
-    b: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+    _haystack: ArrayVar = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([])
+    )
+    _needle: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
 
-    def __init__(self, a: ArrayVar, b: Any | Var, _var_data: VarData | None = None):
-        """Initialize the array contains operation var.
-
-        Args:
-            a: The array.
-            b: The element to check for.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(ArrayContainsOperation, self).__init__(
-            _var_name="",
-            _var_type=bool,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(self, "a", a)
-        object.__setattr__(self, "b", b if isinstance(b, Var) else LiteralVar.create(b))
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -1719,7 +1914,7 @@ class ArrayContainsOperation(BooleanVar):
         Returns:
             The name of the var.
         """
-        return f"{str(self.a)}.includes({str(self.b)})"
+        return f"{str(self._haystack)}.includes({str(self._needle)})"
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -1742,7 +1937,9 @@ class ArrayContainsOperation(BooleanVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.a._get_all_var_data(), self.b._get_all_var_data(), self._var_data
+            self._haystack._get_all_var_data(),
+            self._needle._get_all_var_data(),
+            self._var_data,
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
@@ -1754,7 +1951,32 @@ class ArrayContainsOperation(BooleanVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self.a, self.b))
+        return hash((self.__class__.__name__, self._haystack, self._needle))
+
+    @classmethod
+    def create(
+        cls,
+        haystack: ArrayVar,
+        needle: Any | Var,
+        _var_data: VarData | None = None,
+    ) -> ArrayContainsOperation:
+        """Create a var from a string value.
+
+        Args:
+            haystack: The array.
+            needle: The element to check for.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=bool,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _haystack=haystack,
+            _needle=needle if isinstance(needle, Var) else LiteralVar.create(needle),
+        )
 
 
 @dataclasses.dataclass(
@@ -1765,27 +1987,12 @@ class ArrayContainsOperation(BooleanVar):
 class ToStringOperation(StringVar):
     """Base class for immutable string vars that are the result of a to string operation."""
 
-    original_var: Var = dataclasses.field(
+    _original_var: Var = dataclasses.field(
         default_factory=lambda: LiteralStringVar.create("")
     )
 
-    def __init__(self, original_var: Var, _var_data: VarData | None = None):
-        """Initialize the to string operation var.
-
-        Args:
-            original_var: The original var.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(ToStringOperation, self).__init__(
-            _var_name="",
-            _var_type=str,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(
-            self,
-            "original_var",
-            original_var,
-        )
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -1795,7 +2002,7 @@ class ToStringOperation(StringVar):
         Returns:
             The name of the var.
         """
-        return str(self.original_var)
+        return str(self._original_var)
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -1818,7 +2025,7 @@ class ToStringOperation(StringVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.original_var._get_all_var_data(), self._var_data
+            self._original_var._get_all_var_data(), self._var_data
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
@@ -1830,7 +2037,29 @@ class ToStringOperation(StringVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self.original_var))
+        return hash((self.__class__.__name__, self._original_var))
+
+    @classmethod
+    def create(
+        cls,
+        original_var: Var,
+        _var_data: VarData | None = None,
+    ) -> ToStringOperation:
+        """Create a var from a string value.
+
+        Args:
+            original_var: The original var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=str,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _original_var=original_var,
+        )
 
 
 @dataclasses.dataclass(
@@ -1841,31 +2070,12 @@ class ToStringOperation(StringVar):
 class ToArrayOperation(ArrayVar):
     """Base class for immutable array vars that are the result of a to array operation."""
 
-    original_var: Var = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
+    _original_var: Var = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([])
+    )
 
-    def __init__(
-        self,
-        original_var: Var,
-        _var_type: type[list] | type[set] | type[tuple] = list,
-        _var_data: VarData | None = None,
-    ):
-        """Initialize the to array operation var.
-
-        Args:
-            original_var: The original var.
-            _var_type: The type of the array.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(ToArrayOperation, self).__init__(
-            _var_name="",
-            _var_type=_var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(
-            self,
-            "original_var",
-            original_var,
-        )
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -1875,7 +2085,7 @@ class ToArrayOperation(ArrayVar):
         Returns:
             The name of the var.
         """
-        return str(self.original_var)
+        return str(self._original_var)
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -1898,7 +2108,7 @@ class ToArrayOperation(ArrayVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.original_var._get_all_var_data(), self._var_data
+            self._original_var._get_all_var_data(), self._var_data
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
@@ -1910,7 +2120,30 @@ class ToArrayOperation(ArrayVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self.original_var))
+        return hash((self.__class__.__name__, self._original_var))
+
+    @classmethod
+    def create(
+        cls,
+        original_var: Var,
+        _var_type: type[list] | type[set] | type[tuple] | None = None,
+        _var_data: VarData | None = None,
+    ) -> ToArrayOperation:
+        """Create a var from a string value.
+
+        Args:
+            original_var: The original var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=list if _var_type is None else _var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _original_var=original_var,
+        )
 
 
 @dataclasses.dataclass(
@@ -1921,30 +2154,13 @@ class ToArrayOperation(ArrayVar):
 class ArrayRepeatOperation(ArrayVar):
     """Base class for immutable array vars that are the result of an array repeat operation."""
 
-    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
-    n: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar(0))
+    _array: ArrayVar = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([])
+    )
+    _count: NumberVar = dataclasses.field(default_factory=lambda: LiteralNumberVar.create(0))
 
-    def __init__(
-        self, a: ArrayVar, n: NumberVar | int, _var_data: VarData | None = None
-    ):
-        """Initialize the array repeat operation var.
-
-        Args:
-            a: The array.
-            n: The number of times to repeat the array.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(ArrayRepeatOperation, self).__init__(
-            _var_name="",
-            _var_type=a._var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(self, "a", a)
-        object.__setattr__(
-            self,
-            "n",
-            n if isinstance(n, Var) else LiteralNumberVar(n),
-        )
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -1954,7 +2170,7 @@ class ArrayRepeatOperation(ArrayVar):
         Returns:
             The name of the var.
         """
-        return f"Array.from({{ length: {str(self.n)} }}).flatMap(() => {str(self.a)})"
+        return f"Array.from({{ length: {str(self._count)} }}).flatMap(() => {str(self._array)})"
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -1977,7 +2193,9 @@ class ArrayRepeatOperation(ArrayVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.a._get_all_var_data(), self.n._get_all_var_data(), self._var_data
+            self._array._get_all_var_data(),
+            self._count._get_all_var_data(),
+            self._var_data,
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
@@ -1989,7 +2207,32 @@ class ArrayRepeatOperation(ArrayVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self.a, self.n))
+        return hash((self.__class__.__name__, self._array, self._count))
+
+    @classmethod
+    def create(
+        cls,
+        array: ArrayVar,
+        count: NumberVar | int,
+        _var_data: VarData | None = None,
+    ) -> ArrayRepeatOperation:
+        """Create a var from a string value.
+
+        Args:
+            array: The array.
+            count: The number of times to repeat the array.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=array._var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _array=array,
+            _count=count if isinstance(count, Var) else LiteralNumberVar.create(count),
+        )
 
 
 @dataclasses.dataclass(
@@ -2000,25 +2243,15 @@ class ArrayRepeatOperation(ArrayVar):
 class ArrayConcatOperation(ArrayVar):
     """Base class for immutable array vars that are the result of an array concat operation."""
 
-    a: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
-    b: ArrayVar = dataclasses.field(default_factory=lambda: LiteralArrayVar([]))
+    _lhs: ArrayVar = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([])
+    )
+    _rhs: ArrayVar = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([])
+    )
 
-    def __init__(self, a: ArrayVar, b: ArrayVar, _var_data: VarData | None = None):
-        """Initialize the array concat operation var.
-
-        Args:
-            a: The first array.
-            b: The second array.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        # TODO: Figure out how to merge the types of a and b
-        super(ArrayConcatOperation, self).__init__(
-            _var_name="",
-            _var_type=Union[a._var_type, b._var_type],
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
-        object.__setattr__(self, "a", a)
-        object.__setattr__(self, "b", b)
+    def __post_init__(self):
+        """Post-initialize the var."""
         object.__delattr__(self, "_var_name")
 
     @cached_property
@@ -2028,7 +2261,7 @@ class ArrayConcatOperation(ArrayVar):
         Returns:
             The name of the var.
         """
-        return f"[...{str(self.a)}, ...{str(self.b)}]"
+        return f"[...{str(self._lhs)}, ...{str(self._rhs)}]"
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -2051,7 +2284,7 @@ class ArrayConcatOperation(ArrayVar):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            self.a._get_all_var_data(), self.b._get_all_var_data(), self._var_data
+            self._lhs._get_all_var_data(), self._rhs._get_all_var_data(), self._var_data
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
@@ -2063,4 +2296,30 @@ class ArrayConcatOperation(ArrayVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self.a, self.b))
+        return hash((self.__class__.__name__, self._lhs, self._rhs))
+
+    @classmethod
+    def create(
+        cls,
+        lhs: ArrayVar,
+        rhs: ArrayVar,
+        _var_data: VarData | None = None,
+    ) -> ArrayConcatOperation:
+        """Create a var from a string value.
+
+        Args:
+            lhs: The left-hand side array.
+            rhs: The right-hand side array.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        # TODO: Figure out how to merge the types of a and b
+        return cls(
+            _var_name="",
+            _var_type=Union[lhs._var_type, rhs._var_type],
+            _var_data=ImmutableVarData.merge(_var_data),
+            _lhs=lhs,
+            _rhs=rhs,
+        )
