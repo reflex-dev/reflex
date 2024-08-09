@@ -86,6 +86,7 @@ from reflex.state import (
 from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
 from reflex.utils.exec import is_prod_mode, is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
+from reflex.health import health_check
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -302,6 +303,10 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             from reflex.utils.compat import windows_hot_reload_lifespan_hack
 
             self.register_lifespan_task(windows_hot_reload_lifespan_hack)
+
+        @self.api.get("/health")
+        async def health():
+            return health_check()
 
     def _enable_state(self) -> None:
         """Enable state for the app."""
