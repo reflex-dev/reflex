@@ -55,6 +55,7 @@ from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
+from reflex.utils.types import override
 from reflex.vars import BaseVar, ComputedVar, Var, computed_var
 
 if TYPE_CHECKING:
@@ -2368,6 +2369,7 @@ class StateManagerMemory(StateManager):
             "_states_locks": {"exclude": True},
         }
 
+    @override
     async def get_state(self, token: str) -> BaseState:
         """Get the state for a token.
 
@@ -2383,6 +2385,7 @@ class StateManagerMemory(StateManager):
             self.states[token] = self.state(_reflex_internal_init=True)
         return self.states[token]
 
+    @override
     async def set_state(self, token: str, state: BaseState):
         """Set the state for a token.
 
@@ -2392,6 +2395,7 @@ class StateManagerMemory(StateManager):
         """
         pass
 
+    @override
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
         """Modify the state for a token while holding exclusive lock.
@@ -2558,6 +2562,7 @@ class StateManagerRedis(StateManager):
         for substate_name, substate_task in tasks.items():
             state.substates[substate_name] = await substate_task
 
+    @override
     async def get_state(
         self,
         token: str,
@@ -2657,6 +2662,7 @@ class StateManagerRedis(StateManager):
             )
             self._warned_about_state_size.add(state_full_name)
 
+    @override
     async def set_state(
         self,
         token: str,
@@ -2717,6 +2723,7 @@ class StateManagerRedis(StateManager):
         for t in tasks:
             await t
 
+    @override
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
         """Modify the state for a token while holding exclusive lock.
