@@ -57,6 +57,7 @@ from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
+from reflex.utils.string import remove_prefix
 from reflex.vars import BaseVar, ComputedVar, Var, computed_var
 
 if TYPE_CHECKING:
@@ -1175,9 +1176,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             ValueError: If the substate is not found.
         """
         if isinstance(path, type):
-            path = (
-                path.get_full_name().removeprefix(f"{self.get_full_name()}.").split(".")
-            )
+            path = remove_prefix(
+                text=path.get_full_name(), prefix=f"{self.get_full_name()}."
+            ).split(".")
         if len(path) == 0:
             return self
         if path[0] == self.get_name():
