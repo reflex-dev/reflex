@@ -1434,7 +1434,8 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         template_code_dir_name=template_name,
         template_dir=template_dir,
     )
-    if Path("requirements.txt").exists():
+    req_file = Path("requirements.txt")
+    if req_file.exists() and len(req_file.read_text().splitlines()) > 1:
         console.info(
             "Run `pip install -r requirements.txt` to install the required python packages for this template."
         )
