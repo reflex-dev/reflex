@@ -9,6 +9,7 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
+from reflex.ivars.base import ImmutableVar
 from reflex.state import ComponentState
 from reflex.utils import console
 from reflex.vars import Var
@@ -61,7 +62,7 @@ class Foreach(Component):
                 deprecation_version="0.5.0",
                 removal_version="0.6.0",
             )
-        iterable = Var.create_safe(iterable, _var_is_string=False)
+        iterable = ImmutableVar.create_safe(iterable)
         if iterable._var_type == Any:
             raise ForeachVarError(
                 f"Could not foreach over var `{iterable._var_full_name}` of type Any. "

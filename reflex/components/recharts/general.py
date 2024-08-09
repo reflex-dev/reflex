@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Union
 from reflex.components.component import MemoizationLeaf
 from reflex.constants.colors import Color
 from reflex.event import EventHandler
+from reflex.ivars.base import LiteralVar
 from reflex.vars import Var
 
 from .recharts import (
@@ -139,7 +140,7 @@ class GraphingTooltip(Recharts):
     filter_null: Var[bool]
 
     # If set false, no cursor will be drawn when tooltip is active.
-    cursor: Var[Union[Dict[str, Any], bool]] = Var.create_safe(
+    cursor: Var[Union[Dict[str, Any], bool]] = LiteralVar.create(
         {
             "strokeWidth": 1,
             "fill": Color("gray", 3),
@@ -150,7 +151,7 @@ class GraphingTooltip(Recharts):
     view_box: Var[Dict[str, Any]]
 
     # The style of default tooltip content item which is a li element. DEFAULT: {}
-    item_style: Var[Dict[str, Any]] = Var.create_safe(
+    item_style: Var[Dict[str, Any]] = LiteralVar.create(
         {
             "color": Color("gray", 12),
         }
@@ -159,7 +160,7 @@ class GraphingTooltip(Recharts):
     # The style of tooltip wrapper which is a dom element. DEFAULT: {}
     wrapper_style: Var[Dict[str, Any]]
     # The style of tooltip content which is a dom element. DEFAULT: {}
-    content_style: Var[Dict[str, Any]] = Var.create_safe(
+    content_style: Var[Dict[str, Any]] = LiteralVar.create(
         {
             "background": Color("gray", 1),
             "borderColor": Color("gray", 4),
@@ -168,10 +169,10 @@ class GraphingTooltip(Recharts):
     )
 
     # The style of default tooltip label which is a p element. DEFAULT: {}
-    label_style: Var[Dict[str, Any]] = Var.create_safe({"color": Color("gray", 11)})
+    label_style: Var[Dict[str, Any]] = LiteralVar.create({"color": Color("gray", 11)})
 
     # This option allows the tooltip to extend beyond the viewBox of the chart itself. DEFAULT: { x: false, y: false }
-    allow_escape_view_box: Var[Dict[str, bool]] = Var.create_safe(
+    allow_escape_view_box: Var[Dict[str, bool]] = LiteralVar.create(
         {"x": False, "y": False}
     )
 
@@ -231,10 +232,10 @@ class LabelList(Recharts):
     offset: Var[int]
 
     # The fill color of each label
-    fill: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
+    fill: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
 
     # The stroke color of each label
-    stroke: Var[Union[str, Color]] = Var.create_safe("none", _var_is_string=True)
+    stroke: Var[Union[str, Color]] = LiteralVar.create("none")
 
 
 responsive_container = ResponsiveContainer.create

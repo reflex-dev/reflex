@@ -2,7 +2,7 @@
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar
 
 
 class AppWrap(Fragment):
@@ -15,6 +15,4 @@ class AppWrap(Fragment):
         Returns:
             A new AppWrap component containing {children}.
         """
-        return super().create(
-            Var.create("{children}", _var_is_local=False, _var_is_string=False)
-        )
+        return super().create(ImmutableVar.create("children"))

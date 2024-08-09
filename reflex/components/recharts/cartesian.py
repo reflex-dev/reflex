@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.event import EventHandler
+from reflex.ivars.base import LiteralVar
 from reflex.vars import Var
 
 from .recharts import (
@@ -86,7 +87,7 @@ class Axis(Recharts):
     tick_count: Var[int]
 
     # If set false, no axis tick lines will be drawn.
-    tick_line: Var[bool] = Var.create_safe(False)
+    tick_line: Var[bool] = LiteralVar.create(False)
 
     # The length of tick line.
     tick_size: Var[int]
@@ -95,7 +96,7 @@ class Axis(Recharts):
     min_tick_gap: Var[int]
 
     # The stroke color of axis
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 9))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 9))
 
     # The text anchor of axis
     text_anchor: Var[str]  # 'start', 'middle', 'end'
@@ -136,7 +137,7 @@ class XAxis(Axis):
     x_axis_id: Var[Union[str, int]]
 
     # Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
-    include_hidden: Var[bool] = Var.create_safe(False)
+    include_hidden: Var[bool] = LiteralVar.create(False)
 
 
 class YAxis(Axis):
@@ -187,10 +188,10 @@ class Brush(Recharts):
     alias = "RechartsBrush"
 
     # Stroke color
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 9))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 9))
 
     # The fill color of brush.
-    fill: Var[Union[str, Color]] = Var.create_safe(Color("gray", 2))
+    fill: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 2))
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
@@ -290,22 +291,22 @@ class Area(Cartesian):
     alias = "RechartsArea"
 
     # The color of the line stroke.
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
 
     # The width of the line stroke.
-    stroke_width: Var[int] = Var.create_safe(1)
+    stroke_width: Var[int] = LiteralVar.create(1)
 
     # The color of the area fill.
-    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 5))
+    fill: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 5))
 
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
-    type_: Var[LiteralAreaType] = Var.create_safe("monotone", _var_is_string=True)
+    type_: Var[LiteralAreaType] = LiteralVar.create("monotone")
 
     # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
     dot: Var[Union[bool, Dict[str, Any]]]
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    active_dot: Var[Union[bool, Dict[str, Any]]] = Var.create_safe(
+    active_dot: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(
         {
             "stroke": Color("accent", 2),
             "fill": Color("accent", 10),
@@ -342,7 +343,7 @@ class Bar(Cartesian):
     stroke_width: Var[int]
 
     # The width of the line stroke.
-    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
+    fill: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
     # If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
     background: Var[bool]
 
@@ -403,13 +404,13 @@ class Line(Cartesian):
     type_: Var[LiteralAreaType]
 
     # The color of the line stroke.
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
 
     # The width of the line stroke.
     stroke_width: Var[int]
 
     # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    dot: Var[Union[bool, Dict[str, Any]]] = Var.create_safe(
+    dot: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(
         {
             "stroke": Color("accent", 10),
             "fill": Color("accent", 4),
@@ -417,7 +418,7 @@ class Line(Cartesian):
     )
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    active_dot: Var[Union[bool, Dict[str, Any]]] = Var.create_safe(
+    active_dot: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(
         {
             "stroke": Color("accent", 2),
             "fill": Color("accent", 10),
@@ -475,7 +476,7 @@ class Scatter(Recharts):
     line_type: Var[LiteralLineType]
 
     # The fill
-    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
+    fill: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
 
     # the name
     name: Var[Union[str, int]]
@@ -552,7 +553,7 @@ class Funnel(Recharts):
     animation_easing: Var[LiteralAnimationEasing]
 
     # stroke color
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 3))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 3))
 
     # Valid children components
     _valid_children: List[str] = ["LabelList", "Cell"]
@@ -605,7 +606,7 @@ class ErrorBar(Recharts):
     width: Var[int]
 
     # The stroke color of error bar.
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 8))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 8))
 
     # The stroke width of error bar.
     stroke_width: Var[int]
@@ -795,7 +796,7 @@ class CartesianGrid(Grid):
     stroke_dasharray: Var[str]
 
     # the stroke color of grid
-    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 7))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 7))
 
 
 class CartesianAxis(Grid):

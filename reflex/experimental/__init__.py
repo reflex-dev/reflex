@@ -8,7 +8,6 @@ from reflex.components.sonner.toast import toast as toast
 
 from ..utils.console import warn
 from . import hooks as hooks
-from . import vars as vars
 from .assets import asset as asset
 from .client_state import ClientStateVar as ClientStateVar
 from .layout import layout as layout
@@ -43,7 +42,6 @@ _x = ExperimentalNamespace(
     asset=asset,
     client_state=ClientStateVar.create,
     hooks=hooks,
-    vars=vars,
     layout=layout,
     progress=progress,
     PropsBase=PropsBase,

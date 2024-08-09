@@ -3,6 +3,7 @@
 from typing import Any, Literal, Optional, Union
 
 from reflex.event import EventHandler
+from reflex.ivars.base import LiteralVar
 from reflex.utils import types
 from reflex.vars import Var
 
@@ -104,6 +105,6 @@ class Image(NextComponent):
 
         src = props.get("src", None)
         if src is not None and not isinstance(src, (Var)):
-            props["src"] = Var.create(value=src, _var_is_string=True)
+            props["src"] = LiteralVar.create(src)
 
         return super().create(*children, **props)

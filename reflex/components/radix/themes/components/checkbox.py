@@ -7,6 +7,7 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler
+from reflex.ivars.base import LiteralVar
 from reflex.vars import Var
 
 from ..base import (
@@ -115,9 +116,7 @@ class HighLevelCheckbox(RadixThemesComponent):
     on_change: EventHandler[lambda e0: [e0]]
 
     @classmethod
-    def create(
-        cls, text: Var[str] = Var.create_safe("", _var_is_string=True), **props
-    ) -> Component:
+    def create(cls, text: Var[str] = LiteralVar.create(""), **props) -> Component:
         """Create a checkbox with a label.
 
         Args:

@@ -11,13 +11,14 @@ from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain, EventHandler
+from reflex.ivars.base import ImmutableVar
 from reflex.utils.format import format_event_chain
 from reflex.utils.imports import ImportDict
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var, VarData
 
 from .base import BaseHTML
 
-FORM_DATA = Var.create("form_data", _var_is_string=False)
+FORM_DATA = ImmutableVar.create("form_data")
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     """
     const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
@@ -197,7 +198,7 @@ class Form(BaseHTML):
         if EventTriggers.ON_SUBMIT in self.event_triggers:
             render_tag.add_props(
                 **{
-                    EventTriggers.ON_SUBMIT: BaseVar(
+                    EventTriggers.ON_SUBMIT: ImmutableVar(
                         _var_name=f"handleSubmit_{self.handle_submit_unique_name}",
                         _var_type=EventChain,
                     )
@@ -217,7 +218,7 @@ class Form(BaseHTML):
                     f"getRefValues({str(ref_var)})",
                     _var_is_local=False,
                     _var_is_string=False,
-                    _var_data=ref_var._var_data,
+                    _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
             else:
                 ref_var = Var.create_safe(ref, _var_is_string=False).as_ref()
@@ -225,7 +226,7 @@ class Form(BaseHTML):
                     f"getRefValue({str(ref_var)})",
                     _var_is_local=False,
                     _var_is_string=False,
-                    _var_data=ref_var._var_data,
+                    _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
         return form_refs
 
@@ -631,7 +632,7 @@ class Textarea(BaseHTML):
                     f"(e) => enterKeySubmitOnKeyDown(e, {self.enter_key_submit._var_name_unwrapped})",
                     _var_is_local=False,
                     _var_is_string=False,
-                    _var_data=self.enter_key_submit._var_data,
+                    _var_data=VarData.merge(self.enter_key_submit._get_all_var_data()),
                 )
             )
         if self.auto_height is not None:
@@ -640,7 +641,7 @@ class Textarea(BaseHTML):
                     f"(e) => autoHeightOnInput(e, {self.auto_height._var_name_unwrapped})",
                     _var_is_local=False,
                     _var_is_string=False,
-                    _var_data=self.auto_height._var_data,
+                    _var_data=VarData.merge(self.auto_height._get_all_var_data()),
                 )
             )
         return tag

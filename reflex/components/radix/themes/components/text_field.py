@@ -10,6 +10,7 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
 from reflex.event import EventHandler
+from reflex.ivars.base import LiteralVar
 from reflex.style import Style, format_as_emotion
 from reflex.utils import console
 from reflex.vars import Var
@@ -154,7 +155,7 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
             style = Style(template.style)
             style.update(child.style)
             child._get_style = lambda style=style: {
-                "css": Var.create(format_as_emotion(style))
+                "css": LiteralVar.create(format_as_emotion(style))
             }
             for trigger in template.event_triggers:
                 if trigger not in child.event_triggers:

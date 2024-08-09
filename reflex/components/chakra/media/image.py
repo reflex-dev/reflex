@@ -7,6 +7,7 @@ from typing import Any, Optional
 from reflex.components.chakra import ChakraComponent, LiteralImageLoading
 from reflex.components.component import Component
 from reflex.event import EventHandler
+from reflex.ivars.base import LiteralVar
 from reflex.vars import Var
 
 
@@ -70,5 +71,5 @@ class Image(ChakraComponent):
         """
         src = props.get("src", None)
         if src is not None and not isinstance(src, (Var)):
-            props["src"] = Var.create(value=src, _var_is_string=True)
+            props["src"] = LiteralVar.create(value=src)
         return super().create(*children, **props)

@@ -12,16 +12,17 @@ from reflex.event import (
     EventHandler,
     EventSpec,
 )
+from reflex.ivars.base import ImmutableCallableVar, ImmutableVar
 from reflex.style import Style
-from reflex.vars import BaseVar, CallableVar, Var, VarData
+from reflex.vars import BaseVar, Var, VarData
 
 DEFAULT_UPLOAD_ID: str
 upload_files_context_var_data: VarData
 
-@CallableVar
-def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
-@CallableVar
-def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
+@ImmutableCallableVar
+def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar: ...
+@ImmutableCallableVar
+def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar: ...
 @CallableEventSpec
 def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec: ...
 def cancel_upload(upload_id: str) -> EventSpec: ...
