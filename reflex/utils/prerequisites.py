@@ -22,7 +22,7 @@ from datetime import datetime
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, List, Optional
+from typing import TYPE_CHECKING, Callable, List, Optional
 
 import httpx
 import typer
@@ -38,6 +38,9 @@ from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 from reflex.utils.format import format_library_name
+
+if TYPE_CHECKING:
+    from reflex.app import App
 
 CURRENTLY_INSTALLING_NODE = False
 
@@ -235,7 +238,7 @@ def windows_npm_escape_hatch() -> bool:
     return os.environ.get("REFLEX_USE_NPM", "").lower() in ["true", "1", "yes"]
 
 
-def get_app(reload: bool = False) -> ModuleType:
+def get_app_module(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
 
     Args:
@@ -276,6 +279,21 @@ def get_app(reload: bool = False) -> ModuleType:
         raise
 
 
+def get_app(reload: bool = False) -> App:
+    """Get the app based on the default config.
+
+    Args:
+        reload: Re-import the app module from disk
+
+    Returns:
+        The app based on the default config.
+
+    Raises:
+        RuntimeError: If the app name is not set in the config.
+    """
+    return getattr(get_app_module(reload=reload), constants.CompileVars.APP)
+
+
 def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
@@ -286,7 +304,7 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     Returns:
         The compiled app based on the default config.
     """
-    app_module = get_app(reload=reload)
+    app_module = get_app_module(reload=reload)
     app = getattr(app_module, constants.CompileVars.APP)
     # For py3.8 and py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).

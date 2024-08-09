@@ -1817,7 +1817,7 @@ def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
     def _mock_get_app(*args, **kwargs):
         return app_module
 
-    monkeypatch.setattr(prerequisites, "get_app", _mock_get_app)
+    monkeypatch.setattr(prerequisites, "get_app_module", _mock_get_app)
     return app
 
 

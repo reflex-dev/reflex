@@ -79,6 +79,7 @@ from reflex.state import (
     RouterData,
     State,
     StateManager,
+    StateManagerMemory,
     StateUpdate,
     _substate_key,
     code_uses_state_contexts,
@@ -1099,6 +1100,40 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                     update=StateUpdate(delta=delta),
                     sid=state.router.session.session_id,
                 )
+
+    async def modify_states(
+        self,
+        substate_cls: Type[BaseState] | None = None,
+        from_state: BaseState | None = None,
+    ) -> AsyncIterator[BaseState]:
+        """Iterate over the states.
+
+        Args:
+            substate_cls: The substate class to iterate over.
+            from_state: The state from which this method is called.
+
+        Yields:
+            The states to modify.
+
+        Raises:
+            NotImplementedError: If the state manager is not StateManagerMemory
+        """
+        # TODO: Implement for StateManagerRedis
+        if not isinstance(self.state_manager, StateManagerMemory):
+            raise NotImplementedError
+
+        for token in self.state_manager.states:
+            # avoid deadlock when calling from event handler/background task
+            if (
+                from_state is not None
+                and from_state.router.session.client_token == token
+            ):
+                yield from_state
+                continue
+            async with self.modify_state(token) as state:
+                if substate_cls is not None:
+                    state = state.get_substate(substate_cls.get_name())
+                yield state
 
     def _process_background(
         self, state: BaseState, event: Event

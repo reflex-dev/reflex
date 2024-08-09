@@ -1467,7 +1467,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             state._clean()
 
-            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+            app_instance = prerequisites.get_app()
 
             event_specs = app_instance.backend_exception_handler(ex)
 
@@ -1541,7 +1541,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             telemetry.send_error(ex, context="backend")
 
-            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+            app_instance = prerequisites.get_app()
 
             event_specs = app_instance.backend_exception_handler(ex)
 
@@ -1862,7 +1862,7 @@ class FrontendEventExceptionState(State):
             stack: The stack trace of the exception.
 
         """
-        app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        app_instance = prerequisites.get_app()
         app_instance.frontend_exception_handler(Exception(stack))
 
 
@@ -1901,7 +1901,7 @@ class OnLoadInternalState(State):
             The list of events to queue for on load handling.
         """
         # Do not app._compile()!  It should be already compiled by now.
-        app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        app = prerequisites.get_app()
         load_events = app.get_load_events(self.router.page.path)
         if not load_events:
             self.is_hydrated = True
@@ -2044,7 +2044,7 @@ class StateProxy(wrapt.ObjectProxy):
         """
         super().__init__(state_instance)
         # compile is not relevant to backend logic
-        self._self_app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        self._self_app = prerequisites.get_app()
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_actx = None
         self._self_mutable = False
@@ -2857,7 +2857,7 @@ def get_state_manager() -> StateManager:
     Returns:
         The state manager.
     """
-    app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+    app = prerequisites.get_app()
     return app.state_manager
 
 

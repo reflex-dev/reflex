@@ -50,7 +50,7 @@ def app_module_mock(monkeypatch) -> mock.Mock:
     """
     app_module_mock = mock.Mock()
     get_app_mock = mock.Mock(return_value=app_module_mock)
-    monkeypatch.setattr(prerequisites, "get_app", get_app_mock)
+    monkeypatch.setattr(prerequisites, "get_app_module", get_app_mock)
     return app_module_mock
 
 
