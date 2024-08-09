@@ -81,7 +81,6 @@ from reflex.state import (
     RouterData,
     State,
     StateManager,
-    StateManagerMemory,
     StateUpdate,
     _substate_key,
     code_uses_state_contexts,
@@ -1128,19 +1127,11 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
         Yields:
             The states to modify.
-
-        Raises:
-            NotImplementedError: If the state manager is not StateManagerMemory
         """
-        # TODO: Implement for StateManagerRedis
-        if not isinstance(self.state_manager, StateManagerMemory):
-            raise NotImplementedError
-
-        for token in self.state_manager.states:
+        async for token in self.state_manager.iter_state_tokens():
             # avoid deadlock when calling from event handler/background task
-            if (
-                from_state is not None
-                and from_state.router.session.client_token == token
+            if from_state is not None and token.startswith(
+                from_state.router.session.client_token
             ):
                 state = from_state
                 continue

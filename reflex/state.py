@@ -58,6 +58,7 @@ from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.utils.string import remove_prefix
+from reflex.utils.types import override
 from reflex.vars import BaseVar, ComputedVar, Var, computed_var
 
 if TYPE_CHECKING:
@@ -2364,6 +2365,20 @@ class StateManager(Base, ABC):
         """
         yield self.state()
 
+    @abstractmethod
+    def iter_state_tokens(
+        self, substate_cls: Type[BaseState] | None = None
+    ) -> AsyncIterator[str]:
+        """Iterate over the state names.
+
+        Args:
+            substate_cls: The subclass of BaseState to filter by.
+
+        Raises:
+            NotImplementedError: Always, because this method must be implemented by subclasses.
+        """
+        raise NotImplementedError
+
 
 class StateManagerMemory(StateManager):
     """A state manager that stores states in memory."""
@@ -2429,6 +2444,21 @@ class StateManagerMemory(StateManager):
             state = await self.get_state(token)
             yield state
             await self.set_state(token, state)
+
+    @override
+    async def iter_state_tokens(
+        self, substate_cls: Type[BaseState] | None = None
+    ) -> AsyncIterator[str]:
+        """Iterate over the state names.
+
+        Args:
+            substate_cls: The subclass of BaseState to filter by.
+
+        Yields:
+            The state names.
+        """
+        for token in self.states:
+            yield token
 
 
 # Workaround https://github.com/cloudpipe/cloudpickle/issues/408 for dynamic pydantic classes
@@ -2747,6 +2777,25 @@ class StateManagerRedis(StateManager):
             state = await self.get_state(token)
             yield state
             await self.set_state(token, state, lock_id)
+
+    @override
+    async def iter_state_tokens(
+        self, substate_cls: Type[BaseState] | None = None
+    ) -> AsyncIterator[str]:
+        """Iterate over the state names.
+
+        Args:
+            substate_cls: The subclass of BaseState to filter by.
+
+        Yields:
+            The state names.
+        """
+        if substate_cls is None:
+            substate_cls = self.state
+        async for token in self.redis.scan_iter(
+            match=f"*_{substate_cls.get_name()}", _type="STRING"
+        ):
+            yield token.decode()
 
     @staticmethod
     def _lock_key(token: str) -> bytes:
