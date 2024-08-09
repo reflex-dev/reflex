@@ -1233,6 +1233,17 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             parent_states_with_name.append((parent_state.get_full_name(), parent_state))
         return parent_states_with_name
 
+    def _get_root_state(self) -> BaseState:
+        """Get the root state of the state tree.
+
+        Returns:
+            The root state of the state tree.
+        """
+        parent_state = self
+        while parent_state.parent_state is not None:
+            parent_state = parent_state.parent_state
+        return parent_state
+
     async def _populate_parent_states(self, target_state_cls: Type[BaseState]):
         """Populate substates in the tree between the target_state_cls and common ancestor of this state.
 
@@ -1260,7 +1271,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Fetch all missing parent states and link them up to the common ancestor.
         parent_states_tuple = self._get_parent_states()
-        root_state = parent_states_tuple[-1][1]
+        root_state = self._get_root_state()
         parent_states_by_name = dict(parent_states_tuple)
         parent_state = parent_states_by_name[common_ancestor_name]
         for parent_state_name in missing_parent_states:
@@ -1292,10 +1303,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The instance of state_cls associated with this state's client_token.
         """
-        if self.parent_state is None:
-            root_state = self
-        else:
-            root_state = self._get_parent_states()[-1][1]
+        root_state = self._get_root_state()
         return root_state.get_substate(state_cls.get_full_name().split("."))
 
     async def _get_state_from_redis(self, state_cls: Type[BaseState]) -> BaseState:
@@ -1446,9 +1454,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The valid StateUpdate containing the events and final flag.
         """
         # get the delta from the root of the state tree
-        state = self
-        while state.parent_state is not None:
-            state = state.parent_state
+        state = self._get_root_state()
 
         token = self.router.session.client_token
 
@@ -2487,19 +2493,6 @@ class StateManagerRedis(StateManager):
     # Only warn about each state class size once.
     _warned_about_state_size: ClassVar[Set[str]] = set()
 
-    def _get_root_state(self, state: BaseState) -> BaseState:
-        """Chase parent_state pointers to find an instance of the top-level state.
-
-        Args:
-            state: The state to start from.
-
-        Returns:
-            An instance of the top-level state (self.state).
-        """
-        while type(state) != self.state and state.parent_state is not None:
-            state = state.parent_state
-        return state
-
     async def _get_parent_state(self, token: str) -> BaseState | None:
         """Get the parent state for the state requested in the token.
 
@@ -2614,7 +2607,7 @@ class StateManagerRedis(StateManager):
             # To retain compatibility with previous implementation, by default, we return
             # the top-level state by chasing `parent_state` pointers up the tree.
             if top_level:
-                return self._get_root_state(state)
+                return state._get_root_state()
             return state
 
         # TODO: dedupe the following logic with the above block
@@ -2636,7 +2629,7 @@ class StateManagerRedis(StateManager):
         # To retain compatibility with previous implementation, by default, we return
         # the top-level state by chasing `parent_state` pointers up the tree.
         if top_level:
-            return self._get_root_state(state)
+            return state._get_root_state()
         return state
 
     def _warn_if_too_large(
