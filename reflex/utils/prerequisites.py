@@ -1311,9 +1311,6 @@ def migrate_to_reflex():
                 print(line, end="")
 
 
-RELEASES_URL = f"https://api.github.com/repos/reflex-dev/templates/releases"
-
-
 def fetch_app_templates(version: str) -> dict[str, Template]:
     """Fetch a dict of templates from the templates repo using github API.
 
@@ -1325,7 +1322,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     """
 
     def get_release_by_tag(tag: str) -> dict | None:
-        response = httpx.get(RELEASES_URL)
+        response = httpx.get(constants.Reflex.RELEASES_URL)
         response.raise_for_status()
         releases = response.json()
         for release in releases:
@@ -1437,7 +1434,11 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         template_code_dir_name=template_name,
         template_dir=template_dir,
     )
-
+    req_file = Path("requirements.txt")
+    if req_file.exists() and len(req_file.read_text().splitlines()) > 1:
+        console.info(
+            "Run `pip install -r requirements.txt` to install the required python packages for this template."
+        )
     #  Clean up the temp directories.
     shutil.rmtree(temp_dir)
     shutil.rmtree(unzip_dir)
