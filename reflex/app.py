@@ -26,9 +26,11 @@ from typing import (
     Optional,
     Set,
     Type,
+    TypeVar,
     Union,
     get_args,
     get_type_hints,
+    overload,
 )
 
 from fastapi import FastAPI, HTTPException, Request, UploadFile
@@ -1101,11 +1103,23 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                     sid=state.router.session.session_id,
                 )
 
+    S = TypeVar("S", bound=BaseState)
+
+    @overload
+    async def modify_states(
+        self, substate_cls: Type[S], from_state: None
+    ) -> AsyncIterator[S]: ...
+
+    @overload
+    async def modify_states(
+        self, substate_cls: None, from_state: BaseState
+    ) -> AsyncIterator[BaseState]: ...
+
     async def modify_states(
         self,
-        substate_cls: Type[BaseState] | None = None,
+        substate_cls: Type[S] | Type[BaseState] | None = None,
         from_state: BaseState | None = None,
-    ) -> AsyncIterator[BaseState]:
+    ) -> AsyncIterator[S] | AsyncIterator[BaseState]:
         """Iterate over the states.
 
         Args:
@@ -1128,11 +1142,11 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 from_state is not None
                 and from_state.router.session.client_token == token
             ):
-                yield from_state
+                state = from_state
                 continue
             async with self.modify_state(token) as state:
                 if substate_cls is not None:
-                    state = state.get_substate(substate_cls.get_name())
+                    state = state.get_substate(substate_cls)
                 yield state
 
     def _process_background(

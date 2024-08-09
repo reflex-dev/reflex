@@ -24,8 +24,10 @@ from typing import (
     Sequence,
     Set,
     Type,
+    TypeVar,
     Union,
     cast,
+    overload,
 )
 
 import dill
@@ -289,6 +291,9 @@ class EventHandlerSetVar(EventHandler):
                     f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
                 )
         return super().__call__(*args)
+
+
+S = TypeVar("S", bound="BaseState")
 
 
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
@@ -1151,11 +1156,17 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.substates.values():
             substate._reset_client_storage()
 
-    def get_substate(self, path: Sequence[str]) -> BaseState:
+    @overload
+    def get_substate(self, path: Sequence[str]) -> BaseState: ...
+
+    @overload
+    def get_substate(self, path: Type[S]) -> S: ...
+
+    def get_substate(self, path: Sequence[str] | Type[S]) -> BaseState | S:
         """Get the substate.
 
         Args:
-            path: The path to the substate.
+            path: The path to the substate or the class of the substate.
 
         Returns:
             The substate.
@@ -1163,6 +1174,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             ValueError: If the substate is not found.
         """
+        if isinstance(path, type):
+            path = (
+                path.get_full_name().removeprefix(f"{self.get_full_name()}.").split(".")
+            )
         if len(path) == 0:
             return self
         if path[0] == self.get_name():
@@ -1295,7 +1310,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             root_state = self
         else:
             root_state = self._get_parent_states()[-1][1]
-        return root_state.get_substate(state_cls.get_full_name().split("."))
+        return root_state.get_substate(state_cls)
 
     async def _get_state_from_redis(self, state_cls: Type[BaseState]) -> BaseState:
         """Get a state instance from redis.

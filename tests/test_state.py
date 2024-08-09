@@ -218,7 +218,7 @@ def child_state(test_state) -> ChildState:
     Returns:
         A test child state.
     """
-    child_state = test_state.get_substate([ChildState.get_name()])
+    child_state = test_state.get_substate(ChildState)
     assert child_state is not None
     return child_state
 
@@ -233,7 +233,7 @@ def child_state2(test_state) -> ChildState2:
     Returns:
         A second test child state.
     """
-    child_state2 = test_state.get_substate([ChildState2.get_name()])
+    child_state2 = test_state.get_substate(ChildState2)
     assert child_state2 is not None
     return child_state2
 
@@ -248,7 +248,7 @@ def grandchild_state(child_state) -> GrandchildState:
     Returns:
         A test state.
     """
-    grandchild_state = child_state.get_substate([GrandchildState.get_name()])
+    grandchild_state = child_state.get_substate(GrandchildState)
     assert grandchild_state is not None
     return grandchild_state
 
@@ -1183,7 +1183,7 @@ def test_event_handlers_call_other_handlers():
     assert ms.v == 2
 
     # ensure handler can be called from substate (referencing grandparent handler)
-    ms.get_substate(tuple(SubSubState.get_full_name().split("."))).set_v4(3)
+    ms.get_substate(SubSubState).set_v4(3)
     assert ms.v == 3
 
 
@@ -2854,7 +2854,7 @@ async def test_get_state(mock_app: rx.App, token: str):
     )
 
     # Get the child_state2 directly.
-    child_state2_direct = test_state.get_substate([ChildState2.get_name()])
+    child_state2_direct = test_state.get_substate(ChildState2)
     child_state2_get_state = await test_state.get_state(ChildState2)
     # These should be the same object.
     assert child_state2_direct is child_state2_get_state
@@ -2871,15 +2871,13 @@ async def test_get_state(mock_app: rx.App, token: str):
     )
 
     # ChildState should be retrievable
-    child_state_direct = test_state.get_substate([ChildState.get_name()])
+    child_state_direct = test_state.get_substate(ChildState)
     child_state_get_state = await test_state.get_state(ChildState)
     # These should be the same object.
     assert child_state_direct is child_state_get_state
 
     # GrandchildState instance should be the same as the one retrieved from the child_state2.
-    assert grandchild_state is child_state_direct.get_substate(
-        [GrandchildState.get_name()]
-    )
+    assert grandchild_state is child_state_direct.get_substate(GrandchildState)
     grandchild_state.value2 = "set_value"
 
     assert test_state.get_delta() == {
@@ -2920,7 +2918,7 @@ async def test_get_state(mock_app: rx.App, token: str):
         )
 
     # Set a value on child_state2, should update cached var in grandchild_state2
-    child_state2 = new_test_state.get_substate((ChildState2.get_name(),))
+    child_state2 = new_test_state.get_substate(ChildState2)
     child_state2.value = "set_c2_value"
 
     assert new_test_state.get_delta() == {
@@ -3015,7 +3013,7 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
         assert Child3.get_name() in root.substates  # (due to @rx.var)
 
     # Get the unconnected sibling state, which will be used to `get_state` other instances.
-    child = root.get_substate(Child.get_full_name().split("."))
+    child = root.get_substate(Child)
 
     # Get an uncached child state.
     child2 = await child.get_state(Child2)

@@ -287,9 +287,6 @@ def get_app(reload: bool = False) -> App:
 
     Returns:
         The app based on the default config.
-
-    Raises:
-        RuntimeError: If the app name is not set in the config.
     """
     return getattr(get_app_module(reload=reload), constants.CompileVars.APP)
 
