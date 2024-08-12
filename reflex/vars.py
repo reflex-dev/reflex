@@ -765,6 +765,16 @@ class Var:
         Returns:
             Whether the vars are equal.
         """
+        from reflex.ivars import ImmutableVar
+
+        if isinstance(other, ImmutableVar) or isinstance(self, ImmutableVar):
+            return (
+                self._var_name == other._var_name
+                and self._var_type == other._var_type
+                and ImmutableVarData.merge(self._var_data)
+                == ImmutableVarData.merge(other._var_data)
+            )
+
         return (
             self._var_name == other._var_name
             and self._var_type == other._var_type
