@@ -851,11 +851,11 @@ class LiteralVar(ImmutableVar):
 
         from .number import LiteralBooleanVar, LiteralNumberVar
 
-        if isinstance(value, (int, float)):
-            return LiteralNumberVar.create(value, _var_data=_var_data)
-
         if isinstance(value, bool):
             return LiteralBooleanVar.create(value, _var_data=_var_data)
+
+        if isinstance(value, (int, float)):
+            return LiteralNumberVar.create(value, _var_data=_var_data)
 
         if isinstance(value, (list, tuple, set)):
             return LiteralArrayVar.create(value, _var_data=_var_data)
