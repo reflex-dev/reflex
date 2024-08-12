@@ -28,10 +28,9 @@ from typing import (
     cast,
     get_args,
     overload,
-    override,
 )
 
-from typing_extensions import ParamSpec, get_origin, get_type_hints
+from typing_extensions import ParamSpec, get_origin, get_type_hints, override
 
 from reflex import constants
 from reflex.base import Base
