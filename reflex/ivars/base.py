@@ -851,23 +851,18 @@ class LiteralVar(ImmutableVar):
 
         from .number import LiteralBooleanVar, LiteralNumberVar
 
-        type_mapping = {
-            int: LiteralNumberVar.create,
-            float: LiteralNumberVar.create,
-            bool: LiteralBooleanVar.create,
-            list: LiteralArrayVar.create,
-            tuple: LiteralArrayVar.create,
-            set: LiteralArrayVar.create,
-        }
+        if isinstance(value, (int, float)):
+            return LiteralNumberVar.create(value, _var_data=_var_data)
 
-        constructor = type_mapping.get(type(value))
+        if isinstance(value, bool):
+            return LiteralBooleanVar.create(value, _var_data=_var_data)
 
-        if constructor is None:
-            raise TypeError(
-                f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
-            )
+        if isinstance(value, (list, tuple, set)):
+            return LiteralArrayVar.create(value, _var_data=_var_data)
 
-        return constructor(value, _var_data=_var_data)
+        raise TypeError(
+            f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
+        )
 
     def __post_init__(self):
         """Post-initialize the var."""
