@@ -810,23 +810,28 @@ class LiteralVar(ImmutableVar):
                 ),
             )
 
-        from plotly.graph_objects import Figure, layout
-        from plotly.io import to_json
+        try:
+            from plotly.graph_objects import Figure, layout
+            from plotly.io import to_json
 
-        if isinstance(value, Figure):
-            return LiteralObjectVar.create(
-                json.loads(str(to_json(value))), _var_type=Figure, _var_data=_var_data
-            )
+            if isinstance(value, Figure):
+                return LiteralObjectVar.create(
+                    json.loads(str(to_json(value))),
+                    _var_type=Figure,
+                    _var_data=_var_data,
+                )
 
-        if isinstance(value, layout.Template):
-            return LiteralObjectVar.create(
-                {
-                    "data": json.loads(str(to_json(value.data))),
-                    "layout": json.loads(str(to_json(value.layout))),
-                },
-                _var_type=layout.Template,
-                _var_data=_var_data,
-            )
+            if isinstance(value, layout.Template):
+                return LiteralObjectVar.create(
+                    {
+                        "data": json.loads(str(to_json(value.data))),
+                        "layout": json.loads(str(to_json(value.layout))),
+                    },
+                    _var_type=layout.Template,
+                    _var_data=_var_data,
+                )
+        except ImportError:
+            pass
 
         if isinstance(value, Base):
             return LiteralObjectVar.create(
