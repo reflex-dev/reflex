@@ -425,10 +425,13 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         )
 
     def guess_type(self) -> ImmutableVar:
-        """Guess the type of the var.
+        """Guesses the type of the variable based on its `_var_type` attribute.
 
         Returns:
-            The guessed type.
+            ImmutableVar: The guessed type of the variable.
+
+        Raises:
+            TypeError: If the type is not supported for guessing.
         """
         from .number import NumberVar
         from .object import ObjectVar

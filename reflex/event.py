@@ -717,7 +717,7 @@ def download(
 
             is_data_url = (data._type() == "string") & (
                 data.to(str).startswith("data:")
-            )
+            )  # type: ignore
 
             # If it's a data: URI, use it as is, otherwise convert the Var to JSON in a data: URI.
             url = cond(  # type: ignore

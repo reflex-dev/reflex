@@ -164,7 +164,7 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
 
     # Create the conditional var.
     return TernaryOperator.create(
-        condition=cond_var.to(bool),
+        condition=cond_var.to(bool),  # type: ignore
         if_true=c1,
         if_false=c2,
         _var_data=VarData(imports=_IS_TRUE_IMPORT),
