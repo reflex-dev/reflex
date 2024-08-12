@@ -29,7 +29,7 @@ env:
   # - Best effort print lines that contain illegal chars (map to some default char, etc.)
   PYTHONIOENCODING: 'utf8'
   TELEMETRY_ENABLED: false
-  NODE_OPTIONS: '--max_old_space_size=4096'
+  NODE_OPTIONS: '--max_old_space_size=8192'
   PR_TITLE: ${{ github.event.pull_request.title }}
 
 jobs:
