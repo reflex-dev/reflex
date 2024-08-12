@@ -1271,7 +1271,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Fetch all missing parent states and link them up to the common ancestor.
         parent_states_tuple = self._get_parent_states()
-        root_state = self._get_root_state()
+        root_state = parent_states_tuple[-1][1]
         parent_states_by_name = dict(parent_states_tuple)
         parent_state = parent_states_by_name[common_ancestor_name]
         for parent_state_name in missing_parent_states:
