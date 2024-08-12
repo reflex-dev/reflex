@@ -892,10 +892,10 @@ def test_literal_var():
 
 
 def test_function_var():
-    addition_func = FunctionStringVar("((a, b) => a + b)")
+    addition_func = FunctionStringVar.create("((a, b) => a + b)")
     assert str(addition_func.call(1, 2)) == "(((a, b) => a + b)(1, 2))"
 
-    manual_addition_func = ArgsFunctionOperation(
+    manual_addition_func = ArgsFunctionOperation.create(
         ("a", "b"),
         {
             "args": [ImmutableVar.create_safe("a"), ImmutableVar.create_safe("b")],
@@ -913,11 +913,11 @@ def test_function_var():
         == "(((...args) => ((((a, b) => a + b)(1, ...args))))(2))"
     )
 
-    create_hello_statement = ArgsFunctionOperation(
+    create_hello_statement = ArgsFunctionOperation.create(
         ("name",), f"Hello, {ImmutableVar.create_safe('name')}!"
     )
-    first_name = LiteralStringVar("Steven")
-    last_name = LiteralStringVar("Universe")
+    first_name = LiteralStringVar.create("Steven")
+    last_name = LiteralStringVar.create("Universe")
     assert (
         str(create_hello_statement.call(f"{first_name} {last_name}"))
         == '(((name) => (("Hello, "+name+"!")))(("Steven"+" "+"Universe")))'
@@ -932,7 +932,7 @@ def test_var_operation():
     assert str(add(1, 2)) == "(1 + 2)"
     assert str(add(a=4, b=-9)) == "(4 + -9)"
 
-    five = LiteralNumberVar(5)
+    five = LiteralNumberVar.create(5)
     seven = add(2, five)
 
     assert isinstance(seven, NumberVar)
@@ -952,7 +952,7 @@ def test_string_operations():
 
 
 def test_all_number_operations():
-    starting_number = LiteralNumberVar(-5.4)
+    starting_number = LiteralNumberVar.create(-5.4)
 
     complicated_number = (((-(starting_number + 1)) * 2 / 3) // 2 % 3) ** 2
 
@@ -970,16 +970,16 @@ def test_all_number_operations():
         == "!(((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) != 0) || (true && (Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)) != 0))))"
     )
 
-    assert str(LiteralNumberVar(5) > False) == "(5 > 0)"
-    assert str(LiteralBooleanVar(False) < 5) == "((false ? 1 : 0) < 5)"
+    assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"
+    assert str(LiteralBooleanVar.create(False) < 5) == "((false ? 1 : 0) < 5)"
     assert (
-        str(LiteralBooleanVar(False) < LiteralBooleanVar(True))
+        str(LiteralBooleanVar.create(False) < LiteralBooleanVar.create(True))
         == "((false ? 1 : 0) < (true ? 1 : 0))"
     )
 
 
 def test_index_operation():
-    array_var = LiteralArrayVar([1, 2, 3, 4, 5])
+    array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
     assert str(array_var[0]) == "[1, 2, 3, 4, 5].at(0)"
     assert str(array_var[1:2]) == "[1, 2, 3, 4, 5].slice(1, 2)"
     assert (
@@ -1019,7 +1019,7 @@ def test_array_operations():
 
 
 def test_object_operations():
-    object_var = LiteralObjectVar({"a": 1, "b": 2, "c": 3})
+    object_var = LiteralObjectVar.create({"a": 1, "b": 2, "c": 3})
 
     assert (
         str(object_var.keys()) == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
@@ -1035,13 +1035,13 @@ def test_object_operations():
     assert str(object_var.a) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
     assert str(object_var["a"]) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
     assert (
-        str(object_var.merge(LiteralObjectVar({"c": 4, "d": 5})))
+        str(object_var.merge(LiteralObjectVar.create({"c": 4, "d": 5})))
         == 'Object.assign(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }), ({ ["c"] : 4, ["d"] : 5 }))'
     )
 
 
 def test_type_chains():
-    object_var = LiteralObjectVar({"a": 1, "b": 2, "c": 3})
+    object_var = LiteralObjectVar.create({"a": 1, "b": 2, "c": 3})
     assert (object_var._key_type(), object_var._value_type()) == (str, int)
     assert (object_var.keys()._var_type, object_var.values()._var_type) == (
         List[str],
@@ -1062,7 +1062,7 @@ def test_type_chains():
 
 
 def test_nested_dict():
-    arr = LiteralArrayVar([{"bar": ["foo", "bar"]}], List[Dict[str, List[str]]])
+    arr = LiteralArrayVar.create([{"bar": ["foo", "bar"]}], List[Dict[str, List[str]]])
 
     assert (
         str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'

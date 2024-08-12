@@ -813,14 +813,14 @@ class LiteralVar(ImmutableVar):
 
         if isinstance(value, Figure):
             return LiteralObjectVar.create(
-                json.loads(to_json(value)), _var_type=Figure, _var_data=_var_data
+                json.loads(str(to_json(value))), _var_type=Figure, _var_data=_var_data
             )
 
         if isinstance(value, layout.Template):
             return LiteralObjectVar.create(
                 {
-                    "data": json.loads(to_json(value.data)),
-                    "layout": json.loads(to_json(value.layout)),
+                    "data": json.loads(str(to_json(value.data))),
+                    "layout": json.loads(str(to_json(value.layout))),
                 },
                 _var_type=layout.Template,
                 _var_data=_var_data,
@@ -1206,12 +1206,20 @@ class ImmutableCallableVar(ImmutableVar):
         return hash((self.__class__.__name__, self.original_var))
 
 
+RETURN_TYPE = TypeVar("RETURN_TYPE")
+
+DICT_KEY = TypeVar("DICT_KEY")
+DICT_VAL = TypeVar("DICT_VAL")
+
+LIST_INSIDE = TypeVar("LIST_INSIDE")
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ImmutableComputedVar(ImmutableVar):
+class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
     """A field with computed getters."""
 
     # Whether to track dependencies and cache computed values
@@ -1221,7 +1229,7 @@ class ImmutableComputedVar(ImmutableVar):
     _backend: bool = dataclasses.field(default=False)
 
     # The initial value of the computed var
-    _initial_value: Any | types.Unset = dataclasses.field(default=types.Unset())
+    _initial_value: RETURN_TYPE | types.Unset = dataclasses.field(default=types.Unset())
 
     # Explicit var dependencies to track
     _static_deps: set[str] = dataclasses.field(default_factory=set)
@@ -1232,14 +1240,14 @@ class ImmutableComputedVar(ImmutableVar):
     # Interval at which the computed var should be updated
     _update_interval: Optional[datetime.timedelta] = dataclasses.field(default=None)
 
-    _fget: Callable[[BaseState], Any] = dataclasses.field(
+    _fget: Callable[[BaseState], RETURN_TYPE] = dataclasses.field(
         default_factory=lambda: lambda _: None
-    )
+    )  # type: ignore
 
     def __init__(
         self,
-        fget: Callable[[BaseState], Any],
-        initial_value: Any | types.Unset = types.Unset(),
+        fget: Callable[[BASE_STATE], RETURN_TYPE],
+        initial_value: RETURN_TYPE | types.Unset = types.Unset(),
         cache: bool = False,
         deps: Optional[List[Union[str, Var]]] = None,
         auto_deps: bool = True,
@@ -1380,6 +1388,56 @@ class ImmutableComputedVar(ImmutableVar):
         if last_updated is None:
             return True
         return datetime.datetime.now() - last_updated > self._update_interval
+
+    @overload
+    def __get__(
+        self: ImmutableComputedVar[int] | ImmutableComputedVar[float],
+        instance: None,
+        owner: Type,
+    ) -> NumberVar: ...
+
+    @overload
+    def __get__(
+        self: ImmutableComputedVar[str],
+        instance: None,
+        owner: Type,
+    ) -> StringVar: ...
+
+    @overload
+    def __get__(
+        self: ImmutableComputedVar[dict[DICT_KEY, DICT_VAL]],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[dict[DICT_KEY, DICT_VAL]]: ...
+
+    @overload
+    def __get__(
+        self: ImmutableComputedVar[list[LIST_INSIDE]],
+        instance: None,
+        owner: Type,
+    ) -> ArrayVar[list[LIST_INSIDE]]: ...
+
+    @overload
+    def __get__(
+        self: ImmutableComputedVar[set[LIST_INSIDE]],
+        instance: None,
+        owner: Type,
+    ) -> ArrayVar[set[LIST_INSIDE]]: ...
+
+    @overload
+    def __get__(
+        self: ImmutableComputedVar[tuple[LIST_INSIDE, ...]],
+        instance: None,
+        owner: Type,
+    ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
+
+    @overload
+    def __get__(
+        self, instance: None, owner: Type
+    ) -> ImmutableComputedVar[RETURN_TYPE]: ...
+
+    @overload
+    def __get__(self, instance: BaseState, owner: Type) -> RETURN_TYPE: ...
 
     def __get__(self, instance: BaseState | None, owner):
         """Get the ComputedVar value.
@@ -1556,7 +1614,7 @@ class ImmutableComputedVar(ImmutableVar):
         return ComputedVar
 
     @property
-    def fget(self) -> Callable[[BaseState], Any]:
+    def fget(self) -> Callable[[BaseState], RETURN_TYPE]:
         """Get the getter function.
 
         Returns:
@@ -1565,8 +1623,42 @@ class ImmutableComputedVar(ImmutableVar):
         return self._fget
 
 
+if TYPE_CHECKING:
+    BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
+
+
+@overload
 def immutable_computed_var(
-    fget: Callable[[BaseState], Any] | None = None,
+    fget: None = None,
+    initial_value: Any | types.Unset = types.Unset(),
+    cache: bool = False,
+    deps: Optional[List[Union[str, Var]]] = None,
+    auto_deps: bool = True,
+    interval: Optional[Union[datetime.timedelta, int]] = None,
+    backend: bool | None = None,
+    _deprecated_cached_var: bool = False,
+    **kwargs,
+) -> Callable[
+    [Callable[[BASE_STATE], RETURN_TYPE]], ImmutableComputedVar[RETURN_TYPE]
+]: ...
+
+
+@overload
+def immutable_computed_var(
+    fget: Callable[[BASE_STATE], RETURN_TYPE],
+    initial_value: RETURN_TYPE | types.Unset = types.Unset(),
+    cache: bool = False,
+    deps: Optional[List[Union[str, Var]]] = None,
+    auto_deps: bool = True,
+    interval: Optional[Union[datetime.timedelta, int]] = None,
+    backend: bool | None = None,
+    _deprecated_cached_var: bool = False,
+    **kwargs,
+) -> ImmutableComputedVar[RETURN_TYPE]: ...
+
+
+def immutable_computed_var(
+    fget: Callable[[BASE_STATE], Any] | None = None,
     initial_value: Any | types.Unset = types.Unset(),
     cache: bool = False,
     deps: Optional[List[Union[str, Var]]] = None,
@@ -1576,7 +1668,7 @@ def immutable_computed_var(
     _deprecated_cached_var: bool = False,
     **kwargs,
 ) -> (
-    ImmutableComputedVar | Callable[[Callable[[BaseState], Any]], ImmutableComputedVar]
+    ImmutableComputedVar | Callable[[Callable[[BASE_STATE], Any]], ImmutableComputedVar]
 ):
     """A ComputedVar decorator with or without kwargs.
 
@@ -1615,7 +1707,7 @@ def immutable_computed_var(
     if fget is not None:
         return ImmutableComputedVar(fget, cache=cache)
 
-    def wrapper(fget: Callable[[BaseState], Any]) -> ImmutableComputedVar:
+    def wrapper(fget: Callable[[BASE_STATE], Any]) -> ImmutableComputedVar:
         return ImmutableComputedVar(
             fget,
             initial_value=initial_value,
