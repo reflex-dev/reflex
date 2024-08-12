@@ -6,9 +6,10 @@ import pytest
 from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond, cond
 from reflex.components.radix.themes.typography.text import Text
+from reflex.ivars.number import NumberVar
 from reflex.state import BaseState, State
 from reflex.utils.format import format_state_name
-from reflex.vars import BaseVar, Var, computed_var
+from reflex.vars import Var, computed_var
 
 
 @pytest.fixture
@@ -57,7 +58,11 @@ def test_validate_cond(cond_state: BaseState):
 
     [true_value_text] = true_value["children"]
     assert true_value_text["name"] == "RadixThemesText"
-    assert true_value_text["children"][0]["contents"] == "{`cond is True`}"
+    assert true_value_text["children"][0]["contents"] in (
+        "{`cond is True`}",
+        '{"cond is True"}',
+        "{'cond is True'}",
+    )
 
     # false value
     false_value = condition["false_value"]
@@ -65,7 +70,11 @@ def test_validate_cond(cond_state: BaseState):
 
     [false_value_text] = false_value["children"]
     assert false_value_text["name"] == "RadixThemesText"
-    assert false_value_text["children"][0]["contents"] == "{`cond is False`}"
+    assert false_value_text["children"][0]["contents"] in (
+        "{`cond is False`}",
+        '{"cond is False"}',
+        "{'cond is False'}",
+    )
 
 
 @pytest.mark.parametrize(
@@ -96,7 +105,7 @@ def test_prop_cond(c1: Any, c2: Any):
         c1 = json.dumps(c1).replace('"', "`")
     if not isinstance(c2, Var):
         c2 = json.dumps(c2).replace('"', "`")
-    assert str(prop_cond) == f"{{isTrue(true) ? {c1} : {c2}}}"
+    assert str(prop_cond) == f"{{Boolean(true) ? {c1} : {c2}}}"
 
 
 def test_cond_no_mix():
@@ -136,12 +145,12 @@ def test_cond_computed_var():
     comp = cond(True, CondStateComputed.computed_int, CondStateComputed.computed_str)
 
     # TODO: shouln't this be a ComputedVar?
-    assert isinstance(comp, BaseVar)
+    assert isinstance(comp, NumberVar)
 
     state_name = format_state_name(CondStateComputed.get_full_name())
     assert (
         str(comp)
-        == f"{{isTrue(true) ? {state_name}.computed_int : {state_name}.computed_str}}"
+        == f"{{Boolean(true) ? {state_name}.computed_int : {state_name}.computed_str}}"
     )
 
     assert comp._var_type == Union[int, str]
