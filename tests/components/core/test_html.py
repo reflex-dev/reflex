@@ -15,8 +15,8 @@ def test_html_many_children():
 
 def test_html_create():
     html = Html.create("<p>Hello !</p>")
-    assert str(html.dangerouslySetInnerHTML) == '{"__html": "<p>Hello !</p>"}'  # type: ignore
+    assert str(html.dangerouslySetInnerHTML) == '({ ["__html"] : "<p>Hello !</p>" })'  # type: ignore
     assert (
         str(html)
-        == '<div className={`rx-Html`} dangerouslySetInnerHTML={{"__html": "<p>Hello !</p>"}}/>'
+        == '<div className={"rx-Html"} dangerouslySetInnerHTML={({ ["__html"] : "<p>Hello !</p>" })}/>'
     )

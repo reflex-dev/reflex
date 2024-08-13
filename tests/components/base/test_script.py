@@ -13,7 +13,7 @@ def test_script_inline():
     assert render_dict["name"] == "Script"
     assert not render_dict["contents"]
     assert len(render_dict["children"]) == 1
-    assert render_dict["children"][0]["contents"] == "{`let x = 42`}"
+    assert render_dict["children"][0]["contents"] == '{"let x = 42"}'
 
 
 def test_script_src():

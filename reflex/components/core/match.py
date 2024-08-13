@@ -94,6 +94,9 @@ class Match(MemoizationLeaf):
         if len([case for case in cases if not isinstance(case, tuple)]) > 1:
             raise ValueError("rx.match can only have one default case.")
 
+        if not cases:
+            raise ValueError("rx.match should have at least one case.")
+
         # Get the default case which should be the last non-tuple arg
         if not isinstance(cases[-1], tuple):
             default = cases.pop()

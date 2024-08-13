@@ -83,11 +83,11 @@ def test_upload_root_component_render(upload_root_component):
     # upload
     assert upload["name"] == "ReactDropzone"
     assert upload["props"] == [
-        "id={`default`}",
+        'id={"default"}',
         "multiple={true}",
         "onDrop={e => setFilesById(filesById => {\n"
         "    const updatedFilesById = Object.assign({}, filesById);\n"
-        "    updatedFilesById[`default`] = e;\n"
+        '    updatedFilesById["default"] = e;\n'
         "    return updatedFilesById;\n"
         "  })\n"
         "    }",
@@ -99,23 +99,23 @@ def test_upload_root_component_render(upload_root_component):
     [box] = upload["children"]
     assert box["name"] == "RadixThemesBox"
     assert box["props"] == [
-        "className={`rx-Upload`}",
-        'css={{"border": "1px dotted black"}}',
+        'className={"rx-Upload"}',
+        'css={({ ["border"] : "1px dotted black" })}',
         "{...getRootProps()}",
     ]
 
     # input, button and text inside of box
     [input, button, text] = box["children"]
     assert input["name"] == "input"
-    assert input["props"] == ["type={`file`}", "{...getInputProps()}"]
+    assert input["props"] == ['type={"file"}', "{...getInputProps()}"]
 
     assert button["name"] == "RadixThemesButton"
-    assert button["children"][0]["contents"] == "{`select file`}"
+    assert button["children"][0]["contents"] == '{"select file"}'
 
     assert text["name"] == "RadixThemesText"
     assert (
         text["children"][0]["contents"]
-        == "{`Drag and drop files here or click to select files`}"
+        == '{"Drag and drop files here or click to select files"}'
     )
 
 
@@ -130,11 +130,11 @@ def test_upload_component_render(upload_component):
     # upload
     assert upload["name"] == "ReactDropzone"
     assert upload["props"] == [
-        "id={`default`}",
+        'id={"default"}',
         "multiple={true}",
         "onDrop={e => setFilesById(filesById => {\n"
         "    const updatedFilesById = Object.assign({}, filesById);\n"
-        "    updatedFilesById[`default`] = e;\n"
+        '    updatedFilesById["default"] = e;\n'
         "    return updatedFilesById;\n"
         "  })\n"
         "    }",
@@ -146,23 +146,23 @@ def test_upload_component_render(upload_component):
     [box] = upload["children"]
     assert box["name"] == "RadixThemesBox"
     assert box["props"] == [
-        "className={`rx-Upload`}",
-        'css={{"border": "1px dotted black", "padding": "5em", "textAlign": "center"}}',
+        'className={"rx-Upload"}',
+        'css={({ ["border"] : "1px dotted black", ["padding"] : "5em", ["textAlign"] : "center" })}',
         "{...getRootProps()}",
     ]
 
     # input, button and text inside of box
     [input, button, text] = box["children"]
     assert input["name"] == "input"
-    assert input["props"] == ["type={`file`}", "{...getInputProps()}"]
+    assert input["props"] == ['type={"file"}', "{...getInputProps()}"]
 
     assert button["name"] == "RadixThemesButton"
-    assert button["children"][0]["contents"] == "{`select file`}"
+    assert button["children"][0]["contents"] == '{"select file"}'
 
     assert text["name"] == "RadixThemesText"
     assert (
         text["children"][0]["contents"]
-        == "{`Drag and drop files here or click to select files`}"
+        == '{"Drag and drop files here or click to select files"}'
     )
 
 
@@ -175,13 +175,13 @@ def test_upload_component_with_props_render(upload_component_with_props):
     upload = upload_component_with_props.render()
 
     assert upload["props"] == [
-        "id={`default`}",
+        'id={"default"}',
         "maxFiles={2}",
         "multiple={true}",
         "noDrag={true}",
         "onDrop={e => setFilesById(filesById => {\n"
         "    const updatedFilesById = Object.assign({}, filesById);\n"
-        "    updatedFilesById[`default`] = e;\n"
+        '    updatedFilesById["default"] = e;\n'
         "    return updatedFilesById;\n"
         "  })\n"
         "    }",
@@ -193,11 +193,11 @@ def test_upload_component_id_with_special_chars(upload_component_id_special):
     upload = upload_component_id_special.render()
 
     assert upload["props"] == [
-        r"id={`#spec!\`al-_98ID`}",
+        r'id={"#spec!`al-_98ID"}',
         "multiple={true}",
         "onDrop={e => setFilesById(filesById => {\n"
         "    const updatedFilesById = Object.assign({}, filesById);\n"
-        "    updatedFilesById[`#spec!\\`al-_98ID`] = e;\n"
+        '    updatedFilesById["#spec!`al-_98ID"] = e;\n'
         "    return updatedFilesById;\n"
         "  })\n"
         "    }",

@@ -343,15 +343,10 @@ class LiteralObjectVar(LiteralVar, ObjectVar[OBJECT_TYPE]):
         """
         return ImmutableVarData.merge(
             *[
-                value._get_all_var_data()
+                LiteralVar.create(value)._get_all_var_data()
                 for value in self._var_value.values()
-                if isinstance(value, Var)
             ],
-            *[
-                key._get_all_var_data()
-                for key in self._var_value
-                if isinstance(key, Var)
-            ],
+            *[LiteralVar.create(key)._get_all_var_data() for key in self._var_value],
             self._var_data,
         )
 

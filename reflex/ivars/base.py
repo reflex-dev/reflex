@@ -180,7 +180,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
                 kwargs.get("_var_data", self._var_data), merge_var_data
             ),
         )
-        return type(self)(**field_values)
+        return dataclasses.replace(self, **field_values)
 
     @classmethod
     def create(
@@ -780,10 +780,14 @@ class LiteralVar(ImmutableVar):
             event_name = LiteralVar.create(
                 ".".join(get_event_handler_parts(value.handler))
             )
-            event_args = LiteralVar.create({name: value for name, value in value.args})
+            event_args = LiteralVar.create(
+                {str(name): value for name, value in value.args}
+            )
             event_client_name = LiteralVar.create(value.client_handler_name)
             return FunctionStringVar("Event").call(
-                event_name, event_args, event_client_name
+                event_name,
+                event_args,
+                *([event_client_name] if value.client_handler_name else []),
             )
 
         if isinstance(value, EventChain):
@@ -944,7 +948,7 @@ def unionize(*args: Type) -> Type:
     return Union[first, unionize(*rest)]
 
 
-def figure_out_type(value: Any) -> Type:
+def figure_out_type(value: Any) -> types.GenericType:
     """Figure out the type of the value.
 
     Args:
@@ -964,6 +968,8 @@ def figure_out_type(value: Any) -> Type:
             unionize(*(figure_out_type(k) for k in value)),
             unionize(*(figure_out_type(v) for v in value.values())),
         ]
+    if isinstance(value, Var):
+        return value._var_type
     return type(value)
 
 

@@ -794,8 +794,15 @@ class LiteralStringVar(LiteralVar, StringVar):
 
             strings_and_vals.append(value)
 
+            filtered_strings_and_vals = [
+                s for s in strings_and_vals if isinstance(s, Var) or s
+            ]
+
+            if len(filtered_strings_and_vals) == 1:
+                return filtered_strings_and_vals[0].to(StringVar)  # type: ignore
+
             return ConcatVarOperation.create(
-                *filter(lambda s: isinstance(s, Var) or s, strings_and_vals),
+                *filtered_strings_and_vals,
                 _var_data=_var_data,
             )
 
@@ -853,7 +860,22 @@ class ConcatVarOperation(StringVar):
         Returns:
             The name of the var.
         """
-        return "(" + "+".join([str(element) for element in self._var_value]) + ")"
+        list_of_strs = [""]
+        for var in self._var_value:
+            if isinstance(var, LiteralStringVar):
+                list_of_strs[-1] += var._var_value
+            else:
+                list_of_strs.append(var)
+                list_of_strs.append("")
+
+        list_of_strs_filtered = [
+            str(LiteralVar.create(s)) for s in list_of_strs if isinstance(s, Var) or s
+        ]
+
+        if len(list_of_strs_filtered) == 1:
+            return list_of_strs_filtered[0]
+
+        return "(" + "+".join(list_of_strs_filtered) + ")"
 
     @cached_property
     def _cached_get_all_var_data(self) -> ImmutableVarData | None:
@@ -1201,11 +1223,7 @@ class LiteralArrayVar(LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
             The VarData of the components and all of its children.
         """
         return ImmutableVarData.merge(
-            *[
-                var._get_all_var_data()
-                for var in self._var_value
-                if isinstance(var, Var)
-            ],
+            *[LiteralVar.create(var)._get_all_var_data() for var in self._var_value],
             self._var_data,
         )
 

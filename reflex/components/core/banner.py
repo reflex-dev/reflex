@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Optional
 
-from reflex.components.base.bare import Bare
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.typography import Div
@@ -57,7 +56,7 @@ has_too_many_connection_errors: Var = ImmutableVar.create_safe(
 ).to(BooleanVar)
 
 
-class WebsocketTargetURL(Bare):
+class WebsocketTargetURL:
     """A component that renders the websocket target URL."""
 
     def add_imports(self) -> ImportDict:

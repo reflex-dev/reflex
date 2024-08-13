@@ -132,11 +132,7 @@ def convert_item(
     # Otherwise, convert to Var to collapse VarData encoded in f-string.
     new_var = LiteralVar.create(style_item)
     var_data = new_var._get_all_var_data() if new_var is not None else None
-    if var_data:
-        # The wrapped backtick is used to identify the Var for interpolation.
-        return f"{str(new_var)}", var_data
-
-    return style_item, None
+    return new_var, var_data
 
 
 def convert_list(

@@ -36,9 +36,13 @@ def test_set_src_str():
     """Test that setting the src works."""
     image = rx.image(src="pic2.jpeg")
     # when using next/image, we explicitly create a _var_is_str Var
-    # assert str(image.src) == "{`pic2.jpeg`}"  # type: ignore
+    assert str(image.src) in (
+        '"pic2.jpeg"',
+        "'pic2.jpeg'",
+        "`pic2.jpeg`",
+    )
     # For plain rx.el.img, an explicit var is not created, so the quoting happens later
-    assert str(image.src) == "pic2.jpeg"  # type: ignore
+    # assert str(image.src) == "pic2.jpeg"  # type: ignore
 
 
 def test_set_src_img(pil_image: Img):

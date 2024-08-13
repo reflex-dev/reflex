@@ -771,8 +771,8 @@ class Var:
             return (
                 self._var_name == other._var_name
                 and self._var_type == other._var_type
-                and ImmutableVarData.merge(self._var_data)
-                == ImmutableVarData.merge(other._var_data)
+                and ImmutableVarData.merge(self._get_all_var_data())
+                == ImmutableVarData.merge(other._get_all_var_data())
             )
 
         return (

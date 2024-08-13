@@ -6,8 +6,8 @@ from reflex.components.base.bare import Bare
 @pytest.mark.parametrize(
     "contents,expected",
     [
-        ("hello", "hello"),
-        ("{}", "{}"),
+        ("hello", '{"hello"}'),
+        ("{}", '{"{}"}'),
         (None, ""),
         ("${default_state.name}", "${default_state.name}"),
         ("{state.name}", "{state.name}"),
