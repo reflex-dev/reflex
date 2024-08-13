@@ -46,7 +46,7 @@ lint:
     - linters: [ALL]
       paths:
         - "**/*.pyi"
-    - linters: [bandit]
+    - linters: [bandit, pyright]
       paths:
         - integration/**
         - tests/**
