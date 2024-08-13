@@ -275,6 +275,7 @@ class AppHarness:
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             self.app_module = reflex.utils.prerequisites.get_compiled_app(
+                # Do not reload the module for pre-existing apps (only apps generated from source)
                 reload=self.app_source is not None
             )
             # Save the pages that were added during testing
