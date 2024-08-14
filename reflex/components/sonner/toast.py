@@ -27,7 +27,6 @@ LiteralPosition = Literal[
     "bottom-right",
 ]
 
-
 toast_ref = Var.create_safe("refs['__toast']", _var_is_string=False)
 
 
@@ -159,6 +158,13 @@ class ToastProps(PropsBase):
             )
         return d
 
+    class Config:
+        """Pydantic config."""
+
+        arbitrary_types_allowed = True
+        use_enum_values = True
+        extra = "forbid"
+
 
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
@@ -248,6 +254,16 @@ class Toaster(Component):
         Returns:
             The toast event.
         """
+        toast_prop_fields = ToastProps.get_fields()
+        for prop in props:
+            if prop not in toast_prop_fields:
+                supported_prop_str = ",".join(
+                    [format.wrap(p, '"') for p in toast_prop_fields]
+                )
+                raise ValueError(
+                    f'Invalid prop "{prop!r}" for rx.toast. Supported props are {supported_prop_str}'
+                )
+
         if not Toaster.is_used:
             raise ValueError(
                 "Toaster component must be created before sending a toast. (use `rx.toast.provider()`)"
