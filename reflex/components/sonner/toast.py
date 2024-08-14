@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, ClassVar, Literal, Optional, Union
 
+from pydantic import ValidationError
+
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
@@ -126,6 +128,21 @@ class ToastProps(PropsBase):
 
     # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
     on_auto_close: Optional[Any]
+
+    def __init__(self, **kwargs):
+        """Initialize the props.
+
+        Args:
+            kwargs: Kwargs to initialize the props.
+        """
+        try:
+            super().__init__(**kwargs)
+        except ValidationError as e:
+            invalid_fields = ", ".join([error["loc"][0] for error in e.errors()])
+            supported_props_str = ", ".join(f'"{field}"' for field in self.get_fields())
+            raise ValueError(
+                f"Invalid prop(s) {invalid_fields} for rx.toast. Supported props are {supported_props_str}"
+            ) from None
 
     def dict(self, *args, **kwargs) -> dict[str, Any]:
         """Convert the object to a dictionary.
@@ -254,16 +271,6 @@ class Toaster(Component):
         Returns:
             The toast event.
         """
-        toast_prop_fields = ToastProps.get_fields()
-        for prop in props:
-            if prop not in toast_prop_fields:
-                supported_prop_str = ",".join(
-                    [format.wrap(p, '"') for p in toast_prop_fields]
-                )
-                raise ValueError(
-                    f'Invalid prop "{prop!r}" for rx.toast. Supported props are {supported_prop_str}'
-                )
-
         if not Toaster.is_used:
             raise ValueError(
                 "Toaster component must be created before sending a toast. (use `rx.toast.provider()`)"
