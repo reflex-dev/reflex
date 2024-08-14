@@ -920,7 +920,7 @@ def test_function_var():
     last_name = LiteralStringVar.create("Universe")
     assert (
         str(create_hello_statement.call(f"{first_name} {last_name}"))
-        == '(((name) => (("Hello, "+name+"!")))(("Steven"+" "+"Universe")))'
+        == '(((name) => (("Hello, "+name+"!")))("Steven Universe"))'
     )
 
 
@@ -967,7 +967,7 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "!(((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) != 0) || (true && (Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)) != 0))))"
+        == "!(Boolean((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))))"
     )
 
     assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"
@@ -988,9 +988,9 @@ def test_index_operation():
     )
     assert (
         str(array_var[::-1])
-        == "[1, 2, 3, 4, 5].slice(0, [1, 2, 3, 4, 5].length).reverse().slice(undefined, undefined).filter((_, i) => i % 1 === 0)"
+        == "[1, 2, 3, 4, 5].slice(0, [1, 2, 3, 4, 5].length).slice().reverse().slice(undefined, undefined).filter((_, i) => i % 1 === 0)"
     )
-    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].reverse()"
+    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
     assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5].at(0) + 9)"
 
 
@@ -999,7 +999,7 @@ def test_array_operations():
 
     assert str(array_var.length()) == "[1, 2, 3, 4, 5].length"
     assert str(array_var.contains(3)) == "[1, 2, 3, 4, 5].includes(3)"
-    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].reverse()"
+    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
     assert (
         str(ArrayVar.range(10))
         == "Array.from({ length: (10 - 0) / 1 }, (_, i) => 0 + i * 1)"
@@ -1720,8 +1720,8 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List
             f"{ATestState.get_full_name()}.value",
         ),
         (
-            Var.create(f"{ATestState.value} string", _var_is_string=True),
-            f"`${{{ATestState.get_full_name()}.value}} string`",
+            LiteralVar.create(f"{ATestState.value} string"),
+            f'({ATestState.get_full_name()}.value+" string")',
         ),
         (Var.create(ATestState.dict_val), f"{ATestState.get_full_name()}.dict_val"),
     ],

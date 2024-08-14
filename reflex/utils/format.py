@@ -489,7 +489,6 @@ def format_props(*single_props, **key_value_props) -> list[str]:
     # Format all the props.
     from reflex.ivars.base import ImmutableVar, LiteralVar
 
-
     return [
         (
             f"{name}={format_prop(prop)}"

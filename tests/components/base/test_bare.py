@@ -5,6 +5,7 @@ from reflex.ivars.base import ImmutableVar
 
 STATE_VAR = ImmutableVar.create_safe("default_state.name")
 
+
 @pytest.mark.parametrize(
     "contents,expected",
     [

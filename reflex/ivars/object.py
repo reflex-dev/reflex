@@ -676,6 +676,10 @@ class ObjectMergeOperation(ObjectVar):
         """
         return hash((self.__class__.__name__, self._lhs, self._rhs))
 
+    def __post_init__(self):
+        """Post initialization."""
+        object.__delattr__(self, "_var_name")
+
     @classmethod
     def create(
         cls,

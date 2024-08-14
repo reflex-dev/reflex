@@ -415,7 +415,7 @@ def test_class_attributes():
     assert str(prop) == f'{TestState.get_name()}.obj["prop1"]'
 
     prop = TestState.complex[1].prop1
-    assert str(prop) == f"{TestState.get_name()}.complex[1][\"prop1\"]"
+    assert str(prop) == f'{TestState.get_name()}.complex[1]["prop1"]'
 
 
 def test_get_parent_state():
