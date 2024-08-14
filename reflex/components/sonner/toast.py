@@ -134,6 +134,9 @@ class ToastProps(PropsBase):
 
         Args:
             kwargs: Kwargs to initialize the props.
+
+        Raises:
+            ValueError: If invalid props are passed on instantiation.
         """
         try:
             super().__init__(**kwargs)
