@@ -440,9 +440,10 @@ class CodeBlock(Component):
     def _get_custom_code(self) -> Optional[str]:
         if (
             self.language is not None
-            and self.language._var_name in LiteralCodeLanguage.__args__  # type: ignore
+            and (language_without_quotes := str(self.language).replace('"', ""))
+            in LiteralCodeLanguage.__args__  # type: ignore
         ):
-            return f"{self.alias}.registerLanguage('{self.language._var_name}', {format.to_camel_case(self.language._var_name)})"
+            return f"{self.alias}.registerLanguage('{language_without_quotes}', {format.to_camel_case(language_without_quotes)})"
 
     @classmethod
     def create(

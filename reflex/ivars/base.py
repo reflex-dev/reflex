@@ -10,6 +10,7 @@ import functools
 import inspect
 import json
 import sys
+import warnings
 from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -440,6 +441,8 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             return self
 
         var_type = self._var_type
+        if types.is_optional(var_type):
+            var_type = types.get_args(var_type)[0]
 
         fixed_type = var_type if inspect.isclass(var_type) else get_origin(var_type)
 
@@ -450,15 +453,15 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             raise TypeError(f"Unsupported type {var_type} for guess_type.")
 
         if issubclass(fixed_type, (int, float)):
-            return self.to(NumberVar, var_type)
+            return self.to(NumberVar, self._var_type)
         if issubclass(fixed_type, dict):
-            return self.to(ObjectVar, var_type)
+            return self.to(ObjectVar, self._var_type)
         if issubclass(fixed_type, (list, tuple, set)):
-            return self.to(ArrayVar, var_type)
+            return self.to(ArrayVar, self._var_type)
         if issubclass(fixed_type, str):
             return self.to(StringVar)
         if issubclass(fixed_type, Base):
-            return self.to(ObjectVar, var_type)
+            return self.to(ObjectVar, self._var_type)
         return self
 
     def get_default_value(self) -> Any:
@@ -837,15 +840,47 @@ class LiteralVar(ImmutableVar):
         except ImportError:
             pass
 
+        from .sequence import LiteralArrayVar, LiteralStringVar
+
+        try:
+            import base64
+            import io
+
+            from PIL.Image import MIME
+            from PIL.Image import Image as Img
+
+            if isinstance(value, Img):
+                with io.BytesIO() as buffer:
+                    value.save(buffer, format=getattr(value, "format", None) or "PNG")
+                    try:
+                        # Newer method to get the mime type, but does not always work.
+                        mimetype = value.get_format_mimetype()
+                    except AttributeError:
+                        try:
+                            # Fallback method
+                            mimetype = MIME[value.format]
+                        except KeyError:
+                            # Unknown mime_type: warn and return image/png and hope the browser can sort it out.
+                            warnings.warn(  # noqa: B028
+                                f"Unknown mime type for {value} {value.format}. Defaulting to image/png"
+                            )
+                            mimetype = "image/png"
+                    return LiteralStringVar.create(
+                        f"data:{mimetype};base64,{base64.b64encode(buffer.getvalue()).decode()}",
+                        _var_data=_var_data,
+                    )
+        except ImportError:
+            pass
+
         if isinstance(value, Base):
             return LiteralObjectVar.create(
-                value.dict(), _var_type=type(value), _var_data=_var_data
+                {k: (None if callable(v) else v) for k, v in value.dict().items()},
+                _var_type=type(value),
+                _var_data=_var_data,
             )
 
         if isinstance(value, dict):
             return LiteralObjectVar.create(value, _var_data=_var_data)
-
-        from .sequence import LiteralArrayVar, LiteralStringVar
 
         if isinstance(value, str):
             return LiteralStringVar.create(value, _var_data=_var_data)

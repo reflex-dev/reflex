@@ -6,6 +6,7 @@ from PIL.Image import Image as Img
 
 import reflex as rx
 from reflex.components.next.image import Image  # type: ignore
+from reflex.ivars.sequence import StringVar
 from reflex.utils.serializers import serialize, serialize_image
 
 
@@ -52,7 +53,7 @@ def test_set_src_img(pil_image: Img):
         pil_image: The image to serialize.
     """
     image = Image.create(src=pil_image)
-    assert str(image.src._var_name) == serialize_image(pil_image)  # type: ignore
+    assert str(image.src._var_name) == '"' + serialize_image(pil_image) + '"'  # type: ignore
 
 
 def test_render(pil_image: Img):
@@ -62,4 +63,4 @@ def test_render(pil_image: Img):
         pil_image: The image to serialize.
     """
     image = Image.create(src=pil_image)
-    assert image.src._var_is_string  # type: ignore
+    assert isinstance(image.src, StringVar)

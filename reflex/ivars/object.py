@@ -22,6 +22,7 @@ from typing import (
 
 from typing_extensions import get_origin
 
+from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError
 from reflex.utils.types import GenericType, get_attribute_access_type
 from reflex.vars import ImmutableVarData, Var, VarData
@@ -245,11 +246,15 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         """
         if name.startswith("__") and name.endswith("__"):
             return getattr(super(type(self), self), name)
-        fixed_type = (
-            self._var_type if isclass(self._var_type) else get_origin(self._var_type)
-        )
+
+        var_type = self._var_type
+
+        if types.is_optional(var_type):
+            var_type = get_args(var_type)[0]
+
+        fixed_type = var_type if isclass(var_type) else get_origin(var_type)
         if isclass(fixed_type) and not issubclass(fixed_type, dict):
-            attribute_type = get_attribute_access_type(self._var_type, name)
+            attribute_type = get_attribute_access_type(var_type, name)
             if attribute_type is None:
                 raise VarAttributeError(
                     f"The State var `{self._var_name}` has no attribute '{name}' or may have been annotated "
@@ -727,6 +732,8 @@ class ObjectItemOperation(ImmutableVar):
         Returns:
             The name of the operation.
         """
+        if types.is_optional(self._object._var_type):
+            return f"{str(self._object)}?.[{str(self._key)}]"
         return f"{str(self._object)}[{str(self._key)}]"
 
     def __getattr__(self, name):

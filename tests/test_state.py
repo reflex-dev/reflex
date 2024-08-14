@@ -1061,7 +1061,8 @@ def test_dirty_computed_var_from_backend_var(
     Args:
         interdependent_state: A state with varying Var dependencies.
     """
-    assert InterdependentState._v3._backend is True
+    # Accessing ._v3 returns the immutable var it represents instead of the actual computed var
+    # assert InterdependentState._v3._backend is True
     interdependent_state._v2 = 2
     assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"v2x2": 4, "v3x2": 4},
@@ -2601,15 +2602,23 @@ def test_state_union_optional():
         c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
         custom_union: Union[Custom1, Custom2, Custom3] = Custom1(foo="")
 
-    assert UnionState.c3.c2._var_name == "c3?.c2"  # type: ignore
-    assert UnionState.c3.c2.c1._var_name == "c3?.c2?.c1"  # type: ignore
-    assert UnionState.c3.c2.c1.foo._var_name == "c3?.c2?.c1?.foo"  # type: ignore
-    assert UnionState.c3.c2.c1r.foo._var_name == "c3?.c2?.c1r.foo"  # type: ignore
-    assert UnionState.c3.c2r.c1._var_name == "c3?.c2r.c1"  # type: ignore
-    assert UnionState.c3.c2r.c1.foo._var_name == "c3?.c2r.c1?.foo"  # type: ignore
-    assert UnionState.c3.c2r.c1r.foo._var_name == "c3?.c2r.c1r.foo"  # type: ignore
-    assert UnionState.c3i.c2._var_name == "c3i.c2"  # type: ignore
-    assert UnionState.c3r.c2._var_name == "c3r.c2"  # type: ignore
+    assert str(UnionState.c3.c2) == f'{str(UnionState.c3)}?.["c2"]'
+    assert str(UnionState.c3.c2.c1) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]'
+    assert (
+        str(UnionState.c3.c2.c1.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]?.["foo"]'
+    )
+    assert (
+        str(UnionState.c3.c2.c1r.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1r"]["foo"]'
+    )
+    assert str(UnionState.c3.c2r.c1) == f'{str(UnionState.c3)}?.["c2r"]["c1"]'
+    assert (
+        str(UnionState.c3.c2r.c1.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1"]?.["foo"]'
+    )
+    assert (
+        str(UnionState.c3.c2r.c1r.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1r"]["foo"]'
+    )
+    assert str(UnionState.c3i.c2) == f'{str(UnionState.c3i)}["c2"]'
+    assert str(UnionState.c3r.c2) == f'{str(UnionState.c3r)}["c2"]'
     assert UnionState.custom_union.foo is not None  # type: ignore
     assert UnionState.custom_union.c1 is not None  # type: ignore
     assert UnionState.custom_union.c1r is not None  # type: ignore

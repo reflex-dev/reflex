@@ -753,10 +753,10 @@ class Var:
             return self._var_name
         try:
             return json.loads(self._var_name)
-        except:
+        except ValueError:
             try:
                 return json.loads(self.json())
-            except:
+            except (ValueError, NotImplementedError):
                 return self._var_name
 
     def equals(self, other: Var) -> bool:
