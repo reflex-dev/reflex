@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any, ClassVar, Literal, Optional, Union
 
-from pydantic import ValidationError
-
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
@@ -19,6 +17,11 @@ from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serialize, serializer
 from reflex.vars import Var, VarData
+
+try:
+    from pydantic.v1.error_wrappers import ValidationError
+except ModuleNotFoundError:
+    from pydantic import ValidationError
 
 LiteralPosition = Literal[
     "top-left",
