@@ -860,13 +860,19 @@ class ConcatVarOperation(StringVar):
         Returns:
             The name of the var.
         """
-        list_of_strs = [""]
+        list_of_strs: List[Union[str, Var]] = []
+        last_string = ""
         for var in self._var_value:
             if isinstance(var, LiteralStringVar):
-                list_of_strs[-1] += var._var_value
+                last_string += var._var_value
             else:
+                if last_string:
+                    list_of_strs.append(last_string)
+                    last_string = ""
                 list_of_strs.append(var)
-                list_of_strs.append("")
+
+        if last_string:
+            list_of_strs.append(last_string)
 
         list_of_strs_filtered = [
             str(LiteralVar.create(s)) for s in list_of_strs if isinstance(s, Var) or s

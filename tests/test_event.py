@@ -216,7 +216,7 @@ def test_event_console_log():
     assert spec.args[0][0].equals(ImmutableVar(_var_name="message", _var_type=str))
     assert spec.args[0][1].equals(LiteralVar.create("message"))
     assert format.format_event(spec) == 'Event("_console", {message:"message"})'
-    spec = event.console_log(ImmutableVar.create("message"))
+    spec = event.console_log(ImmutableVar.create_safe("message"))
     assert format.format_event(spec) == 'Event("_console", {message:message})'
 
 

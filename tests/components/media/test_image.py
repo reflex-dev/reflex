@@ -37,7 +37,7 @@ def test_set_src_str():
     """Test that setting the src works."""
     image = rx.image(src="pic2.jpeg")
     # when using next/image, we explicitly create a _var_is_str Var
-    assert str(image.src) in (
+    assert str(image.src) in (  # type: ignore
         '"pic2.jpeg"',
         "'pic2.jpeg'",
         "`pic2.jpeg`",
@@ -63,4 +63,4 @@ def test_render(pil_image: Img):
         pil_image: The image to serialize.
     """
     image = Image.create(src=pil_image)
-    assert isinstance(image.src, StringVar)
+    assert isinstance(image.src, StringVar)  # type: ignore

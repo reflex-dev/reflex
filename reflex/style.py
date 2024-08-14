@@ -116,7 +116,7 @@ def media_query(breakpoint_expr: str):
 
 def convert_item(
     style_item: str | Var,
-) -> tuple[str, VarData | ImmutableVarData | None]:
+) -> tuple[Var, VarData | ImmutableVarData | None]:
     """Format a single value in a style dictionary.
 
     Args:
@@ -136,7 +136,7 @@ def convert_item(
 
 def convert_list(
     responsive_list: list[str | dict | Var],
-) -> tuple[list[str | dict], VarData | None]:
+) -> tuple[list[Var | dict[str, Var | list | dict]], VarData | None]:
     """Format a responsive value list.
 
     Args:
@@ -158,7 +158,9 @@ def convert_list(
     return converted_value, VarData.merge(*item_var_datas)
 
 
-def convert(style_dict):
+def convert(
+    style_dict: dict[str, Var | dict | list | str],
+) -> tuple[dict[str, Var | list | dict], VarData | None]:
     """Format a style dictionary.
 
     Args:

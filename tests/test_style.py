@@ -377,7 +377,7 @@ class StyleState(rx.State):
         (
             {"color": f"dark{StyleState.color}"},
             {
-                "css": ImmutableVar.create(
+                "css": ImmutableVar.create_safe(
                     f'({{ ["color"] : ("dark"+{StyleState.color}) }})'
                 ).to(Dict[str, str])
             },

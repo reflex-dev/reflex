@@ -851,18 +851,19 @@ class LiteralVar(ImmutableVar):
 
             if isinstance(value, Img):
                 with io.BytesIO() as buffer:
-                    value.save(buffer, format=getattr(value, "format", None) or "PNG")
+                    image_format = getattr(value, "format", None) or "PNG"
+                    value.save(buffer, format=image_format)
                     try:
                         # Newer method to get the mime type, but does not always work.
-                        mimetype = value.get_format_mimetype()
+                        mimetype = value.get_format_mimetype()  # type: ignore
                     except AttributeError:
                         try:
                             # Fallback method
-                            mimetype = MIME[value.format]
+                            mimetype = MIME[image_format]
                         except KeyError:
                             # Unknown mime_type: warn and return image/png and hope the browser can sort it out.
                             warnings.warn(  # noqa: B028
-                                f"Unknown mime type for {value} {value.format}. Defaulting to image/png"
+                                f"Unknown mime type for {value} {image_format}. Defaulting to image/png"
                             )
                             mimetype = "image/png"
                     return LiteralStringVar.create(
