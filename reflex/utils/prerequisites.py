@@ -38,6 +38,7 @@ from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 from reflex.utils.format import format_library_name
+from reflex.utils.registry import _get_best_registry
 
 CURRENTLY_INSTALLING_NODE = False
 
@@ -576,6 +577,15 @@ def initialize_package_json():
     output_path = get_web_dir() / constants.PackageJson.PATH
     code = _compile_package_json()
     output_path.write_text(code)
+
+    best_registry = _get_best_registry()
+    bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
+    bun_config_path.write_text(
+        f"""
+[install]
+registry = "{best_registry}"
+"""
+    )
 
 
 def init_reflex_json(project_hash: int | None):
