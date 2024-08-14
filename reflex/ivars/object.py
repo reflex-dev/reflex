@@ -70,6 +70,8 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         fixed_type = (
             self._var_type if isclass(self._var_type) else get_origin(self._var_type)
         )
+        if not isclass(fixed_type):
+            return Any
         args = get_args(self._var_type) if issubclass(fixed_type, dict) else ()
         return args[1] if args else Any
 
@@ -246,7 +248,7 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         fixed_type = (
             self._var_type if isclass(self._var_type) else get_origin(self._var_type)
         )
-        if not issubclass(fixed_type, dict):
+        if isclass(fixed_type) and not issubclass(fixed_type, dict):
             attribute_type = get_attribute_access_type(self._var_type, name)
             if attribute_type is None:
                 raise VarAttributeError(

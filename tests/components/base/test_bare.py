@@ -1,16 +1,20 @@
 import pytest
 
 from reflex.components.base.bare import Bare
+from reflex.ivars.base import ImmutableVar
 
+STATE_VAR = ImmutableVar.create_safe("default_state.name")
 
 @pytest.mark.parametrize(
     "contents,expected",
     [
         ("hello", '{"hello"}'),
         ("{}", '{"{}"}'),
-        (None, ""),
-        ("${default_state.name}", "${default_state.name}"),
-        ("{state.name}", "{state.name}"),
+        (None, '{""}'),
+        (STATE_VAR, "{default_state.name}"),
+        # This behavior is now unsupported.
+        # ("${default_state.name}", "${default_state.name}"),
+        # ("{state.name}", "{state.name}"),
     ],
 )
 def test_fstrings(contents, expected):

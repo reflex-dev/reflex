@@ -411,7 +411,7 @@ def _decode_var_immutable(value: str) -> tuple[ImmutableVarData | None, str]:
             ):
                 # This is a global immutable var.
                 var = _global_vars[int(serialized_data)]
-                var_data = var._var_data
+                var_data = var._get_all_var_data()
 
                 if var_data is not None:
                     realstart = start + offset
@@ -753,8 +753,11 @@ class Var:
             return self._var_name
         try:
             return json.loads(self._var_name)
-        except ValueError:
-            return self._var_name
+        except:
+            try:
+                return json.loads(self.json())
+            except:
+                return self._var_name
 
     def equals(self, other: Var) -> bool:
         """Check if two vars are equal.

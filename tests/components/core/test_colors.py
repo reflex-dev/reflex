@@ -108,9 +108,9 @@ def test_color_with_conditionals(cond_var, expected):
         (create_color_var(rx.color("red")), '"var(--red-7)"'),
         (create_color_var(rx.color("green", shade=1)), '"var(--green-1)"'),
         (create_color_var(rx.color("blue", alpha=True)), '"var(--blue-a7)"'),
-        ("red", "red"),
-        ("green", "green"),
-        ("blue", "blue"),
+        ("red", '"red"'),
+        ("green", '"green"'),
+        ("blue", '"blue"'),
     ],
 )
 def test_radix_color(color, expected):

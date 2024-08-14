@@ -126,8 +126,7 @@ def convert_item(
         The formatted style item and any associated VarData.
     """
     if isinstance(style_item, Var):
-        # If the value is a Var, extract the var_data and cast as str.
-        return str(style_item), style_item._get_all_var_data()
+        return style_item, style_item._get_all_var_data()
 
     # Otherwise, convert to Var to collapse VarData encoded in f-string.
     new_var = LiteralVar.create(style_item)

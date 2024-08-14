@@ -42,7 +42,7 @@ class Tag(Base):
         # Convert any props to vars.
         if "props" in kwargs:
             kwargs["props"] = {
-                name: ImmutableVar.create(value)
+                name: LiteralVar.create(value)
                 for name, value in kwargs["props"].items()
             }
         super().__init__(*args, **kwargs)

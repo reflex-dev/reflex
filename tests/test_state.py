@@ -40,7 +40,7 @@ from reflex.state import (
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
-from reflex.vars import BaseVar, ComputedVar
+from reflex.vars import BaseVar, ComputedVar, Var
 from tests.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
@@ -266,8 +266,8 @@ def test_base_class_vars(test_state):
         if field in test_state.get_skip_vars():
             continue
         prop = getattr(cls, field)
-        assert isinstance(prop, BaseVar)
-        assert prop._var_name == field
+        assert isinstance(prop, Var)
+        assert prop._var_name.split(".")[-1] == field
 
     assert cls.num1._var_type == int
     assert cls.num2._var_type == float
@@ -395,30 +395,27 @@ def test_default_setters(test_state):
 def test_class_indexing_with_vars():
     """Test that we can index into a state var with another var."""
     prop = TestState.array[TestState.num1]
-    assert (
-        str(prop) == f"{{{TestState.get_name()}.array.at({TestState.get_name()}.num1)}}"
-    )
+    assert str(prop) == f"{TestState.get_name()}.array.at({TestState.get_name()}.num1)"
 
     prop = TestState.mapping["a"][TestState.num1]
     assert (
         str(prop)
-        == f'{{{TestState.get_name()}.mapping["a"].at({TestState.get_name()}.num1)}}'
+        == f'{TestState.get_name()}.mapping["a"].at({TestState.get_name()}.num1)'
     )
 
     prop = TestState.mapping[TestState.map_key]
     assert (
-        str(prop)
-        == f"{{{TestState.get_name()}.mapping[{TestState.get_name()}.map_key]}}"
+        str(prop) == f"{TestState.get_name()}.mapping[{TestState.get_name()}.map_key]"
     )
 
 
 def test_class_attributes():
     """Test that we can get class attributes."""
     prop = TestState.obj.prop1
-    assert str(prop) == f"{{{TestState.get_name()}.obj.prop1}}"
+    assert str(prop) == f'{TestState.get_name()}.obj["prop1"]'
 
     prop = TestState.complex[1].prop1
-    assert str(prop) == f"{{{TestState.get_name()}.complex[1].prop1}}"
+    assert str(prop) == f"{TestState.get_name()}.complex[1][\"prop1\"]"
 
 
 def test_get_parent_state():
