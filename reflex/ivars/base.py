@@ -362,13 +362,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         from .object import ObjectVar, ToObjectOperation
         from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
 
-        fixed_type = (
-            var_type
-            if var_type is None or inspect.isclass(var_type)
-            else get_origin(var_type)
-        )
+        fixed_type = get_origin(var_type) or var_type
 
-        fixed_output_type = output if inspect.isclass(output) else get_origin(output)
+        fixed_output_type = get_origin(output) or output
 
         if fixed_output_type is dict:
             return self.to(ObjectVar, output)
@@ -444,7 +440,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         if var_type is Any:
             return self
 
-        fixed_type = var_type if inspect.isclass(var_type) else get_origin(var_type)
+        fixed_type = get_origin(var_type) or var_type
 
         if fixed_type is Union:
             return self
