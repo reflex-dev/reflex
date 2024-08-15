@@ -352,8 +352,16 @@ getattr, __dir__, __all__ = lazy_loader.attach(
 def __getattr__(name):
     if name == "chakra":
         from reflex.utils import console
+
         # TODO: rephrase message
-        console.deprecate("rx.chakra", reason="its being moved to a different project", deprecation_version="0.6.0", removal_version="0.6.0", dedupe=True)
+        console.deprecate(
+            "rx.chakra",
+            reason="its being moved to a different project",
+            deprecation_version="0.6.0",
+            removal_version="0.6.0",
+            dedupe=True,
+        )
         import reflex_chakra as rc
+
         return rc
     return getattr(name)
