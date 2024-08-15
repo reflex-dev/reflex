@@ -411,16 +411,18 @@ class CodeBlock(Component):
         selected_themes = []
 
         for possibleTheme in get_args(LiteralCodeBlockTheme):
+            if format.to_camel_case(possibleTheme) in themeString:
+                selected_themes.append(possibleTheme)
             if possibleTheme in themeString:
                 selected_themes.append(possibleTheme)
 
-        selected_themes = sorted(set(selected_themes))
+        selected_themes = sorted(set(map(self.convert_theme_name, selected_themes)))
 
         imports_.update(
             {
-                f"react-syntax-highlighter/dist/cjs/styles/prism/{self.convert_theme_name(theme)}": [
+                f"react-syntax-highlighter/dist/cjs/styles/prism/{theme}": [
                     ImportVar(
-                        tag=format.to_camel_case(self.convert_theme_name(theme)),
+                        tag=format.to_camel_case(theme),
                         is_default=True,
                         install=False,
                     )
