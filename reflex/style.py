@@ -6,6 +6,7 @@ from typing import Any, Literal, Tuple, Type
 
 from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
+from reflex.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex.event import EventChain
 from reflex.ivars.base import ImmutableCallableVar, ImmutableVar, LiteralVar
 from reflex.ivars.function import FunctionVar
@@ -115,8 +116,8 @@ def media_query(breakpoint_expr: str):
 
 
 def convert_item(
-    style_item: str | Var,
-) -> tuple[Var, VarData | ImmutableVarData | None]:
+    style_item: int | str | Var,
+) -> tuple[str | Var, VarData | ImmutableVarData | None]:
     """Format a single value in a style dictionary.
 
     Args:
@@ -128,6 +129,9 @@ def convert_item(
     if isinstance(style_item, Var):
         return style_item, style_item._get_all_var_data()
 
+    if isinstance(style_item, str) and REFLEX_VAR_OPENING_TAG not in style_item:
+        return style_item, None
+
     # Otherwise, convert to Var to collapse VarData encoded in f-string.
     new_var = LiteralVar.create(style_item)
     var_data = new_var._get_all_var_data() if new_var is not None else None
@@ -136,7 +140,7 @@ def convert_item(
 
 def convert_list(
     responsive_list: list[str | dict | Var],
-) -> tuple[list[Var | dict[str, Var | list | dict]], VarData | None]:
+) -> tuple[list[str | dict[str, Var | list | dict]], VarData | None]:
     """Format a responsive value list.
 
     Args:
@@ -160,7 +164,7 @@ def convert_list(
 
 def convert(
     style_dict: dict[str, Var | dict | list | str],
-) -> tuple[dict[str, Var | list | dict], VarData | None]:
+) -> tuple[dict[str, str | list | dict], VarData | None]:
     """Format a style dictionary.
 
     Args:

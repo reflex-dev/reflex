@@ -423,13 +423,14 @@ class CodeBlock(Component):
 
         if (
             self.language is not None
-            and self.language._var_name in LiteralCodeLanguage.__args__  # type: ignore
+            and (language_without_quotes := str(self.language).replace('"', ""))
+            in LiteralCodeLanguage.__args__  # type: ignore
         ):
             imports_[
-                f"react-syntax-highlighter/dist/cjs/languages/prism/{self.language._var_name}"
+                f"react-syntax-highlighter/dist/cjs/languages/prism/{language_without_quotes}"
             ] = [
                 ImportVar(
-                    tag=format.to_camel_case(self.language._var_name),
+                    tag=format.to_camel_case(language_without_quotes),
                     is_default=True,
                     install=False,
                 )

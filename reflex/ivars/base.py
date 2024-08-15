@@ -761,10 +761,32 @@ class LiteralVar(ImmutableVar):
         Raises:
             TypeError: If the value is not a supported type for LiteralVar.
         """
+        from .number import LiteralBooleanVar, LiteralNumberVar
+        from .object import LiteralObjectVar
+        from .sequence import LiteralArrayVar, LiteralStringVar
+
         if isinstance(value, Var):
             if _var_data is None:
                 return value
             return value._replace(merge_var_data=_var_data)
+
+        if isinstance(value, str):
+            return LiteralStringVar.create(value, _var_data=_var_data)
+
+        if isinstance(value, bool):
+            return LiteralBooleanVar.create(value, _var_data=_var_data)
+
+        if isinstance(value, (int, float)):
+            return LiteralNumberVar.create(value, _var_data=_var_data)
+
+        if isinstance(value, dict):
+            return LiteralObjectVar.create(value, _var_data=_var_data)
+
+        if isinstance(value, Color):
+            return LiteralStringVar.create(f"{value}", _var_data=_var_data)
+
+        if isinstance(value, (list, tuple, set)):
+            return LiteralArrayVar.create(value, _var_data=_var_data)
 
         if value is None:
             return ImmutableVar.create_safe("null", _var_data=_var_data)
@@ -836,8 +858,6 @@ class LiteralVar(ImmutableVar):
         except ImportError:
             pass
 
-        from .sequence import LiteralArrayVar, LiteralStringVar
-
         try:
             import base64
             import io
@@ -875,26 +895,6 @@ class LiteralVar(ImmutableVar):
                 _var_type=type(value),
                 _var_data=_var_data,
             )
-
-        if isinstance(value, dict):
-            return LiteralObjectVar.create(value, _var_data=_var_data)
-
-        if isinstance(value, str):
-            return LiteralStringVar.create(value, _var_data=_var_data)
-
-        if isinstance(value, Color):
-            return LiteralStringVar.create(f"{value}", _var_data=_var_data)
-
-        from .number import LiteralBooleanVar, LiteralNumberVar
-
-        if isinstance(value, bool):
-            return LiteralBooleanVar.create(value, _var_data=_var_data)
-
-        if isinstance(value, (int, float)):
-            return LiteralNumberVar.create(value, _var_data=_var_data)
-
-        if isinstance(value, (list, tuple, set)):
-            return LiteralArrayVar.create(value, _var_data=_var_data)
 
         raise TypeError(
             f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."

@@ -509,7 +509,9 @@ class Component(BaseComponent, ABC):
         # If it's an event chain var, return it.
         if isinstance(value, Var):
             if value._var_type is not EventChain:
-                raise ValueError(f"Invalid event chain: {value}")
+                raise ValueError(
+                    f"Invalid event chain: {repr(value)} of type {type(value)}"
+                )
             return value
         elif isinstance(value, EventChain):
             # Trust that the caller knows what they're doing passing an EventChain directly

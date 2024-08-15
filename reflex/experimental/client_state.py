@@ -8,6 +8,8 @@ from typing import Any, Callable, Optional, Type, Union
 
 from reflex import constants
 from reflex.event import EventChain, EventHandler, EventSpec, call_script
+from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.function import FunctionVar
 from reflex.utils.imports import ImportVar
 from reflex.vars import Var, VarData, get_unique_variable_name
 
@@ -109,12 +111,11 @@ class ClientStateVar(Var):
             var_name = get_unique_variable_name()
         assert isinstance(var_name, str), "var_name must be a string."
         if default is NoValue:
-            default_var = Var.create_safe("", _var_is_local=False, _var_is_string=False)
-        elif not isinstance(default, Var):
-            default_var = Var.create_safe(
-                default,
-                _var_is_string=isinstance(default, str),
+            default_var = ImmutableVar.create_safe(
+                "", _var_is_local=False, _var_is_string=False
             )
+        elif not isinstance(default, Var):
+            default_var = LiteralVar.create(default)
         else:
             default_var = default
         setter_name = f"set{var_name.capitalize()}"
@@ -157,12 +158,10 @@ class ClientStateVar(Var):
             an accessor for the client state variable.
         """
         return (
-            Var.create_safe(
+            ImmutableVar.create_safe(
                 _client_state_ref(self._getter_name)
                 if self._global_ref
-                else self._getter_name,
-                _var_is_local=False,
-                _var_is_string=False,
+                else self._getter_name
             )
             .to(self._var_type)
             ._replace(
@@ -192,19 +191,15 @@ class ClientStateVar(Var):
         )
         if value is not NoValue:
             # This is a hack to make it work like an EventSpec taking an arg
-            value = Var.create_safe(value, _var_is_string=isinstance(value, str))
+            value = LiteralVar.create(value)
             if not value._var_is_string and value._var_full_name.startswith("_"):
                 arg = value._var_name_unwrapped.partition(".")[0]
             else:
                 arg = ""
             setter = f"({arg}) => {setter}({value._var_name_unwrapped})"
         return (
-            Var.create_safe(
-                setter,
-                _var_is_local=False,
-                _var_is_string=False,
-            )
-            .to(EventChain)
+            ImmutableVar.create_safe(setter)
+            .to(FunctionVar, EventChain)
             ._replace(
                 merge_var_data=VarData(  # type: ignore
                     imports=_refs_import if self._global_ref else {}
