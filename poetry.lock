@@ -2124,7 +2124,7 @@ reflex = ">=0.5.9"
 [package.source]
 type = "git"
 url = "https://github.com/reflex-dev/reflex-chakra"
-reference = "HEAD"
+reference = "main"
 resolved_reference = "4cd71854516b3f3336d33e86396ee0e6ab691520"
 
 [[package]]
@@ -3108,4 +3108,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "6ca4b56c0aaccde35abea4cf55a63e6e2bdc0b88aa5e5d85ec540dc479b7d820"
+content-hash = "57b4acbac3b293e1e2a57dff91418558cd84d1d0cb63c819dab32c97a1235527"
