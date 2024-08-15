@@ -8,6 +8,7 @@ from typing import Generator
 
 import pytest
 
+import reflex_chakra as rc
 from benchmarks import WINDOWS_SKIP_REASON
 from reflex import constants
 from reflex.compiler import utils
@@ -144,7 +145,7 @@ def AppWithOnePage():
 
     def index() -> rx.Component:
         return rx.center(
-            rx.chakra.input(
+            rc.input(
                 id="token", value=State.router.session.client_token, is_read_only=True
             ),
             rx.vstack(
