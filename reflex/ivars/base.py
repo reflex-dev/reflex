@@ -1031,8 +1031,6 @@ class CachedVarOperation:
 
         parent_classes = inspect.getmro(self.__class__)
 
-        print(repr(self), parent_classes, name)
-
         return parent_classes[parent_classes.index(CachedVarOperation) + 1].__getattr__(  # type: ignore
             self, name
         )
