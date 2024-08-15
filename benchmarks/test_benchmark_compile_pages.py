@@ -7,8 +7,8 @@ import time
 from typing import Generator
 
 import pytest
-
 import reflex_chakra as rc
+
 from benchmarks import WINDOWS_SKIP_REASON
 from reflex import constants
 from reflex.compiler import utils
