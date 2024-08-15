@@ -1099,13 +1099,6 @@ class ArrayToArrayOperation(CachedVarOperation, ArrayVar):
             "ArrayToArrayOperation must implement _cached_var_name"
         )
 
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((self.__class__.__name__, self._value))
-
     @classmethod
     def create(
         cls,
