@@ -2,6 +2,7 @@ from contextlib import nullcontext
 from typing import Any, Dict, List, Optional, Type, Union
 
 import pytest
+import reflex_chakra as rc
 from reflex_chakra.components.layout.box import Box
 
 import reflex as rx
@@ -1004,7 +1005,7 @@ def test_component_with_only_valid_children(fixture, request):
     [
         (rx.text("hi"), "<RadixThemesText as={`p`}>\n  {`hi`}\n</RadixThemesText>"),
         (
-            rx.box(rx.chakra.heading("test", size="md")),
+            rx.box(rc.heading("test", size="md")),
             "<RadixThemesBox>\n  <Heading size={`md`}>\n  {`test`}\n</Heading>\n</RadixThemesBox>",
         ),
     ],
