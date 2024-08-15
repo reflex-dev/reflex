@@ -85,10 +85,6 @@ def _init(
     prerequisites.initialize_reflex_user_directory()
     prerequisites.ensure_reflex_installation_id()
 
-    # When upgrading to 0.4, show migration instructions.
-    if prerequisites.should_show_rx_chakra_migration_instructions():
-        prerequisites.show_rx_chakra_migration_instructions()
-
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
 
@@ -456,17 +452,6 @@ def makemigrations(
             console.error(
                 f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
             )
-
-
-@script_cli.command(
-    name="keep-chakra",
-    help="Change all rx.<component> references to rx.chakra.<component>, to preserve Chakra UI usage.",
-)
-def keep_chakra():
-    """Change all rx.<component> references to rx.chakra.<component>, to preserve Chakra UI usage."""
-    from reflex.utils import prerequisites
-
-    prerequisites.migrate_to_rx_chakra()
 
 
 @cli.command()
