@@ -68,9 +68,7 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         Returns:
             The type of the values of the object.
         """
-        fixed_type = (
-            self._var_type if isclass(self._var_type) else get_origin(self._var_type)
-        )
+        fixed_type = get_origin(self._var_type) or self._var_type
         if not isclass(fixed_type):
             return Any
         args = get_args(self._var_type) if issubclass(fixed_type, dict) else ()
