@@ -6,6 +6,7 @@ from typing import Callable, Coroutine, Generator, Type
 from urllib.parse import urlsplit
 
 import pytest
+import reflex_chakra as rc
 from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness, AppHarnessProd, WebDriver
@@ -40,15 +41,13 @@ def DynamicRoute():
 
     def index():
         return rx.fragment(
-            rx.chakra.input(
+            rc.input(
                 value=DynamicState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.chakra.input(
-                value=DynamicState.page_id, is_read_only=True, id="page_id"
-            ),
-            rx.chakra.input(
+            rc.input(value=DynamicState.page_id, is_read_only=True, id="page_id"),
+            rc.input(
                 value=DynamicState.router.page.raw_path,
                 is_read_only=True,
                 id="raw_path",
@@ -61,10 +60,10 @@ def DynamicRoute():
                 id="link_page_next",  # type: ignore
             ),
             rx.link("missing", href="/missing", id="link_missing"),
-            rx.chakra.list(
+            rc.list(
                 rx.foreach(
                     DynamicState.order,  # type: ignore
-                    lambda i: rx.chakra.list_item(rx.text(i)),
+                    lambda i: rc.list_item(rx.text(i)),
                 ),
             ),
         )
