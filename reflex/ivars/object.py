@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import functools
 import sys
 import typing
 from functools import cached_property
@@ -28,6 +29,7 @@ from reflex.utils.types import GenericType, get_attribute_access_type
 from reflex.vars import ImmutableVarData, Var, VarData
 
 from .base import (
+    CachedVarOperation,
     ImmutableVar,
     LiteralVar,
     figure_out_type,
@@ -255,7 +257,7 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
             attribute_type = get_attribute_access_type(var_type, name)
             if attribute_type is None:
                 raise VarAttributeError(
-                    f"The State var `{self._var_name}` has no attribute '{name}' or may have been annotated "
+                    f"The State var `{str(self)}` has no attribute '{name}' or may have been annotated "
                     f"wrongly."
                 )
             return ObjectItemOperation.create(self, name, attribute_type).guess_type()
@@ -279,16 +281,12 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LiteralObjectVar(LiteralVar, ObjectVar[OBJECT_TYPE]):
+class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
     """Base class for immutable literal object vars."""
 
     _var_value: Dict[Union[Var, Any], Union[Var, Any]] = dataclasses.field(
         default_factory=dict
     )
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
 
     def _key_type(self) -> Type:
         """Get the type of the keys of the object.
@@ -308,19 +306,6 @@ class LiteralObjectVar(LiteralVar, ObjectVar[OBJECT_TYPE]):
         args_list = typing.get_args(self._var_type)
         return args_list[1] if args_list else Any
 
-    def __getattr__(self, name):
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute of the var.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        return super(type(self), self).__getattr__(name)
-
     @cached_property
     def _cached_var_name(self) -> str:
         """The name of the var.
@@ -338,30 +323,6 @@ class LiteralObjectVar(LiteralVar, ObjectVar[OBJECT_TYPE]):
             )
             + " })"
         )
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            *[
-                LiteralVar.create(value)._get_all_var_data()
-                for value in self._var_value.values()
-            ],
-            *[LiteralVar.create(key)._get_all_var_data() for key in self._var_value],
-            self._var_data,
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        """Wrapper method for cached property.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return self._cached_get_all_var_data
 
     def json(self) -> str:
         """Get the JSON representation of the object.
@@ -387,6 +348,22 @@ class LiteralObjectVar(LiteralVar, ObjectVar[OBJECT_TYPE]):
             The hash of the var.
         """
         return hash((self.__class__.__name__, self._var_name))
+
+    @functools.cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all the var data.
+
+        Returns:
+            The var data.
+        """
+        return ImmutableVarData.merge(
+            *[LiteralVar.create(var)._get_all_var_data() for var in self._var_value],
+            *[
+                LiteralVar.create(var)._get_all_var_data()
+                for var in self._var_value.values()
+            ],
+            self._var_data,
+        )
 
     @classmethod
     def create(
@@ -418,16 +395,12 @@ class LiteralObjectVar(LiteralVar, ObjectVar[OBJECT_TYPE]):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ObjectToArrayOperation(ArrayVar):
+class ObjectToArrayOperation(CachedVarOperation, ArrayVar):
     """Base class for object to array operations."""
 
     _value: ObjectVar = dataclasses.field(
         default_factory=lambda: LiteralObjectVar.create({})
     )
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -439,47 +412,6 @@ class ObjectToArrayOperation(ArrayVar):
         raise NotImplementedError(
             "ObjectToArrayOperation must implement _cached_var_name"
         )
-
-    def __getattr__(self, name):
-        """Get an attribute of the operation.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute of the operation.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        return super(type(self), self).__getattr__(name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the operation.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            self._value._get_all_var_data(),
-            self._var_data,
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        """Wrapper method for cached property.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Get the hash of the operation.
-
-        Returns:
-            The hash of the operation.
-        """
-        return hash((self.__class__.__name__, self._value))
 
     @classmethod
     def create(
@@ -507,9 +439,6 @@ class ObjectToArrayOperation(ArrayVar):
 
 class ObjectKeysOperation(ObjectToArrayOperation):
     """Operation to get the keys of an object."""
-
-    #         value, List[value._key_type()], _var_data
-    #     )
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -553,7 +482,7 @@ class ObjectValuesOperation(ObjectToArrayOperation):
         Returns:
             The name of the operation.
         """
-        return f"Object.values({self._value._var_name})"
+        return f"Object.values({str(self._value)})"
 
     @classmethod
     def create(
@@ -588,7 +517,7 @@ class ObjectEntriesOperation(ObjectToArrayOperation):
         Returns:
             The name of the operation.
         """
-        return f"Object.entries({self._value._var_name})"
+        return f"Object.entries({str(self._value)})"
 
     @classmethod
     def create(
@@ -618,7 +547,7 @@ class ObjectEntriesOperation(ObjectToArrayOperation):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ObjectMergeOperation(ObjectVar):
+class ObjectMergeOperation(CachedVarOperation, ObjectVar):
     """Operation to merge two objects."""
 
     _lhs: ObjectVar = dataclasses.field(
@@ -635,53 +564,7 @@ class ObjectMergeOperation(ObjectVar):
         Returns:
             The name of the operation.
         """
-        return f"Object.assign({self._lhs._var_name}, {self._rhs._var_name})"
-
-    def __getattr__(self, name):
-        """Get an attribute of the operation.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute of the operation.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        return super(type(self), self).__getattr__(name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the operation.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            self._lhs._get_all_var_data(),
-            self._rhs._get_all_var_data(),
-            self._var_data,
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        """Wrapper method for cached property.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Get the hash of the operation.
-
-        Returns:
-            The hash of the operation.
-        """
-        return hash((self.__class__.__name__, self._lhs, self._rhs))
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
+        return f"({{...{str(self._lhs)}, ...{str(self._rhs)}}})"
 
     @classmethod
     def create(
@@ -715,7 +598,7 @@ class ObjectMergeOperation(ObjectVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ObjectItemOperation(ImmutableVar):
+class ObjectItemOperation(CachedVarOperation, ImmutableVar):
     """Operation to get an item from an object."""
 
     _object: ObjectVar = dataclasses.field(
@@ -733,52 +616,6 @@ class ObjectItemOperation(ImmutableVar):
         if types.is_optional(self._object._var_type):
             return f"{str(self._object)}?.[{str(self._key)}]"
         return f"{str(self._object)}[{str(self._key)}]"
-
-    def __getattr__(self, name):
-        """Get an attribute of the operation.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute of the operation.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        return super(type(self), self).__getattr__(name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the operation.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            self._object._get_all_var_data(),
-            self._key._get_all_var_data(),
-            self._var_data,
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        """Wrapper method for cached property.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Get the hash of the operation.
-
-        Returns:
-            The hash of the operation.
-        """
-        return hash((self.__class__.__name__, self._object, self._key))
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
 
     @classmethod
     def create(
@@ -813,7 +650,7 @@ class ObjectItemOperation(ImmutableVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ToObjectOperation(ObjectVar):
+class ToObjectOperation(CachedVarOperation, ObjectVar):
     """Operation to convert a var to an object."""
 
     _original_var: Var = dataclasses.field(
@@ -828,51 +665,6 @@ class ToObjectOperation(ObjectVar):
             The name of the operation.
         """
         return str(self._original_var)
-
-    def __getattr__(self, name):
-        """Get an attribute of the operation.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute of the operation.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        return super(type(self), self).__getattr__(name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the operation.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            self._original_var._get_all_var_data(),
-            self._var_data,
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        """Wrapper method for cached property.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Get the hash of the operation.
-
-        Returns:
-            The hash of the operation.
-        """
-        return hash((self.__class__.__name__, self._original_var))
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
 
     @classmethod
     def create(
@@ -904,17 +696,13 @@ class ToObjectOperation(ObjectVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ObjectHasOwnProperty(BooleanVar):
+class ObjectHasOwnProperty(CachedVarOperation, BooleanVar):
     """Operation to check if an object has a property."""
 
     _object: ObjectVar = dataclasses.field(
         default_factory=lambda: LiteralObjectVar.create({})
     )
     _key: Var | Any = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -924,48 +712,6 @@ class ObjectHasOwnProperty(BooleanVar):
             The name of the operation.
         """
         return f"{str(self._object)}.hasOwnProperty({str(self._key)})"
-
-    def __getattr__(self, name):
-        """Get an attribute of the operation.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute of the operation.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        return super(type(self), self).__getattr__(name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the operation.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            self._object._get_all_var_data(),
-            self._key._get_all_var_data(),
-            self._var_data,
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        """Wrapper method for cached property.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Get the hash of the operation.
-
-        Returns:
-            The hash of the operation.
-        """
-        return hash((self.__class__.__name__, self._object, self._key))
 
     @classmethod
     def create(

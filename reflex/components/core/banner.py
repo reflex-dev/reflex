@@ -22,7 +22,7 @@ from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.ivars.function import FunctionStringVar
 from reflex.ivars.number import BooleanVar
 from reflex.ivars.sequence import LiteralArrayVar
-from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.imports import ImportVar
 from reflex.vars import ImmutableVarData, Var, VarData
 
 connect_error_var_data: VarData = VarData(  # type: ignore
@@ -56,19 +56,8 @@ has_too_many_connection_errors: Var = ImmutableVar.create_safe(
 ).to(BooleanVar)
 
 
-class WebsocketTargetURL:
+class WebsocketTargetURL(ImmutableVar):
     """A component that renders the websocket target URL."""
-
-    def add_imports(self) -> ImportDict:
-        """Add imports for the websocket target URL component.
-
-        Returns:
-            The import dict.
-        """
-        return {
-            f"/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
-            "/env.json": [ImportVar(tag="env", is_default=True)],
-        }
 
     @classmethod
     def create(cls) -> ImmutableVar:
@@ -85,6 +74,7 @@ class WebsocketTargetURL:
                     f"/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
                 },
             ),
+            _var_type=WebsocketTargetURL,
         )
 
 

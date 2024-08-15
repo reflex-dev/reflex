@@ -174,14 +174,13 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
                 "The _var_full_name_needs_state_prefix argument is not supported for ImmutableVar."
             )
 
-        field_values = dict(
-            _var_name=kwargs.pop("_var_name", self._var_name),
-            _var_type=kwargs.pop("_var_type", self._var_type),
+        return dataclasses.replace(
+            self,
             _var_data=ImmutableVarData.merge(
                 kwargs.get("_var_data", self._var_data), merge_var_data
             ),
+            **kwargs,
         )
-        return dataclasses.replace(self, **field_values)
 
     @classmethod
     def create(
@@ -366,6 +365,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
 
         fixed_output_type = get_origin(output) or output
 
+        # If the first argument is a python type, we map it to the corresponding Var type.
         if fixed_output_type is dict:
             return self.to(ObjectVar, output)
         if fixed_output_type in (list, tuple, set):
@@ -409,16 +409,21 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             #     )
             return ToFunctionOperation.create(self, var_type or Callable)
 
-        if not issubclass(output, Var) and var_type is None:
+        # If we can't determine the first argument, we just replace the _var_type.
+        if not issubclass(output, Var) or var_type is None:
             return dataclasses.replace(
                 self,
                 _var_type=output,
             )
 
-        return dataclasses.replace(
-            self,
-            _var_type=var_type,
-        )
+        # We couldn't determine the output type to be any other Var type, so we replace the _var_type.
+        if var_type is not None:
+            return dataclasses.replace(
+                self,
+                _var_type=var_type,
+            )
+
+        return self
 
     def guess_type(self) -> ImmutableVar:
         """Guesses the type of the variable based on its `_var_type` attribute.
@@ -1005,32 +1010,12 @@ def figure_out_type(value: Any) -> types.GenericType:
     return type(value)
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class AndOperation(ImmutableVar):
-    """Class for the logical AND operation."""
-
-    # The first var.
-    _var1: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
-
-    # The second var.
-    _var2: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+class CachedVarOperation:
+    """Base class for cached var operations to lower boilerplate code."""
 
     def __post_init__(self):
-        """Post-initialize the AndOperation."""
+        """Post-initialize the CachedVarOperation."""
         object.__delattr__(self, "_var_name")
-
-    @functools.cached_property
-    def _cached_var_name(self) -> str:
-        """Get the cached var name.
-
-        Returns:
-            The cached var name.
-        """
-        return f"({str(self._var1)} && {str(self._var2)})"
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -1043,19 +1028,13 @@ class AndOperation(ImmutableVar):
         """
         if name == "_var_name":
             return self._cached_var_name
-        return getattr(super(type(self), self), name)
 
-    @functools.cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get the cached VarData.
+        parent_classes = inspect.getmro(self.__class__)
 
-        Returns:
-            The cached VarData.
-        """
-        return ImmutableVarData.merge(
-            self._var1._get_all_var_data(),
-            self._var2._get_all_var_data(),
-            self._var_data,
+        print(repr(self), parent_classes, name)
+
+        return parent_classes[parent_classes.index(CachedVarOperation) + 1].__getattr__(  # type: ignore
+            self, name
         )
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
@@ -1065,6 +1044,67 @@ class AndOperation(ImmutableVar):
             The VarData of the components and all of its children.
         """
         return self._cached_get_all_var_data
+
+    @functools.cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get the cached VarData.
+
+        Returns:
+            The cached VarData.
+        """
+        return ImmutableVarData.merge(
+            *map(
+                lambda value: (
+                    value._get_all_var_data() if isinstance(value, Var) else None
+                ),
+                map(
+                    lambda field: getattr(self, field.name),
+                    dataclasses.fields(self),  # type: ignore
+                ),
+            ),
+            self._var_data,
+        )
+
+    def __hash__(self) -> int:
+        """Calculate the hash of the object.
+
+        Returns:
+            The hash of the object.
+        """
+        return hash(
+            (
+                self.__class__.__name__,
+                *[
+                    getattr(self, field.name)
+                    for field in dataclasses.fields(self)  # type: ignore
+                    if field.name not in ["_var_name", "_var_data", "_var_type"]
+                ],
+            )
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class AndOperation(CachedVarOperation, ImmutableVar):
+    """Class for the logical AND operation."""
+
+    # The first var.
+    _var1: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+
+    # The second var.
+    _var2: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+
+    @functools.cached_property
+    def _cached_var_name(self) -> str:
+        """Get the cached var name.
+
+        Returns:
+            The cached var name.
+        """
+        return f"({str(self._var1)} && {str(self._var2)})"
 
     def __hash__(self) -> int:
         """Calculates the hash value of the object.
@@ -1103,7 +1143,7 @@ class AndOperation(ImmutableVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class OrOperation(ImmutableVar):
+class OrOperation(CachedVarOperation, ImmutableVar):
     """Class for the logical OR operation."""
 
     # The first var.
@@ -1111,10 +1151,6 @@ class OrOperation(ImmutableVar):
 
     # The second var.
     _var2: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
-
-    def __post_init__(self):
-        """Post-initialize the OrOperation."""
-        object.__delattr__(self, "_var_name")
 
     @functools.cached_property
     def _cached_var_name(self) -> str:
@@ -1124,40 +1160,6 @@ class OrOperation(ImmutableVar):
             The cached var name.
         """
         return f"({str(self._var1)} || {str(self._var2)})"
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        return getattr(super(type(self), self), name)
-
-    @functools.cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get the cached VarData.
-
-        Returns:
-            The cached VarData.
-        """
-        return ImmutableVarData.merge(
-            self._var1._get_all_var_data(),
-            self._var2._get_all_var_data(),
-            self._var_data,
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return self._cached_get_all_var_data
 
     def __hash__(self) -> int:
         """Calculates the hash value for the object.
@@ -1378,12 +1380,6 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
             backend=kwargs.pop("backend", self._backend),
             _var_name=kwargs.pop("_var_name", self._var_name),
             _var_type=kwargs.pop("_var_type", self._var_type),
-            _var_is_local=kwargs.pop("_var_is_local", self._var_is_local),
-            _var_is_string=kwargs.pop("_var_is_string", self._var_is_string),
-            _var_full_name_needs_state_prefix=kwargs.pop(
-                "_var_full_name_needs_state_prefix",
-                self._var_full_name_needs_state_prefix,
-            ),
             _var_data=kwargs.pop(
                 "_var_data", VarData.merge(self._var_data, merge_var_data)
             ),
@@ -1676,7 +1672,6 @@ def immutable_computed_var(
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
-    _deprecated_cached_var: bool = False,
     **kwargs,
 ) -> Callable[
     [Callable[[BASE_STATE], RETURN_TYPE]], ImmutableComputedVar[RETURN_TYPE]
@@ -1692,7 +1687,6 @@ def immutable_computed_var(
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
-    _deprecated_cached_var: bool = False,
     **kwargs,
 ) -> ImmutableComputedVar[RETURN_TYPE]: ...
 
@@ -1705,7 +1699,6 @@ def immutable_computed_var(
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
-    _deprecated_cached_var: bool = False,
     **kwargs,
 ) -> (
     ImmutableComputedVar | Callable[[Callable[[BASE_STATE], Any]], ImmutableComputedVar]
@@ -1720,7 +1713,6 @@ def immutable_computed_var(
         auto_deps: Whether var dependencies should be auto-determined.
         interval: Interval at which the computed var should be updated.
         backend: Whether the computed var is a backend var.
-        _deprecated_cached_var: Indicate usage of deprecated cached_var partial function.
         **kwargs: additional attributes to set on the instance
 
     Returns:
@@ -1730,14 +1722,6 @@ def immutable_computed_var(
         ValueError: If caching is disabled and an update interval is set.
         VarDependencyError: If user supplies dependencies without caching.
     """
-    if _deprecated_cached_var:
-        console.deprecate(
-            feature_name="cached_var",
-            reason=("Use @rx.var(cache=True) instead of @rx.cached_var."),
-            deprecation_version="0.5.6",
-            removal_version="0.6.0",
-        )
-
     if cache is False and interval is not None:
         raise ValueError("Cannot set update interval without caching.")
 
@@ -1760,9 +1744,3 @@ def immutable_computed_var(
         )
 
     return wrapper
-
-
-# Partial function of computed_var with cache=True
-cached_var = functools.partial(
-    immutable_computed_var, cache=True, _deprecated_cached_var=True
-)

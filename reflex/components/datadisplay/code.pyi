@@ -341,6 +341,8 @@ LiteralCodeLanguage = Literal[
     "zig",
 ]
 
+def replace_quotes_with_camel_case(value: str) -> str: ...
+
 class CodeBlock(Component):
     def add_imports(self) -> ImportDict: ...
     @overload

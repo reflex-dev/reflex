@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import re
 from typing import Dict, Literal, Optional, Union
+
+from typing_extensions import get_args
 
 from reflex.components.component import Component
 from reflex.components.core.cond import color_mode_cond
@@ -350,6 +351,20 @@ LiteralCodeLanguage = Literal[
 ]
 
 
+def replace_quotes_with_camel_case(value: str) -> str:
+    """Replaces quotes in the given string with camel case format.
+
+    Args:
+        value (str): The string to be processed.
+
+    Returns:
+        str: The processed string with quotes replaced by camel case.
+    """
+    for theme in get_args(LiteralCodeBlockTheme):
+        value = value.replace(f'"{theme}"', format.to_camel_case(theme))
+    return value
+
+
 class CodeBlock(Component):
     """A code block."""
 
@@ -393,20 +408,13 @@ class CodeBlock(Component):
 
         themeString = str(self.theme)
 
-        themes = re.findall(r'"(.*?)"', themeString)
-        if not themes:
-            themes = [themeString]
+        selected_themes = []
 
-        if "oneLight" in themeString:
-            themes.append("light")
-        if "oneDark" in themeString:
-            themes.append("dark")
-        if "one-light" in themeString:
-            themes.append("light")
-        if "one-dark" in themeString:
-            themes.append("dark")
+        for possibleTheme in get_args(LiteralCodeBlockTheme):
+            if possibleTheme in themeString:
+                selected_themes.append(possibleTheme)
 
-        themes = sorted(set(themes))
+        selected_themes = sorted(set(selected_themes))
 
         imports_.update(
             {
@@ -417,7 +425,7 @@ class CodeBlock(Component):
                         install=False,
                     )
                 ]
-                for theme in themes
+                for theme in selected_themes
             }
         )
 
@@ -523,12 +531,14 @@ class CodeBlock(Component):
 
     def _render(self):
         out = super()._render()
-        predicate, qmark, value = self.theme._var_name.partition("?")
-        out.add_props(
-            style=ImmutableVar.create(
-                format.to_camel_case(f"{predicate}{qmark}{value.replace('`', '')}"),
-            )
-        ).remove_props("theme", "code").add_props(children=self.code)
+
+        theme = self.theme._replace(
+            _var_name=replace_quotes_with_camel_case(str(self.theme))
+        )
+
+        out.add_props(style=theme).remove_props("theme", "code").add_props(
+            children=self.code
+        )
 
         return out
 

@@ -1073,7 +1073,7 @@ TEST_VAR = LiteralVar.create("test")._replace(
     )
 )
 FORMATTED_TEST_VAR = LiteralVar.create(f"foo{TEST_VAR}bar")
-STYLE_VAR = TEST_VAR._replace(_var_name="style", _var_is_local=False)
+STYLE_VAR = TEST_VAR._replace(_var_name="style")
 EVENT_CHAIN_VAR = TEST_VAR._replace(_var_type=EventChain)
 ARG_VAR = Var.create("arg")
 
@@ -1299,8 +1299,8 @@ def test_get_vars(component, exp_vars):
         comp_vars,
         sorted(exp_vars, key=lambda v: v._var_name),
     ):
-        print(str(comp_var), str(exp_var))
-        print(comp_var._get_all_var_data(), exp_var._get_all_var_data())
+        # print(str(comp_var), str(exp_var))
+        # print(comp_var._get_all_var_data(), exp_var._get_all_var_data())
         assert comp_var.equals(exp_var)
 
 

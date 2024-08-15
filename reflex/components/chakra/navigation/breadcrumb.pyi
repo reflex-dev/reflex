@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, Optional, Union, overload
 
 from reflex.components.chakra import ChakraComponent
 from reflex.components.chakra.navigation.link import Link
+from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
 from reflex.vars import Var
@@ -239,7 +240,7 @@ class BreadcrumbLink(Link):
         rel: Optional[Union[Var[str], str]] = None,
         href: Optional[Union[Var[str], str]] = None,
         text: Optional[Union[Var[str], str]] = None,
-        as_: Optional[Union[Var[str], str]] = None,
+        as_: Optional[Union[Var[Component], Component]] = None,
         is_external: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

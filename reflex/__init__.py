@@ -325,7 +325,6 @@ _MAPPING: dict = {
     "utils.imports": ["ImportVar"],
     "utils.serializers": ["serializer"],
     "vars": ["Var"],
-    "ivars.base": ["cached_var"],
 }
 
 _SUBMODULES: set[str] = {

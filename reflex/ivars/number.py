@@ -11,6 +11,7 @@ from typing import Any, Union
 from reflex.vars import ImmutableVarData, Var, VarData
 
 from .base import (
+    CachedVarOperation,
     ImmutableVar,
     LiteralVar,
     unionize,
@@ -330,7 +331,7 @@ class NumberVar(ImmutableVar[Union[int, float]]):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class BinaryNumberOperation(NumberVar):
+class BinaryNumberOperation(CachedVarOperation, NumberVar):
     """Base class for immutable number vars that are the result of a binary operation."""
 
     _lhs: NumberVar = dataclasses.field(
@@ -339,10 +340,6 @@ class BinaryNumberOperation(NumberVar):
     _rhs: NumberVar = dataclasses.field(
         default_factory=lambda: LiteralNumberVar.create(0)
     )
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -354,49 +351,6 @@ class BinaryNumberOperation(NumberVar):
         raise NotImplementedError(
             "BinaryNumberOperation must implement _cached_var_name"
         )
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute value.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        getattr(super(BinaryNumberOperation, self), name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        first_value = (
-            self._lhs if isinstance(self._lhs, Var) else LiteralNumberVar(self._lhs)
-        )
-        second_value = (
-            self._rhs if isinstance(self._rhs, Var) else LiteralNumberVar(self._rhs)
-        )
-        return ImmutableVarData.merge(
-            first_value._get_all_var_data(),
-            second_value._get_all_var_data(),
-            self._var_data,
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._lhs, self._rhs))
 
     @classmethod
     def create(
@@ -430,16 +384,12 @@ class BinaryNumberOperation(NumberVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class UnaryNumberOperation(NumberVar):
+class UnaryNumberOperation(CachedVarOperation, NumberVar):
     """Base class for immutable number vars that are the result of a unary operation."""
 
     _value: NumberVar = dataclasses.field(
         default_factory=lambda: LiteralNumberVar.create(0)
     )
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -451,44 +401,6 @@ class UnaryNumberOperation(NumberVar):
         raise NotImplementedError(
             "UnaryNumberOperation must implement _cached_var_name"
         )
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute value.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        getattr(super(UnaryNumberOperation, self), name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        value = (
-            self._value
-            if isinstance(self._value, Var)
-            else LiteralNumberVar(self._value)
-        )
-        return ImmutableVarData.merge(value._get_all_var_data(), self._var_data)
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._value))
 
     @classmethod
     def create(cls, value: NumberVar, _var_data: VarData | None = None):
@@ -787,16 +699,12 @@ class BooleanVar(ImmutableVar[bool]):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class BooleanToIntOperation(NumberVar):
+class BooleanToIntOperation(CachedVarOperation, NumberVar):
     """Base class for immutable number vars that are the result of a boolean to int operation."""
 
     _value: BooleanVar = dataclasses.field(
         default_factory=lambda: LiteralBooleanVar.create(False)
     )
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -806,42 +714,6 @@ class BooleanToIntOperation(NumberVar):
             The name of the var.
         """
         return f"({str(self._value)} ? 1 : 0)"
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute value.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        getattr(super(BooleanToIntOperation, self), name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            self._value._get_all_var_data() if isinstance(self._value, Var) else None,
-            self._var_data,
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._value))
 
     @classmethod
     def create(cls, value: BooleanVar, _var_data: VarData | None = None):
@@ -867,7 +739,7 @@ class BooleanToIntOperation(NumberVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ComparisonOperation(BooleanVar):
+class ComparisonOperation(CachedVarOperation, BooleanVar):
     """Base class for immutable boolean vars that are the result of a comparison operation."""
 
     _lhs: Var = dataclasses.field(
@@ -877,10 +749,6 @@ class ComparisonOperation(BooleanVar):
         default_factory=lambda: LiteralBooleanVar.create(False)
     )
 
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
-
     @cached_property
     def _cached_var_name(self) -> str:
         """The name of the var.
@@ -889,41 +757,6 @@ class ComparisonOperation(BooleanVar):
             NotImplementedError: Must be implemented by subclasses.
         """
         raise NotImplementedError("ComparisonOperation must implement _cached_var_name")
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute value.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        getattr(super(ComparisonOperation, self), name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            self._lhs._get_all_var_data(), self._rhs._get_all_var_data()
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._lhs, self._rhs))
 
     @classmethod
     def create(cls, lhs: Var | Any, rhs: Var | Any, _var_data: VarData | None = None):
@@ -1022,7 +855,7 @@ class NotEqualOperation(ComparisonOperation):
         Returns:
             The name of the var.
         """
-        return f"({str(self._lhs)} != {str(self._rhs)})"
+        return f"({str(self._lhs)} !== {str(self._rhs)})"
 
 
 @dataclasses.dataclass(
@@ -1030,7 +863,7 @@ class NotEqualOperation(ComparisonOperation):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LogicalOperation(BooleanVar):
+class LogicalOperation(CachedVarOperation, BooleanVar):
     """Base class for immutable boolean vars that are the result of a logical operation."""
 
     _lhs: BooleanVar = dataclasses.field(
@@ -1040,10 +873,6 @@ class LogicalOperation(BooleanVar):
         default_factory=lambda: LiteralBooleanVar.create(False)
     )
 
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
-
     @cached_property
     def _cached_var_name(self) -> str:
         """The name of the var.
@@ -1052,41 +881,6 @@ class LogicalOperation(BooleanVar):
             NotImplementedError: Must be implemented by subclasses.
         """
         raise NotImplementedError("LogicalOperation must implement _cached_var_name")
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute value.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        getattr(super(LogicalOperation, self), name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            self._lhs._get_all_var_data(), self._rhs._get_all_var_data()
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._lhs, self._rhs))
 
     @classmethod
     def create(
@@ -1122,16 +916,12 @@ class LogicalOperation(BooleanVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class BooleanNotOperation(BooleanVar):
+class BooleanNotOperation(CachedVarOperation, BooleanVar):
     """Base class for immutable boolean vars that are the result of a logical NOT operation."""
 
     _value: BooleanVar = dataclasses.field(
         default_factory=lambda: LiteralBooleanVar.create(False)
     )
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -1141,39 +931,6 @@ class BooleanNotOperation(BooleanVar):
             The name of the var.
         """
         return f"!({str(self._value)})"
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute value.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        getattr(super(BooleanNotOperation, self), name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(self._value._get_all_var_data())
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._value))
 
     @classmethod
     def create(cls, value: boolean_types, _var_data: VarData | None = None):
@@ -1205,14 +962,6 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
 
     _var_value: bool = dataclasses.field(default=False)
 
-    def __hash__(self) -> int:
-        """Hash the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((self.__class__.__name__, self._var_value))
-
     def json(self) -> str:
         """Get the JSON representation of the var.
 
@@ -1220,6 +969,14 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
             The JSON representation of the var.
         """
         return "true" if self._var_value else "false"
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self._var_value))
 
     @classmethod
     def create(cls, value: bool, _var_data: VarData | None = None):
@@ -1250,14 +1007,6 @@ class LiteralNumberVar(LiteralVar, NumberVar):
 
     _var_value: float | int = dataclasses.field(default=0)
 
-    def __hash__(self) -> int:
-        """Hash the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((self.__class__.__name__, self._var_value))
-
     def json(self) -> str:
         """Get the JSON representation of the var.
 
@@ -1265,6 +1014,14 @@ class LiteralNumberVar(LiteralVar, NumberVar):
             The JSON representation of the var.
         """
         return json.dumps(self._var_value)
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self._var_value))
 
     @classmethod
     def create(cls, value: float | int, _var_data: VarData | None = None):
@@ -1294,16 +1051,12 @@ boolean_types = Union[BooleanVar, bool]
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ToNumberVarOperation(NumberVar):
+class ToNumberVarOperation(CachedVarOperation, NumberVar):
     """Base class for immutable number vars that are the result of a number operation."""
 
     _original_value: Var = dataclasses.field(
         default_factory=lambda: LiteralNumberVar.create(0)
     )
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
 
     @cached_property
     def _cached_var_name(self) -> str:
@@ -1313,41 +1066,6 @@ class ToNumberVarOperation(NumberVar):
             The name of the var.
         """
         return str(self._original_value)
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute value.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        getattr(super(ToNumberVarOperation, self), name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            self._original_value._get_all_var_data(), self._var_data
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._original_value))
 
     @classmethod
     def create(
@@ -1379,7 +1097,7 @@ class ToNumberVarOperation(NumberVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ToBooleanVarOperation(BooleanVar):
+class ToBooleanVarOperation(CachedVarOperation, BooleanVar):
     """Base class for immutable boolean vars that are the result of a boolean operation."""
 
     _original_value: Var = dataclasses.field(
@@ -1394,45 +1112,6 @@ class ToBooleanVarOperation(BooleanVar):
             The name of the var.
         """
         return f"Boolean({str(self._original_value)})"
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute value.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        getattr(super(ToBooleanVarOperation, self), name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            self._original_value._get_all_var_data(), self._var_data
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._original_value))
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
 
     @classmethod
     def create(
@@ -1462,7 +1141,7 @@ class ToBooleanVarOperation(BooleanVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class TernaryOperator(ImmutableVar):
+class TernaryOperator(CachedVarOperation, ImmutableVar):
     """Base class for immutable vars that are the result of a ternary operation."""
 
     _condition: BooleanVar = dataclasses.field(
@@ -1475,10 +1154,6 @@ class TernaryOperator(ImmutableVar):
         default_factory=lambda: LiteralNumberVar.create(0)
     )
 
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
-
     @cached_property
     def _cached_var_name(self) -> str:
         """The name of the var.
@@ -1488,46 +1163,6 @@ class TernaryOperator(ImmutableVar):
         """
         return (
             f"({str(self._condition)} ? {str(self._if_true)} : {str(self._if_false)})"
-        )
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute value.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-        getattr(super(TernaryOperator, self), name)
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            self._condition._get_all_var_data(),
-            self._if_true._get_all_var_data(),
-            self._if_false._get_all_var_data(),
-            self._var_data,
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        return self._cached_get_all_var_data
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash(
-            (self.__class__.__name__, self._condition, self._if_true, self._if_false)
         )
 
     @classmethod

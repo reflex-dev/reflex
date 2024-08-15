@@ -175,7 +175,6 @@ from .event import stop_propagation as stop_propagation
 from .event import upload_files as upload_files
 from .event import window_alert as window_alert
 from .experimental import _x as _x
-from .ivars.base import cached_var as cached_var
 from .middleware import Middleware as Middleware
 from .middleware import middleware as middleware
 from .model import Model as Model

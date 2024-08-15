@@ -905,7 +905,6 @@ class Var:
         Raises:
             VarTypeError: If the var is not indexable.
         """
-        print(repr(self))
         from reflex.utils import format
 
         # Indexing is only supported for strings, lists, tuples, dicts, and dataframes.
@@ -1058,7 +1057,6 @@ class Var:
                 return self._replace(
                     _var_name=f"{self._var_name}{'?' if is_optional else ''}.{name}",
                     _var_type=type_,
-                    _var_is_string=False,
                 )
 
             if name in REPLACED_NAMES:

@@ -12,7 +12,7 @@ from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.imports import ImportVar
 from reflex.vars import Var, VarData
 
 connect_error_var_data: VarData
@@ -22,8 +22,7 @@ connection_errors_count: Var
 has_connection_errors: Var
 has_too_many_connection_errors: Var
 
-class WebsocketTargetURL:
-    def add_imports(self) -> ImportDict: ...
+class WebsocketTargetURL(ImmutableVar):
     @classmethod
     def create(cls) -> ImmutableVar: ...  # type: ignore
 
