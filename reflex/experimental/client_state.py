@@ -11,7 +11,7 @@ from reflex.event import EventChain, EventHandler, EventSpec, call_script
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.ivars.function import FunctionVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData, get_unique_variable_name
+from reflex.vars import ImmutableVarData, Var, VarData, get_unique_variable_name
 
 NoValue = object()
 
@@ -197,15 +197,12 @@ class ClientStateVar(Var):
             else:
                 arg = ""
             setter = f"({arg}) => {setter}({value._var_name_unwrapped})"
-        return (
-            ImmutableVar.create_safe(setter)
-            .to(FunctionVar, EventChain)
-            ._replace(
-                merge_var_data=VarData(  # type: ignore
-                    imports=_refs_import if self._global_ref else {}
-                )
-            )
-        )
+        return ImmutableVar(
+            _var_name=setter,
+            _var_data=ImmutableVarData(
+                imports=_refs_import if self._global_ref else {}
+            ),
+        ).to(FunctionVar, EventChain)
 
     @property
     def set(self) -> Var:
