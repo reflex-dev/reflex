@@ -2114,18 +2114,14 @@ version = "0.1.0"
 description = "reflex using chakra components"
 category = "main"
 optional = false
-python-versions = "^3.8"
-files = []
-develop = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "reflex_chakra-0.1.0-py3-none-any.whl", hash = "sha256:ac447976a2b6a9126b40819e8c8d95538a068ef0c31c005ba3b6e3ceaf4be7af"},
+    {file = "reflex_chakra-0.1.0.tar.gz", hash = "sha256:37098905a9e579982af7d6c9de5f11b5b68e8fdefe3751be12ef6b1d538ce3c9"},
+]
 
 [package.dependencies]
 reflex = ">=0.5.9"
-
-[package.source]
-type = "git"
-url = "https://github.com/reflex-dev/reflex-chakra"
-reference = "main"
-resolved_reference = "4cd71854516b3f3336d33e86396ee0e6ab691520"
 
 [[package]]
 name = "reflex-hosting-cli"
@@ -3108,4 +3104,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "57b4acbac3b293e1e2a57dff91418558cd84d1d0cb63c819dab32c97a1235527"
+content-hash = "49943a560760d064130becf7ad67eb2d21374d40f92068ff377d617bf18f021b"
