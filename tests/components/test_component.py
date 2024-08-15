@@ -2,13 +2,13 @@ from contextlib import nullcontext
 from typing import Any, Dict, List, Optional, Type, Union
 
 import pytest
+from reflex_chakra.components.layout.box import Box
 
 import reflex as rx
 from reflex.base import Base
 from reflex.compiler.compiler import compile_components
 from reflex.components.base.bare import Bare
 from reflex.components.base.fragment import Fragment
-from reflex.components.chakra.layout.box import Box
 from reflex.components.component import (
     Component,
     CustomComponent,
