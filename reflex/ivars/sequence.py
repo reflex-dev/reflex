@@ -29,7 +29,12 @@ from typing_extensions import get_origin
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex.utils.types import GenericType
-from reflex.vars import ImmutableVarData, Var, VarData, _global_vars
+from reflex.vars import (
+    ImmutableVarData,
+    Var,
+    VarData,
+    _global_vars,
+)
 
 from .base import (
     CachedVarOperation,

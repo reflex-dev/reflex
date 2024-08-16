@@ -724,7 +724,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
                 }
             ),
         ).to(ObjectVar)
-        return refs[self]
+        return refs[LiteralVar.create(str(self))]
 
     def _type(self) -> StringVar:
         """Returns the type of the object.
@@ -804,7 +804,7 @@ class LiteralVar(ImmutableVar):
 
         if isinstance(value, EventSpec):
             event_name = LiteralVar.create(
-                ".".join(get_event_handler_parts(value.handler))
+                ".".join(filter(None, get_event_handler_parts(value.handler)))
             )
             event_args = LiteralVar.create(
                 {str(name): value for name, value in value.args}

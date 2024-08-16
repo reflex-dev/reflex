@@ -1113,7 +1113,11 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         Returns:
             Task if the event was backgroundable, otherwise None
         """
+        # print("Processing background", repr(event))
         substate, handler = state._get_event_handler(event)
+        # print("Substate", substate)
+        # print("Handler", handler)
+
         if not handler.is_background:
             return None
 

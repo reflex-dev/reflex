@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from typing import Optional
 
+import reflex as rx
 from reflex.components.chakra import ChakraComponent, LiteralInputVariant
 from reflex.components.component import Component
 from reflex.components.tags.tag import Tag
 from reflex.event import EventHandler
+from reflex.ivars import ArrayVar
 from reflex.utils import format
 from reflex.utils.imports import ImportDict, merge_imports
 from reflex.vars import Var
@@ -186,7 +188,10 @@ class PinInputField(ChakraComponent):
                 props["name"] = f"{name}-{i}"
             return PinInputField.create(**props, index=i, key=i)
 
-        return Var.range(length).foreach(_create)  # type: ignore
+        return rx.foreach(  # type: ignore
+            ArrayVar.range(length),  # type: ignore
+            _create,
+        )
 
     def _get_ref_hook(self) -> Optional[str]:
         return None

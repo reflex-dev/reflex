@@ -11,7 +11,7 @@ from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain, EventHandler
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.utils.format import format_event_chain
 from reflex.utils.imports import ImportDict
 from reflex.vars import Var, VarData
@@ -185,7 +185,7 @@ class Form(BaseHTML):
             HANDLE_SUBMIT_JS_JINJA2.render(
                 handle_submit_unique_name=self.handle_submit_unique_name,
                 form_data=FORM_DATA,
-                field_ref_mapping=str(Var.create_safe(self._get_form_refs())),
+                field_ref_mapping=str(LiteralVar.create(self._get_form_refs())),
                 on_submit_event_chain=format_event_chain(
                     self.event_triggers[EventTriggers.ON_SUBMIT]
                 ),
@@ -213,21 +213,18 @@ class Form(BaseHTML):
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
-                ref_var = Var.create_safe(ref[:-3], _var_is_string=False).as_ref()
-                form_refs[ref[5:-3]] = Var.create_safe(
+                ref_var = ImmutableVar.create_safe(ref[:-3]).as_ref()
+                form_refs[ref[len("refs_") : -3]] = ImmutableVar.create_safe(
                     f"getRefValues({str(ref_var)})",
-                    _var_is_local=False,
-                    _var_is_string=False,
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
             else:
-                ref_var = Var.create_safe(ref, _var_is_string=False).as_ref()
-                form_refs[ref[4:]] = Var.create_safe(
+                ref_var = ImmutableVar.create_safe(ref).as_ref()
+                form_refs[ref[4:]] = ImmutableVar.create_safe(
                     f"getRefValue({str(ref_var)})",
-                    _var_is_local=False,
-                    _var_is_string=False,
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
+        # print(repr(form_refs))
         return form_refs
 
     def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
