@@ -225,6 +225,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     attr = getattr(cls, name, None)
     if hint := get_property_hint(attr):
         return hint
+
     if (
         hasattr(cls, "__fields__")
         and name in cls.__fields__
