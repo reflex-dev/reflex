@@ -6,7 +6,6 @@ from typing import Callable, Coroutine, Generator, Type
 from urllib.parse import urlsplit
 
 import pytest
-import reflex_chakra as rc
 from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness, AppHarnessProd, WebDriver
@@ -17,6 +16,8 @@ from .utils import poll_for_navigation
 def DynamicRoute():
     """App for testing dynamic routes."""
     from typing import List
+
+    import reflex_chakra as rc
 
     import reflex as rx
 
