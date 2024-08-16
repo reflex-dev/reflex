@@ -46,4 +46,4 @@ class HydrateMiddleware(Middleware):
         state._clean()
 
         # Return the state update.
-        return StateUpdate(delta=delta, events=[])
+        return StateUpdate(delta=delta, events=[], scopes=state.scopes_and_subscopes())

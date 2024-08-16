@@ -8,6 +8,7 @@ import copy
 import functools
 import inspect
 import os
+import traceback
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -67,6 +68,22 @@ var = computed_var
 
 # If the state is this large, it's considered a performance issue.
 TOO_LARGE_SERIALIZED_STATE = 100 * 1024  # 100kb
+
+
+def print_stack(depth: int = 3):
+    """Print the current stacktrace to the console.
+
+    Args:
+        depth: Depth of the stack-trace to print
+    """
+    stack = traceback.extract_stack()
+    stack.reverse()
+    print("stacktrace")
+    for idx in range(1, depth + 1):
+        stack_info = stack[idx]
+        print(
+            f"    {stack_info.name} {os.path.basename(stack_info.filename)}:{stack_info.lineno}"
+        )
 
 
 class HeaderData(Base):
@@ -443,11 +460,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
 
     @classmethod
-    def __init_subclass__(cls, mixin: bool = False, **kwargs):
+    def __init_subclass__(
+        cls, mixin: bool = False, scope: Union[Var, str, None] = None, **kwargs
+    ):
         """Do some magic for the subclass initialization.
 
         Args:
             mixin: Whether the subclass is a mixin and should not be initialized.
+            scope: A var or string to set the scope of the state. The state will be shared across all states with the same scope value.
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
 
         Raises:
@@ -460,6 +480,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._mixin = mixin
         if mixin:
             return
+
+        # Set the scope of the state.
+        cls._scope = scope
 
         # Validate the module name.
         cls._validate_module_name()
@@ -680,7 +703,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
         # Any substate containing a ComputedVar with cache=False always needs to be recomputed
-        if cls._always_dirty_computed_vars:
+        if cls._always_dirty_computed_vars:  # or cls._scope is not None:
             # Tell parent classes that this substate has always dirty computed vars
             state_name = cls.get_name()
             parent_state = cls.get_parent_state()
@@ -1271,9 +1294,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 # The requested state is missing, fetch from redis.
                 pass
             parent_state = await state_manager.get_state(
-                token=_substate_key(
-                    self.router.session.client_token, parent_state_name
-                ),
+                token=_substate_key(self._get_token(), parent_state_name),
                 top_level=False,
                 get_substates=False,
                 parent_state=parent_state,
@@ -1319,8 +1340,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 f"Requested state {state_cls.get_full_name()} is not cached and cannot be accessed without redis. "
                 "(All states should already be available -- this is likely a bug).",
             )
+
         return await state_manager.get_state(
-            token=_substate_key(self.router.session.client_token, state_cls),
+            token=_substate_key(self._get_token(), state_cls),
             top_level=False,
             get_substates=True,
             parent_state=parent_state_of_state_cls,
@@ -1426,6 +1448,34 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`)"
         )
 
+    def scopes_and_subscopes(self) -> list[str]:
+        """Recursively gathers all scopes of self and substates.
+
+        Returns:
+            A unique list of the scopes/token
+        """
+        result = [self._get_token()]
+        for substate in self.substates.values():
+            subscopes = substate.scopes_and_subscopes()
+            for subscope in subscopes:
+                if subscope not in result:
+                    result.append(subscope)
+        return result
+
+    def _get_token(self, other: type[BaseState] | None = None) -> str:
+        token = self.router.session.client_token
+        cls = other or self.__class__
+        if cls._scope is not None:
+            scope = None
+            if isinstance(cls._scope, str):
+                scope = f"static{cls._scope}"
+            else:
+                scope = f"shared{getattr(self, cls._scope._var_name)}"
+
+            token = scope
+
+        return token
+
     def _as_state_update(
         self,
         handler: EventHandler,
@@ -1449,7 +1499,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         while state.parent_state is not None:
             state = state.parent_state
 
-        token = self.router.session.client_token
+        token = self._get_token()
 
         # Convert valid EventHandler and EventSpec into Event
         fixed_events = fix_events(self._check_valid(handler, events), token)
@@ -1463,6 +1513,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 delta=delta,
                 events=fixed_events,
                 final=final if not handler.is_background else True,
+                scopes=state.scopes_and_subscopes(),
             )
         except Exception as ex:
             state._clean()
@@ -1640,6 +1691,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             .union(self._always_dirty_computed_vars)
         )
 
+        if len(self.scopes_and_subscopes()) > 1 and "router" in delta_vars:
+            delta_vars.remove("router")
+
         subdelta = {
             prop: getattr(self, prop)
             for prop in delta_vars
@@ -1647,6 +1701,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         }
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
+
+        if self.__class__._scope is not None:
+            subdelta["_scope"] = self._get_token()
 
         # Recursively find the substate deltas.
         substates = self.substates
@@ -1783,7 +1840,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             }
         else:
             computed_vars = {}
-        variables = {**base_vars, **computed_vars}
+        variables = {"_scope": self._get_token(), **base_vars, **computed_vars}
         d = {
             self.get_full_name(): {k: variables[k] for k in sorted(variables)},
         }
@@ -1910,7 +1967,7 @@ class OnLoadInternalState(State):
         return [
             *fix_events(
                 load_events,
-                self.router.session.client_token,
+                self._get_token(),
                 router_data=self.router_data,
             ),
             State.set_is_hydrated(True),  # type: ignore
@@ -2284,6 +2341,8 @@ class StateUpdate(Base):
     # Whether this is the final state update for the event.
     final: bool = True
 
+    scopes: list[str] = []
+
 
 class StateManager(Base, ABC):
     """A class to manage many client states."""
@@ -2377,10 +2436,15 @@ class StateManagerMemory(StateManager):
         Returns:
             The state for the token.
         """
-        # Memory state manager ignores the substate suffix and always returns the top-level state.
-        token = _split_substate_key(token)[0]
         if token not in self.states:
             self.states[token] = self.state(_reflex_internal_init=True)
+
+        # TODO This is a bit madness maybe.
+        token = self.states[token]._get_token()
+
+        if token not in self.states:
+            self.states[token] = self.state(_reflex_internal_init=True)
+
         return self.states[token]
 
     async def set_state(self, token: str, state: BaseState):
@@ -2402,8 +2466,6 @@ class StateManagerMemory(StateManager):
         Yields:
             The state for the token.
         """
-        # Memory state manager ignores the substate suffix and always returns the top-level state.
-        token = _split_substate_key(token)[0]
         if token not in self._states_locks:
             async with self._state_manager_lock:
                 if token not in self._states_locks:
@@ -2558,6 +2620,10 @@ class StateManagerRedis(StateManager):
         for substate_name, substate_task in tasks.items():
             state.substates[substate_name] = await substate_task
 
+    # async def print_all_keys(self):
+    #     for key in await self.redis.keys():
+    #         print(f"redis_key: {key}")
+
     async def get_state(
         self,
         token: str,
@@ -2589,6 +2655,10 @@ class StateManagerRedis(StateManager):
                 "StateManagerRedis requires token to be specified in the form of {token}_{state_full_name}"
             )
 
+        if parent_state is None:
+            parent_state = await self._get_parent_state(token)
+            if parent_state is not None:
+                token = f"{parent_state._get_token(state_cls)}_{state_path}"
         # Fetch the serialized substate from redis.
         redis_state = await self.redis.get(token)
 
@@ -2685,6 +2755,8 @@ class StateManagerRedis(StateManager):
                 "or use `@rx.background` decorator for long-running tasks."
             )
         client_token, substate_name = _split_substate_key(token)
+        client_token = state._get_token()
+
         # If the substate name on the token doesn't match the instance name, it cannot have a parent.
         if state.parent_state is not None and state.get_full_name() != substate_name:
             raise RuntimeError(

@@ -1096,7 +1096,9 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 # When the state is modified reset dirty status and emit the delta to the frontend.
                 state._clean()
                 await self.event_namespace.emit_update(
-                    update=StateUpdate(delta=delta),
+                    update=StateUpdate(
+                        delta=delta, scopes=state.scopes_and_subscopes()
+                    ),
                     sid=state.router.session.session_id,
                 )
 
@@ -1260,16 +1262,23 @@ async def process(
     from reflex.utils import telemetry
 
     try:
-        # Add request data to the state.
-        router_data = event.router_data
-        router_data.update(
-            {
-                constants.RouteVar.QUERY: format.format_query_params(event.router_data),
-                constants.RouteVar.CLIENT_TOKEN: event.token,
-                constants.RouteVar.SESSION_ID: sid,
-                constants.RouteVar.HEADERS: headers,
-                constants.RouteVar.CLIENT_IP: client_ip,
-            }
+        router_data = {}
+        if event.router_data:
+            # Add request data to the state.
+            router_data = event.router_data
+            router_data.update(
+                {
+                    constants.RouteVar.QUERY: format.format_query_params(
+                        event.router_data
+                    ),
+                    constants.RouteVar.CLIENT_TOKEN: event.token,
+                    constants.RouteVar.SESSION_ID: sid,
+                    constants.RouteVar.HEADERS: headers,
+                    constants.RouteVar.CLIENT_IP: client_ip,
+                }
+            )
+        print(
+            f"Processing event: {event.name} with payload: {event.payload} {event.substate_token}"
         )
         # Get the state for the session exclusively.
         async with app.state_manager.modify_state(event.substate_token) as state:
@@ -1291,7 +1300,7 @@ async def process(
             else:
                 if app._process_background(state, event) is not None:
                     # `final=True` allows the frontend send more events immediately.
-                    yield StateUpdate(final=True)
+                    yield StateUpdate(final=True, scopes=state.scopes_and_subscopes())
                     return
 
                 # Process the event synchronously.
@@ -1478,17 +1487,75 @@ class EventNamespace(AsyncNamespace):
         if disconnect_token:
             self.token_to_sid.pop(disconnect_token, None)
 
-    async def emit_update(self, update: StateUpdate, sid: str) -> None:
+    async def emit_update(
+        self, update: StateUpdate, sid: str, room: str | None = None
+    ) -> None:
         """Emit an update to the client.
 
         Args:
             update: The state update to send.
             sid: The Socket.IO session id.
+            room: The room to send the update to.
         """
+        # TODO We don't know when to leave a room yet.
+        for receiver in update.scopes:
+            if self.sid_to_token[sid] != receiver:
+                room = receiver
+                if room not in self.rooms(sid):
+                    print(f"Entering room `{room}`")
+                    await self.enter_room(sid, room)
+
+        for room in self.rooms(sid):
+            if room not in update.scopes and room != sid:
+                print(f"Leaving room `{room}`")
+                await self.leave_room(sid, room)
+
+        delta_by_scope = {}
+        events_by_scope = {}
+
+        for event in update.events:
+            scope = self.token_to_sid.get(event.token, event.token)
+            events = events_by_scope.get(scope, [])
+            events.append(event)
+            events_by_scope[scope] = events
+
+        for state, delta in update.delta.items():
+            key = delta.get("_scope", sid)
+            d = delta_by_scope.get(key, {})
+            d.update({state: delta})
+            delta_by_scope[key] = d
+
+        for scope, deltas in delta_by_scope.items():
+            events = events_by_scope.get(scope, [])
+            print(f"Sending update to {scope} {events}")
+            single_update = StateUpdate(
+                delta=deltas, scopes=[scope], events=events, final=update.final
+            )
+
+            await asyncio.create_task(
+                self.emit(
+                    str(constants.SocketEvent.EVENT), single_update.json(), to=scope
+                )
+            )
+
+        for key in events_by_scope:
+            if key not in delta_by_scope:
+                single_update = StateUpdate(
+                    delta={},
+                    scopes=[key],
+                    events=events_by_scope.get(key, []),
+                    final=update.final,
+                )
+                print(f"Sending event to {key}")
+                await asyncio.create_task(
+                    self.emit(
+                        str(constants.SocketEvent.EVENT), single_update.json(), to=key
+                    )
+                )
+
+        update.scopes = []
+
         # Creating a task prevents the update from being blocked behind other coroutines.
-        await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
-        )
 
     async def on_event(self, sid, data):
         """Event for receiving front-end websocket events.
@@ -1519,6 +1586,8 @@ class EventNamespace(AsyncNamespace):
             client_ip = environ["asgi.scope"]["client"][0]
         except (KeyError, IndexError):
             client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
+
+        print(f"Received event {event.name} {event.token} from {client_ip}")
 
         # Process the events.
         async for update in process(self.app, event, sid, headers, client_ip):
