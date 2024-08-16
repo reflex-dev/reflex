@@ -989,6 +989,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             args: a dict of args
         """
+        cls._check_overwritten_dynamic_args(args)
 
         def argsingle_factory(param):
             @ComputedVar
@@ -1018,6 +1019,24 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
             # Reinitialize dependency tracking dicts.
             cls._init_var_dependency_dicts()
+
+    @classmethod
+    def _check_overwritten_dynamic_args(cls, args: dict[str, str]):
+        """Check if dynamic args are shadowing existing vars. Recursively checks all child states.
+
+        Args:
+            args: a dict of args
+
+        Raises:
+            NameError: If a dynamic arg is shadowing an existing var.
+        """
+        for arg in args:
+            if arg in cls.vars:
+                raise NameError(
+                    f"Dynamic route arg '{arg}' is shadowing an existing var in {cls.__module__}.{cls.__name__}"
+                )
+        for substate in cls.get_substates():
+            substate._check_overwritten_dynamic_args(args)
 
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.
