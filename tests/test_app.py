@@ -917,6 +917,32 @@ class DynamicState(BaseState):
     on_load_internal = OnLoadInternalState.on_load_internal.fn
 
 
+def test_dynamic_arg_shadow(
+    index_page,
+    windows_platform: bool,
+    token: str,
+    app_module_mock: unittest.mock.Mock,
+    mocker,
+):
+    """Create app with dynamic route var and try to add a page with a dynamic arg that shadows a state var.
+
+    Args:
+        index_page: The index page.
+        windows_platform: Whether the system is windows.
+        token: a Token.
+        app_module_mock: Mocked app module.
+        mocker: pytest mocker object.
+    """
+    arg_name = "counter"
+    route = f"/test/[{arg_name}]"
+    if windows_platform:
+        route.lstrip("/").replace("/", "\\")
+    app = app_module_mock.app = App(state=DynamicState)
+    assert app.state is not None
+    with pytest.raises(NameError):
+        app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
+
+
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
     index_page,
