@@ -88,6 +88,19 @@ class VarOperationCall(CachedVarOperation, ImmutableVar):
         """
         return f"({str(self._func)}({', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
 
+    @cached_property
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all the var data associated with the var.
+
+        Returns:
+            All the var data associated with the var.
+        """
+        return ImmutableVarData.merge(
+            self._func._get_all_var_data() if self._func is not None else None,
+            *[LiteralVar.create(arg)._get_all_var_data() for arg in self._args],
+            self._var_data,
+        )
+
     @classmethod
     def create(
         cls,
