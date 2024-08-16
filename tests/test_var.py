@@ -1,4 +1,5 @@
 import json
+import math
 import typing
 from typing import Dict, List, Set, Tuple, Union
 
@@ -6,11 +7,33 @@ import pytest
 from pandas import DataFrame
 
 from reflex.base import Base
+from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex.experimental.vars.base import (
+    ImmutableVar,
+    LiteralVar,
+    var_operation,
+)
+from reflex.experimental.vars.function import ArgsFunctionOperation, FunctionStringVar
+from reflex.experimental.vars.number import (
+    LiteralBooleanVar,
+    LiteralNumberVar,
+    NumberVar,
+)
+from reflex.experimental.vars.object import LiteralObjectVar
+from reflex.experimental.vars.sequence import (
+    ArrayVar,
+    ConcatVarOperation,
+    LiteralArrayVar,
+    LiteralStringVar,
+)
 from reflex.state import BaseState
+from reflex.utils.imports import ImportVar
 from reflex.vars import (
     BaseVar,
     ComputedVar,
+    ImmutableVarData,
     Var,
+    VarData,
     computed_var,
 )
 
@@ -540,6 +563,29 @@ def test_var_indexing_str():
 
 
 @pytest.mark.parametrize(
+    "var",
+    [
+        (BaseVar(_var_name="foo", _var_type=int)),
+        (BaseVar(_var_name="bar", _var_type=float)),
+    ],
+)
+def test_var_replace_with_invalid_kwargs(var):
+    with pytest.raises(TypeError) as excinfo:
+        var._replace(_this_should_fail=True)
+    assert "Unexpected keyword arguments" in str(excinfo.value)
+
+
+def test_computed_var_replace_with_invalid_kwargs():
+    @computed_var(initial_value=1)
+    def test_var(state) -> int:
+        return 1
+
+    with pytest.raises(TypeError) as excinfo:
+        test_var._replace(_random_kwarg=True)
+    assert "Unexpected keyword arguments" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
     "var, index",
     [
         (BaseVar(_var_name="lst", _var_type=List[int]), [1, 2]),
@@ -716,64 +762,55 @@ def test_var_unsupported_indexing_dicts(var, index):
 
 
 @pytest.mark.parametrize(
-    "fixture,full_name",
+    "fixture",
     [
-        ("ParentState", "parent_state.var_without_annotation"),
-        ("ChildState", "parent_state__child_state.var_without_annotation"),
-        (
-            "GrandChildState",
-            "parent_state__child_state__grand_child_state.var_without_annotation",
-        ),
-        ("StateWithAnyVar", "state_with_any_var.var_without_annotation"),
+        "ParentState",
+        "ChildState",
+        "GrandChildState",
+        "StateWithAnyVar",
     ],
 )
-def test_computed_var_without_annotation_error(request, fixture, full_name):
+def test_computed_var_without_annotation_error(request, fixture):
     """Test that a type error is thrown when an attribute of a computed var is
     accessed without annotating the computed var.
 
     Args:
         request: Fixture Request.
         fixture: The state fixture.
-        full_name: The full name of the state var.
     """
     with pytest.raises(TypeError) as err:
         state = request.getfixturevalue(fixture)
         state.var_without_annotation.foo
-    assert (
-        err.value.args[0]
-        == f"You must provide an annotation for the state var `{full_name}`. Annotation cannot be `typing.Any`"
-    )
+        full_name = state.var_without_annotation._var_full_name
+        assert (
+            err.value.args[0]
+            == f"You must provide an annotation for the state var `{full_name}`. Annotation cannot be `typing.Any`"
+        )
 
 
 @pytest.mark.parametrize(
-    "fixture,full_name",
+    "fixture",
     [
-        (
-            "StateWithCorrectVarAnnotation",
-            "state_with_correct_var_annotation.var_with_annotation",
-        ),
-        (
-            "StateWithWrongVarAnnotation",
-            "state_with_wrong_var_annotation.var_with_annotation",
-        ),
+        "StateWithCorrectVarAnnotation",
+        "StateWithWrongVarAnnotation",
     ],
 )
-def test_computed_var_with_annotation_error(request, fixture, full_name):
+def test_computed_var_with_annotation_error(request, fixture):
     """Test that an Attribute error is thrown when a non-existent attribute of an annotated computed var is
     accessed or when the wrong annotation is provided to a computed var.
 
     Args:
         request: Fixture Request.
         fixture: The state fixture.
-        full_name: The full name of the state var.
     """
     with pytest.raises(AttributeError) as err:
         state = request.getfixturevalue(fixture)
         state.var_with_annotation.foo
-    assert (
-        err.value.args[0]
-        == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly."
-    )
+        full_name = state.var_with_annotation._var_full_name
+        assert (
+            err.value.args[0]
+            == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly."
+        )
 
 
 @pytest.mark.parametrize(
@@ -833,6 +870,305 @@ def test_state_with_initial_computed_var(
     else:
         runtime_dict = state.dict()[state_name]
         assert runtime_dict[var_name] == expected_runtime
+
+
+def test_literal_var():
+    complicated_var = LiteralVar.create(
+        [
+            {"a": 1, "b": 2, "c": {"d": 3, "e": 4}},
+            [1, 2, 3, 4],
+            9,
+            "string",
+            True,
+            False,
+            None,
+            set([1, 2, 3]),
+        ]
+    )
+    assert (
+        str(complicated_var)
+        == '[({ ["a"] : 1, ["b"] : 2, ["c"] : ({ ["d"] : 3, ["e"] : 4 }) }), [1, 2, 3, 4], 9, "string", true, false, null, [1, 2, 3]]'
+    )
+
+
+def test_function_var():
+    addition_func = FunctionStringVar("((a, b) => a + b)")
+    assert str(addition_func.call(1, 2)) == "(((a, b) => a + b)(1, 2))"
+
+    manual_addition_func = ArgsFunctionOperation(
+        ("a", "b"),
+        {
+            "args": [ImmutableVar.create_safe("a"), ImmutableVar.create_safe("b")],
+            "result": ImmutableVar.create_safe("a + b"),
+        },
+    )
+    assert (
+        str(manual_addition_func.call(1, 2))
+        == '(((a, b) => (({ ["args"] : [a, b], ["result"] : a + b })))(1, 2))'
+    )
+
+    increment_func = addition_func(1)
+    assert (
+        str(increment_func.call(2))
+        == "(((...args) => ((((a, b) => a + b)(1, ...args))))(2))"
+    )
+
+    create_hello_statement = ArgsFunctionOperation(
+        ("name",), f"Hello, {ImmutableVar.create_safe('name')}!"
+    )
+    first_name = LiteralStringVar("Steven")
+    last_name = LiteralStringVar("Universe")
+    assert (
+        str(create_hello_statement.call(f"{first_name} {last_name}"))
+        == '(((name) => (("Hello, "+name+"!")))(("Steven"+" "+"Universe")))'
+    )
+
+
+def test_var_operation():
+    @var_operation(output=NumberVar)
+    def add(a: Union[NumberVar, int], b: Union[NumberVar, int]) -> str:
+        return f"({a} + {b})"
+
+    assert str(add(1, 2)) == "(1 + 2)"
+    assert str(add(a=4, b=-9)) == "(4 + -9)"
+
+    five = LiteralNumberVar(5)
+    seven = add(2, five)
+
+    assert isinstance(seven, NumberVar)
+
+
+def test_string_operations():
+    basic_string = LiteralStringVar.create("Hello, World!")
+
+    assert str(basic_string.length()) == '"Hello, World!".split("").length'
+    assert str(basic_string.lower()) == '"Hello, World!".toLowerCase()'
+    assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
+    assert str(basic_string.strip()) == '"Hello, World!".trim()'
+    assert str(basic_string.contains("World")) == '"Hello, World!".includes("World")'
+    assert (
+        str(basic_string.split(" ").join(",")) == '"Hello, World!".split(" ").join(",")'
+    )
+
+
+def test_all_number_operations():
+    starting_number = LiteralNumberVar(-5.4)
+
+    complicated_number = (((-(starting_number + 1)) * 2 / 3) // 2 % 3) ** 2
+
+    assert (
+        str(complicated_number)
+        == "((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)"
+    )
+
+    even_more_complicated_number = ~(
+        abs(math.floor(complicated_number)) | 2 & 3 & round(complicated_number)
+    )
+
+    assert (
+        str(even_more_complicated_number)
+        == "!(((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) != 0) || (true && (Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)) != 0))))"
+    )
+
+    assert str(LiteralNumberVar(5) > False) == "(5 > 0)"
+    assert str(LiteralBooleanVar(False) < 5) == "((false ? 1 : 0) < 5)"
+    assert (
+        str(LiteralBooleanVar(False) < LiteralBooleanVar(True))
+        == "((false ? 1 : 0) < (true ? 1 : 0))"
+    )
+
+
+def test_index_operation():
+    array_var = LiteralArrayVar([1, 2, 3, 4, 5])
+    assert str(array_var[0]) == "[1, 2, 3, 4, 5].at(0)"
+    assert str(array_var[1:2]) == "[1, 2, 3, 4, 5].slice(1, 2)"
+    assert (
+        str(array_var[1:4:2])
+        == "[1, 2, 3, 4, 5].slice(1, 4).filter((_, i) => i % 2 === 0)"
+    )
+    assert (
+        str(array_var[::-1])
+        == "[1, 2, 3, 4, 5].slice(0, [1, 2, 3, 4, 5].length).reverse().slice(undefined, undefined).filter((_, i) => i % 1 === 0)"
+    )
+    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].reverse()"
+    assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5].at(0) + 9)"
+
+
+def test_array_operations():
+    array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
+
+    assert str(array_var.length()) == "[1, 2, 3, 4, 5].length"
+    assert str(array_var.contains(3)) == "[1, 2, 3, 4, 5].includes(3)"
+    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].reverse()"
+    assert (
+        str(ArrayVar.range(10))
+        == "Array.from({ length: (10 - 0) / 1 }, (_, i) => 0 + i * 1)"
+    )
+    assert (
+        str(ArrayVar.range(1, 10))
+        == "Array.from({ length: (10 - 1) / 1 }, (_, i) => 1 + i * 1)"
+    )
+    assert (
+        str(ArrayVar.range(1, 10, 2))
+        == "Array.from({ length: (10 - 1) / 2 }, (_, i) => 1 + i * 2)"
+    )
+    assert (
+        str(ArrayVar.range(1, 10, -1))
+        == "Array.from({ length: (10 - 1) / -1 }, (_, i) => 1 + i * -1)"
+    )
+
+
+def test_object_operations():
+    object_var = LiteralObjectVar({"a": 1, "b": 2, "c": 3})
+
+    assert (
+        str(object_var.keys()) == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+    )
+    assert (
+        str(object_var.values())
+        == 'Object.values(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+    )
+    assert (
+        str(object_var.entries())
+        == 'Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+    )
+    assert str(object_var.a) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
+    assert str(object_var["a"]) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
+    assert (
+        str(object_var.merge(LiteralObjectVar({"c": 4, "d": 5})))
+        == 'Object.assign(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }), ({ ["c"] : 4, ["d"] : 5 }))'
+    )
+
+
+def test_type_chains():
+    object_var = LiteralObjectVar({"a": 1, "b": 2, "c": 3})
+    assert (object_var._key_type(), object_var._value_type()) == (str, int)
+    assert (object_var.keys()._var_type, object_var.values()._var_type) == (
+        List[str],
+        List[int],
+    )
+    assert (
+        str(object_var.keys()[0].upper())  # type: ignore
+        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(0).toUpperCase()'
+    )
+    assert (
+        str(object_var.entries()[1][1] - 1)  # type: ignore
+        == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(1).at(1) - 1)'
+    )
+    assert (
+        str(object_var["c"] + object_var["b"])  # type: ignore
+        == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"])'
+    )
+
+
+def test_nested_dict():
+    arr = LiteralArrayVar([{"bar": ["foo", "bar"]}], List[Dict[str, List[str]]])
+
+    assert (
+        str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'
+    )
+
+
+def nested_base():
+    class Boo(Base):
+        foo: str
+        bar: int
+
+    class Foo(Base):
+        bar: Boo
+        baz: int
+
+    parent_obj = LiteralVar.create(Foo(bar=Boo(foo="bar", bar=5), baz=5))
+
+    assert (
+        str(parent_obj.bar.foo)
+        == '({ ["bar"] : ({ ["foo"] : "bar", ["bar"] : 5 }), ["baz"] : 5 })["bar"]["foo"]'
+    )
+
+
+def test_retrival():
+    var_without_data = ImmutableVar.create("test")
+    assert var_without_data is not None
+
+    original_var_data = VarData(
+        state="Test",
+        imports={"react": [ImportVar(tag="useRef")]},
+        hooks={"const state = useContext(StateContexts.state)": None},
+    )
+
+    var_with_data = var_without_data._replace(merge_var_data=original_var_data)
+
+    f_string = f"foo{var_with_data}bar"
+
+    assert REFLEX_VAR_OPENING_TAG in f_string
+    assert REFLEX_VAR_CLOSING_TAG in f_string
+
+    result_var_data = Var.create_safe(f_string)._var_data
+    result_immutable_var_data = ImmutableVar.create_safe(f_string)._var_data
+    assert result_var_data is not None and result_immutable_var_data is not None
+    assert (
+        result_var_data.state
+        == result_immutable_var_data.state
+        == original_var_data.state
+    )
+    assert (
+        result_var_data.imports
+        == (
+            result_immutable_var_data.imports
+            if isinstance(result_immutable_var_data.imports, dict)
+            else {
+                k: list(v)
+                for k, v in result_immutable_var_data.imports
+                if k in original_var_data.imports
+            }
+        )
+        == original_var_data.imports
+    )
+    assert (
+        list(result_var_data.hooks.keys())
+        == (
+            list(result_immutable_var_data.hooks.keys())
+            if isinstance(result_immutable_var_data.hooks, dict)
+            else list(result_immutable_var_data.hooks)
+        )
+        == list(original_var_data.hooks.keys())
+    )
+
+
+def test_fstring_concat():
+    original_var_with_data = Var.create_safe(
+        "imagination", _var_data=VarData(state="fear")
+    )
+
+    immutable_var_with_data = ImmutableVar.create_safe(
+        "consequences",
+        _var_data=VarData(
+            imports={
+                "react": [ImportVar(tag="useRef")],
+                "utils": [ImportVar(tag="useEffect")],
+            }
+        ),
+    )
+
+    f_string = f"foo{original_var_with_data}bar{immutable_var_with_data}baz"
+
+    string_concat = LiteralStringVar.create(
+        f_string,
+        _var_data=VarData(
+            hooks={"const state = useContext(StateContexts.state)": None}
+        ),
+    )
+
+    assert str(string_concat) == '("foo"+imagination+"bar"+consequences+"baz")'
+    assert isinstance(string_concat, ConcatVarOperation)
+    assert string_concat._get_all_var_data() == ImmutableVarData(
+        state="fear",
+        imports={
+            "react": [ImportVar(tag="useRef")],
+            "utils": [ImportVar(tag="useEffect")],
+        },
+        hooks={"const state = useContext(StateContexts.state)": None},
+    )
 
 
 @pytest.mark.parametrize(
@@ -1379,12 +1715,15 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List
         (Var.create(1), "1"),
         (Var.create([1, 2, 3]), "[1, 2, 3]"),
         (Var.create({"foo": "bar"}), '{"foo": "bar"}'),
-        (Var.create(ATestState.value, _var_is_string=True), "a_test_state.value"),
+        (
+            Var.create(ATestState.value, _var_is_string=True),
+            f"{ATestState.get_full_name()}.value",
+        ),
         (
             Var.create(f"{ATestState.value} string", _var_is_string=True),
-            "`${a_test_state.value} string`",
+            f"`${{{ATestState.get_full_name()}.value}} string`",
         ),
-        (Var.create(ATestState.dict_val), "a_test_state.dict_val"),
+        (Var.create(ATestState.dict_val), f"{ATestState.get_full_name()}.dict_val"),
     ],
 )
 def test_var_name_unwrapped(var, expected):

@@ -5,6 +5,7 @@
 # ------------------------------------------------------
 from typing import Any, Callable, Dict, List, Literal, Optional, Union, overload
 
+from reflex.constants.colors import Color
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
 from reflex.vars import BaseVar, Var
@@ -65,8 +66,8 @@ class Pie(Recharts):
         ] = None,
         label: Optional[Union[Var[bool], bool]] = None,
         label_line: Optional[Union[Var[bool], bool]] = None,
-        fill: Optional[Union[Var[str], str]] = None,
-        stroke: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -111,8 +112,8 @@ class Pie(Recharts):
             legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered.
             label: If false set, labels will not be drawn.
             label_line: If false set, label lines will not be drawn.
-            fill: fill color
-            stroke: stroke color
+            stroke: Stoke color
+            fill: Fill color
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -135,7 +136,7 @@ class Radar(Recharts):
         data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         points: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
         dot: Optional[Union[Var[bool], bool]] = None,
-        stroke: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         fill: Optional[Union[Var[str], str]] = None,
         fill_opacity: Optional[Union[Var[float], float]] = None,
         legend_type: Optional[Union[Var[str], str]] = None,
@@ -242,13 +243,30 @@ class RadialBar(Recharts):
         label: Optional[
             Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        background: Optional[Union[Var[bool], bool]] = None,
+        background: Optional[
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+        ] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
+        animation_easing: Optional[
+            Union[
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[
+            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+        ] = None,
+        on_animation_start: Optional[
+            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+        ] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, Callable, BaseVar]
         ] = None,
@@ -278,6 +296,10 @@ class RadialBar(Recharts):
             legend_type: Type of legend
             label: If false set, labels will not be drawn.
             background: If false set, background sector will not be drawn.
+            is_animation_active: If set false, animation of radial bars will be disabled. By default true in CSR, and false in SSR
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. By default 0
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. By default 1500
+            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. By default 'ease'
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -311,6 +333,7 @@ class PolarAngleAxis(Recharts):
         tick: Optional[Union[Var[Union[int, str]], int, str]] = None,
         ticks: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
         orient: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -379,6 +402,7 @@ class PolarAngleAxis(Recharts):
             tick: The width or height of tick.
             ticks: The array of every tick's value and angle.
             orient: The orientation of axis text.
+            stroke: The stroke color of axis
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
             style: The style of the component.
             key: A unique key for the component.
@@ -408,6 +432,7 @@ class PolarGrid(Recharts):
         grid_type: Optional[
             Union[Var[Literal["polygon", "circle"]], Literal["polygon", "circle"]]
         ] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -472,6 +497,7 @@ class PolarGrid(Recharts):
             polar_angles: The array of every line grid's angle.
             polar_radius: The array of every line grid's radius.
             grid_type: The type of polar grids. 'polygon' | 'circle'
+            stroke: The stroke color of grid
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -546,7 +572,8 @@ class PolarRadiusAxis(Recharts):
                 ],
             ]
         ] = None,
-        domain: Optional[List[int]] = None,
+        domain: Optional[Union[Var[List[int]], List[int]]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -589,6 +616,7 @@ class PolarRadiusAxis(Recharts):
             tick_count: The count of ticks.
             scale: If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'
             domain: The domain of the polar radius axis, specifying the minimum and maximum values.
+            stroke: The stroke color of axis
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

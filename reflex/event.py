@@ -509,6 +509,15 @@ def console_log(message: str | Var[str]) -> EventSpec:
     return server_side("_console", get_fn_signature(console_log), message=message)
 
 
+def back() -> EventSpec:
+    """Do a history.back on the browser.
+
+    Returns:
+        An event to go back one page.
+    """
+    return call_script("window.history.back()")
+
+
 def window_alert(message: str | Var[str]) -> EventSpec:
     """Create a window alert on the browser.
 

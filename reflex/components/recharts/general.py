@@ -139,22 +139,36 @@ class GraphingTooltip(Recharts):
     filter_null: Var[bool]
 
     # If set false, no cursor will be drawn when tooltip is active.
-    cursor: Var[bool]
+    cursor: Var[Union[Dict[str, Any], bool]] = Var.create_safe(
+        {
+            "strokeWidth": 1,
+            "fill": Color("gray", 3),
+        }
+    )
 
     # The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
     view_box: Var[Dict[str, Any]]
 
     # The style of default tooltip content item which is a li element. DEFAULT: {}
-    item_style: Var[Dict[str, Any]]
+    item_style: Var[Dict[str, Any]] = Var.create_safe(
+        {
+            "color": Color("gray", 12),
+        }
+    )
 
     # The style of tooltip wrapper which is a dom element. DEFAULT: {}
     wrapper_style: Var[Dict[str, Any]]
-
     # The style of tooltip content which is a dom element. DEFAULT: {}
-    content_style: Var[Dict[str, Any]]
+    content_style: Var[Dict[str, Any]] = Var.create_safe(
+        {
+            "background": Color("gray", 1),
+            "borderColor": Color("gray", 4),
+            "borderRadius": "8px",
+        }
+    )
 
     # The style of default tooltip label which is a p element. DEFAULT: {}
-    label_style: Var[Dict[str, Any]]
+    label_style: Var[Dict[str, Any]] = Var.create_safe({"color": Color("gray", 11)})
 
     # This option allows the tooltip to extend beyond the viewBox of the chart itself. DEFAULT: { x: false, y: false }
     allow_escape_view_box: Var[Dict[str, bool]] = Var.create_safe(
@@ -216,11 +230,11 @@ class LabelList(Recharts):
     # The offset to the specified "position"
     offset: Var[int]
 
-    # The color of the line stroke.
-    stroke: Var[Union[str, Color]]
+    # The fill color of each label
+    fill: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
 
-    # The width of the line stroke.
-    fill: Var[Union[str, Color]]
+    # The stroke color of each label
+    stroke: Var[Union[str, Color]] = Var.create_safe("none", _var_is_string=True)
 
 
 responsive_container = ResponsiveContainer.create

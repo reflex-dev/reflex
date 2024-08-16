@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
+from reflex.constants.colors import Color
 from reflex.event import EventHandler
 from reflex.vars import Var
 
@@ -70,11 +71,11 @@ class Pie(Recharts):
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList"]
 
-    # fill color
-    fill: Var[str]
+    # Stoke color
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
 
-    # stroke color
-    stroke: Var[str]
+    # Fill color
+    fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 3))
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -109,13 +110,13 @@ class Radar(Recharts):
     dot: Var[bool]
 
     # Stoke color
-    stroke: Var[str]
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
 
     # Fill color
-    fill: Var[str]
+    fill: Var[str] = Var.create_safe(Color("accent", 3))
 
     # opacity
-    fill_opacity: Var[float]
+    fill_opacity: Var[float] = Var.create_safe(0.6)
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered.
     legend_type: Var[str]
@@ -156,10 +157,22 @@ class RadialBar(Recharts):
     label: Var[Union[bool, Dict[str, Any]]]
 
     # If false set, background sector will not be drawn.
-    background: Var[bool]
+    background: Var[Union[bool, Dict[str, Any]]]
+
+    # If set false, animation of radial bars will be disabled. By default true in CSR, and false in SSR
+    is_animation_active: Var[bool]
+
+    # Specifies when the animation should begin, the unit of this option is ms. By default 0
+    animation_begin: Var[int]
+
+    # Specifies the duration of animation, the unit of this option is ms. By default 1500
+    animation_duration: Var[int]
+
+    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. By default 'ease'
+    animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
-    _valid_children: List[str] = ["LabelList"]
+    _valid_children: List[str] = ["Cell", "LabelList"]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -174,6 +187,8 @@ class RadialBar(Recharts):
             EventTriggers.ON_MOUSE_OUT: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+            EventTriggers.ON_ANIMATION_START: lambda: [],
+            EventTriggers.ON_ANIMATION_END: lambda: [],
         }
 
 
@@ -203,7 +218,7 @@ class PolarAngleAxis(Recharts):
     axis_line_type: Var[str]
 
     # If false set, tick lines will not be drawn. If true set, tick lines will be drawn which have the props calculated internally. If object set, tick lines will be drawn which have the props mergered by the internal calculated props and the option.
-    tick_line: Var[Union[bool, Dict[str, Any]]]
+    tick_line: Var[Union[bool, Dict[str, Any]]] = Var.create_safe(False)
 
     # The width or height of tick.
     tick: Var[Union[int, str]]
@@ -213,6 +228,9 @@ class PolarAngleAxis(Recharts):
 
     # The orientation of axis text.
     orient: Var[str]
+
+    # The stroke color of axis
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
 
     # Allow the axis has duplicated categorys or not when the type of axis is "category".
     allow_duplicated_category: Var[bool]
@@ -273,6 +291,9 @@ class PolarGrid(Recharts):
     # The type of polar grids. 'polygon' | 'circle'
     grid_type: Var[LiteralGridType]
 
+    # The stroke color of grid
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
+
     # Valid children components
     _valid_children: List[str] = ["RadarChart", "RadiarBarChart"]
 
@@ -321,7 +342,10 @@ class PolarRadiusAxis(Recharts):
     _valid_children: List[str] = ["Label"]
 
     # The domain of the polar radius axis, specifying the minimum and maximum values.
-    domain: List[int] = [0, 250]
+    domain: Var[List[int]] = Var.create_safe([0, 250])
+
+    # The stroke color of axis
+    stroke: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.

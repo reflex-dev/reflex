@@ -17,8 +17,7 @@ defaults:
 env:
   PYTHONIOENCODING: 'utf8'
   TELEMETRY_ENABLED: false
-  NODE_OPTIONS: '--max_old_space_size=4096'
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  NODE_OPTIONS: '--max_old_space_size=8192'
   PR_TITLE: ${{ github.event.pull_request.title }}
 
 jobs:
@@ -30,7 +29,7 @@ jobs:
         # Show OS combos first in GUI
         os: [ubuntu-latest]
         python-version: ['3.11.4']
-        node-version: ['16.x']
+        node-version: ['18.x']
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -49,7 +48,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: reflex-dev/reflex-web
-          ref: reflex-ci
+          ref: main
           path: reflex-web
 
       - name: Install Requirements for reflex-web
@@ -62,17 +61,16 @@ jobs:
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash scripts/benchmarks/benchmarks.sh ./reflex-web prod
+          poetry run bash benchmarks/lighthouse.sh ./reflex-web prod
         env:
           LHCI_GITHUB_APP_TOKEN: $
       - name: Run Benchmarks
         # Only run if the database creds are available in this context.
-        if: ${{ env.DATABASE_URL }}
-        run: poetry run python scripts/benchmarks/lighthouse_score_upload.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
+        run: poetry run python benchmarks/benchmark_lighthouse.py "$GITHUB_SHA" ./integration/benchmarks/.lighthouseci
         env:
           GITHUB_SHA: ${{ github.sha }}
 
-  simple-apps-benchmarks:
+  simple-apps-benchmarks: # This app tests the compile times of various compoonents and pages
     if: github.event.pull_request.merged == true
     env:
       OUTPUT_FILE: benchmarks.json
@@ -116,8 +114,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-      - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg2-binary
       - name: Run benchmark tests
         env:
           APP_HARNESS_HEADLESS: 1
@@ -126,16 +122,14 @@ jobs:
           poetry run pytest -v benchmarks/ --benchmark-json=${{ env.OUTPUT_FILE }} -s
       - name: Upload benchmark results
         # Only run if the database creds are available in this context.
-        if: ${{ env.DATABASE_URL }}
         run:
-          poetry run python scripts/benchmarks/simple_app_benchmark_upload.py --os "${{ matrix.os }}"
+          poetry run python benchmarks/benchmark_compile_times.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --benchmark-json "${{ env.OUTPUT_FILE }}"
-          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
-          --event-type "${{ github.event_name }}" --actor "${{ github.actor }}" --pr-id "${{ github.event.pull_request.id }}"
+          --benchmark-json "${{ env.OUTPUT_FILE }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+          --event-type "${{ github.event_name }}" --pr-id "${{ github.event.pull_request.id }}"
 
-  reflex-build-size:
-    if: github.event.pull_request.merged == true
+  reflex-dist-size: # This job is used to calculate the size of the Reflex distribution (wheel file)
+    if: github.event.pull_request.merged == true  
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
@@ -148,22 +142,19 @@ jobs:
           python-version: 3.11.5
           run-poetry-install: true
           create-venv-at-path: .venv
-      - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg2-binary
       - name: Build reflex
         run: |
           poetry build
       - name: Upload benchmark results
         # Only run if the database creds are available in this context.
-        if: ${{ env.DATABASE_URL }}
         run:
-          poetry run python scripts/benchmarks/benchmark_reflex_size.py --os ubuntu-latest
+          poetry run python benchmarks/benchmark_package_size.py --os ubuntu-latest
           --python-version 3.11.5 --commit-sha "${{ github.sha }}" --pr-id "${{ github.event.pull_request.id }}"
-          --db-url "${{ env.DATABASE_URL }}" --branch-name "${{ github.head_ref || github.ref_name }}"
-          --measurement-type "reflex-build" --path ./dist
+          --branch-name "${{ github.head_ref || github.ref_name }}"
+          --path ./dist
 
-  reflex-plus-dependency-size:
-    if: github.event.pull_request.merged == true
+  reflex-venv-size: # This job calculates the total size of Reflex and its dependencies
+    if: github.event.pull_request.merged == true  
     timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
@@ -197,14 +188,10 @@ jobs:
         run: |
           poetry run pip install uv
 
-      - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg2-binary
-
-      - if: ${{ env.DATABASE_URL }}
-        name: calculate and upload size
+      - name: calculate and upload size
         run:
-          poetry run python scripts/benchmarks/benchmark_reflex_size.py --os "${{ matrix.os }}"
+          poetry run python benchmarks/benchmark_package_size.py --os "${{ matrix.os }}"
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}" --db-url "${{ env.DATABASE_URL }}"
+          --pr-id "${{ github.event.pull_request.id }}" 
           --branch-name "${{ github.head_ref || github.ref_name }}"
-          --measurement-type "reflex-package" --path ./.venv
+          --path ./.venv

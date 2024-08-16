@@ -40,6 +40,7 @@ import reflex
 import reflex.reflex
 import reflex.utils.build
 import reflex.utils.exec
+import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.state import (
@@ -114,7 +115,7 @@ class AppHarness:
 
     app_name: str
     app_source: Optional[
-        types.FunctionType | types.ModuleType | str | functools.partial
+        types.FunctionType | types.ModuleType | str | functools.partial[Any]
     ]
     app_path: pathlib.Path
     app_module_path: pathlib.Path
@@ -133,7 +134,9 @@ class AppHarness:
     def create(
         cls,
         root: pathlib.Path,
-        app_source: Optional[types.FunctionType | types.ModuleType | str] = None,
+        app_source: Optional[
+            types.FunctionType | types.ModuleType | str | functools.partial[Any]
+        ] = None,
         app_name: Optional[str] = None,
     ) -> "AppHarness":
         """Create an AppHarness instance at root.
@@ -176,6 +179,33 @@ class AppHarness:
             app_path=root,
             app_module_path=root / app_name / f"{app_name}.py",
         )
+
+    def get_state_name(self, state_cls_name: str) -> str:
+        """Get the state name for the given state class name.
+
+        Args:
+            state_cls_name: The state class name
+
+        Returns:
+            The state name
+        """
+        return reflex.utils.format.to_snake_case(
+            f"{self.app_name}___{self.app_name}___" + state_cls_name
+        )
+
+    def get_full_state_name(self, path: List[str]) -> str:
+        """Get the full state name for the given state class name.
+
+        Args:
+            path: A list of state class names
+
+        Returns:
+            The full state name
+        """
+        # NOTE: using State.get_name() somehow causes trouble here
+        # path = [State.get_name()] + [self.get_state_name(p) for p in path]
+        path = ["reflex___state____state"] + [self.get_state_name(p) for p in path]
+        return ".".join(path)
 
     def _get_globals_from_signature(self, func: Any) -> dict[str, Any]:
         """Get the globals from a function or module object.
@@ -246,7 +276,10 @@ class AppHarness:
             before_decorated_pages = reflex.app.DECORATED_PAGES[self.app_name].copy()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
-            self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
+            self.app_module = reflex.utils.prerequisites.get_compiled_app(
+                # Do not reload the module for pre-existing apps (only apps generated from source)
+                reload=self.app_source is not None
+            )
             # Save the pages that were added during testing
             self._decorated_pages = [
                 p

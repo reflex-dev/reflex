@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import glob
 import importlib
+import importlib.metadata
 import inspect
 import json
 import os
@@ -15,6 +16,7 @@ import shutil
 import stat
 import sys
 import tempfile
+import textwrap
 import zipfile
 from datetime import datetime
 from fileinput import FileInput
@@ -23,7 +25,6 @@ from types import ModuleType
 from typing import Callable, List, Optional
 
 import httpx
-import pkg_resources
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
@@ -37,6 +38,7 @@ from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 from reflex.utils.format import format_library_name
+from reflex.utils.registry import _get_best_registry
 
 CURRENTLY_INSTALLING_NODE = False
 
@@ -61,7 +63,7 @@ class CpuInfo(Base):
 def get_web_dir() -> Path:
     """Get the working directory for the next.js commands.
 
-    Can be overriden with REFLEX_WEB_WORKDIR.
+    Can be overridden with REFLEX_WEB_WORKDIR.
 
     Returns:
         The working directory.
@@ -78,7 +80,7 @@ def check_latest_package_version(package_name: str):
     """
     try:
         # Get the latest version from PyPI
-        current_version = pkg_resources.get_distribution(package_name).version
+        current_version = importlib.metadata.version(package_name)
         url = f"https://pypi.org/pypi/{package_name}/json"
         response = httpx.get(url)
         latest_version = response.json()["info"]["version"]
@@ -404,9 +406,15 @@ def initialize_gitignore(
         files_to_ignore: The files to add to the .gitignore file.
     """
     # Combine with the current ignored files.
+    current_ignore: set[str] = set()
     if os.path.exists(gitignore_file):
         with open(gitignore_file, "r") as f:
-            files_to_ignore |= set([line.strip() for line in f.readlines()])
+            current_ignore |= set([line.strip() for line in f.readlines()])
+
+    if files_to_ignore == current_ignore:
+        console.debug(f"{gitignore_file} already up to date.")
+        return
+    files_to_ignore |= current_ignore
 
     # Write files to the .gitignore file.
     with open(gitignore_file, "w", newline="\n") as f:
@@ -569,6 +577,15 @@ def initialize_package_json():
     output_path = get_web_dir() / constants.PackageJson.PATH
     code = _compile_package_json()
     output_path.write_text(code)
+
+    best_registry = _get_best_registry()
+    bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
+    bun_config_path.write_text(
+        f"""
+[install]
+registry = "{best_registry}"
+"""
+    )
 
 
 def init_reflex_json(project_hash: int | None):
@@ -970,7 +987,7 @@ def is_latest_template() -> bool:
     json_file = get_web_dir() / constants.Reflex.JSON
     if not json_file.exists():
         return False
-    app_version = json.load(json_file.open()).get("version")
+    app_version = json.loads(json_file.read_text()).get("version")
     return app_version == constants.Reflex.VERSION
 
 
@@ -1304,39 +1321,60 @@ def migrate_to_reflex():
                 print(line, end="")
 
 
-def fetch_app_templates() -> dict[str, Template]:
-    """Fetch the list of app templates from the Reflex backend server.
+def fetch_app_templates(version: str) -> dict[str, Template]:
+    """Fetch a dict of templates from the templates repo using github API.
+
+    Args:
+        version: The version of the templates to fetch.
 
     Returns:
-        The name and download URL as a dictionary.
+        The dict of templates.
     """
-    config = get_config()
-    if not config.cp_backend_url:
-        console.info(
-            "Skip fetching App templates. No backend URL is specified in the config."
-        )
-        return {}
-    try:
-        response = httpx.get(
-            f"{config.cp_backend_url}{constants.Templates.APP_TEMPLATES_ROUTE}"
-        )
+
+    def get_release_by_tag(tag: str) -> dict | None:
+        response = httpx.get(constants.Reflex.RELEASES_URL)
         response.raise_for_status()
-        return {
-            template["name"]: Template.parse_obj(template)
-            for template in response.json()
-        }
-    except httpx.HTTPError as ex:
-        console.info(f"Failed to fetch app templates: {ex}")
-        return {}
-    except (TypeError, KeyError, json.JSONDecodeError) as tkje:
-        console.info(f"Unable to process server response for app templates: {tkje}")
+        releases = response.json()
+        for release in releases:
+            if release["tag_name"] == f"v{tag}":
+                return release
+        return None
+
+    release = get_release_by_tag(version)
+    if release is None:
+        console.warn(f"No templates known for version {version}")
         return {}
 
+    assets = release.get("assets", [])
+    asset = next((a for a in assets if a["name"] == "templates.json"), None)
+    if asset is None:
+        console.warn(f"Templates metadata not found for version {version}")
+        return {}
+    else:
+        templates_url = asset["browser_download_url"]
 
-def create_config_init_app_from_remote_template(
-    app_name: str,
-    template_url: str,
-):
+    templates_data = httpx.get(templates_url, follow_redirects=True).json()["templates"]
+
+    for template in templates_data:
+        if template["name"] == "blank":
+            template["code_url"] = ""
+            continue
+        template["code_url"] = next(
+            (
+                a["browser_download_url"]
+                for a in assets
+                if a["name"] == f"{template['name']}.zip"
+            ),
+            None,
+        )
+    return {
+        tp["name"]: Template.parse_obj(tp)
+        for tp in templates_data
+        if not tp["hidden"] and tp["code_url"] is not None
+    }
+
+
+def create_config_init_app_from_remote_template(app_name: str, template_url: str):
     """Create new rxconfig and initialize app using a remote template.
 
     Args:
@@ -1406,7 +1444,11 @@ def create_config_init_app_from_remote_template(
         template_code_dir_name=template_name,
         template_dir=template_dir,
     )
-
+    req_file = Path("requirements.txt")
+    if req_file.exists() and len(req_file.read_text().splitlines()) > 1:
+        console.info(
+            "Run `pip install -r requirements.txt` to install the required python packages for this template."
+        )
     #  Clean up the temp directories.
     shutil.rmtree(temp_dir)
     shutil.rmtree(unzip_dir)
@@ -1430,15 +1472,20 @@ def initialize_app(app_name: str, template: str | None = None):
         telemetry.send("reinit")
         return
 
-    # Get the available templates
-    templates: dict[str, Template] = fetch_app_templates()
+    templates: dict[str, Template] = {}
 
-    # Prompt for a template if not provided.
-    if template is None and len(templates) > 0:
-        template = prompt_for_template(list(templates.values()))
-    elif template is None:
-        template = constants.Templates.DEFAULT
-    assert template is not None
+    # Don't fetch app templates if the user directly asked for DEFAULT.
+    if template is None or (template != constants.Templates.DEFAULT):
+        try:
+            # Get the available templates
+            templates = fetch_app_templates(constants.Reflex.VERSION)
+            if template is None and len(templates) > 0:
+                template = prompt_for_template(list(templates.values()))
+        except Exception as e:
+            console.warn("Failed to fetch templates. Falling back to default template.")
+            console.debug(f"Error while fetching templates: {e}")
+        finally:
+            template = template or constants.Templates.DEFAULT
 
     # If the blank template is selected, create a blank app.
     if template == constants.Templates.DEFAULT:
@@ -1461,12 +1508,50 @@ def initialize_app(app_name: str, template: str | None = None):
             else:
                 console.error(f"Template `{template}` not found.")
                 raise typer.Exit(1)
+
+        if template_url is None:
+            return
+
         create_config_init_app_from_remote_template(
-            app_name=app_name,
-            template_url=template_url,
+            app_name=app_name, template_url=template_url
         )
 
     telemetry.send("init", template=template)
+
+
+def initialize_main_module_index_from_generation(app_name: str, generation_hash: str):
+    """Overwrite the `index` function in the main module with reflex.build generated code.
+
+    Args:
+        app_name: The name of the app.
+        generation_hash: The generation hash from reflex.build.
+    """
+    # Download the reflex code for the generation.
+    resp = httpx.get(
+        constants.Templates.REFLEX_BUILD_CODE_URL.format(
+            generation_hash=generation_hash
+        )
+    ).raise_for_status()
+
+    def replace_content(_match):
+        return "\n".join(
+            [
+                "def index() -> rx.Component:",
+                textwrap.indent("return " + resp.text, "    "),
+                "",
+                "",
+            ],
+        )
+
+    main_module_path = Path(app_name, app_name + constants.Ext.PY)
+    main_module_code = main_module_path.read_text()
+    main_module_path.write_text(
+        re.sub(
+            r"def index\(\).*:\n([^\n]\s+.*\n+)+",
+            replace_content,
+            main_module_code,
+        )
+    )
 
 
 def format_address_width(address_width) -> int | None:
@@ -1556,3 +1641,15 @@ def is_windows_bun_supported() -> bool:
         and cpu_info.model_name is not None
         and "ARM" not in cpu_info.model_name
     )
+
+
+def is_generation_hash(template: str) -> bool:
+    """Check if the template looks like a generation hash.
+
+    Args:
+        template: The template name.
+
+    Returns:
+        True if the template is composed of 32 or more hex characters.
+    """
+    return re.match(r"^[0-9a-f]{32,}$", template) is not None

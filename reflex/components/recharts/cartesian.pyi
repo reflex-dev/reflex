@@ -24,9 +24,6 @@ class Axis(Recharts):
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], str, int]] = None,
         height: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        orientation: Optional[
-            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
-        ] = None,
         type_: Optional[
             Union[Var[Literal["number", "category"]], Literal["number", "category"]]
         ] = None,
@@ -148,11 +145,10 @@ class Axis(Recharts):
 
         Args:
             *children: The children of the component.
-            data_key: The key of a group of data which should be unique in an area chart.
+            data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
             height: The height of axis, which can be setted by user.
-            orientation: The orientation of axis 'top' | 'bottom'
             type_: The type of axis 'number' | 'category'
             allow_decimals: Allow the ticks of XAxis to be decimals or not.
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
@@ -191,15 +187,16 @@ class XAxis(Axis):
     def create(  # type: ignore
         cls,
         *children,
+        orientation: Optional[
+            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
+        ] = None,
         x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         include_hidden: Optional[Union[Var[bool], bool]] = None,
+        domain: Optional[Union[Var[List], List]] = None,
         data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], str, int]] = None,
         height: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        orientation: Optional[
-            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
-        ] = None,
         type_: Optional[
             Union[Var[Literal["number", "category"]], Literal["number", "category"]]
         ] = None,
@@ -321,13 +318,14 @@ class XAxis(Axis):
 
         Args:
             *children: The children of the component.
+            orientation: The orientation of axis 'top' | 'bottom'
             x_axis_id: The id of x-axis which is corresponding to the data.
             include_hidden: Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
-            data_key: The key of a group of data which should be unique in an area chart.
+            domain: The range of the axis. Work best in conjuction with allow_data_overflow.
+            data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
             height: The height of axis, which can be setted by user.
-            orientation: The orientation of axis 'top' | 'bottom'
             type_: The type of axis 'number' | 'category'
             allow_decimals: Allow the ticks of XAxis to be decimals or not.
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
@@ -369,8 +367,9 @@ class YAxis(Axis):
         orientation: Optional[
             Union[Var[Literal["left", "right"]], Literal["left", "right"]]
         ] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        domain: Optional[Union[Var[List], List]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], str, int]] = None,
         height: Optional[Union[Var[Union[int, str]], str, int]] = None,
@@ -495,9 +494,10 @@ class YAxis(Axis):
 
         Args:
             *children: The children of the component.
-            orientation: The orientation of axis 'top' | 'bottom'
-            data_key: The key of a group of data which should be unique in an area chart.
+            orientation: The orientation of axis 'left' | 'right'
             y_axis_id: The id of y-axis which is corresponding to the data.
+            domain: The range of the axis. Work best in conjuction with allow_data_overflow.
+            data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
             height: The height of axis, which can be setted by user.
@@ -665,6 +665,8 @@ class Brush(Recharts):
     def create(  # type: ignore
         cls,
         *children,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         x: Optional[Union[Var[int], int]] = None,
         y: Optional[Union[Var[int], int]] = None,
@@ -675,8 +677,6 @@ class Brush(Recharts):
         gap: Optional[Union[Var[int], int]] = None,
         start_index: Optional[Union[Var[int], int]] = None,
         end_index: Optional[Union[Var[int], int]] = None,
-        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -692,6 +692,8 @@ class Brush(Recharts):
 
         Args:
             *children: The children of the component.
+            stroke: The stroke color of brush
+            fill: The fill color of brush
             data_key: The key of data displayed in the axis.
             x: The x-coordinate of brush.
             y: The y-coordinate of brush.
@@ -702,8 +704,6 @@ class Brush(Recharts):
             gap: The data with gap of refreshing chart. If the option is not set, the chart will be refreshed every time
             start_index: The default start index of brush. If the option is not set, the start index will be 0.
             end_index: The default end index of brush. If the option is not set, the end index will be 1.
-            fill: The fill color of brush
-            stroke: The stroke color of brush
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -888,8 +888,12 @@ class Area(Cartesian):
                 ],
             ]
         ] = None,
-        dot: Optional[Union[Var[bool], bool]] = None,
-        active_dot: Optional[Union[Var[bool], bool]] = None,
+        dot: Optional[
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+        ] = None,
+        active_dot: Optional[
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+        ] = None,
         label: Optional[Union[Var[bool], bool]] = None,
         stack_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
@@ -996,8 +1000,8 @@ class Area(Cartesian):
             stroke_width: The width of the line stroke.
             fill: The color of the area fill.
             type_: The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
-            dot: If set false, dots will not be drawn. If set true, dots will be drawn which have the props calculated internally.
-            active_dot: The dot is shown when a user enters an area chart and this chart has a tooltip. If set false, no active dot will be drawn. If set true, an active dot will be drawn which will have the props calculated internally.
+            dot: If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
+            active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
             label: If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally.
             stack_id: The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
             unit: The unit of data. This option will be used in tooltip.
@@ -1093,10 +1097,10 @@ class Bar(Cartesian):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_animation_begin: Optional[
+        on_animation_end: Optional[
             Union[EventHandler, EventSpec, list, Callable, BaseVar]
         ] = None,
-        on_animation_end: Optional[
+        on_animation_start: Optional[
             Union[EventHandler, EventSpec, list, Callable, BaseVar]
         ] = None,
         on_blur: Optional[
@@ -1230,9 +1234,13 @@ class Line(Cartesian):
             ]
         ] = None,
         stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        stoke_width: Optional[Union[Var[int], int]] = None,
-        dot: Optional[Union[Var[bool], bool]] = None,
-        active_dot: Optional[Union[Var[bool], bool]] = None,
+        stroke_width: Optional[Union[Var[int], int]] = None,
+        dot: Optional[
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+        ] = None,
+        active_dot: Optional[
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+        ] = None,
         label: Optional[Union[Var[bool], bool]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         connect_nulls: Optional[Union[Var[bool], bool]] = None,
@@ -1338,9 +1346,9 @@ class Line(Cartesian):
             *children: The children of the component.
             type_: The interpolation type of line. And customized interpolation function can be set to type. It's the same as type in Area.
             stroke: The color of the line stroke.
-            stoke_width: The width of the line stroke.
-            dot: If set false, dots will not be drawn. If set true, dots will be drawn which have the props calculated internally.
-            active_dot: The dot is shown when a user enters an area chart and this chart has a tooltip. If set false, no active dot will be drawn. If set true, an active dot will be drawn which will have the props calculated internally.
+            stroke_width: The width of the line stroke.
+            dot: The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
+            active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
             label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
             hide: Hides the line when true, useful when toggling visibility state via legend.
             connect_nulls: Whether to connect a graph line across null points.
@@ -1573,6 +1581,7 @@ class Funnel(Recharts):
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1644,6 +1653,7 @@ class Funnel(Recharts):
             animation_begin: Specifies when the animation should begin, the unit of this option is ms.
             animation_duration: Specifies the duration of animation, the unit of this option is ms.
             animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
+            stroke: stroke color
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2242,6 +2252,7 @@ class CartesianGrid(Grid):
         fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         fill_opacity: Optional[Union[Var[float], float]] = None,
         stroke_dasharray: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         x: Optional[Union[Var[int], int]] = None,
         y: Optional[Union[Var[int], int]] = None,
         width: Optional[Union[Var[int], int]] = None,
@@ -2310,6 +2321,7 @@ class CartesianGrid(Grid):
             fill: The background of grid.
             fill_opacity: The opacity of the background used to fill the space between grid lines
             stroke_dasharray: The pattern of dashes and gaps used to paint the lines of the grid
+            stroke: the stroke color of grid
             x: The x-coordinate of grid.
             y: The y-coordinate of grid.
             width: The width of grid.

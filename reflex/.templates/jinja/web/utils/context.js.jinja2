@@ -33,6 +33,8 @@ export const clientStorage = {}
 {% if state_name %}
 export const state_name = "{{state_name}}"
 
+export const exception_state_name = "{{const.frontend_exception_state}}"
+
 // Theses events are triggered on initial load and each page navigation.
 export const onLoadInternalEvent = () => {
     const internal_events = [];

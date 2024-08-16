@@ -51,6 +51,8 @@ class Bun(SimpleNamespace):
     WINDOWS_INSTALL_URL = (
         "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/install.ps1"
     )
+    # Path of the bunfig file
+    CONFIG_PATH = "bunfig.toml"
 
 
 # FNM config.
