@@ -1,4 +1,5 @@
 import json
+import math
 import typing
 from typing import Dict, List, Set, Tuple, Union
 
@@ -8,8 +9,21 @@ from pandas import DataFrame
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.experimental.vars.base import (
-    ConcatVarOperation,
     ImmutableVar,
+    LiteralVar,
+    var_operation,
+)
+from reflex.experimental.vars.function import ArgsFunctionOperation, FunctionStringVar
+from reflex.experimental.vars.number import (
+    LiteralBooleanVar,
+    LiteralNumberVar,
+    NumberVar,
+)
+from reflex.experimental.vars.object import LiteralObjectVar
+from reflex.experimental.vars.sequence import (
+    ArrayVar,
+    ConcatVarOperation,
+    LiteralArrayVar,
     LiteralStringVar,
 )
 from reflex.state import BaseState
@@ -858,6 +872,220 @@ def test_state_with_initial_computed_var(
         assert runtime_dict[var_name] == expected_runtime
 
 
+def test_literal_var():
+    complicated_var = LiteralVar.create(
+        [
+            {"a": 1, "b": 2, "c": {"d": 3, "e": 4}},
+            [1, 2, 3, 4],
+            9,
+            "string",
+            True,
+            False,
+            None,
+            set([1, 2, 3]),
+        ]
+    )
+    assert (
+        str(complicated_var)
+        == '[({ ["a"] : 1, ["b"] : 2, ["c"] : ({ ["d"] : 3, ["e"] : 4 }) }), [1, 2, 3, 4], 9, "string", true, false, null, [1, 2, 3]]'
+    )
+
+
+def test_function_var():
+    addition_func = FunctionStringVar("((a, b) => a + b)")
+    assert str(addition_func.call(1, 2)) == "(((a, b) => a + b)(1, 2))"
+
+    manual_addition_func = ArgsFunctionOperation(
+        ("a", "b"),
+        {
+            "args": [ImmutableVar.create_safe("a"), ImmutableVar.create_safe("b")],
+            "result": ImmutableVar.create_safe("a + b"),
+        },
+    )
+    assert (
+        str(manual_addition_func.call(1, 2))
+        == '(((a, b) => (({ ["args"] : [a, b], ["result"] : a + b })))(1, 2))'
+    )
+
+    increment_func = addition_func(1)
+    assert (
+        str(increment_func.call(2))
+        == "(((...args) => ((((a, b) => a + b)(1, ...args))))(2))"
+    )
+
+    create_hello_statement = ArgsFunctionOperation(
+        ("name",), f"Hello, {ImmutableVar.create_safe('name')}!"
+    )
+    first_name = LiteralStringVar("Steven")
+    last_name = LiteralStringVar("Universe")
+    assert (
+        str(create_hello_statement.call(f"{first_name} {last_name}"))
+        == '(((name) => (("Hello, "+name+"!")))(("Steven"+" "+"Universe")))'
+    )
+
+
+def test_var_operation():
+    @var_operation(output=NumberVar)
+    def add(a: Union[NumberVar, int], b: Union[NumberVar, int]) -> str:
+        return f"({a} + {b})"
+
+    assert str(add(1, 2)) == "(1 + 2)"
+    assert str(add(a=4, b=-9)) == "(4 + -9)"
+
+    five = LiteralNumberVar(5)
+    seven = add(2, five)
+
+    assert isinstance(seven, NumberVar)
+
+
+def test_string_operations():
+    basic_string = LiteralStringVar.create("Hello, World!")
+
+    assert str(basic_string.length()) == '"Hello, World!".split("").length'
+    assert str(basic_string.lower()) == '"Hello, World!".toLowerCase()'
+    assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
+    assert str(basic_string.strip()) == '"Hello, World!".trim()'
+    assert str(basic_string.contains("World")) == '"Hello, World!".includes("World")'
+    assert (
+        str(basic_string.split(" ").join(",")) == '"Hello, World!".split(" ").join(",")'
+    )
+
+
+def test_all_number_operations():
+    starting_number = LiteralNumberVar(-5.4)
+
+    complicated_number = (((-(starting_number + 1)) * 2 / 3) // 2 % 3) ** 2
+
+    assert (
+        str(complicated_number)
+        == "((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)"
+    )
+
+    even_more_complicated_number = ~(
+        abs(math.floor(complicated_number)) | 2 & 3 & round(complicated_number)
+    )
+
+    assert (
+        str(even_more_complicated_number)
+        == "!(((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) != 0) || (true && (Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)) != 0))))"
+    )
+
+    assert str(LiteralNumberVar(5) > False) == "(5 > 0)"
+    assert str(LiteralBooleanVar(False) < 5) == "((false ? 1 : 0) < 5)"
+    assert (
+        str(LiteralBooleanVar(False) < LiteralBooleanVar(True))
+        == "((false ? 1 : 0) < (true ? 1 : 0))"
+    )
+
+
+def test_index_operation():
+    array_var = LiteralArrayVar([1, 2, 3, 4, 5])
+    assert str(array_var[0]) == "[1, 2, 3, 4, 5].at(0)"
+    assert str(array_var[1:2]) == "[1, 2, 3, 4, 5].slice(1, 2)"
+    assert (
+        str(array_var[1:4:2])
+        == "[1, 2, 3, 4, 5].slice(1, 4).filter((_, i) => i % 2 === 0)"
+    )
+    assert (
+        str(array_var[::-1])
+        == "[1, 2, 3, 4, 5].slice(0, [1, 2, 3, 4, 5].length).reverse().slice(undefined, undefined).filter((_, i) => i % 1 === 0)"
+    )
+    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].reverse()"
+    assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5].at(0) + 9)"
+
+
+def test_array_operations():
+    array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
+
+    assert str(array_var.length()) == "[1, 2, 3, 4, 5].length"
+    assert str(array_var.contains(3)) == "[1, 2, 3, 4, 5].includes(3)"
+    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].reverse()"
+    assert (
+        str(ArrayVar.range(10))
+        == "Array.from({ length: (10 - 0) / 1 }, (_, i) => 0 + i * 1)"
+    )
+    assert (
+        str(ArrayVar.range(1, 10))
+        == "Array.from({ length: (10 - 1) / 1 }, (_, i) => 1 + i * 1)"
+    )
+    assert (
+        str(ArrayVar.range(1, 10, 2))
+        == "Array.from({ length: (10 - 1) / 2 }, (_, i) => 1 + i * 2)"
+    )
+    assert (
+        str(ArrayVar.range(1, 10, -1))
+        == "Array.from({ length: (10 - 1) / -1 }, (_, i) => 1 + i * -1)"
+    )
+
+
+def test_object_operations():
+    object_var = LiteralObjectVar({"a": 1, "b": 2, "c": 3})
+
+    assert (
+        str(object_var.keys()) == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+    )
+    assert (
+        str(object_var.values())
+        == 'Object.values(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+    )
+    assert (
+        str(object_var.entries())
+        == 'Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+    )
+    assert str(object_var.a) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
+    assert str(object_var["a"]) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
+    assert (
+        str(object_var.merge(LiteralObjectVar({"c": 4, "d": 5})))
+        == 'Object.assign(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }), ({ ["c"] : 4, ["d"] : 5 }))'
+    )
+
+
+def test_type_chains():
+    object_var = LiteralObjectVar({"a": 1, "b": 2, "c": 3})
+    assert (object_var._key_type(), object_var._value_type()) == (str, int)
+    assert (object_var.keys()._var_type, object_var.values()._var_type) == (
+        List[str],
+        List[int],
+    )
+    assert (
+        str(object_var.keys()[0].upper())  # type: ignore
+        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(0).toUpperCase()'
+    )
+    assert (
+        str(object_var.entries()[1][1] - 1)  # type: ignore
+        == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(1).at(1) - 1)'
+    )
+    assert (
+        str(object_var["c"] + object_var["b"])  # type: ignore
+        == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"])'
+    )
+
+
+def test_nested_dict():
+    arr = LiteralArrayVar([{"bar": ["foo", "bar"]}], List[Dict[str, List[str]]])
+
+    assert (
+        str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'
+    )
+
+
+def nested_base():
+    class Boo(Base):
+        foo: str
+        bar: int
+
+    class Foo(Base):
+        bar: Boo
+        baz: int
+
+    parent_obj = LiteralVar.create(Foo(bar=Boo(foo="bar", bar=5), baz=5))
+
+    assert (
+        str(parent_obj.bar.foo)
+        == '({ ["bar"] : ({ ["foo"] : "bar", ["bar"] : 5 }), ["baz"] : 5 })["bar"]["foo"]'
+    )
+
+
 def test_retrival():
     var_without_data = ImmutableVar.create("test")
     assert var_without_data is not None
@@ -931,7 +1159,7 @@ def test_fstring_concat():
         ),
     )
 
-    assert str(string_concat) == '"foo"+imagination+"bar"+consequences+"baz"'
+    assert str(string_concat) == '("foo"+imagination+"bar"+consequences+"baz")'
     assert isinstance(string_concat, ConcatVarOperation)
     assert string_concat._get_all_var_data() == ImmutableVarData(
         state="fear",

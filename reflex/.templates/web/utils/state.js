@@ -647,7 +647,12 @@ export const useEventLoop = (
   const [connectErrors, setConnectErrors] = useState([]);
 
   // Function to add new events to the event queue.
-  const addEvents = (events, _e, event_actions) => {
+  const addEvents = (events, args, event_actions) => {
+    if (!(args instanceof Array)) {
+      args = [args];
+    }
+    const _e = args.filter((o) => o?.preventDefault !== undefined)[0]
+
     if (event_actions?.preventDefault && _e?.preventDefault) {
       _e.preventDefault();
     }
@@ -777,7 +782,7 @@ export const useEventLoop = (
   // Route after the initial page hydration.
   useEffect(() => {
     const change_start = () => {
-      const main_state_dispatch = dispatch["state"]
+      const main_state_dispatch = dispatch["reflex___state____state"]
       if (main_state_dispatch !== undefined) {
         main_state_dispatch({ is_hydrated: false })
       }

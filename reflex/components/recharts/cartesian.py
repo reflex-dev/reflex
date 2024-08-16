@@ -138,6 +138,9 @@ class XAxis(Axis):
     # Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
     include_hidden: Var[bool] = Var.create_safe(False)
 
+    # The range of the axis. Work best in conjuction with allow_data_overflow.
+    domain: Var[List]
+
 
 class YAxis(Axis):
     """A YAxis component in Recharts."""
@@ -299,7 +302,7 @@ class Area(Cartesian):
     fill: Var[Union[str, Color]] = Var.create_safe(Color("accent", 5))
 
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
-    type_: Var[LiteralAreaType] = Var.create_safe("monotone")
+    type_: Var[LiteralAreaType] = Var.create_safe("monotone", _var_is_string=True)
 
     # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
     dot: Var[Union[bool, Dict[str, Any]]]
@@ -406,7 +409,7 @@ class Line(Cartesian):
     stroke: Var[Union[str, Color]] = Var.create_safe(Color("accent", 9))
 
     # The width of the line stroke.
-    stoke_width: Var[int]
+    stroke_width: Var[int]
 
     # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
     dot: Var[Union[bool, Dict[str, Any]]] = Var.create_safe(

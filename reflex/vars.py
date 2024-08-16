@@ -379,7 +379,9 @@ def _decode_var_immutable(value: str) -> tuple[ImmutableVarData | None, str]:
 
             serialized_data = m.group(1)
 
-            if serialized_data[1:].isnumeric():
+            if serialized_data.isnumeric() or (
+                serialized_data[0] == "-" and serialized_data[1:].isnumeric()
+            ):
                 # This is a global immutable var.
                 var = _global_vars[int(serialized_data)]
                 var_data = var._var_data
@@ -473,7 +475,9 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
 
             serialized_data = m.group(1)
 
-            if serialized_data[1:].isnumeric():
+            if serialized_data.isnumeric() or (
+                serialized_data[0] == "-" and serialized_data[1:].isnumeric()
+            ):
                 # This is a global immutable var.
                 var = _global_vars[int(serialized_data)]
                 var_data = var._var_data
@@ -1997,6 +2001,14 @@ class Var:
         """
         return self._var_data
 
+    def json(self) -> str:
+        """Serialize the var to a JSON string.
+
+        Raises:
+            NotImplementedError: If the method is not implemented.
+        """
+        raise NotImplementedError("Var subclasses must implement the json method.")
+
     @property
     def _var_name_unwrapped(self) -> str:
         """Get the var str without wrapping in curly braces.
@@ -2169,6 +2181,24 @@ class ComputedVar(Var, property):
 
     # Interval at which the computed var should be updated
     _update_interval: Optional[datetime.timedelta] = dataclasses.field(default=None)
+
+    # The name of the var.
+    _var_name: str = dataclasses.field()
+
+    # The type of the var.
+    _var_type: Type = dataclasses.field(default=Any)
+
+    # Whether this is a local javascript variable.
+    _var_is_local: bool = dataclasses.field(default=False)
+
+    # Whether the var is a string literal.
+    _var_is_string: bool = dataclasses.field(default=False)
+
+    # _var_full_name should be prefixed with _var_state
+    _var_full_name_needs_state_prefix: bool = dataclasses.field(default=False)
+
+    # Extra metadata associated with the Var
+    _var_data: Optional[VarData] = dataclasses.field(default=None)
 
     def __init__(
         self,
@@ -2458,7 +2488,7 @@ class ComputedVar(Var, property):
 
 def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
-    initial_value: Any | None = None,
+    initial_value: Any | types.Unset = types.Unset(),
     cache: bool = False,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
@@ -2554,17 +2584,25 @@ class CallableVar(BaseVar):
 
 
 def get_uuid_string_var() -> Var:
-    """Return a var that generates UUIDs via .web/utils/state.js.
+    """Return a Var that generates a single memoized UUID via .web/utils/state.js.
+
+    useMemo with an empty dependency array ensures that the generated UUID is
+    consistent across re-renders of the component.
 
     Returns:
-        the var to generate UUIDs at runtime.
+        A Var that generates a UUID at runtime.
     """
     from reflex.utils.imports import ImportVar
 
     unique_uuid_var_data = VarData(
-        imports={f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")}}  # type: ignore
+        imports={
+            f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # type: ignore
+            "react": "useMemo",
+        }
     )
 
     return BaseVar(
-        _var_name="generateUUID()", _var_type=str, _var_data=unique_uuid_var_data
+        _var_name="useMemo(generateUUID, [])",
+        _var_type=str,
+        _var_data=unique_uuid_var_data,
     )

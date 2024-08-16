@@ -234,7 +234,7 @@ class LabelList(Recharts):
     fill: Var[Union[str, Color]] = Var.create_safe(Color("gray", 10))
 
     # The stroke color of each label
-    stroke: Var[Union[str, Color]] = Var.create_safe("none")
+    stroke: Var[Union[str, Color]] = Var.create_safe("none", _var_is_string=True)
 
 
 responsive_container = ResponsiveContainer.create

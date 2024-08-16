@@ -192,6 +192,7 @@ class XAxis(Axis):
         ] = None,
         x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         include_hidden: Optional[Union[Var[bool], bool]] = None,
+        domain: Optional[Union[Var[List], List]] = None,
         data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], str, int]] = None,
@@ -320,6 +321,7 @@ class XAxis(Axis):
             orientation: The orientation of axis 'top' | 'bottom'
             x_axis_id: The id of x-axis which is corresponding to the data.
             include_hidden: Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
+            domain: The range of the axis. Work best in conjuction with allow_data_overflow.
             data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
@@ -1232,7 +1234,7 @@ class Line(Cartesian):
             ]
         ] = None,
         stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        stoke_width: Optional[Union[Var[int], int]] = None,
+        stroke_width: Optional[Union[Var[int], int]] = None,
         dot: Optional[
             Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
@@ -1344,7 +1346,7 @@ class Line(Cartesian):
             *children: The children of the component.
             type_: The interpolation type of line. And customized interpolation function can be set to type. It's the same as type in Area.
             stroke: The color of the line stroke.
-            stoke_width: The width of the line stroke.
+            stroke_width: The width of the line stroke.
             dot: The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
             active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
             label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union
+from typing import Any, ClassVar, Literal, Optional, Union
+
+from pydantic import ValidationError
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
@@ -26,7 +28,6 @@ LiteralPosition = Literal[
     "bottom-center",
     "bottom-right",
 ]
-
 
 toast_ref = Var.create_safe("refs['__toast']", _var_is_string=False)
 
@@ -128,6 +129,24 @@ class ToastProps(PropsBase):
     # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
     on_auto_close: Optional[Any]
 
+    def __init__(self, **kwargs):
+        """Initialize the props.
+
+        Args:
+            kwargs: Kwargs to initialize the props.
+
+        Raises:
+            ValueError: If invalid props are passed on instantiation.
+        """
+        try:
+            super().__init__(**kwargs)
+        except ValidationError as e:
+            invalid_fields = ", ".join([error["loc"][0] for error in e.errors()])  # type: ignore
+            supported_props_str = ", ".join(f'"{field}"' for field in self.get_fields())
+            raise ValueError(
+                f"Invalid prop(s) {invalid_fields} for rx.toast. Supported props are {supported_props_str}"
+            ) from None
+
     def dict(self, *args, **kwargs) -> dict[str, Any]:
         """Convert the object to a dictionary.
 
@@ -158,6 +177,13 @@ class ToastProps(PropsBase):
                 self.on_auto_close, _toast_callback_signature
             )
         return d
+
+    class Config:
+        """Pydantic config."""
+
+        arbitrary_types_allowed = True
+        use_enum_values = True
+        extra = "forbid"
 
 
 class Toaster(Component):
@@ -211,6 +237,9 @@ class Toaster(Component):
     # Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
     pause_when_page_is_hidden: Var[bool]
 
+    # Marked True when any Toast component is created.
+    is_used: ClassVar[bool] = False
+
     def add_hooks(self) -> list[Var | str]:
         """Add hooks for the toaster component.
 
@@ -231,7 +260,7 @@ class Toaster(Component):
         return [hook]
 
     @staticmethod
-    def send_toast(message: str, level: str | None = None, **props) -> EventSpec:
+    def send_toast(message: str = "", level: str | None = None, **props) -> EventSpec:
         """Send a toast message.
 
         Args:
@@ -239,10 +268,19 @@ class Toaster(Component):
             level: The level of the toast.
             **props: The options for the toast.
 
+        Raises:
+            ValueError: If the Toaster component is not created.
+
         Returns:
             The toast event.
         """
+        if not Toaster.is_used:
+            raise ValueError(
+                "Toaster component must be created before sending a toast. (use `rx.toast.provider()`)"
+            )
         toast_command = f"{toast_ref}.{level}" if level is not None else toast_ref
+        if message == "" and ("title" not in props or "description" not in props):
+            raise ValueError("Toast message or title or description must be provided.")
         if props:
             args = serialize(ToastProps(**props))  # type: ignore
             toast = f"{toast_command}(`{message}`, {args})"
@@ -330,6 +368,20 @@ class Toaster(Component):
             _var_data=dismiss_var_data,
         )
         return call_script(dismiss_action)
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a toaster component.
+
+        Args:
+            *children: The children of the toaster.
+            **props: The properties of the toaster.
+
+        Returns:
+            The toaster component.
+        """
+        cls.is_used = True
+        return super().create(*children, **props)
 
 
 # TODO: figure out why loading toast stay open forever

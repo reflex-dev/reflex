@@ -3,14 +3,29 @@
 from __future__ import annotations
 
 import dataclasses
-import json
-import re
+import functools
+import inspect
 import sys
-from functools import cached_property
-from typing import Any, Optional, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
+
+from typing_extensions import ParamSpec, get_origin
 
 from reflex import constants
-from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex.base import Base
 from reflex.utils import serializers, types
 from reflex.utils.exceptions import VarTypeError
 from reflex.vars import (
@@ -22,20 +37,33 @@ from reflex.vars import (
     _global_vars,
 )
 
+if TYPE_CHECKING:
+    from .function import FunctionVar, ToFunctionOperation
+    from .number import (
+        BooleanVar,
+        NumberVar,
+        ToBooleanVarOperation,
+        ToNumberVarOperation,
+    )
+    from .object import ObjectVar, ToObjectOperation
+    from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
+
+VAR_TYPE = TypeVar("VAR_TYPE")
+
 
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ImmutableVar(Var):
+class ImmutableVar(Var, Generic[VAR_TYPE]):
     """Base class for immutable vars."""
 
     # The name of the var.
     _var_name: str = dataclasses.field()
 
     # The type of the var.
-    _var_type: Type = dataclasses.field(default=Any)
+    _var_type: types.GenericType = dataclasses.field(default=Any)
 
     # Extra metadata associated with the Var
     _var_data: Optional[ImmutableVarData] = dataclasses.field(default=None)
@@ -79,11 +107,12 @@ class ImmutableVar(Var):
         """Post-initialize the var."""
         # Decode any inline Var markup and apply it to the instance
         _var_data, _var_name = _decode_var_immutable(self._var_name)
-        if _var_data:
+
+        if _var_data or _var_name != self._var_name:
             self.__init__(
-                _var_name,
-                self._var_type,
-                ImmutableVarData.merge(self._var_data, _var_data),
+                _var_name=_var_name,
+                _var_type=self._var_type,
+                _var_data=ImmutableVarData.merge(self._var_data, _var_data),
             )
 
     def __hash__(self) -> int:
@@ -95,6 +124,11 @@ class ImmutableVar(Var):
         return hash((self._var_name, self._var_type, self._var_data))
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all VarData associated with the Var.
+
+        Returns:
+            The VarData of the components and all of its children.
+        """
         return self._var_data
 
     def _replace(self, merge_var_data=None, **kwargs: Any):
@@ -249,64 +283,154 @@ class ImmutableVar(Var):
         _global_vars[hashed_var] = self
 
         # Encode the _var_data into the formatted output for tracking purposes.
-        return f"{REFLEX_VAR_OPENING_TAG}{hashed_var}{REFLEX_VAR_CLOSING_TAG}{self._var_name}"
+        return f"{constants.REFLEX_VAR_OPENING_TAG}{hashed_var}{constants.REFLEX_VAR_CLOSING_TAG}{self._var_name}"
+
+    @overload
+    def to(
+        self, output: Type[NumberVar], var_type: type[int] | type[float] = float
+    ) -> ToNumberVarOperation: ...
+
+    @overload
+    def to(self, output: Type[BooleanVar]) -> ToBooleanVarOperation: ...
+
+    @overload
+    def to(
+        self,
+        output: Type[ArrayVar],
+        var_type: type[list] | type[tuple] | type[set] = list,
+    ) -> ToArrayOperation: ...
+
+    @overload
+    def to(self, output: Type[StringVar]) -> ToStringOperation: ...
+
+    @overload
+    def to(
+        self, output: Type[ObjectVar], var_type: types.GenericType = dict
+    ) -> ToObjectOperation: ...
+
+    @overload
+    def to(
+        self, output: Type[FunctionVar], var_type: Type[Callable] = Callable
+    ) -> ToFunctionOperation: ...
+
+    @overload
+    def to(
+        self, output: Type[OUTPUT], var_type: types.GenericType | None = None
+    ) -> OUTPUT: ...
+
+    def to(
+        self, output: Type[OUTPUT], var_type: types.GenericType | None = None
+    ) -> Var:
+        """Convert the var to a different type.
+
+        Args:
+            output: The output type.
+            var_type: The type of the var.
+
+        Raises:
+            TypeError: If the var_type is not a supported type for the output.
+
+        Returns:
+            The converted var.
+        """
+        from .number import (
+            BooleanVar,
+            NumberVar,
+            ToBooleanVarOperation,
+            ToNumberVarOperation,
+        )
+
+        fixed_type = (
+            var_type
+            if var_type is None or inspect.isclass(var_type)
+            else get_origin(var_type)
+        )
+
+        if issubclass(output, NumberVar):
+            if fixed_type is not None and not issubclass(fixed_type, (int, float)):
+                raise TypeError(
+                    f"Unsupported type {var_type} for NumberVar. Must be int or float."
+                )
+            return ToNumberVarOperation(self, var_type or float)
+        if issubclass(output, BooleanVar):
+            return ToBooleanVarOperation(self)
+
+        from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
+
+        if issubclass(output, ArrayVar):
+            if fixed_type is not None and not issubclass(
+                fixed_type, (list, tuple, set)
+            ):
+                raise TypeError(
+                    f"Unsupported type {var_type} for ArrayVar. Must be list, tuple, or set."
+                )
+            return ToArrayOperation(self, var_type or list)
+        if issubclass(output, StringVar):
+            return ToStringOperation(self)
+
+        from .object import ObjectVar, ToObjectOperation
+
+        if issubclass(output, ObjectVar):
+            return ToObjectOperation(self, var_type or dict)
+
+        from .function import FunctionVar, ToFunctionOperation
+
+        if issubclass(output, FunctionVar):
+            if fixed_type is not None and not issubclass(fixed_type, Callable):
+                raise TypeError(
+                    f"Unsupported type {var_type} for FunctionVar. Must be Callable."
+                )
+            return ToFunctionOperation(self, var_type or Callable)
+
+        return output(
+            _var_name=self._var_name,
+            _var_type=self._var_type if var_type is None else var_type,
+            _var_data=self._var_data,
+        )
+
+    def guess_type(self) -> ImmutableVar:
+        """Guess the type of the var.
+
+        Returns:
+            The guessed type.
+        """
+        from .number import NumberVar
+        from .object import ObjectVar
+        from .sequence import ArrayVar, StringVar
+
+        if self._var_type is Any:
+            return self
+
+        var_type = self._var_type
+
+        fixed_type = var_type if inspect.isclass(var_type) else get_origin(var_type)
+
+        if issubclass(fixed_type, (int, float)):
+            return self.to(NumberVar, var_type)
+        if issubclass(fixed_type, dict):
+            return self.to(ObjectVar, var_type)
+        if issubclass(fixed_type, (list, tuple, set)):
+            return self.to(ArrayVar, var_type)
+        if issubclass(fixed_type, str):
+            return self.to(StringVar)
+        if issubclass(fixed_type, Base):
+            return self.to(ObjectVar, var_type)
+        return self
 
 
-class StringVar(ImmutableVar):
-    """Base class for immutable string vars."""
-
-
-class NumberVar(ImmutableVar):
-    """Base class for immutable number vars."""
-
-
-class BooleanVar(ImmutableVar):
-    """Base class for immutable boolean vars."""
-
-
-class ObjectVar(ImmutableVar):
-    """Base class for immutable object vars."""
-
-
-class ArrayVar(ImmutableVar):
-    """Base class for immutable array vars."""
-
-
-class FunctionVar(ImmutableVar):
-    """Base class for immutable function vars."""
+OUTPUT = TypeVar("OUTPUT", bound=ImmutableVar)
 
 
 class LiteralVar(ImmutableVar):
     """Base class for immutable literal vars."""
 
-    def __post_init__(self):
-        """Post-initialize the var."""
-
-
-# Compile regex for finding reflex var tags.
-_decode_var_pattern_re = (
-    rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
-)
-_decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class LiteralStringVar(LiteralVar):
-    """Base class for immutable literal string vars."""
-
-    _var_value: Optional[str] = dataclasses.field(default=None)
-
     @classmethod
     def create(
         cls,
-        value: str,
+        value: Any,
         _var_data: VarData | None = None,
-    ) -> LiteralStringVar | ConcatVarOperation:
-        """Create a var from a string value.
+    ) -> Var:
+        """Create a var from a value.
 
         Args:
             value: The value to create the var from.
@@ -314,141 +438,146 @@ class LiteralStringVar(LiteralVar):
 
         Returns:
             The var.
+
+        Raises:
+            TypeError: If the value is not a supported type for LiteralVar.
         """
-        if REFLEX_VAR_OPENING_TAG in value:
-            strings_and_vals: list[Var] = []
-            offset = 0
+        if isinstance(value, Var):
+            if _var_data is None:
+                return value
+            return value._replace(merge_var_data=_var_data)
 
-            # Initialize some methods for reading json.
-            var_data_config = VarData().__config__
+        if value is None:
+            return ImmutableVar.create_safe("null", _var_data=_var_data)
 
-            def json_loads(s):
-                try:
-                    return var_data_config.json_loads(s)
-                except json.decoder.JSONDecodeError:
-                    return var_data_config.json_loads(
-                        var_data_config.json_loads(f'"{s}"')
-                    )
+        from .object import LiteralObjectVar
 
-            # Find all tags.
-            while m := _decode_var_pattern.search(value):
-                start, end = m.span()
-                if start > 0:
-                    strings_and_vals.append(LiteralStringVar.create(value[:start]))
-
-                serialized_data = m.group(1)
-
-                if serialized_data[1:].isnumeric():
-                    # This is a global immutable var.
-                    var = _global_vars[int(serialized_data)]
-                    strings_and_vals.append(var)
-                    value = value[(end + len(var._var_name)) :]
-                else:
-                    data = json_loads(serialized_data)
-                    string_length = data.pop("string_length", None)
-                    var_data = VarData.parse_obj(data)
-
-                    # Use string length to compute positions of interpolations.
-                    if string_length is not None:
-                        realstart = start + offset
-                        var_data.interpolations = [
-                            (realstart, realstart + string_length)
-                        ]
-                        strings_and_vals.append(
-                            ImmutableVar.create_safe(
-                                value[end : (end + string_length)], _var_data=var_data
-                            )
-                        )
-                        value = value[(end + string_length) :]
-
-                offset += end - start
-
-            if value:
-                strings_and_vals.append(LiteralStringVar.create(value))
-
-            return ConcatVarOperation.create(
-                tuple(strings_and_vals), _var_data=_var_data
+        if isinstance(value, Base):
+            return LiteralObjectVar(
+                value.dict(), _var_type=type(value), _var_data=_var_data
             )
 
-        return cls(
-            _var_value=value,
-            _var_name=f'"{value}"',
-            _var_type=str,
-            _var_data=ImmutableVarData.merge(_var_data),
-        )
+        from .number import LiteralBooleanVar, LiteralNumberVar
+        from .sequence import LiteralArrayVar, LiteralStringVar
 
+        if isinstance(value, str):
+            return LiteralStringVar.create(value, _var_data=_var_data)
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ConcatVarOperation(StringVar):
-    """Representing a concatenation of literal string vars."""
+        type_mapping = {
+            int: LiteralNumberVar,
+            float: LiteralNumberVar,
+            bool: LiteralBooleanVar,
+            dict: LiteralObjectVar,
+            list: LiteralArrayVar,
+            tuple: LiteralArrayVar,
+            set: LiteralArrayVar,
+        }
 
-    _var_value: tuple[Var, ...] = dataclasses.field(default_factory=tuple)
+        constructor = type_mapping.get(type(value))
 
-    def __init__(self, _var_value: tuple[Var, ...], _var_data: VarData | None = None):
-        """Initialize the operation of concatenating literal string vars.
+        if constructor is None:
+            raise TypeError(f"Unsupported type {type(value)} for LiteralVar.")
 
-        Args:
-            _var_value: The list of vars to concatenate.
-            _var_data: Additional hooks and imports associated with the Var.
-        """
-        super(ConcatVarOperation, self).__init__(
-            _var_name="", _var_data=ImmutableVarData.merge(_var_data), _var_type=str
-        )
-        object.__setattr__(self, "_var_value", _var_value)
-        object.__setattr__(self, "_var_name", self._cached_var_name)
-
-    @cached_property
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return "+".join([str(element) for element in self._var_value])
-
-    @cached_property
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all VarData associated with the Var.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return ImmutableVarData.merge(
-            *[var._get_all_var_data() for var in self._var_value], self._var_data
-        )
-
-    def _get_all_var_data(self) -> ImmutableVarData | None:
-        """Wrapper method for cached property.
-
-        Returns:
-            The VarData of the components and all of its children.
-        """
-        return self._cached_get_all_var_data
+        return constructor(value, _var_data=_var_data)
 
     def __post_init__(self):
         """Post-initialize the var."""
-        pass
 
-    @classmethod
-    def create(
-        cls,
-        value: tuple[Var, ...],
-        _var_data: VarData | None = None,
-    ) -> ConcatVarOperation:
-        """Create a var from a tuple of values.
+    def json(self) -> str:
+        """Serialize the var to a JSON string.
 
-        Args:
-            value: The value to create the var from.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
+        Raises:
+            NotImplementedError: If the method is not implemented.
         """
-        return ConcatVarOperation(
-            _var_value=value,
-            _var_data=_var_data,
+        raise NotImplementedError(
+            "LiteralVar subclasses must implement the json method."
         )
+
+
+P = ParamSpec("P")
+T = TypeVar("T", bound=ImmutableVar)
+
+
+def var_operation(*, output: Type[T]) -> Callable[[Callable[P, str]], Callable[P, T]]:
+    """Decorator for creating a var operation.
+
+    Example:
+    ```python
+    @var_operation(output=NumberVar)
+    def add(a: NumberVar, b: NumberVar):
+        return f"({a} + {b})"
+    ```
+
+    Args:
+        output: The output type of the operation.
+
+    Returns:
+        The decorator.
+    """
+
+    def decorator(func: Callable[P, str], output=output):
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            args_vars = [
+                LiteralVar.create(arg) if not isinstance(arg, Var) else arg
+                for arg in args
+            ]
+            kwargs_vars = {
+                key: LiteralVar.create(value) if not isinstance(value, Var) else value
+                for key, value in kwargs.items()
+            }
+            return output(
+                _var_name=func(*args_vars, **kwargs_vars),  # type: ignore
+                _var_data=VarData.merge(
+                    *[arg._get_all_var_data() for arg in args if isinstance(arg, Var)],
+                    *[
+                        arg._get_all_var_data()
+                        for arg in kwargs.values()
+                        if isinstance(arg, Var)
+                    ],
+                ),
+            )
+
+        return wrapper
+
+    return decorator
+
+
+def unionize(*args: Type) -> Type:
+    """Unionize the types.
+
+    Args:
+        args: The types to unionize.
+
+    Returns:
+        The unionized types.
+    """
+    if not args:
+        return Any
+    first, *rest = args
+    if not rest:
+        return first
+    return Union[first, unionize(*rest)]
+
+
+def figure_out_type(value: Any) -> Type:
+    """Figure out the type of the value.
+
+    Args:
+        value: The value to figure out the type of.
+
+    Returns:
+        The type of the value.
+    """
+    if isinstance(value, list):
+        return List[unionize(*(figure_out_type(v) for v in value))]
+    if isinstance(value, set):
+        return Set[unionize(*(figure_out_type(v) for v in value))]
+    if isinstance(value, tuple):
+        return Tuple[unionize(*(figure_out_type(v) for v in value)), ...]
+    if isinstance(value, dict):
+        return Dict[
+            unionize(*(figure_out_type(k) for k in value)),
+            unionize(*(figure_out_type(v) for v in value.values())),
+        ]
+    return type(value)

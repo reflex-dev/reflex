@@ -19,6 +19,7 @@ import reflex.config
 from reflex import constants
 from reflex.app import App
 from reflex.base import Base
+from reflex.components.sonner.toast import Toaster
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
 from reflex.state import (
@@ -1011,6 +1012,21 @@ def interdependent_state() -> BaseState:
     return s
 
 
+def test_interdependent_state_initial_dict() -> None:
+    s = InterdependentState()
+    state_name = s.get_name()
+    d = s.dict(initial=True)[state_name]
+    d.pop("router")
+    assert d == {
+        "x": 0,
+        "v1": 0,
+        "v1x2": 0,
+        "v2x2": 2,
+        "v1x2x2": 0,
+        "v3x2": 2,
+    }
+
+
 def test_not_dirty_computed_var_from_var(
     interdependent_state: InterdependentState,
 ) -> None:
@@ -1527,7 +1543,6 @@ async def test_state_with_invalid_yield(capsys, mock_app):
     Args:
         capsys: Pytest fixture for capture standard streams.
         mock_app: Mock app fixture.
-
     """
 
     class StateWithInvalidYield(BaseState):
@@ -1546,10 +1561,29 @@ async def test_state_with_invalid_yield(capsys, mock_app):
         rx.event.Event(token="fake_token", name="invalid_handler")
     ):
         assert not update.delta
-        assert update.events == rx.event.fix_events(
-            [rx.window_alert("An error occurred. See logs for details.")],
-            token="",
-        )
+        if Toaster.is_used:
+            assert update.events == rx.event.fix_events(
+                [
+                    rx.toast(
+                        "An error occurred.",
+                        description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`).<br/>See logs for details.",
+                        level="error",
+                        id="backend_error",
+                        position="top-center",
+                        style={"width": "500px"},
+                    )  # type: ignore
+                ],
+                token="",
+            )
+        else:
+            assert update.events == rx.event.fix_events(
+                [
+                    rx.window_alert(
+                        "An error occurred.\nContact the website administrator."
+                    )
+                ],
+                token="",
+            )
     captured = capsys.readouterr()
     assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
@@ -1806,7 +1840,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
 
     sp = StateProxy(grandchild_state)
     assert sp.__wrapped__ == grandchild_state
-    assert sp._self_substate_path == grandchild_state.get_full_name().split(".")
+    assert sp._self_substate_path == tuple(grandchild_state.get_full_name().split("."))
     assert sp._self_app is mock_app
     assert not sp._self_mutable
     assert sp._self_actx is None
