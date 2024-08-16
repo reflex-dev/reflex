@@ -222,7 +222,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     """
     from reflex.model import Model
 
-    attr = getattr(cls, name, None)
+    try:
+        attr = getattr(cls, name, None)
+    except NotImplementedError:
+        attr = None
+
     if hint := get_property_hint(attr):
         return hint
 
