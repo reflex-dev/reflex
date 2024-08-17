@@ -396,11 +396,11 @@ class FileUpload(Base):
                     _var_name="filesById",
                     _var_type=dict[str, Any],
                     _var_data=ImmutableVarData.merge(upload_files_context_var_data),
-                ).to(ObjectVar)[LiteralVar.create_safe(upload_id)],
+                ).to(ObjectVar)[LiteralVar.create(upload_id)],
             ),
             (
                 ImmutableVar.create_safe("upload_id"),
-                LiteralVar.create_safe(upload_id),
+                LiteralVar.create(upload_id),
             ),
         ]
         if self.on_upload_progress is not None:

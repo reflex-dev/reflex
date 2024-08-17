@@ -1220,7 +1220,7 @@ class ImmutableCallableVar(ImmutableVar):
         super(ImmutableCallableVar, self).__init__(
             _var_name=original_var._var_name,
             _var_type=original_var._var_type,
-            _var_data=ImmutableVarData.merge(original_var._var_data),
+            _var_data=ImmutableVarData.merge(original_var._get_all_var_data()),
         )
         object.__setattr__(self, "fn", fn)
         object.__setattr__(self, "original_var", original_var)
@@ -1486,11 +1486,14 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
             The value of the var for the given instance.
         """
         if instance is None:
+            class_where_defined: Type[BaseState] = vars(
+                sys.modules[self.fget.__module__]
+            ).get(self.fget.__qualname__.split(".")[0], owner)
             return self._replace(
-                _var_name=format_state_name(owner.get_full_name())
+                _var_name=format_state_name(class_where_defined.get_full_name())
                 + "."
                 + self._var_name,
-                merge_var_data=ImmutableVarData.from_state(owner),
+                merge_var_data=ImmutableVarData.from_state(class_where_defined),
             ).guess_type()
 
         if not self._cache:
