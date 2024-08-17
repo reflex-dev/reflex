@@ -51,7 +51,7 @@ from reflex.utils.imports import (
     ParsedImportDict,
     parse_imports,
 )
-from reflex.utils.types import override
+from reflex.utils.types import Self, override
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -2545,6 +2545,51 @@ def computed_var(
 
 # Partial function of computed_var with cache=True
 cached_var = functools.partial(computed_var, cache=True, _deprecated_cached_var=True)
+
+VAR_CALLABLE = Callable[[Any], Var]
+
+
+class HybridProperty(property):
+    """A hybrid property that can also be used in frontend/as var."""
+
+    # The optional var function for the property.
+    _var: VAR_CALLABLE | None = None
+
+    @override
+    def __get__(self, instance: Any, owner: type | None = None, /) -> Any:
+        """Get the value of the property. If the property is not bound to an instance return a frontend Var.
+
+        Args:
+            instance: The instance of the class accessing this property.
+            owner: The class that this descriptor is attached to.
+
+        Returns:
+            The value of the property or a frontend Var.
+        """
+        if instance is not None:
+            return super().__get__(instance, owner)
+        if self._var is not None:
+            # Call custom var function if set
+            return self._var(owner)
+        else:
+            # Call the property getter function if no custom var function is set
+            assert self.fget is not None
+            return self.fget(owner)
+
+    def var(self, func: VAR_CALLABLE) -> Self:
+        """Set the (optional) var function for the property.
+
+        Args:
+            func: The var function to set.
+
+        Returns:
+            The property instance with the var function set.
+        """
+        self._var = func
+        return self
+
+
+hybrid_property = HybridProperty
 
 
 class CallableVar(BaseVar):

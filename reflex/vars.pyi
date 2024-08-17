@@ -30,6 +30,7 @@ from reflex.utils import console as console
 from reflex.utils import format as format
 from reflex.utils import types as types
 from reflex.utils.imports import ImmutableParsedImportDict, ImportDict, ParsedImportDict
+from reflex.utils.types import Self, override
 
 USED_VARIABLES: Incomplete
 
@@ -210,6 +211,16 @@ def cached_var(
 ) -> Callable[[Callable[[Any], Any]], ComputedVar]: ...
 @overload
 def cached_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
+
+VAR_CALLABLE = Callable[[Any], Var]
+
+class HybridProperty(property):
+    _var: VAR_CALLABLE | None = None
+    @override
+    def __get__(self, instance: Any, owner: type | None = None, /) -> Any: ...
+    def var(self, func: VAR_CALLABLE) -> Self: ...
+
+hybrid_property = HybridProperty
 
 class CallableVar(BaseVar):
     def __init__(self, fn: Callable[..., BaseVar]): ...
