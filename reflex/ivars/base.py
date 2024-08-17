@@ -1485,10 +1485,22 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         Returns:
             The value of the var for the given instance.
         """
+        from reflex.state import BaseState
+
         if instance is None:
-            class_where_defined: Type[BaseState] = vars(
-                sys.modules[self.fget.__module__]
-            ).get(self.fget.__qualname__.split(".")[0], owner)
+            list_of_modules = self.fget.__qualname__.split(".")
+            class_name_where_defined = (
+                list_of_modules[-2] if len(list_of_modules) > 1 else owner.__name__
+            )
+            classes_where_defined = [
+                c
+                for c in inspect.getmro(owner)
+                if c.__name__ == class_name_where_defined
+            ]
+            class_where_defined = cast(
+                Type[BaseState],
+                classes_where_defined[0] if classes_where_defined else owner,
+            )
             return self._replace(
                 _var_name=format_state_name(class_where_defined.get_full_name())
                 + "."
