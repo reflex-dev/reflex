@@ -13,6 +13,7 @@ from typing import Generator, List, Tuple, Type
 from unittest.mock import AsyncMock
 
 import pytest
+import reflex_chakra as rc
 import sqlmodel
 from fastapi import FastAPI, UploadFile
 from starlette_admin.auth import AuthProvider
@@ -1274,13 +1275,13 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
         tag = "Fragment1"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(99, "Box"): rx.chakra.box()}
+            return {(99, "Box"): rc.box()}
 
     class Fragment2(Component):
         tag = "Fragment2"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(50, "Text"): rx.chakra.text()}
+            return {(50, "Text"): rc.text()}
 
     class Fragment3(Component):
         tag = "Fragment3"
