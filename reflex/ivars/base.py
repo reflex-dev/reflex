@@ -1507,10 +1507,15 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
                 Type[BaseState],
                 min(
                     filter(
-                        is_not_mixin,
+                        lambda state: state.__module__ == self.fget.__module__,
                         filter(
-                            lambda state: contains_class_name(inspect.getmro(state)),
-                            inspect.getmro(owner),
+                            is_not_mixin,
+                            filter(
+                                lambda state: contains_class_name(
+                                    inspect.getmro(state)
+                                ),
+                                inspect.getmro(owner),
+                            ),
                         ),
                     ),
                     default=owner,
