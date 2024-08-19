@@ -394,7 +394,7 @@ class FileUpload(Base):
                 ImmutableVar.create_safe("files"),
                 ImmutableVar(
                     _var_name="filesById",
-                    _var_type=dict[str, Any],
+                    _var_type=Dict[str, Any],
                     _var_data=ImmutableVarData.merge(upload_files_context_var_data),
                 ).to(ObjectVar)[LiteralVar.create(upload_id)],
             ),
