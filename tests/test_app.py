@@ -67,7 +67,7 @@ class EmptyState(BaseState):
 
 
 @pytest.fixture
-def index_page():
+def index_page() -> ComponentCallable:
     """An index page.
 
     Returns:
@@ -81,7 +81,7 @@ def index_page():
 
 
 @pytest.fixture
-def about_page():
+def about_page() -> ComponentCallable:
     """An about page.
 
     Returns:
@@ -941,6 +941,34 @@ def test_dynamic_arg_shadow(
     assert app.state is not None
     with pytest.raises(NameError):
         app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
+
+
+def test_multiple_dynamic_args(
+    index_page: ComponentCallable,
+    windows_platform: bool,
+    token: str,
+    app_module_mock: unittest.mock.Mock,
+    mocker,
+):
+    """Create app with multiple dynamic route vars with the same name.
+
+    Args:
+        index_page: The index page.
+        windows_platform: Whether the system is windows.
+        token: a Token.
+        app_module_mock: Mocked app module.
+        mocker: pytest mocker object.
+    """
+    arg_name = "my_arg"
+    route = f"/test/[{arg_name}]"
+    route2 = f"/test2/[{arg_name}]"
+    if windows_platform:
+        route = route.lstrip("/").replace("/", "\\")
+        route2 = route2.lstrip("/").replace("/", "\\")
+    app = app_module_mock.app = App(state=DynamicState)
+    assert app.state is not None
+    app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
+    app.add_page(index_page, route=route2, on_load=DynamicState.on_load)  # type: ignore
 
 
 @pytest.mark.asyncio
