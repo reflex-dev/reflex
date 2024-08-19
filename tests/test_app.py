@@ -918,7 +918,7 @@ class DynamicState(BaseState):
 
 
 def test_dynamic_arg_shadow(
-    index_page,
+    index_page: ComponentCallable,
     windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
@@ -965,15 +965,14 @@ def test_multiple_dynamic_args(
     if windows_platform:
         route = route.lstrip("/").replace("/", "\\")
         route2 = route2.lstrip("/").replace("/", "\\")
-    app = app_module_mock.app = App(state=DynamicState)
-    assert app.state is not None
-    app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
-    app.add_page(index_page, route=route2, on_load=DynamicState.on_load)  # type: ignore
+    app = app_module_mock.app = App(state=EmptyState)
+    app.add_page(index_page, route=route)
+    app.add_page(index_page, route=route2)
 
 
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
-    index_page,
+    index_page: ComponentCallable,
     windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
