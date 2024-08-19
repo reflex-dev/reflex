@@ -23,10 +23,13 @@ def DynamicRoute():
 
     class DynamicState(rx.State):
         order: List[str] = []
-        page_id: str = ""
+        input_page_id: str = ""
 
         def on_load(self):
-            self.order.append(f"{self.router.page.path}-{self.page_id or 'no page id'}")
+            self.input_page_id = self.page_id  # type: ignore
+            self.order.append(
+                f"{self.router.page.path}-{self.input_page_id or 'no page id'}"
+            )
 
         def on_load_redir(self):
             query_params = self.router.page.params
@@ -36,7 +39,7 @@ def DynamicRoute():
         @rx.var
         def next_page(self) -> str:
             try:
-                return str(int(self.page_id) + 1)
+                return str(int(self.input_page_id) + 1)
             except ValueError:
                 return "0"
 
@@ -47,7 +50,7 @@ def DynamicRoute():
                 is_read_only=True,
                 id="token",
             ),
-            rc.input(value=DynamicState.page_id, is_read_only=True, id="page_id"),
+            rc.input(value=DynamicState.input_page_id, is_read_only=True, id="page_id"),
             rc.input(
                 value=DynamicState.router.page.raw_path,
                 is_read_only=True,
