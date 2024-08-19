@@ -168,8 +168,14 @@ class BaseVar(Var):
 
 @dataclass(init=False)
 class ComputedVar(Var):
-    _var_cache: bool
     fget: FunctionType
+    _cache: bool = False
+    _backend: bool = False
+    _initial_value: Any | types.Unset = types.Unset()
+    _static_deps: set[str]
+    _auto_deps: bool = True
+    _update_interval: Optional[datetime.timedelta] = None
+    _var_is_dynamic_route: bool = False
     @property
     def _cache_attr(self) -> str: ...
     def __get__(self, instance, owner): ...

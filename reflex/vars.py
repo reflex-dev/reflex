@@ -2194,6 +2194,9 @@ class ComputedVar(Var, property):
     # Extra metadata associated with the Var
     _var_data: Optional[VarData] = dataclasses.field(default=None)
 
+    # Whether the var is a (automatically created) dynamic route var
+    _var_is_dynamic_route: bool = dataclasses.field(default=False)
+
     def __init__(
         self,
         fget: Callable[[BaseState], Any],

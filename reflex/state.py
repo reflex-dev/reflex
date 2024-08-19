@@ -996,6 +996,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             def inner_func(self) -> str:
                 return self.router.page.params.get(param, "")
 
+            inner_func._var_is_dynamic_route = True
             return inner_func
 
         def arglist_factory(param):
@@ -1003,6 +1004,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             def inner_func(self) -> List:
                 return self.router.page.params.get(param, [])
 
+            inner_func._var_is_dynamic_route = True
             return inner_func
 
         for param, value in args.items():
@@ -1031,7 +1033,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             NameError: If a dynamic arg is shadowing an existing var.
         """
         for arg in args:
-            if arg in cls.vars:
+            if (
+                arg in cls.computed_vars and not cls.vars[arg]._var_is_dynamic_route
+            ) or arg in cls.base_vars:
                 raise NameError(
                     f"Dynamic route arg '{arg}' is shadowing an existing var in {cls.__module__}.{cls.__name__}"
                 )
