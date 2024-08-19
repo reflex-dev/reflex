@@ -270,7 +270,7 @@ _MAPPING: dict = {
         "EditorButtonList",
         "EditorOptions",
     ],
-    "components": ["el", "chakra", "radix", "lucide", "recharts", "next"],
+    "components": ["el", "radix", "lucide", "recharts", "next"],
     "components.markdown": ["markdown"],
     **RADIX_MAPPING,
     "components.plotly": ["plotly"],
@@ -342,8 +342,27 @@ _SUBMODULES: set[str] = {
     "compiler",
 }
 _SUBMOD_ATTRS: dict = _MAPPING
-__getattr__, __dir__, __all__ = lazy_loader.attach(
+getattr, __dir__, __all__ = lazy_loader.attach(
     __name__,
     submodules=_SUBMODULES,
     submod_attrs=_SUBMOD_ATTRS,
 )
+
+
+def __getattr__(name):
+    if name == "chakra":
+        from reflex.utils import console
+
+        console.deprecate(
+            "rx.chakra",
+            reason="and moved to a separate package. "
+            "To continue using Chakra UI components, install the `reflex-chakra` package via `pip install "
+            "reflex-chakra`.",
+            deprecation_version="0.6.0",
+            removal_version="0.7.0",
+            dedupe=True,
+        )
+        import reflex_chakra as rc
+
+        return rc
+    return getattr(name)
