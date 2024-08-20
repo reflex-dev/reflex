@@ -32,7 +32,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import ParamSpec, get_origin, get_type_hints, override
+from typing_extensions import ParamSpec, get_type_hints, override
 
 from reflex import constants
 from reflex.base import Base
@@ -40,6 +40,7 @@ from reflex.constants.colors import Color
 from reflex.utils import console, imports, serializers, types
 from reflex.utils.exceptions import VarDependencyError, VarTypeError, VarValueError
 from reflex.utils.format import format_state_name
+from reflex.utils.types import get_origin
 from reflex.vars import (
     ComputedVar,
     ImmutableVarData,

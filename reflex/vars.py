@@ -29,7 +29,6 @@ from typing import (
     _GenericAlias,  # type: ignore
     cast,
     get_args,
-    get_origin,
     get_type_hints,
 )
 
@@ -51,7 +50,7 @@ from reflex.utils.imports import (
     ParsedImportDict,
     parse_imports,
 )
-from reflex.utils.types import override
+from reflex.utils.types import get_origin, override
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
