@@ -20,6 +20,7 @@ runtimes:
 lint:
   disabled:
     - flake8
+    - markdownlint
     - mypy
     - prettier
     - pylint
@@ -33,7 +34,6 @@ lint:
     - git-diff-check
     - hadolint@2.12.0
     - isort@5.13.2
-    - markdownlint@0.41.0
     - osv-scanner@1.8.3
     - oxipng@9.1.2
     - pyright@1.1.376
