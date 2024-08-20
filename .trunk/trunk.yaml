@@ -19,14 +19,15 @@ runtimes:
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
   disabled:
-    - remark-lint
+    - flake8
     - mypy
+    - pylint
+    - remark-lint
   enabled:
     - actionlint@1.7.1
     - bandit@1.7.9
     - black@24.8.0
     - checkov@3.2.231
-    - flake8@7.1.1
     - git-diff-check
     - hadolint@2.12.0
     - isort@5.13.2
@@ -34,7 +35,6 @@ lint:
     - osv-scanner@1.8.3
     - oxipng@9.1.2
     - prettier@3.3.3
-    - pylint@3.2.6
     - pyright@1.1.376
     - ruff@0.6.1
     - shellcheck@0.10.0
