@@ -558,6 +558,31 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         Args:
             route: The route of the page to compile.
         """
+        uncompiled_page = self.uncompiled_pages[route]
+
+        on_load = uncompiled_page.on_load
+
+        if on_load:
+            self.load_events[route] = (
+                on_load if isinstance(on_load, list) else [on_load]
+            )
+
+        self.uncompiled_pages[route] = UncompiledPage(
+            component=component,
+            route=route,
+            title=title,
+            description=description,
+            image=image,
+            on_load=on_load,
+            meta=meta,
+        )
+
+    def _compile_page(self, route: str):
+        """Compile a page.
+
+        Args:
+            route: The route of the page to compile.
+        """
         component = compiler.compile_uncompiled_page_helper(
             route, self.uncompiled_pages[route]
         )
