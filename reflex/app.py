@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import asyncio
-import concurrent.futures
 import contextlib
 import copy
+import dataclasses
 import functools
 import inspect
 import io
-import multiprocessing
+import multiprocess
+from pathos import multiprocessing, pools
 import os
 import platform
 import sys
@@ -169,6 +170,21 @@ class OverlayFragment(Fragment):
     pass
 
 
+@dataclasses.dataclass(
+    frozen=True,
+)
+class UncompiledPage:
+    """An uncompiled page."""
+
+    component: Component
+    route: str
+    title: str
+    description: str
+    image: str
+    on_load: Union[EventHandler, EventSpec, list[EventHandler | EventSpec], None]
+    meta: list[dict[str, str]]
+
+
 class App(MiddlewareMixin, LifespanMixin, Base):
     """The main Reflex app that encapsulates the backend and frontend.
 
@@ -218,6 +234,9 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
     # Attributes to add to the html root tag of every page.
     html_custom_attrs: Optional[Dict[str, str]] = None
+
+    # A map from a route to an uncompiled page. PRIVATE.
+    uncompiled_pages: Dict[str, UncompiledPage] = {}
 
     # A map from a page route to the component to render. Users should use `add_page`. PRIVATE.
     pages: Dict[str, Component] = {}
@@ -492,13 +511,13 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         # Check if the route given is valid
         verify_route_validity(route)
 
-        if route in self.pages and os.getenv(constants.RELOAD_CONFIG):
+        if route in self.uncompiled_pages and os.getenv(constants.RELOAD_CONFIG):
             # when the app is reloaded(typically for app harness tests), we should maintain
             # the latest render function of a route.This applies typically to decorated pages
             # since they are only added when app._compile is called.
-            self.pages.pop(route)
+            self.uncompiled_pages.pop(route)
 
-        if route in self.pages:
+        if route in self.uncompiled_pages:
             route_name = (
                 f"`{route}` or `/`"
                 if route == constants.PageNames.INDEX_ROUTE
@@ -514,8 +533,33 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         state = self.state if self.state else State
         state.setup_dynamic_args(get_route_args(route))
 
+        if on_load:
+            self.load_events[route] = (
+                on_load if isinstance(on_load, list) else [on_load]
+            )
+
+        self.uncompiled_pages[route] = UncompiledPage(
+            component=component,
+            route=route,
+            title=title,
+            description=description,
+            image=image,
+            on_load=on_load,
+            meta=meta,
+        )
+
+    def _compile_page(self, route: str):
+        """Compile a page.
+
+        Args:
+            route: The route of the page to compile.
+        """
+        uncompiled_page = self.uncompiled_pages[route]
+
+        on_load = uncompiled_page.on_load
+
         # Generate the component if it is a callable.
-        component = self._generate_component(component)
+        component = self._generate_component(uncompiled_page.component)
 
         # unpack components that return tuples in an rx.fragment.
         if isinstance(component, tuple):
@@ -538,16 +582,16 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
         meta_args = {
             "title": (
-                title
-                if title is not None
+                uncompiled_page.title
+                if uncompiled_page.title is not None
                 else format.make_default_page_title(get_config().app_name, route)
             ),
-            "image": image,
-            "meta": meta,
+            "image": uncompiled_page.image,
+            "meta": uncompiled_page.meta,
         }
 
-        if description is not None:
-            meta_args["description"] = description
+        if uncompiled_page.description is not None:
+            meta_args["description"] = uncompiled_page.description
 
         # Add meta information to the component.
         compiler_utils.add_meta(
@@ -558,12 +602,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         # Add the page.
         self._check_routes_conflict(route)
         self.pages[route] = component
-
-        # Add the load events.
-        if on_load:
-            if not isinstance(on_load, list):
-                on_load = [on_load]
-            self.load_events[route] = on_load
 
     def get_load_events(self, route: str) -> list[EventHandler | EventSpec]:
         """Get the load events for a route.
@@ -839,11 +877,15 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         """
         from reflex.utils.exceptions import ReflexRuntimeError
 
+        print("Compiling the app...")
+
+        self._enable_state()
+
         def get_compilation_time() -> str:
             return str(datetime.now().time()).split(".")[0]
 
         # Render a default 404 page if the user didn't supply one
-        if constants.Page404.SLUG not in self.pages:
+        if constants.Page404.SLUG not in self.uncompiled_pages:
             self.add_custom_404_page()
 
         # Add the optional endpoints (_upload)
@@ -869,7 +911,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         progress.start()
         task = progress.add_task(
             f"[{get_compilation_time()}] Compiling:",
-            total=len(self.pages)
+            total=len(self.uncompiled_pages)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
         )
@@ -898,7 +940,88 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         all_imports = {}
         custom_components = set()
 
-        for _route, component in self.pages.items():
+        progress.advance(task)
+
+        # Compile the root document before fork.
+        compile_results.append(
+            compiler.compile_document_root(
+                self.head_components,
+                html_lang=self.html_lang,
+                html_custom_attrs=self.html_custom_attrs,  # type: ignore
+            )
+        )
+
+        # Fix #2992 by removing the top-level appearance prop
+        if self.theme is not None:
+            self.theme.appearance = None
+
+        progress.advance(task)
+
+        for route, uncompiled_page in self.uncompiled_pages.items():
+            ExecutorSafeFunctions.UNCOMPILED_PAGES[route] = uncompiled_page
+
+        ExecutorSafeFunctions.STYLE = self.style
+
+        # Use a forking process pool, if possible.  Much faster, especially for large sites.
+        # Fallback to ThreadPoolExecutor as something that will always work.
+        executor = None
+        if (
+            platform.system() in ("Linux", "Darwin")
+            and os.environ.get("REFLEX_COMPILE_PROCESSES") is not None
+        ):
+            executor = pools.ProcessPool()
+        else:
+            executor = pools.ThreadPool()
+
+        pages_results = []
+
+        with executor:
+            result_futures = []
+            pages_futures = []
+
+            # def _mark_complete(_=None):
+            #     progress.advance(task)
+
+            def _submit_work(fn, *args, **kwargs):
+                f = executor.apipe(fn, *args, **kwargs)
+                # f.add_done_callback(_mark_complete)
+                result_futures.append(f)
+
+            # Compile all page components.
+            for route in self.uncompiled_pages:
+                f = executor.apipe(
+                    ExecutorSafeFunctions.compile_uncompiled_page, route
+                )
+                # f.add_done_callback(_mark_complete)
+                pages_futures.append((route, f))
+
+            # Compile the root stylesheet with base styles.
+            _submit_work(compiler.compile_root_stylesheet, self.stylesheets)
+
+            # Compile the theme.
+            _submit_work(ExecutorSafeFunctions.compile_theme)
+
+            # Compile the Tailwind config.
+            if config.tailwind is not None:
+                config.tailwind["content"] = config.tailwind.get(
+                    "content", constants.Tailwind.CONTENT
+                )
+                _submit_work(compiler.compile_tailwind, config.tailwind)
+            else:
+                _submit_work(compiler.remove_tailwind_from_postcss)
+
+            # Wait for all compilation tasks to complete.
+            for future in result_futures:
+                compile_results.append(future.get())
+
+            for route, future in pages_futures:
+                print(f"Compiled {route}")
+                pages_results.append(future.get())
+
+        for route, component, compiled_page in pages_results:
+            self.pages[compiled_page] = component
+            compile_results.append(compiled_page)
+
             # Merge the component style with the app style.
             component._add_style_recursive(self.style, self.theme)
 
@@ -910,8 +1033,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
             # Add the custom components from the page to the set.
             custom_components |= component._get_all_custom_components()
-
-        progress.advance(task)
 
         # Perform auto-memoization of stateful components.
         (
@@ -930,113 +1051,29 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             )
         compile_results.append((stateful_components_path, stateful_components_code))
 
-        # Compile the root document before fork.
-        compile_results.append(
-            compiler.compile_document_root(
-                self.head_components,
-                html_lang=self.html_lang,
-                html_custom_attrs=self.html_custom_attrs,  # type: ignore
-            )
-        )
-
-        # Compile the contexts before fork.
-        compile_results.append(
-            compiler.compile_contexts(self.state, self.theme),
-        )
-        # Fix #2992 by removing the top-level appearance prop
-        if self.theme is not None:
-            self.theme.appearance = None
-
         app_root = self._app_root(app_wrappers=app_wrappers)
-
-        progress.advance(task)
-
-        # Prepopulate the global ExecutorSafeFunctions class with input data required by the compile functions.
-        # This is required for multiprocessing to work, in presence of non-picklable inputs.
-        for route, component in zip(self.pages, page_components):
-            ExecutorSafeFunctions.COMPILE_PAGE_ARGS_BY_ROUTE[route] = (
-                route,
-                component,
-                self.state,
-            )
-
-        ExecutorSafeFunctions.COMPILE_APP_APP_ROOT = app_root
-        ExecutorSafeFunctions.CUSTOM_COMPONENTS = custom_components
-        ExecutorSafeFunctions.STYLE = self.style
-
-        # Use a forking process pool, if possible.  Much faster, especially for large sites.
-        # Fallback to ThreadPoolExecutor as something that will always work.
-        executor = None
-        if (
-            platform.system() in ("Linux", "Darwin")
-            and os.environ.get("REFLEX_COMPILE_PROCESSES") is not None
-        ):
-            executor = concurrent.futures.ProcessPoolExecutor(
-                max_workers=int(os.environ.get("REFLEX_COMPILE_PROCESSES", 0)) or None,
-                mp_context=multiprocessing.get_context("fork"),
-            )
-        else:
-            executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=int(os.environ.get("REFLEX_COMPILE_THREADS", 0)) or None,
-            )
-
-        with executor:
-            result_futures = []
-            custom_components_future = None
-
-            def _mark_complete(_=None):
-                progress.advance(task)
-
-            def _submit_work(fn, *args, **kwargs):
-                f = executor.submit(fn, *args, **kwargs)
-                f.add_done_callback(_mark_complete)
-                result_futures.append(f)
-
-            # Compile all page components.
-            for route in self.pages:
-                _submit_work(ExecutorSafeFunctions.compile_page, route)
-
-            # Compile the app wrapper.
-            _submit_work(ExecutorSafeFunctions.compile_app)
-
-            # Compile the custom components.
-            custom_components_future = executor.submit(
-                ExecutorSafeFunctions.compile_custom_components,
-            )
-            custom_components_future.add_done_callback(_mark_complete)
-
-            # Compile the root stylesheet with base styles.
-            _submit_work(compiler.compile_root_stylesheet, self.stylesheets)
-
-            # Compile the theme.
-            _submit_work(ExecutorSafeFunctions.compile_theme)
-
-            # Compile the Tailwind config.
-            if config.tailwind is not None:
-                config.tailwind["content"] = config.tailwind.get(
-                    "content", constants.Tailwind.CONTENT
-                )
-                _submit_work(compiler.compile_tailwind, config.tailwind)
-            else:
-                _submit_work(compiler.remove_tailwind_from_postcss)
-
-            # Wait for all compilation tasks to complete.
-            for future in concurrent.futures.as_completed(result_futures):
-                compile_results.append(future.result())
-
-            # Special case for custom_components, since we need the compiled imports
-            # to install proper frontend packages.
-            (
-                *custom_components_result,
-                custom_components_imports,
-            ) = custom_components_future.result()
-            compile_results.append(custom_components_result)
-            all_imports.update(custom_components_imports)
 
         # Get imports from AppWrap components.
         all_imports.update(app_root._get_all_imports())
 
         progress.advance(task)
+
+        # Compile the contexts before fork.
+        compile_results.append(
+            compiler.compile_contexts(self.state, self.theme),
+        )
+
+        # Compile the app root.
+        compile_results.append(
+            compiler.compile_app(app_root),
+        )
+
+        # Compile custom components.
+        *custom_components_result, custom_components_imports = (
+            compiler.compile_components(custom_components)
+        )
+        compile_results.append(custom_components_result)
+        all_imports.update(custom_components_imports)
 
         progress.advance(task)
         progress.stop()

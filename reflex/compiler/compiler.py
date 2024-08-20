@@ -5,10 +5,11 @@ from __future__ import annotations
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Iterable, Optional, Type, Union
+from typing import TYPE_CHECKING, Dict, Iterable, Optional, Type, Union
 
 from reflex import constants
 from reflex.compiler import templates, utils
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
     BaseComponent,
     Component,
@@ -511,6 +512,58 @@ def purge_web_pages_dir():
     utils.empty_dir(get_web_dir() / constants.Dirs.PAGES, keep_files=["_app.js"])
 
 
+if TYPE_CHECKING:
+    from reflex.app import UncompiledPage
+    from reflex.event import EventHandler, EventSpec
+
+
+def compile_uncompiled_page(
+    route: str, page: UncompiledPage
+) -> tuple[EventHandler | EventSpec | list[EventHandler | EventSpec] | None, Fragment]:
+    """Compiles an uncompiled page into a component and adds meta information.
+
+    Args:
+        route (str): The route of the page.
+        page (UncompiledPage): The uncompiled page object.
+
+    Returns:
+        tuple[EventHandler | EventSpec | list[EventHandler | EventSpec] | None, Fragment]: The on_load event handler or spec, and the compiled component.
+    """
+    # Generate the component if it is a callable.
+    component = page.component
+    component = component if isinstance(component, Component) else component()
+
+    # unpack components that return tuples in an rx.fragment.
+    if isinstance(component, tuple):
+        component = Fragment.create(*component)
+
+    from reflex.app import OverlayFragment
+    from reflex.utils.format import make_default_page_title
+
+    component = OverlayFragment.create(component)
+
+    meta_args = {
+        "title": (
+            page.title
+            if page.title is not None
+            else make_default_page_title(get_config().app_name, route)
+        ),
+        "image": page.image,
+        "meta": page.meta,
+    }
+
+    if page.description is not None:
+        meta_args["description"] = page.description
+
+    # Add meta information to the component.
+    utils.add_meta(
+        component,
+        **meta_args,
+    )
+
+    return component
+
+
 class ExecutorSafeFunctions:
     """Helper class to allow parallelisation of parts of the compilation process.
 
@@ -536,9 +589,9 @@ class ExecutorSafeFunctions:
 
     """
 
-    COMPILE_PAGE_ARGS_BY_ROUTE = {}
-    COMPILE_APP_APP_ROOT: Component | None = None
-    CUSTOM_COMPONENTS: set[CustomComponent] | None = None
+    UNCOMPILED_PAGES = {}
+    COMPILED_COMPONENTS = {}
+    STATE: Type[BaseState] | None = None
     STYLE: ComponentStyle | None = None
 
     @classmethod
@@ -551,35 +604,21 @@ class ExecutorSafeFunctions:
         Returns:
             The path and code of the compiled page.
         """
-        return compile_page(*cls.COMPILE_PAGE_ARGS_BY_ROUTE[route])
+        return compile_page(route, cls.COMPILED_COMPONENTS[route], cls.STATE)
 
     @classmethod
-    def compile_app(cls):
-        """Compile the app.
+    def compile_uncompiled_page(cls, route: str):
+        """Compile an uncompiled page.
+
+        Args:
+            route: The route of the page to compile.
 
         Returns:
-            The path and code of the compiled app.
-
-        Raises:
-            ValueError: If the app root is not set.
+            The path and code of the compiled page.
         """
-        if cls.COMPILE_APP_APP_ROOT is None:
-            raise ValueError("COMPILE_APP_APP_ROOT should be set")
-        return compile_app(cls.COMPILE_APP_APP_ROOT)
-
-    @classmethod
-    def compile_custom_components(cls):
-        """Compile the custom components.
-
-        Returns:
-            The path and code of the compiled custom components.
-
-        Raises:
-            ValueError: If the custom components are not set.
-        """
-        if cls.CUSTOM_COMPONENTS is None:
-            raise ValueError("CUSTOM_COMPONENTS should be set")
-        return compile_components(cls.CUSTOM_COMPONENTS)
+        component = compile_uncompiled_page(route, cls.UNCOMPILED_PAGES[route])
+        component = component if isinstance(component, Component) else component()
+        return route, component, compile_page(route, component, cls.STATE)
 
     @classmethod
     def compile_theme(cls):
