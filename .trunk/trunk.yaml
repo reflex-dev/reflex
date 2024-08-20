@@ -19,6 +19,7 @@ runtimes:
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
   disabled:
+    - prettier
     - flake8
     - mypy
     - pylint
@@ -34,7 +35,6 @@ lint:
     - markdownlint@0.41.0
     - osv-scanner@1.8.3
     - oxipng@9.1.2
-    - prettier@3.3.3
     - pyright@1.1.376
     - ruff@0.6.1
     - shellcheck@0.10.0
