@@ -19,11 +19,12 @@ runtimes:
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
   disabled:
-    - prettier
     - flake8
     - mypy
+    - prettier
     - pylint
     - remark-lint
+    - stylelint
   enabled:
     - actionlint@1.7.1
     - bandit@1.7.9
@@ -39,7 +40,6 @@ lint:
     - ruff@0.6.1
     - shellcheck@0.10.0
     - shfmt@3.6.0
-    - stylelint@16.8.2
     - svgo@3.3.2
     - taplo@0.9.3
     - trivy@0.54.1
