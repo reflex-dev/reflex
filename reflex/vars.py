@@ -181,15 +181,14 @@ class VarData(Base):
                 var_data.interpolations if isinstance(var_data, VarData) else []
             )
 
-        return (
-            cls(
+        if state or _imports or hooks or interpolations:
+            return cls(
                 state=state,
                 imports=_imports,
                 hooks=hooks,
                 interpolations=interpolations,
             )
-            or None
-        )
+        return None
 
     def __bool__(self) -> bool:
         """Check if the var data is non-empty.
@@ -301,14 +300,13 @@ class ImmutableVarData:
                 else {k: None for k in var_data.hooks}
             )
 
-        return (
-            ImmutableVarData(
+        if state or _imports or hooks:
+            return ImmutableVarData(
                 state=state,
                 imports=_imports,
                 hooks=hooks,
             )
-            or None
-        )
+        return None
 
     def __bool__(self) -> bool:
         """Check if the var data is non-empty.
