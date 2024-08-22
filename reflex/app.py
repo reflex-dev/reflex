@@ -9,6 +9,7 @@ import dataclasses
 import functools
 import inspect
 import io
+import dill
 import multiprocess
 from pathos import multiprocessing, pools
 import os
@@ -50,6 +51,7 @@ from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.compiler.compiler import (
     ExecutorSafeFunctions,
+    compile_uncompiled_page_helper,
 )
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.error_boundary import ErrorBoundary
@@ -538,56 +540,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         # this state assignment is only required for tests using the deprecated state kwarg for App
         state = self.state if self.state else State
         state.setup_dynamic_args(get_route_args(route))
-
-        if on_load:
-            self.load_events[route] = (
-                on_load if isinstance(on_load, list) else [on_load]
-            )
-
-        self.uncompiled_pages[route] = UncompiledPage(
-            component=component,
-            route=route,
-            title=title,
-            description=description,
-            image=image,
-            on_load=on_load,
-            meta=meta,
-        )
-
-    def _compile_page(self, route: str):
-        """Compile a page.
-
-        Args:
-            route: The route of the page to compile.
-        """
-        uncompiled_page = self.uncompiled_pages[route]
-
-        on_load = uncompiled_page.on_load
-
-        if on_load:
-            self.load_events[route] = (
-                on_load if isinstance(on_load, list) else [on_load]
-            )
-
-        self.uncompiled_pages[route] = UncompiledPage(
-            component=component,
-            route=route,
-            title=title or constants.DefaultPage.TITLE,
-            description=description or constants.DefaultPage.DESCRIPTION,
-            image=image,
-            on_load=on_load,
-            meta=meta,
-        )
-
-    def _compile_page(self, route: str):
-        """Compile a page.
-
-        Args:
-            route: The route of the page to compile.
-        """
-        uncompiled_page = self.uncompiled_pages[route]
-
-        on_load = uncompiled_page.on_load
 
         if on_load:
             self.load_events[route] = (
