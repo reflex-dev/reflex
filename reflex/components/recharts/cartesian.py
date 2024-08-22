@@ -142,6 +142,9 @@ class XAxis(Axis):
     # The range of the axis. Work best in conjuction with allow_data_overflow.
     domain: Var[List]
 
+    # The range of the axis. Work best in conjuction with allow_data_overflow.
+    domain: Var[List]
+
 
 class YAxis(Axis):
     """A YAxis component in Recharts."""
