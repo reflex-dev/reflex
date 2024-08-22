@@ -125,8 +125,8 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
     )
     if Toaster.is_used:
         return toast(
+            "An error occurred.",
             level="error",
-            title="An error occurred.",
             description="<br/>".join(error_message),
             position="top-center",
             id="backend_error",

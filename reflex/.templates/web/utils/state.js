@@ -782,7 +782,7 @@ export const useEventLoop = (
   // Route after the initial page hydration.
   useEffect(() => {
     const change_start = () => {
-      const main_state_dispatch = dispatch["state"]
+      const main_state_dispatch = dispatch["reflex___state____state"]
       if (main_state_dispatch !== undefined) {
         main_state_dispatch({ is_hydrated: false })
       }
