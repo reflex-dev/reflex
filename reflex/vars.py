@@ -2588,15 +2588,17 @@ def get_uuid_string_var() -> Var:
     """
     from reflex.utils.imports import ImportVar
 
+    unique_uuid_var = get_unique_variable_name()
     unique_uuid_var_data = VarData(
         imports={
             f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # type: ignore
             "react": "useMemo",
-        }
+        },
+        hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},
     )
 
     return BaseVar(
-        _var_name="useMemo(generateUUID, [])",
+        _var_name=unique_uuid_var,
         _var_type=str,
         _var_data=unique_uuid_var_data,
     )

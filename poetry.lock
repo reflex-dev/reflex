@@ -2241,6 +2241,20 @@ hiredis = ["hiredis (>1.0.0)"]
 ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"]
 
 [[package]]
+name = "reflex-chakra"
+version = "0.1.1a1"
+description = "reflex using chakra components"
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "reflex_chakra-0.1.1a1-py3-none-any.whl", hash = "sha256:e27a3ffb171802a5309a4a7215e7f894810a4a8f0753e2779b5a7010ef36173c"},
+    {file = "reflex_chakra-0.1.1a1.tar.gz", hash = "sha256:f224d42255fde675a65a622cdb19bff0e073edafe94b15019bfd8b21a461801c"},
+]
+
+[package.dependencies]
+reflex = ">=0.5.9"
+
+[[package]]
 name = "reflex-hosting-cli"
 version = "0.1.13"
 description = "Reflex Hosting CLI"
@@ -3221,4 +3235,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "56db9fa9c2b0eb777c2a941f5a758dd70a77d7ac7ea06c34a91e18e03837d5e3"
+content-hash = "d01bc03489bab0666d48df4a10473d079413787ad4cfe1f706e45613d2ecbb24"

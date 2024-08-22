@@ -70,7 +70,7 @@ def get_base_component_map() -> dict[str, Callable]:
         "a": lambda value: Link.create(value),
         "code": lambda value: Code.create(value),
         "codeblock": lambda value, **props: CodeBlock.create(
-            value, margin_y="1em", **props
+            value, margin_y="1em", wrap_long_lines=True, **props
         ),
     }
 
