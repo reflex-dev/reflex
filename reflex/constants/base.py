@@ -77,6 +77,8 @@ class Reflex(SimpleNamespace):
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
 
+    RELEASES_URL = f"https://api.github.com/repos/reflex-dev/templates/releases"
+
 
 class ReflexHostingCLI(SimpleNamespace):
     """Base constants concerning Reflex Hosting CLI."""
