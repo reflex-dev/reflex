@@ -9,6 +9,7 @@ import dataclasses
 import functools
 import inspect
 import io
+import dill
 import multiprocess
 from pathos import multiprocessing, pools
 import os
@@ -47,7 +48,10 @@ from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
-from reflex.compiler.compiler import ExecutorSafeFunctions
+from reflex.compiler.compiler import (
+    ExecutorSafeFunctions,
+    compile_uncompiled_page_helper,
+)
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
@@ -554,49 +558,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         Args:
             route: The route of the page to compile.
         """
-        uncompiled_page = self.uncompiled_pages[route]
-
-        on_load = uncompiled_page.on_load
-
-        # Generate the component if it is a callable.
-        component = self._generate_component(uncompiled_page.component)
-
-        # unpack components that return tuples in an rx.fragment.
-        if isinstance(component, tuple):
-            component = Fragment.create(*component)
-
-        # Ensure state is enabled if this page uses state.
-        if self.state is None:
-            if on_load or component._has_stateful_event_triggers():
-                self._enable_state()
-            else:
-                for var in component._get_vars(include_children=True):
-                    if not var._var_data:
-                        continue
-                    if not var._var_data.state:
-                        continue
-                    self._enable_state()
-                    break
-
-        component = OverlayFragment.create(component)
-
-        meta_args = {
-            "title": (
-                uncompiled_page.title
-                if uncompiled_page.title is not None
-                else format.make_default_page_title(get_config().app_name, route)
-            ),
-            "image": uncompiled_page.image,
-            "meta": uncompiled_page.meta,
-        }
-
-        if uncompiled_page.description is not None:
-            meta_args["description"] = uncompiled_page.description
-
-        # Add meta information to the component.
-        compiler_utils.add_meta(
-            component,
-            **meta_args,
+        component = compiler.compile_uncompiled_page_helper(
+            route, self.uncompiled_pages[route]
         )
 
         # Add the page.
@@ -892,6 +855,10 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         self._add_optional_endpoints()
 
         if not self._should_compile():
+            for route in self.uncompiled_pages:
+                if route in self.pages:
+                    continue
+                self._compile_page(route)
             return
 
         self._validate_var_dependencies()
@@ -957,11 +924,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
         progress.advance(task)
 
-        for route, uncompiled_page in self.uncompiled_pages.items():
-            ExecutorSafeFunctions.UNCOMPILED_PAGES[route] = uncompiled_page
-
-        ExecutorSafeFunctions.STYLE = self.style
-
         # Use a forking process pool, if possible.  Much faster, especially for large sites.
         # Fallback to ThreadPoolExecutor as something that will always work.
         executor = None
@@ -969,6 +931,9 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             platform.system() in ("Linux", "Darwin")
             and os.environ.get("REFLEX_COMPILE_PROCESSES") is not None
         ):
+            for route in self.uncompiled_pages:
+                self._compile_page(route)
+
             executor = pools.ProcessPool()
         else:
             executor = pools.ThreadPool()
@@ -979,27 +944,40 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             result_futures = []
             pages_futures = []
 
-            # def _mark_complete(_=None):
-            #     progress.advance(task)
-
             def _submit_work(fn, *args, **kwargs):
                 f = executor.apipe(fn, *args, **kwargs)
-                # f.add_done_callback(_mark_complete)
                 result_futures.append(f)
 
             # Compile all page components.
-            for route in self.uncompiled_pages:
+            for route, page in self.uncompiled_pages.items():
+                if route in self.pages:
+                    continue
+
                 f = executor.apipe(
-                    ExecutorSafeFunctions.compile_uncompiled_page, route
+                    ExecutorSafeFunctions.compile_uncompiled_page,
+                    route,
+                    page,
+                    self.state,
+                    self.style,
+                    self.theme,
                 )
-                # f.add_done_callback(_mark_complete)
                 pages_futures.append((route, f))
+
+            # Compile the pre-compiled pages.
+            for route, component in self.pages.items():
+                component._add_style_recursive(self.style, self.theme)
+                _submit_work(
+                    ExecutorSafeFunctions.compile_page,
+                    route,
+                    component,
+                    self.state,
+                )
 
             # Compile the root stylesheet with base styles.
             _submit_work(compiler.compile_root_stylesheet, self.stylesheets)
 
             # Compile the theme.
-            _submit_work(ExecutorSafeFunctions.compile_theme)
+            _submit_work(ExecutorSafeFunctions.compile_theme, self.style)
 
             # Compile the Tailwind config.
             if config.tailwind is not None:
@@ -1013,18 +991,18 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             # Wait for all compilation tasks to complete.
             for future in result_futures:
                 compile_results.append(future.get())
+                progress.advance(task)
 
             for route, future in pages_futures:
-                print(f"Compiled {route}")
                 pages_results.append(future.get())
+                progress.advance(task)
 
         for route, component, compiled_page in pages_results:
-            self.pages[compiled_page] = component
+            self._check_routes_conflict(route)
+            self.pages[route] = component
             compile_results.append(compiled_page)
 
-            # Merge the component style with the app style.
-            component._add_style_recursive(self.style, self.theme)
-
+        for route, component in self.pages.items():
             # Add component._get_all_imports() to all_imports.
             all_imports.update(component._get_all_imports())
 

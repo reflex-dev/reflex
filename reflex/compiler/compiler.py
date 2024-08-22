@@ -517,9 +517,7 @@ if TYPE_CHECKING:
     from reflex.event import EventHandler, EventSpec
 
 
-def compile_uncompiled_page(
-    route: str, page: UncompiledPage
-) -> tuple[EventHandler | EventSpec | list[EventHandler | EventSpec] | None, Fragment]:
+def compile_uncompiled_page_helper(route: str, page: UncompiledPage) -> Component:
     """Compiles an uncompiled page into a component and adds meta information.
 
     Args:
@@ -527,7 +525,7 @@ def compile_uncompiled_page(
         page (UncompiledPage): The uncompiled page object.
 
     Returns:
-        tuple[EventHandler | EventSpec | list[EventHandler | EventSpec] | None, Fragment]: The on_load event handler or spec, and the compiled component.
+        Component: The compiled component.
     """
     # Generate the component if it is a callable.
     component = page.component
@@ -589,13 +587,10 @@ class ExecutorSafeFunctions:
 
     """
 
-    UNCOMPILED_PAGES = {}
-    COMPILED_COMPONENTS = {}
-    STATE: Type[BaseState] | None = None
-    STYLE: ComponentStyle | None = None
-
     @classmethod
-    def compile_page(cls, route: str):
+    def compile_page(
+        cls, route: str, component: Component, state: Type[BaseState]
+    ) -> tuple[str, str]:
         """Compile a page.
 
         Args:
@@ -604,10 +599,17 @@ class ExecutorSafeFunctions:
         Returns:
             The path and code of the compiled page.
         """
-        return compile_page(route, cls.COMPILED_COMPONENTS[route], cls.STATE)
+        return compile_page(route, component, state)
 
     @classmethod
-    def compile_uncompiled_page(cls, route: str):
+    def compile_uncompiled_page(
+        cls,
+        route: str,
+        page: UncompiledPage,
+        state: Type[BaseState],
+        style: ComponentStyle,
+        theme: Component,
+    ) -> tuple[str, Component, tuple[str, str]]:
         """Compile an uncompiled page.
 
         Args:
@@ -616,12 +618,13 @@ class ExecutorSafeFunctions:
         Returns:
             The path and code of the compiled page.
         """
-        component = compile_uncompiled_page(route, cls.UNCOMPILED_PAGES[route])
+        component = compile_uncompiled_page_helper(route, page)
         component = component if isinstance(component, Component) else component()
-        return route, component, compile_page(route, component, cls.STATE)
+        component._add_style_recursive(style, theme)
+        return route, component, compile_page(route, component, state)
 
     @classmethod
-    def compile_theme(cls):
+    def compile_theme(cls, style: ComponentStyle | None) -> tuple[str, str]:
         """Compile the theme.
 
         Returns:
@@ -630,6 +633,6 @@ class ExecutorSafeFunctions:
         Raises:
             ValueError: If the style is not set.
         """
-        if cls.STYLE is None:
+        if style is None:
             raise ValueError("STYLE should be set")
-        return compile_theme(cls.STYLE)
+        return compile_theme(style)
