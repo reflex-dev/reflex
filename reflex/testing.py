@@ -328,7 +328,8 @@ class AppHarness:
             )
         )
         self.backend.shutdown = self._get_backend_shutdown_handler()
-        self.backend_thread = threading.Thread(target=self.backend.run)
+        with chdir(self.app_path):
+            self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
 
     async def _reset_backend_state_manager(self):
