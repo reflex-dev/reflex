@@ -2505,7 +2505,7 @@ class StateManagerDisk(StateManager):
         Returns:
             The path for the token.
         """
-        return self.states_directory / f"{token}.pkl"
+        return (self.states_directory / f"{token}.pkl").absolute()
 
     async def load_state(self, token: str, root_state: BaseState) -> BaseState:
         """Load a state object based on the provided token.
