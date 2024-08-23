@@ -7,7 +7,6 @@ import time
 from typing import Generator
 
 import pytest
-import reflex_chakra as rc
 
 from benchmarks import WINDOWS_SKIP_REASON
 from reflex import constants
@@ -131,6 +130,7 @@ def render_multiple_pages(app, num: int):
 
 def AppWithOnePage():
     """A reflex app with one page."""
+    import reflex_chakra as rc
     from rxconfig import config  # type: ignore
 
     import reflex as rx
