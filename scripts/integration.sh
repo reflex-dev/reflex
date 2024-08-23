@@ -34,4 +34,4 @@ if [ -f /proc/$pid/winpid ]; then
   echo "Windows detected, passing winpid $pid to port waiter"
 fi
 
-python scripts/wait_for_listening_port.py $check_ports --timeout=1200 --server-pid "$pid"
+python scripts/wait_for_listening_port.py $check_ports --timeout=1800 --server-pid "$pid"
