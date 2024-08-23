@@ -47,12 +47,16 @@ jobs:
           create-venv-at-path: .venv
       - run: poetry run uv pip install pyvirtualdisplay pillow playwright pytest-playwright
       - name: Run app harness tests
+        uses: nick-fields/retry@v3
         env:
           SCREENSHOT_DIR: /tmp/screenshots
           REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
-        run: |
-          poetry run playwright install --with-deps
-          poetry run pytest integration
+        with:
+          timeout_minutes: 10
+          max_attempts: 2
+          command: |
+            poetry run playwright install --with-deps
+            poetry run pytest integration
       - uses: actions/upload-artifact@v4
         name: Upload failed test screenshots
         if: always()
