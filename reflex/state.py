@@ -2435,28 +2435,6 @@ def _default_token_expiration() -> int:
     return get_config().redis_token_expiration
 
 
-def _purge_expired_states(token_expiration: int):
-    """Purge expired states from the disk.
-
-    Args:
-        token_expiration: The token expiration time in seconds.
-    """
-    import time
-
-    for path in path_ops.ls(prerequisites.get_web_dir() / constants.Dirs.STATES):
-        # check path is a pickle file
-        if path.suffix != ".pkl":
-            continue
-
-        # load last edited field from file
-        last_edited = path.stat().st_mtime
-
-        # check if the file is older than the token expiration time
-        if time.time() - last_edited > token_expiration:
-            # remove the file
-            path.unlink()
-
-
 class StateManagerDisk(StateManager):
     """A state manager that stores states in memory."""
 
@@ -2478,6 +2456,7 @@ class StateManagerDisk(StateManager):
         fields = {
             "_states_locks": {"exclude": True},
         }
+        keep_untouched = (functools.cached_property,)
 
     def __init__(self, state: Type[BaseState]):
         """Create a new state manager.
@@ -2487,10 +2466,35 @@ class StateManagerDisk(StateManager):
         """
         super().__init__(state=state)
 
-        states_directory = prerequisites.get_web_dir() / constants.Dirs.STATES
-        path_ops.mkdir(states_directory)
+        path_ops.mkdir(self.states_directory)
 
-        _purge_expired_states(self.token_expiration)
+        self._purge_expired_states()
+
+    @functools.cached_property
+    def states_directory(self) -> Path:
+        """Get the states directory.
+
+        Returns:
+            The states directory.
+        """
+        return prerequisites.get_web_dir() / constants.Dirs.STATES
+
+    def _purge_expired_states(self):
+        """Purge expired states from the disk."""
+        import time
+
+        for path in path_ops.ls(self.states_directory):
+            # check path is a pickle file
+            if path.suffix != ".pkl":
+                continue
+
+            # load last edited field from file
+            last_edited = path.stat().st_mtime
+
+            # check if the file is older than the token expiration time
+            if time.time() - last_edited > self.token_expiration:
+                # remove the file
+                path.unlink()
 
     def token_path(self, token: str) -> Path:
         """Get the path for a token.
@@ -2501,7 +2505,7 @@ class StateManagerDisk(StateManager):
         Returns:
             The path for the token.
         """
-        return prerequisites.get_web_dir() / constants.Dirs.STATES / f"{token}.pkl"
+        return self.states_directory / f"{token}.pkl"
 
     async def load_state(self, token: str, root_state: BaseState) -> BaseState:
         """Load a state object based on the provided token.
