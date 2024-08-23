@@ -21,7 +21,6 @@ from .admin import AdminDash as AdminDash
 from .app import App as App
 from .app import UploadFile as UploadFile
 from .base import Base as Base
-from .components import chakra as chakra
 from .components import el as el
 from .components import lucide as lucide
 from .components import next as next

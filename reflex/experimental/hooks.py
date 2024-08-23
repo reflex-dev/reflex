@@ -7,7 +7,7 @@ from reflex.vars import Var, VarData
 
 
 def _compose_react_imports(tags: list[str]) -> dict[str, list[ImportVar]]:
-    return {"react": [ImportVar(tag=tag, install=False) for tag in tags]}
+    return {"react": [ImportVar(tag=tag) for tag in tags]}
 
 
 def const(name, value) -> Var:

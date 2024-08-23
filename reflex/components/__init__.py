@@ -16,7 +16,6 @@ _SUBMODULES: set[str] = {
     "react_player",
     "sonner",
     "suneditor",
-    "chakra",
     "el",
     "base",
     "recharts",

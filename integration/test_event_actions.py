@@ -16,6 +16,8 @@ def TestEventAction():
     """App for testing event_actions."""
     from typing import List, Optional
 
+    import reflex_chakra as rc
+
     import reflex as rx
 
     class EventActionState(rx.State):
@@ -53,7 +55,7 @@ def TestEventAction():
 
     def index():
         return rx.vstack(
-            rx.chakra.input(
+            rc.input(
                 value=EventActionState.router.session.client_token,
                 is_read_only=True,
                 id="token",
@@ -146,10 +148,10 @@ def TestEventAction():
                     200
                 ).stop_propagation,
             ),
-            rx.chakra.list(
+            rc.list(
                 rx.foreach(
                     EventActionState.order,  # type: ignore
-                    rx.chakra.list_item,
+                    rc.list_item,
                 ),
             ),
             on_click=EventActionState.on_click("outer"),  # type: ignore

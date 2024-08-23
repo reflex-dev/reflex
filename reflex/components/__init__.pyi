@@ -4,7 +4,6 @@
 # ------------------------------------------------------
 
 from . import base as base
-from . import chakra as chakra
 from . import core as core
 from . import datadisplay as datadisplay
 from . import el as el

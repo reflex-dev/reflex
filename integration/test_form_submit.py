@@ -20,6 +20,8 @@ def FormSubmit(form_component):
     """
     from typing import Dict, List
 
+    import reflex_chakra as rc
+
     import reflex as rx
 
     class FormState(rx.State):
@@ -35,28 +37,28 @@ def FormSubmit(form_component):
     @app.add_page
     def index():
         return rx.vstack(
-            rx.chakra.input(
+            rc.input(
                 value=FormState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
             eval(form_component)(
                 rx.vstack(
-                    rx.chakra.input(id="name_input"),
-                    rx.hstack(rx.chakra.pin_input(length=4, id="pin_input")),
-                    rx.chakra.number_input(id="number_input"),
+                    rc.input(id="name_input"),
+                    rx.hstack(rc.pin_input(length=4, id="pin_input")),
+                    rc.number_input(id="number_input"),
                     rx.checkbox(id="bool_input"),
                     rx.switch(id="bool_input2"),
                     rx.checkbox(id="bool_input3"),
                     rx.switch(id="bool_input4"),
                     rx.slider(id="slider_input", default_value=[50], width="100%"),
-                    rx.chakra.range_slider(id="range_input"),
+                    rc.range_slider(id="range_input"),
                     rx.radio(["option1", "option2"], id="radio_input"),
                     rx.radio(FormState.var_options, id="radio_input_var"),
-                    rx.chakra.select(["option1", "option2"], id="select_input"),
-                    rx.chakra.select(FormState.var_options, id="select_input_var"),
+                    rc.select(["option1", "option2"], id="select_input"),
+                    rc.select(FormState.var_options, id="select_input_var"),
                     rx.text_area(id="text_area_input"),
-                    rx.chakra.input(
+                    rc.input(
                         id="debounce_input",
                         debounce_timeout=0,
                         on_change=rx.console_log,
@@ -79,6 +81,8 @@ def FormSubmitName(form_component):
     """
     from typing import Dict, List
 
+    import reflex_chakra as rc
+
     import reflex as rx
 
     class FormState(rx.State):
@@ -94,22 +98,22 @@ def FormSubmitName(form_component):
     @app.add_page
     def index():
         return rx.vstack(
-            rx.chakra.input(
+            rc.input(
                 value=FormState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
             eval(form_component)(
                 rx.vstack(
-                    rx.chakra.input(name="name_input"),
-                    rx.hstack(rx.chakra.pin_input(length=4, name="pin_input")),
-                    rx.chakra.number_input(name="number_input"),
+                    rc.input(name="name_input"),
+                    rx.hstack(rc.pin_input(length=4, name="pin_input")),
+                    rc.number_input(name="number_input"),
                     rx.checkbox(name="bool_input"),
                     rx.switch(name="bool_input2"),
                     rx.checkbox(name="bool_input3"),
                     rx.switch(name="bool_input4"),
                     rx.slider(name="slider_input", default_value=[50], width="100%"),
-                    rx.chakra.range_slider(name="range_input"),
+                    rc.range_slider(name="range_input"),
                     rx.radio(FormState.options, name="radio_input"),
                     rx.select(
                         FormState.options,
@@ -117,16 +121,16 @@ def FormSubmitName(form_component):
                         default_value=FormState.options[0],
                     ),
                     rx.text_area(name="text_area_input"),
-                    rx.chakra.input_group(
-                        rx.chakra.input_left_element(rx.icon(tag="chevron_right")),
-                        rx.chakra.input(
+                    rc.input_group(
+                        rc.input_left_element(rx.icon(tag="chevron_right")),
+                        rc.input(
                             name="debounce_input",
                             debounce_timeout=0,
                             on_change=rx.console_log,
                         ),
-                        rx.chakra.input_right_element(rx.icon(tag="chevron_left")),
+                        rc.input_right_element(rx.icon(tag="chevron_left")),
                     ),
-                    rx.chakra.button_group(
+                    rc.button_group(
                         rx.button("Submit", type_="submit"),
                         rx.icon_button(FormState.val, icon=rx.icon(tag="plus")),
                         variant="outline",
@@ -148,8 +152,8 @@ def FormSubmitName(form_component):
         functools.partial(FormSubmitName, form_component="rx.form.root"),
         functools.partial(FormSubmit, form_component="rx.el.form"),
         functools.partial(FormSubmitName, form_component="rx.el.form"),
-        functools.partial(FormSubmit, form_component="rx.chakra.form"),
-        functools.partial(FormSubmitName, form_component="rx.chakra.form"),
+        functools.partial(FormSubmit, form_component="rc.form"),
+        functools.partial(FormSubmitName, form_component="rc.form"),
     ],
     ids=[
         "id-radix",

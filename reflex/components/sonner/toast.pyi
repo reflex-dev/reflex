@@ -51,6 +51,11 @@ class ToastProps(PropsBase):
 
     def dict(self, *args, **kwargs) -> dict[str, Any]: ...
 
+    class Config:
+        arbitrary_types_allowed = True
+        use_enum_values = True
+        extra = "forbid"
+
 class Toaster(Component):
     is_used: ClassVar[bool] = False
 
