@@ -52,7 +52,7 @@ from reflex.event import (
     EventSpec,
     fix_events,
 )
-from reflex.utils import console, format, prerequisites, types
+from reflex.utils import console, format, path_ops, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
@@ -2426,6 +2426,15 @@ class StateManagerMemory(StateManager):
             await self.set_state(token, state)
 
 
+def _default_token_expiration() -> int:
+    """Get the default token expiration time.
+
+    Returns:
+        The default token expiration time.
+    """
+    return get_config().redis_token_expiration
+
+
 class StateManagerDisk(StateManager):
     """A state manager that stores states in memory."""
 
@@ -2438,6 +2447,9 @@ class StateManagerDisk(StateManager):
     # The dict of mutexes for each client
     _states_locks: Dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
 
+    # The token expiration time (s).
+    token_expiration: int = pydantic.Field(default_factory=_default_token_expiration)
+
     class Config:
         """The Pydantic config."""
 
@@ -2445,23 +2457,63 @@ class StateManagerDisk(StateManager):
             "_states_locks": {"exclude": True},
         }
 
-    async def load_state(self, token: str, root_state: BaseState = None) -> BaseState:
+    def __init__(self, state: Type[BaseState]):
+        """Create a new state manager.
+
+        Args:
+            state: The state class to use.
+        """
+        super().__init__(state=state)
+
+        import time
+
+        states_directory = prerequisites.get_web_dir() / constants.Dirs.STATES
+
+        path_ops.mkdir(states_directory)
+
+        for path in path_ops.ls(states_directory):
+            # check path is a pickle file
+            if path.suffix != ".pkl":
+                continue
+
+            # load last edited field from file
+            last_edited = path.stat().st_mtime
+
+            # check if the file is older than the token expiration time
+            if time.time() - last_edited > self.token_expiration:
+                # remove the file
+                path.unlink()
+
+    def token_path(self, token: str) -> Path:
+        """Get the path for a token.
+
+        Args:
+            token: The token to get the path for.
+
+        Returns:
+            The path for the token.
+        """
+        return prerequisites.get_web_dir() / constants.Dirs.STATES / f"{token}.pkl"
+
+    async def load_state(self, token: str, root_state: BaseState) -> BaseState:
         """Load a state object based on the provided token.
 
         Args:
             token: The token used to identify the state object.
-            root_state: The root state object. Defaults to None.
+            root_state: The root state object.
 
         Returns:
-            BaseState: The loaded state object.
+            The loaded state object.
         """
         if token in self.states:
             return self.states[token]
 
         client_token, substate_address = _split_substate_key(token)
 
-        if os.path.exists(f"state_{token}.pkl"):
-            with open(f"state_{token}.pkl", "rb") as file:
+        token_path = self.token_path(token)
+
+        if os.path.exists(token_path):
+            with open(token_path, "rb") as file:
                 (substate_schema, substate) = dill.load(file)
             if substate_schema == substate.schema():
                 await self.populate_substates(client_token, substate, root_state)
@@ -2488,8 +2540,6 @@ class StateManagerDisk(StateManager):
 
             state.substates[substate.get_name()] = substate
             substate.parent_state = state
-
-        return state
 
     @override
     async def get_state(
@@ -2525,7 +2575,7 @@ class StateManagerDisk(StateManager):
         substate_token = _substate_key(client_token, substate_name)
         self.states[substate_token] = substate
         state_dilled = dill.dumps((substate.schema(), substate), byref=True)
-        Path(f"state_{substate_token}.pkl").write_bytes(state_dilled)
+        Path(self.token_path(substate_token)).write_bytes(state_dilled)
         for substate_substate in substate.substates.values():
             await self.set_state_for_substate(client_token, substate_substate)
 
@@ -2590,15 +2640,6 @@ def _default_lock_expiration() -> int:
         The default lock expiration time.
     """
     return get_config().redis_lock_expiration
-
-
-def _default_token_expiration() -> int:
-    """Get the default token expiration time.
-
-    Returns:
-        The default token expiration time.
-    """
-    return get_config().redis_token_expiration
 
 
 class StateManagerRedis(StateManager):

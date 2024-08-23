@@ -45,6 +45,7 @@ import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.state import (
     BaseState,
+    StateManager,
     StateManagerMemory,
     StateManagerRedis,
     reload_state_module,
@@ -126,7 +127,7 @@ class AppHarness:
     frontend_output_thread: Optional[threading.Thread] = None
     backend_thread: Optional[threading.Thread] = None
     backend: Optional[uvicorn.Server] = None
-    state_manager: Optional[StateManagerMemory | StateManagerRedis] = None
+    state_manager: Optional[StateManager] = None
     _frontends: list["WebDriver"] = dataclasses.field(default_factory=list)
     _decorated_pages: list = dataclasses.field(default_factory=list)
 
