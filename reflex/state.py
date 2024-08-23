@@ -2436,7 +2436,11 @@ def _default_token_expiration() -> int:
 
 
 def _purge_expired_states(token_expiration: int):
-    """Purge expired states from the disk."""
+    """Purge expired states from the disk.
+
+    Args:
+        token_expiration: The token expiration time in seconds.
+    """
     import time
 
     for path in path_ops.ls(prerequisites.get_web_dir() / constants.Dirs.STATES):
