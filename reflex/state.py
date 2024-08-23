@@ -11,6 +11,7 @@ import os
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from pathlib import Path
 from types import FunctionType, MethodType
 from typing import (
     TYPE_CHECKING,
@@ -2318,7 +2319,7 @@ class StateManager(Base, ABC):
                 token_expiration=config.redis_token_expiration,
                 lock_expiration=config.redis_lock_expiration,
             )
-        return StateManagerMemory(state=state)
+        return StateManagerDisk(state=state)
 
     @abstractmethod
     async def get_state(self, token: str) -> BaseState:
@@ -2423,6 +2424,144 @@ class StateManagerMemory(StateManager):
             state = await self.get_state(token)
             yield state
             await self.set_state(token, state)
+
+
+class StateManagerDisk(StateManager):
+    """A state manager that stores states in memory."""
+
+    # The mapping of client ids to states.
+    states: Dict[str, BaseState] = {}
+
+    # The mutex ensures the dict of mutexes is updated exclusively
+    _state_manager_lock = asyncio.Lock()
+
+    # The dict of mutexes for each client
+    _states_locks: Dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
+
+    class Config:
+        """The Pydantic config."""
+
+        fields = {
+            "_states_locks": {"exclude": True},
+        }
+
+    async def load_state(self, token: str, root_state: BaseState = None) -> BaseState:
+        """Load a state object based on the provided token.
+
+        Args:
+            token: The token used to identify the state object.
+            root_state: The root state object. Defaults to None.
+
+        Returns:
+            BaseState: The loaded state object.
+        """
+        if token in self.states:
+            return self.states[token]
+
+        client_token, substate_address = _split_substate_key(token)
+
+        if os.path.exists(f"state_{token}.pkl"):
+            with open(f"state_{token}.pkl", "rb") as file:
+                (substate_schema, substate) = dill.load(file)
+            if substate_schema == substate.schema():
+                await self.populate_substates(client_token, substate, root_state)
+                return substate
+
+        return root_state.get_substate(substate_address.split(".")[1:])
+
+    async def populate_substates(
+        self, client_token: str, state: BaseState, root_state: BaseState
+    ):
+        """Populate the substates of a state object.
+
+        Args:
+            client_token: The client token.
+            state: The state object to populate.
+            root_state: The root state object.
+        """
+        for substate in state.get_substates():
+            substate_name = substate.get_full_name()
+
+            substate_token = _substate_key(client_token, substate_name)
+
+            substate = await self.load_state(substate_token, root_state)
+
+            state.substates[substate.get_name()] = substate
+            substate.parent_state = state
+
+        return state
+
+    @override
+    async def get_state(
+        self,
+        token: str,
+    ) -> BaseState:
+        """Get the state for a token.
+
+        Args:
+            token: The token to get the state for.
+
+        Returns:
+            The state for the token.
+        """
+        client_token, substate_address = _split_substate_key(token)
+
+        root_state_token = _substate_key(client_token, substate_address.split(".")[0])
+
+        root_state = await self.load_state(
+            root_state_token, self.state(_reflex_internal_init=True)
+        )
+
+        return root_state.get_substate(substate_address.split(".")[1:])
+
+    async def set_state_for_substate(self, client_token: str, substate: BaseState):
+        """Set the state for a substate.
+
+        Args:
+            client_token: The client token.
+            substate: The substate to set.
+        """
+        substate_name = substate.get_full_name()
+        substate_token = _substate_key(client_token, substate_name)
+        self.states[substate_token] = substate
+        state_dilled = dill.dumps((substate.schema(), substate), byref=True)
+        Path(f"state_{substate_token}.pkl").write_bytes(state_dilled)
+        for substate_substate in substate.substates.values():
+            await self.set_state_for_substate(client_token, substate_substate)
+
+    @override
+    async def set_state(self, token: str, state: BaseState):
+        """Set the state for a token.
+
+        Args:
+            token: The token to set the state for.
+            state: The state to set.
+        """
+        client_token, substate = _split_substate_key(token)
+        await self.set_state_for_substate(client_token, state)
+
+    @override
+    @contextlib.asynccontextmanager
+    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
+        """Modify the state for a token while holding exclusive lock.
+
+        Args:
+            token: The token to modify the state for.
+
+        Yields:
+            The state for the token.
+        """
+        # Memory state manager ignores the substate suffix and always returns the top-level state.
+        client_token, substate = _split_substate_key(token)
+        if client_token not in self._states_locks:
+            async with self._state_manager_lock:
+                if client_token not in self._states_locks:
+                    self._states_locks[client_token] = asyncio.Lock()
+
+        async with self._states_locks[client_token]:
+            state = await self.get_state(token)
+            yield state._get_root_state()
+            await self.set_state(token, state._get_root_state())
 
 
 # Workaround https://github.com/cloudpipe/cloudpickle/issues/408 for dynamic pydantic classes
