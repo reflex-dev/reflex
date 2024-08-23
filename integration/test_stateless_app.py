@@ -27,6 +27,9 @@ def stateless_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
     Args:
         tmp_path_factory: pytest fixture for creating temporary directories.
+
+    Yields:
+        AppHarness: A harness for testing the stateless app.
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("stateless_app"),
@@ -36,7 +39,12 @@ def stateless_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
 
 def test_statelessness(stateless_app: AppHarness, page: Page):
-    """Test that the stateless app renders a heading but backend/_event is not mounted."""
+    """Test that the stateless app renders a heading but backend/_event is not mounted.
+
+    Args:
+        stateless_app: A harness for testing the stateless app.
+        page: A Playwright page.
+    """
     assert stateless_app.frontend_url is not None
     assert stateless_app.backend is not None
     assert stateless_app.backend.started
