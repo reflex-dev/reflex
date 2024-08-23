@@ -52,7 +52,7 @@ jobs:
           SCREENSHOT_DIR: /tmp/screenshots
           REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
         with:
-          timeout_minutes: 25
+          timeout_minutes: 30
           max_attempts: 2
           command: |
             poetry run playwright install --with-deps
