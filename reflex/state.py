@@ -2558,11 +2558,9 @@ class StateManagerDisk(StateManager):
 
         root_state_token = _substate_key(client_token, substate_address.split(".")[0])
 
-        root_state = await self.load_state(
+        return await self.load_state(
             root_state_token, self.state(_reflex_internal_init=True)
         )
-
-        return root_state.get_substate(substate_address.split(".")[1:])
 
     async def set_state_for_substate(self, client_token: str, substate: BaseState):
         """Set the state for a substate.
@@ -2610,8 +2608,8 @@ class StateManagerDisk(StateManager):
 
         async with self._states_locks[client_token]:
             state = await self.get_state(token)
-            yield state._get_root_state()
-            await self.set_state(token, state._get_root_state())
+            yield state
+            await self.set_state(token, state)
 
 
 # Workaround https://github.com/cloudpipe/cloudpickle/issues/408 for dynamic pydantic classes
