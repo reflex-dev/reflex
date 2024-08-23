@@ -46,6 +46,7 @@ import reflex.utils.processes
 from reflex.state import (
     BaseState,
     StateManager,
+    StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
     reload_state_module,
@@ -789,7 +790,7 @@ class AppHarness:
             raise RuntimeError("App is not running.")
         state_manager = self.app_instance.state_manager
         assert isinstance(
-            state_manager, StateManagerMemory
+            state_manager, (StateManagerMemory, StateManagerDisk)
         ), "Only works with memory state manager"
         if not self._poll_for(
             target=lambda: state_manager.states,

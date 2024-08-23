@@ -31,6 +31,7 @@ from reflex.state import (
     RouterData,
     State,
     StateManager,
+    StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
     StateProxy,
@@ -1588,7 +1589,7 @@ async def test_state_with_invalid_yield(capsys, mock_app):
     assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
 
-@pytest.fixture(scope="function", params=["in_process", "redis"])
+@pytest.fixture(scope="function", params=["in_process", "disk", "redis"])
 def state_manager(request) -> Generator[StateManager, None, None]:
     """Instance of state manager parametrized for redis and in-process.
 
@@ -1602,8 +1603,11 @@ def state_manager(request) -> Generator[StateManager, None, None]:
     if request.param == "redis":
         if not isinstance(state_manager, StateManagerRedis):
             pytest.skip("Test requires redis")
-    else:
+    elif request.param == "disk":
         # explicitly NOT using redis
+        state_manager = StateManagerDisk(state=TestState)
+        assert not state_manager._states_locks
+    else:
         state_manager = StateManagerMemory(state=TestState)
         assert not state_manager._states_locks
 
@@ -1641,7 +1645,7 @@ async def test_state_manager_modify_state(
     async with state_manager.modify_state(substate_token) as state:
         if isinstance(state_manager, StateManagerRedis):
             assert await state_manager.redis.get(f"{token}_lock")
-        elif isinstance(state_manager, StateManagerMemory):
+        elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
             assert token in state_manager._states_locks
             assert state_manager._states_locks[token].locked()
         # Should be able to write proxy objects inside mutables
@@ -1651,11 +1655,11 @@ async def test_state_manager_modify_state(
     # lock should be dropped after exiting the context
     if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
-    elif isinstance(state_manager, StateManagerMemory):
+    elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         assert not state_manager._states_locks[token].locked()
 
         # separate instances should NOT share locks
-        sm2 = StateManagerMemory(state=TestState)
+        sm2 = state_manager.__class__(state=TestState)
         assert sm2._state_manager_lock is state_manager._state_manager_lock
         assert not sm2._states_locks
         if state_manager._states_locks:
@@ -1693,7 +1697,7 @@ async def test_state_manager_contend(
 
     if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
-    elif isinstance(state_manager, StateManagerMemory):
+    elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         assert token in state_manager._states_locks
         assert not state_manager._states_locks[token].locked()
 
@@ -1833,7 +1837,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     assert child_state is not None
     parent_state = child_state.parent_state
     assert parent_state is not None
-    if isinstance(mock_app.state_manager, StateManagerMemory):
+    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         mock_app.state_manager.states[parent_state.router.session.client_token] = (
             parent_state
         )
@@ -1876,7 +1880,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
             # For in-process store, only one instance of the state exists
             assert sp.__wrapped__ is grandchild_state
         else:
-            # When redis is used, a new+updated instance is assigned to the proxy
+            # When redis or disk is used, a new+updated instance is assigned to the proxy
             assert sp.__wrapped__ is not grandchild_state
         sp.value2 = "42"
     assert not sp._self_mutable  # proxy is not mutable after exiting context
@@ -1887,7 +1891,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     gotten_state = await mock_app.state_manager.get_state(
         _substate_key(grandchild_state.router.session.client_token, grandchild_state)
     )
-    if isinstance(mock_app.state_manager, StateManagerMemory):
+    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         # For in-process store, only one instance of the state exists
         assert gotten_state is parent_state
     else:
@@ -2831,7 +2835,7 @@ async def test_get_state(mock_app: rx.App, token: str):
         _substate_key(token, ChildState2)
     )
     assert isinstance(test_state, TestState)
-    if isinstance(mock_app.state_manager, StateManagerMemory):
+    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         # All substates are available
         assert tuple(sorted(test_state.substates)) == (
             ChildState.get_name(),
@@ -2904,6 +2908,15 @@ async def test_get_state(mock_app: rx.App, token: str):
         # In memory, it's the same instance
         assert new_test_state is test_state
         test_state._clean()
+        # All substates are available
+        assert tuple(sorted(new_test_state.substates)) == (
+            ChildState.get_name(),
+            ChildState2.get_name(),
+            ChildState3.get_name(),
+        )
+    elif isinstance(mock_app.state_manager, StateManagerDisk):
+        # On disk, it's a new instance
+        assert new_test_state is not test_state
         # All substates are available
         assert tuple(sorted(new_test_state.substates)) == (
             ChildState.get_name(),
