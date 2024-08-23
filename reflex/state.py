@@ -2435,6 +2435,24 @@ def _default_token_expiration() -> int:
     return get_config().redis_token_expiration
 
 
+def _purge_expired_states(token_expiration: int):
+    """Purge expired states from the disk."""
+    import time
+
+    for path in path_ops.ls(prerequisites.get_web_dir() / constants.Dirs.STATES):
+        # check path is a pickle file
+        if path.suffix != ".pkl":
+            continue
+
+        # load last edited field from file
+        last_edited = path.stat().st_mtime
+
+        # check if the file is older than the token expiration time
+        if time.time() - last_edited > token_expiration:
+            # remove the file
+            path.unlink()
+
+
 class StateManagerDisk(StateManager):
     """A state manager that stores states in memory."""
 
@@ -2465,24 +2483,10 @@ class StateManagerDisk(StateManager):
         """
         super().__init__(state=state)
 
-        import time
-
         states_directory = prerequisites.get_web_dir() / constants.Dirs.STATES
-
         path_ops.mkdir(states_directory)
 
-        for path in path_ops.ls(states_directory):
-            # check path is a pickle file
-            if path.suffix != ".pkl":
-                continue
-
-            # load last edited field from file
-            last_edited = path.stat().st_mtime
-
-            # check if the file is older than the token expiration time
-            if time.time() - last_edited > self.token_expiration:
-                # remove the file
-                path.unlink()
+        _purge_expired_states(self.token_expiration)
 
     def token_path(self, token: str) -> Path:
         """Get the path for a token.
@@ -2512,8 +2516,8 @@ class StateManagerDisk(StateManager):
 
         token_path = self.token_path(token)
 
-        if os.path.exists(token_path):
-            with open(token_path, "rb") as file:
+        if token_path.exists():
+            with token_path.open(mode="rb") as file:
                 (substate_schema, substate) = dill.load(file)
             if substate_schema == substate.schema():
                 await self.populate_substates(client_token, substate, root_state)
@@ -2532,9 +2536,7 @@ class StateManagerDisk(StateManager):
             root_state: The root state object.
         """
         for substate in state.get_substates():
-            substate_name = substate.get_full_name()
-
-            substate_token = _substate_key(client_token, substate_name)
+            substate_token = _substate_key(client_token, substate)
 
             substate = await self.load_state(substate_token, root_state)
 
@@ -2569,11 +2571,13 @@ class StateManagerDisk(StateManager):
             client_token: The client token.
             substate: The substate to set.
         """
-        substate_name = substate.get_full_name()
-        substate_token = _substate_key(client_token, substate_name)
+        substate_token = _substate_key(client_token, substate)
+
         self.states[substate_token] = substate
+
         state_dilled = dill.dumps((substate.schema(), substate), byref=True)
-        Path(self.token_path(substate_token)).write_bytes(state_dilled)
+        self.token_path(substate_token).write_bytes(state_dilled)
+
         for substate_substate in substate.substates.values():
             await self.set_state_for_substate(client_token, substate_substate)
 
