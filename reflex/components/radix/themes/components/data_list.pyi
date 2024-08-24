@@ -213,6 +213,7 @@ class DataListItem(RadixThemesComponent):
 
         Args:
             *children: Child components.
+            align: The alignment of the data list item within its container.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -363,6 +364,10 @@ class DataListLabel(RadixThemesComponent):
 
         Args:
             *children: Child components.
+            width: The width of the component
+            min_width: The minimum width of the component
+            max_width: The maximum width of the component
+            color_scheme: The color scheme for the DataList component.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
