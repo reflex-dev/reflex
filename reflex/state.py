@@ -424,8 +424,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return [
             v
             for mixin in cls._mixins() + [cls]
-            for v in mixin.__dict__.values()
-            if isinstance(v, ComputedVar)
+            for name, v in mixin.__dict__.items()
+            if isinstance(v, ComputedVar) and name not in cls.inherited_vars
         ]
 
     @classmethod
@@ -548,6 +548,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         for mixin in cls._mixins():
             for name, value in mixin.__dict__.items():
+                if name in cls.inherited_vars:
+                    continue
                 if isinstance(value, ComputedVar):
                     fget = cls._copy_fn(value.fget)
                     newcv = value._replace(fget=fget)
