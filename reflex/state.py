@@ -33,6 +33,9 @@ from typing import (
 import dill
 from sqlalchemy.orm import DeclarativeBase
 
+from reflex.config import get_config
+from reflex.ivars.base import ImmutableComputedVar, ImmutableVar, immutable_computed_var
+
 try:
     import pydantic.v1 as pydantic
 except ModuleNotFoundError:
@@ -44,7 +47,6 @@ from redis.exceptions import ResponseError
 
 from reflex import constants
 from reflex.base import Base
-from reflex.config import get_config
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -56,14 +58,19 @@ from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
-from reflex.vars import BaseVar, ComputedVar, Var, computed_var
+from reflex.utils.types import override
+from reflex.vars import (
+    ComputedVar,
+    ImmutableVarData,
+    Var,
+)
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
 Delta = Dict[str, Any]
-var = computed_var
+var = immutable_computed_var
 
 
 # If the state is this large, it's considered a performance issue.
@@ -236,7 +243,7 @@ def _no_chain_background_task(
 
 def _substate_key(
     token: str,
-    state_cls_or_name: BaseState | Type[BaseState] | str | list[str],
+    state_cls_or_name: BaseState | Type[BaseState] | str | Sequence[str],
 ) -> str:
     """Get the substate key.
 
@@ -332,10 +339,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     vars: ClassVar[Dict[str, Var]] = {}
 
     # The base vars of the class.
-    base_vars: ClassVar[Dict[str, BaseVar]] = {}
+    base_vars: ClassVar[Dict[str, ImmutableVar]] = {}
 
     # The computed vars of the class.
-    computed_vars: ClassVar[Dict[str, ComputedVar]] = {}
+    computed_vars: ClassVar[Dict[str, Union[ComputedVar, ImmutableComputedVar]]] = {}
 
     # Vars inherited by the parent state.
     inherited_vars: ClassVar[Dict[str, Var]] = {}
@@ -451,7 +458,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return f"{self.__class__.__name__}({self.dict()})"
 
     @classmethod
-    def _get_computed_vars(cls) -> list[ComputedVar]:
+    def _get_computed_vars(cls) -> list[Union[ComputedVar, ImmutableComputedVar]]:
         """Helper function to get all computed vars of a instance.
 
         Returns:
@@ -461,7 +468,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             v
             for mixin in cls._mixins() + [cls]
             for v in mixin.__dict__.values()
-            if isinstance(v, ComputedVar)
+            if isinstance(v, (ComputedVar, ImmutableComputedVar))
         ]
 
     @classmethod
@@ -557,13 +564,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: BaseVar(_var_name=f.name, _var_type=f.outer_type_)._var_set_state(
-                cls
-            )
+            f.name: ImmutableVar(
+                _var_name=format.format_state_name(cls.get_full_name()) + "." + f.name,
+                _var_type=f.outer_type_,
+                _var_data=ImmutableVarData.from_state(cls),
+            ).guess_type()
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
-        cls.computed_vars = {v._var_name: v._var_set_state(cls) for v in computed_vars}
+        cls.computed_vars = {
+            v._var_name: v._replace(merge_var_data=ImmutableVarData.from_state(cls))
+            for v in computed_vars
+        }
         cls.vars = {
             **cls.inherited_vars,
             **cls.base_vars,
@@ -584,12 +596,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         for mixin in cls._mixins():
             for name, value in mixin.__dict__.items():
-                if isinstance(value, ComputedVar):
+                if isinstance(value, (ComputedVar, ImmutableComputedVar)):
                     fget = cls._copy_fn(value.fget)
-                    newcv = value._replace(fget=fget)
+                    newcv = value._replace(
+                        fget=fget, _var_data=ImmutableVarData.from_state(cls)
+                    )
                     # cleanup refs to mixin cls in var_data
-                    newcv._var_data = None
-                    newcv._var_set_state(cls)
                     setattr(cls, name, newcv)
                     cls.computed_vars[newcv._var_name] = newcv
                     cls.vars[newcv._var_name] = newcv
@@ -883,7 +895,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return getattr(substate, name)
 
     @classmethod
-    def _init_var(cls, prop: BaseVar):
+    def _init_var(cls, prop: ImmutableVar):
         """Initialize a variable.
 
         Args:
@@ -926,8 +938,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
 
         # create the variable based on name and type
-        var = BaseVar(_var_name=name, _var_type=type_)
-        var._var_set_state(cls)
+        var = ImmutableVar(
+            _var_name=format.format_state_name(cls.get_full_name()) + "." + name,
+            _var_type=type_,
+            _var_data=ImmutableVarData.from_state(cls),
+        ).guess_type()
 
         # add the pydantic field dynamically (must be done before _init_var)
         cls.add_field(var, default_value)
@@ -946,13 +961,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._init_var_dependency_dicts()
 
     @classmethod
-    def _set_var(cls, prop: BaseVar):
+    def _set_var(cls, prop: ImmutableVar):
         """Set the var as a class member.
 
         Args:
             prop: The var instance to set.
         """
-        setattr(cls, prop._var_name, prop)
+        acutal_var_name = (
+            prop._var_name
+            if "." not in prop._var_name
+            else prop._var_name.split(".")[-1]
+        )
+        setattr(cls, acutal_var_name, prop)
 
     @classmethod
     def _create_event_handler(cls, fn):
@@ -972,7 +992,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
 
     @classmethod
-    def _create_setter(cls, prop: BaseVar):
+    def _create_setter(cls, prop: ImmutableVar):
         """Create a setter for the var.
 
         Args:
@@ -985,14 +1005,17 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             setattr(cls, setter_name, event_handler)
 
     @classmethod
-    def _set_default_value(cls, prop: BaseVar):
+    def _set_default_value(cls, prop: ImmutableVar):
         """Set the default value for the var.
 
         Args:
             prop: The var to set the default value for.
         """
         # Get the pydantic field for the var.
-        field = cls.get_fields()[prop._var_name]
+        if "." in prop._var_name:
+            field = cls.get_fields()[prop._var_name.split(".")[-1]]
+        else:
+            field = cls.get_fields()[prop._var_name]
         if field.required:
             default_value = prop.get_default_value()
             if default_value is not None:
@@ -1004,7 +1027,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             and not types.is_optional(prop._var_type)
         ):
             # Ensure frontend uses null coalescing when accessing.
-            prop._var_type = Optional[prop._var_type]
+            object.__setattr__(prop, "_var_type", Optional[prop._var_type])
 
     @staticmethod
     def _get_base_functions() -> dict[str, FunctionType]:
@@ -1269,6 +1292,17 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             parent_states_with_name.append((parent_state.get_full_name(), parent_state))
         return parent_states_with_name
 
+    def _get_root_state(self) -> BaseState:
+        """Get the root state of the state tree.
+
+        Returns:
+            The root state of the state tree.
+        """
+        parent_state = self
+        while parent_state.parent_state is not None:
+            parent_state = parent_state.parent_state
+        return parent_state
+
     async def _populate_parent_states(self, target_state_cls: Type[BaseState]):
         """Populate substates in the tree between the target_state_cls and common ancestor of this state.
 
@@ -1328,10 +1362,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The instance of state_cls associated with this state's client_token.
         """
-        if self.parent_state is None:
-            root_state = self
-        else:
-            root_state = self._get_parent_states()[-1][1]
+        root_state = self._get_root_state()
         return root_state.get_substate(state_cls.get_full_name().split("."))
 
     async def _get_state_from_redis(self, state_cls: Type[BaseState]) -> BaseState:
@@ -1482,9 +1513,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The valid StateUpdate containing the events and final flag.
         """
         # get the delta from the root of the state tree
-        state = self
-        while state.parent_state is not None:
-            state = state.parent_state
+        state = self._get_root_state()
 
         token = self.router.session.client_token
 
@@ -1804,7 +1833,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 # Include initial computed vars.
                 prop_name: (
                     cv._initial_value
-                    if isinstance(cv, ComputedVar)
+                    if isinstance(cv, (ComputedVar, ImmutableComputedVar))
                     and not isinstance(cv._initial_value, types.Unset)
                     else self.get_value(getattr(self, prop_name))
                 )
@@ -2066,19 +2095,38 @@ class StateProxy(wrapt.ObjectProxy):
                     self.counter += 1
     """
 
-    def __init__(self, state_instance):
+    def __init__(
+        self, state_instance, parent_state_proxy: Optional["StateProxy"] = None
+    ):
         """Create a proxy for a state instance.
+
+        If `get_state` is used on a StateProxy, the resulting state will be
+        linked to the given state via parent_state_proxy. The first state in the
+        chain is the state that initiated the background task.
 
         Args:
             state_instance: The state instance to proxy.
+            parent_state_proxy: The parent state proxy, for linked mutability and context tracking.
         """
         super().__init__(state_instance)
         # compile is not relevant to backend logic
         self._self_app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        self._self_substate_path = state_instance.get_full_name().split(".")
+        self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_actx = None
         self._self_mutable = False
         self._self_actx_lock = asyncio.Lock()
+        self._self_actx_lock_holder = None
+        self._self_parent_state_proxy = parent_state_proxy
+
+    def _is_mutable(self) -> bool:
+        """Check if the state is mutable.
+
+        Returns:
+            Whether the state is mutable.
+        """
+        if self._self_parent_state_proxy is not None:
+            return self._self_parent_state_proxy._is_mutable() or self._self_mutable
+        return self._self_mutable
 
     async def __aenter__(self) -> StateProxy:
         """Enter the async context manager protocol.
@@ -2091,8 +2139,31 @@ class StateProxy(wrapt.ObjectProxy):
 
         Returns:
             This StateProxy instance in mutable mode.
+
+        Raises:
+            ImmutableStateError: If the state is already mutable.
         """
+        if self._self_parent_state_proxy is not None:
+            parent_state = (
+                await self._self_parent_state_proxy.__aenter__()
+            ).__wrapped__
+            super().__setattr__(
+                "__wrapped__",
+                await parent_state.get_state(
+                    State.get_class_substate(self._self_substate_path)
+                ),
+            )
+            return self
+        current_task = asyncio.current_task()
+        if (
+            self._self_actx_lock.locked()
+            and current_task == self._self_actx_lock_holder
+        ):
+            raise ImmutableStateError(
+                "The state is already mutable. Do not nest `async with self` blocks."
+            )
         await self._self_actx_lock.acquire()
+        self._self_actx_lock_holder = current_task
         self._self_actx = self._self_app.modify_state(
             token=_substate_key(
                 self.__wrapped__.router.session.client_token,
@@ -2114,12 +2185,16 @@ class StateProxy(wrapt.ObjectProxy):
         Args:
             exc_info: The exception info tuple.
         """
+        if self._self_parent_state_proxy is not None:
+            await self._self_parent_state_proxy.__aexit__(*exc_info)
+            return
         if self._self_actx is None:
             return
         self._self_mutable = False
         try:
             await self._self_actx.__aexit__(*exc_info)
         finally:
+            self._self_actx_lock_holder = None
             self._self_actx_lock.release()
         self._self_actx = None
 
@@ -2154,7 +2229,7 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
-        if name in ["substates", "parent_state"] and not self._self_mutable:
+        if name in ["substates", "parent_state"] and not self._is_mutable():
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
@@ -2194,7 +2269,7 @@ class StateProxy(wrapt.ObjectProxy):
         """
         if (
             name.startswith("_self_")  # wrapper attribute
-            or self._self_mutable  # lock held
+            or self._is_mutable()  # lock held
             # non-persisted state attribute
             or name in self.__wrapped__.get_skip_vars()
         ):
@@ -2218,7 +2293,7 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
-        if not self._self_mutable:
+        if not self._is_mutable():
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
@@ -2237,12 +2312,14 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
-        if not self._self_mutable:
+        if not self._is_mutable():
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
-        return await self.__wrapped__.get_state(state_cls)
+        return type(self)(
+            await self.__wrapped__.get_state(state_cls), parent_state_proxy=self
+        )
 
     def _as_state_update(self, *args, **kwargs) -> StateUpdate:
         """Temporarily allow mutability to access parent_state.
@@ -2357,6 +2434,7 @@ class StateManagerMemory(StateManager):
             "_states_locks": {"exclude": True},
         }
 
+    @override
     async def get_state(self, token: str) -> BaseState:
         """Get the state for a token.
 
@@ -2372,6 +2450,7 @@ class StateManagerMemory(StateManager):
             self.states[token] = self.state(_reflex_internal_init=True)
         return self.states[token]
 
+    @override
     async def set_state(self, token: str, state: BaseState):
         """Set the state for a token.
 
@@ -2381,6 +2460,7 @@ class StateManagerMemory(StateManager):
         """
         pass
 
+    @override
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
         """Modify the state for a token while holding exclusive lock.
@@ -2472,19 +2552,6 @@ class StateManagerRedis(StateManager):
     # Only warn about each state class size once.
     _warned_about_state_size: ClassVar[Set[str]] = set()
 
-    def _get_root_state(self, state: BaseState) -> BaseState:
-        """Chase parent_state pointers to find an instance of the top-level state.
-
-        Args:
-            state: The state to start from.
-
-        Returns:
-            An instance of the top-level state (self.state).
-        """
-        while type(state) != self.state and state.parent_state is not None:
-            state = state.parent_state
-        return state
-
     async def _get_parent_state(self, token: str) -> BaseState | None:
         """Get the parent state for the state requested in the token.
 
@@ -2547,6 +2614,7 @@ class StateManagerRedis(StateManager):
         for substate_name, substate_task in tasks.items():
             state.substates[substate_name] = await substate_task
 
+    @override
     async def get_state(
         self,
         token: str,
@@ -2598,7 +2666,7 @@ class StateManagerRedis(StateManager):
             # To retain compatibility with previous implementation, by default, we return
             # the top-level state by chasing `parent_state` pointers up the tree.
             if top_level:
-                return self._get_root_state(state)
+                return state._get_root_state()
             return state
 
         # TODO: dedupe the following logic with the above block
@@ -2620,7 +2688,7 @@ class StateManagerRedis(StateManager):
         # To retain compatibility with previous implementation, by default, we return
         # the top-level state by chasing `parent_state` pointers up the tree.
         if top_level:
-            return self._get_root_state(state)
+            return state._get_root_state()
         return state
 
     def _warn_if_too_large(
@@ -2646,6 +2714,7 @@ class StateManagerRedis(StateManager):
             )
             self._warned_about_state_size.add(state_full_name)
 
+    @override
     async def set_state(
         self,
         token: str,
@@ -2706,6 +2775,7 @@ class StateManagerRedis(StateManager):
         for t in tasks:
             await t
 
+    @override
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
         """Modify the state for a token while holding exclusive lock.
@@ -3291,7 +3361,7 @@ class ImmutableMutableProxy(MutableProxy):
         Raises:
             ImmutableStateError: if the StateProxy is not mutable.
         """
-        if not self._self_state._self_mutable:
+        if not self._self_state._is_mutable():
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."

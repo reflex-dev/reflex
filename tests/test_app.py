@@ -13,6 +13,7 @@ from typing import Generator, List, Tuple, Type
 from unittest.mock import AsyncMock
 
 import pytest
+import reflex_chakra as rc
 import sqlmodel
 from fastapi import FastAPI, UploadFile
 from starlette_admin.auth import AuthProvider
@@ -1251,7 +1252,7 @@ def test_app_wrap_compile_theme(compilable_app: tuple[App, Path]):
         "function AppWrap({children}) {"
         "return ("
         "<RadixThemesColorModeProvider>"
-        "<RadixThemesTheme accentColor={`plum`} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
+        "<RadixThemesTheme accentColor={\"plum\"} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
@@ -1274,13 +1275,13 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
         tag = "Fragment1"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(99, "Box"): rx.chakra.box()}
+            return {(99, "Box"): rc.box()}
 
     class Fragment2(Component):
         tag = "Fragment2"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(50, "Text"): rx.chakra.text()}
+            return {(50, "Text"): rc.text()}
 
     class Fragment3(Component):
         tag = "Fragment3"
@@ -1433,16 +1434,16 @@ def test_add_page_component_returning_tuple():
 
     assert isinstance((fragment_wrapper := app.pages["index"].children[0]), Fragment)
     assert isinstance((first_text := fragment_wrapper.children[0]), Text)
-    assert str(first_text.children[0].contents) == "{`first`}"  # type: ignore
+    assert str(first_text.children[0].contents) == '"first"'  # type: ignore
     assert isinstance((second_text := fragment_wrapper.children[1]), Text)
-    assert str(second_text.children[0].contents) == "{`second`}"  # type: ignore
+    assert str(second_text.children[0].contents) == '"second"'  # type: ignore
 
     # Test page with trailing comma.
     assert isinstance(
         (page2_fragment_wrapper := app.pages["page2"].children[0]), Fragment
     )
     assert isinstance((third_text := page2_fragment_wrapper.children[0]), Text)
-    assert str(third_text.children[0].contents) == "{`third`}"  # type: ignore
+    assert str(third_text.children[0].contents) == '"third"'  # type: ignore
 
 
 @pytest.mark.parametrize("export", (True, False))

@@ -29,7 +29,7 @@ from reflex.state import State as State
 from reflex.utils import console as console
 from reflex.utils import format as format
 from reflex.utils import types as types
-from reflex.utils.imports import ImportDict, ParsedImportDict
+from reflex.utils.imports import ImmutableParsedImportDict, ImportDict, ParsedImportDict
 
 USED_VARIABLES: Incomplete
 
@@ -47,7 +47,26 @@ class VarData(Base):
     hooks: Dict[str, None] = {}
     interpolations: List[Tuple[int, int]] = []
     @classmethod
-    def merge(cls, *others: VarData | None) -> VarData | None: ...
+    def merge(cls, *others: ImmutableVarData | VarData | None) -> VarData | None: ...
+
+class ImmutableVarData:
+    state: str = ""
+    imports: ImmutableParsedImportDict = tuple()
+    hooks: Tuple[str, ...] = tuple()
+    def __init__(
+        self,
+        state: str = "",
+        imports: ImportDict | ParsedImportDict | None = None,
+        hooks: dict[str, None] | None = None,
+    ) -> None: ...
+    @classmethod
+    def merge(
+        cls, *others: ImmutableVarData | VarData | None
+    ) -> ImmutableVarData | None: ...
+    @classmethod
+    def from_state(cls, state: Type[BaseState] | str) -> ImmutableVarData: ...
+
+def _decode_var_immutable(value: str) -> tuple[ImmutableVarData, str]: ...
 
 class Var:
     _var_name: str
@@ -118,7 +137,7 @@ class Var:
     def __or__(self, other: Var) -> Var: ...
     def __ror__(self, other: Var) -> Var: ...
     def __contains__(self, _: Any) -> Var: ...
-    def contains(self, other: Any) -> Var: ...
+    def contains(self, other: Any, field: Union[Var, None] = None) -> Var: ...
     def reverse(self) -> Var: ...
     def foreach(self, fn: Callable) -> Var: ...
     @classmethod
@@ -133,6 +152,9 @@ class Var:
     @property
     def _var_full_name(self) -> str: ...
     def _var_set_state(self, state: Type[BaseState] | str) -> Any: ...
+    def _get_all_var_data(self) -> VarData | ImmutableVarData: ...
+    def json(self) -> str: ...
+    def _type(self) -> Var: ...
 
 @dataclass(eq=False)
 class BaseVar(Var):
@@ -171,7 +193,7 @@ class ComputedVar(Var):
 @overload
 def computed_var(
     fget: Callable[[BaseState], Any] | None = None,
-    initial_value: Any | None = None,
+    initial_value: Any | types.Unset = types.Unset(),
     cache: bool = False,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
@@ -183,7 +205,7 @@ def computed_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
 @overload
 def cached_var(
     fget: Callable[[BaseState], Any] | None = None,
-    initial_value: Any | None = None,
+    initial_value: Any | types.Unset = types.Unset(),
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,

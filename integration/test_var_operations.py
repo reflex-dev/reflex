@@ -14,7 +14,11 @@ def VarOperations():
     """App with var operations."""
     from typing import Dict, List
 
+    import reflex_chakra as rc
+
     import reflex as rx
+    from reflex.ivars.base import LiteralVar
+    from reflex.ivars.sequence import ArrayVar
 
     class VarOperationState(rx.State):
         int_var1: int = 10
@@ -29,8 +33,8 @@ def VarOperations():
         str_var2: str = "second"
         str_var3: str = "ThIrD"
         str_var4: str = "a long string"
-        dict1: Dict = {1: 2}
-        dict2: Dict = {3: 4}
+        dict1: Dict[int, int] = {1: 2}
+        dict2: Dict[int, int] = {3: 4}
         html_str: str = "<div>hello</div>"
 
     app = rx.App(state=rx.State)
@@ -543,33 +547,33 @@ def VarOperations():
                 VarOperationState.html_str,
                 id="html_str",
             ),
-            rx.chakra.highlight(
+            rc.highlight(
                 "second",
                 query=[VarOperationState.str_var2],
             ),
-            rx.text(rx.Var.range(2, 5).join(","), id="list_join_range1"),
-            rx.text(rx.Var.range(2, 10, 2).join(","), id="list_join_range2"),
-            rx.text(rx.Var.range(5, 0, -1).join(","), id="list_join_range3"),
-            rx.text(rx.Var.range(0, 3).join(","), id="list_join_range4"),
+            rx.text(ArrayVar.range(2, 5).join(","), id="list_join_range1"),
+            rx.text(ArrayVar.range(2, 10, 2).join(","), id="list_join_range2"),
+            rx.text(ArrayVar.range(5, 0, -1).join(","), id="list_join_range3"),
+            rx.text(ArrayVar.range(0, 3).join(","), id="list_join_range4"),
             rx.box(
                 rx.foreach(
-                    rx.Var.range(0, 2),
+                    ArrayVar.range(0, 2),
                     lambda x: rx.text(VarOperationState.list1[x], as_="p"),
                 ),
                 id="foreach_list_arg",
             ),
             rx.box(
                 rx.foreach(
-                    rx.Var.range(0, 2),
+                    ArrayVar.range(0, 2),
                     lambda x, ix: rx.text(VarOperationState.list1[ix], as_="p"),
                 ),
                 id="foreach_list_ix",
             ),
             rx.box(
                 rx.foreach(
-                    rx.Var.create_safe(list(range(0, 3))).to(List[int]),
+                    LiteralVar.create(list(range(0, 3))).to(ArrayVar, List[int]),
                     lambda x: rx.foreach(
-                        rx.Var.range(x),
+                        ArrayVar.range(x),
                         lambda y: rx.text(VarOperationState.list1[y], as_="p"),
                     ),
                 ),
@@ -783,6 +787,7 @@ def test_var_operations(driver, var_operations: AppHarness):
     ]
 
     for tag, expected in tests:
+        print(tag)
         assert driver.find_element(By.ID, tag).text == expected
 
     # Highlight component with var query (does not plumb ID)

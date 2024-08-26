@@ -95,3 +95,5 @@ class EventTriggers(SimpleNamespace):
     ON_CLEAR_SERVER_ERRORS = "on_clear_server_errors"
     ON_VALUE_COMMIT = "on_value_commit"
     ON_SELECT = "on_select"
+    ON_ANIMATION_START = "on_animation_start"
+    ON_ANIMATION_END = "on_animation_end"

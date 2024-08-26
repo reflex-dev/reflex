@@ -6,7 +6,6 @@ import functools
 import glob
 import importlib
 import importlib.metadata
-import inspect
 import json
 import os
 import platform
@@ -16,6 +15,7 @@ import shutil
 import stat
 import sys
 import tempfile
+import textwrap
 import zipfile
 from datetime import datetime
 from fileinput import FileInput
@@ -30,13 +30,13 @@ from packaging import version
 from redis import Redis as RedisSync
 from redis.asyncio import Redis
 
-import reflex
 from reflex import constants, model
 from reflex.base import Base
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 from reflex.utils.format import format_library_name
+from reflex.utils.registry import _get_best_registry
 
 CURRENTLY_INSTALLING_NODE = False
 
@@ -575,6 +575,15 @@ def initialize_package_json():
     output_path = get_web_dir() / constants.PackageJson.PATH
     code = _compile_package_json()
     output_path.write_text(code)
+
+    best_registry = _get_best_registry()
+    bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
+    bun_config_path.write_text(
+        f"""
+[install]
+registry = "{best_registry}"
+"""
+    )
 
 
 def init_reflex_json(project_hash: int | None):
@@ -1158,114 +1167,6 @@ def prompt_for_template(templates: list[Template]) -> str:
     return templates[int(template)].name
 
 
-def should_show_rx_chakra_migration_instructions() -> bool:
-    """Should we show the migration instructions for rx.chakra.* => rx.*?.
-
-    Returns:
-        bool: True if we should show the migration instructions.
-    """
-    if os.getenv("REFLEX_PROMPT_MIGRATE_TO_RX_CHAKRA") == "yes":
-        return True
-
-    if not Path(constants.Config.FILE).exists():
-        # They are running reflex init for the first time.
-        return False
-
-    existing_init_reflex_version = None
-    reflex_json = get_web_dir() / constants.Dirs.REFLEX_JSON
-    if reflex_json.exists():
-        with reflex_json.open("r") as f:
-            data = json.load(f)
-        existing_init_reflex_version = data.get("version", None)
-
-    if existing_init_reflex_version is None:
-        # They clone a reflex app from git for the first time.
-        # That app may or may not be 0.4 compatible.
-        # So let's just show these instructions THIS TIME.
-        return True
-
-    if constants.Reflex.VERSION < "0.4":
-        return False
-    else:
-        return existing_init_reflex_version < "0.4"
-
-
-def show_rx_chakra_migration_instructions():
-    """Show the migration instructions for rx.chakra.* => rx.*."""
-    console.log(
-        "Prior to reflex 0.4.0, rx.* components are based on Chakra UI. They are now based on Radix UI. To stick to Chakra UI, use rx.chakra.*."
-    )
-    console.log("")
-    console.log(
-        "[bold]Run `reflex script keep-chakra` to automatically update your app."
-    )
-    console.log("")
-    console.log(
-        "For more details, please see https://reflex.dev/blog/2024-02-16-reflex-v0.4.0/"
-    )
-
-
-def migrate_to_rx_chakra():
-    """Migrate rx.button => r.chakra.button, etc."""
-    file_pattern = os.path.join(get_config().app_name, "**/*.py")
-    file_list = glob.glob(file_pattern, recursive=True)
-
-    # Populate with all rx.<x> components that have been moved to rx.chakra.<x>
-    patterns = {
-        rf"\brx\.{name}\b": f"rx.chakra.{name}"
-        for name in _get_rx_chakra_component_to_migrate()
-    }
-
-    for file_path in file_list:
-        with FileInput(file_path, inplace=True) as file:
-            for _line_num, line in enumerate(file):
-                for old, new in patterns.items():
-                    line = re.sub(old, new, line)
-                print(line, end="")
-
-
-def _get_rx_chakra_component_to_migrate() -> set[str]:
-    from reflex.components.chakra import ChakraComponent
-
-    rx_chakra_names = set(dir(reflex.chakra))
-
-    names_to_migrate = set()
-
-    # whitelist names will always be rewritten as rx.chakra.<x>
-    whitelist = {
-        "ColorModeIcon",
-        "MultiSelect",
-        "MultiSelectOption",
-        "color_mode_icon",
-        "multi_select",
-        "multi_select_option",
-    }
-
-    for rx_chakra_name in sorted(rx_chakra_names):
-        if rx_chakra_name.startswith("_"):
-            continue
-
-        rx_chakra_object = getattr(reflex.chakra, rx_chakra_name)
-        try:
-            if (
-                (
-                    inspect.ismethod(rx_chakra_object)
-                    and inspect.isclass(rx_chakra_object.__self__)
-                    and issubclass(rx_chakra_object.__self__, ChakraComponent)
-                )
-                or (
-                    inspect.isclass(rx_chakra_object)
-                    and issubclass(rx_chakra_object, ChakraComponent)
-                )
-                or rx_chakra_name in whitelist
-            ):
-                names_to_migrate.add(rx_chakra_name)
-
-        except Exception:
-            raise
-    return names_to_migrate
-
-
 def migrate_to_reflex():
     """Migration from Pynecone to Reflex."""
     # Check if the old config file exists.
@@ -1310,39 +1211,60 @@ def migrate_to_reflex():
                 print(line, end="")
 
 
-def fetch_app_templates() -> dict[str, Template]:
-    """Fetch the list of app templates from the Reflex backend server.
+def fetch_app_templates(version: str) -> dict[str, Template]:
+    """Fetch a dict of templates from the templates repo using github API.
+
+    Args:
+        version: The version of the templates to fetch.
 
     Returns:
-        The name and download URL as a dictionary.
+        The dict of templates.
     """
-    config = get_config()
-    if not config.cp_backend_url:
-        console.info(
-            "Skip fetching App templates. No backend URL is specified in the config."
-        )
-        return {}
-    try:
-        response = httpx.get(
-            f"{config.cp_backend_url}{constants.Templates.APP_TEMPLATES_ROUTE}"
-        )
+
+    def get_release_by_tag(tag: str) -> dict | None:
+        response = httpx.get(constants.Reflex.RELEASES_URL)
         response.raise_for_status()
-        return {
-            template["name"]: Template.parse_obj(template)
-            for template in response.json()
-        }
-    except httpx.HTTPError as ex:
-        console.info(f"Failed to fetch app templates: {ex}")
-        return {}
-    except (TypeError, KeyError, json.JSONDecodeError) as tkje:
-        console.info(f"Unable to process server response for app templates: {tkje}")
+        releases = response.json()
+        for release in releases:
+            if release["tag_name"] == f"v{tag}":
+                return release
+        return None
+
+    release = get_release_by_tag(version)
+    if release is None:
+        console.warn(f"No templates known for version {version}")
         return {}
 
+    assets = release.get("assets", [])
+    asset = next((a for a in assets if a["name"] == "templates.json"), None)
+    if asset is None:
+        console.warn(f"Templates metadata not found for version {version}")
+        return {}
+    else:
+        templates_url = asset["browser_download_url"]
 
-def create_config_init_app_from_remote_template(
-    app_name: str,
-    template_url: str,
-):
+    templates_data = httpx.get(templates_url, follow_redirects=True).json()["templates"]
+
+    for template in templates_data:
+        if template["name"] == "blank":
+            template["code_url"] = ""
+            continue
+        template["code_url"] = next(
+            (
+                a["browser_download_url"]
+                for a in assets
+                if a["name"] == f"{template['name']}.zip"
+            ),
+            None,
+        )
+    return {
+        tp["name"]: Template.parse_obj(tp)
+        for tp in templates_data
+        if not tp["hidden"] and tp["code_url"] is not None
+    }
+
+
+def create_config_init_app_from_remote_template(app_name: str, template_url: str):
     """Create new rxconfig and initialize app using a remote template.
 
     Args:
@@ -1412,7 +1334,11 @@ def create_config_init_app_from_remote_template(
         template_code_dir_name=template_name,
         template_dir=template_dir,
     )
-
+    req_file = Path("requirements.txt")
+    if req_file.exists() and len(req_file.read_text().splitlines()) > 1:
+        console.info(
+            "Run `pip install -r requirements.txt` to install the required python packages for this template."
+        )
     #  Clean up the temp directories.
     shutil.rmtree(temp_dir)
     shutil.rmtree(unzip_dir)
@@ -1436,15 +1362,20 @@ def initialize_app(app_name: str, template: str | None = None):
         telemetry.send("reinit")
         return
 
-    # Get the available templates
-    templates: dict[str, Template] = fetch_app_templates()
+    templates: dict[str, Template] = {}
 
-    # Prompt for a template if not provided.
-    if template is None and len(templates) > 0:
-        template = prompt_for_template(list(templates.values()))
-    elif template is None:
-        template = constants.Templates.DEFAULT
-    assert template is not None
+    # Don't fetch app templates if the user directly asked for DEFAULT.
+    if template is None or (template != constants.Templates.DEFAULT):
+        try:
+            # Get the available templates
+            templates = fetch_app_templates(constants.Reflex.VERSION)
+            if template is None and len(templates) > 0:
+                template = prompt_for_template(list(templates.values()))
+        except Exception as e:
+            console.warn("Failed to fetch templates. Falling back to default template.")
+            console.debug(f"Error while fetching templates: {e}")
+        finally:
+            template = template or constants.Templates.DEFAULT
 
     # If the blank template is selected, create a blank app.
     if template == constants.Templates.DEFAULT:
@@ -1467,12 +1398,50 @@ def initialize_app(app_name: str, template: str | None = None):
             else:
                 console.error(f"Template `{template}` not found.")
                 raise typer.Exit(1)
+
+        if template_url is None:
+            return
+
         create_config_init_app_from_remote_template(
-            app_name=app_name,
-            template_url=template_url,
+            app_name=app_name, template_url=template_url
         )
 
     telemetry.send("init", template=template)
+
+
+def initialize_main_module_index_from_generation(app_name: str, generation_hash: str):
+    """Overwrite the `index` function in the main module with reflex.build generated code.
+
+    Args:
+        app_name: The name of the app.
+        generation_hash: The generation hash from reflex.build.
+    """
+    # Download the reflex code for the generation.
+    resp = httpx.get(
+        constants.Templates.REFLEX_BUILD_CODE_URL.format(
+            generation_hash=generation_hash
+        )
+    ).raise_for_status()
+
+    def replace_content(_match):
+        return "\n".join(
+            [
+                "def index() -> rx.Component:",
+                textwrap.indent("return " + resp.text, "    "),
+                "",
+                "",
+            ],
+        )
+
+    main_module_path = Path(app_name, app_name + constants.Ext.PY)
+    main_module_code = main_module_path.read_text()
+    main_module_path.write_text(
+        re.sub(
+            r"def index\(\).*:\n([^\n]\s+.*\n+)+",
+            replace_content,
+            main_module_code,
+        )
+    )
 
 
 def format_address_width(address_width) -> int | None:
@@ -1562,3 +1531,15 @@ def is_windows_bun_supported() -> bool:
         and cpu_info.model_name is not None
         and "ARM" not in cpu_info.model_name
     )
+
+
+def is_generation_hash(template: str) -> bool:
+    """Check if the template looks like a generation hash.
+
+    Args:
+        template: The template name.
+
+    Returns:
+        True if the template is composed of 32 or more hex characters.
+    """
+    return re.match(r"^[0-9a-f]{32,}$", template) is not None

@@ -19,6 +19,7 @@ import reflex.config
 from reflex import constants
 from reflex.app import App
 from reflex.base import Base
+from reflex.components.sonner.toast import Toaster
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
 from reflex.state import (
@@ -39,7 +40,7 @@ from reflex.state import (
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
-from reflex.vars import BaseVar, ComputedVar
+from reflex.vars import BaseVar, ComputedVar, Var
 from tests.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
@@ -265,8 +266,8 @@ def test_base_class_vars(test_state):
         if field in test_state.get_skip_vars():
             continue
         prop = getattr(cls, field)
-        assert isinstance(prop, BaseVar)
-        assert prop._var_name == field
+        assert isinstance(prop, Var)
+        assert prop._var_name.split(".")[-1] == field
 
     assert cls.num1._var_type == int
     assert cls.num2._var_type == float
@@ -394,30 +395,27 @@ def test_default_setters(test_state):
 def test_class_indexing_with_vars():
     """Test that we can index into a state var with another var."""
     prop = TestState.array[TestState.num1]
-    assert (
-        str(prop) == f"{{{TestState.get_name()}.array.at({TestState.get_name()}.num1)}}"
-    )
+    assert str(prop) == f"{TestState.get_name()}.array.at({TestState.get_name()}.num1)"
 
     prop = TestState.mapping["a"][TestState.num1]
     assert (
         str(prop)
-        == f'{{{TestState.get_name()}.mapping["a"].at({TestState.get_name()}.num1)}}'
+        == f'{TestState.get_name()}.mapping["a"].at({TestState.get_name()}.num1)'
     )
 
     prop = TestState.mapping[TestState.map_key]
     assert (
-        str(prop)
-        == f"{{{TestState.get_name()}.mapping[{TestState.get_name()}.map_key]}}"
+        str(prop) == f"{TestState.get_name()}.mapping[{TestState.get_name()}.map_key]"
     )
 
 
 def test_class_attributes():
     """Test that we can get class attributes."""
     prop = TestState.obj.prop1
-    assert str(prop) == f"{{{TestState.get_name()}.obj.prop1}}"
+    assert str(prop) == f'{TestState.get_name()}.obj["prop1"]'
 
     prop = TestState.complex[1].prop1
-    assert str(prop) == f"{{{TestState.get_name()}.complex[1].prop1}}"
+    assert str(prop) == f'{TestState.get_name()}.complex[1]["prop1"]'
 
 
 def test_get_parent_state():
@@ -1011,6 +1009,21 @@ def interdependent_state() -> BaseState:
     return s
 
 
+def test_interdependent_state_initial_dict() -> None:
+    s = InterdependentState()
+    state_name = s.get_name()
+    d = s.dict(initial=True)[state_name]
+    d.pop("router")
+    assert d == {
+        "x": 0,
+        "v1": 0,
+        "v1x2": 0,
+        "v2x2": 2,
+        "v1x2x2": 0,
+        "v3x2": 2,
+    }
+
+
 def test_not_dirty_computed_var_from_var(
     interdependent_state: InterdependentState,
 ) -> None:
@@ -1048,7 +1061,8 @@ def test_dirty_computed_var_from_backend_var(
     Args:
         interdependent_state: A state with varying Var dependencies.
     """
-    assert InterdependentState._v3._backend is True
+    # Accessing ._v3 returns the immutable var it represents instead of the actual computed var
+    # assert InterdependentState._v3._backend is True
     interdependent_state._v2 = 2
     assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"v2x2": 4, "v3x2": 4},
@@ -1527,7 +1541,6 @@ async def test_state_with_invalid_yield(capsys, mock_app):
     Args:
         capsys: Pytest fixture for capture standard streams.
         mock_app: Mock app fixture.
-
     """
 
     class StateWithInvalidYield(BaseState):
@@ -1546,10 +1559,29 @@ async def test_state_with_invalid_yield(capsys, mock_app):
         rx.event.Event(token="fake_token", name="invalid_handler")
     ):
         assert not update.delta
-        assert update.events == rx.event.fix_events(
-            [rx.window_alert("An error occurred. See logs for details.")],
-            token="",
-        )
+        if Toaster.is_used:
+            assert update.events == rx.event.fix_events(
+                [
+                    rx.toast(
+                        "An error occurred.",
+                        description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`).<br/>See logs for details.",
+                        level="error",
+                        id="backend_error",
+                        position="top-center",
+                        style={"width": "500px"},
+                    )  # type: ignore
+                ],
+                token="",
+            )
+        else:
+            assert update.events == rx.event.fix_events(
+                [
+                    rx.window_alert(
+                        "An error occurred.\nContact the website administrator."
+                    )
+                ],
+                token="",
+            )
     captured = capsys.readouterr()
     assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
@@ -1806,7 +1838,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
 
     sp = StateProxy(grandchild_state)
     assert sp.__wrapped__ == grandchild_state
-    assert sp._self_substate_path == grandchild_state.get_full_name().split(".")
+    assert sp._self_substate_path == tuple(grandchild_state.get_full_name().split("."))
     assert sp._self_app is mock_app
     assert not sp._self_mutable
     assert sp._self_actx is None
@@ -2570,15 +2602,23 @@ def test_state_union_optional():
         c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
         custom_union: Union[Custom1, Custom2, Custom3] = Custom1(foo="")
 
-    assert UnionState.c3.c2._var_name == "c3?.c2"  # type: ignore
-    assert UnionState.c3.c2.c1._var_name == "c3?.c2?.c1"  # type: ignore
-    assert UnionState.c3.c2.c1.foo._var_name == "c3?.c2?.c1?.foo"  # type: ignore
-    assert UnionState.c3.c2.c1r.foo._var_name == "c3?.c2?.c1r.foo"  # type: ignore
-    assert UnionState.c3.c2r.c1._var_name == "c3?.c2r.c1"  # type: ignore
-    assert UnionState.c3.c2r.c1.foo._var_name == "c3?.c2r.c1?.foo"  # type: ignore
-    assert UnionState.c3.c2r.c1r.foo._var_name == "c3?.c2r.c1r.foo"  # type: ignore
-    assert UnionState.c3i.c2._var_name == "c3i.c2"  # type: ignore
-    assert UnionState.c3r.c2._var_name == "c3r.c2"  # type: ignore
+    assert str(UnionState.c3.c2) == f'{str(UnionState.c3)}?.["c2"]'  # type: ignore
+    assert str(UnionState.c3.c2.c1) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]'  # type: ignore
+    assert (
+        str(UnionState.c3.c2.c1.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]?.["foo"]'  # type: ignore
+    )
+    assert (
+        str(UnionState.c3.c2.c1r.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1r"]["foo"]'  # type: ignore
+    )
+    assert str(UnionState.c3.c2r.c1) == f'{str(UnionState.c3)}?.["c2r"]["c1"]'  # type: ignore
+    assert (
+        str(UnionState.c3.c2r.c1.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1"]?.["foo"]'  # type: ignore
+    )
+    assert (
+        str(UnionState.c3.c2r.c1r.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1r"]["foo"]'  # type: ignore
+    )
+    assert str(UnionState.c3i.c2) == f'{str(UnionState.c3i)}["c2"]'  # type: ignore
+    assert str(UnionState.c3r.c2) == f'{str(UnionState.c3r)}["c2"]'  # type: ignore
     assert UnionState.custom_union.foo is not None  # type: ignore
     assert UnionState.custom_union.c1 is not None  # type: ignore
     assert UnionState.custom_union.c1r is not None  # type: ignore

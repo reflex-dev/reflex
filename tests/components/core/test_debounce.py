@@ -4,8 +4,8 @@ import pytest
 
 import reflex as rx
 from reflex.components.core.debounce import DEFAULT_DEBOUNCE_TIMEOUT
+from reflex.ivars.base import LiteralVar
 from reflex.state import BaseState
-from reflex.vars import BaseVar
 
 
 def test_create_no_child():
@@ -60,11 +60,7 @@ def test_render_child_props():
     assert "css" in tag.props and isinstance(tag.props["css"], rx.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
-    assert tag.props["value"].equals(
-        BaseVar(
-            _var_name="real", _var_type=str, _var_is_local=True, _var_is_string=False
-        )
-    )
+    assert tag.props["value"].equals(LiteralVar.create("real"))
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""
@@ -90,6 +86,29 @@ def test_render_with_ref():
     )._render()
     assert isinstance(tag.props["inputRef"], rx.Var)
     assert "foo_bar" in str(tag.props["inputRef"])
+
+
+def test_render_with_key():
+    tag = rx.debounce_input(
+        rx.input(
+            on_change=S.on_change,
+            key="foo_bar",
+        )
+    )._render()
+    assert isinstance(tag.props["key"], rx.Var)
+    assert "foo_bar" in str(tag.props["key"])
+
+
+def test_render_with_special_props():
+    special_prop = rx.Var.create_safe("{foo_bar}", _var_is_string=False)
+    tag = rx.debounce_input(
+        rx.input(
+            on_change=S.on_change,
+            special_props=[special_prop],
+        )
+    )._render()
+    assert len(tag.special_props) == 1
+    assert list(tag.special_props)[0].equals(special_prop)
 
 
 def test_event_triggers():
@@ -133,11 +152,7 @@ def test_render_child_props_recursive():
     assert "css" in tag.props and isinstance(tag.props["css"], rx.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
-    assert tag.props["value"].equals(
-        BaseVar(
-            _var_name="outer", _var_type=str, _var_is_local=True, _var_is_string=False
-        )
-    )
+    assert tag.props["value"].equals(LiteralVar.create("outer"))
     assert tag.props["forceNotifyOnBlur"]._var_name == "false"
     assert tag.props["forceNotifyByEnter"]._var_name == "false"
     assert tag.props["debounceTimeout"]._var_name == "42"

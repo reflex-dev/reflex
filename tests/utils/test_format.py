@@ -8,6 +8,7 @@ import pytest
 
 from reflex.components.tags.tag import Tag
 from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.serializers import serialize_figure
@@ -422,19 +423,19 @@ def test_format_cond(
         (
             "state__state.value",
             [
-                [Var.create(1), Var.create("red", _var_is_string=True)],
-                [Var.create(2), Var.create(3), Var.create("blue", _var_is_string=True)],
+                [LiteralVar.create(1), LiteralVar.create("red")],
+                [LiteralVar.create(2), LiteralVar.create(3), LiteralVar.create("blue")],
                 [TestState.mapping, TestState.num1],
                 [
-                    Var.create(f"{TestState.map_key}-key", _var_is_string=True),
-                    Var.create("return-key", _var_is_string=True),
+                    LiteralVar.create(f"{TestState.map_key}-key"),
+                    LiteralVar.create("return-key"),
                 ],
             ],
-            Var.create("yellow", _var_is_string=True),
-            "(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return (`red`);  break;case JSON.stringify(2): case JSON.stringify(3):  "
-            f"return (`blue`);  break;case JSON.stringify({TestState.get_full_name()}.mapping):  return "
-            f"({TestState.get_full_name()}.num1);  break;case JSON.stringify(`${{{TestState.get_full_name()}.map_key}}-key`):  return (`return-key`);"
-            "  break;default:  return (`yellow`);  break;};})()",
+            LiteralVar.create("yellow"),
+            '(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return ("red");  break;case JSON.stringify(2): case JSON.stringify(3):  '
+            f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping):  return '
+            f'({TestState.get_full_name()}.num1);  break;case JSON.stringify(({TestState.get_full_name()}.map_key+"-key")):  return ("return-key");'
+            '  break;default:  return ("yellow");  break;};})()',
         )
     ],
 )
@@ -477,7 +478,7 @@ def test_format_match(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
                 args_spec=lambda: [],
             ),
-            '{(_e) => addEvents([Event("mock_event", {})], (_e), {})}',
+            '{(...args) => addEvents([Event("mock_event", {})], args, {})}',
         ),
         (
             EventChain(
@@ -495,9 +496,9 @@ def test_format_match(
                         ),
                     )
                 ],
-                args_spec=lambda: [],
+                args_spec=lambda e: [e.target.value],
             ),
-            '{(_e) => addEvents([Event("mock_event", {arg:_e.target.value})], (_e), {})}',
+            '{(_e) => addEvents([Event("mock_event", {arg:_e.target.value})], [_e], {})}',
         ),
         (
             EventChain(
@@ -505,7 +506,7 @@ def test_format_match(
                 args_spec=lambda: [],
                 event_actions={"stopPropagation": True},
             ),
-            '{(_e) => addEvents([Event("mock_event", {})], (_e), {"stopPropagation": true})}',
+            '{(...args) => addEvents([Event("mock_event", {})], args, {"stopPropagation": true})}',
         ),
         (
             EventChain(
@@ -513,7 +514,7 @@ def test_format_match(
                 args_spec=lambda: [],
                 event_actions={"preventDefault": True},
             ),
-            '{(_e) => addEvents([Event("mock_event", {})], (_e), {"preventDefault": true})}',
+            '{(...args) => addEvents([Event("mock_event", {})], args, {"preventDefault": true})}',
         ),
         ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
         (BaseVar(_var_name="var", _var_type="int"), "{var}"),
@@ -541,7 +542,7 @@ def test_format_match(
             {
                 "h1": f"{{({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />}}"
             },
-            '{{"h1": ({node, ...props}) => <Heading {...props} as={`h1`} />}}',
+            '{{"h1": ({node, ...props}) => <Heading {...props} as={"h1"} />}}',
         ),
     ],
 )
@@ -558,7 +559,11 @@ def test_format_prop(prop: Var, formatted: str):
 @pytest.mark.parametrize(
     "single_props,key_value_props,output",
     [
-        (["string"], {"key": 42}, ["key={42}", "string"]),
+        (
+            [ImmutableVar.create_safe("...props")],
+            {"key": 42},
+            ["key={42}", "{...props}"],
+        ),
     ],
 )
 def test_format_props(single_props, key_value_props, output):

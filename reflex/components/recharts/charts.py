@@ -7,7 +7,9 @@ from typing import Any, Dict, List, Union
 from reflex.components.component import Component
 from reflex.components.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
+from reflex.constants.colors import Color
 from reflex.event import EventHandler
+from reflex.ivars.base import LiteralVar
 from reflex.vars import Var
 
 from .recharts import (
@@ -155,10 +157,10 @@ class BarChart(CategoricalChartBase):
     alias = "RechartsBarChart"
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-    bar_category_gap: Var[Union[str, int]] = Var.create_safe("10%", _var_is_string=True)  # type: ignore
+    bar_category_gap: Var[Union[str, int]] = LiteralVar.create("10%")
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[Union[str, int]] = Var.create_safe(4)  # type: ignore
+    bar_gap: Var[Union[str, int]] = LiteralVar.create(4)  # type: ignore
 
     # The width of all the bars in the chart. Number
     bar_size: Var[int]
@@ -441,6 +443,9 @@ class FunnelChart(ChartBase):
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
     margin: Var[Dict[str, Any]]
+
+    # The stroke color of each bar. String | Object
+    stroke: Var[Union[str, Color]]
 
     # Valid children components
     _valid_children: List[str] = ["Legend", "GraphingTooltip", "Funnel"]

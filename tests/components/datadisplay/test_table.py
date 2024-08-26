@@ -2,8 +2,8 @@ import sys
 from typing import List, Tuple
 
 import pytest
+from reflex_chakra.components.datadisplay.table import Tbody, Tfoot, Thead
 
-from reflex.components.chakra.datadisplay.table import Tbody, Tfoot, Thead
 from reflex.state import BaseState
 
 PYTHON_GT_V38 = sys.version_info.major >= 3 and sys.version_info.minor > 8

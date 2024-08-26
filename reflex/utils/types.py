@@ -49,7 +49,7 @@ from reflex.base import Base
 from reflex.utils import console
 
 if sys.version_info >= (3, 12):
-    from typing import override
+    from typing import override as override
 else:
 
     def override(func: Callable) -> Callable:
@@ -491,10 +491,18 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
             return False
         if callable(value):
             return False
+        from reflex.ivars.base import ImmutableComputedVar
         from reflex.vars import ComputedVar
 
         if isinstance(
-            value, (types.FunctionType, property, cached_property, ComputedVar)
+            value,
+            (
+                types.FunctionType,
+                property,
+                cached_property,
+                ComputedVar,
+                ImmutableComputedVar,
+            ),
         ):
             return False
 

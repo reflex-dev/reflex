@@ -16,7 +16,7 @@ from reflex_cli.utils import dependency
 from reflex import constants
 from reflex.config import get_config
 from reflex.custom_components.custom_components import custom_components_cli
-from reflex.utils import console, telemetry
+from reflex.utils import console, redir, telemetry
 
 # Disable typer+rich integration for help panels
 typer.core.rich = False  # type: ignore
@@ -65,6 +65,7 @@ def _init(
     name: str,
     template: str | None = None,
     loglevel: constants.LogLevel = config.loglevel,
+    ai: bool = False,
 ):
     """Initialize a new Reflex app in the given directory."""
     from reflex.utils import exec, prerequisites
@@ -84,15 +85,33 @@ def _init(
     prerequisites.initialize_reflex_user_directory()
     prerequisites.ensure_reflex_installation_id()
 
-    # When upgrading to 0.4, show migration instructions.
-    if prerequisites.should_show_rx_chakra_migration_instructions():
-        prerequisites.show_rx_chakra_migration_instructions()
-
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
 
+    # Integrate with reflex.build.
+    generation_hash = None
+    if ai:
+        if template is None:
+            # If AI is requested and no template specified, redirect the user to reflex.build.
+            generation_hash = redir.reflex_build_redirect()
+        elif prerequisites.is_generation_hash(template):
+            # Otherwise treat the template as a generation hash.
+            generation_hash = template
+        else:
+            console.error(
+                "Cannot use `--template` option with `--ai` option. Please remove `--template` option."
+            )
+            raise typer.Exit(2)
+        template = constants.Templates.DEFAULT
+
     # Initialize the app.
     prerequisites.initialize_app(app_name, template)
+
+    # If a reflex.build generation hash is available, download the code and apply it to the main module.
+    if generation_hash:
+        prerequisites.initialize_main_module_index_from_generation(
+            app_name, generation_hash=generation_hash
+        )
 
     # Migrate Pynecone projects to Reflex.
     prerequisites.migrate_to_reflex()
@@ -119,9 +138,13 @@ def init(
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
+    ai: bool = typer.Option(
+        False,
+        help="Use AI to create the initial template. Cannot be used with existing app or `--template` option.",
+    ),
 ):
     """Initialize a new Reflex app in the current directory."""
-    _init(name, template, loglevel)
+    _init(name, template, loglevel, ai)
 
 
 def _run(
@@ -429,17 +452,6 @@ def makemigrations(
             console.error(
                 f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
             )
-
-
-@script_cli.command(
-    name="keep-chakra",
-    help="Change all rx.<component> references to rx.chakra.<component>, to preserve Chakra UI usage.",
-)
-def keep_chakra():
-    """Change all rx.<component> references to rx.chakra.<component>, to preserve Chakra UI usage."""
-    from reflex.utils import prerequisites
-
-    prerequisites.migrate_to_rx_chakra()
 
 
 @cli.command()

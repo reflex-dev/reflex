@@ -113,11 +113,29 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         EventSpec: The window alert event.
 
     """
+    from reflex.components.sonner.toast import Toaster, toast
+
     error = traceback.format_exc()
 
     console.error(f"[Reflex Backend Exception]\n {error}\n")
 
-    return window_alert("An error occurred. See logs for details.")
+    error_message = (
+        ["Contact the website administrator."]
+        if is_prod_mode()
+        else [f"{type(exception).__name__}: {exception}.", "See logs for details."]
+    )
+    if Toaster.is_used:
+        return toast(
+            "An error occurred.",
+            level="error",
+            description="<br/>".join(error_message),
+            position="top-center",
+            id="backend_error",
+            style={"width": "500px"},
+        )  # type: ignore
+    else:
+        error_message.insert(0, "An error occurred.")
+        return window_alert("\n".join(error_message))
 
 
 def default_overlay_component() -> Component:
@@ -184,7 +202,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
     # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Optional[Union[Component, ComponentCallable]] = (
-        default_overlay_component
+        default_overlay_component()
     )
 
     # Error boundary component to wrap the app with.
@@ -425,7 +443,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             raise
         except TypeError as e:
             message = str(e)
-            if "BaseVar" in message or "ComputedVar" in message:
+            if "Var" in message:
                 raise VarOperationTypeError(
                     "You may be trying to use an invalid Python function on a state var. "
                     "When referencing a var inside your render code, only limited var operations are supported. "
@@ -510,9 +528,10 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 self._enable_state()
             else:
                 for var in component._get_vars(include_children=True):
-                    if not var._var_data:
+                    var_data = var._get_all_var_data()
+                    if not var_data:
                         continue
-                    if not var._var_data.state:
+                    if not var_data.state:
                         continue
                     self._enable_state()
                     break
@@ -1096,6 +1115,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             Task if the event was backgroundable, otherwise None
         """
         substate, handler = state._get_event_handler(event)
+
         if not handler.is_background:
             return None
 
