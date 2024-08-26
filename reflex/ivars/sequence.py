@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import dataclasses
-import functools
 import inspect
 import json
 import re
 import sys
 import typing
-from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -40,6 +38,7 @@ from .base import (
     CachedVarOperation,
     ImmutableVar,
     LiteralVar,
+    cached_property_no_lock,
     figure_out_type,
     unionize,
 )
@@ -216,7 +215,7 @@ class StringToStringOperation(CachedVarOperation, StringVar):
         default_factory=lambda: LiteralStringVar.create("")
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -253,7 +252,7 @@ class StringToStringOperation(CachedVarOperation, StringVar):
 class StringLowerOperation(StringToStringOperation):
     """Base class for immutable string vars that are the result of a string lower operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -266,7 +265,7 @@ class StringLowerOperation(StringToStringOperation):
 class StringUpperOperation(StringToStringOperation):
     """Base class for immutable string vars that are the result of a string upper operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -279,7 +278,7 @@ class StringUpperOperation(StringToStringOperation):
 class StringStripOperation(StringToStringOperation):
     """Base class for immutable string vars that are the result of a string strip operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -304,7 +303,7 @@ class StringContainsOperation(CachedVarOperation, BooleanVar):
         default_factory=lambda: LiteralStringVar.create("")
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -360,7 +359,7 @@ class StringStartsWithOperation(CachedVarOperation, BooleanVar):
         default_factory=lambda: LiteralStringVar.create("")
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -416,7 +415,7 @@ class StringItemOperation(CachedVarOperation, StringVar):
         default_factory=lambda: LiteralNumberVar.create(0)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -470,7 +469,7 @@ class ArrayJoinOperation(CachedVarOperation, StringVar):
         default_factory=lambda: LiteralStringVar.create("")
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -642,7 +641,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar):
 
     _var_value: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -672,7 +671,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar):
 
         return "(" + "+".join(list_of_strs_filtered) + ")"
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_get_all_var_data(self) -> ImmutableVarData | None:
         """Get all the VarData associated with the Var.
 
@@ -953,7 +952,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         List[Union[Var, Any]], Set[Union[Var, Any]], Tuple[Union[Var, Any], ...]
     ] = dataclasses.field(default_factory=list)
 
-    @functools.cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -968,7 +967,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
             + "]"
         )
 
-    @functools.cached_property
+    @cached_property_no_lock
     def _cached_get_all_var_data(self) -> ImmutableVarData | None:
         """Get all the VarData associated with the Var.
 
@@ -1044,7 +1043,7 @@ class StringSplitOperation(CachedVarOperation, ArrayVar):
         default_factory=lambda: LiteralStringVar.create("")
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1093,7 +1092,7 @@ class ArrayToArrayOperation(CachedVarOperation, ArrayVar):
         default_factory=lambda: LiteralArrayVar.create([])
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1140,7 +1139,7 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
     )
     _slice: slice = dataclasses.field(default_factory=lambda: slice(None, None, None))
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1216,7 +1215,7 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
 class ArrayReverseOperation(ArrayToArrayOperation):
     """Base class for immutable string vars that are the result of a string reverse operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1238,7 +1237,7 @@ class ArrayToNumberOperation(CachedVarOperation, NumberVar):
         default_factory=lambda: LiteralArrayVar.create([]),
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1275,7 +1274,7 @@ class ArrayToNumberOperation(CachedVarOperation, NumberVar):
 class ArrayLengthOperation(ArrayToNumberOperation):
     """Base class for immutable number vars that are the result of an array length operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1314,7 +1313,7 @@ class ArrayItemOperation(CachedVarOperation, ImmutableVar):
         default_factory=lambda: LiteralNumberVar.create(0)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1374,7 +1373,7 @@ class RangeOperation(CachedVarOperation, ArrayVar):
         default_factory=lambda: LiteralNumberVar.create(1)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1426,7 +1425,7 @@ class ArrayContainsOperation(CachedVarOperation, BooleanVar):
     )
     _needle: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1473,7 +1472,7 @@ class ToStringOperation(CachedVarOperation, StringVar):
         default_factory=lambda: LiteralStringVar.create("")
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1517,7 +1516,7 @@ class ToArrayOperation(CachedVarOperation, ArrayVar):
         default_factory=lambda: LiteralArrayVar.create([])
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1565,7 +1564,7 @@ class ArrayRepeatOperation(CachedVarOperation, ArrayVar):
         default_factory=lambda: LiteralNumberVar.create(0)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1615,7 +1614,7 @@ class ArrayConcatOperation(CachedVarOperation, ArrayVar):
         default_factory=lambda: LiteralArrayVar.create([])
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 

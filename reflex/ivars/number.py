@@ -5,7 +5,6 @@ from __future__ import annotations
 import dataclasses
 import json
 import sys
-from functools import cached_property
 from typing import Any, Union
 
 from reflex.vars import ImmutableVarData, Var, VarData
@@ -14,6 +13,7 @@ from .base import (
     CachedVarOperation,
     ImmutableVar,
     LiteralVar,
+    cached_property_no_lock,
     unionize,
 )
 
@@ -341,7 +341,7 @@ class BinaryNumberOperation(CachedVarOperation, NumberVar):
         default_factory=lambda: LiteralNumberVar.create(0)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -391,7 +391,7 @@ class UnaryNumberOperation(CachedVarOperation, NumberVar):
         default_factory=lambda: LiteralNumberVar.create(0)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -424,7 +424,7 @@ class UnaryNumberOperation(CachedVarOperation, NumberVar):
 class NumberAddOperation(BinaryNumberOperation):
     """Base class for immutable number vars that are the result of an addition operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -437,7 +437,7 @@ class NumberAddOperation(BinaryNumberOperation):
 class NumberSubtractOperation(BinaryNumberOperation):
     """Base class for immutable number vars that are the result of a subtraction operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -450,7 +450,7 @@ class NumberSubtractOperation(BinaryNumberOperation):
 class NumberAbsoluteOperation(UnaryNumberOperation):
     """Base class for immutable number vars that are the result of an absolute operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -463,7 +463,7 @@ class NumberAbsoluteOperation(UnaryNumberOperation):
 class NumberMultiplyOperation(BinaryNumberOperation):
     """Base class for immutable number vars that are the result of a multiplication operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -476,7 +476,7 @@ class NumberMultiplyOperation(BinaryNumberOperation):
 class NumberNegateOperation(UnaryNumberOperation):
     """Base class for immutable number vars that are the result of a negation operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -489,7 +489,7 @@ class NumberNegateOperation(UnaryNumberOperation):
 class NumberTrueDivision(BinaryNumberOperation):
     """Base class for immutable number vars that are the result of a true division operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -502,7 +502,7 @@ class NumberTrueDivision(BinaryNumberOperation):
 class NumberFloorDivision(BinaryNumberOperation):
     """Base class for immutable number vars that are the result of a floor division operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -515,7 +515,7 @@ class NumberFloorDivision(BinaryNumberOperation):
 class NumberModuloOperation(BinaryNumberOperation):
     """Base class for immutable number vars that are the result of a modulo operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -528,7 +528,7 @@ class NumberModuloOperation(BinaryNumberOperation):
 class NumberExponentOperation(BinaryNumberOperation):
     """Base class for immutable number vars that are the result of an exponent operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -541,7 +541,7 @@ class NumberExponentOperation(BinaryNumberOperation):
 class NumberRoundOperation(UnaryNumberOperation):
     """Base class for immutable number vars that are the result of a round operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -554,7 +554,7 @@ class NumberRoundOperation(UnaryNumberOperation):
 class NumberCeilOperation(UnaryNumberOperation):
     """Base class for immutable number vars that are the result of a ceil operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -567,7 +567,7 @@ class NumberCeilOperation(UnaryNumberOperation):
 class NumberFloorOperation(UnaryNumberOperation):
     """Base class for immutable number vars that are the result of a floor operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -580,7 +580,7 @@ class NumberFloorOperation(UnaryNumberOperation):
 class NumberTruncOperation(UnaryNumberOperation):
     """Base class for immutable number vars that are the result of a trunc operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -706,7 +706,7 @@ class BooleanToIntOperation(CachedVarOperation, NumberVar):
         default_factory=lambda: LiteralBooleanVar.create(False)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -749,7 +749,7 @@ class ComparisonOperation(CachedVarOperation, BooleanVar):
         default_factory=lambda: LiteralBooleanVar.create(False)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -783,7 +783,7 @@ class ComparisonOperation(CachedVarOperation, BooleanVar):
 class GreaterThanOperation(ComparisonOperation):
     """Base class for immutable boolean vars that are the result of a greater than operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -796,7 +796,7 @@ class GreaterThanOperation(ComparisonOperation):
 class GreaterThanOrEqualOperation(ComparisonOperation):
     """Base class for immutable boolean vars that are the result of a greater than or equal operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -809,7 +809,7 @@ class GreaterThanOrEqualOperation(ComparisonOperation):
 class LessThanOperation(ComparisonOperation):
     """Base class for immutable boolean vars that are the result of a less than operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -822,7 +822,7 @@ class LessThanOperation(ComparisonOperation):
 class LessThanOrEqualOperation(ComparisonOperation):
     """Base class for immutable boolean vars that are the result of a less than or equal operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -835,7 +835,7 @@ class LessThanOrEqualOperation(ComparisonOperation):
 class EqualOperation(ComparisonOperation):
     """Base class for immutable boolean vars that are the result of an equal operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -848,7 +848,7 @@ class EqualOperation(ComparisonOperation):
 class NotEqualOperation(ComparisonOperation):
     """Base class for immutable boolean vars that are the result of a not equal operation."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -873,7 +873,7 @@ class LogicalOperation(CachedVarOperation, BooleanVar):
         default_factory=lambda: LiteralBooleanVar.create(False)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -923,7 +923,7 @@ class BooleanNotOperation(CachedVarOperation, BooleanVar):
         default_factory=lambda: LiteralBooleanVar.create(False)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1058,7 +1058,7 @@ class ToNumberVarOperation(CachedVarOperation, NumberVar):
         default_factory=lambda: LiteralNumberVar.create(0)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1104,7 +1104,7 @@ class ToBooleanVarOperation(CachedVarOperation, BooleanVar):
         default_factory=lambda: LiteralBooleanVar.create(False)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -1154,7 +1154,7 @@ class TernaryOperator(CachedVarOperation, ImmutableVar):
         default_factory=lambda: LiteralNumberVar.create(0)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
