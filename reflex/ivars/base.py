@@ -1011,9 +1011,6 @@ def figure_out_type(value: Any) -> types.GenericType:
     return type(value)
 
 
-_NOT_FOUND = object()
-
-
 class cached_property_no_lock(functools.cached_property):
     """A special version of functools.cached_property that does not use a lock."""
 
