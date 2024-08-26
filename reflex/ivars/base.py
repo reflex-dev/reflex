@@ -362,7 +362,11 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         from .object import ObjectVar, ToObjectOperation
         from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
 
-        fixed_type = get_origin(var_type) or var_type
+        base_type = var_type
+        if types.is_optional(base_type):
+            base_type = types.get_args(base_type)[0]
+
+        fixed_type = get_origin(base_type) or base_type
 
         fixed_output_type = get_origin(output) or output
 
