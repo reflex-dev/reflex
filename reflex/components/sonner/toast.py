@@ -14,6 +14,7 @@ from reflex.event import (
     EventSpec,
     call_script,
 )
+from reflex.ivars.base import LiteralVar
 from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
@@ -197,21 +198,19 @@ class Toaster(Component):
     theme: Var[str] = resolved_color_mode
 
     # whether to show rich colors
-    rich_colors: Var[bool] = Var.create_safe(True)
+    rich_colors: Var[bool] = LiteralVar.create(True)
 
     # whether to expand the toast
-    expand: Var[bool] = Var.create_safe(True)
+    expand: Var[bool] = LiteralVar.create(True)
 
     # the number of toasts that are currently visible
     visible_toasts: Var[int]
 
     # the position of the toast
-    position: Var[LiteralPosition] = Var.create_safe(
-        "bottom-right", _var_is_string=True
-    )
+    position: Var[LiteralPosition] = LiteralVar.create("bottom-right")
 
     # whether to show the close button
-    close_button: Var[bool] = Var.create_safe(False)
+    close_button: Var[bool] = LiteralVar.create(False)
 
     # offset of the toast
     offset: Var[str]
@@ -356,7 +355,7 @@ class Toaster(Component):
 
         if isinstance(id, Var):
             dismiss = f"{toast_ref}.dismiss({id._var_name_unwrapped})"
-            dismiss_var_data = id._var_data
+            dismiss_var_data = id._get_all_var_data()
         elif isinstance(id, str):
             dismiss = f"{toast_ref}.dismiss('{id}')"
         else:
@@ -365,7 +364,7 @@ class Toaster(Component):
             dismiss,
             _var_is_string=False,
             _var_is_local=True,
-            _var_data=dismiss_var_data,
+            _var_data=VarData.merge(dismiss_var_data),
         )
         return call_script(dismiss_action)
 

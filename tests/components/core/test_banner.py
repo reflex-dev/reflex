@@ -9,8 +9,11 @@ from reflex.components.radix.themes.typography.text import Text
 
 def test_websocket_target_url():
     url = WebsocketTargetURL.create()
-    _imports = url._get_all_imports(collapse=True)
-    assert tuple(_imports) == ("/utils/state", "/env.json")
+    var_data = url._get_all_var_data()
+    assert var_data is not None
+    assert sorted(tuple((key for key, _ in var_data.imports))) == sorted(
+        ("/utils/state", "/env.json")
+    )
 
 
 def test_connection_banner():
