@@ -35,8 +35,8 @@ def test_component_state():
     assert cs1.State.increment != cs2.State.increment
 
     assert len(cs1.children) == 1
-    assert cs1.children[0].render() == Bare.create("{`a`}").render()
+    assert cs1.children[0].render() == Bare.create("a").render()
     assert cs1.id == "a"
     assert len(cs2.children) == 1
-    assert cs2.children[0].render() == Bare.create("{`b`}").render()
+    assert cs2.children[0].render() == Bare.create("b").render()
     assert cs2.id == "b"
