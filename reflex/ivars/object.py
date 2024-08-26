@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import dataclasses
-import functools
 import sys
 import typing
-from functools import cached_property
 from inspect import isclass
 from typing import (
     Any,
@@ -32,6 +30,7 @@ from .base import (
     CachedVarOperation,
     ImmutableVar,
     LiteralVar,
+    cached_property_no_lock,
     figure_out_type,
 )
 from .number import BooleanVar, NumberVar
@@ -306,7 +305,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         args_list = typing.get_args(self._var_type)
         return args_list[1] if args_list else Any
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -349,7 +348,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         """
         return hash((self.__class__.__name__, self._var_name))
 
-    @functools.cached_property
+    @cached_property_no_lock
     def _cached_get_all_var_data(self) -> ImmutableVarData | None:
         """Get all the var data.
 
@@ -402,7 +401,7 @@ class ObjectToArrayOperation(CachedVarOperation, ArrayVar):
         default_factory=lambda: LiteralObjectVar.create({})
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the operation.
 
@@ -440,7 +439,7 @@ class ObjectToArrayOperation(CachedVarOperation, ArrayVar):
 class ObjectKeysOperation(ObjectToArrayOperation):
     """Operation to get the keys of an object."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the operation.
 
@@ -475,7 +474,7 @@ class ObjectKeysOperation(ObjectToArrayOperation):
 class ObjectValuesOperation(ObjectToArrayOperation):
     """Operation to get the values of an object."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the operation.
 
@@ -510,7 +509,7 @@ class ObjectValuesOperation(ObjectToArrayOperation):
 class ObjectEntriesOperation(ObjectToArrayOperation):
     """Operation to get the entries of an object."""
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the operation.
 
@@ -557,7 +556,7 @@ class ObjectMergeOperation(CachedVarOperation, ObjectVar):
         default_factory=lambda: LiteralObjectVar.create({})
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the operation.
 
@@ -606,7 +605,7 @@ class ObjectItemOperation(CachedVarOperation, ImmutableVar):
     )
     _key: Var | Any = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the operation.
 
@@ -657,7 +656,7 @@ class ToObjectOperation(CachedVarOperation, ObjectVar):
         default_factory=lambda: LiteralObjectVar.create({})
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the operation.
 
@@ -704,7 +703,7 @@ class ObjectHasOwnProperty(CachedVarOperation, BooleanVar):
     )
     _key: Var | Any = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the operation.
 

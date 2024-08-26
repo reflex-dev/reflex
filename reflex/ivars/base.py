@@ -1011,6 +1011,19 @@ def figure_out_type(value: Any) -> types.GenericType:
     return type(value)
 
 
+class cached_property_no_lock(functools.cached_property):
+    """A special version of functools.cached_property that does not use a lock."""
+
+    def __init__(self, func):
+        """Initialize the cached_property_no_lock.
+
+        Args:
+            func: The function to cache.
+        """
+        super().__init__(func)
+        self.lock = contextlib.nullcontext()
+
+
 class CachedVarOperation:
     """Base class for cached var operations to lower boilerplate code."""
 
@@ -1044,7 +1057,7 @@ class CachedVarOperation:
         """
         return self._cached_get_all_var_data
 
-    @functools.cached_property
+    @cached_property_no_lock
     def _cached_get_all_var_data(self) -> ImmutableVarData | None:
         """Get the cached VarData.
 
@@ -1096,7 +1109,7 @@ class AndOperation(CachedVarOperation, ImmutableVar):
     # The second var.
     _var2: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
 
-    @functools.cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """Get the cached var name.
 
@@ -1151,7 +1164,7 @@ class OrOperation(CachedVarOperation, ImmutableVar):
     # The second var.
     _var2: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
 
-    @functools.cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """Get the cached var name.
 

@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from functools import cached_property
 from typing import Any, Callable, Optional, Tuple, Type, Union
 
 from reflex.utils.types import GenericType
 from reflex.vars import ImmutableVarData, Var, VarData
 
-from .base import CachedVarOperation, ImmutableVar, LiteralVar
+from .base import CachedVarOperation, ImmutableVar, LiteralVar, cached_property_no_lock
 
 
 class FunctionVar(ImmutableVar[Callable]):
@@ -79,7 +78,7 @@ class VarOperationCall(CachedVarOperation, ImmutableVar):
     _func: Optional[FunctionVar] = dataclasses.field(default=None)
     _args: Tuple[Union[Var, Any], ...] = dataclasses.field(default_factory=tuple)
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -88,7 +87,7 @@ class VarOperationCall(CachedVarOperation, ImmutableVar):
         """
         return f"({str(self._func)}({', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_get_all_var_data(self) -> ImmutableVarData | None:
         """Get all the var data associated with the var.
 
@@ -139,7 +138,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
     _args_names: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
     _return_expr: Union[Var, Any] = dataclasses.field(default=None)
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
@@ -187,7 +186,7 @@ class ToFunctionOperation(CachedVarOperation, FunctionVar):
         default_factory=lambda: LiteralVar.create(None)
     )
 
-    @cached_property
+    @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
 
