@@ -272,6 +272,8 @@ async def test_submit(driver, form_submit: AppHarness):
 
     form_data = format.collect_form_dict_names(form_data)
 
+    print(form_data)
+
     assert form_data["name_input"] == "foo"
     assert form_data["pin_input"] == pin_values
     assert form_data["number_input"] == "-3"

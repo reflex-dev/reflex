@@ -32,6 +32,7 @@ import dill
 from sqlalchemy.orm import DeclarativeBase
 
 from reflex.config import get_config
+from reflex.ivars.base import ImmutableComputedVar, ImmutableVar, immutable_computed_var
 
 try:
     import pydantic.v1 as pydantic
@@ -56,14 +57,18 @@ from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.utils.types import override
-from reflex.vars import BaseVar, ComputedVar, Var, computed_var
+from reflex.vars import (
+    ComputedVar,
+    ImmutableVarData,
+    Var,
+)
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
 Delta = Dict[str, Any]
-var = computed_var
+var = immutable_computed_var
 
 
 # If the state is this large, it's considered a performance issue.
@@ -299,10 +304,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     vars: ClassVar[Dict[str, Var]] = {}
 
     # The base vars of the class.
-    base_vars: ClassVar[Dict[str, BaseVar]] = {}
+    base_vars: ClassVar[Dict[str, ImmutableVar]] = {}
 
     # The computed vars of the class.
-    computed_vars: ClassVar[Dict[str, ComputedVar]] = {}
+    computed_vars: ClassVar[Dict[str, Union[ComputedVar, ImmutableComputedVar]]] = {}
 
     # Vars inherited by the parent state.
     inherited_vars: ClassVar[Dict[str, Var]] = {}
@@ -415,7 +420,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return f"{self.__class__.__name__}({self.dict()})"
 
     @classmethod
-    def _get_computed_vars(cls) -> list[ComputedVar]:
+    def _get_computed_vars(cls) -> list[Union[ComputedVar, ImmutableComputedVar]]:
         """Helper function to get all computed vars of a instance.
 
         Returns:
@@ -425,7 +430,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             v
             for mixin in cls._mixins() + [cls]
             for v in mixin.__dict__.values()
-            if isinstance(v, ComputedVar)
+            if isinstance(v, (ComputedVar, ImmutableComputedVar))
         ]
 
     @classmethod
@@ -521,13 +526,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: BaseVar(_var_name=f.name, _var_type=f.outer_type_)._var_set_state(
-                cls
-            )
+            f.name: ImmutableVar(
+                _var_name=format.format_state_name(cls.get_full_name()) + "." + f.name,
+                _var_type=f.outer_type_,
+                _var_data=ImmutableVarData.from_state(cls),
+            ).guess_type()
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
-        cls.computed_vars = {v._var_name: v._var_set_state(cls) for v in computed_vars}
+        cls.computed_vars = {
+            v._var_name: v._replace(merge_var_data=ImmutableVarData.from_state(cls))
+            for v in computed_vars
+        }
         cls.vars = {
             **cls.inherited_vars,
             **cls.base_vars,
@@ -548,12 +558,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         for mixin in cls._mixins():
             for name, value in mixin.__dict__.items():
-                if isinstance(value, ComputedVar):
+                if isinstance(value, (ComputedVar, ImmutableComputedVar)):
                     fget = cls._copy_fn(value.fget)
-                    newcv = value._replace(fget=fget)
+                    newcv = value._replace(
+                        fget=fget, _var_data=ImmutableVarData.from_state(cls)
+                    )
                     # cleanup refs to mixin cls in var_data
-                    newcv._var_data = None
-                    newcv._var_set_state(cls)
                     setattr(cls, name, newcv)
                     cls.computed_vars[newcv._var_name] = newcv
                     cls.vars[newcv._var_name] = newcv
@@ -847,7 +857,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return getattr(substate, name)
 
     @classmethod
-    def _init_var(cls, prop: BaseVar):
+    def _init_var(cls, prop: ImmutableVar):
         """Initialize a variable.
 
         Args:
@@ -890,8 +900,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
 
         # create the variable based on name and type
-        var = BaseVar(_var_name=name, _var_type=type_)
-        var._var_set_state(cls)
+        var = ImmutableVar(
+            _var_name=format.format_state_name(cls.get_full_name()) + "." + name,
+            _var_type=type_,
+            _var_data=ImmutableVarData.from_state(cls),
+        ).guess_type()
 
         # add the pydantic field dynamically (must be done before _init_var)
         cls.add_field(var, default_value)
@@ -910,13 +923,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._init_var_dependency_dicts()
 
     @classmethod
-    def _set_var(cls, prop: BaseVar):
+    def _set_var(cls, prop: ImmutableVar):
         """Set the var as a class member.
 
         Args:
             prop: The var instance to set.
         """
-        setattr(cls, prop._var_name, prop)
+        acutal_var_name = (
+            prop._var_name
+            if "." not in prop._var_name
+            else prop._var_name.split(".")[-1]
+        )
+        setattr(cls, acutal_var_name, prop)
 
     @classmethod
     def _create_event_handler(cls, fn):
@@ -936,7 +954,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
 
     @classmethod
-    def _create_setter(cls, prop: BaseVar):
+    def _create_setter(cls, prop: ImmutableVar):
         """Create a setter for the var.
 
         Args:
@@ -949,14 +967,17 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             setattr(cls, setter_name, event_handler)
 
     @classmethod
-    def _set_default_value(cls, prop: BaseVar):
+    def _set_default_value(cls, prop: ImmutableVar):
         """Set the default value for the var.
 
         Args:
             prop: The var to set the default value for.
         """
         # Get the pydantic field for the var.
-        field = cls.get_fields()[prop._var_name]
+        if "." in prop._var_name:
+            field = cls.get_fields()[prop._var_name.split(".")[-1]]
+        else:
+            field = cls.get_fields()[prop._var_name]
         if field.required:
             default_value = prop.get_default_value()
             if default_value is not None:
@@ -968,7 +989,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             and not types.is_optional(prop._var_type)
         ):
             # Ensure frontend uses null coalescing when accessing.
-            prop._var_type = Optional[prop._var_type]
+            object.__setattr__(prop, "_var_type", Optional[prop._var_type])
 
     @staticmethod
     def _get_base_functions() -> dict[str, FunctionType]:
@@ -1774,7 +1795,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 # Include initial computed vars.
                 prop_name: (
                     cv._initial_value
-                    if isinstance(cv, ComputedVar)
+                    if isinstance(cv, (ComputedVar, ImmutableComputedVar))
                     and not isinstance(cv._initial_value, types.Unset)
                     else self.get_value(getattr(self, prop_name))
                 )

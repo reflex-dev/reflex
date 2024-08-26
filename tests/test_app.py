@@ -1252,7 +1252,7 @@ def test_app_wrap_compile_theme(compilable_app: tuple[App, Path]):
         "function AppWrap({children}) {"
         "return ("
         "<RadixThemesColorModeProvider>"
-        "<RadixThemesTheme accentColor={`plum`} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
+        "<RadixThemesTheme accentColor={\"plum\"} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
@@ -1434,16 +1434,16 @@ def test_add_page_component_returning_tuple():
 
     assert isinstance((fragment_wrapper := app.pages["index"].children[0]), Fragment)
     assert isinstance((first_text := fragment_wrapper.children[0]), Text)
-    assert str(first_text.children[0].contents) == "{`first`}"  # type: ignore
+    assert str(first_text.children[0].contents) == '"first"'  # type: ignore
     assert isinstance((second_text := fragment_wrapper.children[1]), Text)
-    assert str(second_text.children[0].contents) == "{`second`}"  # type: ignore
+    assert str(second_text.children[0].contents) == '"second"'  # type: ignore
 
     # Test page with trailing comma.
     assert isinstance(
         (page2_fragment_wrapper := app.pages["page2"].children[0]), Fragment
     )
     assert isinstance((third_text := page2_fragment_wrapper.children[0]), Text)
-    assert str(third_text.children[0].contents) == "{`third`}"  # type: ignore
+    assert str(third_text.children[0].contents) == '"third"'  # type: ignore
 
 
 @pytest.mark.parametrize("export", (True, False))

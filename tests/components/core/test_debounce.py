@@ -4,8 +4,8 @@ import pytest
 
 import reflex as rx
 from reflex.components.core.debounce import DEFAULT_DEBOUNCE_TIMEOUT
+from reflex.ivars.base import LiteralVar
 from reflex.state import BaseState
-from reflex.vars import BaseVar
 
 
 def test_create_no_child():
@@ -60,11 +60,7 @@ def test_render_child_props():
     assert "css" in tag.props and isinstance(tag.props["css"], rx.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
-    assert tag.props["value"].equals(
-        BaseVar(
-            _var_name="real", _var_type=str, _var_is_local=True, _var_is_string=False
-        )
-    )
+    assert tag.props["value"].equals(LiteralVar.create("real"))
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""
@@ -156,11 +152,7 @@ def test_render_child_props_recursive():
     assert "css" in tag.props and isinstance(tag.props["css"], rx.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
-    assert tag.props["value"].equals(
-        BaseVar(
-            _var_name="outer", _var_type=str, _var_is_local=True, _var_is_string=False
-        )
-    )
+    assert tag.props["value"].equals(LiteralVar.create("outer"))
     assert tag.props["forceNotifyOnBlur"]._var_name == "false"
     assert tag.props["forceNotifyByEnter"]._var_name == "false"
     assert tag.props["debounceTimeout"]._var_name == "42"

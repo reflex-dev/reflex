@@ -9,6 +9,7 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
 from reflex.event import EventHandler
+from reflex.ivars.base import ImmutableVar
 from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
@@ -293,9 +294,7 @@ class DataEditor(NoSSRComponent):
 
         # Define the name of the getData callback associated with this component and assign to get_cell_content.
         data_callback = f"getData_{editor_id}"
-        self.get_cell_content = Var.create(
-            data_callback, _var_is_local=False, _var_is_string=False
-        )  # type: ignore
+        self.get_cell_content = ImmutableVar.create(data_callback)  # type: ignore
 
         code = [f"function {data_callback}([col, row])" "{"]
 

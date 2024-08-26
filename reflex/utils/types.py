@@ -496,10 +496,18 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
             return False
         if callable(value):
             return False
+        from reflex.ivars.base import ImmutableComputedVar
         from reflex.vars import ComputedVar
 
         if isinstance(
-            value, (types.FunctionType, property, cached_property, ComputedVar)
+            value,
+            (
+                types.FunctionType,
+                property,
+                cached_property,
+                ComputedVar,
+                ImmutableComputedVar,
+            ),
         ):
             return False
 
