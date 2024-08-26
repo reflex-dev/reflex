@@ -49,7 +49,7 @@ from reflex.base import Base
 from reflex.utils import console
 
 if sys.version_info >= (3, 12):
-    from typing import override
+    from typing import override as override
 else:
 
     def override(func: Callable) -> Callable:

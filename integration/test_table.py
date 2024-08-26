@@ -12,6 +12,8 @@ def Table():
     """App using table component."""
     from typing import List
 
+    import reflex_chakra as rc
+
     import reflex as rx
 
     class TableState(rx.State):
@@ -32,13 +34,13 @@ def Table():
     @app.add_page
     def index():
         return rx.center(
-            rx.chakra.input(
+            rc.input(
                 id="token",
                 value=TableState.router.session.client_token,
                 is_read_only=True,
             ),
-            rx.chakra.table_container(
-                rx.chakra.table(
+            rc.table_container(
+                rc.table(
                     headers=TableState.headers,
                     rows=TableState.rows,
                     footers=TableState.footers,
@@ -53,40 +55,40 @@ def Table():
     @app.add_page
     def another():
         return rx.center(
-            rx.chakra.table_container(
-                rx.chakra.table(  # type: ignore
-                    rx.chakra.thead(  # type: ignore
-                        rx.chakra.tr(  # type: ignore
-                            rx.chakra.th("Name"),
-                            rx.chakra.th("Age"),
-                            rx.chakra.th("Location"),
+            rc.table_container(
+                rc.table(  # type: ignore
+                    rc.thead(  # type: ignore
+                        rc.tr(  # type: ignore
+                            rc.th("Name"),
+                            rc.th("Age"),
+                            rc.th("Location"),
                         )
                     ),
-                    rx.chakra.tbody(  # type: ignore
-                        rx.chakra.tr(  # type: ignore
-                            rx.chakra.td("John"),
-                            rx.chakra.td(30),
-                            rx.chakra.td("New York"),
+                    rc.tbody(  # type: ignore
+                        rc.tr(  # type: ignore
+                            rc.td("John"),
+                            rc.td(30),
+                            rc.td("New York"),
                         ),
-                        rx.chakra.tr(  # type: ignore
-                            rx.chakra.td("Jane"),
-                            rx.chakra.td(31),
-                            rx.chakra.td("San Francisco"),
+                        rc.tr(  # type: ignore
+                            rc.td("Jane"),
+                            rc.td(31),
+                            rc.td("San Francisco"),
                         ),
-                        rx.chakra.tr(  # type: ignore
-                            rx.chakra.td("Joe"),
-                            rx.chakra.td(32),
-                            rx.chakra.td("Los Angeles"),
+                        rc.tr(  # type: ignore
+                            rc.td("Joe"),
+                            rc.td(32),
+                            rc.td("Los Angeles"),
                         ),
                     ),
-                    rx.chakra.tfoot(  # type: ignore
-                        rx.chakra.tr(
-                            rx.chakra.td("footer1"),
-                            rx.chakra.td("footer2"),
-                            rx.chakra.td("footer3"),
+                    rc.tfoot(  # type: ignore
+                        rc.tr(
+                            rc.td("footer1"),
+                            rc.td("footer2"),
+                            rc.td("footer3"),
                         )  # type: ignore
                     ),
-                    rx.chakra.table_caption("random caption"),
+                    rc.table_caption("random caption"),
                     variant="striped",
                     color_scheme="teal",
                 )
