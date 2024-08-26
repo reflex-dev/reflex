@@ -18,6 +18,7 @@ from reflex.components.component import (
     StatefulComponent,
 )
 from reflex.config import get_config
+from reflex.ivars.base import ImmutableVar
 from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils.exec import is_prod_mode
@@ -81,7 +82,7 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
         The compiled context file.
     """
     appearance = getattr(theme, "appearance", None)
-    if appearance is None or Var.create_safe(appearance)._var_name == "inherit":
+    if appearance is None or str(ImmutableVar.create_safe(appearance)) == "inherit":
         appearance = SYSTEM_COLOR_MODE
 
     last_compiled_time = str(datetime.now())

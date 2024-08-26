@@ -465,7 +465,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             raise
         except TypeError as e:
             message = str(e)
-            if "BaseVar" in message or "ComputedVar" in message:
+            if "Var" in message:
                 raise VarOperationTypeError(
                     "You may be trying to use an invalid Python function on a state var. "
                     "When referencing a var inside your render code, only limited var operations are supported. "
@@ -1128,6 +1128,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             Task if the event was backgroundable, otherwise None
         """
         substate, handler = state._get_event_handler(event)
+
         if not handler.is_background:
             return None
 

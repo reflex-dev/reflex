@@ -7,9 +7,11 @@ from typing import Any, Literal, Tuple, Type
 from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
 from reflex.event import EventChain
+from reflex.ivars.base import ImmutableCallableVar, ImmutableVar, LiteralVar
+from reflex.ivars.function import FunctionVar
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
-from reflex.vars import BaseVar, CallableVar, Var, VarData
+from reflex.vars import ImmutableVarData, Var, VarData
 
 VarData.update_forward_refs()  # Ensure all type definitions are resolved
 
@@ -25,7 +27,7 @@ color_mode_imports = {
 }
 
 
-def _color_mode_var(_var_name: str, _var_type: Type = str) -> BaseVar:
+def _color_mode_var(_var_name: str, _var_type: Type = str) -> ImmutableVar:
     """Create a Var that destructs the _var_name from ColorModeContext.
 
     Args:
@@ -33,24 +35,22 @@ def _color_mode_var(_var_name: str, _var_type: Type = str) -> BaseVar:
         _var_type: The type of the Var.
 
     Returns:
-        The BaseVar for accessing _var_name from ColorModeContext.
+        The Var that resolves to the color mode.
     """
-    return BaseVar(
+    return ImmutableVar(
         _var_name=_var_name,
         _var_type=_var_type,
-        _var_is_local=False,
-        _var_is_string=False,
-        _var_data=VarData(
+        _var_data=ImmutableVarData(
             imports=color_mode_imports,
             hooks={f"const {{ {_var_name} }} = useContext(ColorModeContext)": None},
         ),
-    )
+    ).guess_type()
 
 
-@CallableVar
+@ImmutableCallableVar
 def set_color_mode(
     new_color_mode: LiteralColorMode | Var[LiteralColorMode] | None = None,
-) -> BaseVar[EventChain]:
+) -> Var[EventChain]:
     """Create an EventChain Var that sets the color mode to a specific value.
 
     Note: `set_color_mode` is not a real event and cannot be triggered from a
@@ -70,11 +70,14 @@ def set_color_mode(
         return base_setter
 
     if not isinstance(new_color_mode, Var):
-        new_color_mode = Var.create_safe(new_color_mode, _var_is_string=True)
-    return base_setter._replace(
-        _var_name=f"() => {base_setter._var_name}({new_color_mode._var_name_unwrapped})",
-        merge_var_data=new_color_mode._var_data,
-    )
+        new_color_mode = LiteralVar.create(new_color_mode)
+
+    return ImmutableVar(
+        f"() => {str(base_setter)}({str(new_color_mode)})",
+        _var_data=ImmutableVarData.merge(
+            base_setter._get_all_var_data(), new_color_mode._get_all_var_data()
+        ),
+    ).to(FunctionVar, EventChain)
 
 
 # Var resolves to the current color mode for the app ("light", "dark" or "system")
@@ -111,7 +114,9 @@ def media_query(breakpoint_expr: str):
     return f"@media screen and (min-width: {breakpoint_expr})"
 
 
-def convert_item(style_item: str | Var) -> tuple[str, VarData | None]:
+def convert_item(
+    style_item: int | str | Var,
+) -> tuple[str | Var, VarData | ImmutableVarData | None]:
     """Format a single value in a style dictionary.
 
     Args:
@@ -121,21 +126,20 @@ def convert_item(style_item: str | Var) -> tuple[str, VarData | None]:
         The formatted style item and any associated VarData.
     """
     if isinstance(style_item, Var):
-        # If the value is a Var, extract the var_data and cast as str.
-        return str(style_item), style_item._var_data
+        return style_item, style_item._get_all_var_data()
+
+    # if isinstance(style_item, str) and REFLEX_VAR_OPENING_TAG not in style_item:
+    #     return style_item, None
 
     # Otherwise, convert to Var to collapse VarData encoded in f-string.
-    new_var = Var.create(style_item, _var_is_string=False)
-    if new_var is not None and new_var._var_data:
-        # The wrapped backtick is used to identify the Var for interpolation.
-        return f"`{str(new_var)}`", new_var._var_data
-
-    return style_item, None
+    new_var = LiteralVar.create(style_item)
+    var_data = new_var._get_all_var_data() if new_var is not None else None
+    return new_var, var_data
 
 
 def convert_list(
     responsive_list: list[str | dict | Var],
-) -> tuple[list[str | dict], VarData | None]:
+) -> tuple[list[str | dict[str, Var | list | dict]], VarData | None]:
     """Format a responsive value list.
 
     Args:
@@ -157,7 +161,9 @@ def convert_list(
     return converted_value, VarData.merge(*item_var_datas)
 
 
-def convert(style_dict):
+def convert(
+    style_dict: dict[str, Var | dict | list | str],
+) -> tuple[dict[str, str | list | dict], VarData | None]:
     """Format a style dictionary.
 
     Args:
@@ -175,7 +181,11 @@ def convert(style_dict):
 
     for key, value in style_dict.items():
         keys = format_style_key(key)
-        if isinstance(value, dict):
+        if isinstance(value, Var):
+            return_val = value
+            new_var_data = value._get_all_var_data()
+            update_out_dict(return_val, keys)
+        elif isinstance(value, dict):
             # Recursively format nested style dictionaries.
             return_val, new_var_data = convert(value)
             update_out_dict(return_val, keys)
@@ -254,12 +264,10 @@ class Style(dict):
             value: The value to set.
         """
         # Create a Var to collapse VarData encoded in f-string.
-        _var = Var.create(value, _var_is_string=False)
+        _var = LiteralVar.create(value)
         if _var is not None:
             # Carry the imports/hooks when setting a Var as a value.
-            self._var_data = VarData.merge(
-                self._var_data if hasattr(self, "_var_data") else None, _var._var_data
-            )
+            self._var_data = VarData.merge(self._var_data, _var._get_all_var_data())
         super().__setitem__(key, value)
 
 
