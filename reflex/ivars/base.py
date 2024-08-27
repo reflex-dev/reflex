@@ -942,7 +942,7 @@ def var_operation(
 ) -> Callable[P, BooleanVar]: ...
 
 
-NUMBER_T = TypeVar("NUMBER_T", bound=Union[int, float])
+NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float])
 
 
 @overload
