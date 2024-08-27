@@ -70,8 +70,8 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
     def dict(
         self,
         *,
-        include: Optional[Union["AbstractSetIntStr", "MappingIntStrAny"]] = None,
-        exclude: Optional[Union["AbstractSetIntStr", "MappingIntStrAny"]] = None,
+        include: Optional[Union[AbstractSetIntStr, MappingIntStrAny]] = None,
+        exclude: Optional[Union[AbstractSetIntStr, MappingIntStrAny]] = None,
         by_alias: bool = False,
         skip_defaults: Optional[bool] = None,
         exclude_unset: bool = False,
@@ -79,7 +79,7 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         exclude_none: bool = False,
     ) -> dict[str, Any]:
         if not include and hasattr(self.__class__, "__used_fields__"):
-            include = set(self.__class__.__used_fields__)
+            include = self.__class__.__used_fields__
         return super().dict(
             include=include,
             exclude=exclude,

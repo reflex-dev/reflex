@@ -261,11 +261,12 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
                 )
 
             if not hasattr(fixed_type, "__used_fields__"):
-                fixed_type.__used_fields__ = []
-            fixed_type.__used_fields__.append(name)
+                fixed_type.__used_fields__ = set()
+            fixed_type.__used_fields__.add(name)
 
             return ObjectItemOperation.create(self, name, attribute_type).guess_type()
         else:
+            print(f"I'm here {name}")
             return ObjectItemOperation.create(self, name).guess_type()
 
     def contains(self, key: Var | Any) -> BooleanVar:
