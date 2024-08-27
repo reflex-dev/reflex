@@ -1713,6 +1713,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         substates = self.substates
         for var in self.dirty_vars:
             for substate_name in self._substate_var_dependencies[var]:
+                if substate_name not in substates:
+                    # TODO: why is this happening?
+                    continue
                 self.dirty_substates.add(substate_name)
                 substate = substates[substate_name]
                 substate.dirty_vars.add(var)
