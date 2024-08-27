@@ -20,6 +20,7 @@ from typing import (
     Generic,
     List,
     Literal,
+    NoReturn,
     Optional,
     Sequence,
     Set,
@@ -925,52 +926,92 @@ class LiteralVar(ImmutableVar):
 
 
 P = ParamSpec("P")
-T = TypeVar("T", bound=ImmutableVar)
+T = TypeVar("T")
 
 
-def var_operation(*, output: Type[T]) -> Callable[[Callable[P, str]], Callable[P, T]]:
+# NoReturn is used to match CustomVarOperationReturn with no type hint.
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[NoReturn]],
+) -> Callable[P, ImmutableVar]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[bool]],
+) -> Callable[P, BooleanVar]: ...
+
+
+NUMBER_T = TypeVar("NUMBER_T", bound=Union[int, float])
+
+
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[NUMBER_T]],
+) -> Callable[P, NumberVar[NUMBER_T]]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[str]],
+) -> Callable[P, StringVar]: ...
+
+
+LIST_T = TypeVar("LIST_T", bound=Union[List, Tuple, Set])
+
+
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[LIST_T]],
+) -> Callable[P, ArrayVar[LIST_T]]: ...
+
+
+OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Dict)
+
+
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[OBJECT_TYPE]],
+) -> Callable[P, ObjectVar[OBJECT_TYPE]]: ...
+
+
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[T]],
+) -> Callable[P, ImmutableVar[T]]:
     """Decorator for creating a var operation.
 
     Example:
     ```python
-    @var_operation(output=NumberVar)
+    @var_operation
     def add(a: NumberVar, b: NumberVar):
-        return f"({a} + {b})"
+        return custom_var_operation(f"{a} + {b}")
     ```
 
     Args:
-        output: The output type of the operation.
+        func: The function to decorate.
 
     Returns:
-        The decorator.
+        The decorated function.
     """
 
-    def decorator(func: Callable[P, str], output=output):
-        @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-            args_vars = [
-                LiteralVar.create(arg) if not isinstance(arg, Var) else arg
-                for arg in args
-            ]
-            kwargs_vars = {
-                key: LiteralVar.create(value) if not isinstance(value, Var) else value
-                for key, value in kwargs.items()
-            }
-            return output(
-                _var_name=func(*args_vars, **kwargs_vars),  # type: ignore
-                _var_data=VarData.merge(
-                    *[arg._get_all_var_data() for arg in args if isinstance(arg, Var)],
-                    *[
-                        arg._get_all_var_data()
-                        for arg in kwargs.values()
-                        if isinstance(arg, Var)
-                    ],
-                ),
-            )
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> ImmutableVar[T]:
+        func_args = list(inspect.signature(func).parameters)
+        args_vars = {
+            func_args[i]: (LiteralVar.create(arg) if not isinstance(arg, Var) else arg)
+            for i, arg in enumerate(args)
+        }
+        kwargs_vars = {
+            key: LiteralVar.create(value) if not isinstance(value, Var) else value
+            for key, value in kwargs.items()
+        }
 
-        return wrapper
+        return CustomVarOperation.create(
+            args=tuple(list(args_vars.items()) + list(kwargs_vars.items())),
+            return_var=func(*args_vars.values(), **kwargs_vars),  # type: ignore
+        ).guess_type()
 
-    return decorator
+    return wrapper
 
 
 def unionize(*args: Type) -> Type:
@@ -1796,3 +1837,114 @@ def immutable_computed_var(
         )
 
     return wrapper
+
+
+RETURN = TypeVar("RETURN")
+
+
+class CustomVarOperationReturn(ImmutableVar[RETURN]):
+    """Base class for custom var operations."""
+
+    @classmethod
+    def create(
+        cls,
+        js_expression: str,
+        _var_type: Type[RETURN] | None = None,
+        _var_data: VarData | None = None,
+    ) -> CustomVarOperationReturn[RETURN]:
+        """Create a CustomVarOperation.
+
+        Args:
+            js_expression: The JavaScript expression to evaluate.
+            _var_type: The type of the var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The CustomVarOperation.
+        """
+        return CustomVarOperationReturn(
+            _var_name=js_expression,
+            _var_type=_var_type or Any,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+
+
+def var_operation_return(
+    js_expression: str,
+    var_type: Type[RETURN] | None = None,
+) -> CustomVarOperationReturn[RETURN]:
+    """Shortcut for creating a CustomVarOperationReturn.
+
+    Args:
+        js_expression: The JavaScript expression to evaluate.
+        var_type: The type of the var.
+
+    Returns:
+        The CustomVarOperationReturn.
+    """
+    return CustomVarOperationReturn.create(js_expression, var_type)
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class CustomVarOperation(CachedVarOperation, ImmutableVar[T]):
+    """Base class for custom var operations."""
+
+    _args: Tuple[Tuple[str, Var], ...] = dataclasses.field(default_factory=tuple)
+
+    _return: CustomVarOperationReturn[T] = dataclasses.field(
+        default_factory=lambda: CustomVarOperationReturn.create("")
+    )
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """Get the cached var name.
+
+        Returns:
+            The cached var name.
+        """
+        return str(self._return)
+
+    @cached_property_no_lock
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get the cached VarData.
+
+        Returns:
+            The cached VarData.
+        """
+        return ImmutableVarData.merge(
+            *map(
+                lambda arg: arg[1]._get_all_var_data(),
+                self._args,
+            ),
+            self._return._get_all_var_data(),
+            self._var_data,
+        )
+
+    @classmethod
+    def create(
+        cls,
+        args: Tuple[Tuple[str, Var], ...],
+        return_var: CustomVarOperationReturn[T],
+        _var_data: VarData | None = None,
+    ) -> CustomVarOperation[T]:
+        """Create a CustomVarOperation.
+
+        Args:
+            args: The arguments to the operation.
+            return_var: The return var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The CustomVarOperation.
+        """
+        return CustomVarOperation(
+            _var_name="",
+            _var_type=return_var._var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _args=args,
+            _return=return_var,
+        )

@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import sys
-from typing import Any, Union
+from typing import Any, TypeVar, Union
 
 from reflex.vars import ImmutableVarData, Var, VarData
 
@@ -17,8 +17,10 @@ from .base import (
     unionize,
 )
 
+NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float])
 
-class NumberVar(ImmutableVar[Union[int, float]]):
+
+class NumberVar(ImmutableVar[NUMBER_T]):
     """Base class for immutable number vars."""
 
     def __add__(self, other: number_types | boolean_types) -> NumberAddOperation:
