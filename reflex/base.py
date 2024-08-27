@@ -5,6 +5,15 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, Any, List, Optional, Type, Union
 
+if TYPE_CHECKING:
+    from reflex.utils.types import override
+else:
+
+    def override(fn):
+        """Decorator to indicate that a method is meant to override a parent method."""
+        return fn
+
+
 try:
     import pydantic.v1.main as pydantic_main
     from pydantic.v1 import BaseModel
@@ -67,6 +76,7 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         use_enum_values = True
         extra = "allow"
 
+    @override
     def dict(
         self,
         *,
