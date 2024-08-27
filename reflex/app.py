@@ -557,9 +557,12 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         Args:
             route: The route of the page to compile.
         """
-        component = compiler.compile_unevaluated_page(
-            route, self.unevaluated_pages[route]
+        component, enable_state = compiler.compile_unevaluated_page(
+            route, self.unevaluated_pages[route], self.state
         )
+
+        if enable_state:
+            self._enable_state()
 
         # Add the page.
         self._check_routes_conflict(route)
@@ -840,8 +843,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         from reflex.utils.exceptions import ReflexRuntimeError
 
         self.pages = {}
-
-        self._enable_state()
 
         def get_compilation_time() -> str:
             return str(datetime.now().time()).split(".")[0]

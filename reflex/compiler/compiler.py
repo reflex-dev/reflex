@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, Optional, Type, Union
+from typing import TYPE_CHECKING, Dict, Iterable, Optional, Tuple, Type, Union
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -517,15 +517,18 @@ if TYPE_CHECKING:
     from reflex.app import UnevaluatedPage
 
 
-def compile_unevaluated_page(route: str, page: UnevaluatedPage) -> Component:
+def compile_unevaluated_page(
+    route: str, page: UnevaluatedPage, state: Type[BaseState] | None = None
+) -> Tuple[Component, bool]:
     """Compiles an uncompiled page into a component and adds meta information.
 
     Args:
         route: The route of the page.
         page: The uncompiled page object.
+        state: The state of the app.
 
     Returns:
-        The compiled component.
+        The compiled component and whether state should be enabled.
     """
     # Generate the component if it is a callable.
     component = page.component
@@ -534,6 +537,21 @@ def compile_unevaluated_page(route: str, page: UnevaluatedPage) -> Component:
     # unpack components that return tuples in an rx.fragment.
     if isinstance(component, tuple):
         component = Fragment.create(*component)
+
+    enable_state = False
+    # Ensure state is enabled if this page uses state.
+    if state is None:
+        if page.on_load or component._has_stateful_event_triggers():
+            enable_state = True
+        else:
+            for var in component._get_vars(include_children=True):
+                var_data = var._get_all_var_data()
+                if not var_data:
+                    continue
+                if not var_data.state:
+                    continue
+                enable_state = True
+                break
 
     from reflex.app import OverlayFragment
     from reflex.utils.format import make_default_page_title
@@ -559,7 +577,7 @@ def compile_unevaluated_page(route: str, page: UnevaluatedPage) -> Component:
         **meta_args,
     )
 
-    return component
+    return component, enable_state
 
 
 class ExecutorSafeFunctions:
@@ -620,7 +638,9 @@ class ExecutorSafeFunctions:
         Returns:
             The route, compiled component, and compiled page.
         """
-        component = compile_unevaluated_page(route, cls.UNCOMPILED_PAGES[route])
+        component, enable_state = compile_unevaluated_page(
+            route, cls.UNCOMPILED_PAGES[route]
+        )
         component = component if isinstance(component, Component) else component()
         component._add_style_recursive(style, theme)
         return route, component, compile_page(route, component, cls.STATE)
