@@ -979,7 +979,8 @@ def array_item_operation(array: ArrayVar, index: NumberVar | int):
     """
     args = typing.get_args(array._var_type)
     if args and isinstance(index, LiteralNumberVar) and is_tuple_type(array._var_type):
-        element_type = args[index._var_value % len(args)]
+        index_value = int(index._var_value)
+        element_type = args[index_value % len(args)]
     else:
         element_type = unionize(*args)
 
