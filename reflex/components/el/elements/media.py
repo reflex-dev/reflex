@@ -1,8 +1,14 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
 
+import os
+import pathlib
 from typing import Any, Union
 
+import requests
+from PIL import Image
+
 from reflex import Component, ComponentNamespace
+from reflex.constants.base import Dirs
 from reflex.constants.colors import Color
 from reflex.utils import console
 from reflex.vars import Var as Var
@@ -132,6 +138,60 @@ class Img(BaseHTML):
             The component.
 
         """
+
+        def validate_image(src):
+            """Validates the 'src' parameter for the Image component.
+
+            Args:
+                src: The source parameter (local file path, web URL, or Pillow Image).
+
+            Returns:
+                Valid source (src) or raises an error.
+            """
+            try:
+                if isinstance(src, str):
+                    if src.startswith("/"):
+                        full_path = (
+                            pathlib.Path.cwd() / Dirs.APP_ASSETS / src.strip("/")
+                        )
+                        if os.path.exists(full_path):
+                            return True
+                        else:
+                            raise FileNotFoundError(
+                                f"Local image not found: {full_path}"
+                            )
+                    elif src.startswith("http"):
+                        try:
+                            response = requests.head(src)
+                            if response.status_code == 200:
+                                return True
+                            else:
+                                raise ValueError(f"Invalid web URL: {src}")
+                        except requests.RequestException:
+                            raise ValueError(
+                                f"Failed to validate web URL: {src}"
+                            ) from requests.RequestException
+                    else:
+                        raise ValueError(f"Unsupported src format: {src}")
+                elif isinstance(src, Image.Image):
+                    return True
+                else:
+                    raise ValueError(f"Invalid src type: {type(src)}")
+            except Exception as e:
+                print(f"Error: {e}")
+                return False
+
+        src = props.get("src", "")
+        if not validate_image(src):
+            fallback = props.get("fallback", "")
+            if fallback:
+                if validate_image(fallback):
+                    props["src"] = fallback
+                else:
+                    print(f"Invalid fallback image: {fallback}")
+            else:
+                print(f"Invalid src image: {src}")
+
         return (
             super().create(src=children[0], **props)
             if children
