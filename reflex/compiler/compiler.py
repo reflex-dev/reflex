@@ -106,7 +106,7 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
 
 def _compile_page(
     component: Component,
-    state: Type[BaseState],
+    state: Type[BaseState] | None,
 ) -> str:
     """Compile the component given the app state.
 
@@ -121,7 +121,7 @@ def _compile_page(
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
-    kwargs = {"state_name": state.get_name()} if state else {}
+    kwargs = {"state_name": state.get_name()} if state is not None else {}
 
     return templates.PAGE.render(
         imports=imports,
@@ -403,7 +403,7 @@ def compile_contexts(
 
 
 def compile_page(
-    path: str, component: Component, state: Type[BaseState]
+    path: str, component: Component, state: Type[BaseState] | None
 ) -> tuple[str, str]:
     """Compile a single page.
 
@@ -521,11 +521,11 @@ def compile_unevaluated_page(route: str, page: UnevaluatedPage) -> Component:
     """Compiles an uncompiled page into a component and adds meta information.
 
     Args:
-        route (str): The route of the page.
-        page (UncompiledPage): The uncompiled page object.
+        route: The route of the page.
+        page: The uncompiled page object.
 
     Returns:
-        Component: The compiled component.
+        The compiled component.
     """
     # Generate the component if it is a callable.
     component = page.component
@@ -597,8 +597,6 @@ class ExecutorSafeFunctions:
 
         Args:
             route: The route of the page to compile.
-            component: The component to compile.
-            state: The app state.
 
         Returns:
             The path and code of the compiled page.
@@ -609,16 +607,13 @@ class ExecutorSafeFunctions:
     def compile_unevaluated_page(
         cls,
         route: str,
-        state: Type[BaseState],
         style: ComponentStyle,
-        theme: Component,
+        theme: Component | None,
     ) -> tuple[str, Component, tuple[str, str]]:
         """Compile an unevaluated page.
 
         Args:
             route: The route of the page to compile.
-            page: The unevaluated page.
-            state: The app state.
             style: The style of the page.
             theme: The theme of the page.
 
@@ -628,11 +623,14 @@ class ExecutorSafeFunctions:
         component = compile_unevaluated_page(route, cls.UNCOMPILED_PAGES[route])
         component = component if isinstance(component, Component) else component()
         component._add_style_recursive(style, theme)
-        return route, component, compile_page(route, component, state)
+        return route, component, compile_page(route, component, cls.STATE)
 
     @classmethod
     def compile_theme(cls, style: ComponentStyle | None) -> tuple[str, str]:
         """Compile the theme.
+
+        Args:
+            style: The style to compile.
 
         Returns:
             The path and code of the compiled theme.

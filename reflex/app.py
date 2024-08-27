@@ -970,7 +970,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 f = executor.submit(
                     ExecutorSafeFunctions.compile_unevaluated_page,
                     route,
-                    self.state,
                     self.style,
                     self.theme,
                 )
