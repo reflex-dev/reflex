@@ -1016,18 +1016,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return
 
         def argsingle_factory(param):
-            @ComputedVar
             def inner_func(self) -> str:
                 return self.router.page.params.get(param, "")
 
-            return inner_func
+            return ComputedVar(fget=inner_func, cache=True)
 
         def arglist_factory(param):
-            @ComputedVar
             def inner_func(self) -> List:
                 return self.router.page.params.get(param, [])
 
-            return inner_func
+            return ComputedVar(fget=inner_func, cache=True)
 
         for param, value in args.items():
             if value == constants.RouteArgType.SINGLE:
