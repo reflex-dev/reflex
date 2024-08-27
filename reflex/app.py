@@ -179,13 +179,13 @@ class OverlayFragment(Fragment):
 class UnevaluatedPage:
     """An uncompiled page."""
 
-    component: Component | ComponentCallable
+    component: Union[Component, ComponentCallable]
     route: str
     title: str
     description: str
     image: str
     on_load: Union[EventHandler, EventSpec, list[EventHandler | EventSpec], None]
-    meta: list[dict[str, str]]
+    meta: List[Dict[str, str]]
 
 
 class App(MiddlewareMixin, LifespanMixin, Base):
