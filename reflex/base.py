@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any, List, Optional, Type, Union, override
+from typing import TYPE_CHECKING, Any, List, Optional, Type, Union
 
 try:
     import pydantic.v1.main as pydantic_main
     from pydantic.v1 import BaseModel
     from pydantic.v1.fields import ModelField
+
 except ModuleNotFoundError:
     if not TYPE_CHECKING:
         import pydantic.main as pydantic_main
@@ -66,7 +67,6 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         use_enum_values = True
         extra = "allow"
 
-    @override
     def dict(
         self,
         *,
@@ -78,6 +78,17 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         exclude_defaults: bool = False,
         exclude_none: bool = False,
     ) -> dict[str, Any]:
+        """Convert the object to a dict.
+
+        Args:
+            include: The fields to include.
+            exclude: The fields to exclude.
+            by_alias: Whether to use the alias names.
+            skip_defaults: Whether to skip default values.
+            exclude_unset: Whether to exclude unset values.
+            exclude_defaults: Whether to exclude default values.
+            exclude_none: Whether to exclude None values.
+        """
         if not include and hasattr(self.__class__, "__used_fields__"):
             include = self.__class__.__used_fields__
         return super().dict(
