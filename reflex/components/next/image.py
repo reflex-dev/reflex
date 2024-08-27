@@ -6,9 +6,15 @@ from reflex.event import EventHandler
 from reflex.utils import types
 from reflex.vars import Var
 
+from pathlib import Path
+from constants.base import Dirs
+
+import requests
+import os
+
 from .base import NextComponent
 
-
+# implementing image call back technique here
 class Image(NextComponent):
     """Display an image."""
 
@@ -61,6 +67,9 @@ class Image(NextComponent):
     # Fires when the image has an error.
     on_error: EventHandler[lambda: []]
 
+    # Fires when the src image is not provided.
+    fallback: Var[str]
+
     @classmethod
     def create(
         cls,
@@ -83,6 +92,42 @@ class Image(NextComponent):
         style = props.get("style", {})
         DEFAULT_W_H = "100%"
 
+        def validate_src_image(src):
+            """
+            Validates the 'src' parameter for the Image component.
+            Args:
+                src: The source parameter (local file path, web URL, or Pillow Image).
+            Returns:
+                Valid source (src) or raises an error.
+            """
+            try:
+                if isinstance(src, str):
+                    if src.startswith("/"):
+                        full_path = Path.cwd() / Dirs.APP_ASSETS / src.strip("/")
+                        if os.path.exists(full_path):
+                            return True
+                        else:
+                            raise FileNotFoundError(f"Local image not found: {full_path}")
+                    elif src.startswith("http"):
+                        try:
+                            response = requests.head(src)
+                            if response.status_code == 200:
+                                return True
+                            else:
+                                raise ValueError(f"Invalid web URL: {src}")
+                        except requests.RequestException:
+                            raise ValueError(f"Failed to validate web URL: {src}")
+                    else:
+                        raise ValueError(f"Unsupported src format: {src}")
+                elif isinstance(src, Image.Image):
+                    return True
+                else:
+                    raise ValueError(f"Invalid src type: {type(src)}")
+            except Exception as e:
+                print(f"Error: {e}")
+                return False
+                                
+
         def check_prop_type(prop_name, prop_value):
             if types.check_prop_in_allowed_types(prop_value, allowed_types=[int]):
                 props[prop_name] = prop_value
@@ -93,6 +138,17 @@ class Image(NextComponent):
             else:
                 props[prop_name] = 0
                 style[prop_name] = DEFAULT_W_H
+
+
+        src = props.get("src", "")
+        if not validate_src_image(src):
+            if props.get("fallback"):
+                if validate_src_image(props.get("fallback")):
+                    props["src"] = props.get("fallback")
+                else:
+                    raise ValueError(f"Invalid fallback image: {props.get('fallback')}")
+            else:
+                raise ValueError(f"Invalid src image: {src}")
 
         check_prop_type("width", width)
         check_prop_type("height", height)
