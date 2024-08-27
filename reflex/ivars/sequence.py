@@ -848,7 +848,9 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
     _array: ArrayVar = dataclasses.field(
         default_factory=lambda: LiteralArrayVar.create([])
     )
-    _slice: slice = dataclasses.field(default_factory=lambda: slice(None, None, None))
+    _start: NumberVar | int = dataclasses.field(default_factory=lambda: 0)
+    _stop: NumberVar | int = dataclasses.field(default_factory=lambda: 0)
+    _step: NumberVar | int = dataclasses.field(default_factory=lambda: 1)
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -860,7 +862,7 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
         Raises:
             ValueError: If the slice step is zero.
         """
-        start, end, step = self._slice.start, self._slice.stop, self._slice.step
+        start, end, step = self._start, self._stop, self._step
 
         normalized_start = (
             LiteralVar.create(start)
@@ -910,7 +912,9 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
             _var_type=array._var_type,
             _var_data=ImmutableVarData.merge(_var_data),
             _array=array,
-            _slice=slice,
+            _start=slice.start,
+            _stop=slice.stop,
+            _step=slice.step,
         )
 
 
