@@ -3608,5 +3608,7 @@ def reload_state_module(
         if subclass.__module__ == module and module is not None:
             state.class_subclasses.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
+    state._computed_var_dependencies = defaultdict(set)
+    state._substate_var_dependencies = defaultdict(set)
     state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()
