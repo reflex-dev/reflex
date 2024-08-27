@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any, List, Type
+from typing import TYPE_CHECKING, Any, List, Optional, Type, Union, override
 
 try:
     import pydantic.v1.main as pydantic_main
@@ -14,6 +14,7 @@ except ModuleNotFoundError:
         import pydantic.main as pydantic_main
         from pydantic import BaseModel
         from pydantic.fields import ModelField  # type: ignore
+        from pydantic.v1.typing import AbstractSetIntStr, MappingIntStrAny
 
 
 from reflex import constants
@@ -64,6 +65,30 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         arbitrary_types_allowed = True
         use_enum_values = True
         extra = "allow"
+
+    @override
+    def dict(
+        self,
+        *,
+        include: Optional[Union["AbstractSetIntStr", "MappingIntStrAny"]] = None,
+        exclude: Optional[Union["AbstractSetIntStr", "MappingIntStrAny"]] = None,
+        by_alias: bool = False,
+        skip_defaults: Optional[bool] = None,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+    ) -> dict[str, Any]:
+        if not include and hasattr(self.__class__, "__used_fields__"):
+            include = set(self.__class__.__used_fields__)
+        return super().dict(
+            include=include,
+            exclude=exclude,
+            by_alias=by_alias,
+            skip_defaults=skip_defaults,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
+        )
 
     def json(self) -> str:
         """Convert the object to a json string.

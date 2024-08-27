@@ -259,6 +259,11 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
                     f"The State var `{str(self)}` has no attribute '{name}' or may have been annotated "
                     f"wrongly."
                 )
+
+            if not hasattr(fixed_type, "__used_fields__"):
+                fixed_type.__used_fields__ = []
+            fixed_type.__used_fields__.append(name)
+
             return ObjectItemOperation.create(self, name, attribute_type).guess_type()
         else:
             return ObjectItemOperation.create(self, name).guess_type()
