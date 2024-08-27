@@ -514,10 +514,10 @@ def purge_web_pages_dir():
 
 
 if TYPE_CHECKING:
-    from reflex.app import UncompiledPage
+    from reflex.app import UnevaluatedPage
 
 
-def compile_uncompiled_page_helper(route: str, page: UncompiledPage) -> Component:
+def compile_unevaluated_page(route: str, page: UnevaluatedPage) -> Component:
     """Compiles an uncompiled page into a component and adds meta information.
 
     Args:
@@ -588,7 +588,7 @@ class ExecutorSafeFunctions:
     """
 
     COMPONENTS: Dict[str, Component] = {}
-    UNCOMPILED_PAGES: Dict[str, UncompiledPage] = {}
+    UNCOMPILED_PAGES: Dict[str, UnevaluatedPage] = {}
     STATE: Optional[Type[BaseState]] = None
 
     @classmethod
@@ -606,18 +606,18 @@ class ExecutorSafeFunctions:
         return compile_page(route, cls.COMPONENTS[route], cls.STATE)
 
     @classmethod
-    def compile_uncompiled_page(
+    def compile_unevaluated_page(
         cls,
         route: str,
         state: Type[BaseState],
         style: ComponentStyle,
         theme: Component,
     ) -> tuple[str, Component, tuple[str, str]]:
-        """Compile an uncompiled page.
+        """Compile an unevaluated page.
 
         Args:
             route: The route of the page to compile.
-            page: The uncompiled page.
+            page: The unevaluated page.
             state: The app state.
             style: The style of the page.
             theme: The theme of the page.
@@ -625,7 +625,7 @@ class ExecutorSafeFunctions:
         Returns:
             The route, compiled component, and compiled page.
         """
-        component = compile_uncompiled_page_helper(route, cls.UNCOMPILED_PAGES[route])
+        component = compile_unevaluated_page(route, cls.UNCOMPILED_PAGES[route])
         component = component if isinstance(component, Component) else component()
         component._add_style_recursive(style, theme)
         return route, component, compile_page(route, component, state)

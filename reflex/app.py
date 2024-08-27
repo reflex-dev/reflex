@@ -176,7 +176,7 @@ class OverlayFragment(Fragment):
 @dataclasses.dataclass(
     frozen=True,
 )
-class UncompiledPage:
+class UnevaluatedPage:
     """An uncompiled page."""
 
     component: Component | ComponentCallable
@@ -238,11 +238,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
     # Attributes to add to the html root tag of every page.
     html_custom_attrs: Optional[Dict[str, str]] = None
 
-    # A map from a route to an uncompiled page. PRIVATE.
-    uncompiled_pages: Dict[str, UncompiledPage] = {}
-
-    # A map from a route to an uncompiled page. PRIVATE.
-    uncompiled_pages: Dict[str, UncompiledPage] = {}
+    # A map from a route to an unevaluated page. PRIVATE.
+    unevaluated_pages: Dict[str, UnevaluatedPage] = {}
 
     # A map from a page route to the component to render. Users should use `add_page`. PRIVATE.
     pages: Dict[str, Component] = {}
@@ -517,13 +514,13 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         # Check if the route given is valid
         verify_route_validity(route)
 
-        if route in self.uncompiled_pages and os.getenv(constants.RELOAD_CONFIG):
+        if route in self.unevaluated_pages and os.getenv(constants.RELOAD_CONFIG):
             # when the app is reloaded(typically for app harness tests), we should maintain
             # the latest render function of a route.This applies typically to decorated pages
             # since they are only added when app._compile is called.
-            self.uncompiled_pages.pop(route)
+            self.unevaluated_pages.pop(route)
 
-        if route in self.uncompiled_pages:
+        if route in self.unevaluated_pages:
             route_name = (
                 f"`{route}` or `/`"
                 if route == constants.PageNames.INDEX_ROUTE
@@ -544,7 +541,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 on_load if isinstance(on_load, list) else [on_load]
             )
 
-        self.uncompiled_pages[route] = UncompiledPage(
+        self.unevaluated_pages[route] = UnevaluatedPage(
             component=component,
             route=route,
             title=title or constants.DefaultPage.TITLE,
@@ -560,8 +557,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         Args:
             route: The route of the page to compile.
         """
-        component = compiler.compile_uncompiled_page_helper(
-            route, self.uncompiled_pages[route]
+        component = compiler.compile_unevaluated_page(
+            route, self.unevaluated_pages[route]
         )
 
         # Add the page.
@@ -842,7 +839,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         """
         from reflex.utils.exceptions import ReflexRuntimeError
 
-        print("Compiling the app...")
+        self.pages = {}
 
         self._enable_state()
 
@@ -850,17 +847,16 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             return str(datetime.now().time()).split(".")[0]
 
         # Render a default 404 page if the user didn't supply one
-        if constants.Page404.SLUG not in self.uncompiled_pages:
+        if constants.Page404.SLUG not in self.unevaluated_pages:
             self.add_custom_404_page()
 
         # Add the optional endpoints (_upload)
         self._add_optional_endpoints()
 
+        for route in self.unevaluated_pages:
+            self._compile_page(route)
+
         if not self._should_compile():
-            for route in self.uncompiled_pages:
-                if route in self.pages:
-                    continue
-                self._compile_page(route)
             return
 
         self._validate_var_dependencies()
@@ -880,7 +876,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         progress.start()
         task = progress.add_task(
             f"[{get_compilation_time()}] Compiling:",
-            total=len(self.uncompiled_pages)
+            total=len(self.unevaluated_pages)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
         )
@@ -933,9 +929,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             platform.system() in ("Linux", "Darwin")
             and os.environ.get("REFLEX_COMPILE_PROCESSES") is not None
         ):
-            for route in self.uncompiled_pages:
-                self._compile_page(route)
-
             executor = concurrent.futures.ProcessPoolExecutor(
                 max_workers=int(os.environ.get("REFLEX_COMPILE_PROCESSES", 0)) or None,
                 mp_context=multiprocessing.get_context("fork"),
@@ -950,7 +943,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
             ExecutorSafeFunctions.COMPONENTS[route] = component
 
-        for route, page in self.uncompiled_pages.items():
+        for route, page in self.unevaluated_pages.items():
             if route in self.pages:
                 continue
 
@@ -970,12 +963,12 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 result_futures.append(f)
 
             # Compile all page components.
-            for route in self.uncompiled_pages:
+            for route in self.unevaluated_pages:
                 if route in self.pages:
                     continue
 
                 f = executor.submit(
-                    ExecutorSafeFunctions.compile_uncompiled_page,
+                    ExecutorSafeFunctions.compile_unevaluated_page,
                     route,
                     self.state,
                     self.style,
