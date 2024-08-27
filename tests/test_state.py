@@ -649,7 +649,12 @@ def test_set_dirty_var(test_state):
     assert test_state.dirty_vars == set()
 
 
-def test_set_dirty_substate(test_state, child_state, child_state2, grandchild_state):
+def test_set_dirty_substate(
+    test_state: TestState,
+    child_state: ChildState,
+    child_state2: ChildState2,
+    grandchild_state: GrandchildState,
+):
     """Test changing substate vars marks the value as dirty.
 
     Args:

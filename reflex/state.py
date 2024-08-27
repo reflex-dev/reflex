@@ -591,6 +591,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
+        # Initialize per-class var dependency tracking.
+        cls._computed_var_dependencies = defaultdict(set)
+        cls._substate_var_dependencies = defaultdict(set)
         cls._init_var_dependency_dicts()
 
     @staticmethod
@@ -660,10 +663,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Additional updates tracking dicts for vars and substates that always
         need to be recomputed.
         """
-        # Initialize per-class var dependency tracking.
-        cls._computed_var_dependencies = defaultdict(set)
-        cls._substate_var_dependencies = defaultdict(set)
-
         inherited_vars = set(cls.inherited_vars).union(
             set(cls.inherited_backend_vars),
         )
@@ -1013,6 +1012,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             args: a dict of args
         """
+        if not args:
+            return
 
         def argsingle_factory(param):
             @ComputedVar
@@ -1040,8 +1041,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
-            # Reinitialize dependency tracking dicts.
-            cls._init_var_dependency_dicts()
+        # Reinitialize dependency tracking dicts.
+        cls._init_var_dependency_dicts()
 
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.
