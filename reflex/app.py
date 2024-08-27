@@ -184,7 +184,7 @@ class UnevaluatedPage:
     title: str
     description: str
     image: str
-    on_load: Union[EventHandler, EventSpec, list[EventHandler | EventSpec], None]
+    on_load: Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]], None]
     meta: List[Dict[str, str]]
 
 
