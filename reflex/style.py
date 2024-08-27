@@ -267,7 +267,10 @@ class Style(dict):
         _var = LiteralVar.create(value)
         if _var is not None:
             # Carry the imports/hooks when setting a Var as a value.
-            self._var_data = VarData.merge(self._var_data, _var._get_all_var_data())
+            self._var_data = VarData.merge(
+                self._var_data,
+                _var._get_all_var_data(),
+            )
         super().__setitem__(key, value)
 
 

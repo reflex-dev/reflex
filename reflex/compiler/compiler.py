@@ -587,10 +587,12 @@ class ExecutorSafeFunctions:
 
     """
 
+    COMPONENTS: Dict[str, Component] = {}
+    UNCOMPILED_PAGES: Dict[str, UncompiledPage] = {}
+    STATE: Optional[Type[BaseState]] = None
+
     @classmethod
-    def compile_page(
-        cls, route: str, component: Component, state: Type[BaseState]
-    ) -> tuple[str, str]:
+    def compile_page(cls, route: str) -> tuple[str, str]:
         """Compile a page.
 
         Args:
@@ -601,13 +603,12 @@ class ExecutorSafeFunctions:
         Returns:
             The path and code of the compiled page.
         """
-        return compile_page(route, component, state)
+        return compile_page(route, cls.COMPONENTS[route], cls.STATE)
 
     @classmethod
     def compile_uncompiled_page(
         cls,
         route: str,
-        page: UncompiledPage,
         state: Type[BaseState],
         style: ComponentStyle,
         theme: Component,
@@ -624,7 +625,7 @@ class ExecutorSafeFunctions:
         Returns:
             The route, compiled component, and compiled page.
         """
-        component = compile_uncompiled_page_helper(route, page)
+        component = compile_uncompiled_page_helper(route, cls.UNCOMPILED_PAGES[route])
         component = component if isinstance(component, Component) else component()
         component._add_style_recursive(style, theme)
         return route, component, compile_page(route, component, state)
