@@ -27,7 +27,7 @@ import httpx
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
-from redis import Redis as RedisSync
+from redis import Redis as RedisSync, exceptions
 from redis.asyncio import Redis
 
 from reflex import constants, model
@@ -362,7 +362,7 @@ def get_redis_status():
             redis_client.ping()
         else:
             status = "NA"
-    except Redis.exceptions.ConnectionError:
+    except exceptions.ConnectionError:
         status = False
     
     return status
