@@ -59,22 +59,10 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 pydantic_main.validate_field_name = validate_field_name  # type: ignore
 
 
-class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
-    """The base class subclassed by all Reflex classes.
-
-    This class wraps Pydantic and provides common methods such as
-    serialization and setting fields.
-
-    Any data structure that needs to be transferred between the
-    frontend and backend should subclass this class.
+class SlimBaseMixin(BaseModel):
+    """A mixin to slim down the BaseModel class.
+    Only used fields will be included in the dict.
     """
-
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
-        use_enum_values = True
-        extra = "allow"
 
     @override
     def dict(
@@ -110,6 +98,24 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
         )
+
+
+class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
+    """The base class subclassed by all Reflex classes.
+
+    This class wraps Pydantic and provides common methods such as
+    serialization and setting fields.
+
+    Any data structure that needs to be transferred between the
+    frontend and backend should subclass this class.
+    """
+
+    class Config:
+        """Pydantic config."""
+
+        arbitrary_types_allowed = True
+        use_enum_values = True
+        extra = "allow"
 
     def json(self) -> str:
         """Convert the object to a json string.
