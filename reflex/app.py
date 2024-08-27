@@ -9,9 +9,6 @@ import dataclasses
 import functools
 import inspect
 import io
-import dill
-import multiprocess
-from pathos import multiprocessing, pools
 import os
 import platform
 import sys
@@ -51,7 +48,6 @@ from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.compiler.compiler import (
     ExecutorSafeFunctions,
-    compile_uncompiled_page_helper,
 )
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.error_boundary import ErrorBoundary
@@ -181,7 +177,7 @@ class OverlayFragment(Fragment):
 class UncompiledPage:
     """An uncompiled page."""
 
-    component: Component
+    component: Component | ComponentCallable
     route: str
     title: str
     description: str
@@ -549,8 +545,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         self.uncompiled_pages[route] = UncompiledPage(
             component=component,
             route=route,
-            title=title,
-            description=description,
+            title=title or constants.DefaultPage.TITLE,
+            description=description or constants.DefaultPage.DESCRIPTION,
             image=image,
             on_load=on_load,
             meta=meta,
