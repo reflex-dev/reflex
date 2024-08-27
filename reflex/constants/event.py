@@ -11,6 +11,7 @@ class Endpoint(Enum):
     EVENT = "_event"
     UPLOAD = "_upload"
     AUTH_CODESPACE = "auth-codespace"
+    HEALTH = "health"
 
     def __str__(self) -> str:
         """Get the string representation of the endpoint.
@@ -47,6 +48,7 @@ class SocketEvent(SimpleNamespace):
 
     PING = "ping"
     EVENT = "event"
+    HEALTH = "health"
 
     def __str__(self) -> str:
         """Get the string representation of the event name.

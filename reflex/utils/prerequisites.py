@@ -343,6 +343,30 @@ def parse_redis_url() -> str | dict | None:
     console.info(f"Using redis at {config.redis_url}")
     return dict(host=redis_url, port=int(redis_port), db=0)
 
+def get_redis_status():
+    """
+    Checks the status of the Redis connection.
+
+    Attempts to connect to Redis and send a ping command to verify connectivity.
+
+    Returns:
+        int or bool or str: The status of the Redis connection:
+            - True: Redis is accessible and responding.
+            - False: Redis is not accessible due to a connection error.
+            - "NA": Redis client is not available.
+    """
+    try:
+        status = True
+        redis_client = get_redis_sync()
+        if redis_client is not None:
+            redis_client.ping()
+        else:
+            status = "NA"
+    except Redis.exceptions.ConnectionError:
+        status = False
+    
+    return status
+
 
 def validate_app_name(app_name: str | None = None) -> str:
     """Validate the app name.
