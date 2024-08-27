@@ -9,9 +9,6 @@ import dataclasses
 import functools
 import inspect
 import io
-import dill
-import multiprocess
-from pathos import multiprocessing, pools
 import os
 import platform
 import sys
@@ -37,6 +34,7 @@ from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware import cors
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from pathos import pools
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette_admin.contrib.sqla.admin import Admin
@@ -50,7 +48,6 @@ from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.compiler.compiler import (
     ExecutorSafeFunctions,
-    compile_uncompiled_page_helper,
 )
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.error_boundary import ErrorBoundary
@@ -180,7 +177,7 @@ class OverlayFragment(Fragment):
 class UncompiledPage:
     """An uncompiled page."""
 
-    component: Component
+    component: Union[Component, ComponentCallable]
     route: str
     title: str
     description: str
@@ -545,8 +542,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         self.uncompiled_pages[route] = UncompiledPage(
             component=component,
             route=route,
-            title=title,
-            description=description,
+            title=title or constants.DefaultPage.TITLE,
+            description=description or constants.DefaultPage.DESCRIPTION,
             image=image,
             on_load=on_load,
             meta=meta,
@@ -1018,7 +1015,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 compile_results.append(future.get())
                 progress.advance(task)
 
-            for route, future in pages_futures:
+            for _, future in pages_futures:
                 pages_results.append(future.get())
                 progress.advance(task)
 
@@ -1027,7 +1024,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             self.pages[route] = component
             compile_results.append(compiled_page)
 
-        for route, component in self.pages.items():
+        for _, component in self.pages.items():
             # Add component._get_all_imports() to all_imports.
             all_imports.update(component._get_all_imports())
 

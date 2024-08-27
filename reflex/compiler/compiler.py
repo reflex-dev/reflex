@@ -515,7 +515,6 @@ def purge_web_pages_dir():
 
 if TYPE_CHECKING:
     from reflex.app import UncompiledPage
-    from reflex.event import EventHandler, EventSpec
 
 
 def compile_uncompiled_page_helper(route: str, page: UncompiledPage) -> Component:
@@ -596,6 +595,8 @@ class ExecutorSafeFunctions:
 
         Args:
             route: The route of the page to compile.
+            component: The component to compile.
+            state: The app state.
 
         Returns:
             The path and code of the compiled page.
@@ -615,9 +616,13 @@ class ExecutorSafeFunctions:
 
         Args:
             route: The route of the page to compile.
+            page: The uncompiled page.
+            state: The app state.
+            style: The style of the page.
+            theme: The theme of the page.
 
         Returns:
-            The path and code of the compiled page.
+            The route, compiled component, and compiled page.
         """
         component = compile_uncompiled_page_helper(route, page)
         component = component if isinstance(component, Component) else component()

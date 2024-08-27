@@ -268,8 +268,9 @@ class Style(dict):
         if _var is not None:
             # Carry the imports/hooks when setting a Var as a value.
             self._var_data = VarData.merge(
-                self._var_data if hasattr(self, "_var_data") else None, _var._get_all_var_data
-            ())
+                self._var_data if hasattr(self, "_var_data") else None,
+                _var._get_all_var_data(),
+            )
         super().__setitem__(key, value)
 
 
