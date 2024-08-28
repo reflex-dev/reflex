@@ -22,7 +22,7 @@ from reflex.ivars.base import LiteralVar
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
-from reflex.utils.exceptions import EventHandlerArgMismatch
+from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import BaseVar, Var, VarData
 
@@ -924,11 +924,11 @@ def test_invalid_event_handler_args(component2, test_state):
         )
 
     # lambda signature must match event trigger.
-    with pytest.raises(ValueError):
+    with pytest.raises(EventFnArgMismatch):
         component2.create(on_click=lambda _: test_state.do_something_arg(1))
-    with pytest.raises(ValueError):
+    with pytest.raises(EventFnArgMismatch):
         component2.create(on_open=lambda: test_state.do_something)
-    with pytest.raises(ValueError):
+    with pytest.raises(EventFnArgMismatch):
         component2.create(on_prop_event=lambda: test_state.do_something)
 
     # lambda returning EventHandler must match spec
