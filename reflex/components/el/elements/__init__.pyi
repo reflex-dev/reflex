@@ -335,6 +335,6 @@ _MAPPING = {
         "Del",
     ],
 }
-EXCLUDE = ["del_", "Del", "image", "LinearGradient"]
+EXCLUDE = ["del_", "Del", "image"]
 for _, v in _MAPPING.items():
     v.extend([mod.capitalize() for mod in v if mod not in EXCLUDE])
