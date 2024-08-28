@@ -2436,7 +2436,16 @@ def _default_token_expiration() -> int:
     return get_config().redis_token_expiration
 
 
-def state_to_schema(state: BaseState) -> List[Tuple[str, str, Any, bool]]:
+def state_to_schema(
+    state: BaseState,
+) -> List[
+    Tuple[
+        str,
+        str,
+        Any,
+        Union[bool, None],
+    ]
+]:
     """Convert a state to a schema.
 
     Args:
@@ -2445,9 +2454,20 @@ def state_to_schema(state: BaseState) -> List[Tuple[str, str, Any, bool]]:
     Returns:
         The schema.
     """
-    return sorted(
-        (field_name, model_field.name, model_field.type_, model_field.required)
-        for field_name, model_field in state.__fields__.items()
+    return list(
+        sorted(
+            (
+                field_name,
+                model_field.name,
+                model_field.type_,
+                (
+                    model_field.required
+                    if isinstance(model_field.required, bool)
+                    else None
+                ),
+            )
+            for field_name, model_field in state.__fields__.items()
+        )
     )
 
 
