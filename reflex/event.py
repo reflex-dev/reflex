@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import types
 import urllib.parse
 from base64 import b64encode
 from typing import (
@@ -903,6 +904,8 @@ def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
     # Check that fn signature matches arg_spec
     fn_args = inspect.getfullargspec(fn).args
     n_fn_args = len(fn_args)
+    if isinstance(fn, types.MethodType):
+        n_fn_args -= 1  # subtract 1 for bound self arg
     parsed_args = parse_args_spec(arg_spec)
     if len(parsed_args) != n_fn_args:
         raise EventFnArgMismatch(
