@@ -27,7 +27,8 @@ import httpx
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
-from redis import Redis as RedisSync, exceptions
+from redis import Redis as RedisSync
+from redis import exceptions
 from redis.asyncio import Redis
 
 from reflex import constants, model
@@ -343,9 +344,9 @@ def parse_redis_url() -> str | dict | None:
     console.info(f"Using redis at {config.redis_url}")
     return dict(host=redis_url, port=int(redis_port), db=0)
 
+
 def get_redis_status():
-    """
-    Checks the status of the Redis connection.
+    """Checks the status of the Redis connection.
 
     Attempts to connect to Redis and send a ping command to verify connectivity.
 
@@ -353,7 +354,6 @@ def get_redis_status():
         int or bool or str: The status of the Redis connection:
             - True: Redis is accessible and responding.
             - False: Redis is not accessible due to a connection error.
-            - "NA": Redis client is not available.
     """
     try:
         status = True
@@ -361,10 +361,10 @@ def get_redis_status():
         if redis_client is not None:
             redis_client.ping()
         else:
-            status = "NA"
-    except exceptions.ConnectionError:
+            status = None
+    except exceptions.RedisError:
         status = False
-    
+
     return status
 
 

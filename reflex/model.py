@@ -50,29 +50,24 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
     return sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)
 
-def get_db_status():
 
-    """
-    Checks the status of the database connection.
+def get_db_status():
+    """Checks the status of the database connection.
 
     Attempts to connect to the database and execute a simple query to verify connectivity.
 
     Returns:
         bool or str: The status of the database connection:
             - True: The database is accessible.
-            - False: The database is not accessible due to an operational error.
-            - "NA": The database URL is not present.
+            - False: The database is not accessible.
     """
     status = True
     try:
         engine = get_engine()
         with engine.connect() as connection:
             connection.execute(sqlalchemy.text("SELECT 1"))
-    except sqlalchemy.exc.OperationalError:
+    except Exception:
         status = False
-    except ValueError:
-        status = "NA"
-
     return status
 
 

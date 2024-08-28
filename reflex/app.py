@@ -33,7 +33,7 @@ from typing import (
 
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware import cors
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
@@ -1319,6 +1319,7 @@ async def ping() -> str:
     """
     return "pong"
 
+
 async def health():
     """Health check endpoint to assess the status of the database and Redis services.
 
@@ -1328,16 +1329,14 @@ async def health():
             - "db" (bool or str): Database status - True, False, or "NA".
             - "redis" (bool or str): Redis status - True, False, or "NA".
     """
-    health_status = {
-        "status": True,
-        "db": True,
-        "redis": True
-    }
+    health_status = {"status": True}
     status_code = 200
     health_status["db"] = get_db_status()
-    health_status["redis"] = prerequisites.get_redis_status()
+    redis_status = prerequisites.get_redis_status()
+    if redis_status is not None:
+        health_status["redis"] = redis_status
 
-    if health_status["db"] is False or health_status["redis"] is False:
+    if not health_status["db"] or not health_status["redis"]:
         health_status["status"] = False
         status_code = 503
 
