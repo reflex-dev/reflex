@@ -2444,7 +2444,10 @@ def state_to_schema(state: BaseState) -> dict[str, Any]:
     Returns:
         The schema.
     """
-    return state.dict(include_computed=True, initial=True)
+    return sorted(
+        (field_name, model_field.name, model_field.type_, model_field.required)
+        for field_name, model_field in state.__fields__.items()
+    )
 
 
 class StateManagerDisk(StateManager):
