@@ -527,15 +527,7 @@ class Component(BaseComponent, ABC):
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
-                    try:
-                        event = call_event_handler(v, args_spec)
-                    except ValueError as err:
-                        raise ValueError(
-                            f" {err} defined in the `{type(self).__name__}` component"
-                        ) from err
-
-                    # Add the event to the chain.
-                    events.append(event)
+                    events.append(call_event_handler(v, args_spec))
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
                     result = call_event_fn(v, args_spec)

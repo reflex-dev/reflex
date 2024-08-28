@@ -22,6 +22,7 @@ from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.ivars.function import FunctionStringVar, FunctionVar
 from reflex.ivars.object import ObjectVar
 from reflex.utils import format
+from reflex.utils.exceptions import EventHandlerArgMismatch
 from reflex.utils.types import ArgsSpec
 from reflex.vars import ImmutableVarData, Var
 
@@ -831,7 +832,7 @@ def call_event_handler(
         arg_spec: The lambda that define the argument(s) to pass to the event handler.
 
     Raises:
-        ValueError: if number of arguments expected by event_handler doesn't match the spec.
+        EventHandlerArgMismatch: if number of arguments expected by event_handler doesn't match the spec.
 
     Returns:
         The event spec from calling the event handler.
@@ -843,13 +844,16 @@ def call_event_handler(
         return event_handler.add_args(*parsed_args)
 
     args = inspect.getfullargspec(event_handler.fn).args
-    if len(args) == len(["self", *parsed_args]):
+    n_args = len(args) - 1  # subtract 1 for bound self arg
+    if n_args == len(parsed_args):
         return event_handler(*parsed_args)  # type: ignore
     else:
-        source = inspect.getsource(arg_spec)  # type: ignore
-        raise ValueError(
-            f"number of arguments in {event_handler.fn.__qualname__} "
-            f"doesn't match the definition of the event trigger '{source.strip().strip(',')}'"
+        raise EventHandlerArgMismatch(
+            "The number of arguments accepted by "
+            f"{event_handler.fn.__qualname__} ({n_args}) "
+            "does not match the arguments passed by the event trigger: "
+            f"{[str(v) for v in parsed_args]}\n"
+            "See https://reflex.dev/docs/events/event-arguments/"
         )
 
 

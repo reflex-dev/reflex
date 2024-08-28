@@ -22,6 +22,7 @@ from reflex.ivars.base import LiteralVar
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
+from reflex.utils.exceptions import EventHandlerArgMismatch
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import BaseVar, Var, VarData
 
@@ -891,23 +892,23 @@ def test_invalid_event_handler_args(component2, test_state):
         test_state: A test state.
     """
     # EventHandler args must match
-    with pytest.raises(ValueError):
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(on_click=test_state.do_something_arg)
-    with pytest.raises(ValueError):
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(on_open=test_state.do_something)
-    with pytest.raises(ValueError):
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(on_prop_event=test_state.do_something)
 
     # Multiple EventHandler args: all must match
-    with pytest.raises(ValueError):
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(
             on_click=[test_state.do_something_arg, test_state.do_something]
         )
-    with pytest.raises(ValueError):
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(
             on_open=[test_state.do_something_arg, test_state.do_something]
         )
-    with pytest.raises(ValueError):
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(
             on_prop_event=[test_state.do_something_arg, test_state.do_something]
         )
@@ -931,26 +932,26 @@ def test_invalid_event_handler_args(component2, test_state):
         component2.create(on_prop_event=lambda: test_state.do_something)
 
     # lambda returning EventHandler must match spec
-    with pytest.raises(ValueError):
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(on_click=lambda: test_state.do_something_arg)
-    with pytest.raises(ValueError):
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(on_open=lambda _: test_state.do_something)
-    with pytest.raises(ValueError):
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(on_prop_event=lambda _: test_state.do_something)
 
     # Mixed EventSpec and EventHandler must match spec.
-    with pytest.raises(ValueError):
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(
             on_click=lambda: [
                 test_state.do_something_arg(1),
                 test_state.do_something_arg,
             ]
         )
-    with pytest.raises(ValueError):
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(
             on_open=lambda _: [test_state.do_something_arg(1), test_state.do_something]
         )
-    with pytest.raises(ValueError):
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(
             on_prop_event=lambda _: [
                 test_state.do_something_arg(1),
