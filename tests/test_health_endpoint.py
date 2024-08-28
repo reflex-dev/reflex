@@ -65,8 +65,4 @@ def test_get_db_status(mock_engine, execute_side_effect, expected_status, mocker
 
     # Verify the result
     assert status == expected_status
-
-    if mock_engine:
-        mock_get_engine.assert_called_once()
-    else:
-        mock_get_engine.assert_called_once()
+    mock_get_engine.assert_called_once()
