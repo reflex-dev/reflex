@@ -24,6 +24,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Type,
     Union,
     cast,
@@ -2435,7 +2436,7 @@ def _default_token_expiration() -> int:
     return get_config().redis_token_expiration
 
 
-def state_to_schema(state: BaseState) -> dict[str, Any]:
+def state_to_schema(state: BaseState) -> List[Tuple[str, str, Any, bool]]:
     """Convert a state to a schema.
 
     Args:
