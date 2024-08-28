@@ -2435,6 +2435,18 @@ def _default_token_expiration() -> int:
     return get_config().redis_token_expiration
 
 
+def state_to_schema(state: BaseState) -> dict[str, Any]:
+    """Convert a state to a schema.
+
+    Args:
+        state: The state to convert to a schema.
+
+    Returns:
+        The schema.
+    """
+    return state.dict(include_computed=True, initial=True)
+
+
 class StateManagerDisk(StateManager):
     """A state manager that stores states in memory."""
 
@@ -2527,7 +2539,7 @@ class StateManagerDisk(StateManager):
         if token_path.exists():
             with token_path.open(mode="rb") as file:
                 (substate_schema, substate) = dill.load(file)
-            if substate_schema == substate.schema():
+            if substate_schema == state_to_schema(substate):
                 await self.populate_substates(client_token, substate, root_state)
                 return substate
 
@@ -2583,7 +2595,7 @@ class StateManagerDisk(StateManager):
 
         self.states[substate_token] = substate
 
-        state_dilled = dill.dumps((substate.schema(), substate), byref=True)
+        state_dilled = dill.dumps((state_to_schema(substate), substate), byref=True)
         self.token_path(substate_token).write_bytes(state_dilled)
 
         for substate_substate in substate.substates.values():

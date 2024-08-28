@@ -1891,7 +1891,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     gotten_state = await mock_app.state_manager.get_state(
         _substate_key(grandchild_state.router.session.client_token, grandchild_state)
     )
-    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
+    if isinstance(mock_app.state_manager, StateManagerMemory):
         # For in-process store, only one instance of the state exists
         assert gotten_state is parent_state
     else:
