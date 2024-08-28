@@ -22,11 +22,9 @@ from typing import (
     overload,
 )
 
-from typing_extensions import get_origin
-
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
-from reflex.utils.types import GenericType
+from reflex.utils.types import GenericType, get_origin
 from reflex.vars import (
     ImmutableVarData,
     Var,

@@ -19,11 +19,9 @@ from typing import (
     overload,
 )
 
-from typing_extensions import get_origin
-
 from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError
-from reflex.utils.types import GenericType, get_attribute_access_type
+from reflex.utils.types import GenericType, get_attribute_access_type, get_origin
 from reflex.vars import ImmutableVarData, Var, VarData
 
 from .base import (
