@@ -700,11 +700,11 @@ def download_and_extract_fnm_zip():
     try:
         # Download the FNM zip release.
         # TODO: show progress to improve UX
-        with httpx.stream("GET", url, follow_redirects=True) as response:
-            response.raise_for_status()
-            with open(fnm_zip_file, "wb") as output_file:
-                for chunk in response.iter_bytes():
-                    output_file.write(chunk)
+        response = net.get(url, follow_redirects=True)
+        response.raise_for_status()
+        with open(fnm_zip_file, "wb") as output_file:
+            for chunk in response.iter_bytes():
+                output_file.write(chunk)
 
         # Extract the downloaded zip file.
         with zipfile.ZipFile(fnm_zip_file, "r") as zip_ref:
