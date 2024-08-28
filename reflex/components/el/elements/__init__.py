@@ -65,11 +65,6 @@ _MAPPING = {
         "portal",
         "source",
         "svg",
-        "defs",
-        "lineargradient",
-        "LinearGradient",
-        "stop",
-        "path",
     ],
     "metadata": [
         "base",

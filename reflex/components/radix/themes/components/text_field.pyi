@@ -5,7 +5,7 @@
 # ------------------------------------------------------
 from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el import elements
 from reflex.event import EventHandler, EventSpec
@@ -239,11 +239,6 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         """
         ...
 
-    @classmethod
-    def create_root_deprecated(cls, *children, **props) -> Component: ...
-    @classmethod
-    def create_input_deprecated(cls, *children, **props) -> Component: ...
-
 class TextFieldSlot(RadixThemesComponent):
     @overload
     @classmethod
@@ -377,8 +372,6 @@ class TextFieldSlot(RadixThemesComponent):
         ...
 
 class TextField(ComponentNamespace):
-    root = staticmethod(TextFieldRoot.create_root_deprecated)
-    input = staticmethod(TextFieldRoot.create_input_deprecated)
     slot = staticmethod(TextFieldSlot.create)
 
     @staticmethod

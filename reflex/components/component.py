@@ -45,7 +45,7 @@ from reflex.event import (
 )
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style, format_as_emotion
-from reflex.utils import console, format, imports, types
+from reflex.utils import format, imports, types
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.utils.serializers import serializer
 from reflex.vars import BaseVar, ImmutableVarData, Var, VarData
@@ -742,22 +742,6 @@ class Component(BaseComponent, ABC):
         from reflex.components.base.bare import Bare
         from reflex.components.base.fragment import Fragment
         from reflex.utils.exceptions import ComponentTypeError
-
-        # Translate deprecated props to new names.
-        new_prop_names = [
-            prop for prop in cls.get_props() if prop in ["type", "min", "max"]
-        ]
-        for prop in new_prop_names:
-            under_prop = f"{prop}_"
-            if under_prop in props:
-                console.deprecate(
-                    f"Underscore suffix for prop `{under_prop}`",
-                    reason=f"for consistency. Use `{prop}` instead.",
-                    deprecation_version="0.4.0",
-                    removal_version="0.6.0",
-                    dedupe=False,
-                )
-                props[prop] = props.pop(under_prop)
 
         # Filter out None props
         props = {key: value for key, value in props.items() if value is not None}
