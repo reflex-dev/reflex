@@ -79,6 +79,8 @@ def component2() -> Type[Component]:
         # A test list prop.
         arr: Var[List[str]]
 
+        on_prop_event: EventHandler[lambda e0: [e0]]
+
         def get_event_triggers(self) -> Dict[str, Any]:
             """Test controlled triggers.
 
@@ -496,7 +498,7 @@ def test_get_props(component1, component2):
         component2: A test component.
     """
     assert component1.get_props() == {"text", "number", "text_or_number"}
-    assert component2.get_props() == {"arr"}
+    assert component2.get_props() == {"arr", "on_prop_event"}
 
 
 @pytest.mark.parametrize(
@@ -574,7 +576,7 @@ def test_get_event_triggers(component1, component2):
     assert component1().get_event_triggers().keys() == default_triggers
     assert (
         component2().get_event_triggers().keys()
-        == {"on_open", "on_close"} | default_triggers
+        == {"on_open", "on_close", "on_prop_event"} | default_triggers
     )
 
 
@@ -888,18 +890,105 @@ def test_invalid_event_handler_args(component2, test_state):
         component2: A test component.
         test_state: A test state.
     """
-    # Uncontrolled event handlers should not take args.
-    # This is okay.
-    component2.create(on_click=test_state.do_something)
-    # This is not okay.
+    # EventHandler args must match
     with pytest.raises(ValueError):
         component2.create(on_click=test_state.do_something_arg)
+    with pytest.raises(ValueError):
         component2.create(on_open=test_state.do_something)
+    with pytest.raises(ValueError):
+        component2.create(on_prop_event=test_state.do_something)
+
+    # Multiple EventHandler args: all must match
+    with pytest.raises(ValueError):
+        component2.create(
+            on_click=[test_state.do_something_arg, test_state.do_something]
+        )
+    with pytest.raises(ValueError):
         component2.create(
             on_open=[test_state.do_something_arg, test_state.do_something]
         )
-    # However lambdas are okay.
+    with pytest.raises(ValueError):
+        component2.create(
+            on_prop_event=[test_state.do_something_arg, test_state.do_something]
+        )
+
+    # lambda cannot return weird values.
+    with pytest.raises(ValueError):
+        component2.create(on_click=lambda: 1)
+    with pytest.raises(ValueError):
+        component2.create(on_click=lambda: [1])
+    with pytest.raises(ValueError):
+        component2.create(
+            on_click=lambda: (test_state.do_something_arg(1), test_state.do_something)
+        )
+
+    # lambda signature must match event trigger.
+    with pytest.raises(ValueError):
+        component2.create(on_click=lambda _: test_state.do_something_arg(1))
+    with pytest.raises(ValueError):
+        component2.create(on_open=lambda: test_state.do_something)
+    with pytest.raises(ValueError):
+        component2.create(on_prop_event=lambda: test_state.do_something)
+
+    # lambda returning EventHandler must match spec
+    with pytest.raises(ValueError):
+        component2.create(on_click=lambda: test_state.do_something_arg)
+    with pytest.raises(ValueError):
+        component2.create(on_open=lambda _: test_state.do_something)
+    with pytest.raises(ValueError):
+        component2.create(on_prop_event=lambda _: test_state.do_something)
+
+    # Mixed EventSpec and EventHandler must match spec.
+    with pytest.raises(ValueError):
+        component2.create(
+            on_click=lambda: [
+                test_state.do_something_arg(1),
+                test_state.do_something_arg,
+            ]
+        )
+    with pytest.raises(ValueError):
+        component2.create(
+            on_open=lambda _: [test_state.do_something_arg(1), test_state.do_something]
+        )
+    with pytest.raises(ValueError):
+        component2.create(
+            on_prop_event=lambda _: [
+                test_state.do_something_arg(1),
+                test_state.do_something,
+            ]
+        )
+
+
+def test_valid_event_handler_args(component2, test_state):
+    """Test that an valid event handler args do not raise exception.
+
+    Args:
+        component2: A test component.
+        test_state: A test state.
+    """
+    # Uncontrolled event handlers should not take args.
+    component2.create(on_click=test_state.do_something)
+    component2.create(on_click=test_state.do_something_arg(1))
+
+    # Controlled event handlers should take args.
+    component2.create(on_open=test_state.do_something_arg)
+    component2.create(on_prop_event=test_state.do_something_arg)
+
+    # Using a partial event spec bypasses arg validation (ignoring the args).
+    component2.create(on_open=test_state.do_something())
+    component2.create(on_prop_event=test_state.do_something())
+
+    # lambda returning EventHandler is okay if the spec matches.
+    component2.create(on_click=lambda: test_state.do_something)
+    component2.create(on_open=lambda _: test_state.do_something_arg)
+    component2.create(on_prop_event=lambda _: test_state.do_something_arg)
+
+    # lambda can always return an EventSpec.
     component2.create(on_click=lambda: test_state.do_something_arg(1))
+    component2.create(on_open=lambda _: test_state.do_something_arg(1))
+    component2.create(on_prop_event=lambda _: test_state.do_something_arg(1))
+
+    # Return EventSpec and EventHandler (no arg).
     component2.create(
         on_click=lambda: [test_state.do_something_arg(1), test_state.do_something]
     )
@@ -907,9 +996,24 @@ def test_invalid_event_handler_args(component2, test_state):
         on_click=lambda: [test_state.do_something_arg(1), test_state.do_something()]
     )
 
-    # Controlled event handlers should take args.
-    # This is okay.
-    component2.create(on_open=test_state.do_something_arg)
+    # Return 2 EventSpec.
+    component2.create(
+        on_open=lambda _: [test_state.do_something_arg(1), test_state.do_something()]
+    )
+    component2.create(
+        on_prop_event=lambda _: [
+            test_state.do_something_arg(1),
+            test_state.do_something(),
+        ]
+    )
+
+    # Return EventHandler (1 arg) and EventSpec.
+    component2.create(
+        on_open=lambda _: [test_state.do_something_arg, test_state.do_something()]
+    )
+    component2.create(
+        on_prop_event=lambda _: [test_state.do_something_arg, test_state.do_something()]
+    )
 
 
 def test_get_hooks_nested(component1, component2, component3):
