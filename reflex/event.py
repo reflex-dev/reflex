@@ -22,7 +22,7 @@ from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.ivars.function import FunctionStringVar, FunctionVar
 from reflex.ivars.object import ObjectVar
 from reflex.utils import format
-from reflex.utils.exceptions import EventHandlerArgMismatch
+from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.types import ArgsSpec
 from reflex.vars import ImmutableVarData, Var
 
@@ -878,58 +878,58 @@ def parse_args_spec(arg_spec: ArgsSpec):
     )
 
 
-def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec] | Var:
+def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
     """Call a function to a list of event specs.
 
     The function should return a single EventSpec, a list of EventSpecs, or a
-    single Var. If the function takes in an arg, the arg will be passed to the
-    function. Otherwise, the function will be called with no args.
+    single Var. The function signature must match the passed arg_spec or
+    EventFnArgsMismatch will be raised.
 
     Args:
         fn: The function to call.
-        arg: The argument to pass to the function.
+        arg_spec: The argument spec for the event trigger.
 
     Returns:
         The event specs from calling the function or a Var.
 
     Raises:
-        EventHandlerValueError: If the lambda has an invalid signature.
+        EventFnArgMismatch: If the function signature doesn't match the arg spec.
+        EventHandlerValueError: If the lambda returns an unusable value.
     """
     # Import here to avoid circular imports.
     from reflex.event import EventHandler, EventSpec
     from reflex.utils.exceptions import EventHandlerValueError
 
-    # Get the args of the lambda.
-    args = inspect.getfullargspec(fn).args
+    # Check that fn signature matches arg_spec
+    fn_args = inspect.getfullargspec(fn).args
+    n_fn_args = len(fn_args)
+    parsed_args = parse_args_spec(arg_spec)
+    if len(parsed_args) != n_fn_args:
+        raise EventFnArgMismatch(
+            "The number of arguments accepted by "
+            f"{fn} ({n_fn_args}) "
+            "does not match the arguments passed by the event trigger: "
+            f"{[str(v) for v in parsed_args]}\n"
+            "See https://reflex.dev/docs/events/event-arguments/"
+        )
 
-    if isinstance(arg, ArgsSpec):
-        out = fn(*parse_args_spec(arg))  # type: ignore
-    else:
-        # Call the lambda.
-        if len(args) == 0:
-            out = fn()
-        elif len(args) == 1:
-            out = fn(arg)
-        else:
-            raise EventHandlerValueError(f"Lambda {fn} must have 0 or 1 arguments.")
+    # Call the function with the parsed args.
+    out = fn(*parsed_args)
 
     # If the function returns a Var, assume it's an EventChain and render it directly.
     if isinstance(out, Var):
         return out
 
     # Convert the output to a list.
-    if not isinstance(out, List):
+    if not isinstance(out, list):
         out = [out]
 
     # Convert any event specs to event specs.
     events = []
     for e in out:
-        # Convert handlers to event specs.
         if isinstance(e, EventHandler):
-            if len(args) == 0:
-                e = e()
-            elif len(args) == 1:
-                e = e(arg)  # type: ignore
+            # An un-called EventHandler gets all of the args of the event trigger.
+            e = call_event_handler(e, arg_spec)
 
         # Make sure the event spec is valid.
         if not isinstance(e, EventSpec):

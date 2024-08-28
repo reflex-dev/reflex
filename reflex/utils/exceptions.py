@@ -83,3 +83,7 @@ class MatchTypeError(ReflexError, TypeError):
 
 class EventHandlerArgMismatch(ReflexError, TypeError):
     """Raised when the number of args accepted by an EventHandler is differs from that provided by the event trigger."""
+
+
+class EventFnArgMismatch(ReflexError, TypeError):
+    """Raised when the number of args accepted by a lambda differs from that provided by the event trigger."""
