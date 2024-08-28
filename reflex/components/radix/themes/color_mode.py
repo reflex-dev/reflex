@@ -32,7 +32,6 @@ from reflex.style import (
     set_color_mode,
     toggle_color_mode,
 )
-from reflex.utils import console
 from reflex.vars import Var
 
 from .components.icon_button import IconButton
@@ -100,7 +99,6 @@ class ColorModeIconButton(IconButton):
     @classmethod
     def create(
         cls,
-        *children,
         position: LiteralPosition | None = None,
         allow_system: bool = False,
         **props,
@@ -108,7 +106,6 @@ class ColorModeIconButton(IconButton):
         """Create a icon button component that calls toggle_color_mode on click.
 
         Args:
-            *children: The children of the component.
             position: The position of the icon button. Follow document flow if None.
             allow_system: Allow picking the "system" value for the color mode.
             **props: The props to pass to the component.
@@ -116,14 +113,6 @@ class ColorModeIconButton(IconButton):
         Returns:
             The button component.
         """
-        if children:
-            console.deprecate(
-                feature_name="passing children to color_mode.button",
-                reason=", use color_mode_cond and toggle_color_mode instead to build a custom color_mode component",
-                deprecation_version="0.5.0",
-                removal_version="0.6.0",
-            )
-
         # position is used to set nice defaults for positioning the icon button
         if isinstance(position, Var):
             _set_var_default(props, position, "position", "fixed", position)

@@ -11,7 +11,6 @@ from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
 from reflex.ivars.base import ImmutableVar
 from reflex.state import ComponentState
-from reflex.utils import console
 from reflex.vars import Var
 
 
@@ -39,14 +38,12 @@ class Foreach(Component):
         cls,
         iterable: Var[Iterable] | Iterable,
         render_fn: Callable,
-        **props,
     ) -> Foreach:
         """Create a foreach component.
 
         Args:
             iterable: The iterable to create components from.
             render_fn: A function from the render args to the component.
-            **props: The attributes to pass to each child component (deprecated).
 
         Returns:
             The foreach component.
@@ -55,13 +52,6 @@ class Foreach(Component):
             ForeachVarError: If the iterable is of type Any.
             TypeError: If the render function is a ComponentState.
         """
-        if props:
-            console.deprecate(
-                feature_name="Passing props to rx.foreach",
-                reason="it does not have the intended effect and may be confusing",
-                deprecation_version="0.5.0",
-                removal_version="0.6.0",
-            )
         iterable = ImmutableVar.create_safe(iterable)
         if iterable._var_type == Any:
             raise ForeachVarError(

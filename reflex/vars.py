@@ -6,7 +6,6 @@ import contextlib
 import dataclasses
 import datetime
 import dis
-import functools
 import inspect
 import json
 import random
@@ -2535,7 +2534,6 @@ def computed_var(
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
-    _deprecated_cached_var: bool = False,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
     """A ComputedVar decorator with or without kwargs.
@@ -2558,14 +2556,6 @@ def computed_var(
         ValueError: If caching is disabled and an update interval is set.
         VarDependencyError: If user supplies dependencies without caching.
     """
-    if _deprecated_cached_var:
-        console.deprecate(
-            feature_name="cached_var",
-            reason=("Use @rx.var(cache=True) instead of @rx.cached_var."),
-            deprecation_version="0.5.6",
-            removal_version="0.6.0",
-        )
-
     if cache is False and interval is not None:
         raise ValueError("Cannot set update interval without caching.")
 
@@ -2588,10 +2578,6 @@ def computed_var(
         )
 
     return wrapper
-
-
-# Partial function of computed_var with cache=True
-cached_var = functools.partial(computed_var, cache=True, _deprecated_cached_var=True)
 
 
 class CallableVar(BaseVar):
