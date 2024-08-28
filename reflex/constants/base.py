@@ -45,6 +45,8 @@ class Dirs(SimpleNamespace):
     REFLEX_JSON = "reflex.json"
     # The name of the postcss config file.
     POSTCSS_JS = "postcss.config.js"
+    # The reflex-ai directory.
+    AI_SCRATCH = "**/reflex_ai_tmp/**/*.py"
 
 
 class Reflex(SimpleNamespace):

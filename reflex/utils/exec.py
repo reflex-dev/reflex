@@ -215,7 +215,7 @@ def run_backend(
         log_level=loglevel.value,
         reload=True,
         reload_dirs=[config.app_name],
-        reload_excludes=[str(web_dir)],
+        reload_excludes=[str(web_dir), constants.base.Dirs.AI_SCRATCH],
     )
 
 
