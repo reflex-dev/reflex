@@ -1,9 +1,11 @@
+import json
 from unittest.mock import MagicMock, Mock
 
 import pytest
 import sqlalchemy
 from redis.exceptions import RedisError
 
+from reflex.app import health
 from reflex.model import get_db_status
 from reflex.utils.prerequisites import get_redis_status
 
@@ -66,3 +68,37 @@ def test_get_db_status(mock_engine, execute_side_effect, expected_status, mocker
     # Verify the result
     assert status == expected_status
     mock_get_engine.assert_called_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "db_status, redis_status, expected_status, expected_code",
+    [
+        # Case 1: Both services are connected
+        (True, True, {"status": True, "db": True, "redis": True}, 200),
+        # Case 2: Database not connected, Redis connected
+        (False, True, {"status": False, "db": False, "redis": True}, 503),
+        # Case 3: Database connected, Redis not connected
+        (True, False, {"status": False, "db": True, "redis": False}, 503),
+        # Case 4: Both services not connected
+        (False, False, {"status": False, "db": False, "redis": False}, 503),
+        # Case 5: Database Connected, Redis not used
+        (True, None, {"status": True, "db": True, "redis": False}, 200),
+    ],
+)
+async def test_health(db_status, redis_status, expected_status, expected_code, mocker):
+    # Mock get_db_status and get_redis_status
+    mocker.patch("reflex.app.get_db_status", return_value=db_status)
+    mocker.patch(
+        "reflex.utils.prerequisites.get_redis_status", return_value=redis_status
+    )
+
+    # Call the async health function
+    response = await health()
+
+    print(json.loads(response.body))
+    print(expected_status)
+
+    # Verify the response content and status code
+    assert response.status_code == expected_code
+    assert json.loads(response.body) == expected_status

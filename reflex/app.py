@@ -1332,11 +1332,16 @@ async def health():
     health_status = {"status": True}
     status_code = 200
     health_status["db"] = get_db_status()
+
     redis_status = prerequisites.get_redis_status()
-    if redis_status is not None:
+    if redis_status is None:
+        health_status["redis"] = False
+    else:
         health_status["redis"] = redis_status
 
-    if not health_status["db"] or not health_status["redis"]:
+    if not health_status["db"] or (
+        not health_status["redis"] and redis_status is not None
+    ):
         health_status["status"] = False
         status_code = 503
 

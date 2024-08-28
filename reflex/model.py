@@ -51,13 +51,13 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     return sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)
 
 
-def get_db_status():
+def get_db_status() -> bool:
     """Checks the status of the database connection.
 
     Attempts to connect to the database and execute a simple query to verify connectivity.
 
     Returns:
-        bool or str: The status of the database connection:
+        bool: The status of the database connection:
             - True: The database is accessible.
             - False: The database is not accessible.
     """
