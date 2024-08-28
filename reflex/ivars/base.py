@@ -384,10 +384,18 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             return self.to(BooleanVar, output)
 
         if issubclass(output, NumberVar):
-            if fixed_type is not None and not issubclass(fixed_type, (int, float)):
-                raise TypeError(
-                    f"Unsupported type {var_type} for NumberVar. Must be int or float."
-                )
+            if fixed_type is not None:
+                if fixed_type is Union:
+                    inner_types = get_args(base_type)
+                    if not all(issubclass(t, (int, float)) for t in inner_types):
+                        raise TypeError(
+                            f"Unsupported type {var_type} for NumberVar. Must be int or float."
+                        )
+
+                elif not issubclass(fixed_type, (int, float)):
+                    raise TypeError(
+                        f"Unsupported type {var_type} for NumberVar. Must be int or float."
+                    )
             return ToNumberVarOperation.create(self, var_type or float)
 
         if issubclass(output, BooleanVar):
@@ -454,6 +462,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         fixed_type = get_origin(var_type) or var_type
 
         if fixed_type is Union:
+            inner_types = get_args(var_type)
+            if int in inner_types and float in inner_types:
+                return self.to(NumberVar, self._var_type)
             return self
 
         if not inspect.isclass(fixed_type):
@@ -570,9 +581,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             BooleanVar: A BooleanVar object representing the result of the equality check.
         """
-        from .number import EqualOperation
+        from .number import equal_operation
 
-        return EqualOperation.create(self, other)
+        return equal_operation(self, other)
 
     def __ne__(self, other: Var | Any) -> BooleanVar:
         """Check if the current object is not equal to the given object.
@@ -583,9 +594,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             BooleanVar: A BooleanVar object representing the result of the comparison.
         """
-        from .number import EqualOperation
+        from .number import equal_operation
 
-        return ~EqualOperation.create(self, other)
+        return ~equal_operation(self, other)
 
     def __gt__(self, other: Var | Any) -> BooleanVar:
         """Compare the current instance with another variable and return a BooleanVar representing the result of the greater than operation.
@@ -596,9 +607,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             BooleanVar: A BooleanVar representing the result of the greater than operation.
         """
-        from .number import GreaterThanOperation
+        from .number import greater_than_operation
 
-        return GreaterThanOperation.create(self, other)
+        return greater_than_operation(self, other)
 
     def __ge__(self, other: Var | Any) -> BooleanVar:
         """Check if the value of this variable is greater than or equal to the value of another variable or object.
@@ -609,9 +620,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             BooleanVar: A BooleanVar object representing the result of the comparison.
         """
-        from .number import GreaterThanOrEqualOperation
+        from .number import greater_than_or_equal_operation
 
-        return GreaterThanOrEqualOperation.create(self, other)
+        return greater_than_or_equal_operation(self, other)
 
     def __lt__(self, other: Var | Any) -> BooleanVar:
         """Compare the current instance with another variable using the less than (<) operator.
@@ -622,9 +633,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the comparison.
         """
-        from .number import LessThanOperation
+        from .number import less_than_operation
 
-        return LessThanOperation.create(self, other)
+        return less_than_operation(self, other)
 
     def __le__(self, other: Var | Any) -> BooleanVar:
         """Compare if the current instance is less than or equal to the given value.
@@ -635,9 +646,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A BooleanVar object representing the result of the comparison.
         """
-        from .number import LessThanOrEqualOperation
+        from .number import less_than_or_equal_operation
 
-        return LessThanOrEqualOperation.create(self, other)
+        return less_than_or_equal_operation(self, other)
 
     def bool(self) -> BooleanVar:
         """Convert the var to a boolean.
@@ -658,7 +669,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical AND operation.
         """
-        return AndOperation.create(self, other)
+        return and_operation(self, other)
 
     def __rand__(self, other: Var | Any) -> ImmutableVar:
         """Perform a logical AND operation on the current instance and another variable.
@@ -669,7 +680,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical AND operation.
         """
-        return AndOperation.create(other, self)
+        return and_operation(other, self)
 
     def __or__(self, other: Var | Any) -> ImmutableVar:
         """Perform a logical OR operation on the current instance and another variable.
@@ -680,7 +691,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical OR operation.
         """
-        return OrOperation.create(self, other)
+        return or_operation(self, other)
 
     def __ror__(self, other: Var | Any) -> ImmutableVar:
         """Perform a logical OR operation on the current instance and another variable.
@@ -691,7 +702,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical OR operation.
         """
-        return OrOperation.create(other, self)
+        return or_operation(other, self)
 
     def __invert__(self) -> BooleanVar:
         """Perform a logical NOT operation on the current instance.
@@ -699,9 +710,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical NOT operation.
         """
-        from .number import BooleanNotOperation
-
-        return BooleanNotOperation.create(self.bool())
+        return ~self.bool()
 
     def to_string(self) -> ImmutableVar:
         """Convert the var to a string.
@@ -957,7 +966,7 @@ def var_operation(
 ) -> Callable[P, StringVar]: ...
 
 
-LIST_T = TypeVar("LIST_T", bound=Union[List, Tuple, Set])
+LIST_T = TypeVar("LIST_T", bound=Union[List[Any], Tuple, Set])
 
 
 @overload
@@ -1140,114 +1149,64 @@ class CachedVarOperation:
         )
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class AndOperation(CachedVarOperation, ImmutableVar):
-    """Class for the logical AND operation."""
+def and_operation(a: Var | Any, b: Var | Any) -> ImmutableVar:
+    """Perform a logical AND operation on two variables.
 
-    # The first var.
-    _var1: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+    Args:
+        a: The first variable.
+        b: The second variable.
 
-    # The second var.
-    _var2: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """Get the cached var name.
-
-        Returns:
-            The cached var name.
-        """
-        return f"({str(self._var1)} && {str(self._var2)})"
-
-    def __hash__(self) -> int:
-        """Calculates the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._var1, self._var2))
-
-    @classmethod
-    def create(
-        cls, var1: Var | Any, var2: Var | Any, _var_data: VarData | None = None
-    ) -> AndOperation:
-        """Create an AndOperation.
-
-        Args:
-            var1: The first var.
-            var2: The second var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The AndOperation.
-        """
-        var1, var2 = map(LiteralVar.create, (var1, var2))
-        return AndOperation(
-            _var_name="",
-            _var_type=unionize(var1._var_type, var2._var_type),
-            _var_data=ImmutableVarData.merge(_var_data),
-            _var1=var1,
-            _var2=var2,
-        )
+    Returns:
+        The result of the logical AND operation.
+    """
+    return _and_operation(a, b)  # type: ignore
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class OrOperation(CachedVarOperation, ImmutableVar):
-    """Class for the logical OR operation."""
+@var_operation
+def _and_operation(a: ImmutableVar, b: ImmutableVar):
+    """Perform a logical AND operation on two variables.
 
-    # The first var.
-    _var1: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+    Args:
+        a: The first variable.
+        b: The second variable.
 
-    # The second var.
-    _var2: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+    Returns:
+        The result of the logical AND operation.
+    """
+    return var_operation_return(
+        js_expression=f"({a} && {b})",
+        var_type=unionize(a._var_type, b._var_type),
+    )
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """Get the cached var name.
 
-        Returns:
-            The cached var name.
-        """
-        return f"({str(self._var1)} || {str(self._var2)})"
+def or_operation(a: Var | Any, b: Var | Any) -> ImmutableVar:
+    """Perform a logical OR operation on two variables.
 
-    def __hash__(self) -> int:
-        """Calculates the hash value for the object.
+    Args:
+        a: The first variable.
+        b: The second variable.
 
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._var1, self._var2))
+    Returns:
+        The result of the logical OR operation.
+    """
+    return _or_operation(a, b)  # type: ignore
 
-    @classmethod
-    def create(
-        cls, var1: Var | Any, var2: Var | Any, _var_data: VarData | None = None
-    ) -> OrOperation:
-        """Create an OrOperation.
 
-        Args:
-            var1: The first var.
-            var2: The second var.
-            _var_data: Additional hooks and imports associated with the Var.
+@var_operation
+def _or_operation(a: ImmutableVar, b: ImmutableVar):
+    """Perform a logical OR operation on two variables.
 
-        Returns:
-            The OrOperation.
-        """
-        var1, var2 = map(LiteralVar.create, (var1, var2))
-        return OrOperation(
-            _var_name="",
-            _var_type=unionize(var1._var_type, var2._var_type),
-            _var_data=ImmutableVarData.merge(_var_data),
-            _var1=var1,
-            _var2=var2,
-        )
+    Args:
+        a: The first variable.
+        b: The second variable.
+
+    Returns:
+        The result of the logical OR operation.
+    """
+    return var_operation_return(
+        js_expression=f"({a} || {b})",
+        var_type=unionize(a._var_type, b._var_type),
+    )
 
 
 @dataclasses.dataclass(

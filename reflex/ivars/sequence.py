@@ -48,7 +48,6 @@ from .base import (
 from .number import (
     BooleanVar,
     LiteralNumberVar,
-    NotEqualOperation,
     NumberVar,
 )
 
@@ -148,13 +147,13 @@ class StringVar(ImmutableVar[str]):
         """
         return string_strip_operation(self)
 
-    def bool(self) -> NotEqualOperation:
+    def bool(self):
         """Boolean conversion.
 
         Returns:
             The boolean value of the string.
         """
-        return NotEqualOperation.create(self.length(), 0)
+        return self.length() != 0
 
     def reversed(self) -> StringVar:
         """Reverse the string.
