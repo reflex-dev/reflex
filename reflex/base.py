@@ -59,45 +59,12 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 pydantic_main.validate_field_name = validate_field_name  # type: ignore
 
 
-class SlimBaseMixin(BaseModel):
+class UsedSerialization:
     """A mixin to slim down the BaseModel class.
-    Only used fields will be included in the dict.
+    Only used fields will be included in the dict for serialization.
     """
 
-    @override
-    def dict(
-        self,
-        *,
-        include: Optional[Union[AbstractSetIntStr, MappingIntStrAny]] = None,
-        exclude: Optional[Union[AbstractSetIntStr, MappingIntStrAny]] = None,
-        by_alias: bool = False,
-        skip_defaults: Optional[bool] = None,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-    ) -> dict[str, Any]:
-        """Convert the object to a dict.
-
-        Args:
-            include: The fields to include.
-            exclude: The fields to exclude.
-            by_alias: Whether to use the alias names.
-            skip_defaults: Whether to skip default values.
-            exclude_unset: Whether to exclude unset values.
-            exclude_defaults: Whether to exclude default values.
-            exclude_none: Whether to exclude None values.
-        """
-        if not include and hasattr(self.__class__, "__used_fields__"):
-            include = self.__class__.__used_fields__
-        return super().dict(
-            include=include,
-            exclude=exclude,
-            by_alias=by_alias,
-            skip_defaults=skip_defaults,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-        )
+    __used_fields__: set[str] = set()
 
 
 class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
@@ -194,4 +161,45 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
             exclude_unset=False,
             exclude_defaults=False,
             exclude_none=False,
+        )
+
+
+class SlimBase(Base, UsedSerialization):
+    """A slimmed down version of the Base class.
+    Only used fields will be included in the dict for serialization.
+    """
+
+    @override
+    def dict(
+        self,
+        *,
+        include: Optional[Union[AbstractSetIntStr, MappingIntStrAny]] = None,
+        exclude: Optional[Union[AbstractSetIntStr, MappingIntStrAny]] = None,
+        by_alias: bool = False,
+        skip_defaults: Optional[bool] = None,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+    ) -> dict[str, Any]:
+        """Convert the object to a dict.
+
+        Args:
+            include: The fields to include.
+            exclude: The fields to exclude.
+            by_alias: Whether to use the alias names.
+            skip_defaults: Whether to skip default values.
+            exclude_unset: Whether to exclude unset values.
+            exclude_defaults: Whether to exclude default values.
+            exclude_none: Whether to exclude None values.
+        """
+        if not include and isinstance(self, UsedSerialization):
+            include = self.__class__.__used_fields__
+        return super().dict(
+            include=include,
+            exclude=exclude,
+            by_alias=by_alias,
+            skip_defaults=skip_defaults,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
         )
