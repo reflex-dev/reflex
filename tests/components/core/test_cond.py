@@ -141,8 +141,7 @@ def test_cond_computed_var():
 
     state_name = format_state_name(CondStateComputed.get_full_name())
     assert (
-        str(comp)
-        == f"(true ? {state_name}.computed_int : {state_name}.computed_str)"
+        str(comp) == f"(true ? {state_name}.computed_int : {state_name}.computed_str)"
     )
 
     assert comp._var_type == Union[int, str]
