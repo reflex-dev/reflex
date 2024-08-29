@@ -419,6 +419,9 @@ class HighLevelRadioGroup(RadixThemesComponent):
 
         Returns:
             The created radio group component.
+
+        Raises:
+            TypeError: If the type of items is invalid.
         """
         ...
 
@@ -588,6 +591,9 @@ class RadioGroup(ComponentNamespace):
 
         Returns:
             The created radio group component.
+
+        Raises:
+            TypeError: If the type of items is invalid.
         """
         ...
 
