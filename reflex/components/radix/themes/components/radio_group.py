@@ -135,7 +135,8 @@ class HighLevelRadioGroup(RadixThemesComponent):
         Returns:
             The created radio group component.
 
-        TypeError: If the type of items is invalid.
+        Raises:
+            TypeError: If the type of items is invalid.
         """
         direction = props.pop("direction", "column")
         spacing = props.pop("spacing", "2")
