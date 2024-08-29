@@ -1320,7 +1320,7 @@ async def ping() -> str:
     return "pong"
 
 
-async def health():
+async def health() -> JSONResponse:
     """Health check endpoint to assess the status of the database and Redis services.
 
     Returns:
@@ -1564,12 +1564,3 @@ class EventNamespace(AsyncNamespace):
         """
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
-
-    async def on_health(self, sid):
-        """Event for testing the Health of Reflex instance.
-
-        Args:
-            sid: The Socket.IO session id.
-        """
-        # Emit the test event.
-        await self.emit(str(constants.SocketEvent.HEALTH), "ok", to=sid)

@@ -351,9 +351,10 @@ def get_redis_status() -> bool | None:
     Attempts to connect to Redis and send a ping command to verify connectivity.
 
     Returns:
-        int or bool or str: The status of the Redis connection:
+        bool or None: The status of the Redis connection:
             - True: Redis is accessible and responding.
             - False: Redis is not accessible due to a connection error.
+            - None: Redis not used i.e redis_url is not set in rxconfig.
     """
     try:
         status = True
