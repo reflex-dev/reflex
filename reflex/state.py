@@ -2560,7 +2560,7 @@ class StateManagerDisk(StateManager):
 
         token_path = self.token_path(token)
 
-        if token_path.exists():
+        if token_path.exists() and token_path.stat().st_size != 0:
             with token_path.open(mode="rb") as file:
                 (substate_schema, substate) = dill.load(file)
             if substate_schema == state_to_schema(substate):
