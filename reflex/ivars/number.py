@@ -950,7 +950,7 @@ class ToBooleanVarOperation(CachedVarOperation, BooleanVar):
         Returns:
             The name of the var.
         """
-        return f"Boolean({str(self._original_value)})"
+        return str(self._original_value)
 
     @classmethod
     def create(
@@ -973,6 +973,22 @@ class ToBooleanVarOperation(CachedVarOperation, BooleanVar):
             _var_data=ImmutableVarData.merge(_var_data),
             _original_value=value,
         )
+
+
+@var_operation
+def boolify(value: Var):
+    """Convert the value to a boolean.
+
+    Args:
+        value: The value.
+
+    Returns:
+        The boolean value.
+    """
+    return var_operation_return(
+        js_expression=f"Boolean({value})",
+        var_type=bool,
+    )
 
 
 @var_operation

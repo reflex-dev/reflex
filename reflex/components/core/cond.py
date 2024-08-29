@@ -164,7 +164,7 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
 
     # Create the conditional var.
     return ternary_operation(
-        cond_var.to(bool)._replace(
+        cond_var.bool()._replace(
             merge_var_data=VarData(imports=_IS_TRUE_IMPORT),
         ),  # type: ignore
         c1,

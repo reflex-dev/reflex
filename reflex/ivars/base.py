@@ -448,7 +448,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Raises:
             TypeError: If the type is not supported for guessing.
         """
-        from .number import NumberVar
+        from .number import BooleanVar, NumberVar
         from .object import ObjectVar
         from .sequence import ArrayVar, StringVar
 
@@ -470,6 +470,8 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         if not inspect.isclass(fixed_type):
             raise TypeError(f"Unsupported type {var_type} for guess_type.")
 
+        if issubclass(fixed_type, bool):
+            return self.to(BooleanVar, self._var_type)
         if issubclass(fixed_type, (int, float)):
             return self.to(NumberVar, self._var_type)
         if issubclass(fixed_type, dict):
@@ -656,9 +658,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             The boolean var.
         """
-        from .number import ToBooleanVarOperation
+        from .number import boolify
 
-        return ToBooleanVarOperation.create(self)
+        return boolify(self)
 
     def __and__(self, other: Var | Any) -> ImmutableVar:
         """Perform a logical AND operation on the current instance and another variable.
