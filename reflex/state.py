@@ -2623,6 +2623,8 @@ class StateManagerDisk(StateManager):
         self.states[substate_token] = substate
 
         state_dilled = dill.dumps((state_to_schema(substate), substate), byref=True)
+        if not self.states_directory.exists():
+            self.states_directory.mkdir(parents=True, exist_ok=True)
         self.token_path(substate_token).write_bytes(state_dilled)
 
         for substate_substate in substate.substates.values():
