@@ -29,7 +29,6 @@ from typing import (
     _GenericAlias,  # type: ignore
     cast,
     get_args,
-    get_origin,
     get_type_hints,
 )
 
@@ -51,7 +50,7 @@ from reflex.utils.imports import (
     ParsedImportDict,
     parse_imports,
 )
-from reflex.utils.types import Self, override
+from reflex.utils.types import Self, get_origin, override
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -182,15 +181,14 @@ class VarData(Base):
                 var_data.interpolations if isinstance(var_data, VarData) else []
             )
 
-        return (
-            cls(
+        if state or _imports or hooks or interpolations:
+            return cls(
                 state=state,
                 imports=_imports,
                 hooks=hooks,
                 interpolations=interpolations,
             )
-            or None
-        )
+        return None
 
     def __bool__(self) -> bool:
         """Check if the var data is non-empty.
@@ -302,14 +300,13 @@ class ImmutableVarData:
                 else {k: None for k in var_data.hooks}
             )
 
-        return (
-            ImmutableVarData(
+        if state or _imports or hooks:
+            return ImmutableVarData(
                 state=state,
                 imports=_imports,
                 hooks=hooks,
             )
-            or None
-        )
+        return None
 
     def __bool__(self) -> bool:
         """Check if the var data is non-empty.
@@ -344,6 +341,33 @@ class ImmutableVarData:
             and imports.collapse_imports(self.imports)
             == imports.collapse_imports(other.imports)
         )
+
+    @classmethod
+    def from_state(cls, state: Type[BaseState] | str) -> ImmutableVarData:
+        """Set the state of the var.
+
+        Args:
+            state: The state to set or the full name of the state.
+
+        Returns:
+            The var with the set state.
+        """
+        from reflex.utils import format
+
+        state_name = state if isinstance(state, str) else state.get_full_name()
+        new_var_data = ImmutableVarData(
+            state=state_name,
+            hooks={
+                "const {0} = useContext(StateContexts.{0})".format(
+                    format.format_state_name(state_name)
+                ): None
+            },
+            imports={
+                f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
+                "react": [ImportVar(tag="useContext")],
+            },
+        )
+        return new_var_data
 
 
 def _decode_var_immutable(value: str) -> tuple[ImmutableVarData | None, str]:
@@ -384,7 +408,7 @@ def _decode_var_immutable(value: str) -> tuple[ImmutableVarData | None, str]:
             ):
                 # This is a global immutable var.
                 var = _global_vars[int(serialized_data)]
-                var_data = var._var_data
+                var_data = var._get_all_var_data()
 
                 if var_data is not None:
                     realstart = start + offset
@@ -727,7 +751,10 @@ class Var:
         try:
             return json.loads(self._var_name)
         except ValueError:
-            return self._var_name
+            try:
+                return json.loads(self.json())
+            except (ValueError, NotImplementedError):
+                return self._var_name
 
     def equals(self, other: Var) -> bool:
         """Check if two vars are equal.
@@ -738,6 +765,16 @@ class Var:
         Returns:
             Whether the vars are equal.
         """
+        from reflex.ivars import ImmutableVar
+
+        if isinstance(other, ImmutableVar) or isinstance(self, ImmutableVar):
+            return (
+                self._var_name == other._var_name
+                and self._var_type == other._var_type
+                and ImmutableVarData.merge(self._get_all_var_data())
+                == ImmutableVarData.merge(other._get_all_var_data())
+            )
+
         return (
             self._var_name == other._var_name
             and self._var_type == other._var_type
@@ -800,11 +837,19 @@ class Var:
         """
         from reflex.utils import format
 
-        out = (
-            self._var_full_name
-            if self._var_is_local
-            else format.wrap(self._var_full_name, "{")
-        )
+        if self._var_is_local:
+            console.deprecate(
+                feature_name="Local Vars",
+                reason=(
+                    "Setting _var_is_local to True does not have any effect anymore. "
+                    "Use the new ImmutableVar instead."
+                ),
+                deprecation_version="0.5.9",
+                removal_version="0.6.0",
+            )
+            out = self._var_full_name
+        else:
+            out = format.wrap(self._var_full_name, "{")
         if self._var_is_string:
             out = format.format_string(out)
         return out
@@ -1009,7 +1054,6 @@ class Var:
                 return self._replace(
                     _var_name=f"{self._var_name}{'?' if is_optional else ''}.{name}",
                     _var_type=type_,
-                    _var_is_string=False,
                 )
 
             if name in REPLACED_NAMES:

@@ -6,7 +6,7 @@ import contextlib
 import inspect
 import sys
 import types
-from functools import cached_property, wraps
+from functools import cached_property, lru_cache, wraps
 from typing import (
     Any,
     Callable,
@@ -21,8 +21,10 @@ from typing import (
     Union,
     _GenericAlias,  # type: ignore
     get_args,
-    get_origin,
     get_type_hints,
+)
+from typing import (
+    get_origin as get_origin_og,
 )
 
 import sqlalchemy
@@ -138,6 +140,20 @@ class Unset:
         return False
 
 
+@lru_cache()
+def get_origin(tp):
+    """Get the origin of a class.
+
+    Args:
+        tp: The class to get the origin of.
+
+    Returns:
+        The origin of the class.
+    """
+    return get_origin_og(tp)
+
+
+@lru_cache()
 def is_generic_alias(cls: GenericType) -> bool:
     """Check whether the class is a generic alias.
 
@@ -162,6 +178,7 @@ def is_none(cls: GenericType) -> bool:
     return cls is type(None) or cls is None
 
 
+@lru_cache()
 def is_union(cls: GenericType) -> bool:
     """Check if a class is a Union.
 
@@ -174,6 +191,7 @@ def is_union(cls: GenericType) -> bool:
     return get_origin(cls) in UnionTypes
 
 
+@lru_cache()
 def is_literal(cls: GenericType) -> bool:
     """Check if a class is a Literal.
 
@@ -319,6 +337,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     return None  # Attribute is not accessible.
 
 
+@lru_cache()
 def get_base_class(cls: GenericType) -> Type:
     """Get the base class of a class.
 
@@ -496,10 +515,18 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
             return False
         if callable(value):
             return False
+        from reflex.ivars.base import ImmutableComputedVar
         from reflex.vars import ComputedVar
 
         if isinstance(
-            value, (types.FunctionType, property, cached_property, ComputedVar)
+            value,
+            (
+                types.FunctionType,
+                property,
+                cached_property,
+                ComputedVar,
+                ImmutableComputedVar,
+            ),
         ):
             return False
 
