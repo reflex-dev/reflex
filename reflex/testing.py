@@ -292,6 +292,8 @@ class AppHarness:
         if isinstance(self.app_instance._state_manager, StateManagerRedis):
             # Create our own redis connection for testing.
             self.state_manager = StateManagerRedis.create(self.app_instance.state)
+        elif isinstance(self.app_instance._state_manager, StateManagerDisk):
+            self.state_manager = StateManagerDisk.create(self.app_instance.state)
         else:
             self.state_manager = self.app_instance._state_manager
 
