@@ -48,7 +48,6 @@ class SocketEvent(SimpleNamespace):
 
     PING = "ping"
     EVENT = "event"
-    HEALTH = "health"
 
     def __str__(self) -> str:
         """Get the string representation of the event name.
