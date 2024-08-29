@@ -1,5 +1,7 @@
 """General utility functions."""
 
+from __future__ import annotations
+
 import contextlib
 import os
 import shutil
@@ -81,7 +83,7 @@ class AssetFolderHandler(FileSystemEventHandler):
         if os.path.exists(dest_path):
             shutil.rmtree(dest_path)
 
-    def get_dest_path(self, src_path: str) -> str:
+    def get_dest_path(self, src_path: str | bytes) -> str:
         """Get public file path.
 
         Args:
@@ -90,6 +92,10 @@ class AssetFolderHandler(FileSystemEventHandler):
         Returns:
             The public file path.
         """
+        if isinstance(src_path, (bytes, bytearray)):
+            src_path = src_path.decode()
+        elif isinstance(src_path, memoryview):
+            src_path = src_path.tobytes().decode()
         return src_path.replace(
             str(self.root / Dirs.APP_ASSETS),
             str(self.root / get_web_dir() / Dirs.PUBLIC),
