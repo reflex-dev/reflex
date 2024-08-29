@@ -345,7 +345,7 @@ def parse_redis_url() -> str | dict | None:
     return dict(host=redis_url, port=int(redis_port), db=0)
 
 
-def get_redis_status() -> bool | None:
+async def get_redis_status() -> bool | None:
     """Checks the status of the Redis connection.
 
     Attempts to connect to Redis and send a ping command to verify connectivity.

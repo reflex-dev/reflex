@@ -10,6 +10,7 @@ from reflex.model import get_db_status
 from reflex.utils.prerequisites import get_redis_status
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "mock_redis_client, expected_status",
     [
@@ -21,20 +22,21 @@ from reflex.utils.prerequisites import get_redis_status
         (None, None),
     ],
 )
-def test_get_redis_status(mock_redis_client, expected_status, mocker):
+async def test_get_redis_status(mock_redis_client, expected_status, mocker):
     # Mock the `get_redis_sync` function to return the mock Redis client
     mock_get_redis_sync = mocker.patch(
         "reflex.utils.prerequisites.get_redis_sync", return_value=mock_redis_client
     )
 
     # Call the function
-    status = get_redis_status()
+    status = await get_redis_status()
 
     # Verify the result
     assert status == expected_status
     mock_get_redis_sync.assert_called_once()
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "mock_engine, execute_side_effect, expected_status",
     [
@@ -48,7 +50,7 @@ def test_get_redis_status(mock_redis_client, expected_status, mocker):
         ),
     ],
 )
-def test_get_db_status(mock_engine, execute_side_effect, expected_status, mocker):
+async def test_get_db_status(mock_engine, execute_side_effect, expected_status, mocker):
     # Mock get_engine to return the mock_engine
     mock_get_engine = mocker.patch("reflex.model.get_engine", return_value=mock_engine)
 
@@ -63,7 +65,7 @@ def test_get_db_status(mock_engine, execute_side_effect, expected_status, mocker
             mock_connection.execute.return_value = None
 
     # Call the function
-    status = get_db_status()
+    status = await get_db_status()
 
     # Verify the result
     assert status == expected_status

@@ -15,6 +15,7 @@ import alembic.runtime.environment
 import alembic.script
 import alembic.util
 import sqlalchemy
+import sqlalchemy.exc
 import sqlalchemy.orm
 
 from reflex import constants
@@ -51,7 +52,7 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     return sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)
 
 
-def get_db_status() -> bool:
+async def get_db_status() -> bool:
     """Checks the status of the database connection.
 
     Attempts to connect to the database and execute a simple query to verify connectivity.
@@ -66,8 +67,9 @@ def get_db_status() -> bool:
         engine = get_engine()
         with engine.connect() as connection:
             connection.execute(sqlalchemy.text("SELECT 1"))
-    except Exception:
+    except sqlalchemy.exc.OperationalError:
         status = False
+
     return status
 
 

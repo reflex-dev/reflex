@@ -1331,9 +1331,13 @@ async def health() -> JSONResponse:
     """
     health_status = {"status": True}
     status_code = 200
-    health_status["db"] = get_db_status()
 
-    redis_status = prerequisites.get_redis_status()
+    db_status, redis_status = await asyncio.gather(
+        get_db_status(), prerequisites.get_redis_status()
+    )
+
+    health_status["db"] = db_status
+
     if redis_status is None:
         health_status["redis"] = False
     else:
