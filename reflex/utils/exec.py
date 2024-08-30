@@ -167,7 +167,6 @@ def run_frontend(
 
     # Run the frontend.
     console.rule("[bold green]App Running")
-    print("run caommand", prerequisites.get_run_command(env.value))
     run_process_and_launch_url(
         prerequisites.get_run_command(env.value),
         backend_present,
