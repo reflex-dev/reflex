@@ -211,18 +211,11 @@ def _run(
     # Warn if schema is not up to date.
     prerequisites.check_schema_up_to_date()
 
-    # Get the frontend and backend commands, based on the environment.
-    setup_frontend = backend_cmd = None
+    # Get the backend command based on the environment.
     if env == constants.Env.DEV:
-        setup_frontend, backend_cmd = (
-            build.setup_frontend,
-            exec.run_backend,
-        )
+        backend_cmd = exec.run_backend
     elif env == constants.Env.PROD:
-        setup_frontend, backend_cmd = (
-            build.setup_frontend_prod,
-            exec.run_backend_prod,
-        )
+        backend_cmd = exec.run_backend_prod
     else:
         raise ValueError(f"Invalid env: {env}")
 
@@ -237,7 +230,7 @@ def _run(
 
     # Run the frontend on a separate thread.
     if frontend:
-        setup_frontend(Path.cwd())
+        build.setup_frontend(Path.cwd(), env)
         commands.append((exec.run_frontend, Path.cwd(), frontend_port, backend, env))
 
     # In prod mode, run the backend on a separate thread.

@@ -55,9 +55,6 @@ def export(
         prerequisites.get_compiled_app(export=True)
         # Set up .web directory and install frontend dependencies.
         build.setup_frontend(Path.cwd())
-
-    # Build the static app.
-    if frontend:
         build.build(deploy_url=config.deploy_url, for_export=True)
 
     # Zip up the app.

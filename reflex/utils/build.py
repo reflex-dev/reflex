@@ -216,13 +216,13 @@ def build(
 
 def setup_frontend(
     root: Path,
-    disable_telemetry: bool = True,
+    env: constants.Env = constants.Env.DEV,
 ):
     """Set up the frontend to run the app.
 
     Args:
         root: The root path of the project.
-        disable_telemetry: Whether to disable the Next telemetry.
+        env: The environment to set up the frontend for.
     """
     # Create the assets dir if it doesn't exist.
     path_ops.mkdir(constants.Dirs.APP_ASSETS)
@@ -237,27 +237,16 @@ def setup_frontend(
     set_env_json()
 
     # Disable the Next telemetry.
-    if disable_telemetry:
-        processes.new_process(
-            prerequisites.get_run_command("next", "telemetry", "disable"),
-            cwd=prerequisites.get_web_dir(),
-            stdout=subprocess.DEVNULL,
-            shell=constants.IS_WINDOWS,
-        )
+    processes.new_process(
+        prerequisites.get_run_command("next", "telemetry", "disable"),
+        cwd=prerequisites.get_web_dir(),
+        stdout=subprocess.DEVNULL,
+        shell=constants.IS_WINDOWS,
+    )
 
-
-def setup_frontend_prod(
-    root: Path,
-    disable_telemetry: bool = True,
-):
-    """Set up the frontend for prod mode.
-
-    Args:
-        root: The root path of the project.
-        disable_telemetry: Whether to disable the Next telemetry.
-    """
-    setup_frontend(root, disable_telemetry)
-    build(deploy_url=get_config().deploy_url)
+    # In production, build the frontend.
+    if env == constants.Env.PROD:
+        build(deploy_url=get_config().deploy_url)
 
 
 def _looks_like_venv_dir(dir_to_check: str) -> bool:
