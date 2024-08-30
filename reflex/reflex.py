@@ -231,7 +231,7 @@ def _run(
     # Run the frontend on a separate thread.
     if frontend:
         build.setup_frontend(Path.cwd(), env)
-        commands.append((exec.run_frontend, Path.cwd(), frontend_port, backend, env))
+        commands.append((exec.run_frontend, frontend_port, backend, env))
 
     # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:

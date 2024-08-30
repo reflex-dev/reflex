@@ -9,7 +9,6 @@ import platform
 import re
 import subprocess
 import sys
-from pathlib import Path
 from urllib.parse import urljoin
 
 import psutil
@@ -18,20 +17,9 @@ from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, path_ops
 from reflex.utils.prerequisites import get_web_dir
-from reflex.utils.watch import AssetFolderWatch
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
-
-
-def start_watching_assets_folder(root):
-    """Start watching assets folder.
-
-    Args:
-        root: root path of the project.
-    """
-    asset_watch = AssetFolderWatch(root)
-    asset_watch.start()
 
 
 def detect_package_change(json_file_path: str) -> str:
@@ -140,7 +128,6 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
 
 
 def run_frontend(
-    root: Path,
     port: str,
     backend_present: bool = True,
     env: constants.Env = constants.Env.DEV,
@@ -160,10 +147,6 @@ def run_frontend(
 
     # Set the port.
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-
-    if env == constants.Env.PROD:
-        # Start watching asset folder.
-        start_watching_assets_folder(root)
 
     # Run the frontend.
     console.rule("[bold green]App Running")
