@@ -144,7 +144,7 @@ class EventHandler(EventActionsMixin):
     # Empty string means this event handler is a server side event.
     state_full_name: str = ""
 
-    class Config:
+    class Config:  # type: ignore
         """The Pydantic config."""
 
         # Needed to allow serialization of Callable.
@@ -229,7 +229,7 @@ class EventSpec(EventActionsMixin):
     # The arguments to pass to the function.
     args: Tuple[Tuple[Var, Var], ...] = ()
 
-    class Config:
+    class Config:  # type: ignore
         """The Pydantic config."""
 
         # Required to allow tuple fields.
@@ -363,7 +363,9 @@ class FileUpload(Base):
     on_upload_progress: Optional[Union[EventHandler, Callable]] = None
 
     @staticmethod
-    def on_upload_progress_args_spec(_prog: Dict[str, Union[int, float, bool]]):
+    def on_upload_progress_args_spec(
+        _prog: Var[Dict[str, Union[int, float, bool]]],
+    ) -> list[Var]:
         """Args spec for on_upload_progress event handler.
 
         Returns:
@@ -463,7 +465,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
         return None
 
     fn.__qualname__ = name
-    fn.__signature__ = sig
+    fn.__signature__ = sig  # pyright: ignore [reportFunctionMemberAccess]
     return EventSpec(
         handler=EventHandler(fn=fn),
         args=tuple(

@@ -69,7 +69,7 @@ reflex-chakra = ">=0.6.0a"
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.1.2,<8.0"
 pytest-mock = ">=3.10.0,<4.0"
-pyright = ">=1.1.229,<1.1.335"
+pyright = ">=1.1.229"
 darglint = ">=1.8.1,<2.0"
 toml = ">=0.10.2,<1.0"
 pytest-asyncio = ">=0.20.1,<0.22.0" # https://github.com/pytest-dev/pytest-asyncio/issues/706

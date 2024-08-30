@@ -149,7 +149,7 @@ class Config(Base):
     See the [configuration](https://reflex.dev/docs/getting-started/configuration/) docs for more info.
     """
 
-    class Config:
+    class Config:  # type: ignore
         """Pydantic config for the config."""
 
         validate_assignment = True

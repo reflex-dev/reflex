@@ -3,17 +3,16 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any, List, Type
+from typing import Any, List, Type
 
 try:
     import pydantic.v1.main as pydantic_main
     from pydantic.v1 import BaseModel
     from pydantic.v1.fields import ModelField
 except ModuleNotFoundError:
-    if not TYPE_CHECKING:
-        import pydantic.main as pydantic_main
-        from pydantic import BaseModel
-        from pydantic.fields import ModelField  # type: ignore
+    import pydantic.main as pydantic_main
+    from pydantic import BaseModel
+    from pydantic.fields import ModelField  # type: ignore
 
 
 from reflex import constants
@@ -48,7 +47,7 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 pydantic_main.validate_field_name = validate_field_name  # type: ignore
 
 
-class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
+class Base(BaseModel):  # pyright: ignore [reportGeneralTypeIssues]
     """The base class subclassed by all Reflex classes.
 
     This class wraps Pydantic and provides common methods such as
@@ -65,7 +64,7 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         use_enum_values = True
         extra = "allow"
 
-    def json(self) -> str:
+    def json(self) -> str:  # pyright: ignore [reportIncompatibleMethodOverride]
         """Convert the object to a json string.
 
         Returns:

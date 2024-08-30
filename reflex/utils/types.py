@@ -95,8 +95,9 @@ PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
-# ArgsSpec = Callable[[Var], list[Var]]
-ArgsSpec = Callable
+
+# Type for signatures mapping JS function args to Python function args.
+ArgsSpec = Callable[..., List]
 
 
 PrimitiveToAnnotation = {
