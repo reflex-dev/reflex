@@ -186,38 +186,41 @@ def get_bun_version() -> version.Version | None:
         return None
 
 
-def get_install_package_manager() -> str | None:
-    """Get the package manager executable for installation.
-      Currently, bun is used for installation only.
-
-    Returns:
-        The path to the package manager.
-    """
-    if (
-        constants.IS_WINDOWS
-        and not is_windows_bun_supported()
-        or windows_check_onedrive_in_path()
-        or windows_npm_escape_hatch()
-    ):
-        return get_package_manager()
-    return get_config().bun_path
-
-
 def get_package_manager() -> str | None:
-    """Get the package manager executable for running app.
-      Currently on unix systems, npm is used for running the app only.
+    """Get the package manager executable for installation.
 
     Returns:
         The path to the package manager.
     """
+    # Check if bun is supported.
+    if is_bun_supported():
+        return get_config().bun_path
+
+    # Use npm otherwise.
     npm_path = path_ops.get_npm_path()
     if npm_path is not None:
         npm_path = str(Path(npm_path).resolve())
     return npm_path
 
 
-def windows_check_onedrive_in_path() -> bool:
-    """For windows, check if oneDrive is present in the project dir path.
+def get_run_command(*command: str) -> List[str]:
+    """Get the run command for the package manager.
+
+    Args:
+        command: The command to run.
+
+    Returns:
+        The run command for the package manager.
+    """
+    out = [get_package_manager(), "run"]
+    if is_bun_supported():
+        out.append("--bun")
+    out.extend(command)
+    return out
+
+
+def check_onedrive_in_path() -> bool:
+    """Check if oneDrive is present in the project dir path.
 
     Returns:
         If oneDrive is in the path of the project directory.
@@ -225,8 +228,8 @@ def windows_check_onedrive_in_path() -> bool:
     return "onedrive" in str(Path.cwd()).lower()
 
 
-def windows_npm_escape_hatch() -> bool:
-    """For windows, if the user sets REFLEX_USE_NPM, use npm instead of bun.
+def npm_escape_hatch() -> bool:
+    """If the user sets REFLEX_USE_NPM, use npm instead of bun.
 
     Returns:
         If the user has set REFLEX_USE_NPM.
@@ -778,14 +781,12 @@ def install_bun():
     Raises:
         FileNotFoundError: If required packages are not found.
     """
-    win_supported = is_windows_bun_supported()
-    one_drive_in_path = windows_check_onedrive_in_path()
-    if constants.IS_WINDOWS and not win_supported or one_drive_in_path:
-        if not win_supported:
+    if not is_bun_supported():
+        if constants.IS_WINDOWS:
             console.warn(
                 "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
             )
-        if one_drive_in_path:
+        if check_onedrive_in_path():
             console.warn(
                 "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
             )
@@ -883,18 +884,8 @@ def install_frontend_packages(packages: set[str], config: Config):
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
-    fallback_command = (
-        get_package_manager()
-        if not constants.IS_WINDOWS
-        or constants.IS_WINDOWS
-        and is_windows_bun_supported()
-        and not windows_check_onedrive_in_path()
-        else None
-    )
     processes.run_process_with_fallback(
-        [get_install_package_manager(), "install"],  # type: ignore
-        fallback=fallback_command,
+        [get_package_manager(), "install"],  # type: ignore
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
         cwd=get_web_dir(),
@@ -904,13 +895,12 @@ def install_frontend_packages(packages: set[str], config: Config):
     if config.tailwind is not None:
         processes.run_process_with_fallback(
             [
-                get_install_package_manager(),
+                get_package_manager(),
                 "add",
                 "-d",
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
             ],
-            fallback=fallback_command,
             analytics_enabled=True,
             show_status_message="Installing tailwind",
             cwd=get_web_dir(),
@@ -920,8 +910,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         processes.run_process_with_fallback(
-            [get_install_package_manager(), "add", *packages],
-            fallback=fallback_command,
+            [get_package_manager(), "add", *packages],
             analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
             cwd=get_web_dir(),
@@ -968,7 +957,7 @@ def needs_reinit(frontend: bool = True) -> bool:
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
 
-        if windows_check_onedrive_in_path():
+        if check_onedrive_in_path():
             console.warn(
                 "Creating project directories in OneDrive may lead to performance issues. For optimal performance, It is recommended to avoid using OneDrive for your reflex app."
             )
@@ -1035,12 +1024,12 @@ def validate_frontend_dependencies(init=True):
             )
             raise typer.Exit(1)
 
-        if not check_node_version():
-            node_version = get_node_version()
-            console.error(
-                f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
-            )
-            raise typer.Exit(1)
+        # if not check_node_version():
+        #     node_version = get_node_version()
+        #     console.error(
+        #         f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
+        #     )
+        #     raise typer.Exit(1)
 
     if init:
         # we only need bun for package install on `reflex init`.
@@ -1095,7 +1084,7 @@ def initialize_frontend_dependencies():
     global CURRENTLY_INSTALLING_NODE
     CURRENTLY_INSTALLING_NODE = True
     # Install the frontend dependencies.
-    processes.run_concurrently(install_node, install_bun)
+    processes.run_concurrently(install_bun)
     CURRENTLY_INSTALLING_NODE = False
     # Set up the web directory.
     initialize_web_directory()
@@ -1516,15 +1505,24 @@ def get_cpu_info() -> CpuInfo | None:
 
 
 @functools.lru_cache(maxsize=None)
-def is_windows_bun_supported() -> bool:
+def is_bun_supported() -> bool:
     """Check whether the underlining host running windows qualifies to run bun.
     We typically do not run bun on ARM or 32 bit devices that use windows.
 
     Returns:
         Whether the host is qualified to use bun.
     """
+    # Escape hatch for npm.
+    if npm_escape_hatch():
+        return False
+
+    # Bun does not work in OneDrive.
+    if check_onedrive_in_path():
+        return False
+
+    # Check if the host is a 64 bit windows machine.
     cpu_info = get_cpu_info()
-    return (
+    return not (
         constants.IS_WINDOWS
         and cpu_info is not None
         and cpu_info.address_width == 64

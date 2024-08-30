@@ -36,9 +36,9 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.1.10"
+    VERSION = "1.1.26"
     # Min Bun Version
-    MIN_VERSION = "0.7.0"
+    MIN_VERSION = "1.1.26"
     # The directory to store the bun.
     ROOT_PATH = os.path.join(Reflex.DIR, "bun")
     # Default bun path.

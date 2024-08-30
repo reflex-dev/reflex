@@ -139,48 +139,37 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
             break  # while True
 
 
-def run_frontend(root: Path, port: str, backend_present=True):
+def run_frontend(
+    root: Path,
+    port: str,
+    backend_present: bool = True,
+    env: constants.Env = constants.Env.DEV,
+):
     """Run the frontend.
 
     Args:
         root: The root path of the project.
         port: The port to run the frontend on.
         backend_present: Whether the backend is present.
+        env: The environment to run the frontend in.
     """
     from reflex.utils import prerequisites
 
-    # Start watching asset folder.
-    start_watching_assets_folder(root)
-    # validate dependencies before run
+    # Validate dependencies before run
     prerequisites.validate_frontend_dependencies(init=False)
-
-    # Run the frontend in development mode.
-    console.rule("[bold green]App Running")
-    os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-    run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "dev"],  # type: ignore
-        backend_present,
-    )
-
-
-def run_frontend_prod(root: Path, port: str, backend_present=True):
-    """Run the frontend.
-
-    Args:
-        root: The root path of the project (to keep same API as run_frontend).
-        port: The port to run the frontend on.
-        backend_present: Whether the backend is present.
-    """
-    from reflex.utils import prerequisites
 
     # Set the port.
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-    # validate dependencies before run
-    prerequisites.validate_frontend_dependencies(init=False)
-    # Run the frontend in production mode.
+
+    if env == constants.Env.PROD:
+        # Start watching asset folder.
+        start_watching_assets_folder(root)
+
+    # Run the frontend.
     console.rule("[bold green]App Running")
+    print("run caommand", prerequisites.get_run_command(env.value))
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "prod"],  # type: ignore
+        prerequisites.get_run_command(env.value),
         backend_present,
     )
 
@@ -300,14 +289,9 @@ def output_system_info():
 
     system = platform.system()
 
-    if (
-        system != "Windows"
-        or system == "Windows"
-        and prerequisites.is_windows_bun_supported()
-    ):
-        dependencies.extend(
+    if prerequisites.is_bun_supported():
+        dependencies.append(
             [
-                f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
                 f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
             ],
         )
@@ -328,9 +312,6 @@ def output_system_info():
     for dep in dependencies:
         console.debug(f"{dep}")
 
-    console.debug(
-        f"Using package installer at: {prerequisites.get_install_package_manager()}"  # type: ignore
-    )
     console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")  # type: ignore
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")

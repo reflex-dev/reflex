@@ -212,20 +212,19 @@ def _run(
     prerequisites.check_schema_up_to_date()
 
     # Get the frontend and backend commands, based on the environment.
-    setup_frontend = frontend_cmd = backend_cmd = None
+    setup_frontend = backend_cmd = None
     if env == constants.Env.DEV:
-        setup_frontend, frontend_cmd, backend_cmd = (
+        setup_frontend, backend_cmd = (
             build.setup_frontend,
-            exec.run_frontend,
             exec.run_backend,
         )
-    if env == constants.Env.PROD:
-        setup_frontend, frontend_cmd, backend_cmd = (
+    elif env == constants.Env.PROD:
+        setup_frontend, backend_cmd = (
             build.setup_frontend_prod,
-            exec.run_frontend_prod,
             exec.run_backend_prod,
         )
-    assert setup_frontend and frontend_cmd and backend_cmd, "Invalid env"
+    else:
+        raise ValueError(f"Invalid env: {env}")
 
     # Post a telemetry event.
     telemetry.send(f"run-{env.value}")
@@ -239,7 +238,7 @@ def _run(
     # Run the frontend on a separate thread.
     if frontend:
         setup_frontend(Path.cwd())
-        commands.append((frontend_cmd, Path.cwd(), frontend_port, backend))
+        commands.append((exec.run_frontend, Path.cwd(), frontend_port, backend, env))
 
     # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:

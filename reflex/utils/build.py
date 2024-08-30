@@ -207,7 +207,7 @@ def build(
 
     # Start the subprocess with the progress bar.
     process = processes.new_process(
-        [prerequisites.get_package_manager(), "run", command],
+        prerequisites.get_run_command(command),
         cwd=wdir,
         shell=constants.IS_WINDOWS,
     )
@@ -239,13 +239,7 @@ def setup_frontend(
     # Disable the Next telemetry.
     if disable_telemetry:
         processes.new_process(
-            [
-                prerequisites.get_package_manager(),
-                "run",
-                "next",
-                "telemetry",
-                "disable",
-            ],
+            prerequisites.get_run_command("next", "telemetry", "disable"),
             cwd=prerequisites.get_web_dir(),
             stdout=subprocess.DEVNULL,
             shell=constants.IS_WINDOWS,
