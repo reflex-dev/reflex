@@ -76,6 +76,9 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
 class ToastProps(PropsBase):
     """Props for the toast component."""
 
+    # Toast's title, renders above the description.
+    title: Optional[Union[str, Var]]
+
     # Toast's description, renders underneath the title.
     description: Optional[Union[str, Var]]
 
@@ -290,7 +293,7 @@ class Toaster(Component):
         return call_script(toast_action)
 
     @staticmethod
-    def toast_info(message: str, **kwargs):
+    def toast_info(message: str = "", **kwargs):
         """Display an info toast message.
 
         Args:
@@ -303,7 +306,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="info", **kwargs)
 
     @staticmethod
-    def toast_warning(message: str, **kwargs):
+    def toast_warning(message: str = "", **kwargs):
         """Display a warning toast message.
 
         Args:
@@ -316,7 +319,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="warning", **kwargs)
 
     @staticmethod
-    def toast_error(message: str, **kwargs):
+    def toast_error(message: str = "", **kwargs):
         """Display an error toast message.
 
         Args:
@@ -329,7 +332,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="error", **kwargs)
 
     @staticmethod
-    def toast_success(message: str, **kwargs):
+    def toast_success(message: str = "", **kwargs):
         """Display a success toast message.
 
         Args:
