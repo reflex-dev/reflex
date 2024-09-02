@@ -915,6 +915,20 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         """
         return ArrayContainsOperation.create(self, other)
 
+
+    def pluck(self, field: Any) -> ArrayVar:
+        """Check if the array contains an element.
+
+        Args:
+            other: The element to check for.
+
+        Returns:
+            The array contains operation.
+        """
+        if field is None:
+            return self
+        return ArrayPluckOperation.create(self, field)
+
     def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Multiply the sequence by a number or integer.
 
@@ -1209,6 +1223,51 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
             _slice=slice,
         )
 
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ArrayPluckOperation(ArrayToArrayOperation):
+    """Base class for immutable string vars that are the result of a string reverse operation."""
+
+    _field: Var | Any = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+
+        return f"{str(self._value)}.map(e=>e?.[{str(self._field)}])"
+
+    @classmethod
+    def create(
+        cls,
+        value: ArrayVar,
+        field: Var | str,
+        _var_data: VarData | None = None,
+    ) -> ArrayPluckOperation:
+        """Create a var from a string value.
+
+        Args:
+            value: The value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _var_name="",
+            _var_type=value._var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _value=value,
+            _field=(
+                field if isinstance(field, Var) else LiteralVar.create(field)
+            ),
+        )
 
 class ArrayReverseOperation(ArrayToArrayOperation):
     """Base class for immutable string vars that are the result of a string reverse operation."""
