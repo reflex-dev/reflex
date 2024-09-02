@@ -1,7 +1,7 @@
 import reflex as rx
 
-from examples.states.base import BaseState
-from examples.styles import text
+from sandbox.states.base import BaseState
+from sandbox.styles import text
 
 navbar: dict[str, str] = {
     "width": "100%",

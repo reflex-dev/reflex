@@ -1,7 +1,7 @@
 import reflex as rx
 
-from examples.states.queries import QueryAPI
-from examples.components.drawer import render_drawer
+from sandbox.states.queries import QueryAPI
+from sandbox.components.drawer import render_drawer
 
 
 def create_table_header(title: str):

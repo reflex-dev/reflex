@@ -1,6 +1,6 @@
 import uuid
 import httpx
-from examples.states.base import BaseState
+from sandbox.states.base import BaseState
 
 
 # test URL: str = https://jsonplaceholder.typicode.com/posts

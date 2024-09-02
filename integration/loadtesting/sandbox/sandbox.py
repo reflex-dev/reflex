@@ -1,5 +1,5 @@
 import reflex as rx
-from examples.pages import *
+from sandbox.pages import *
 
 
 class State(rx.State):

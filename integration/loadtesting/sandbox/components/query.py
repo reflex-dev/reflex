@@ -1,8 +1,8 @@
 import reflex as rx
 
-from examples.states.base import BaseState
-from examples.states.queries import QueryState, QueryAPI
-from examples.styles import text
+from sandbox.states.base import BaseState
+from sandbox.states.queries import QueryState, QueryAPI
+from sandbox.styles import text
 
 
 def item_title(title: str):

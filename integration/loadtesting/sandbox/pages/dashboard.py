@@ -2,10 +2,10 @@
 
 import reflex as rx
 
-from examples.components.navbar import render_navbar
-from examples.components.query import render_query_component
-from examples.components.output import render_output
-from examples.states.queries import QueryAPI
+from sandbox.components.navbar import render_navbar
+from sandbox.components.query import render_query_component
+from sandbox.components.output import render_output
+from sandbox.states.queries import QueryAPI
 
 
 @rx.page("/", on_load=QueryAPI.run_get_request)
