@@ -754,7 +754,7 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("list_and_list", "[3,4]"),
         ("list_or_list", "[1,2]"),
         ("list_contains", "true"),
-        ("list_pluck", "[\"obj_1\",\"obj_2\"]"),
+        ("list_pluck", '["obj_1","obj_2"]'),
         ("list_reverse", "[2,1]"),
         ("list_join", "firstsecondthird"),
         ("list_join_comma", "first,second,third"),

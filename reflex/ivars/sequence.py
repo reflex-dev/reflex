@@ -915,15 +915,14 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         """
         return ArrayContainsOperation.create(self, other)
 
-
     def pluck(self, field: Any) -> ArrayVar:
-        """Check if the array contains an element.
+        """Pluck a field from the array.
 
         Args:
-            other: The element to check for.
+            field: The field to pluck from the array.
 
         Returns:
-            The array contains operation.
+            The array pluck operation.
         """
         if field is None:
             return self
@@ -1223,15 +1222,18 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
             _slice=slice,
         )
 
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
 class ArrayPluckOperation(ArrayToArrayOperation):
-    """Base class for immutable string vars that are the result of a string reverse operation."""
+    """Base class for immutable array vars that are the result of an array pluck operation."""
 
-    _field: Var | Any = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+    _field: Var | Any = dataclasses.field(
+        default_factory=lambda: LiteralVar.create(None)
+    )
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -1240,7 +1242,6 @@ class ArrayPluckOperation(ArrayToArrayOperation):
         Returns:
             The name of the var.
         """
-
         return f"{str(self._value)}.map(e=>e?.[{str(self._field)}])"
 
     @classmethod
@@ -1250,10 +1251,11 @@ class ArrayPluckOperation(ArrayToArrayOperation):
         field: Var | str,
         _var_data: VarData | None = None,
     ) -> ArrayPluckOperation:
-        """Create a var from a string value.
+        """Pluck a field from an object.
 
         Args:
             value: The value to create the var from.
+            field: The field to pluck from the objects in the array.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -1264,10 +1266,9 @@ class ArrayPluckOperation(ArrayToArrayOperation):
             _var_type=value._var_type,
             _var_data=ImmutableVarData.merge(_var_data),
             _value=value,
-            _field=(
-                field if isinstance(field, Var) else LiteralVar.create(field)
-            ),
+            _field=(field if isinstance(field, Var) else LiteralVar.create(field)),
         )
+
 
 class ArrayReverseOperation(ArrayToArrayOperation):
     """Base class for immutable string vars that are the result of a string reverse operation."""
