@@ -42,6 +42,7 @@ from reflex.state import (
     OnLoadInternalState,
     RouterData,
     State,
+    StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
     StateUpdate,
@@ -1395,7 +1396,9 @@ def test_app_state_manager():
         app.state_manager
     app._enable_state()
     assert app.state_manager is not None
-    assert isinstance(app.state_manager, (StateManagerMemory, StateManagerRedis))
+    assert isinstance(
+        app.state_manager, (StateManagerMemory, StateManagerDisk, StateManagerRedis)
+    )
 
 
 def test_generate_component():

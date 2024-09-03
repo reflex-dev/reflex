@@ -12,6 +12,7 @@ from reflex.ivars.base import (
     ImmutableVar,
     LiteralVar,
     var_operation,
+    var_operation_return,
 )
 from reflex.ivars.function import ArgsFunctionOperation, FunctionStringVar
 from reflex.ivars.number import (
@@ -925,9 +926,9 @@ def test_function_var():
 
 
 def test_var_operation():
-    @var_operation(output=NumberVar)
-    def add(a: Union[NumberVar, int], b: Union[NumberVar, int]) -> str:
-        return f"({a} + {b})"
+    @var_operation
+    def add(a: Union[NumberVar, int], b: Union[NumberVar, int]):
+        return var_operation_return(js_expression=f"({a} + {b})", var_type=int)
 
     assert str(add(1, 2)) == "(1 + 2)"
     assert str(add(a=4, b=-9)) == "(4 + -9)"
@@ -967,14 +968,14 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "!(Boolean((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))))"
+        == "!(((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)))) !== 0))"
     )
 
     assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"
-    assert str(LiteralBooleanVar.create(False) < 5) == "((false ? 1 : 0) < 5)"
+    assert str(LiteralBooleanVar.create(False) < 5) == "(Number(false) < 5)"
     assert (
         str(LiteralBooleanVar.create(False) < LiteralBooleanVar.create(True))
-        == "((false ? 1 : 0) < (true ? 1 : 0))"
+        == "(Number(false) < Number(true))"
     )
 
 

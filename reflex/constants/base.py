@@ -45,6 +45,8 @@ class Dirs(SimpleNamespace):
     REFLEX_JSON = "reflex.json"
     # The name of the postcss config file.
     POSTCSS_JS = "postcss.config.js"
+    # The name of the states directory.
+    STATES = "states"
 
 
 class Reflex(SimpleNamespace):

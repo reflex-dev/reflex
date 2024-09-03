@@ -79,3 +79,11 @@ class LockExpiredError(ReflexError):
 
 class MatchTypeError(ReflexError, TypeError):
     """Raised when the return types of match cases are different."""
+
+
+class EventHandlerArgMismatch(ReflexError, TypeError):
+    """Raised when the number of args accepted by an EventHandler is differs from that provided by the event trigger."""
+
+
+class EventFnArgMismatch(ReflexError, TypeError):
+    """Raised when the number of args accepted by a lambda differs from that provided by the event trigger."""
