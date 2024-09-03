@@ -161,15 +161,20 @@ class StringVar(ImmutableVar[str]):
         """
         return self.split().reverse().join()
 
-    def contains(self, other: StringVar | str) -> BooleanVar:
+    def contains(
+        self, other: StringVar | str, field: StringVar | str | None = None
+    ) -> BooleanVar:
         """Check if the string contains another string.
 
         Args:
             other: The other string.
+            field: The field to check.
 
         Returns:
             The string contains operation.
         """
+        if field is not None:
+            return string_contains_field_operation(self, other, field)
         return string_contains_operation(self, other)
 
     def split(self, separator: StringVar | str = "") -> ArrayVar[List[str]]:
@@ -232,6 +237,26 @@ def string_strip_operation(string: StringVar):
         The stripped string.
     """
     return var_operation_return(js_expression=f"{string}.trim()", var_type=str)
+
+
+@var_operation
+def string_contains_field_operation(
+    haystack: StringVar, needle: StringVar | str, field: StringVar | str
+):
+    """Check if a string contains another string.
+
+    Args:
+        haystack: The haystack.
+        needle: The needle.
+        field: The field to check.
+
+    Returns:
+        The string contains operation.
+    """
+    return var_operation_return(
+        js_expression=f"{haystack}.some(obj => obj[{field}] === {needle})",
+        var_type=bool,
+    )
 
 
 @var_operation
@@ -696,15 +721,18 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
 
         return array_range_operation(start, end, step or 1)
 
-    def contains(self, other: Any) -> BooleanVar:
+    def contains(self, other: Any, field: StringVar | str | None = None) -> BooleanVar:
         """Check if the array contains an element.
 
         Args:
             other: The element to check for.
+            field: The field to check.
 
         Returns:
             The array contains operation.
         """
+        if field is not None:
+            return array_contains_field_operation(self, other, field)
         return array_contains_operation(self, other)
 
     def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
@@ -1004,6 +1032,26 @@ def array_range_operation(
     return var_operation_return(
         js_expression=f"Array.from({{ length: ({str(stop)} - {str(start)}) / {str(step)} }}, (_, i) => {str(start)} + i * {str(step)})",
         var_type=List[int],
+    )
+
+
+@var_operation
+def array_contains_field_operation(
+    haystack: ArrayVar, needle: Any | Var, field: StringVar | str
+):
+    """Check if an array contains an element.
+
+    Args:
+        haystack: The array to check.
+        needle: The element to check for.
+        field: The field to check.
+
+    Returns:
+        The array contains operation.
+    """
+    return var_operation_return(
+        js_expression=f"{haystack}.some(obj => obj[{field}] === {needle})",
+        var_type=bool,
     )
 
 

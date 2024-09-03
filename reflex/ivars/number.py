@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import sys
-from typing import Any, Callable, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
 
 from reflex.vars import ImmutableVarData, Var, VarData
 
@@ -20,7 +20,10 @@ from .base import (
     var_operation_return,
 )
 
-NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float])
+NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float], bool)
+
+if TYPE_CHECKING:
+    from .sequence import ArrayVar
 
 
 class NumberVar(ImmutableVar[NUMBER_T]):
@@ -78,7 +81,15 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         """
         return number_abs_operation(self)
 
-    def __mul__(self, other: number_types | boolean_types):
+    @overload
+    def __mul__(self, other: number_types | boolean_types) -> NumberVar: ...
+
+    @overload
+    def __mul__(self, other: list | tuple | set | ArrayVar) -> ArrayVar: ...
+
+    def __mul__(
+        self, other: number_types | boolean_types | list | tuple | set | ArrayVar
+    ):
         """Multiply two numbers.
 
         Args:
@@ -87,6 +98,12 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number multiplication operation.
         """
+        from .sequence import ArrayVar, LiteralArrayVar
+
+        if isinstance(other, (list, tuple, set, ArrayVar, LiteralArrayVar)):
+            if isinstance(other, (ArrayVar, LiteralArrayVar)):
+                return other * self
+            return LiteralArrayVar.create(other) * self
         return number_multiply_operation(self, +other)
 
     def __rmul__(self, other: number_types | boolean_types):
@@ -545,7 +562,7 @@ def number_trunc_operation(value: NumberVar):
     return var_operation_return(js_expression=f"Math.trunc({value})", var_type=int)
 
 
-class BooleanVar(ImmutableVar[bool]):
+class BooleanVar(NumberVar[bool]):
     """Base class for immutable boolean vars."""
 
     def __invert__(self):

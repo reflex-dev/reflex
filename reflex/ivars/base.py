@@ -8,9 +8,7 @@ import datetime
 import dis
 import functools
 import inspect
-import json
 import sys
-import warnings
 from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -37,7 +35,6 @@ from typing_extensions import ParamSpec, get_type_hints, override
 
 from reflex import constants
 from reflex.base import Base
-from reflex.constants.colors import Color
 from reflex.utils import console, imports, serializers, types
 from reflex.utils.exceptions import VarDependencyError, VarTypeError, VarValueError
 from reflex.utils.format import format_state_name
@@ -384,6 +381,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         if fixed_output_type is bool:
             return self.to(BooleanVar, output)
 
+        if issubclass(output, BooleanVar):
+            return ToBooleanVarOperation.create(self)
+
         if issubclass(output, NumberVar):
             if fixed_type is not None:
                 if fixed_type is Union:
@@ -398,9 +398,6 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
                         f"Unsupported type {var_type} for NumberVar. Must be int or float."
                     )
             return ToNumberVarOperation.create(self, var_type or float)
-
-        if issubclass(output, BooleanVar):
-            return ToBooleanVarOperation.create(self)
 
         if issubclass(output, ArrayVar):
             if fixed_type is not None and not issubclass(
@@ -574,6 +571,18 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         setter.__qualname__ = self.get_setter_name()
 
         return setter
+
+    def _var_set_state(self, state: type[BaseState] | str) -> ImmutableVar:
+        formatted_state_name = (
+            state
+            if isinstance(state, str)
+            else format_state_name(state.get_full_name())
+        )
+
+        return self._replace(
+            _var_name=formatted_state_name + "." + self._var_name,
+            merge_var_data=ImmutableVarData.from_state(state),
+        )
 
     def __eq__(self, other: Var | Any) -> BooleanVar:
         """Check if the current variable is equal to the given variable.
@@ -805,9 +814,6 @@ class LiteralVar(ImmutableVar):
         if isinstance(value, dict):
             return LiteralObjectVar.create(value, _var_data=_var_data)
 
-        if isinstance(value, Color):
-            return LiteralStringVar.create(f"{value}", _var_data=_var_data)
-
         if isinstance(value, (list, tuple, set)):
             return LiteralArrayVar.create(value, _var_data=_var_data)
 
@@ -858,59 +864,15 @@ class LiteralVar(ImmutableVar):
                 ),
             )
 
-        try:
-            from plotly.graph_objects import Figure, layout
-            from plotly.io import to_json
-
-            if isinstance(value, Figure):
+        serialized_value = serializers.serialize(value)
+        if serialized_value is not None:
+            if isinstance(serialized_value, dict):
                 return LiteralObjectVar.create(
-                    json.loads(str(to_json(value))),
-                    _var_type=Figure,
+                    serialized_value,
+                    _var_type=type(value),
                     _var_data=_var_data,
                 )
-
-            if isinstance(value, layout.Template):
-                return LiteralObjectVar.create(
-                    {
-                        "data": json.loads(str(to_json(value.data))),
-                        "layout": json.loads(str(to_json(value.layout))),
-                    },
-                    _var_type=layout.Template,
-                    _var_data=_var_data,
-                )
-        except ImportError:
-            pass
-
-        try:
-            import base64
-            import io
-
-            from PIL.Image import MIME
-            from PIL.Image import Image as Img
-
-            if isinstance(value, Img):
-                with io.BytesIO() as buffer:
-                    image_format = getattr(value, "format", None) or "PNG"
-                    value.save(buffer, format=image_format)
-                    try:
-                        # Newer method to get the mime type, but does not always work.
-                        mimetype = value.get_format_mimetype()  # type: ignore
-                    except AttributeError:
-                        try:
-                            # Fallback method
-                            mimetype = MIME[image_format]
-                        except KeyError:
-                            # Unknown mime_type: warn and return image/png and hope the browser can sort it out.
-                            warnings.warn(  # noqa: B028
-                                f"Unknown mime type for {value} {image_format}. Defaulting to image/png"
-                            )
-                            mimetype = "image/png"
-                    return LiteralStringVar.create(
-                        f"data:{mimetype};base64,{base64.b64encode(buffer.getvalue()).decode()}",
-                        _var_data=_var_data,
-                    )
-        except ImportError:
-            pass
+            return LiteralVar.create(serialized_value, _var_data=_var_data)
 
         if isinstance(value, Base):
             return LiteralObjectVar.create(

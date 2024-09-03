@@ -1,12 +1,13 @@
 import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, Type
 
 import pytest
 
 from reflex.base import Base
 from reflex.components.core.colors import Color
+from reflex.ivars.base import LiteralVar
 from reflex.utils import serializers
 from reflex.vars import Var
 
@@ -29,20 +30,10 @@ def test_has_serializer(type_: Type, expected: bool):
 @pytest.mark.parametrize(
     "type_,expected",
     [
-        (str, serializers.serialize_str),
-        (list, serializers.serialize_list),
-        (tuple, serializers.serialize_list),
-        (set, serializers.serialize_list),
-        (dict, serializers.serialize_dict),
-        (List[str], serializers.serialize_list),
-        (Dict[int, int], serializers.serialize_dict),
         (datetime.datetime, serializers.serialize_datetime),
         (datetime.date, serializers.serialize_datetime),
         (datetime.time, serializers.serialize_datetime),
         (datetime.timedelta, serializers.serialize_datetime),
-        (int, serializers.serialize_primitive),
-        (float, serializers.serialize_primitive),
-        (bool, serializers.serialize_primitive),
         (Enum, serializers.serialize_enum),
     ],
 )
@@ -203,24 +194,28 @@ def test_serialize(value: Any, expected: str):
 @pytest.mark.parametrize(
     "value,expected,exp_var_is_string",
     [
-        ("test", "test", False),
+        ("test", '"test"', False),
         (1, "1", False),
         (1.0, "1.0", False),
         (True, "true", False),
         (False, "false", False),
         ([1, 2, 3], "[1, 2, 3]", False),
-        ([{"key": 1}, {"key": 2}], '[{"key": 1}, {"key": 2}]', False),
-        (StrEnum.FOO, "foo", False),
+        ([{"key": 1}, {"key": 2}], '[({ ["key"] : 1 }), ({ ["key"] : 2 })]', False),
+        (StrEnum.FOO, '"foo"', False),
         ([StrEnum.FOO, StrEnum.BAR], '["foo", "bar"]', False),
         (
             BaseSubclass(ts=datetime.timedelta(1, 1, 1)),
-            '{"ts": "1 day, 0:00:01.000001"}',
+            '"{\\"ts\\": \\"1 day, 0:00:01.000001\\"}"',
             False,
         ),
-        (datetime.datetime(2021, 1, 1, 1, 1, 1, 1), "2021-01-01 01:01:01.000001", True),
-        (Color(color="slate", shade=1), "var(--slate-1)", True),
-        (BaseSubclass, "BaseSubclass", True),
-        (Path("."), ".", True),
+        (
+            datetime.datetime(2021, 1, 1, 1, 1, 1, 1),
+            '"2021-01-01 01:01:01.000001"',
+            True,
+        ),
+        (Color(color="slate", shade=1), '"var(--slate-1)"', True),
+        (BaseSubclass, '"BaseSubclass"', True),
+        (Path("."), '"."', True),
     ],
 )
 def test_serialize_var_to_str(value: Any, expected: str, exp_var_is_string: bool):
@@ -231,6 +226,5 @@ def test_serialize_var_to_str(value: Any, expected: str, exp_var_is_string: bool
         expected: The expected result.
         exp_var_is_string: The expected value of _var_is_string.
     """
-    v = Var.create_safe(value)
-    assert v._var_full_name == expected
-    assert v._var_is_string == exp_var_is_string
+    v = LiteralVar.create(value)
+    assert str(v) == expected
