@@ -14,8 +14,6 @@ def VarOperations():
     """App with var operations."""
     from typing import Dict, List
 
-    import reflex_chakra as rc
-
     import reflex as rx
     from reflex.ivars.base import LiteralVar
     from reflex.ivars.sequence import ArrayVar
@@ -552,10 +550,7 @@ def VarOperations():
                 VarOperationState.html_str,
                 id="html_str",
             ),
-            rc.highlight(
-                "second",
-                query=[VarOperationState.str_var2],
-            ),
+            rx.el.mark("second"),
             rx.text(ArrayVar.range(2, 5).join(","), id="list_join_range1"),
             rx.text(ArrayVar.range(2, 10, 2).join(","), id="list_join_range2"),
             rx.text(ArrayVar.range(5, 0, -1).join(","), id="list_join_range3"),

@@ -10,89 +10,45 @@ from reflex.testing import AppHarness
 
 def Table():
     """App using table component."""
-    from typing import List
-
-    import reflex_chakra as rc
-
     import reflex as rx
-
-    class TableState(rx.State):
-        rows: List[List[str]] = [
-            ["John", "30", "New York"],
-            ["Jane", "31", "San Fransisco"],
-            ["Joe", "32", "Los Angeles"],
-        ]
-
-        headers: List[str] = ["Name", "Age", "Location"]
-
-        footers: List[str] = ["footer1", "footer2", "footer3"]
-
-        caption: str = "random caption"
 
     app = rx.App(state=rx.State)
 
     @app.add_page
     def index():
         return rx.center(
-            rc.input(
+            rx.input(
                 id="token",
-                value=TableState.router.session.client_token,
+                value=rx.State.router.session.client_token,
                 is_read_only=True,
             ),
-            rc.table_container(
-                rc.table(
-                    headers=TableState.headers,
-                    rows=TableState.rows,
-                    footers=TableState.footers,
-                    caption=TableState.caption,
-                    variant="striped",
-                    color_scheme="blue",
-                    width="100%",
+            rx.table.root(
+                rx.table.header(
+                    rx.table.row(
+                        rx.table.column_header_cell("Name"),
+                        rx.table.column_header_cell("Age"),
+                        rx.table.column_header_cell("Location"),
+                    ),
                 ),
+                rx.table.body(
+                    rx.table.row(
+                        rx.table.row_header_cell("John"),
+                        rx.table.cell(30),
+                        rx.table.cell("New York"),
+                    ),
+                    rx.table.row(
+                        rx.table.row_header_cell("Jane"),
+                        rx.table.cell(31),
+                        rx.table.cell("San Fransisco"),
+                    ),
+                    rx.table.row(
+                        rx.table.row_header_cell("Joe"),
+                        rx.table.cell(32),
+                        rx.table.cell("Los Angeles"),
+                    ),
+                ),
+                width="100%",
             ),
-        )
-
-    @app.add_page
-    def another():
-        return rx.center(
-            rc.table_container(
-                rc.table(  # type: ignore
-                    rc.thead(  # type: ignore
-                        rc.tr(  # type: ignore
-                            rc.th("Name"),
-                            rc.th("Age"),
-                            rc.th("Location"),
-                        )
-                    ),
-                    rc.tbody(  # type: ignore
-                        rc.tr(  # type: ignore
-                            rc.td("John"),
-                            rc.td(30),
-                            rc.td("New York"),
-                        ),
-                        rc.tr(  # type: ignore
-                            rc.td("Jane"),
-                            rc.td(31),
-                            rc.td("San Francisco"),
-                        ),
-                        rc.tr(  # type: ignore
-                            rc.td("Joe"),
-                            rc.td(32),
-                            rc.td("Los Angeles"),
-                        ),
-                    ),
-                    rc.tfoot(  # type: ignore
-                        rc.tr(
-                            rc.td("footer1"),
-                            rc.td("footer2"),
-                            rc.td("footer3"),
-                        )  # type: ignore
-                    ),
-                    rc.table_caption("random caption"),
-                    variant="striped",
-                    color_scheme="teal",
-                )
-            )
         )
 
 
@@ -138,8 +94,7 @@ def driver(table: AppHarness):
         driver.quit()
 
 
-@pytest.mark.parametrize("route", ["", "/another"])
-def test_table(driver, table: AppHarness, route):
+def test_table(driver, table: AppHarness):
     """Test that a table component is rendered properly.
 
     Args:
@@ -147,14 +102,13 @@ def test_table(driver, table: AppHarness, route):
         table: Harness for Table app
         route: Page route or path.
     """
-    driver.get(f"{table.frontend_url}/{route}")
     assert table.app_instance is not None, "app is not running"
 
     thead = driver.find_element(By.TAG_NAME, "thead")
     # poll till page is fully loaded.
     table.poll_for_content(element=thead)
     # check headers
-    assert thead.find_element(By.TAG_NAME, "tr").text == "NAME AGE LOCATION"
+    assert thead.find_element(By.TAG_NAME, "tr").text == "Name Age Location"
     # check first row value
     assert (
         driver.find_element(By.TAG_NAME, "tbody")
@@ -162,12 +116,3 @@ def test_table(driver, table: AppHarness, route):
         .text
         == "John 30 New York"
     )
-    # check footer
-    assert (
-        driver.find_element(By.TAG_NAME, "tfoot")
-        .find_element(By.TAG_NAME, "tr")
-        .text.lower()
-        == "footer1 footer2 footer3"
-    )
-    # check caption
-    assert driver.find_element(By.TAG_NAME, "caption").text == "random caption"
