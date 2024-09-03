@@ -402,9 +402,9 @@ def serialize_dataeditortheme(theme: DataEditorTheme):
     Returns:
         The serialized theme.
     """
-    return format.json_dumps(
-        {format.to_camel_case(k): v for k, v in theme.__dict__.items() if v is not None}
-    )
+    return {
+        format.to_camel_case(k): v for k, v in theme.__dict__.items() if v is not None
+    }
 
 
 data_editor = DataEditor.create
