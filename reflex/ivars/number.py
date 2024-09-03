@@ -5,8 +5,9 @@ from __future__ import annotations
 import dataclasses
 import json
 import sys
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, NoReturn, TypeVar, Union, overload
 
+from reflex.utils.exceptions import VarTypeError
 from reflex.vars import ImmutableVarData, Var, VarData
 
 from .base import (
@@ -26,10 +27,27 @@ if TYPE_CHECKING:
     from .sequence import ArrayVar
 
 
+def raise_unsupported_operand_types(
+    operator: str, operands_types: tuple[type, ...]
+) -> NoReturn:
+    """Raise an unsupported operand types error.
+
+    Args:
+        operator: The operator.
+        operands_types: The types of the operands.
+
+    Raises:
+        VarTypeError: The operand types are unsupported.
+    """
+    raise VarTypeError(
+        f"Unsupported Operand type(s) for {operator}: {', '.join(map(lambda t: t.__name__, operands_types))}"
+    )
+
+
 class NumberVar(ImmutableVar[NUMBER_T]):
     """Base class for immutable number vars."""
 
-    def __add__(self, other: number_types | boolean_types):
+    def __add__(self, other: Any):
         """Add two numbers.
 
         Args:
@@ -38,9 +56,11 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number addition operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("+", (type(self), type(other)))
         return number_add_operation(self, +other)
 
-    def __radd__(self, other: number_types | boolean_types):
+    def __radd__(self, other: Any):
         """Add two numbers.
 
         Args:
@@ -49,9 +69,11 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number addition operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("+", (type(other), type(self)))
         return number_add_operation(+other, self)
 
-    def __sub__(self, other: number_types | boolean_types):
+    def __sub__(self, other: Any):
         """Subtract two numbers.
 
         Args:
@@ -60,9 +82,12 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number subtraction operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("-", (type(self), type(other)))
+
         return number_subtract_operation(self, +other)
 
-    def __rsub__(self, other: number_types | boolean_types):
+    def __rsub__(self, other: Any):
         """Subtract two numbers.
 
         Args:
@@ -71,6 +96,9 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number subtraction operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("-", (type(other), type(self)))
+
         return number_subtract_operation(+other, self)
 
     def __abs__(self):
@@ -87,9 +115,7 @@ class NumberVar(ImmutableVar[NUMBER_T]):
     @overload
     def __mul__(self, other: list | tuple | set | ArrayVar) -> ArrayVar: ...
 
-    def __mul__(
-        self, other: number_types | boolean_types | list | tuple | set | ArrayVar
-    ):
+    def __mul__(self, other: Any):
         """Multiply two numbers.
 
         Args:
@@ -100,13 +126,17 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         """
         from .sequence import ArrayVar, LiteralArrayVar
 
-        if isinstance(other, (list, tuple, set, ArrayVar, LiteralArrayVar)):
-            if isinstance(other, (ArrayVar, LiteralArrayVar)):
+        if isinstance(other, (list, tuple, set, ArrayVar)):
+            if isinstance(other, ArrayVar):
                 return other * self
             return LiteralArrayVar.create(other) * self
+
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("*", (type(self), type(other)))
+
         return number_multiply_operation(self, +other)
 
-    def __rmul__(self, other: number_types | boolean_types):
+    def __rmul__(self, other: Any):
         """Multiply two numbers.
 
         Args:
@@ -115,9 +145,19 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number multiplication operation.
         """
+        from .sequence import ArrayVar, LiteralArrayVar
+
+        if isinstance(other, (list, tuple, set, ArrayVar)):
+            if isinstance(other, ArrayVar):
+                return other * self
+            return LiteralArrayVar.create(other) * self
+
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("*", (type(other), type(self)))
+
         return number_multiply_operation(+other, self)
 
-    def __truediv__(self, other: number_types | boolean_types):
+    def __truediv__(self, other: Any):
         """Divide two numbers.
 
         Args:
@@ -126,9 +166,12 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number true division operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("/", (type(self), type(other)))
+
         return number_true_division_operation(self, +other)
 
-    def __rtruediv__(self, other: number_types | boolean_types):
+    def __rtruediv__(self, other: Any):
         """Divide two numbers.
 
         Args:
@@ -137,9 +180,12 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number true division operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("/", (type(other), type(self)))
+
         return number_true_division_operation(+other, self)
 
-    def __floordiv__(self, other: number_types | boolean_types):
+    def __floordiv__(self, other: Any):
         """Floor divide two numbers.
 
         Args:
@@ -148,9 +194,12 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number floor division operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("//", (type(self), type(other)))
+
         return number_floor_division_operation(self, +other)
 
-    def __rfloordiv__(self, other: number_types | boolean_types):
+    def __rfloordiv__(self, other: Any):
         """Floor divide two numbers.
 
         Args:
@@ -159,9 +208,12 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number floor division operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("//", (type(other), type(self)))
+
         return number_floor_division_operation(+other, self)
 
-    def __mod__(self, other: number_types | boolean_types):
+    def __mod__(self, other: Any):
         """Modulo two numbers.
 
         Args:
@@ -170,9 +222,12 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number modulo operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("%", (type(self), type(other)))
+
         return number_modulo_operation(self, +other)
 
-    def __rmod__(self, other: number_types | boolean_types):
+    def __rmod__(self, other: Any):
         """Modulo two numbers.
 
         Args:
@@ -181,9 +236,12 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number modulo operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("%", (type(other), type(self)))
+
         return number_modulo_operation(+other, self)
 
-    def __pow__(self, other: number_types | boolean_types):
+    def __pow__(self, other: Any):
         """Exponentiate two numbers.
 
         Args:
@@ -192,9 +250,12 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number exponent operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("**", (type(self), type(other)))
+
         return number_exponent_operation(self, +other)
 
-    def __rpow__(self, other: number_types | boolean_types):
+    def __rpow__(self, other: Any):
         """Exponentiate two numbers.
 
         Args:
@@ -203,6 +264,9 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number exponent operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("**", (type(other), type(self)))
+
         return number_exponent_operation(+other, self)
 
     def __neg__(self):
@@ -270,9 +334,9 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The result of the comparison.
         """
-        if isinstance(other, (NumberVar, BooleanVar, int, float, bool)):
-            return less_than_operation(self, +other)
-        return less_than_operation(self, other)
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("<", (type(self), type(other)))
+        return less_than_operation(self, +other)
 
     def __le__(self, other: Any):
         """Less than or equal comparison.
@@ -283,9 +347,9 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The result of the comparison.
         """
-        if isinstance(other, (NumberVar, BooleanVar, int, float, bool)):
-            return less_than_or_equal_operation(self, +other)
-        return less_than_or_equal_operation(self, other)
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("<=", (type(self), type(other)))
+        return less_than_or_equal_operation(self, +other)
 
     def __eq__(self, other: Any):
         """Equal comparison.
@@ -296,7 +360,7 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The result of the comparison.
         """
-        if isinstance(other, (NumberVar, BooleanVar, int, float, bool)):
+        if isinstance(other, NUMBER_TYPES):
             return equal_operation(self, +other)
         return equal_operation(self, other)
 
@@ -309,7 +373,7 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The result of the comparison.
         """
-        if isinstance(other, (NumberVar, BooleanVar, int, float, bool)):
+        if isinstance(other, NUMBER_TYPES):
             return not_equal_operation(self, +other)
         return not_equal_operation(self, other)
 
@@ -322,9 +386,9 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The result of the comparison.
         """
-        if isinstance(other, (NumberVar, BooleanVar, int, float, bool)):
-            return greater_than_operation(self, +other)
-        return greater_than_operation(self, other)
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types(">", (type(self), type(other)))
+        return greater_than_operation(self, +other)
 
     def __ge__(self, other: Any):
         """Greater than or equal comparison.
@@ -335,9 +399,9 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The result of the comparison.
         """
-        if isinstance(other, (NumberVar, BooleanVar, int, float, bool)):
-            return greater_than_or_equal_operation(self, +other)
-        return greater_than_or_equal_operation(self, other)
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types(">=", (type(self), type(other)))
+        return greater_than_or_equal_operation(self, +other)
 
     def bool(self):
         """Boolean conversion.
@@ -1024,3 +1088,6 @@ def ternary_operation(condition: BooleanVar, if_true: Var, if_false: Var):
         js_expression=f"({condition} ? {if_true} : {if_false})",
         var_type=unionize(if_true._var_type, if_false._var_type),
     )
+
+
+NUMBER_TYPES = (int, float, NumberVar)

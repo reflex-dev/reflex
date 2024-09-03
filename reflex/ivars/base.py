@@ -610,58 +610,6 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
 
         return ~equal_operation(self, other)
 
-    def __gt__(self, other: Var | Any) -> BooleanVar:
-        """Compare the current instance with another variable and return a BooleanVar representing the result of the greater than operation.
-
-        Args:
-            other (Var | Any): The variable to compare with.
-
-        Returns:
-            BooleanVar: A BooleanVar representing the result of the greater than operation.
-        """
-        from .number import greater_than_operation
-
-        return greater_than_operation(self, other)
-
-    def __ge__(self, other: Var | Any) -> BooleanVar:
-        """Check if the value of this variable is greater than or equal to the value of another variable or object.
-
-        Args:
-            other (Var | Any): The variable or object to compare with.
-
-        Returns:
-            BooleanVar: A BooleanVar object representing the result of the comparison.
-        """
-        from .number import greater_than_or_equal_operation
-
-        return greater_than_or_equal_operation(self, other)
-
-    def __lt__(self, other: Var | Any) -> BooleanVar:
-        """Compare the current instance with another variable using the less than (<) operator.
-
-        Args:
-            other: The variable to compare with.
-
-        Returns:
-            A `BooleanVar` object representing the result of the comparison.
-        """
-        from .number import less_than_operation
-
-        return less_than_operation(self, other)
-
-    def __le__(self, other: Var | Any) -> BooleanVar:
-        """Compare if the current instance is less than or equal to the given value.
-
-        Args:
-            other: The value to compare with.
-
-        Returns:
-            A BooleanVar object representing the result of the comparison.
-        """
-        from .number import less_than_or_equal_operation
-
-        return less_than_or_equal_operation(self, other)
-
     def bool(self) -> BooleanVar:
         """Convert the var to a boolean.
 

@@ -1129,7 +1129,7 @@ class Var:
                 op,
             ):
                 raise VarTypeError(
-                    f"Unsupported Operand type(s) for {op}: `{left_operand._var_full_name}` of type {left_operand._var_type.__name__} and `{right_operand._var_full_name}` of type {right_operand._var_type.__name__}"  # type: ignore
+                    f"Unsupported Operand type(s) for {op}: `{left_operand._var_full_name}` of type {left_operand._var_type} and `{right_operand._var_full_name}` of type {right_operand._var_type}"  # type: ignore
                 )
 
             left_operand_full_name = get_operand_full_name(left_operand)

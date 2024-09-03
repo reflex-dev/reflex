@@ -47,6 +47,7 @@ from .number import (
     BooleanVar,
     LiteralNumberVar,
     NumberVar,
+    raise_unsupported_operand_types,
 )
 
 if TYPE_CHECKING:
@@ -56,7 +57,7 @@ if TYPE_CHECKING:
 class StringVar(ImmutableVar[str]):
     """Base class for immutable string vars."""
 
-    def __add__(self, other: StringVar | str) -> ConcatVarOperation:
+    def __add__(self, other: Any) -> ConcatVarOperation:
         """Concatenate two strings.
 
         Args:
@@ -65,9 +66,12 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string concatenation operation.
         """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types("+", (type(self), type(other)))
+
         return ConcatVarOperation.create(self, other)
 
-    def __radd__(self, other: StringVar | str) -> ConcatVarOperation:
+    def __radd__(self, other: Any) -> ConcatVarOperation:
         """Concatenate two strings.
 
         Args:
@@ -76,28 +80,37 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string concatenation operation.
         """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types("+", (type(other), type(self)))
+
         return ConcatVarOperation.create(other, self)
 
-    def __mul__(self, other: NumberVar | int) -> StringVar:
+    def __mul__(self, other: Any) -> StringVar:
         """Multiply the sequence by a number or an integer.
 
         Args:
-            other (NumberVar | int): The number or integer to multiply the sequence by.
+            other: The number or integer to multiply the sequence by.
 
         Returns:
             StringVar: The resulting sequence after multiplication.
         """
+        if not isinstance(other, (NumberVar, int)):
+            raise_unsupported_operand_types("*", (type(self), type(other)))
+
         return (self.split() * other).join()
 
-    def __rmul__(self, other: NumberVar | int) -> StringVar:
+    def __rmul__(self, other: Any) -> StringVar:
         """Multiply the sequence by a number or an integer.
 
         Args:
-            other (NumberVar | int): The number or integer to multiply the sequence by.
+            other: The number or integer to multiply the sequence by.
 
         Returns:
             StringVar: The resulting sequence after multiplication.
         """
+        if not isinstance(other, (NumberVar, int)):
+            raise_unsupported_operand_types("*", (type(other), type(self)))
+
         return (self.split() * other).join()
 
     def __getitem__(self, i: slice | int | NumberVar) -> StringVar:
@@ -198,6 +211,118 @@ class StringVar(ImmutableVar[str]):
             The string starts with operation.
         """
         return string_starts_with_operation(self, prefix)
+
+    def __lt__(self, other: Any):
+        """Check if the string is less than another string.
+
+        Args:
+            other: The other string.
+
+        Returns:
+            The string less than operation.
+        """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types("<", (type(self), type(other)))
+
+        return string_lt_operation(self, other)
+
+    def __gt__(self, other: Any):
+        """Check if the string is greater than another string.
+
+        Args:
+            other: The other string.
+
+        Returns:
+            The string greater than operation.
+        """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types(">", (type(self), type(other)))
+
+        return string_gt_operation(self, other)
+
+    def __le__(self, other: Any):
+        """Check if the string is less than or equal to another string.
+
+        Args:
+            other: The other string.
+
+        Returns:
+            The string less than or equal operation.
+        """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types("<=", (type(self), type(other)))
+
+        return string_le_operation(self, other)
+
+    def __ge__(self, other: Any):
+        """Check if the string is greater than or equal to another string.
+
+        Args:
+            other: The other string.
+
+        Returns:
+            The string greater than or equal operation.
+        """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types(">=", (type(self), type(other)))
+
+        return string_ge_operation(self, other)
+
+
+@var_operation
+def string_lt_operation(lhs: StringVar | str, rhs: StringVar | str):
+    """Check if a string is less than another string.
+
+    Args:
+        lhs: The left-hand side string.
+        rhs: The right-hand side string.
+
+    Returns:
+        The string less than operation.
+    """
+    return var_operation_return(js_expression=f"{lhs} < {rhs}", var_type=bool)
+
+
+@var_operation
+def string_gt_operation(lhs: StringVar | str, rhs: StringVar | str):
+    """Check if a string is greater than another string.
+
+    Args:
+        lhs: The left-hand side string.
+        rhs: The right-hand side string.
+
+    Returns:
+        The string greater than operation.
+    """
+    return var_operation_return(js_expression=f"{lhs} > {rhs}", var_type=bool)
+
+
+@var_operation
+def string_le_operation(lhs: StringVar | str, rhs: StringVar | str):
+    """Check if a string is less than or equal to another string.
+
+    Args:
+        lhs: The left-hand side string.
+        rhs: The right-hand side string.
+
+    Returns:
+        The string less than or equal operation.
+    """
+    return var_operation_return(js_expression=f"{lhs} <= {rhs}", var_type=bool)
+
+
+@var_operation
+def string_ge_operation(lhs: StringVar | str, rhs: StringVar | str):
+    """Check if a string is greater than or equal to another string.
+
+    Args:
+        lhs: The left-hand side string.
+        rhs: The right-hand side string.
+
+    Returns:
+        The string greater than or equal operation.
+    """
+    return var_operation_return(js_expression=f"{lhs} >= {rhs}", var_type=bool)
 
 
 @var_operation
@@ -557,15 +682,18 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         """
         return array_reverse_operation(self)
 
-    def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayVar[ARRAY_VAR_TYPE]:
+    def __add__(self, other: Any) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Concatenate two arrays.
 
         Parameters:
-            other (ArrayVar[ARRAY_VAR_TYPE]): The other array to concatenate.
+            other: The other array to concatenate.
 
         Returns:
             ArrayConcatOperation: The concatenation of the two arrays.
         """
+        if not isinstance(other, ArrayVar):
+            raise_unsupported_operand_types("+", (type(self), type(other)))
+
         return array_concat_operation(self, other)
 
     @overload
@@ -735,18 +863,76 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
             return array_contains_field_operation(self, other, field)
         return array_contains_operation(self, other)
 
-    def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
+    def __mul__(self, other: Any) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Multiply the sequence by a number or integer.
 
         Parameters:
-            other (NumberVar | int): The number or integer to multiply the sequence by.
+            other: The number or integer to multiply the sequence by.
 
         Returns:
             ArrayVar[ARRAY_VAR_TYPE]: The result of multiplying the sequence by the given number or integer.
         """
+        if not isinstance(other, (NumberVar, int)):
+            raise_unsupported_operand_types("*", (type(self), type(other)))
         return repeat_array_operation(self, other)
 
     __rmul__ = __mul__  # type: ignore
+
+    def __lt__(self, other: Any):
+        """Check if the array is less than another array.
+
+        Args:
+            other: The other array.
+
+        Returns:
+            The array less than operation.
+        """
+        if not isinstance(other, (ArrayVar, list, tuple)):
+            raise_unsupported_operand_types("<", (type(self), type(other)))
+
+        return array_lt_operation(self, other)
+
+    def __gt__(self, other: Any):
+        """Check if the array is greater than another array.
+
+        Args:
+            other: The other array.
+
+        Returns:
+            The array greater than operation.
+        """
+        if not isinstance(other, (ArrayVar, list, tuple)):
+            raise_unsupported_operand_types(">", (type(self), type(other)))
+
+        return array_gt_operation(self, other)
+
+    def __le__(self, other: Any):
+        """Check if the array is less than or equal to another array.
+
+        Args:
+            other: The other array.
+
+        Returns:
+            The array less than or equal operation.
+        """
+        if not isinstance(other, (ArrayVar, list, tuple)):
+            raise_unsupported_operand_types("<=", (type(self), type(other)))
+
+        return array_le_operation(self, other)
+
+    def __ge__(self, other: Any):
+        """Check if the array is greater than or equal to another array.
+
+        Args:
+            other: The other array.
+
+        Returns:
+            The array greater than or equal operation.
+        """
+        if not isinstance(other, (ArrayVar, list, tuple)):
+            raise_unsupported_operand_types(">=", (type(self), type(other)))
+
+        return array_ge_operation(self, other)
 
 
 LIST_ELEMENT = TypeVar("LIST_ELEMENT")
@@ -959,6 +1145,61 @@ def array_reverse_operation(
         js_expression=f"{array}.slice().reverse()",
         var_type=array._var_type,
     )
+
+
+@var_operation
+def array_lt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tuple):
+    """Check if an array is less than another array.
+
+    Args:
+        lhs: The left-hand side array.
+        rhs: The right-hand side array.
+
+    Returns:
+        The array less than operation.
+    """
+    return var_operation_return(js_expression=f"{lhs} < {rhs}", var_type=bool)
+
+
+@var_operation
+def array_gt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tuple):
+    """Check if an array is greater than another array.
+
+    Args:
+        lhs: The left-hand side array.
+        rhs: The right-hand side array.
+
+    Returns:
+        The array greater than operation.
+    """
+    return var_operation_return(js_expression=f"{lhs} > {rhs}", var_type=bool)
+
+
+@var_operation
+def array_le_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tuple):
+    """Check if an array is less than or equal to another array.
+
+    Args:
+        lhs: The left-hand side array.
+        rhs: The right-hand side array.
+
+    Returns:
+        The array less than or equal operation.
+    """
+    return var_operation_return(js_expression=f"{lhs} <= {rhs}", var_type=bool)
+
+
+def array_ge_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tuple):
+    """Check if an array is greater than or equal to another array.
+
+    Args:
+        lhs: The left-hand side array.
+        rhs: The right-hand side array.
+
+    Returns:
+        The array greater than or equal operation.
+    """
+    return var_operation_return(js_expression=f"{lhs} >= {rhs}", var_type=bool)
 
 
 @var_operation
