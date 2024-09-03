@@ -2480,7 +2480,7 @@ def state_to_schema(
             (
                 field_name,
                 model_field.name,
-                model_field.type_,
+                f"{model_field.type_.__module__}.{model_field.type_.__qualname__}",
                 (
                     model_field.required
                     if isinstance(model_field.required, bool)
@@ -2643,7 +2643,7 @@ class StateManagerDisk(StateManager):
 
         self.states[substate_token] = substate
 
-        state_dilled = dill.dumps((state_to_schema(substate), substate), byref=True)
+        state_dilled = dill.dumps((state_to_schema(substate), substate))
         if not self.states_directory.exists():
             self.states_directory.mkdir(parents=True, exist_ok=True)
         self.token_path(substate_token).write_bytes(state_dilled)
