@@ -21,11 +21,10 @@ from typing import (
     Union,
     overload,
 )
-from typing_extensions import get_args
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
-from reflex.utils.types import GenericType, get_origin, is_union
+from reflex.utils.types import GenericType, get_origin
 from reflex.vars import (
     ImmutableVarData,
     Var,
