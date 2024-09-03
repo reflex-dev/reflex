@@ -21,10 +21,11 @@ from typing import (
     Union,
     overload,
 )
+from typing_extensions import get_args
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
-from reflex.utils.types import GenericType, get_origin
+from reflex.utils.types import GenericType, get_origin, is_union
 from reflex.vars import (
     ImmutableVarData,
     Var,
@@ -872,8 +873,11 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             ArrayVar[ARRAY_VAR_TYPE]: The result of multiplying the sequence by the given number or integer.
         """
-        if not isinstance(other, (NumberVar, int)):
+        if not isinstance(other, (NumberVar, int)) or (
+            isinstance(other, NumberVar) and other._is_strict_float()
+        ):
             raise_unsupported_operand_types("*", (type(self), type(other)))
+
         return repeat_array_operation(self, other)
 
     __rmul__ = __mul__  # type: ignore

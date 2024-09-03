@@ -410,6 +410,22 @@ class NumberVar(ImmutableVar[NUMBER_T]):
             The boolean value of the number.
         """
         return self != 0
+    
+    def _is_strict_float(self) -> bool:
+        """Check if the number is a float.
+
+        Returns:
+            bool: True if the number is a float.
+        """
+        return issubclass(self._var_type, float)
+    
+    def _is_strict_int(self) -> bool:
+        """Check if the number is an int.
+        
+        Returns:
+            bool: True if the number is an int.
+        """
+        return issubclass(self._var_type, int)
 
 
 def binary_number_operation(
