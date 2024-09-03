@@ -5,7 +5,15 @@ Converted from https://github.com/radix-ui/website/blob/main/components/generate
 
 import math
 
-from coloraide import Color
+from reflex.utils import console
+
+try:
+    from coloraide import Color
+except ImportError:
+    console.error(
+        "coloraide is not installed. Please install it to use this module. `pip install coloraide`"
+    )
+    exit(1)
 
 from .bezier import bezier
 from .default_colors import DEFAULT_DARK_COLORS, DEFAULT_LIGHT_COLORS

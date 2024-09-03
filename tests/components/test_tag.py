@@ -3,6 +3,7 @@ from typing import Dict, List
 import pytest
 
 from reflex.components.tags import CondTag, Tag, tagless
+from reflex.ivars.base import LiteralVar
 from reflex.vars import BaseVar, Var
 
 
@@ -12,8 +13,8 @@ from reflex.vars import BaseVar, Var
         ({}, []),
         ({"key-hypen": 1}, ["key-hypen={1}"]),
         ({"key": 1}, ["key={1}"]),
-        ({"key": "value"}, ["key={`value`}"]),
-        ({"key": True, "key2": "value2"}, ["key={true}", "key2={`value2`}"]),
+        ({"key": "value"}, ['key={"value"}']),
+        ({"key": True, "key2": "value2"}, ["key={true}", 'key2={"value2"}']),
     ],
 )
 def test_format_props(props: Dict[str, Var], test_props: List):
@@ -53,8 +54,8 @@ def test_is_valid_prop(prop: Var, valid: bool):
 def test_add_props():
     """Test that the props are added."""
     tag = Tag().add_props(key="value", key2=42, invalid=None, invalid2={})
-    assert tag.props["key"].equals(Var.create("value"))
-    assert tag.props["key2"].equals(Var.create(42))
+    assert tag.props["key"].equals(LiteralVar.create("value"))
+    assert tag.props["key2"].equals(LiteralVar.create(42))
     assert "invalid" not in tag.props
     assert "invalid2" not in tag.props
 
@@ -102,7 +103,7 @@ def test_format_tag(tag: Tag, expected: Dict):
     assert tag_dict["name"] == expected["name"]
     assert tag_dict["contents"] == expected["contents"]
     for prop, prop_value in tag_dict["props"].items():
-        assert prop_value.equals(Var.create_safe(expected["props"][prop]))
+        assert prop_value.equals(LiteralVar.create(expected["props"][prop]))
 
 
 def test_format_cond_tag():

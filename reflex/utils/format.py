@@ -272,8 +272,10 @@ def format_f_string_prop(prop: BaseVar) -> str:
     Returns:
         The formatted string.
     """
+    from reflex.ivars.base import VarData
+
     s = prop._var_full_name
-    var_data = prop._var_data
+    var_data = VarData.merge(prop._get_all_var_data())
     interps = var_data.interpolations if var_data else []
     parts: List[str] = []
 
@@ -421,6 +423,7 @@ def format_prop(
     # import here to avoid circular import.
     from reflex.event import EventChain
     from reflex.utils import serializers
+    from reflex.vars import VarData
 
     try:
         # Handle var props.
@@ -428,7 +431,8 @@ def format_prop(
             if not prop._var_is_local or prop._var_is_string:
                 return str(prop)
             if isinstance(prop, BaseVar) and types._issubclass(prop._var_type, str):
-                if prop._var_data and prop._var_data.interpolations:
+                var_data = VarData.merge(prop._get_all_var_data())
+                if var_data and var_data.interpolations:
                     return format_f_string_prop(prop)
                 return format_string(prop._var_full_name)
             prop = prop._var_full_name
@@ -483,11 +487,26 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         The formatted props list.
     """
     # Format all the props.
+    from reflex.ivars.base import ImmutableVar, LiteralVar
+
     return [
-        f"{name}={format_prop(prop)}"
+        (
+            f"{name}={format_prop(prop)}"
+            if isinstance(prop, Var) and not isinstance(prop, ImmutableVar)
+            else (
+                f"{name}={{{format_prop(prop if isinstance(prop, Var) else LiteralVar.create(prop))}}}"
+            )
+        )
         for name, prop in sorted(key_value_props.items())
         if prop is not None
-    ] + [str(prop) for prop in single_props]
+    ] + [
+        (
+            str(prop)
+            if isinstance(prop, Var) and not isinstance(prop, ImmutableVar)
+            else f"{{{str(LiteralVar.create(prop))}}}"
+        )
+        for prop in single_props
+    ]
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
@@ -502,12 +521,12 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     # Get the class that defines the event handler.
     parts = handler.fn.__qualname__.split(".")
 
-    # If there's no enclosing class, just return the function name.
-    if len(parts) == 1:
-        return ("", parts[-1])
-
     # Get the state full name
     state_full_name = handler.state_full_name
+
+    # If there's no enclosing class, just return the function name.
+    if not state_full_name:
+        return ("", parts[-1])
 
     # Get the function name
     name = parts[-1]
@@ -613,11 +632,13 @@ def format_event_chain(
 
 
 def format_queue_events(
-    events: EventSpec
-    | EventHandler
-    | Callable
-    | List[EventSpec | EventHandler | Callable]
-    | None = None,
+    events: (
+        EventSpec
+        | EventHandler
+        | Callable
+        | List[EventSpec | EventHandler | Callable]
+        | None
+    ) = None,
     args_spec: Optional[ArgsSpec] = None,
 ) -> Var[EventChain]:
     """Format a list of event handler / event spec as a javascript callback.
@@ -645,11 +666,10 @@ def format_queue_events(
         call_event_fn,
         call_event_handler,
     )
+    from reflex.ivars import FunctionVar, ImmutableVar
 
     if not events:
-        return Var.create_safe(
-            "() => null", _var_is_string=False, _var_is_local=False
-        ).to(EventChain)
+        return ImmutableVar("(() => null)").to(FunctionVar, EventChain)
 
     # If no spec is provided, the function will take no arguments.
     def _default_args_spec():
@@ -682,12 +702,10 @@ def format_queue_events(
 
     # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
     # Typically this snippet will _only_ run from within an rx.call_script eval context.
-    return Var.create_safe(
+    return ImmutableVar(
         f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}); "
         f"processEvent({constants.CompileVars.SOCKET})}}",
-        _var_is_string=False,
-        _var_is_local=False,
-    ).to(EventChain)
+    ).to(FunctionVar, EventChain)
 
 
 def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
@@ -786,8 +804,8 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
     """
     clean_ref = re.sub(r"[^\w]+", "_", refs)
     if idx is not None:
-        idx._var_is_local = True
-        return f"refs_{clean_ref}[{idx}]"
+        # idx._var_is_local = True
+        return f"refs_{clean_ref}[{str(idx)}]"
     return f"refs_{clean_ref}"
 
 
@@ -938,7 +956,9 @@ def format_data_editor_cell(cell: Any):
     Returns:
         The formatted cell.
     """
+    from reflex.ivars.base import ImmutableVar
+
     return {
-        "kind": Var.create(value="GridCellKind.Text", _var_is_string=False),
+        "kind": ImmutableVar.create("GridCellKind.Text"),
         "data": cell,
     }

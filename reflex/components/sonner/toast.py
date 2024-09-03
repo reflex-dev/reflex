@@ -14,6 +14,7 @@ from reflex.event import (
     EventSpec,
     call_script,
 )
+from reflex.ivars.base import LiteralVar
 from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
@@ -74,6 +75,9 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
 
 class ToastProps(PropsBase):
     """Props for the toast component."""
+
+    # Toast's title, renders above the description.
+    title: Optional[Union[str, Var]]
 
     # Toast's description, renders underneath the title.
     description: Optional[Union[str, Var]]
@@ -197,21 +201,19 @@ class Toaster(Component):
     theme: Var[str] = resolved_color_mode
 
     # whether to show rich colors
-    rich_colors: Var[bool] = Var.create_safe(True)
+    rich_colors: Var[bool] = LiteralVar.create(True)
 
     # whether to expand the toast
-    expand: Var[bool] = Var.create_safe(True)
+    expand: Var[bool] = LiteralVar.create(True)
 
     # the number of toasts that are currently visible
     visible_toasts: Var[int]
 
     # the position of the toast
-    position: Var[LiteralPosition] = Var.create_safe(
-        "bottom-right", _var_is_string=True
-    )
+    position: Var[LiteralPosition] = LiteralVar.create("bottom-right")
 
     # whether to show the close button
-    close_button: Var[bool] = Var.create_safe(False)
+    close_button: Var[bool] = LiteralVar.create(False)
 
     # offset of the toast
     offset: Var[str]
@@ -291,7 +293,7 @@ class Toaster(Component):
         return call_script(toast_action)
 
     @staticmethod
-    def toast_info(message: str, **kwargs):
+    def toast_info(message: str = "", **kwargs):
         """Display an info toast message.
 
         Args:
@@ -304,7 +306,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="info", **kwargs)
 
     @staticmethod
-    def toast_warning(message: str, **kwargs):
+    def toast_warning(message: str = "", **kwargs):
         """Display a warning toast message.
 
         Args:
@@ -317,7 +319,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="warning", **kwargs)
 
     @staticmethod
-    def toast_error(message: str, **kwargs):
+    def toast_error(message: str = "", **kwargs):
         """Display an error toast message.
 
         Args:
@@ -330,7 +332,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="error", **kwargs)
 
     @staticmethod
-    def toast_success(message: str, **kwargs):
+    def toast_success(message: str = "", **kwargs):
         """Display a success toast message.
 
         Args:
@@ -356,7 +358,7 @@ class Toaster(Component):
 
         if isinstance(id, Var):
             dismiss = f"{toast_ref}.dismiss({id._var_name_unwrapped})"
-            dismiss_var_data = id._var_data
+            dismiss_var_data = id._get_all_var_data()
         elif isinstance(id, str):
             dismiss = f"{toast_ref}.dismiss('{id}')"
         else:
@@ -365,7 +367,7 @@ class Toaster(Component):
             dismiss,
             _var_is_string=False,
             _var_is_local=True,
-            _var_data=dismiss_var_data,
+            _var_data=VarData.merge(dismiss_var_data),
         )
         return call_script(dismiss_action)
 
