@@ -812,6 +812,13 @@ class LiteralVar(ImmutableVar):
                 ),
             )
 
+        if isinstance(value, Base):
+            return LiteralObjectVar.create(
+                {k: (None if callable(v) else v) for k, v in value.dict().items()},
+                _var_type=type(value),
+                _var_data=_var_data,
+            )
+
         serialized_value = serializers.serialize(value)
         if serialized_value is not None:
             if isinstance(serialized_value, dict):
@@ -821,13 +828,6 @@ class LiteralVar(ImmutableVar):
                     _var_data=_var_data,
                 )
             return LiteralVar.create(serialized_value, _var_data=_var_data)
-
-        if isinstance(value, Base):
-            return LiteralObjectVar.create(
-                {k: (None if callable(v) else v) for k, v in value.dict().items()},
-                _var_type=type(value),
-                _var_data=_var_data,
-            )
 
         raise TypeError(
             f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
