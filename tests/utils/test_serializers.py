@@ -205,7 +205,7 @@ def test_serialize(value: Any, expected: str):
         ([StrEnum.FOO, StrEnum.BAR], '["foo", "bar"]', False),
         (
             BaseSubclass(ts=datetime.timedelta(1, 1, 1)),
-            '"{\\"ts\\": \\"1 day, 0:00:01.000001\\"}"',
+            '({ ["ts"] : "1 day, 0:00:01.000001" })',
             False,
         ),
         (
