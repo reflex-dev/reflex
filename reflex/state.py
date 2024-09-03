@@ -2457,6 +2457,20 @@ def _default_token_expiration() -> int:
     return get_config().redis_token_expiration
 
 
+def _serialize_type(type_: Any) -> str:
+    """Serialize a type.
+
+    Args:
+        type_: The type to serialize.
+
+    Returns:
+        The serialized type.
+    """
+    if not inspect.isclass(type_):
+        return f"{type_}"
+    return f"{type_.__module__}.{type_.__qualname__}"
+
+
 def state_to_schema(
     state: BaseState,
 ) -> List[
@@ -2480,7 +2494,7 @@ def state_to_schema(
             (
                 field_name,
                 model_field.name,
-                f"{model_field.type_.__module__}.{model_field.type_.__qualname__}",
+                _serialize_type(model_field.type_),
                 (
                     model_field.required
                     if isinstance(model_field.required, bool)
