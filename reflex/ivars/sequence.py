@@ -942,6 +942,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         if any(
             not isinstance(i, (int, NumberVar))
             for i in (first_endpoint, second_endpoint, step)
+            if i is not None
         ):
             raise_unsupported_operand_types(
                 "range", (type(first_endpoint), type(second_endpoint), type(step))
