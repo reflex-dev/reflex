@@ -209,4 +209,4 @@ def find_replace(directory: str | Path, find: str, replace: str):
             filepath = Path(root, file)
             text = filepath.read_text(encoding="utf-8")
             text = re.sub(find, replace, text)
-            filepath.write_text(text)
+            filepath.write_text(text, encoding="utf-8")
