@@ -71,7 +71,6 @@ from .components.plotly import plotly as plotly
 from .components.radix.primitives.accordion import accordion as accordion
 from .components.radix.primitives.drawer import drawer as drawer
 from .components.radix.primitives.form import form as form
-from .components.radix.primitives.progress import progress as progress
 from .components.radix.themes.base import theme as theme
 from .components.radix.themes.base import theme_panel as theme_panel
 from .components.radix.themes.color_mode import color_mode as color_mode
@@ -106,6 +105,7 @@ from .components.radix.themes.components.hover_card import hover_card as hover_c
 from .components.radix.themes.components.icon_button import icon_button as icon_button
 from .components.radix.themes.components.inset import inset as inset
 from .components.radix.themes.components.popover import popover as popover
+from .components.radix.themes.components.progress import progress as progress
 from .components.radix.themes.components.radio_cards import radio_cards as radio_cards
 from .components.radix.themes.components.radio_group import radio as radio
 from .components.radix.themes.components.radio_group import radio_group as radio_group

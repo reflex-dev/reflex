@@ -205,7 +205,7 @@ RADIX_PRIMITIVES_MAPPING: dict = {
     "components.radix.primitives.form": [
         "form",
     ],
-    "components.radix.primitives.progress": ["progress"],
+    "components.radix.themes.components.progress": ["progress"],
 }
 
 COMPONENTS_CORE_MAPPING: dict = {
