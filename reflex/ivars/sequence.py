@@ -14,6 +14,7 @@ from typing import (
     Dict,
     List,
     Literal,
+    NoReturn,
     Set,
     Tuple,
     Type,
@@ -57,6 +58,12 @@ if TYPE_CHECKING:
 class StringVar(ImmutableVar[str]):
     """Base class for immutable string vars."""
 
+    @overload
+    def __add__(self, other: StringVar | str) -> ConcatVarOperation: ...
+
+    @overload
+    def __add__(self, other: NoReturn) -> NoReturn: ...
+
     def __add__(self, other: Any) -> ConcatVarOperation:
         """Concatenate two strings.
 
@@ -70,6 +77,12 @@ class StringVar(ImmutableVar[str]):
             raise_unsupported_operand_types("+", (type(self), type(other)))
 
         return ConcatVarOperation.create(self, other)
+
+    @overload
+    def __radd__(self, other: StringVar | str) -> ConcatVarOperation: ...
+
+    @overload
+    def __radd__(self, other: NoReturn) -> NoReturn: ...
 
     def __radd__(self, other: Any) -> ConcatVarOperation:
         """Concatenate two strings.
@@ -85,6 +98,12 @@ class StringVar(ImmutableVar[str]):
 
         return ConcatVarOperation.create(other, self)
 
+    @overload
+    def __mul__(self, other: NumberVar | int) -> StringVar: ...
+
+    @overload
+    def __mul__(self, other: NoReturn) -> NoReturn: ...
+
     def __mul__(self, other: Any) -> StringVar:
         """Multiply the sequence by a number or an integer.
 
@@ -98,6 +117,12 @@ class StringVar(ImmutableVar[str]):
             raise_unsupported_operand_types("*", (type(self), type(other)))
 
         return (self.split() * other).join()
+
+    @overload
+    def __rmul__(self, other: NumberVar | int) -> StringVar: ...
+
+    @overload
+    def __rmul__(self, other: NoReturn) -> NoReturn: ...
 
     def __rmul__(self, other: Any) -> StringVar:
         """Multiply the sequence by a number or an integer.
@@ -113,7 +138,13 @@ class StringVar(ImmutableVar[str]):
 
         return (self.split() * other).join()
 
-    def __getitem__(self, i: slice | int | NumberVar) -> StringVar:
+    @overload
+    def __getitem__(self, i: slice) -> StringVar: ...
+
+    @overload
+    def __getitem__(self, i: int | NumberVar) -> StringVar: ...
+
+    def __getitem__(self, i: Any) -> StringVar:
         """Get a slice of the string.
 
         Args:
@@ -124,6 +155,8 @@ class StringVar(ImmutableVar[str]):
         """
         if isinstance(i, slice):
             return self.split()[i].join()
+        if not isinstance(i, (int, NumberVar)):
+            raise_unsupported_operand_types("[]", (type(self), type(i)))
         return string_item_operation(self, i)
 
     def length(self) -> NumberVar:
@@ -174,9 +207,17 @@ class StringVar(ImmutableVar[str]):
         """
         return self.split().reverse().join()
 
+    @overload
     def contains(
         self, other: StringVar | str, field: StringVar | str | None = None
-    ) -> BooleanVar:
+    ) -> BooleanVar: ...
+
+    @overload
+    def contains(
+        self, other: NoReturn, field: StringVar | str | None = None
+    ) -> NoReturn: ...
+
+    def contains(self, other: Any, field: Any = None) -> BooleanVar:
         """Check if the string contains another string.
 
         Args:
@@ -186,11 +227,21 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string contains operation.
         """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types("contains", (type(self), type(other)))
         if field is not None:
+            if not isinstance(field, (StringVar, str)):
+                raise_unsupported_operand_types("contains", (type(self), type(field)))
             return string_contains_field_operation(self, other, field)
         return string_contains_operation(self, other)
 
-    def split(self, separator: StringVar | str = "") -> ArrayVar[List[str]]:
+    @overload
+    def split(self, separator: StringVar | str = "") -> ArrayVar[List[str]]: ...
+
+    @overload
+    def split(self, separator: NoReturn) -> NoReturn: ...
+
+    def split(self, separator: Any = "") -> ArrayVar[List[str]]:
         """Split the string.
 
         Args:
@@ -199,9 +250,17 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string split operation.
         """
+        if not isinstance(separator, (StringVar, str)):
+            raise_unsupported_operand_types("split", (type(self), type(separator)))
         return string_split_operation(self, separator)
 
-    def startswith(self, prefix: StringVar | str) -> BooleanVar:
+    @overload
+    def startswith(self, prefix: StringVar | str) -> BooleanVar: ...
+
+    @overload
+    def startswith(self, prefix: NoReturn) -> NoReturn: ...
+
+    def startswith(self, prefix: Any) -> BooleanVar:
         """Check if the string starts with a prefix.
 
         Args:
@@ -210,7 +269,15 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string starts with operation.
         """
+        if not isinstance(prefix, (StringVar, str)):
+            raise_unsupported_operand_types("startswith", (type(self), type(prefix)))
         return string_starts_with_operation(self, prefix)
+
+    @overload
+    def __lt__(self, other: StringVar | str) -> BooleanVar: ...
+
+    @overload
+    def __lt__(self, other: NoReturn) -> NoReturn: ...
 
     def __lt__(self, other: Any):
         """Check if the string is less than another string.
@@ -226,6 +293,12 @@ class StringVar(ImmutableVar[str]):
 
         return string_lt_operation(self, other)
 
+    @overload
+    def __gt__(self, other: StringVar | str) -> BooleanVar: ...
+
+    @overload
+    def __gt__(self, other: NoReturn) -> NoReturn: ...
+
     def __gt__(self, other: Any):
         """Check if the string is greater than another string.
 
@@ -240,6 +313,12 @@ class StringVar(ImmutableVar[str]):
 
         return string_gt_operation(self, other)
 
+    @overload
+    def __le__(self, other: StringVar | str) -> BooleanVar: ...
+
+    @overload
+    def __le__(self, other: NoReturn) -> NoReturn: ...
+
     def __le__(self, other: Any):
         """Check if the string is less than or equal to another string.
 
@@ -253,6 +332,12 @@ class StringVar(ImmutableVar[str]):
             raise_unsupported_operand_types("<=", (type(self), type(other)))
 
         return string_le_operation(self, other)
+
+    @overload
+    def __ge__(self, other: StringVar | str) -> BooleanVar: ...
+
+    @overload
+    def __ge__(self, other: NoReturn) -> NoReturn: ...
 
     def __ge__(self, other: Any):
         """Check if the string is greater than or equal to another string.
@@ -663,7 +748,13 @@ VALUE_TYPE = TypeVar("VALUE_TYPE")
 class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
     """Base class for immutable array vars."""
 
-    def join(self, sep: StringVar | str = "") -> StringVar:
+    @overload
+    def join(self, sep: StringVar | str = "") -> StringVar: ...
+
+    @overload
+    def join(self, sep: NoReturn) -> NoReturn: ...
+
+    def join(self, sep: Any = "") -> StringVar:
         """Join the elements of the array.
 
         Args:
@@ -672,6 +763,8 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             The joined elements.
         """
+        if not isinstance(sep, (StringVar, str)):
+            raise_unsupported_operand_types("join", (type(self), type(sep)))
         return array_join_operation(self, sep)
 
     def reverse(self) -> ArrayVar[ARRAY_VAR_TYPE]:
@@ -681,6 +774,12 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
             The reversed array.
         """
         return array_reverse_operation(self)
+
+    @overload
+    def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayVar[ARRAY_VAR_TYPE]: ...
+
+    @overload
+    def __add__(self, other: NoReturn) -> NoReturn: ...
 
     def __add__(self, other: Any) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Concatenate two arrays.
@@ -786,9 +885,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
     @overload
     def __getitem__(self, i: int | NumberVar) -> ImmutableVar: ...
 
-    def __getitem__(
-        self, i: slice | int | NumberVar
-    ) -> ArrayVar[ARRAY_VAR_TYPE] | ImmutableVar:
+    def __getitem__(self, i: Any) -> ArrayVar[ARRAY_VAR_TYPE] | ImmutableVar:
         """Get a slice of the array.
 
         Args:
@@ -799,6 +896,8 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         """
         if isinstance(i, slice):
             return ArraySliceOperation.create(self, i)
+        if not isinstance(i, (int, NumberVar)):
+            raise_unsupported_operand_types("[]", (type(self), type(i)))
         return array_item_operation(self, i)
 
     def length(self) -> NumberVar:
@@ -840,6 +939,13 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             The range of numbers.
         """
+        if any(
+            not isinstance(i, (int, NumberVar))
+            for i in (first_endpoint, second_endpoint, step)
+        ):
+            raise_unsupported_operand_types(
+                "range", (type(first_endpoint), type(second_endpoint), type(step))
+            )
         if second_endpoint is None:
             start = 0
             end = first_endpoint
@@ -849,7 +955,13 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
 
         return array_range_operation(start, end, step or 1)
 
-    def contains(self, other: Any, field: StringVar | str | None = None) -> BooleanVar:
+    @overload
+    def contains(self, other: Any) -> BooleanVar: ...
+
+    @overload
+    def contains(self, other: Any, field: StringVar | str) -> BooleanVar: ...
+
+    def contains(self, other: Any, field: Any = None) -> BooleanVar:
         """Check if the array contains an element.
 
         Args:
@@ -860,8 +972,16 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
             The array contains operation.
         """
         if field is not None:
+            if not isinstance(field, (StringVar, str)):
+                raise_unsupported_operand_types("contains", (type(self), type(field)))
             return array_contains_field_operation(self, other, field)
         return array_contains_operation(self, other)
+
+    @overload
+    def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]: ...
+
+    @overload
+    def __mul__(self, other: NoReturn) -> NoReturn: ...
 
     def __mul__(self, other: Any) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Multiply the sequence by a number or integer.
@@ -881,6 +1001,12 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
 
     __rmul__ = __mul__  # type: ignore
 
+    @overload
+    def __lt__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> BooleanVar: ...
+
+    @overload
+    def __lt__(self, other: list | tuple) -> BooleanVar: ...
+
     def __lt__(self, other: Any):
         """Check if the array is less than another array.
 
@@ -894,6 +1020,12 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
             raise_unsupported_operand_types("<", (type(self), type(other)))
 
         return array_lt_operation(self, other)
+
+    @overload
+    def __gt__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> BooleanVar: ...
+
+    @overload
+    def __gt__(self, other: list | tuple) -> BooleanVar: ...
 
     def __gt__(self, other: Any):
         """Check if the array is greater than another array.
@@ -909,6 +1041,12 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
 
         return array_gt_operation(self, other)
 
+    @overload
+    def __le__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> BooleanVar: ...
+
+    @overload
+    def __le__(self, other: list | tuple) -> BooleanVar: ...
+
     def __le__(self, other: Any):
         """Check if the array is less than or equal to another array.
 
@@ -922,6 +1060,12 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
             raise_unsupported_operand_types("<=", (type(self), type(other)))
 
         return array_le_operation(self, other)
+
+    @overload
+    def __ge__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> BooleanVar: ...
+
+    @overload
+    def __ge__(self, other: list | tuple) -> BooleanVar: ...
 
     def __ge__(self, other: Any):
         """Check if the array is greater than or equal to another array.
@@ -1192,6 +1336,7 @@ def array_le_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     return var_operation_return(js_expression=f"{lhs} <= {rhs}", var_type=bool)
 
 
+@var_operation
 def array_ge_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tuple):
     """Check if an array is greater than or equal to another array.
 
