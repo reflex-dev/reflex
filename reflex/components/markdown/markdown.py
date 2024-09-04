@@ -170,7 +170,7 @@ class Markdown(Component):
                 ),
             },
             *[
-                component(_MOCK_ARG)._get_imports()  # type: ignore
+                component(_MOCK_ARG)._get_all_imports()  # type: ignore
                 for component in self.component_map.values()
             ],
             CodeBlock.create(theme="light")._get_imports(),  # type: ignore,
