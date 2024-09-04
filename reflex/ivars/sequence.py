@@ -34,16 +34,18 @@ from reflex.vars import (
 
 from .base import (
     CachedVarOperation,
+    CustomVarOperationReturn,
     ImmutableVar,
     LiteralVar,
     cached_property_no_lock,
     figure_out_type,
     unionize,
+    var_operation,
+    var_operation_return,
 )
 from .number import (
     BooleanVar,
     LiteralNumberVar,
-    NotEqualOperation,
     NumberVar,
 )
 
@@ -98,15 +100,7 @@ class StringVar(ImmutableVar[str]):
         """
         return (self.split() * other).join()
 
-    @overload
-    def __getitem__(self, i: slice) -> ArrayJoinOperation: ...
-
-    @overload
-    def __getitem__(self, i: int | NumberVar) -> StringItemOperation: ...
-
-    def __getitem__(
-        self, i: slice | int | NumberVar
-    ) -> ArrayJoinOperation | StringItemOperation:
+    def __getitem__(self, i: slice | int | NumberVar) -> StringVar:
         """Get a slice of the string.
 
         Args:
@@ -117,7 +111,7 @@ class StringVar(ImmutableVar[str]):
         """
         if isinstance(i, slice):
             return self.split()[i].join()
-        return StringItemOperation.create(self, i)
+        return string_item_operation(self, i)
 
     def length(self) -> NumberVar:
         """Get the length of the string.
@@ -133,7 +127,7 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string lower operation.
         """
-        return StringLowerOperation.create(self)
+        return string_lower_operation(self)
 
     def upper(self) -> StringVar:
         """Convert the string to uppercase.
@@ -141,7 +135,7 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string upper operation.
         """
-        return StringUpperOperation.create(self)
+        return string_upper_operation(self)
 
     def strip(self) -> StringVar:
         """Strip the string.
@@ -149,17 +143,17 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string strip operation.
         """
-        return StringStripOperation.create(self)
+        return string_strip_operation(self)
 
-    def bool(self) -> NotEqualOperation:
+    def bool(self):
         """Boolean conversion.
 
         Returns:
             The boolean value of the string.
         """
-        return NotEqualOperation.create(self.length(), 0)
+        return self.length() != 0
 
-    def reversed(self) -> ArrayJoinOperation:
+    def reversed(self) -> StringVar:
         """Reverse the string.
 
         Returns:
@@ -167,7 +161,7 @@ class StringVar(ImmutableVar[str]):
         """
         return self.split().reverse().join()
 
-    def contains(self, other: StringVar | str) -> StringContainsOperation:
+    def contains(self, other: StringVar | str) -> BooleanVar:
         """Check if the string contains another string.
 
         Args:
@@ -176,9 +170,9 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string contains operation.
         """
-        return StringContainsOperation.create(self, other)
+        return string_contains_operation(self, other)
 
-    def split(self, separator: StringVar | str = "") -> StringSplitOperation:
+    def split(self, separator: StringVar | str = "") -> ArrayVar[List[str]]:
         """Split the string.
 
         Args:
@@ -187,9 +181,9 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string split operation.
         """
-        return StringSplitOperation.create(self, separator)
+        return string_split_operation(self, separator)
 
-    def startswith(self, prefix: StringVar | str) -> StringStartsWithOperation:
+    def startswith(self, prefix: StringVar | str) -> BooleanVar:
         """Check if the string starts with a prefix.
 
         Args:
@@ -198,308 +192,106 @@ class StringVar(ImmutableVar[str]):
         Returns:
             The string starts with operation.
         """
-        return StringStartsWithOperation.create(self, prefix)
+        return string_starts_with_operation(self, prefix)
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class StringToStringOperation(CachedVarOperation, StringVar):
-    """Base class for immutable string vars that are the result of a string to string operation."""
+@var_operation
+def string_lower_operation(string: StringVar):
+    """Convert a string to lowercase.
 
-    _value: StringVar = dataclasses.field(
-        default_factory=lambda: LiteralStringVar.create("")
+    Args:
+        string: The string to convert.
+
+    Returns:
+        The lowercase string.
+    """
+    return var_operation_return(js_expression=f"{string}.toLowerCase()", var_type=str)
+
+
+@var_operation
+def string_upper_operation(string: StringVar):
+    """Convert a string to uppercase.
+
+    Args:
+        string: The string to convert.
+
+    Returns:
+        The uppercase string.
+    """
+    return var_operation_return(js_expression=f"{string}.toUpperCase()", var_type=str)
+
+
+@var_operation
+def string_strip_operation(string: StringVar):
+    """Strip a string.
+
+    Args:
+        string: The string to strip.
+
+    Returns:
+        The stripped string.
+    """
+    return var_operation_return(js_expression=f"{string}.trim()", var_type=str)
+
+
+@var_operation
+def string_contains_operation(haystack: StringVar, needle: StringVar | str):
+    """Check if a string contains another string.
+
+    Args:
+        haystack: The haystack.
+        needle: The needle.
+
+    Returns:
+        The string contains operation.
+    """
+    return var_operation_return(
+        js_expression=f"{haystack}.includes({needle})", var_type=bool
     )
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
 
-        Raises:
-            NotImplementedError: Must be implemented by subclasses.
-        """
-        raise NotImplementedError(
-            "StringToStringOperation must implement _cached_var_name"
-        )
+@var_operation
+def string_starts_with_operation(full_string: StringVar, prefix: StringVar | str):
+    """Check if a string starts with a prefix.
 
-    @classmethod
-    def create(
-        cls,
-        value: StringVar,
-        _var_data: VarData | None = None,
-    ) -> StringVar:
-        """Create a var from a string value.
+    Args:
+        full_string: The full string.
+        prefix: The prefix.
 
-        Args:
-            value: The value to create the var from.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=str,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _value=value,
-        )
-
-
-class StringLowerOperation(StringToStringOperation):
-    """Base class for immutable string vars that are the result of a string lower operation."""
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return f"{str(self._value)}.toLowerCase()"
-
-
-class StringUpperOperation(StringToStringOperation):
-    """Base class for immutable string vars that are the result of a string upper operation."""
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return f"{str(self._value)}.toUpperCase()"
-
-
-class StringStripOperation(StringToStringOperation):
-    """Base class for immutable string vars that are the result of a string strip operation."""
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return f"{str(self._value)}.trim()"
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class StringContainsOperation(CachedVarOperation, BooleanVar):
-    """Base class for immutable boolean vars that are the result of a string contains operation."""
-
-    _haystack: StringVar = dataclasses.field(
-        default_factory=lambda: LiteralStringVar.create("")
-    )
-    _needle: StringVar = dataclasses.field(
-        default_factory=lambda: LiteralStringVar.create("")
+    Returns:
+        Whether the string starts with the prefix.
+    """
+    return var_operation_return(
+        js_expression=f"{full_string}.startsWith({prefix})", var_type=bool
     )
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
 
-        Returns:
-            The name of the var.
-        """
-        return f"{str(self._haystack)}.includes({str(self._needle)})"
+@var_operation
+def string_item_operation(string: StringVar, index: NumberVar | int):
+    """Get an item from a string.
 
-    @classmethod
-    def create(
-        cls,
-        haystack: StringVar | str,
-        needle: StringVar | str,
-        _var_data: VarData | None = None,
-    ) -> StringContainsOperation:
-        """Create a var from a string value.
+    Args:
+        string: The string.
+        index: The index of the item.
 
-        Args:
-            haystack: The haystack.
-            needle: The needle.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=bool,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _haystack=(
-                haystack
-                if isinstance(haystack, Var)
-                else LiteralStringVar.create(haystack)
-            ),
-            _needle=(
-                needle if isinstance(needle, Var) else LiteralStringVar.create(needle)
-            ),
-        )
+    Returns:
+        The item from the string.
+    """
+    return var_operation_return(js_expression=f"{string}.at({index})", var_type=str)
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class StringStartsWithOperation(CachedVarOperation, BooleanVar):
-    """Base class for immutable boolean vars that are the result of a string starts with operation."""
+@var_operation
+def array_join_operation(array: ArrayVar, sep: StringVar | str = ""):
+    """Join the elements of an array.
 
-    _full_string: StringVar = dataclasses.field(
-        default_factory=lambda: LiteralStringVar.create("")
-    )
-    _prefix: StringVar = dataclasses.field(
-        default_factory=lambda: LiteralStringVar.create("")
-    )
+    Args:
+        array: The array.
+        sep: The separator.
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return f"{str(self._full_string)}.startsWith({str(self._prefix)})"
-
-    @classmethod
-    def create(
-        cls,
-        full_string: StringVar | str,
-        prefix: StringVar | str,
-        _var_data: VarData | None = None,
-    ) -> StringStartsWithOperation:
-        """Create a var from a string value.
-
-        Args:
-            full_string: The full string.
-            prefix: The prefix.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=bool,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _full_string=(
-                full_string
-                if isinstance(full_string, Var)
-                else LiteralStringVar.create(full_string)
-            ),
-            _prefix=(
-                prefix if isinstance(prefix, Var) else LiteralStringVar.create(prefix)
-            ),
-        )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class StringItemOperation(CachedVarOperation, StringVar):
-    """Base class for immutable string vars that are the result of a string item operation."""
-
-    _string: StringVar = dataclasses.field(
-        default_factory=lambda: LiteralStringVar.create("")
-    )
-    _index: NumberVar = dataclasses.field(
-        default_factory=lambda: LiteralNumberVar.create(0)
-    )
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return f"{str(self._string)}.at({str(self._index)})"
-
-    @classmethod
-    def create(
-        cls,
-        string: StringVar | str,
-        index: NumberVar | int,
-        _var_data: VarData | None = None,
-    ) -> StringItemOperation:
-        """Create a var from a string value.
-
-        Args:
-            string: The string.
-            index: The index.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=str,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _string=(
-                string if isinstance(string, Var) else LiteralStringVar.create(string)
-            ),
-            _index=(
-                index if isinstance(index, Var) else LiteralNumberVar.create(index)
-            ),
-        )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ArrayJoinOperation(CachedVarOperation, StringVar):
-    """Base class for immutable string vars that are the result of an array join operation."""
-
-    _array: ArrayVar = dataclasses.field(
-        default_factory=lambda: LiteralArrayVar.create([])
-    )
-    _sep: StringVar = dataclasses.field(
-        default_factory=lambda: LiteralStringVar.create("")
-    )
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return f"{str(self._array)}.join({str(self._sep)})"
-
-    @classmethod
-    def create(
-        cls,
-        array: ArrayVar,
-        sep: StringVar | str = "",
-        _var_data: VarData | None = None,
-    ) -> ArrayJoinOperation:
-        """Create a var from a string value.
-
-        Args:
-            array: The array.
-            sep: The separator.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=str,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _array=array,
-            _sep=sep if isinstance(sep, Var) else LiteralStringVar.create(sep),
-        )
+    Returns:
+        The joined elements.
+    """
+    return var_operation_return(js_expression=f"{array}.join({sep})", var_type=str)
 
 
 # Compile regex for finding reflex var tags.
@@ -721,7 +513,7 @@ VALUE_TYPE = TypeVar("VALUE_TYPE")
 class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
     """Base class for immutable array vars."""
 
-    def join(self, sep: StringVar | str = "") -> ArrayJoinOperation:
+    def join(self, sep: StringVar | str = "") -> StringVar:
         """Join the elements of the array.
 
         Args:
@@ -730,7 +522,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             The joined elements.
         """
-        return ArrayJoinOperation.create(self, sep)
+        return array_join_operation(self, sep)
 
     def reverse(self) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Reverse the array.
@@ -738,9 +530,9 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             The reversed array.
         """
-        return ArrayReverseOperation.create(self)
+        return array_reverse_operation(self)
 
-    def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayConcatOperation:
+    def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Concatenate two arrays.
 
         Parameters:
@@ -749,7 +541,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             ArrayConcatOperation: The concatenation of the two arrays.
         """
-        return ArrayConcatOperation.create(self, other)
+        return array_concat_operation(self, other)
 
     @overload
     def __getitem__(self, i: slice) -> ArrayVar[ARRAY_VAR_TYPE]: ...
@@ -854,7 +646,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         """
         if isinstance(i, slice):
             return ArraySliceOperation.create(self, i)
-        return ArrayItemOperation.create(self, i).guess_type()
+        return array_item_operation(self, i)
 
     def length(self) -> NumberVar:
         """Get the length of the array.
@@ -862,7 +654,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             The length of the array.
         """
-        return ArrayLengthOperation.create(self)
+        return array_length_operation(self)
 
     @overload
     @classmethod
@@ -902,7 +694,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
             start = first_endpoint
             end = second_endpoint
 
-        return RangeOperation.create(start, end, step or 1)
+        return array_range_operation(start, end, step or 1)
 
     def contains(self, other: Any) -> BooleanVar:
         """Check if the array contains an element.
@@ -913,9 +705,9 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             The array contains operation.
         """
-        return ArrayContainsOperation.create(self, other)
+        return array_contains_operation(self, other)
 
-    def pluck(self, field: Any) -> ArrayVar:
+    def pluck(self, field: StringVar | str) -> ArrayVar:
         """Pluck a field from the array.
 
         Args:
@@ -926,7 +718,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         """
         if field is None:
             return self
-        return ArrayPluckOperation.create(self, field)
+        return array_pluck_operation(self, field)
 
     def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Multiply the sequence by a number or integer.
@@ -937,7 +729,7 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             ArrayVar[ARRAY_VAR_TYPE]: The result of multiplying the sequence by the given number or integer.
         """
-        return ArrayRepeatOperation.create(self, other)
+        return repeat_array_operation(self, other)
 
     __rmul__ = __mul__  # type: ignore
 
@@ -1039,102 +831,20 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         )
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class StringSplitOperation(CachedVarOperation, ArrayVar):
-    """Base class for immutable array vars that are the result of a string split operation."""
+@var_operation
+def string_split_operation(string: StringVar, sep: StringVar | str = ""):
+    """Split a string.
 
-    _string: StringVar = dataclasses.field(
-        default_factory=lambda: LiteralStringVar.create("")
+    Args:
+        string: The string to split.
+        sep: The separator.
+
+    Returns:
+        The split string.
+    """
+    return var_operation_return(
+        js_expression=f"{string}.split({sep})", var_type=List[str]
     )
-    _sep: StringVar = dataclasses.field(
-        default_factory=lambda: LiteralStringVar.create("")
-    )
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return f"{str(self._string)}.split({str(self._sep)})"
-
-    @classmethod
-    def create(
-        cls,
-        string: StringVar | str,
-        sep: StringVar | str,
-        _var_data: VarData | None = None,
-    ) -> StringSplitOperation:
-        """Create a var from a string value.
-
-        Args:
-            string: The string.
-            sep: The separator.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=List[str],
-            _var_data=ImmutableVarData.merge(_var_data),
-            _string=(
-                string if isinstance(string, Var) else LiteralStringVar.create(string)
-            ),
-            _sep=(sep if isinstance(sep, Var) else LiteralStringVar.create(sep)),
-        )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ArrayToArrayOperation(CachedVarOperation, ArrayVar):
-    """Base class for immutable array vars that are the result of an array to array operation."""
-
-    _value: ArrayVar = dataclasses.field(
-        default_factory=lambda: LiteralArrayVar.create([])
-    )
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Raises:
-            NotImplementedError: Must be implemented by subclasses.
-        """
-        raise NotImplementedError(
-            "ArrayToArrayOperation must implement _cached_var_name"
-        )
-
-    @classmethod
-    def create(
-        cls,
-        value: ArrayVar,
-        _var_data: VarData | None = None,
-    ) -> ArrayToArrayOperation:
-        """Create a var from a string value.
-
-        Args:
-            value: The value to create the var from.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=value._var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _value=value,
-        )
 
 
 @dataclasses.dataclass(
@@ -1148,7 +858,9 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
     _array: ArrayVar = dataclasses.field(
         default_factory=lambda: LiteralArrayVar.create([])
     )
-    _slice: slice = dataclasses.field(default_factory=lambda: slice(None, None, None))
+    _start: NumberVar | int = dataclasses.field(default_factory=lambda: 0)
+    _stop: NumberVar | int = dataclasses.field(default_factory=lambda: 0)
+    _step: NumberVar | int = dataclasses.field(default_factory=lambda: 1)
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -1160,7 +872,7 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
         Raises:
             ValueError: If the slice step is zero.
         """
-        start, end, step = self._slice.start, self._slice.stop, self._slice.step
+        start, end, step = self._start, self._stop, self._step
 
         normalized_start = (
             LiteralVar.create(start)
@@ -1178,16 +890,7 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
             if step < 0:
                 actual_start = end + 1 if end is not None else 0
                 actual_end = start + 1 if start is not None else self._array.length()
-                return str(
-                    ArraySliceOperation.create(
-                        ArrayReverseOperation.create(
-                            ArraySliceOperation.create(
-                                self._array, slice(actual_start, actual_end)
-                            )
-                        ),
-                        slice(None, None, -step),
-                    )
-                )
+                return str(self._array[actual_start:actual_end].reverse()[::-step])
             if step == 0:
                 raise ValueError("slice step cannot be zero")
             return f"{str(self._array)}.slice({str(normalized_start)}, {str(normalized_end)}).filter((_, i) => i % {str(step)} === 0)"
@@ -1219,127 +922,64 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
             _var_type=array._var_type,
             _var_data=ImmutableVarData.merge(_var_data),
             _array=array,
-            _slice=slice,
+            _start=slice.start,
+            _stop=slice.stop,
+            _step=slice.step,
         )
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ArrayPluckOperation(ArrayToArrayOperation):
-    """Base class for immutable array vars that are the result of an array pluck operation."""
+@var_operation
+def array_pluck_operation(
+    array: ArrayVar[ARRAY_VAR_TYPE],
+    field: StringVar | str,
+) -> CustomVarOperationReturn[ARRAY_VAR_TYPE]:
+    """Pluck a field from an array of objects.
 
-    _field: Var | Any = dataclasses.field(
-        default_factory=lambda: LiteralVar.create(None)
+    Args:
+        array: The array to pluck from.
+        field: The field to pluck from the objects in the array.
+
+    Returns:
+        The reversed array.
+    """
+    return var_operation_return(
+        js_expression=f"{array}.map(e=>e?.[{field}])",
+        var_type=array._var_type,
     )
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
 
-        Returns:
-            The name of the var.
-        """
-        return f"{str(self._value)}.map(e=>e?.[{str(self._field)}])"
+@var_operation
+def array_reverse_operation(
+    array: ArrayVar[ARRAY_VAR_TYPE],
+) -> CustomVarOperationReturn[ARRAY_VAR_TYPE]:
+    """Reverse an array.
 
-    @classmethod
-    def create(
-        cls,
-        value: ArrayVar,
-        field: Var | str,
-        _var_data: VarData | None = None,
-    ) -> ArrayPluckOperation:
-        """Pluck a field from an object.
+    Args:
+        array: The array to reverse.
 
-        Args:
-            value: The value to create the var from.
-            field: The field to pluck from the objects in the array.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=value._var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _value=value,
-            _field=(field if isinstance(field, Var) else LiteralVar.create(field)),
-        )
-
-
-class ArrayReverseOperation(ArrayToArrayOperation):
-    """Base class for immutable string vars that are the result of a string reverse operation."""
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return f"{str(self._value)}.slice().reverse()"
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ArrayToNumberOperation(CachedVarOperation, NumberVar):
-    """Base class for immutable number vars that are the result of an array to number operation."""
-
-    _array: ArrayVar = dataclasses.field(
-        default_factory=lambda: LiteralArrayVar.create([]),
+    Returns:
+        The reversed array.
+    """
+    return var_operation_return(
+        js_expression=f"{array}.slice().reverse()",
+        var_type=array._var_type,
     )
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
 
-        Raises:
-            NotImplementedError: Must be implemented by subclasses.
-        """
-        raise NotImplementedError(
-            "StringToNumberOperation must implement _cached_var_name"
-        )
+@var_operation
+def array_length_operation(array: ArrayVar):
+    """Get the length of an array.
 
-    @classmethod
-    def create(
-        cls,
-        array: ArrayVar,
-        _var_data: VarData | None = None,
-    ) -> ArrayToNumberOperation:
-        """Create a var from a string value.
+    Args:
+        array: The array.
 
-        Args:
-            array: The array.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=int,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _array=array,
-        )
-
-
-class ArrayLengthOperation(ArrayToNumberOperation):
-    """Base class for immutable number vars that are the result of an array length operation."""
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return f"{str(self._array)}.length"
+    Returns:
+        The length of the array.
+    """
+    return var_operation_return(
+        js_expression=f"{array}.length",
+        var_type=int,
+    )
 
 
 def is_tuple_type(t: GenericType) -> bool:
@@ -1356,166 +996,65 @@ def is_tuple_type(t: GenericType) -> bool:
     return get_origin(t) is tuple
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ArrayItemOperation(CachedVarOperation, ImmutableVar):
-    """Base class for immutable array vars that are the result of an array item operation."""
+@var_operation
+def array_item_operation(array: ArrayVar, index: NumberVar | int):
+    """Get an item from an array.
 
-    _array: ArrayVar = dataclasses.field(
-        default_factory=lambda: LiteralArrayVar.create([])
-    )
-    _index: NumberVar = dataclasses.field(
-        default_factory=lambda: LiteralNumberVar.create(0)
-    )
+    Args:
+        array: The array.
+        index: The index of the item.
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
+    Returns:
+        The item from the array.
+    """
+    args = typing.get_args(array._var_type)
+    if args and isinstance(index, LiteralNumberVar) and is_tuple_type(array._var_type):
+        index_value = int(index._var_value)
+        element_type = args[index_value % len(args)]
+    else:
+        element_type = unionize(*args)
 
-        Returns:
-            The name of the var.
-        """
-        return f"{str(self._array)}.at({str(self._index)})"
-
-    @classmethod
-    def create(
-        cls,
-        array: ArrayVar,
-        index: NumberVar | int,
-        _var_type: GenericType | None = None,
-        _var_data: VarData | None = None,
-    ) -> ArrayItemOperation:
-        """Create a var from a string value.
-
-        Args:
-            array: The array.
-            index: The index.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        args = typing.get_args(array._var_type)
-        if args and isinstance(index, int) and is_tuple_type(array._var_type):
-            element_type = args[index % len(args)]
-        else:
-            element_type = unionize(*args)
-
-        return cls(
-            _var_name="",
-            _var_type=element_type if _var_type is None else _var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _array=array,
-            _index=index if isinstance(index, Var) else LiteralNumberVar.create(index),
-        )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class RangeOperation(CachedVarOperation, ArrayVar):
-    """Base class for immutable array vars that are the result of a range operation."""
-
-    _start: NumberVar = dataclasses.field(
-        default_factory=lambda: LiteralNumberVar.create(0)
-    )
-    _stop: NumberVar = dataclasses.field(
-        default_factory=lambda: LiteralNumberVar.create(0)
-    )
-    _step: NumberVar = dataclasses.field(
-        default_factory=lambda: LiteralNumberVar.create(1)
+    return var_operation_return(
+        js_expression=f"{str(array)}.at({str(index)})",
+        var_type=element_type,
     )
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
 
-        Returns:
-            The name of the var.
-        """
-        start, end, step = self._start, self._stop, self._step
-        return f"Array.from({{ length: ({str(end)} - {str(start)}) / {str(step)} }}, (_, i) => {str(start)} + i * {str(step)})"
+@var_operation
+def array_range_operation(
+    start: NumberVar | int, stop: NumberVar | int, step: NumberVar | int
+):
+    """Create a range of numbers.
 
-    @classmethod
-    def create(
-        cls,
-        start: NumberVar | int,
-        stop: NumberVar | int,
-        step: NumberVar | int,
-        _var_data: VarData | None = None,
-    ) -> RangeOperation:
-        """Create a var from a string value.
+    Args:
+        start: The start of the range.
+        stop: The end of the range.
+        step: The step of the range.
 
-        Args:
-            start: The start of the range.
-            stop: The end of the range.
-            step: The step of the range.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=List[int],
-            _var_data=ImmutableVarData.merge(_var_data),
-            _start=start if isinstance(start, Var) else LiteralNumberVar.create(start),
-            _stop=stop if isinstance(stop, Var) else LiteralNumberVar.create(stop),
-            _step=step if isinstance(step, Var) else LiteralNumberVar.create(step),
-        )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ArrayContainsOperation(CachedVarOperation, BooleanVar):
-    """Base class for immutable boolean vars that are the result of an array contains operation."""
-
-    _haystack: ArrayVar = dataclasses.field(
-        default_factory=lambda: LiteralArrayVar.create([])
+    Returns:
+        The range of numbers.
+    """
+    return var_operation_return(
+        js_expression=f"Array.from({{ length: ({str(stop)} - {str(start)}) / {str(step)} }}, (_, i) => {str(start)} + i * {str(step)})",
+        var_type=List[int],
     )
-    _needle: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
 
-        Returns:
-            The name of the var.
-        """
-        return f"{str(self._haystack)}.includes({str(self._needle)})"
+@var_operation
+def array_contains_operation(haystack: ArrayVar, needle: Any | Var):
+    """Check if an array contains an element.
 
-    @classmethod
-    def create(
-        cls,
-        haystack: ArrayVar,
-        needle: Any | Var,
-        _var_data: VarData | None = None,
-    ) -> ArrayContainsOperation:
-        """Create a var from a string value.
+    Args:
+        haystack: The array to check.
+        needle: The element to check for.
 
-        Args:
-            haystack: The array.
-            needle: The element to check for.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=bool,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _haystack=haystack,
-            _needle=needle if isinstance(needle, Var) else LiteralVar.create(needle),
-        )
+    Returns:
+        The array contains operation.
+    """
+    return var_operation_return(
+        js_expression=f"{haystack}.includes({needle})",
+        var_type=bool,
+    )
 
 
 @dataclasses.dataclass(
@@ -1607,102 +1146,39 @@ class ToArrayOperation(CachedVarOperation, ArrayVar):
         )
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ArrayRepeatOperation(CachedVarOperation, ArrayVar):
-    """Base class for immutable array vars that are the result of an array repeat operation."""
+@var_operation
+def repeat_array_operation(
+    array: ArrayVar[ARRAY_VAR_TYPE], count: NumberVar | int
+) -> CustomVarOperationReturn[ARRAY_VAR_TYPE]:
+    """Repeat an array a number of times.
 
-    _array: ArrayVar = dataclasses.field(
-        default_factory=lambda: LiteralArrayVar.create([])
-    )
-    _count: NumberVar = dataclasses.field(
-        default_factory=lambda: LiteralNumberVar.create(0)
-    )
+    Args:
+        array: The array to repeat.
+        count: The number of times to repeat the array.
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return f"Array.from({{ length: {str(self._count)} }}).flatMap(() => {str(self._array)})"
-
-    @classmethod
-    def create(
-        cls,
-        array: ArrayVar,
-        count: NumberVar | int,
-        _var_data: VarData | None = None,
-    ) -> ArrayRepeatOperation:
-        """Create a var from a string value.
-
-        Args:
-            array: The array.
-            count: The number of times to repeat the array.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=array._var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _array=array,
-            _count=count if isinstance(count, Var) else LiteralNumberVar.create(count),
-        )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ArrayConcatOperation(CachedVarOperation, ArrayVar):
-    """Base class for immutable array vars that are the result of an array concat operation."""
-
-    _lhs: ArrayVar = dataclasses.field(
-        default_factory=lambda: LiteralArrayVar.create([])
-    )
-    _rhs: ArrayVar = dataclasses.field(
-        default_factory=lambda: LiteralArrayVar.create([])
+    Returns:
+        The repeated array.
+    """
+    return var_operation_return(
+        js_expression=f"Array.from({{ length: {count} }}).flatMap(() => {array})",
+        var_type=array._var_type,
     )
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
 
-        Returns:
-            The name of the var.
-        """
-        return f"[...{str(self._lhs)}, ...{str(self._rhs)}]"
+@var_operation
+def array_concat_operation(
+    lhs: ArrayVar[ARRAY_VAR_TYPE], rhs: ArrayVar[ARRAY_VAR_TYPE]
+) -> CustomVarOperationReturn[ARRAY_VAR_TYPE]:
+    """Concatenate two arrays.
 
-    @classmethod
-    def create(
-        cls,
-        lhs: ArrayVar,
-        rhs: ArrayVar,
-        _var_data: VarData | None = None,
-    ) -> ArrayConcatOperation:
-        """Create a var from a string value.
+    Args:
+        lhs: The left-hand side array.
+        rhs: The right-hand side array.
 
-        Args:
-            lhs: The left-hand side array.
-            rhs: The right-hand side array.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        # TODO: Figure out how to merge the types of a and b
-        return cls(
-            _var_name="",
-            _var_type=Union[lhs._var_type, rhs._var_type],
-            _var_data=ImmutableVarData.merge(_var_data),
-            _lhs=lhs,
-            _rhs=rhs,
-        )
+    Returns:
+        The concatenated array.
+    """
+    return var_operation_return(
+        js_expression=f"[...{lhs}, ...{rhs}]",
+        var_type=Union[lhs._var_type, rhs._var_type],
+    )

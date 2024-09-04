@@ -2457,6 +2457,20 @@ def _default_token_expiration() -> int:
     return get_config().redis_token_expiration
 
 
+def _serialize_type(type_: Any) -> str:
+    """Serialize a type.
+
+    Args:
+        type_: The type to serialize.
+
+    Returns:
+        The serialized type.
+    """
+    if not inspect.isclass(type_):
+        return f"{type_}"
+    return f"{type_.__module__}.{type_.__qualname__}"
+
+
 def state_to_schema(
     state: BaseState,
 ) -> List[
@@ -2480,7 +2494,7 @@ def state_to_schema(
             (
                 field_name,
                 model_field.name,
-                model_field.type_,
+                _serialize_type(model_field.type_),
                 (
                     model_field.required
                     if isinstance(model_field.required, bool)
@@ -2643,7 +2657,7 @@ class StateManagerDisk(StateManager):
 
         self.states[substate_token] = substate
 
-        state_dilled = dill.dumps((state_to_schema(substate), substate), byref=True)
+        state_dilled = dill.dumps((state_to_schema(substate), substate))
         if not self.states_directory.exists():
             self.states_directory.mkdir(parents=True, exist_ok=True)
         self.token_path(substate_token).write_bytes(state_dilled)

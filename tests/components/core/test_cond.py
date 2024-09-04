@@ -23,7 +23,7 @@ def cond_state(request):
 def test_f_string_cond_interpolation():
     # make sure backticks inside interpolation don't get escaped
     var = LiteralVar.create(f"x {cond(True, 'a', 'b')}")
-    assert str(var) == '("x "+(Boolean(true) ? "a" : "b"))'
+    assert str(var) == '("x "+(true ? "a" : "b"))'
 
 
 @pytest.mark.parametrize(
@@ -97,7 +97,7 @@ def test_prop_cond(c1: Any, c2: Any):
         c1 = json.dumps(c1)
     if not isinstance(c2, Var):
         c2 = json.dumps(c2)
-    assert str(prop_cond) == f"(Boolean(true) ? {c1} : {c2})"
+    assert str(prop_cond) == f"(true ? {c1} : {c2})"
 
 
 def test_cond_no_mix():
@@ -141,8 +141,7 @@ def test_cond_computed_var():
 
     state_name = format_state_name(CondStateComputed.get_full_name())
     assert (
-        str(comp)
-        == f"(Boolean(true) ? {state_name}.computed_int : {state_name}.computed_str)"
+        str(comp) == f"(true ? {state_name}.computed_int : {state_name}.computed_str)"
     )
 
     assert comp._var_type == Union[int, str]
