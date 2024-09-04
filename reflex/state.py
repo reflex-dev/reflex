@@ -2293,11 +2293,12 @@ class StateProxy(wrapt.ObjectProxy):
         Returns:
             The state update.
         """
+        original_mutable = self._self_mutable
         self._self_mutable = True
         try:
             return self.__wrapped__._as_state_update(*args, **kwargs)
         finally:
-            self._self_mutable = False
+            self._self_mutable = original_mutable
 
 
 class StateUpdate(Base):
