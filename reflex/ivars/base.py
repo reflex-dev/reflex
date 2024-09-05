@@ -24,7 +24,6 @@ from typing import (
     Set,
     Tuple,
     Type,
-    TypeGuard,
     TypeVar,
     Union,
     cast,
@@ -32,7 +31,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import ParamSpec, deprecated, get_type_hints, override
+from typing_extensions import ParamSpec, TypeGuard, deprecated, get_type_hints, override
 
 from reflex import constants
 from reflex.base import Base
