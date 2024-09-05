@@ -2043,6 +2043,12 @@ class Var:
             else wrapped_var.strip("{}")
         )
 
+    def without_data(self):
+        """Return a copy of the var without data."""
+        var_copy = self._replace()
+        var_copy._var_data = None
+        return var_copy
+
 
 # Allow automatic serialization of Var within JSON structures
 serializers.serializer(_encode_var)

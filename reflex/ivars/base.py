@@ -734,6 +734,14 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         type_of = FunctionStringVar("typeof")
         return type_of.call(self).to(StringVar)
 
+    def without_data(self):
+        """Create a copy of the var without the data.
+
+        Returns:
+            The var without the data.
+        """
+        return dataclasses.replace(self, _var_data=None)
+
 
 OUTPUT = TypeVar("OUTPUT", bound=ImmutableVar)
 

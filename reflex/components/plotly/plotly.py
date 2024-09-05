@@ -271,8 +271,7 @@ const extractPoints = (points) => {
             template_dict = Var.create_safe(
                 {"layout": {"template": self.template.to(dict)}}
             )
-            template_dict._var_data = None  # To avoid stripping outer curly brackets
-            merge_dicts.append(template_dict)
+            merge_dicts.append(template_dict.without_data())
         if merge_dicts:
             tag.special_props.add(
                 # Merge all dictionaries and spread the result over props.
