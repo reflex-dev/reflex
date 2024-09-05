@@ -116,7 +116,7 @@ class DebounceInput(Component):
         props.setdefault(
             "element",
             ImmutableVar(
-                _var_name="{%s}" % (child.alias or child.tag),
+                _var_name=str(child.alias or child.tag),
                 _var_type=Type[Component],
                 _var_data=ImmutableVarData(
                     imports=child._get_imports(),

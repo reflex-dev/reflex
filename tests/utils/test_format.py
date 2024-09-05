@@ -468,7 +468,7 @@ def test_format_prop(prop: Var, formatted: str):
     "single_props,key_value_props,output",
     [
         (
-            [ImmutableVar.create_safe("...props")],
+            [ImmutableVar.create_safe("{...props}")],
             {"key": 42},
             ["key={42}", "{...props}"],
         ),

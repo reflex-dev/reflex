@@ -8,6 +8,7 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
 from reflex.event import EventHandler
+from reflex.ivars.base import ImmutableVar
 from reflex.utils import console
 from reflex.vars import Var
 
@@ -275,17 +276,14 @@ const extractPoints = (points) => {
         if merge_dicts:
             tag.special_props.add(
                 # Merge all dictionaries and spread the result over props.
-                Var.create_safe(
+                ImmutableVar.create_safe(
                     f"{{...mergician({figure._var_name_unwrapped},"
                     f"{','.join(md._var_name_unwrapped for md in merge_dicts)})}}",
-                    _var_is_string=False,
                 ),
             )
         else:
             # Spread the figure dict over props, nothing to merge.
             tag.special_props.add(
-                Var.create_safe(
-                    f"{{...{figure._var_name_unwrapped}}}", _var_is_string=False
-                )
+                ImmutableVar.create_safe(f"{{...{figure._var_name_unwrapped}}}")
             )
         return tag

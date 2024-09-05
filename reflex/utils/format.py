@@ -464,7 +464,7 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         (
             str(prop)
             if isinstance(prop, Var) and not isinstance(prop, ImmutableVar)
-            else f"{{{str(LiteralVar.create(prop))}}}"
+            else f"{str(LiteralVar.create(prop))}"
         )
         for prop in single_props
     ]

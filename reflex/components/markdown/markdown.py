@@ -25,6 +25,7 @@ from reflex.vars import Var
 # Special vars used in the component map.
 _CHILDREN = ImmutableVar.create_safe("children")
 _PROPS = ImmutableVar.create_safe("...props")
+_PROPS_IN_TAG = ImmutableVar.create_safe("{...props}")
 _MOCK_ARG = ImmutableVar.create_safe("")
 
 # Special remark plugins.
@@ -194,7 +195,7 @@ class Markdown(Component):
         if tag not in self.component_map:
             raise ValueError(f"No markdown component found for tag: {tag}.")
 
-        special_props = {_PROPS}
+        special_props = {_PROPS_IN_TAG}
         children = [_CHILDREN]
 
         # For certain tags, the props from the markdown renderer are not actually valid for the component.
@@ -205,9 +206,7 @@ class Markdown(Component):
         children_prop = props.pop("children", None)
         if children_prop is not None:
             special_props.add(
-                Var.create_safe(
-                    f"children={{{str(children_prop)}}}", _var_is_string=False
-                )
+                ImmutableVar.create_safe(f"children={{{str(children_prop)}}}")
             )
             children = []
         # Get the component.
