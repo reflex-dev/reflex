@@ -15,6 +15,7 @@ from reflex.vars import Var
 
 _CHILDREN = ImmutableVar.create_safe("children")
 _PROPS = ImmutableVar.create_safe("...props")
+_PROPS_IN_TAG = ImmutableVar.create_safe("{...props}")
 _MOCK_ARG = ImmutableVar.create_safe("")
 _REMARK_MATH = ImmutableVar.create_safe("remarkMath")
 _REMARK_GFM = ImmutableVar.create_safe("remarkGfm")
