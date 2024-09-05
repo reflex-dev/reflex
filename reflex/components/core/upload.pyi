@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Union, overload
 
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
+from reflex.constants import Dirs
 from reflex.event import (
     CallableEventSpec,
     EventHandler,
@@ -14,7 +15,8 @@ from reflex.event import (
 )
 from reflex.ivars.base import ImmutableCallableVar, ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var, VarData
+from reflex.utils.imports import ImportVar
+from reflex.vars import ImmutableVarData, Var, VarData
 
 DEFAULT_UPLOAD_ID: str
 upload_files_context_var_data: VarData
@@ -28,7 +30,15 @@ def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec: ...
 def cancel_upload(upload_id: str) -> EventSpec: ...
 def get_upload_dir() -> Path: ...
 
-uploaded_files_url_prefix: Var
+uploaded_files_url_prefix = ImmutableVar(
+    _var_name="getBackendURL(env.UPLOAD)",
+    _var_data=ImmutableVarData(
+        imports={
+            f"/{Dirs.STATE_PATH}": "getBackendURL",
+            "/env.json": ImportVar(tag="env", is_default=True),
+        }
+    ),
+).to(str)
 
 def get_upload_url(file_path: str) -> Var[str]: ...
 

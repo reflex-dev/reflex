@@ -1877,13 +1877,10 @@ class Var:
 
         Returns:
             A var representing range operation.
-
-        Raises:
-            VarTypeError: If the var is not an int.
         """
         from reflex.ivars import ArrayVar
 
-        return ArrayVar.range(v1, v2, step)
+        return ArrayVar.range(v1, v2, step)  # type: ignore
 
     def to(self, type_: Type) -> Var:
         """Convert the type of the var.

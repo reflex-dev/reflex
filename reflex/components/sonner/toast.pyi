@@ -10,6 +10,7 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.components.props import PropsBase
 from reflex.event import EventHandler, EventSpec
+from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
 from reflex.utils.serializers import serializer
 from reflex.vars import Var
@@ -22,7 +23,7 @@ LiteralPosition = Literal[
     "bottom-center",
     "bottom-right",
 ]
-toast_ref = Var.create_safe("refs['__toast']", _var_is_string=False)
+toast_ref = ImmutableVar.create_safe("refs['__toast']")
 
 class ToastAction(Base):
     label: str
