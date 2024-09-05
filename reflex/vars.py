@@ -2044,7 +2044,11 @@ class Var:
         )
 
     def without_data(self):
-        """Return a copy of the var without data."""
+        """Return a copy of the var without data.
+
+        Returns:
+            A copy of the var without data.
+        """
         var_copy = self._replace()
         var_copy._var_data = None
         return var_copy
