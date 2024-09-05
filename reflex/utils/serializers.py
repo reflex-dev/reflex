@@ -283,9 +283,6 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
 
     Returns:
         The serialized dictionary.
-
-    Raises:
-        InvalidStylePropError: If the style prop is invalid.
     """
     from reflex.ivars import LiteralObjectVar
 
