@@ -105,7 +105,7 @@ class Templates(SimpleNamespace):
 
     # The reflex.build backend host
     REFLEX_BUILD_BACKEND = os.environ.get(
-        "REFLEX_BUILD_BACKEND", "https://rxh-prod-flexgen.fly.dev"
+        "REFLEX_BUILD_BACKEND", "https://flexgen-prod-flexgen.fly.dev"
     )
 
     # The URL to redirect to reflex.build
