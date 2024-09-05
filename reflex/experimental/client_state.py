@@ -190,13 +190,15 @@ class ClientStateVar(Var):
             else self._setter_name
         )
         if value is not NoValue:
+            import re
+
             # This is a hack to make it work like an EventSpec taking an arg
-            value = LiteralVar.create(value)
-            if not value._var_is_string and value._var_full_name.startswith("_"):
-                arg = value._var_name_unwrapped.partition(".")[0]
-            else:
-                arg = ""
-            setter = f"({arg}) => {setter}({value._var_name_unwrapped})"
+            value_str = str(LiteralVar.create(value))
+
+            # remove patterns of ["*"] from the value_str using regex
+            arg = re.sub(r"\[\".*\"\]", "", value_str)
+
+            setter = f"({arg}) => {setter}({str(value)})"
         return ImmutableVar(
             _var_name=setter,
             _var_data=ImmutableVarData(
