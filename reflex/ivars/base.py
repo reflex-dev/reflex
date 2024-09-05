@@ -1056,7 +1056,7 @@ def original_var_type_or_target_type(original_var: Var, target_type: type) -> ty
         The inherited type.
     """
     if isinstance(original_var, LiteralVar):
-        return str
+        return target_type
     if isinstance(original_var._var_type, type) and issubclass(
         original_var._var_type, target_type
     ):
