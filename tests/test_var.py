@@ -1,7 +1,7 @@
 import json
 import math
 import typing
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union, cast
 
 import pytest
 from pandas import DataFrame
@@ -1771,3 +1771,21 @@ def test_invalid_computed_var_deps(deps: List):
         )
         def test_var(state) -> int:
             return 1
+
+
+def test_to_string_operation():
+    class Email(str): ...
+
+    class TestState(BaseState):
+        optional_email: Optional[Email] = None
+        email: Email = Email("test@reflex.dev")
+
+    assert (
+        str(TestState.optional_email) == f"{TestState.get_full_name()}.optional_email"
+    )
+    my_state = TestState()
+    assert my_state.optional_email is None
+    assert my_state.email == "test@reflex.dev"
+
+    assert cast(ImmutableVar, TestState.email)._var_type == Email
+    assert cast(ImmutableVar, TestState.optional_email)._var_type == Optional[Email]
