@@ -1043,6 +1043,14 @@ def unionize(*args: Type) -> Type:
     return Union[first, unionize(*rest)]
 
 
+def inherit_original_var_type(original_var: Var, type_wish: type) -> type:
+    if isinstance(original_var, LiteralVar):
+        return str
+    if issubclass(original_var._var_type, type_wish):
+        return original_var._var_type
+    return type_wish
+
+
 def figure_out_type(value: Any) -> types.GenericType:
     """Figure out the type of the value.
 
