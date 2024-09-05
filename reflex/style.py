@@ -125,6 +125,9 @@ def convert_item(
 
     Returns:
         The formatted style item and any associated VarData.
+
+    Raises:
+        ReflexError: If an EventHandler is used as a style value
     """
     if isinstance(style_item, EventHandler):
         raise ReflexError(
