@@ -4,15 +4,12 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
-import datetime
-import dis
 import inspect
 import json
 import random
 import re
 import string
 import sys
-from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -26,17 +23,16 @@ from typing import (
     Type,
     Union,
     _GenericAlias,  # type: ignore
-    cast,
     get_args,
-    get_type_hints,
 )
+
+from typing_extensions import deprecated
 
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, imports, serializers, types
 from reflex.utils.exceptions import (
     VarAttributeError,
-    VarDependencyError,
     VarTypeError,
     VarValueError,
 )
@@ -49,7 +45,7 @@ from reflex.utils.imports import (
     ParsedImportDict,
     parse_imports,
 )
-from reflex.utils.types import get_origin, override
+from reflex.utils.types import get_origin
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -603,7 +599,7 @@ class Var:
         Raises:
             VarTypeError: If the value is JSON-unserializable.
         """
-        from reflex.utils import format
+        from reflex.ivars import ImmutableVar, LiteralVar
 
         # Check for none values.
         if value is None:
@@ -613,45 +609,15 @@ class Var:
         if isinstance(value, Var):
             return value
 
-        # Try to pull the imports and hooks from contained values.
-        if not isinstance(value, str):
-            _var_data = VarData.merge(*_extract_var_data(value), _var_data)
-
-        # Try to serialize the value.
-        type_ = type(value)
-        if type_ in types.JSONType:
-            name = value
-        else:
-            name, serialized_type = serializers.serialize(value, get_type=True)
-            if (
-                serialized_type is not None
-                and _var_is_string is None
-                and issubclass(serialized_type, str)
-            ):
-                _var_is_string = True
-        if name is None:
-            raise VarTypeError(
-                f"No JSON serializer found for var {value} of type {type_}."
-            )
-        name = name if isinstance(name, str) else format.json_dumps(name)
-
-        if _var_is_string is None and type_ is str:
-            console.deprecate(
-                feature_name=f"Creating a Var ({value}) from a string without specifying _var_is_string",
-                reason=(
-                    "Specify _var_is_string=False to create a Var that is not a string literal. "
-                    "In the future, creating a Var from a string will be treated as a string literal "
-                    "by default."
-                ),
-                deprecation_version="0.5.4",
-                removal_version="0.6.0",
+        # If the value is a string, create a LiteralVar.
+        if not isinstance(value, str) or _var_is_local is True:
+            return LiteralVar.create(
+                value,
+                _var_data=_var_data,
             )
 
-        return BaseVar(
-            _var_name=name,
-            _var_type=type_,
-            _var_is_local=_var_is_local,
-            _var_is_string=_var_is_string if _var_is_string is not None else False,
+        return ImmutableVar.create(
+            value,
             _var_data=_var_data,
         )
 
@@ -1259,7 +1225,16 @@ class Var:
             _var_is_string=False,
         )
 
+    @deprecated("Use `.js_type()` instead.")
     def _type(self) -> Var:
+        """Get the type of the Var.
+
+        Returns:
+            A var representing the type.
+        """
+        return self.js_type()
+
+    def js_type(self) -> Var:
         """Get the type of the Var in Javascript.
 
         Returns:
@@ -2030,9 +2005,10 @@ class Var:
         Returns:
             The state name associated with the var.
         """
-        return self._var_data.state if self._var_data else ""
+        var_data = self._get_all_var_data()
+        return var_data.state if var_data else ""
 
-    def _get_all_var_data(self) -> VarData | None:
+    def _get_all_var_data(self) -> ImmutableVarData | VarData | None:
         """Get all the var data.
 
         Returns:
@@ -2195,385 +2171,6 @@ class BaseVar(Var):
         setter.__qualname__ = self.get_setter_name()
 
         return setter
-
-
-@dataclasses.dataclass(init=False, eq=False)
-class ComputedVar(Var, property):
-    """A field with computed getters."""
-
-    # Whether to track dependencies and cache computed values
-    _cache: bool = dataclasses.field(default=False)
-
-    # Whether the computed var is a backend var
-    _backend: bool = dataclasses.field(default=False)
-
-    # The initial value of the computed var
-    _initial_value: Any | types.Unset = dataclasses.field(default=types.Unset())
-
-    # Explicit var dependencies to track
-    _static_deps: set[str] = dataclasses.field(default_factory=set)
-
-    # Whether var dependencies should be auto-determined
-    _auto_deps: bool = dataclasses.field(default=True)
-
-    # Interval at which the computed var should be updated
-    _update_interval: Optional[datetime.timedelta] = dataclasses.field(default=None)
-
-    # The name of the var.
-    _var_name: str = dataclasses.field()
-
-    # The type of the var.
-    _var_type: Type = dataclasses.field(default=Any)
-
-    # Whether this is a local javascript variable.
-    _var_is_local: bool = dataclasses.field(default=False)
-
-    # Whether the var is a string literal.
-    _var_is_string: bool = dataclasses.field(default=False)
-
-    # _var_full_name should be prefixed with _var_state
-    _var_full_name_needs_state_prefix: bool = dataclasses.field(default=False)
-
-    # Extra metadata associated with the Var
-    _var_data: Optional[VarData] = dataclasses.field(default=None)
-
-    def __init__(
-        self,
-        fget: Callable[[BaseState], Any],
-        initial_value: Any | types.Unset = types.Unset(),
-        cache: bool = False,
-        deps: Optional[List[Union[str, Var]]] = None,
-        auto_deps: bool = True,
-        interval: Optional[Union[int, datetime.timedelta]] = None,
-        backend: bool | None = None,
-        **kwargs,
-    ):
-        """Initialize a ComputedVar.
-
-        Args:
-            fget: The getter function.
-            initial_value: The initial value of the computed var.
-            cache: Whether to cache the computed value.
-            deps: Explicit var dependencies to track.
-            auto_deps: Whether var dependencies should be auto-determined.
-            interval: Interval at which the computed var should be updated.
-            backend: Whether the computed var is a backend var.
-            **kwargs: additional attributes to set on the instance
-
-        Raises:
-            TypeError: If the computed var dependencies are not Var instances or var names.
-        """
-        if backend is None:
-            backend = fget.__name__.startswith("_")
-        self._backend = backend
-
-        self._initial_value = initial_value
-        self._cache = cache
-        if isinstance(interval, int):
-            interval = datetime.timedelta(seconds=interval)
-        self._update_interval = interval
-        if deps is None:
-            deps = []
-        else:
-            for dep in deps:
-                if isinstance(dep, Var):
-                    continue
-                if isinstance(dep, str) and dep != "":
-                    continue
-                raise TypeError(
-                    "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
-                )
-        self._static_deps = {
-            dep._var_name if isinstance(dep, Var) else dep for dep in deps
-        }
-        self._auto_deps = auto_deps
-        property.__init__(self, fget)
-        kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
-        kwargs["_var_type"] = kwargs.pop("_var_type", self._determine_var_type())
-        BaseVar.__init__(self, **kwargs)  # type: ignore
-
-    @override
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> ComputedVar:
-        """Replace the attributes of the ComputedVar.
-
-        Args:
-            merge_var_data: VarData to merge into the existing VarData.
-            **kwargs: Var fields to update.
-
-        Returns:
-            The new ComputedVar instance.
-
-        Raises:
-            TypeError: If kwargs contains keys that are not allowed.
-        """
-        field_values = dict(
-            fget=kwargs.pop("fget", self.fget),
-            initial_value=kwargs.pop("initial_value", self._initial_value),
-            cache=kwargs.pop("cache", self._cache),
-            deps=kwargs.pop("deps", self._static_deps),
-            auto_deps=kwargs.pop("auto_deps", self._auto_deps),
-            interval=kwargs.pop("interval", self._update_interval),
-            backend=kwargs.pop("backend", self._backend),
-            _var_name=kwargs.pop("_var_name", self._var_name),
-            _var_type=kwargs.pop("_var_type", self._var_type),
-            _var_is_local=kwargs.pop("_var_is_local", self._var_is_local),
-            _var_is_string=kwargs.pop("_var_is_string", self._var_is_string),
-            _var_full_name_needs_state_prefix=kwargs.pop(
-                "_var_full_name_needs_state_prefix",
-                self._var_full_name_needs_state_prefix,
-            ),
-            _var_data=VarData.merge(self._var_data, merge_var_data),
-        )
-
-        if kwargs:
-            unexpected_kwargs = ", ".join(kwargs.keys())
-            raise TypeError(f"Unexpected keyword arguments: {unexpected_kwargs}")
-
-        return ComputedVar(**field_values)
-
-    @property
-    def _cache_attr(self) -> str:
-        """Get the attribute used to cache the value on the instance.
-
-        Returns:
-            An attribute name.
-        """
-        return f"__cached_{self._var_name}"
-
-    @property
-    def _last_updated_attr(self) -> str:
-        """Get the attribute used to store the last updated timestamp.
-
-        Returns:
-            An attribute name.
-        """
-        return f"__last_updated_{self._var_name}"
-
-    def needs_update(self, instance: BaseState) -> bool:
-        """Check if the computed var needs to be updated.
-
-        Args:
-            instance: The state instance that the computed var is attached to.
-
-        Returns:
-            True if the computed var needs to be updated, False otherwise.
-        """
-        if self._update_interval is None:
-            return False
-        last_updated = getattr(instance, self._last_updated_attr, None)
-        if last_updated is None:
-            return True
-        return datetime.datetime.now() - last_updated > self._update_interval
-
-    def __get__(self, instance: BaseState | None, owner):
-        """Get the ComputedVar value.
-
-        If the value is already cached on the instance, return the cached value.
-
-        Args:
-            instance: the instance of the class accessing this computed var.
-            owner: the class that this descriptor is attached to.
-
-        Returns:
-            The value of the var for the given instance.
-        """
-        if instance is None or not self._cache:
-            return super().__get__(instance, owner)
-
-        # handle caching
-        if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
-            # Set cache attr on state instance.
-            setattr(instance, self._cache_attr, super().__get__(instance, owner))
-            # Ensure the computed var gets serialized to redis.
-            instance._was_touched = True
-            # Set the last updated timestamp on the state instance.
-            setattr(instance, self._last_updated_attr, datetime.datetime.now())
-        return getattr(instance, self._cache_attr)
-
-    def _deps(
-        self,
-        objclass: Type,
-        obj: FunctionType | CodeType | None = None,
-        self_name: Optional[str] = None,
-    ) -> set[str]:
-        """Determine var dependencies of this ComputedVar.
-
-        Save references to attributes accessed on "self".  Recursively called
-        when the function makes a method call on "self" or define comprehensions
-        or nested functions that may reference "self".
-
-        Args:
-            objclass: the class obj this ComputedVar is attached to.
-            obj: the object to disassemble (defaults to the fget function).
-            self_name: if specified, look for this name in LOAD_FAST and LOAD_DEREF instructions.
-
-        Returns:
-            A set of variable names accessed by the given obj.
-
-        Raises:
-            VarValueError: if the function references the get_state, parent_state, or substates attributes
-                (cannot track deps in a related state, only implicitly via parent state).
-        """
-        if not self._auto_deps:
-            return self._static_deps
-        d = self._static_deps.copy()
-        if obj is None:
-            fget = property.__getattribute__(self, "fget")
-            if fget is not None:
-                obj = cast(FunctionType, fget)
-            else:
-                return set()
-        with contextlib.suppress(AttributeError):
-            # unbox functools.partial
-            obj = cast(FunctionType, obj.func)  # type: ignore
-        with contextlib.suppress(AttributeError):
-            # unbox EventHandler
-            obj = cast(FunctionType, obj.fn)  # type: ignore
-
-        if self_name is None and isinstance(obj, FunctionType):
-            try:
-                # the first argument to the function is the name of "self" arg
-                self_name = obj.__code__.co_varnames[0]
-            except (AttributeError, IndexError):
-                self_name = None
-        if self_name is None:
-            # cannot reference attributes on self if method takes no args
-            return set()
-
-        invalid_names = ["get_state", "parent_state", "substates", "get_substate"]
-        self_is_top_of_stack = False
-        for instruction in dis.get_instructions(obj):
-            if (
-                instruction.opname in ("LOAD_FAST", "LOAD_DEREF")
-                and instruction.argval == self_name
-            ):
-                # bytecode loaded the class instance to the top of stack, next load instruction
-                # is referencing an attribute on self
-                self_is_top_of_stack = True
-                continue
-            if self_is_top_of_stack and instruction.opname in (
-                "LOAD_ATTR",
-                "LOAD_METHOD",
-            ):
-                try:
-                    ref_obj = getattr(objclass, instruction.argval)
-                except Exception:
-                    ref_obj = None
-                if instruction.argval in invalid_names:
-                    raise VarValueError(
-                        f"Cached var {self._var_full_name} cannot access arbitrary state via `{instruction.argval}`."
-                    )
-                if callable(ref_obj):
-                    # recurse into callable attributes
-                    d.update(
-                        self._deps(
-                            objclass=objclass,
-                            obj=ref_obj,
-                        )
-                    )
-                # recurse into property fget functions
-                elif isinstance(ref_obj, property) and not isinstance(
-                    ref_obj, ComputedVar
-                ):
-                    d.update(
-                        self._deps(
-                            objclass=objclass,
-                            obj=ref_obj.fget,  # type: ignore
-                        )
-                    )
-                elif (
-                    instruction.argval in objclass.backend_vars
-                    or instruction.argval in objclass.vars
-                ):
-                    # var access
-                    d.add(instruction.argval)
-            elif instruction.opname == "LOAD_CONST" and isinstance(
-                instruction.argval, CodeType
-            ):
-                # recurse into nested functions / comprehensions, which can reference
-                # instance attributes from the outer scope
-                d.update(
-                    self._deps(
-                        objclass=objclass,
-                        obj=instruction.argval,
-                        self_name=self_name,
-                    )
-                )
-            self_is_top_of_stack = False
-        return d
-
-    def mark_dirty(self, instance) -> None:
-        """Mark this ComputedVar as dirty.
-
-        Args:
-            instance: the state instance that needs to recompute the value.
-        """
-        with contextlib.suppress(AttributeError):
-            delattr(instance, self._cache_attr)
-
-    def _determine_var_type(self) -> Type:
-        """Get the type of the var.
-
-        Returns:
-            The type of the var.
-        """
-        hints = get_type_hints(property.__getattribute__(self, "fget"))
-        if "return" in hints:
-            return hints["return"]
-        return Any
-
-
-def computed_var(
-    fget: Callable[[BaseState], Any] | None = None,
-    initial_value: Any | types.Unset = types.Unset(),
-    cache: bool = False,
-    deps: Optional[List[Union[str, Var]]] = None,
-    auto_deps: bool = True,
-    interval: Optional[Union[datetime.timedelta, int]] = None,
-    backend: bool | None = None,
-    **kwargs,
-) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
-    """A ComputedVar decorator with or without kwargs.
-
-    Args:
-        fget: The getter function.
-        initial_value: The initial value of the computed var.
-        cache: Whether to cache the computed value.
-        deps: Explicit var dependencies to track.
-        auto_deps: Whether var dependencies should be auto-determined.
-        interval: Interval at which the computed var should be updated.
-        backend: Whether the computed var is a backend var.
-        **kwargs: additional attributes to set on the instance
-
-    Returns:
-        A ComputedVar instance.
-
-    Raises:
-        ValueError: If caching is disabled and an update interval is set.
-        VarDependencyError: If user supplies dependencies without caching.
-    """
-    if cache is False and interval is not None:
-        raise ValueError("Cannot set update interval without caching.")
-
-    if cache is False and (deps is not None or auto_deps is False):
-        raise VarDependencyError("Cannot track dependencies without caching.")
-
-    if fget is not None:
-        return ComputedVar(fget=fget, cache=cache)
-
-    def wrapper(fget: Callable[[BaseState], Any]) -> ComputedVar:
-        return ComputedVar(
-            fget=fget,
-            initial_value=initial_value,
-            cache=cache,
-            deps=deps,
-            auto_deps=auto_deps,
-            interval=interval,
-            backend=backend,
-            **kwargs,
-        )
-
-    return wrapper
 
 
 class CallableVar(BaseVar):

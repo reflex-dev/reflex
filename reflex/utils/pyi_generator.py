@@ -69,7 +69,7 @@ DEFAULT_TYPING_IMPORTS = {
 # TODO: fix import ordering and unused imports with ruff later
 DEFAULT_IMPORTS = {
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
-    "reflex.vars": ["Var", "BaseVar", "ComputedVar"],
+    "reflex.vars": ["Var", "BaseVar"],
     "reflex.components.core.breakpoints": ["Breakpoints"],
     "reflex.event": ["EventChain", "EventHandler", "EventSpec"],
     "reflex.style": ["Style"],

@@ -155,7 +155,9 @@ class StringVar(ImmutableVar[str]):
         """
         if isinstance(i, slice):
             return self.split()[i].join()
-        if not isinstance(i, (int, NumberVar)):
+        if not isinstance(i, (int, NumberVar)) or (
+            isinstance(i, NumberVar) and i._is_strict_float()
+        ):
             raise_unsupported_operand_types("[]", (type(self), type(i)))
         return string_item_operation(self, i)
 
@@ -896,7 +898,9 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         """
         if isinstance(i, slice):
             return ArraySliceOperation.create(self, i)
-        if not isinstance(i, (int, NumberVar)):
+        if not isinstance(i, (int, NumberVar)) or (
+            isinstance(i, NumberVar) and i._is_strict_float()
+        ):
             raise_unsupported_operand_types("[]", (type(self), type(i)))
         return array_item_operation(self, i)
 

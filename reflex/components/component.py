@@ -2141,9 +2141,10 @@ class StatefulComponent(BaseComponent):
             # Calculate Var dependencies accessed by the handler for useCallback dep array.
             var_deps = ["addEvents", "Event"]
             for arg in event_args:
-                if arg._get_all_var_data() is None:
+                var_data = arg._get_all_var_data()
+                if var_data is None:
                     continue
-                for hook in arg._get_all_var_data().hooks:
+                for hook in var_data.hooks:
                     var_deps.extend(cls._get_hook_deps(hook))
             memo_var_data = VarData.merge(
                 *[var._get_all_var_data() for var in event_args],

@@ -717,7 +717,7 @@ def download(
         elif isinstance(data, Var):
             # Need to check on the frontend if the Var already looks like a data: URI.
 
-            is_data_url = (data._type() == "string") & (
+            is_data_url = (data.js_type() == "string") & (
                 data.to(str).startswith("data:")
             )  # type: ignore
 

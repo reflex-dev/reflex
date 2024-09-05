@@ -6,11 +6,11 @@ from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
-from reflex.ivars.base import ImmutableComputedVar
+from reflex.ivars.base import is_computed_var
 from reflex.utils import types
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serialize
-from reflex.vars import ComputedVar, Var
+from reflex.vars import Var
 
 
 class Gridjs(Component):
@@ -66,17 +66,14 @@ class DataTable(Gridjs):
 
         # The annotation should be provided if data is a computed var. We need this to know how to
         # render pandas dataframes.
-        if (
-            isinstance(data, (ComputedVar, ImmutableComputedVar))
-            and data._var_type == Any
-        ):
+        if is_computed_var(data) and data._var_type == Any:
             raise ValueError(
                 "Annotation of the computed var assigned to the data field should be provided."
             )
 
         if (
             columns is not None
-            and isinstance(columns, (ComputedVar, ImmutableComputedVar))
+            and is_computed_var(columns)
             and columns._var_type == Any
         ):
             raise ValueError(

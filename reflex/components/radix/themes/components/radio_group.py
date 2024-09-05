@@ -168,7 +168,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
 
         def radio_group_item(value: Var) -> Component:
             item_value = rx.cond(
-                value._type() == "string",
+                value.js_type() == "string",
                 value,
                 value.to_string(),
             ).to(StringVar)

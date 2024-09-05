@@ -18,7 +18,7 @@ from reflex.components.component import (
 )
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler, parse_args_spec
-from reflex.ivars.base import LiteralVar
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
@@ -1181,7 +1181,7 @@ TEST_VAR = LiteralVar.create("test")._replace(
 FORMATTED_TEST_VAR = LiteralVar.create(f"foo{TEST_VAR}bar")
 STYLE_VAR = TEST_VAR._replace(_var_name="style")
 EVENT_CHAIN_VAR = TEST_VAR._replace(_var_type=EventChain)
-ARG_VAR = Var.create("arg")
+ARG_VAR = ImmutableVar.create_safe("arg")
 
 TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "test"}})._replace(
     merge_var_data=TEST_VAR._var_data
@@ -1401,6 +1401,7 @@ class EventState(rx.State):
 def test_get_vars(component, exp_vars):
     comp_vars = sorted(component._get_vars(), key=lambda v: v._var_name)
     assert len(comp_vars) == len(exp_vars)
+    print(comp_vars, exp_vars)
     for comp_var, exp_var in zip(
         comp_vars,
         sorted(exp_vars, key=lambda v: v._var_name),
@@ -2027,7 +2028,7 @@ def test_component_add_hooks_var():
             return [
                 "const hook3 = useRef(null)",
                 "const hook1 = 42",
-                Var.create(
+                ImmutableVar.create(
                     "useEffect(() => () => {}, [])",
                     _var_data=VarData(
                         hooks={
@@ -2037,7 +2038,7 @@ def test_component_add_hooks_var():
                         imports={"react": [ImportVar(tag="useEffect")]},
                     ),
                 ),
-                Var.create(
+                ImmutableVar.create(
                     "const hook3 = useRef(null)",
                     _var_data=VarData(
                         imports={"react": [ImportVar(tag="useRef")]},

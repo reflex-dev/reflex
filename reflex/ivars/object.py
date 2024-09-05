@@ -33,7 +33,7 @@ from .base import (
     var_operation,
     var_operation_return,
 )
-from .number import BooleanVar, NumberVar
+from .number import BooleanVar, NumberVar, raise_unsupported_operand_types
 from .sequence import ArrayVar, StringVar
 
 OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Dict)
@@ -184,6 +184,10 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         Returns:
             The item from the object.
         """
+        if not isinstance(key, (StringVar, str, int, NumberVar)) or (
+            isinstance(key, NumberVar) and key._is_strict_float()
+        ):
+            raise_unsupported_operand_types("[]", (type(self), type(key)))
         return ObjectItemOperation.create(self, key).guess_type()
 
     # NoReturn is used here to catch when key value is Any

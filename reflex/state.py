@@ -34,7 +34,12 @@ import dill
 from sqlalchemy.orm import DeclarativeBase
 
 from reflex.config import get_config
-from reflex.ivars.base import ImmutableComputedVar, ImmutableVar, immutable_computed_var
+from reflex.ivars.base import (
+    ImmutableComputedVar,
+    ImmutableVar,
+    immutable_computed_var,
+    is_computed_var,
+)
 
 try:
     import pydantic.v1 as pydantic
@@ -60,7 +65,6 @@ from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.utils.types import override
 from reflex.vars import (
-    ComputedVar,
     ImmutableVarData,
     Var,
 )
@@ -309,7 +313,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     base_vars: ClassVar[Dict[str, ImmutableVar]] = {}
 
     # The computed vars of the class.
-    computed_vars: ClassVar[Dict[str, Union[ComputedVar, ImmutableComputedVar]]] = {}
+    computed_vars: ClassVar[Dict[str, ImmutableComputedVar]] = {}
 
     # Vars inherited by the parent state.
     inherited_vars: ClassVar[Dict[str, Var]] = {}
@@ -422,7 +426,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return f"{self.__class__.__name__}({self.dict()})"
 
     @classmethod
-    def _get_computed_vars(cls) -> list[Union[ComputedVar, ImmutableComputedVar]]:
+    def _get_computed_vars(cls) -> list[ImmutableComputedVar]:
         """Helper function to get all computed vars of a instance.
 
         Returns:
@@ -432,7 +436,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             v
             for mixin in cls._mixins() + [cls]
             for v in mixin.__dict__.values()
-            if isinstance(v, (ComputedVar, ImmutableComputedVar))
+            if is_computed_var(v)
         ]
 
     @classmethod
@@ -560,7 +564,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         for mixin in cls._mixins():
             for name, value in mixin.__dict__.items():
-                if isinstance(value, (ComputedVar, ImmutableComputedVar)):
+                if is_computed_var(value):
                     fget = cls._copy_fn(value.fget)
                     newcv = value._replace(
                         fget=fget, _var_data=ImmutableVarData.from_state(cls)
@@ -1015,14 +1019,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
 
         def argsingle_factory(param):
-            @ComputedVar
+            @ImmutableComputedVar
             def inner_func(self) -> str:
                 return self.router.page.params.get(param, "")
 
             return inner_func
 
         def arglist_factory(param):
-            @ComputedVar
+            @ImmutableComputedVar
             def inner_func(self) -> List:
                 return self.router.page.params.get(param, [])
 
@@ -1035,8 +1039,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            # to allow passing as a prop
-            func._var_name = param
+            # to allow passing as a prop, evade python frozen rules (bad practice)
+            object.__setattr__(func, "_var_name", param)
             cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
@@ -1797,7 +1801,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 # Include initial computed vars.
                 prop_name: (
                     cv._initial_value
-                    if isinstance(cv, (ComputedVar, ImmutableComputedVar))
+                    if is_computed_var(cv)
                     and not isinstance(cv._initial_value, types.Unset)
                     else self.get_value(getattr(self, prop_name))
                 )

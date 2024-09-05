@@ -97,7 +97,7 @@ def test_prop_cond(c1: Any, c2: Any):
         c1 = json.dumps(c1)
     if not isinstance(c2, Var):
         c2 = json.dumps(c2)
-    assert str(prop_cond) == f"(true ? {c1} : {c2})"
+    assert str(prop_cond) == f"(true ? {str(c1)} : {str(c2)})"
 
 
 def test_cond_no_mix():

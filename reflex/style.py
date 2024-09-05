@@ -6,10 +6,11 @@ from typing import Any, Literal, Tuple, Type
 
 from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
-from reflex.event import EventChain
+from reflex.event import EventChain, EventHandler
 from reflex.ivars.base import ImmutableCallableVar, ImmutableVar, LiteralVar
 from reflex.ivars.function import FunctionVar
 from reflex.utils import format
+from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
 from reflex.vars import ImmutableVarData, Var, VarData
 
@@ -125,6 +126,12 @@ def convert_item(
     Returns:
         The formatted style item and any associated VarData.
     """
+    if isinstance(style_item, EventHandler):
+        raise ReflexError(
+            "EventHandlers cannot be used as style values. "
+            "Please use a Var or a literal value."
+        )
+
     if isinstance(style_item, Var):
         return style_item, style_item._get_all_var_data()
 

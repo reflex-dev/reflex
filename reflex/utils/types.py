@@ -509,14 +509,14 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
     if name in cls.inherited_backend_vars:
         return False
 
+    from reflex.ivars.base import is_computed_var
+
     if name in cls.__dict__:
         value = cls.__dict__[name]
         if type(value) == classmethod:
             return False
         if callable(value):
             return False
-        from reflex.ivars.base import ImmutableComputedVar
-        from reflex.vars import ComputedVar
 
         if isinstance(
             value,
@@ -524,10 +524,8 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
                 types.FunctionType,
                 property,
                 cached_property,
-                ComputedVar,
-                ImmutableComputedVar,
             ),
-        ):
+        ) or is_computed_var(value):
             return False
 
     return True

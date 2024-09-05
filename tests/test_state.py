@@ -22,6 +22,7 @@ from reflex.base import Base
 from reflex.components.sonner.toast import Toaster
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
+from reflex.ivars.base import ImmutableComputedVar
 from reflex.state import (
     BaseState,
     ImmutableStateError,
@@ -41,7 +42,7 @@ from reflex.state import (
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
-from reflex.vars import BaseVar, ComputedVar, Var
+from reflex.vars import BaseVar, Var
 from tests.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
@@ -102,7 +103,7 @@ class TestState(BaseState):
     fig: Figure = Figure()
     dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
 
-    @ComputedVar
+    @ImmutableComputedVar
     def sum(self) -> float:
         """Dynamically sum the numbers.
 
@@ -111,7 +112,7 @@ class TestState(BaseState):
         """
         return self.num1 + self.num2
 
-    @ComputedVar
+    @ImmutableComputedVar
     def upper(self) -> str:
         """Uppercase the key.
 
@@ -1097,7 +1098,7 @@ def test_child_state():
         v: int = 2
 
     class ChildState(MainState):
-        @ComputedVar
+        @ImmutableComputedVar
         def rendered_var(self):
             return self.v
 
@@ -1116,7 +1117,7 @@ def test_conditional_computed_vars():
         t1: str = "a"
         t2: str = "b"
 
-        @ComputedVar
+        @ImmutableComputedVar
         def rendered_var(self) -> str:
             if self.flag:
                 return self.t1
@@ -3063,12 +3064,12 @@ def test_potentially_dirty_substates():
     """
 
     class State(RxState):
-        @ComputedVar
+        @ImmutableComputedVar
         def foo(self) -> str:
             return ""
 
     class C1(State):
-        @ComputedVar
+        @ImmutableComputedVar
         def bar(self) -> str:
             return ""
 

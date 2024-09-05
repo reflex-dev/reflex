@@ -228,21 +228,22 @@ class Markdown(Component):
         """
         return str(self.get_component(tag, **props)).replace("\n", "")
 
-    def format_component_map(self) -> dict[str, str]:
+    def format_component_map(self) -> dict[str, Var]:
         """Format the component map for rendering.
 
         Returns:
             The formatted component map.
         """
         components = {
-            tag: f"{{({{node, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => ({self.format_component(tag)})}}"
+            tag: ImmutableVar.create_safe(
+                f"(({{node, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => ({self.format_component(tag)}))"
+            )
             for tag in self.component_map
         }
 
         # Separate out inline code and code blocks.
-        components[
-            "code"
-        ] = f"""{{({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
+        components["code"] = ImmutableVar.create_safe(
+            f"""(({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
     if (language) {{
@@ -260,7 +261,8 @@ class Markdown(Component):
     ) : (
         {self.format_component("codeblock", language=ImmutableVar.create_safe("language"))}
     );
-      }}}}""".replace("\n", " ")
+      }})""".replace("\n", " ")
+        )
 
         return components
 

@@ -24,6 +24,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypeGuard,
     TypeVar,
     Union,
     cast,
@@ -31,7 +32,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import ParamSpec, get_type_hints, override
+from typing_extensions import ParamSpec, deprecated, get_type_hints, override
 
 from reflex import constants
 from reflex.base import Base
@@ -40,7 +41,6 @@ from reflex.utils.exceptions import VarDependencyError, VarTypeError, VarValueEr
 from reflex.utils.format import format_state_name
 from reflex.utils.types import get_origin
 from reflex.vars import (
-    ComputedVar,
     ImmutableVarData,
     Var,
     VarData,
@@ -380,6 +380,8 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             return self.to(StringVar, output)
         if fixed_output_type is bool:
             return self.to(BooleanVar, output)
+        if fixed_output_type is None:
+            return ToNoneOperation.create(self)
 
         if issubclass(output, BooleanVar):
             return ToBooleanVarOperation.create(self)
@@ -421,6 +423,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             #     )
             return ToFunctionOperation.create(self, var_type or Callable)
 
+        if issubclass(output, NoneVar):
+            return ToNoneOperation.create(self)
+
         # If we can't determine the first argument, we just replace the _var_type.
         if not issubclass(output, Var) or var_type is None:
             return dataclasses.replace(
@@ -451,6 +456,8 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         from .sequence import ArrayVar, StringVar
 
         var_type = self._var_type
+        if var_type is None:
+            return self.to(None)
         if types.is_optional(var_type):
             var_type = types.get_args(var_type)[0]
 
@@ -701,8 +708,20 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         ).to(ObjectVar)
         return refs[LiteralVar.create(str(self))]
 
+    @deprecated("Use `.js_type()` instead.")
     def _type(self) -> StringVar:
         """Returns the type of the object.
+
+        This method uses the `typeof` function from the `FunctionStringVar` class
+        to determine the type of the object.
+
+        Returns:
+            StringVar: A string variable representing the type of the object.
+        """
+        return self.js_type()
+
+    def js_type(self) -> StringVar:
+        """Returns the javascript type of the object.
 
         This method uses the `typeof` function from the `FunctionStringVar` class
         to determine the type of the object.
@@ -1185,6 +1204,24 @@ DICT_VAL = TypeVar("DICT_VAL")
 LIST_INSIDE = TypeVar("LIST_INSIDE")
 
 
+class FakeComputedVarBaseClass(Var, property):
+    """A fake base class for ComputedVar to avoid inheriting from property."""
+
+    ...
+
+
+def is_computed_var(obj: Any) -> TypeGuard[ImmutableComputedVar]:
+    """Check if the object is a ComputedVar.
+
+    Args:
+        obj: The object to check.
+
+    Returns:
+        Whether the object is a ComputedVar.
+    """
+    return isinstance(obj, FakeComputedVarBaseClass)
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
@@ -1612,7 +1649,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         Returns:
             The class of the var.
         """
-        return ComputedVar
+        return FakeComputedVarBaseClass
 
     @property
     def fget(self) -> Callable[[BaseState], RETURN_TYPE]:
@@ -1819,4 +1856,83 @@ class CustomVarOperation(CachedVarOperation, ImmutableVar[T]):
             _var_data=ImmutableVarData.merge(_var_data),
             _args=args,
             _return=return_var,
+        )
+
+
+class NoneVar(ImmutableVar[None]):
+    """A var representing None."""
+
+
+class LiteralNoneVar(LiteralVar, NoneVar):
+    """A var representing None."""
+
+    def json(self) -> str:
+        """Serialize the var to a JSON string.
+
+        Returns:
+            The JSON string.
+        """
+        return "null"
+
+    @classmethod
+    def create(
+        cls,
+        _var_data: VarData | None = None,
+    ) -> LiteralNoneVar:
+        """Create a var from a value.
+
+        Args:
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return LiteralNoneVar(
+            _var_name="null",
+            _var_type=None,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ToNoneOperation(CachedVarOperation, NoneVar):
+    """A var operation that converts a var to None."""
+
+    _original_var: Var = dataclasses.field(
+        default_factory=lambda: LiteralNoneVar.create()
+    )
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """Get the cached var name.
+
+        Returns:
+            The cached var name.
+        """
+        return str(self._original_var)
+
+    @classmethod
+    def create(
+        cls,
+        var: Var,
+        _var_data: VarData | None = None,
+    ) -> ToNoneOperation:
+        """Create a ToNoneOperation.
+
+        Args:
+            var: The var to convert to None.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The ToNoneOperation.
+        """
+        return ToNoneOperation(
+            _var_name="",
+            _var_type=None,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _original_var=var,
         )

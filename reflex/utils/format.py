@@ -331,45 +331,6 @@ def format_route(route: str, format_case=True) -> str:
     return route
 
 
-def format_cond(
-    cond: str | Var,
-    true_value: str | Var,
-    false_value: str | Var = '""',
-    is_prop=False,
-) -> str:
-    """Format a conditional expression.
-
-    Args:
-        cond: The cond.
-        true_value: The value to return if the cond is true.
-        false_value: The value to return if the cond is false.
-        is_prop: Whether the cond is a prop
-
-    Returns:
-        The formatted conditional expression.
-    """
-    # Use Python truthiness.
-    cond = f"isTrue({cond})"
-
-    def create_var(cond_part):
-        return Var.create_safe(cond_part, _var_is_string=isinstance(cond_part, str))
-
-    # Format prop conds.
-    if is_prop:
-        true_value = create_var(true_value)
-        prop1 = true_value._replace(
-            _var_is_local=True,
-        )
-
-        false_value = create_var(false_value)
-        prop2 = false_value._replace(_var_is_local=True)
-        # unwrap '{}' to avoid f-string semantics for Var
-        return f"{cond} ? {prop1._var_name_unwrapped} : {prop2._var_name_unwrapped}"
-
-    # Format component conds.
-    return wrap(f"{cond} ? {true_value} : {false_value}", "{")
-
-
 def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> str:
     """Format a match expression whose return type is a Var.
 
