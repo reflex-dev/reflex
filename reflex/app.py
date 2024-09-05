@@ -269,13 +269,12 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 "`connect_error_component` is deprecated, use `overlay_component` instead"
             )
         super().__init__(**kwargs)
-        base_state_subclasses = BaseState.__subclasses__()
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
-        if not is_testing_env() and len(base_state_subclasses) > 1:
-            # Only one Base State class is allowed.
+        if not is_testing_env() and BaseState.__subclasses__() != [State]:
+            # Only rx.State is allowed as Base State subclass.
             raise ValueError(
-                "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
+                "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             )
 
         if "breakpoints" in self.style:
