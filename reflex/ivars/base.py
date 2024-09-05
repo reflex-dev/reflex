@@ -1043,12 +1043,25 @@ def unionize(*args: Type) -> Type:
     return Union[first, unionize(*rest)]
 
 
-def inherit_original_var_type(original_var: Var, type_wish: type) -> type:
+def original_var_type_or_target_type(original_var: Var, target_type: type) -> type:
+    """Inherit the original var type if possible, i.e. the original var is a subclass of the target type.
+        When the original var is a LiteralVar, the target type is always target_type.
+        When the original var is a subclass of the target type, the original var type is returned.
+
+    Args:
+        original_var: The original var of the operation.
+        target_type: The target type of the operation.
+
+    Returns:
+        The inherited type.
+    """
     if isinstance(original_var, LiteralVar):
         return str
-    if issubclass(original_var._var_type, type_wish):
+    if isinstance(original_var._var_type, type) and issubclass(
+        original_var._var_type, target_type
+    ):
         return original_var._var_type
-    return type_wish
+    return target_type
 
 
 def figure_out_type(value: Any) -> types.GenericType:

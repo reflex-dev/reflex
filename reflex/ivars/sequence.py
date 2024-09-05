@@ -39,7 +39,7 @@ from .base import (
     LiteralVar,
     cached_property_no_lock,
     figure_out_type,
-    inherit_original_var_type,
+    original_var_type_or_target_type,
     unionize,
     var_operation,
     var_operation_return,
@@ -1063,7 +1063,7 @@ class ToStringOperation(CachedVarOperation, StringVar):
         """
         return cls(
             _var_name="",
-            _var_type=inherit_original_var_type(original_var, str),
+            _var_type=original_var_type_or_target_type(original_var, str),
             _var_data=ImmutableVarData.merge(_var_data),
             _original_var=original_var,
         )
