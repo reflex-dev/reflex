@@ -20,6 +20,7 @@ from typing import (
     Generic,
     List,
     Literal,
+    NoReturn,
     Optional,
     Sequence,
     Set,
@@ -384,10 +385,18 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             return self.to(BooleanVar, output)
 
         if issubclass(output, NumberVar):
-            if fixed_type is not None and not issubclass(fixed_type, (int, float)):
-                raise TypeError(
-                    f"Unsupported type {var_type} for NumberVar. Must be int or float."
-                )
+            if fixed_type is not None:
+                if fixed_type is Union:
+                    inner_types = get_args(base_type)
+                    if not all(issubclass(t, (int, float)) for t in inner_types):
+                        raise TypeError(
+                            f"Unsupported type {var_type} for NumberVar. Must be int or float."
+                        )
+
+                elif not issubclass(fixed_type, (int, float)):
+                    raise TypeError(
+                        f"Unsupported type {var_type} for NumberVar. Must be int or float."
+                    )
             return ToNumberVarOperation.create(self, var_type or float)
 
         if issubclass(output, BooleanVar):
@@ -440,7 +449,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Raises:
             TypeError: If the type is not supported for guessing.
         """
-        from .number import NumberVar
+        from .number import BooleanVar, NumberVar
         from .object import ObjectVar
         from .sequence import ArrayVar, StringVar
 
@@ -454,11 +463,16 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         fixed_type = get_origin(var_type) or var_type
 
         if fixed_type is Union:
+            inner_types = get_args(var_type)
+            if int in inner_types and float in inner_types:
+                return self.to(NumberVar, self._var_type)
             return self
 
         if not inspect.isclass(fixed_type):
             raise TypeError(f"Unsupported type {var_type} for guess_type.")
 
+        if issubclass(fixed_type, bool):
+            return self.to(BooleanVar, self._var_type)
         if issubclass(fixed_type, (int, float)):
             return self.to(NumberVar, self._var_type)
         if issubclass(fixed_type, dict):
@@ -570,9 +584,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             BooleanVar: A BooleanVar object representing the result of the equality check.
         """
-        from .number import EqualOperation
+        from .number import equal_operation
 
-        return EqualOperation.create(self, other)
+        return equal_operation(self, other)
 
     def __ne__(self, other: Var | Any) -> BooleanVar:
         """Check if the current object is not equal to the given object.
@@ -583,9 +597,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             BooleanVar: A BooleanVar object representing the result of the comparison.
         """
-        from .number import EqualOperation
+        from .number import equal_operation
 
-        return ~EqualOperation.create(self, other)
+        return ~equal_operation(self, other)
 
     def __gt__(self, other: Var | Any) -> BooleanVar:
         """Compare the current instance with another variable and return a BooleanVar representing the result of the greater than operation.
@@ -596,9 +610,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             BooleanVar: A BooleanVar representing the result of the greater than operation.
         """
-        from .number import GreaterThanOperation
+        from .number import greater_than_operation
 
-        return GreaterThanOperation.create(self, other)
+        return greater_than_operation(self, other)
 
     def __ge__(self, other: Var | Any) -> BooleanVar:
         """Check if the value of this variable is greater than or equal to the value of another variable or object.
@@ -609,9 +623,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             BooleanVar: A BooleanVar object representing the result of the comparison.
         """
-        from .number import GreaterThanOrEqualOperation
+        from .number import greater_than_or_equal_operation
 
-        return GreaterThanOrEqualOperation.create(self, other)
+        return greater_than_or_equal_operation(self, other)
 
     def __lt__(self, other: Var | Any) -> BooleanVar:
         """Compare the current instance with another variable using the less than (<) operator.
@@ -622,9 +636,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the comparison.
         """
-        from .number import LessThanOperation
+        from .number import less_than_operation
 
-        return LessThanOperation.create(self, other)
+        return less_than_operation(self, other)
 
     def __le__(self, other: Var | Any) -> BooleanVar:
         """Compare if the current instance is less than or equal to the given value.
@@ -635,9 +649,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A BooleanVar object representing the result of the comparison.
         """
-        from .number import LessThanOrEqualOperation
+        from .number import less_than_or_equal_operation
 
-        return LessThanOrEqualOperation.create(self, other)
+        return less_than_or_equal_operation(self, other)
 
     def bool(self) -> BooleanVar:
         """Convert the var to a boolean.
@@ -645,9 +659,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             The boolean var.
         """
-        from .number import ToBooleanVarOperation
+        from .number import boolify
 
-        return ToBooleanVarOperation.create(self)
+        return boolify(self)
 
     def __and__(self, other: Var | Any) -> ImmutableVar:
         """Perform a logical AND operation on the current instance and another variable.
@@ -658,7 +672,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical AND operation.
         """
-        return AndOperation.create(self, other)
+        return and_operation(self, other)
 
     def __rand__(self, other: Var | Any) -> ImmutableVar:
         """Perform a logical AND operation on the current instance and another variable.
@@ -669,7 +683,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical AND operation.
         """
-        return AndOperation.create(other, self)
+        return and_operation(other, self)
 
     def __or__(self, other: Var | Any) -> ImmutableVar:
         """Perform a logical OR operation on the current instance and another variable.
@@ -680,7 +694,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical OR operation.
         """
-        return OrOperation.create(self, other)
+        return or_operation(self, other)
 
     def __ror__(self, other: Var | Any) -> ImmutableVar:
         """Perform a logical OR operation on the current instance and another variable.
@@ -691,7 +705,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical OR operation.
         """
-        return OrOperation.create(other, self)
+        return or_operation(other, self)
 
     def __invert__(self) -> BooleanVar:
         """Perform a logical NOT operation on the current instance.
@@ -699,9 +713,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical NOT operation.
         """
-        from .number import BooleanNotOperation
-
-        return BooleanNotOperation.create(self.bool())
+        return ~self.bool()
 
     def to_string(self) -> ImmutableVar:
         """Convert the var to a string.
@@ -926,52 +938,92 @@ class LiteralVar(ImmutableVar):
 
 
 P = ParamSpec("P")
-T = TypeVar("T", bound=ImmutableVar)
+T = TypeVar("T")
 
 
-def var_operation(*, output: Type[T]) -> Callable[[Callable[P, str]], Callable[P, T]]:
+# NoReturn is used to match CustomVarOperationReturn with no type hint.
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[NoReturn]],
+) -> Callable[P, ImmutableVar]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[bool]],
+) -> Callable[P, BooleanVar]: ...
+
+
+NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float])
+
+
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[NUMBER_T]],
+) -> Callable[P, NumberVar[NUMBER_T]]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[str]],
+) -> Callable[P, StringVar]: ...
+
+
+LIST_T = TypeVar("LIST_T", bound=Union[List[Any], Tuple, Set])
+
+
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[LIST_T]],
+) -> Callable[P, ArrayVar[LIST_T]]: ...
+
+
+OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Dict)
+
+
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[OBJECT_TYPE]],
+) -> Callable[P, ObjectVar[OBJECT_TYPE]]: ...
+
+
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[T]],
+) -> Callable[P, ImmutableVar[T]]:
     """Decorator for creating a var operation.
 
     Example:
     ```python
-    @var_operation(output=NumberVar)
+    @var_operation
     def add(a: NumberVar, b: NumberVar):
-        return f"({a} + {b})"
+        return custom_var_operation(f"{a} + {b}")
     ```
 
     Args:
-        output: The output type of the operation.
+        func: The function to decorate.
 
     Returns:
-        The decorator.
+        The decorated function.
     """
 
-    def decorator(func: Callable[P, str], output=output):
-        @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-            args_vars = [
-                LiteralVar.create(arg) if not isinstance(arg, Var) else arg
-                for arg in args
-            ]
-            kwargs_vars = {
-                key: LiteralVar.create(value) if not isinstance(value, Var) else value
-                for key, value in kwargs.items()
-            }
-            return output(
-                _var_name=func(*args_vars, **kwargs_vars),  # type: ignore
-                _var_data=VarData.merge(
-                    *[arg._get_all_var_data() for arg in args if isinstance(arg, Var)],
-                    *[
-                        arg._get_all_var_data()
-                        for arg in kwargs.values()
-                        if isinstance(arg, Var)
-                    ],
-                ),
-            )
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> ImmutableVar[T]:
+        func_args = list(inspect.signature(func).parameters)
+        args_vars = {
+            func_args[i]: (LiteralVar.create(arg) if not isinstance(arg, Var) else arg)
+            for i, arg in enumerate(args)
+        }
+        kwargs_vars = {
+            key: LiteralVar.create(value) if not isinstance(value, Var) else value
+            for key, value in kwargs.items()
+        }
 
-        return wrapper
+        return CustomVarOperation.create(
+            args=tuple(list(args_vars.items()) + list(kwargs_vars.items())),
+            return_var=func(*args_vars.values(), **kwargs_vars),  # type: ignore
+        ).guess_type()
 
-    return decorator
+    return wrapper
 
 
 def unionize(*args: Type) -> Type:
@@ -1100,114 +1152,64 @@ class CachedVarOperation:
         )
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class AndOperation(CachedVarOperation, ImmutableVar):
-    """Class for the logical AND operation."""
+def and_operation(a: Var | Any, b: Var | Any) -> ImmutableVar:
+    """Perform a logical AND operation on two variables.
 
-    # The first var.
-    _var1: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+    Args:
+        a: The first variable.
+        b: The second variable.
 
-    # The second var.
-    _var2: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """Get the cached var name.
-
-        Returns:
-            The cached var name.
-        """
-        return f"({str(self._var1)} && {str(self._var2)})"
-
-    def __hash__(self) -> int:
-        """Calculates the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._var1, self._var2))
-
-    @classmethod
-    def create(
-        cls, var1: Var | Any, var2: Var | Any, _var_data: VarData | None = None
-    ) -> AndOperation:
-        """Create an AndOperation.
-
-        Args:
-            var1: The first var.
-            var2: The second var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The AndOperation.
-        """
-        var1, var2 = map(LiteralVar.create, (var1, var2))
-        return AndOperation(
-            _var_name="",
-            _var_type=unionize(var1._var_type, var2._var_type),
-            _var_data=ImmutableVarData.merge(_var_data),
-            _var1=var1,
-            _var2=var2,
-        )
+    Returns:
+        The result of the logical AND operation.
+    """
+    return _and_operation(a, b)  # type: ignore
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class OrOperation(CachedVarOperation, ImmutableVar):
-    """Class for the logical OR operation."""
+@var_operation
+def _and_operation(a: ImmutableVar, b: ImmutableVar):
+    """Perform a logical AND operation on two variables.
 
-    # The first var.
-    _var1: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+    Args:
+        a: The first variable.
+        b: The second variable.
 
-    # The second var.
-    _var2: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+    Returns:
+        The result of the logical AND operation.
+    """
+    return var_operation_return(
+        js_expression=f"({a} && {b})",
+        var_type=unionize(a._var_type, b._var_type),
+    )
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """Get the cached var name.
 
-        Returns:
-            The cached var name.
-        """
-        return f"({str(self._var1)} || {str(self._var2)})"
+def or_operation(a: Var | Any, b: Var | Any) -> ImmutableVar:
+    """Perform a logical OR operation on two variables.
 
-    def __hash__(self) -> int:
-        """Calculates the hash value for the object.
+    Args:
+        a: The first variable.
+        b: The second variable.
 
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._var1, self._var2))
+    Returns:
+        The result of the logical OR operation.
+    """
+    return _or_operation(a, b)  # type: ignore
 
-    @classmethod
-    def create(
-        cls, var1: Var | Any, var2: Var | Any, _var_data: VarData | None = None
-    ) -> OrOperation:
-        """Create an OrOperation.
 
-        Args:
-            var1: The first var.
-            var2: The second var.
-            _var_data: Additional hooks and imports associated with the Var.
+@var_operation
+def _or_operation(a: ImmutableVar, b: ImmutableVar):
+    """Perform a logical OR operation on two variables.
 
-        Returns:
-            The OrOperation.
-        """
-        var1, var2 = map(LiteralVar.create, (var1, var2))
-        return OrOperation(
-            _var_name="",
-            _var_type=unionize(var1._var_type, var2._var_type),
-            _var_data=ImmutableVarData.merge(_var_data),
-            _var1=var1,
-            _var2=var2,
-        )
+    Args:
+        a: The first variable.
+        b: The second variable.
+
+    Returns:
+        The result of the logical OR operation.
+    """
+    return var_operation_return(
+        js_expression=f"({a} || {b})",
+        var_type=unionize(a._var_type, b._var_type),
+    )
 
 
 @dataclasses.dataclass(
@@ -1797,3 +1799,114 @@ def immutable_computed_var(
         )
 
     return wrapper
+
+
+RETURN = TypeVar("RETURN")
+
+
+class CustomVarOperationReturn(ImmutableVar[RETURN]):
+    """Base class for custom var operations."""
+
+    @classmethod
+    def create(
+        cls,
+        js_expression: str,
+        _var_type: Type[RETURN] | None = None,
+        _var_data: VarData | None = None,
+    ) -> CustomVarOperationReturn[RETURN]:
+        """Create a CustomVarOperation.
+
+        Args:
+            js_expression: The JavaScript expression to evaluate.
+            _var_type: The type of the var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The CustomVarOperation.
+        """
+        return CustomVarOperationReturn(
+            _var_name=js_expression,
+            _var_type=_var_type or Any,
+            _var_data=ImmutableVarData.merge(_var_data),
+        )
+
+
+def var_operation_return(
+    js_expression: str,
+    var_type: Type[RETURN] | None = None,
+) -> CustomVarOperationReturn[RETURN]:
+    """Shortcut for creating a CustomVarOperationReturn.
+
+    Args:
+        js_expression: The JavaScript expression to evaluate.
+        var_type: The type of the var.
+
+    Returns:
+        The CustomVarOperationReturn.
+    """
+    return CustomVarOperationReturn.create(js_expression, var_type)
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class CustomVarOperation(CachedVarOperation, ImmutableVar[T]):
+    """Base class for custom var operations."""
+
+    _args: Tuple[Tuple[str, Var], ...] = dataclasses.field(default_factory=tuple)
+
+    _return: CustomVarOperationReturn[T] = dataclasses.field(
+        default_factory=lambda: CustomVarOperationReturn.create("")
+    )
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """Get the cached var name.
+
+        Returns:
+            The cached var name.
+        """
+        return str(self._return)
+
+    @cached_property_no_lock
+    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+        """Get the cached VarData.
+
+        Returns:
+            The cached VarData.
+        """
+        return ImmutableVarData.merge(
+            *map(
+                lambda arg: arg[1]._get_all_var_data(),
+                self._args,
+            ),
+            self._return._get_all_var_data(),
+            self._var_data,
+        )
+
+    @classmethod
+    def create(
+        cls,
+        args: Tuple[Tuple[str, Var], ...],
+        return_var: CustomVarOperationReturn[T],
+        _var_data: VarData | None = None,
+    ) -> CustomVarOperation[T]:
+        """Create a CustomVarOperation.
+
+        Args:
+            args: The arguments to the operation.
+            return_var: The return var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The CustomVarOperation.
+        """
+        return CustomVarOperation(
+            _var_name="",
+            _var_type=return_var._var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _args=args,
+            _return=return_var,
+        )

@@ -4,7 +4,6 @@ from typing import Any, Union
 
 from reflex import Component, ComponentNamespace
 from reflex.constants.colors import Color
-from reflex.utils import console
 from reflex.vars import Var as Var
 
 from .base import BaseHTML
@@ -445,23 +444,3 @@ picture = Picture.create
 portal = Portal.create
 source = Source.create
 svg = SVG()
-
-
-def __getattr__(name: str):
-    if name in ("defs", "lineargradient", "stop", "path"):
-        console.deprecate(
-            f"`rx.el.{name}`",
-            reason=f"use `rx.el.svg.{'linear_gradient' if name =='lineargradient' else name}`",
-            deprecation_version="0.5.8",
-            removal_version="0.6.0",
-        )
-        return (
-            LinearGradient.create
-            if name == "lineargradient"
-            else globals()[name.capitalize()].create
-        )
-
-    try:
-        return globals()[name]
-    except KeyError:
-        raise AttributeError(f"module '{__name__} has no attribute '{name}'") from None

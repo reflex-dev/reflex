@@ -67,11 +67,11 @@ def test_color(color, expected):
     [
         (
             rx.cond(True, rx.color("mint"), rx.color("tomato", 5)),
-            '(Boolean(true) ? "var(--mint-7)" : "var(--tomato-5)")',
+            '(true ? "var(--mint-7)" : "var(--tomato-5)")',
         ),
         (
             rx.cond(True, rx.color(ColorState.color), rx.color(ColorState.color, 5)),  # type: ignore
-            f'(Boolean(true) ? ("var(--"+{str(color_state_name)}.color+"-7)") : ("var(--"+{str(color_state_name)}.color+"-5)"))',
+            f'(true ? ("var(--"+{str(color_state_name)}.color+"-7)") : ("var(--"+{str(color_state_name)}.color+"-5)"))',
         ),
         (
             rx.match(

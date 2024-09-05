@@ -45,7 +45,7 @@ from reflex.event import (
 )
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style, format_as_emotion
-from reflex.utils import console, format, imports, types
+from reflex.utils import format, imports, types
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.utils.serializers import serializer
 from reflex.vars import BaseVar, ImmutableVarData, Var, VarData
@@ -527,15 +527,7 @@ class Component(BaseComponent, ABC):
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
-                    try:
-                        event = call_event_handler(v, args_spec)
-                    except ValueError as err:
-                        raise ValueError(
-                            f" {err} defined in the `{type(self).__name__}` component"
-                        ) from err
-
-                    # Add the event to the chain.
-                    events.append(event)
+                    events.append(call_event_handler(v, args_spec))
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
                     result = call_event_fn(v, args_spec)
@@ -635,27 +627,6 @@ class Component(BaseComponent, ABC):
         from reflex.compiler.compiler import _compile_component
 
         return _compile_component(self)
-
-    def _apply_theme(self, theme: Optional[Component]):
-        """Apply the theme to this component.
-
-        Deprecated. Use add_style instead.
-
-        Args:
-            theme: The theme to apply.
-        """
-        pass
-
-    def apply_theme(self, theme: Optional[Component]):
-        """Apply a theme to the component and its children.
-
-        Args:
-            theme: The theme to apply.
-        """
-        self._apply_theme(theme)
-        for child in self.children:
-            if isinstance(child, Component):
-                child.apply_theme(theme)
 
     def _exclude_props(self) -> list[str]:
         """Props to exclude when adding the component props to the Tag.
@@ -763,22 +734,6 @@ class Component(BaseComponent, ABC):
         from reflex.components.base.bare import Bare
         from reflex.components.base.fragment import Fragment
         from reflex.utils.exceptions import ComponentTypeError
-
-        # Translate deprecated props to new names.
-        new_prop_names = [
-            prop for prop in cls.get_props() if prop in ["type", "min", "max"]
-        ]
-        for prop in new_prop_names:
-            under_prop = f"{prop}_"
-            if under_prop in props:
-                console.deprecate(
-                    f"Underscore suffix for prop `{under_prop}`",
-                    reason=f"for consistency. Use `{prop}` instead.",
-                    deprecation_version="0.4.0",
-                    removal_version="0.6.0",
-                    dedupe=False,
-                )
-                props[prop] = props.pop(under_prop)
 
         # Filter out None props
         props = {key: value for key, value in props.items() if value is not None}
@@ -895,17 +850,6 @@ class Component(BaseComponent, ABC):
         if component_style:
             new_style.update(component_style)
             style_vars.append(component_style._var_data)
-
-        # 3. User-defined style from `Component.style`.
-        # Apply theme for retro-compatibility with deprecated _apply_theme API
-        if type(self)._apply_theme != Component._apply_theme:
-            console.deprecate(
-                f"{self.__class__.__name__}._apply_theme",
-                reason="use add_style instead",
-                deprecation_version="0.5.0",
-                removal_version="0.6.0",
-            )
-            self._apply_theme(theme)
 
         # 4. style dict and css props passed to the component instance.
         new_style.update(self.style)
