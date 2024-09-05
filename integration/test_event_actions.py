@@ -146,7 +146,7 @@ def TestEventAction():
                     200
                 ).stop_propagation,
             ),
-            rx.list(
+            rx.list(  # type: ignore
                 rx.foreach(
                     EventActionState.order,  # type: ignore
                     rx.list_item,

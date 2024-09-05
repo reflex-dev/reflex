@@ -58,7 +58,7 @@ def DynamicRoute():
                 id="link_page_next",  # type: ignore
             ),
             rx.link("missing", href="/missing", id="link_missing"),
-            rx.list(
+            rx.list(  # type: ignore
                 rx.foreach(
                     DynamicState.order,  # type: ignore
                     lambda i: rx.list_item(rx.text(i)),
