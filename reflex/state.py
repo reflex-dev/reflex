@@ -1711,9 +1711,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         substates = self.substates
         for var in self.dirty_vars:
             for substate_name in self._substate_var_dependencies[var]:
-                if substate_name not in substates:
-                    # TODO: why is this happening?
-                    continue
                 self.dirty_substates.add(substate_name)
                 substate = substates[substate_name]
                 substate.dirty_vars.add(var)
@@ -3608,4 +3605,7 @@ def reload_state_module(
         if subclass.__module__ == module and module is not None:
             state.class_subclasses.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
+            state._computed_var_dependencies = defaultdict(set)
+            state._substate_var_dependencies = defaultdict(set)
+            state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()
