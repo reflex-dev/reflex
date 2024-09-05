@@ -100,7 +100,6 @@ def test_table(driver, table: AppHarness):
     Args:
         driver: Selenium WebDriver open to the app
         table: Harness for Table app
-        route: Page route or path.
     """
     assert table.app_instance is not None, "app is not running"
 
