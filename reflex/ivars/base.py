@@ -795,7 +795,7 @@ class LiteralVar(ImmutableVar):
             return LiteralArrayVar.create(value, _var_data=_var_data)
 
         if value is None:
-            return ImmutableVar.create_safe("null", _var_data=_var_data)
+            return LiteralNoneVar.create(_var_data=_var_data)
 
         from reflex.event import EventChain, EventSpec
         from reflex.utils.format import get_event_handler_parts

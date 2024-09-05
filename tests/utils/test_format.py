@@ -277,7 +277,7 @@ def test_format_string(input: str, output: str):
         (Var.create(value="test", _var_is_local=True), '"test"'),
         (Var.create(value="test", _var_is_local=False), "test"),
         (Var.create(value="test", _var_is_string=True), '"test"'),
-        (Var.create(value="test", _var_is_string=False), '"test"'),
+        (Var.create(value='"test"', _var_is_string=False), '"test"'),
         (Var.create(value="test", _var_is_local=False, _var_is_string=False), "test"),
     ],
 )
@@ -383,7 +383,7 @@ def test_format_match(
                         handler=EventHandler(fn=mock_event),
                         args=(
                             (
-                                Var.create_safe("arg"),
+                                LiteralVar.create("arg"),
                                 ImmutableVar(
                                     _var_name="_e",
                                     _var_type=FrontendEvent,
@@ -679,8 +679,8 @@ def test_format_ref(input, output):
     "input,output",
     [
         (("my_array", None), "refs_my_array"),
-        (("my_array", Var.create(0)), "refs_my_array[0]"),
-        (("my_array", Var.create(1)), "refs_my_array[1]"),
+        (("my_array", LiteralVar.create(0)), "refs_my_array[0]"),
+        (("my_array", LiteralVar.create(1)), "refs_my_array[1]"),
     ],
 )
 def test_format_array_ref(input, output):

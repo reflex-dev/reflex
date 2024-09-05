@@ -19,9 +19,7 @@ def make_var(value) -> Var:
     Returns:
         The var.
     """
-    var = Var.create(value, _var_is_local=False, _var_is_string=False)
-    assert var is not None
-    return var
+    return ImmutableVar.create_safe(value)
 
 
 def test_create_event():
@@ -83,7 +81,7 @@ def test_call_event_handler():
 
     assert event_spec.handler == handler
     assert event_spec.args[0][0].equals(ImmutableVar.create_safe("arg1"))
-    assert event_spec.args[0][1].equals(Var.create_safe(first))
+    assert event_spec.args[0][1].equals(LiteralVar.create(first))
     assert event_spec.args[1][0].equals(ImmutableVar.create_safe("arg2"))
     assert event_spec.args[1][1].equals(LiteralVar.create(second))
 

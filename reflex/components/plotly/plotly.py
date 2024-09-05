@@ -240,8 +240,8 @@ const extractPoints = (points) => {
         from plotly.io import templates
 
         responsive_template = color_mode_cond(
-            light=Var.create_safe(templates["plotly"]).to(dict),
-            dark=Var.create_safe(templates["plotly_dark"]).to(dict),
+            light=LiteralVar.create(templates["plotly"]),
+            dark=LiteralVar.create(templates["plotly_dark"]),
         )
         if isinstance(responsive_template, Var):
             # Mark the conditional Var as a Template to avoid type mismatch
@@ -261,14 +261,10 @@ const extractPoints = (points) => {
             # Why is this not a literal dict? Great question... it didn't work
             # reliably because of how _var_name_unwrapped strips the outer curly
             # brackets if any of the contained Vars depend on state.
-            layout_dict = Var.create_safe(
-                f"{{'layout': {self.layout.to(dict)._var_name_unwrapped}}}"
-            ).to(dict)
+            layout_dict = LiteralVar.create({"layout": self.layout})
             merge_dicts.append(layout_dict)
         if self.template is not None:
-            template_dict = Var.create_safe(
-                {"layout": {"template": self.template.to(dict)}}
-            )
+            template_dict = LiteralVar.create({"layout": {"template": self.template}})
             merge_dicts.append(template_dict.without_data())
         if merge_dicts:
             tag.special_props.add(

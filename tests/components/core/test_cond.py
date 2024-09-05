@@ -76,7 +76,7 @@ def test_validate_cond(cond_state: BaseState):
         (32, 0),
         ("hello", ""),
         (2.3, 0.0),
-        (Var.create("a"), Var.create("b")),
+        (LiteralVar.create("a"), LiteralVar.create("b")),
     ],
 )
 def test_prop_cond(c1: Any, c2: Any):
@@ -103,7 +103,7 @@ def test_prop_cond(c1: Any, c2: Any):
 def test_cond_no_mix():
     """Test if cond can't mix components and props."""
     with pytest.raises(ValueError):
-        cond(True, Var.create("hello"), Text.create("world"))
+        cond(True, LiteralVar.create("hello"), Text.create("world"))
 
 
 def test_cond_no_else():

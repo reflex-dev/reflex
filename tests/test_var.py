@@ -254,7 +254,7 @@ def test_get_setter(prop, expected):
 @pytest.mark.parametrize(
     "value,expected",
     [
-        (None, None),
+        (None, ImmutableVar(_var_name="null", _var_type=None)),
         (1, ImmutableVar(_var_name="1", _var_type=int)),
         ("key", ImmutableVar(_var_name='"key"', _var_type=str)),
         (3.14, ImmutableVar(_var_name="3.14", _var_type=float)),
@@ -274,11 +274,8 @@ def test_create(value, expected):
         value: The value to create a var from.
         expected: The expected name of the setter function.
     """
-    prop = Var.create(value)
-    if value is None:
-        assert prop == expected
-    else:
-        assert prop.equals(expected)  # type: ignore
+    prop = LiteralVar.create(value)
+    assert prop.equals(expected)  # type: ignore
 
 
 def test_create_type_error():
@@ -290,18 +287,11 @@ def test_create_type_error():
     value = ErrorType()
 
     with pytest.raises(TypeError):
-        Var.create(value)
+        LiteralVar.create(value)
 
 
 def v(value) -> Var:
     return LiteralVar.create(value)
-    val = (
-        Var.create(json.dumps(value), _var_is_string=True, _var_is_local=False)
-        if isinstance(value, str)
-        else Var.create(value, _var_is_local=False)
-    )
-    assert val is not None
-    return val
 
 
 def test_basic_operations(TestObj):
@@ -332,11 +322,7 @@ def test_basic_operations(TestObj):
         str(ImmutableVar.create("foo") == ImmutableVar.create("bar")) == "(foo === bar)"
     )
     assert (
-        str(
-            Var.create_safe("foo", _var_is_string=True)
-            == Var.create_safe("bar", _var_is_string=True)
-        )
-        == '("foo" === "bar")'
+        str(LiteralVar.create("foo") == LiteralVar.create("bar")) == '("foo" === "bar")'
     )
     assert (
         str(
@@ -346,7 +332,7 @@ def test_basic_operations(TestObj):
             )
             ._var_set_state("state")
             .bar
-            == Var.create_safe("bar", _var_is_string=True)
+            == LiteralVar.create("bar")
         )
         == '("bar" === state.foo.bar)'
     )
@@ -1077,7 +1063,7 @@ def test_retrival():
     assert REFLEX_VAR_OPENING_TAG in f_string
     assert REFLEX_VAR_CLOSING_TAG in f_string
 
-    result_var_data = Var.create_safe(f_string)._get_all_var_data()
+    result_var_data = LiteralVar.create(f_string)._get_all_var_data()
     result_immutable_var_data = ImmutableVar.create_safe(f_string)._var_data
     assert result_var_data is not None and result_immutable_var_data is not None
     assert (
@@ -1098,7 +1084,7 @@ def test_retrival():
 
 
 def test_fstring_concat():
-    original_var_with_data = Var.create_safe(
+    original_var_with_data = LiteralVar.create(
         "imagination", _var_data=VarData(state="fear")
     )
 
@@ -1161,8 +1147,8 @@ def test_fstrings(out, expected):
     [
         ([1], ""),
         ({"a": 1}, ""),
-        ([Var.create_safe(1)._var_set_state("foo")], "foo"),
-        ({"a": Var.create_safe(1)._var_set_state("foo")}, "foo"),
+        ([LiteralVar.create(1)._var_set_state("foo")], "foo"),
+        ({"a": LiteralVar.create(1)._var_set_state("foo")}, "foo"),
     ],
 )
 def test_extract_state_from_container(value, expect_state):
@@ -1172,7 +1158,7 @@ def test_extract_state_from_container(value, expect_state):
         value: The value to create a var from.
         expect_state: The expected state.
     """
-    var_data = Var.create_safe(value)._get_all_var_data()
+    var_data = LiteralVar.create(value)._get_all_var_data()
     var_state = var_data.state if var_data else ""
     assert var_state == expect_state
 
@@ -1191,7 +1177,7 @@ def test_fstring_roundtrip(value):
         value: The value to create a Var from.
     """
     var = ImmutableVar.create_safe(value)._var_set_state("state")
-    rt_var = Var.create_safe(f"{var}")
+    rt_var = LiteralVar.create(f"{var}")
     assert var._var_state == rt_var._var_state
     assert not rt_var._var_full_name_needs_state_prefix
     assert rt_var._var_name == var._var_full_name

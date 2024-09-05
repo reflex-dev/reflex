@@ -270,7 +270,7 @@ def test_create_component(component1):
     [
         pytest.param(
             "text",
-            Var.create("hello"),
+            LiteralVar.create("hello"),
             None,
             id="text",
         ),
@@ -294,13 +294,13 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text",
-            Var.create(1),
+            LiteralVar.create(1),
             TypeError,
             id="text-int",
         ),
         pytest.param(
             "number",
-            Var.create(1),
+            LiteralVar.create(1),
             None,
             id="number",
         ),
@@ -324,19 +324,19 @@ def test_create_component(component1):
         ),
         pytest.param(
             "number",
-            Var.create("1"),
+            LiteralVar.create("1"),
             TypeError,
             id="number-str",
         ),
         pytest.param(
             "text_or_number",
-            Var.create("hello"),
+            LiteralVar.create("hello"),
             None,
             id="text_or_number-str",
         ),
         pytest.param(
             "text_or_number",
-            Var.create(1),
+            LiteralVar.create(1),
             None,
             id="text_or_number-int",
         ),
@@ -378,7 +378,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            Var.create(1.0),
+            LiteralVar.create(1.0),
             TypeError,
             id="text_or_number-float",
         ),
@@ -874,7 +874,7 @@ def test_custom_component_wrapper():
     from reflex.components.radix.themes.typography.text import Text
 
     ccomponent = my_component(
-        rx.text("child"), width=Var.create(1), color=Var.create("red")
+        rx.text("child"), width=LiteralVar.create(1), color=LiteralVar.create("red")
     )
     assert isinstance(ccomponent, CustomComponent)
     assert len(ccomponent.children) == 1
@@ -1519,7 +1519,7 @@ def test_validate_valid_children():
             True,
             rx.fragment(valid_component2()),
             rx.fragment(
-                rx.foreach(Var.create([1, 2, 3]), lambda x: valid_component2(x))  # type: ignore
+                rx.foreach(LiteralVar.create([1, 2, 3]), lambda x: valid_component2(x))  # type: ignore
             ),
         )
     )
@@ -1579,7 +1579,7 @@ def test_validate_valid_parents():
             rx.fragment(valid_component3()),
             rx.fragment(
                 rx.foreach(
-                    Var.create([1, 2, 3]),  # type: ignore
+                    LiteralVar.create([1, 2, 3]),  # type: ignore
                     lambda x: valid_component2(valid_component3(x)),
                 )
             ),
@@ -1646,7 +1646,9 @@ def test_validate_invalid_children():
                 True,
                 rx.fragment(invalid_component()),
                 rx.fragment(
-                    rx.foreach(Var.create([1, 2, 3]), lambda x: invalid_component(x))  # type: ignore
+                    rx.foreach(
+                        LiteralVar.create([1, 2, 3]), lambda x: invalid_component(x)
+                    )  # type: ignore
                 ),
             )
         )
