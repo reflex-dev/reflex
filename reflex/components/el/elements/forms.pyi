@@ -1559,7 +1559,7 @@ class Select(BaseHTML):
         """
         ...
 
-AUTO_HEIGHT_JS = '\nconst autoHeightOnInput = (e, is_enabled) => {\n    if (is_enabled) {\n        const el = e.target;\n        el.style.overflowY = "hidden";\n        el.style.height = "auto";\n        el.style.height = (e.target.scrollHeight) + "px";\n        if (el.form && !el.form.data_resize_on_reset) {\n            el.form.addEventListener("reset", () => window.setTimeout(() => autoHeightOnInput(e, is_enabled), 0))\n            el.form.data_resize_on_reset = true;\n        }\n    }\n}\n'
+AUTO_HEIGHT_JS = '\nconst autoHeightOnInput = (e, is_enabled) => {\n    if (is_enabled) {\n        const el = e.target;\n        el.style.overflowY = "scroll";\n        el.style.height = "auto";\n        el.style.height = (e.target.scrollHeight) + "px";\n        if (el.form && !el.form.data_resize_on_reset) {\n            el.form.addEventListener("reset", () => window.setTimeout(() => autoHeightOnInput(e, is_enabled), 0))\n            el.form.data_resize_on_reset = true;\n        }\n    }\n}\n'
 ENTER_KEY_SUBMIT_JS = "\nconst enterKeySubmitOnKeyDown = (e, is_enabled) => {\n    if (is_enabled && e.which === 13 && !e.shiftKey) {\n        e.preventDefault();\n        if (!e.repeat) {\n            if (e.target.form) {\n                e.target.form.requestSubmit();\n            }\n        }\n    }\n}\n"
 
 class Textarea(BaseHTML):
