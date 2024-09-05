@@ -595,9 +595,6 @@ class Var:
 
         Returns:
             The var.
-
-        Raises:
-            VarTypeError: If the value is JSON-unserializable.
         """
         from reflex.ivars import ImmutableVar, LiteralVar
 
