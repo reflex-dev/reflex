@@ -24,7 +24,7 @@ from reflex.style import Style
 from reflex.utils import imports
 from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import Var, VarData
 
 
 @pytest.fixture
@@ -276,19 +276,19 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text",
-            BaseVar(_var_name="hello", _var_type=Optional[str]),
+            ImmutableVar(_var_name="hello", _var_type=Optional[str]),
             None,
             id="text-optional",
         ),
         pytest.param(
             "text",
-            BaseVar(_var_name="hello", _var_type=Union[str, None]),
+            ImmutableVar(_var_name="hello", _var_type=Union[str, None]),
             None,
             id="text-union-str-none",
         ),
         pytest.param(
             "text",
-            BaseVar(_var_name="hello", _var_type=Union[None, str]),
+            ImmutableVar(_var_name="hello", _var_type=Union[None, str]),
             None,
             id="text-union-none-str",
         ),
@@ -306,19 +306,19 @@ def test_create_component(component1):
         ),
         pytest.param(
             "number",
-            BaseVar(_var_name="1", _var_type=Optional[int]),
+            ImmutableVar(_var_name="1", _var_type=Optional[int]),
             None,
             id="number-optional",
         ),
         pytest.param(
             "number",
-            BaseVar(_var_name="1", _var_type=Union[int, None]),
+            ImmutableVar(_var_name="1", _var_type=Union[int, None]),
             None,
             id="number-union-int-none",
         ),
         pytest.param(
             "number",
-            BaseVar(_var_name="1", _var_type=Union[None, int]),
+            ImmutableVar(_var_name="1", _var_type=Union[None, int]),
             None,
             id="number-union-none-int",
         ),
@@ -342,37 +342,37 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="hello", _var_type=Optional[str]),
+            ImmutableVar(_var_name="hello", _var_type=Optional[str]),
             None,
             id="text_or_number-optional-str",
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="hello", _var_type=Union[str, None]),
+            ImmutableVar(_var_name="hello", _var_type=Union[str, None]),
             None,
             id="text_or_number-union-str-none",
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="hello", _var_type=Union[None, str]),
+            ImmutableVar(_var_name="hello", _var_type=Union[None, str]),
             None,
             id="text_or_number-union-none-str",
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="1", _var_type=Optional[int]),
+            ImmutableVar(_var_name="1", _var_type=Optional[int]),
             None,
             id="text_or_number-optional-int",
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="1", _var_type=Union[int, None]),
+            ImmutableVar(_var_name="1", _var_type=Union[int, None]),
             None,
             id="text_or_number-union-int-none",
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="1", _var_type=Union[None, int]),
+            ImmutableVar(_var_name="1", _var_type=Union[None, int]),
             None,
             id="text_or_number-union-none-int",
         ),
@@ -384,7 +384,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="hello", _var_type=Optional[Union[str, int]]),
+            ImmutableVar(_var_name="hello", _var_type=Optional[Union[str, int]]),
             None,
             id="text_or_number-optional-union-str-int",
         ),
@@ -2153,7 +2153,9 @@ class TriggerState(rx.State):
                 rx.text("random text", on_click=TriggerState.do_something),
                 rx.text(
                     "random text",
-                    on_click=BaseVar(_var_name="toggleColorMode", _var_type=EventChain),
+                    on_click=ImmutableVar(
+                        _var_name="toggleColorMode", _var_type=EventChain
+                    ),
                 ),
             ),
             True,
@@ -2163,7 +2165,9 @@ class TriggerState(rx.State):
                 rx.text("random text", on_click=rx.console_log("log")),
                 rx.text(
                     "random text",
-                    on_click=BaseVar(_var_name="toggleColorMode", _var_type=EventChain),
+                    on_click=ImmutableVar(
+                        _var_name="toggleColorMode", _var_type=EventChain
+                    ),
                 ),
             ),
             False,

@@ -22,7 +22,7 @@ from reflex.base import Base
 from reflex.components.sonner.toast import Toaster
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
-from reflex.ivars.base import ImmutableComputedVar
+from reflex.ivars.base import ImmutableComputedVar, ImmutableVar
 from reflex.state import (
     BaseState,
     ImmutableStateError,
@@ -42,7 +42,7 @@ from reflex.state import (
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var
 from tests.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
@@ -519,10 +519,10 @@ def test_set_class_var():
     with pytest.raises(AttributeError):
         TestState.num3  # type: ignore
     TestState._set_var(
-        BaseVar(_var_name="num3", _var_type=int)._var_set_state(TestState)
+        ImmutableVar(_var_name="num3", _var_type=int)._var_set_state(TestState)
     )
     var = TestState.num3  # type: ignore
-    assert var._var_name == "num3"
+    assert var._var_name == TestState.get_full_name() + ".num3"
     assert var._var_type == int
     assert var._var_state == TestState.get_full_name()
 

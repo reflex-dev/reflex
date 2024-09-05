@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from reflex import constants
 from reflex.utils import exceptions, types
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -263,34 +263,6 @@ def format_string(string: str) -> str:
     return _wrap_js_string(_escape_js_string(string))
 
 
-def format_f_string_prop(prop: BaseVar) -> str:
-    """Format the string in a given prop as an f-string.
-
-    Args:
-        prop: The prop to format.
-
-    Returns:
-        The formatted string.
-    """
-    from reflex.ivars.base import VarData
-
-    s = prop._var_full_name
-    var_data = VarData.merge(prop._get_all_var_data())
-    interps = var_data.interpolations if var_data else []
-    parts: List[str] = []
-
-    if interps:
-        for i, (start, end) in enumerate(interps):
-            prev_end = interps[i - 1][1] if i > 0 else 0
-            parts.append(_escape_js_string(s[prev_end:start]))
-            parts.append(s[start:end])
-        parts.append(_escape_js_string(s[interps[-1][1] :]))
-    else:
-        parts.append(_escape_js_string(s))
-
-    return _wrap_js_string("".join(parts))
-
-
 def format_var(var: Var) -> str:
     """Format the given Var as a javascript value.
 
@@ -331,7 +303,7 @@ def format_route(route: str, format_case=True) -> str:
     return route
 
 
-def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> str:
+def format_match(cond: str | Var, match_cases: List[Var], default: Var) -> str:
     """Format a match expression whose return type is a Var.
 
     Args:
@@ -350,17 +322,12 @@ def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> s
         return_value = case[-1]
 
         case_conditions = " ".join(
-            [
-                f"case JSON.stringify({condition._var_name_unwrapped}):"
-                for condition in conditions
-            ]
+            [f"case JSON.stringify({str(condition)}):" for condition in conditions]
         )
-        case_code = (
-            f"{case_conditions}  return ({return_value._var_name_unwrapped});  break;"
-        )
+        case_code = f"{case_conditions}  return ({str(return_value)});  break;"
         switch_code += case_code
 
-    switch_code += f"default:  return ({default._var_name_unwrapped});  break;"
+    switch_code += f"default:  return ({str(default)});  break;"
     switch_code += "};})()"
 
     return switch_code
@@ -384,22 +351,14 @@ def format_prop(
     # import here to avoid circular import.
     from reflex.event import EventChain
     from reflex.utils import serializers
-    from reflex.vars import VarData
 
     try:
         # Handle var props.
         if isinstance(prop, Var):
-            if not prop._var_is_local or prop._var_is_string:
-                return str(prop)
-            if isinstance(prop, BaseVar) and types._issubclass(prop._var_type, str):
-                var_data = VarData.merge(prop._get_all_var_data())
-                if var_data and var_data.interpolations:
-                    return format_f_string_prop(prop)
-                return format_string(prop._var_full_name)
-            prop = prop._var_full_name
+            return str(prop)
 
         # Handle event props.
-        elif isinstance(prop, EventChain):
+        if isinstance(prop, EventChain):
             sig = inspect.signature(prop.args_spec)  # type: ignore
             if sig.parameters:
                 arg_def = ",".join(f"_{p}" for p in sig.parameters)
@@ -900,7 +859,7 @@ def format_data_editor_column(col: str | dict):
             col["overlayIcon"] = None
         return col
 
-    if isinstance(col, BaseVar):
+    if isinstance(col, Var):
         return col
 
     raise ValueError(

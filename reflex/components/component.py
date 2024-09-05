@@ -48,7 +48,7 @@ from reflex.style import Style, format_as_emotion
 from reflex.utils import format, imports, types
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.utils.serializers import serializer
-from reflex.vars import BaseVar, ImmutableVarData, Var, VarData
+from reflex.vars import ImmutableVarData, Var, VarData
 
 
 class BaseComponent(Base, ABC):
@@ -1513,7 +1513,7 @@ class Component(BaseComponent, ABC):
             The ref name.
         """
         # do not create a ref if the id is dynamic or unspecified
-        if self.id is None or isinstance(self.id, (BaseVar, ImmutableVar)):
+        if self.id is None or isinstance(self.id, Var):
             return None
         return format.format_ref(self.id)
 

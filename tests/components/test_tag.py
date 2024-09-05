@@ -3,8 +3,8 @@ from typing import Dict, List
 import pytest
 
 from reflex.components.tags import CondTag, Tag, tagless
-from reflex.ivars.base import LiteralVar
-from reflex.vars import BaseVar, Var
+from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.vars import Var
 
 
 @pytest.mark.parametrize(
@@ -111,7 +111,7 @@ def test_format_cond_tag():
     tag = CondTag(
         true_value=dict(Tag(name="h1", contents="True content")),
         false_value=dict(Tag(name="h2", contents="False content")),
-        cond=BaseVar(_var_name="logged_in", _var_type=bool),
+        cond=ImmutableVar(_var_name="logged_in", _var_type=bool),
     )
     tag_dict = dict(tag)
     cond, true_value, false_value = (

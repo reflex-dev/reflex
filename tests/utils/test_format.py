@@ -12,7 +12,7 @@ from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.serializers import serialize_figure
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var
 from tests.test_state import (
     ChildState,
     ChildState2,
@@ -336,7 +336,7 @@ def test_format_route(route: str, format_case: bool, expected: bool):
     ],
 )
 def test_format_match(
-    condition: str, match_cases: List[BaseVar], default: BaseVar, expected: str
+    condition: str, match_cases: List[Var], default: Var, expected: str
 ):
     """Test formatting a match statement.
 

@@ -1,12 +1,12 @@
 from reflex_chakra.components.forms.form import Form
 
 from reflex.event import EventChain
-from reflex.vars import BaseVar
+from reflex.ivars.base import ImmutableVar
 
 
 def test_render_on_submit():
     """Test that on_submit event chain is rendered as a separate function."""
-    submit_it = BaseVar(
+    submit_it = ImmutableVar(
         _var_name="submit_it",
         _var_type=EventChain,
     )
