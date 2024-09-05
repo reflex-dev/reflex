@@ -716,8 +716,6 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         Returns:
             The array pluck operation.
         """
-        if field is None:
-            return self
         return array_pluck_operation(self, field)
 
     def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
